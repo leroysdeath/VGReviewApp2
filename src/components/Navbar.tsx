@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, Menu, X, Gamepad2 } from 'lucide-react';
+import { LoginModal } from './LoginModal';
 
 export const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,18 +48,12 @@ export const Navbar: React.FC = () => {
           {/* Desktop User Menu */}
           <div className="hidden md:block">
             <div className="ml-4 flex items-center md:ml-6">
-              <Link
-                to="/user/1"
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
                 className="p-2 text-gray-400 hover:text-white transition-colors"
               >
                 <User className="h-6 w-6" />
-              </Link>
-              <Link
-                to="/login"
-                className="ml-3 px-4 py-2 rounded-md text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors"
-              >
-                Login
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -118,15 +114,31 @@ export const Navbar: React.FC = () => {
               Profile
             </Link>
             <Link
-              to="/login"
-              className="block px-3 py-2 rounded-md text-base font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+              to="/user/1"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
+              Profile
+            </Link>
+            <button
+              onClick={() => {
+                setIsLoginModalOpen(true);
+                setIsMenuOpen(false);
+              }}
+              className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+            >
               Login
+            </button>
             </Link>
           </div>
         </div>
       )}
+
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={isLoginModalOpen} 
+        onClose={() => setIsLoginModalOpen(false)} 
+      />
     </nav>
   );
 };
