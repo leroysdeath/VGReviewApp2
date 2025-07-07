@@ -129,7 +129,6 @@ export const Navbar: React.FC = () => {
             >
               Login
             </button>
-            </Link>
           </div>
         </div>
       )}
