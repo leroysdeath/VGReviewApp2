@@ -70,19 +70,6 @@ export const Navbar: React.FC = () => {
               >
                 <User className="h-6 w-6" />
               </button>
-              
-              {/* Dummy Profile Test */}
-              <Link
-                to="/profile"
-                className="ml-2 p-1 rounded-full hover:ring-2 hover:ring-purple-400 transition-all"
-                title="Dummy Profile Test"
-              >
-                <img
-                  src="https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=150"
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              </Link>
             </div>
           </div>
 
