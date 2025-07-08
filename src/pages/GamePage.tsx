@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Star, Calendar, User, MessageCircle, Plus, Check, Heart } from 'lucide-react';
+import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { mockReviews } from '../data/mockData';
@@ -168,7 +168,7 @@ export const GamePage: React.FC = () => {
                       <Check className="h-7 w-7 text-green-500 stroke-[3] absolute -top-0.5 -left-0.5" />
                     )}
                   </button>
-                  <span className="text-gray-300 text-sm">Wishlist</span>
+                  <span className="text-gray-300 text-sm">Started Game</span>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -184,16 +184,23 @@ export const GamePage: React.FC = () => {
                       <Check className="h-7 w-7 text-green-500 stroke-[3] absolute -top-0.5 -left-0.5" />
                     )}
                   </button>
-                  <span className="text-gray-300 text-sm">Completed</span>
+                  <span className="text-gray-300 text-sm">Finished Game</span>
                 </div>
                 
-                <Link
-                  to={`/review/${game.id}`}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors ml-4"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Write Review
-                </Link>
+                <div className="flex items-center gap-3 ml-4">
+                  <Link
+                    to={`/review/${game.id}`}
+                    className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center hover:bg-purple-700 transition-colors"
+                  >
+                    <ScrollText className="h-4 w-4 text-white" />
+                  </Link>
+                  <Link
+                    to={`/review/${game.id}`}
+                    className="text-gray-300 text-sm hover:text-purple-400 transition-colors"
+                  >
+                    Write a Review
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
