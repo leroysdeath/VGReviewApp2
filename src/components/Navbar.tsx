@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2 } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2, TestTube } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 
 export const Navbar: React.FC = () => {
