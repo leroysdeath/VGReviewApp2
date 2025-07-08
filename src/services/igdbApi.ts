@@ -1,8 +1,6 @@
 const IGDB_CLIENT_ID = '4hooxi4jnd1na6pbslynp0bo8desfp';
 const IGDB_ACCESS_TOKEN = 'r7x5fuhcfvkhub70xd2asdwrgjrcw2';
-const IGDB_BASE_URL = 'https://api.igdb.com/v4';
-
-export interface IGDBGame {
+const IGDB_BASE_URL = '/api/igdb';
   id: number;
   name: string;
   summary?: string;
@@ -52,8 +50,6 @@ class IGDBService {
       const response = await fetch(`${IGDB_BASE_URL}/${endpoint}`, {
         method: 'POST',
         headers: {
-          'Client-ID': IGDB_CLIENT_ID,
-          'Authorization': `Bearer ${IGDB_ACCESS_TOKEN}`,
           'Content-Type': 'application/json',
         },
         body,
