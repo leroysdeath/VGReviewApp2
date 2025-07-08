@@ -1,565 +1,465 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit, Calendar, MessageCircle, Star, Trophy, Users, BookOpen, Settings, Heart, Clock, CheckCircle, Plus } from 'lucide-react';
+import { Edit, Calendar, MessageCircle, Star, Trophy, Users, BookOpen, Settings, Heart, Clock, CheckCircle, Plus, Grid, List, Filter } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { mockGames, mockReviews } from '../data/mockData';
 
 export const DummyUserPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'lists' | 'stats'>('overview');
+  const [activeTab, setActiveTab] = useState<'profile' | 'films' | 'diary' | 'reviews' | 'watchlist' | 'lists' | 'likes' | 'tags' | 'network' | 'stats'>('profile');
   const [reviewFilter, setReviewFilter] = useState('recent');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Current user data (dummy data for testing) - matches ProfilePage structure
+  // Current user data (dummy data for testing) - matches new Letterboxd-style structure
   const currentUser = {
     id: 'dummy-user',
     username: 'DummyTestUser',
     email: 'dummy@example.com',
     avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=150',
-    bio: 'This is a comprehensive dummy user profile for testing purposes. Passionate gamer exploring virtual worlds and sharing honest reviews. Love RPGs, indie games, and anything with great storytelling.',
+    bio: 'beCAUSE it\'s so much FUN, jAn. GET IT',
     joinDate: 'January 2024',
     location: 'Test City, TC',
     website: 'https://dummytestuser.com'
   };
 
-  // User's gaming stats - matches ProfilePage structure
+  // User's gaming stats - matches Letterboxd structure
   const stats = {
-    totalGames: 247,
-    completedGames: 156,
-    currentlyPlaying: 8,
-    wishlistCount: 42,
-    reviewsWritten: 89,
-    averageRating: 7.8,
-    hoursPlayed: 1247,
-    achievementsUnlocked: 1834,
-    following: 67,
-    followers: 234,
-    games: 247,
-    thisYear: 45,
-    lists: 12
+    films: 1322,
+    thisYear: 169,
+    lists: 10,
+    following: 39,
+    followers: 9342
   };
 
-  // User's recent activity - matches ProfilePage structure
-  const recentActivity = [
-    { type: 'review', game: 'The Legend of Zelda: Breath of the Wild', rating: 9.5, date: '2 days ago' },
-    { type: 'completed', game: 'Cyberpunk 2077', date: '1 week ago' },
-    { type: 'wishlist', game: 'Elden Ring DLC', date: '1 week ago' },
-    { type: 'started', game: 'Baldur\'s Gate 3', date: '2 weeks ago' },
-    { type: 'review', game: 'Spider-Man 2', rating: 9.0, date: '3 weeks ago' },
-    { type: 'completed', game: 'God of War Ragnarök', date: '3 weeks ago' },
-    { type: 'wishlist', game: 'Final Fantasy XVI', date: '1 month ago' }
-  ];
-
-  // User's top games - matches ProfilePage structure
-  const topGames = mockGames.slice(0, 5);
+  // User's favorite games (top 4 for the grid)
+  const userFavoriteGames = mockGames.slice(0, 4);
+  const userRecentGames = mockGames.slice(0, 8);
   const userReviews = mockReviews.slice(0, 6);
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'review': return <MessageCircle className="h-4 w-4 text-purple-400" />;
-      case 'completed': return <CheckCircle className="h-4 w-4 text-green-400" />;
-      case 'wishlist': return <Heart className="h-4 w-4 text-red-400" />;
-      case 'started': return <Clock className="h-4 w-4 text-blue-400" />;
-      default: return <Star className="h-4 w-4 text-yellow-400" />;
-    }
-  };
+  const currentYear = new Date().getFullYear();
 
-  const getActivityText = (activity: any) => {
-    switch (activity.type) {
-      case 'review':
-        return `Reviewed ${activity.game} - ${activity.rating}/10`;
-      case 'completed':
-        return `Completed ${activity.game}`;
-      case 'wishlist':
-        return `Added ${activity.game} to wishlist`;
-      case 'started':
-        return `Started playing ${activity.game}`;
+  const sortedReviews = [...userReviews].sort((a, b) => {
+    switch (reviewFilter) {
+      case 'highest':
+        return b.rating - a.rating;
+      case 'lowest':
+        return a.rating - b.rating;
+      case 'oldest':
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
       default:
-        return activity.game;
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
     }
-  };
+  });
 
   return (
-    <div className="min-h-screen bg-gray-900 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Dummy Test Banner */}
-        <div className="bg-blue-600 text-white p-4 rounded-lg mb-6 text-center">
-          <h2 className="text-lg font-semibold">👤 Dummy Test User Profile</h2>
-          <p className="text-sm opacity-90">This is a comprehensive test profile showcasing what a fully-featured user profile would look like</p>
-        </div>
+    <div className="min-h-screen bg-gray-900">
+      {/* Dummy Test Banner */}
+      <div className="bg-blue-600 text-white p-4 text-center">
+        <h2 className="text-lg font-semibold">👤 Dummy Test User Profile - Letterboxd Style</h2>
+        <p className="text-sm opacity-90">This is a comprehensive test profile showcasing the new Letterboxd-inspired design</p>
+      </div>
 
-        {/* Profile Header - Exact structure from ProfilePage */}
-        <div className="bg-gray-800 rounded-lg p-8 mb-8">
-          <div className="flex flex-col md:flex-row items-start gap-6">
-            <div className="relative">
+      {/* Profile Header */}
+      <div className="bg-gray-800 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-start gap-6">
+            {/* Profile Image */}
+            <div className="relative flex-shrink-0">
               <img
                 src={currentUser.avatar}
                 alt={currentUser.username}
-                className="w-32 h-32 rounded-full object-cover border-4 border-purple-500"
+                className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
               />
-              <button className="absolute bottom-2 right-2 p-2 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors">
-                <Edit className="h-4 w-4 text-white" />
-              </button>
             </div>
             
+            {/* Profile Info */}
             <div className="flex-1">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">{currentUser.username}</h1>
-                  <p className="text-gray-400 mb-4">{currentUser.bio}</p>
-                </div>
-                <Link
-                  to="/settings"
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                >
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-2xl font-bold text-white">{currentUser.username}</h1>
+                <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
+                  PATRON
+                </span>
+                <button className="text-gray-400 hover:text-white">
                   <Settings className="h-4 w-4" />
-                  Edit Profile
-                </Link>
+                </button>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-400">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>Joined {currentUser.joinDate}</span>
+              <p className="text-blue-400 text-sm mb-3">{currentUser.bio}</p>
+              
+              <div className="flex items-center gap-1 text-gray-400 text-sm mb-4">
+                <span>🎮 platform 9¾</span>
+                <span className="mx-2">🔗</span>
+                <span>dummytestuser.card.co</span>
+              </div>
+
+              {/* Stats */}
+              <div className="flex items-center gap-8">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{stats.films.toLocaleString()}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">GAMES</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  <span>{stats.followers} followers</span>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{stats.thisYear}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Trophy className="h-4 w-4" />
-                  <span>{stats.totalGames} games</span>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{stats.lists}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4" />
-                  <span>{stats.reviewsWritten} reviews</span>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{stats.following}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWING</div>
                 </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{stats.followers.toLocaleString()}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Year Stats Widget */}
+            <div className="flex-shrink-0">
+              <div className="bg-gray-700 rounded-lg p-4 text-center min-w-[120px]">
+                <div className="text-sm text-gray-400 mb-1">STATS FOR</div>
+                <div className="text-xl font-bold text-white mb-2">{currentYear}</div>
+                <button className="text-gray-400 hover:text-white">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Navigation Tabs - Exact structure from ProfilePage */}
-        <div className="bg-gray-800 rounded-lg overflow-hidden mb-8">
-          <div className="border-b border-gray-700">
-            <nav className="flex">
+      {/* Navigation Tabs */}
+      <div className="bg-gray-800 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex space-x-8">
+            {[
+              { key: 'profile', label: 'Profile' },
+              { key: 'films', label: 'Games' },
+              { key: 'diary', label: 'Diary' },
+              { key: 'reviews', label: 'Reviews' },
+              { key: 'watchlist', label: 'Wishlist' },
+              { key: 'lists', label: 'Lists' },
+              { key: 'likes', label: 'Likes' },
+              { key: 'tags', label: 'Tags' },
+              { key: 'network', label: 'Network' },
+              { key: 'stats', label: 'Stats' }
+            ].map((tab) => (
               <button
-                onClick={() => setActiveTab('overview')}
-                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'overview'
-                    ? 'border-purple-500 text-purple-400'
-                    : 'border-transparent text-gray-400 hover:text-white'
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as any)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.key
+                    ? 'border-green-500 text-green-400'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
                 }`}
               >
-                Overview
+                {tab.label}
               </button>
-              <button
-                onClick={() => setActiveTab('reviews')}
-                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'reviews'
-                    ? 'border-purple-500 text-purple-400'
-                    : 'border-transparent text-gray-400 hover:text-white'
-                }`}
-              >
-                Reviews ({stats.reviewsWritten})
-              </button>
-              <button
-                onClick={() => setActiveTab('lists')}
-                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'lists'
-                    ? 'border-purple-500 text-purple-400'
-                    : 'border-transparent text-gray-400 hover:text-white'
-                }`}
-              >
-                Lists
-              </button>
-              <button
-                onClick={() => setActiveTab('stats')}
-                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'stats'
-                    ? 'border-purple-500 text-purple-400'
-                    : 'border-transparent text-gray-400 hover:text-white'
-                }`}
-              >
-                Statistics
-              </button>
-            </nav>
-          </div>
+            ))}
+          </nav>
+        </div>
+      </div>
 
-          <div className="p-6">
-            {/* Overview Tab - Exact structure from ProfilePage */}
-            {activeTab === 'overview' && (
-              <div className="grid lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                  {/* Top 5 Games */}
-                  <div>
-                    <h3 className="text-xl font-semibold text-white mb-4">My Top 5 Games</h3>
-                    <div className="space-y-3">
-                      {topGames.map((game, index) => (
-                        <div key={game.id} className="flex items-center gap-4 p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
-                          <div className="text-2xl font-bold text-purple-400 w-8">
-                            {index + 1}
-                          </div>
-                          <img
-                            src={game.coverImage}
-                            alt={game.title}
-                            className="w-16 h-16 object-cover rounded"
-                          />
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-white">{game.title}</h4>
-                            <p className="text-gray-400 text-sm">{game.genre}</p>
-                          </div>
-                          <StarRating rating={game.rating} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Recent Reviews */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-semibold text-white">Recent Reviews</h3>
-                      <Link to="/reviews" className="text-purple-400 hover:text-purple-300 text-sm">
-                        View All
-                      </Link>
-                    </div>
-                    <div className="space-y-4">
-                      {userReviews.slice(0, 3).map((review) => {
-                        const game = mockGames.find(g => g.id === review.gameId);
-                        return (
-                          <div key={review.id} className="flex gap-4 p-4 bg-gray-700 rounded-lg">
-                            <img
-                              src={game?.coverImage}
-                              alt={game?.title}
-                              className="w-16 h-16 object-cover rounded"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-4 mb-2">
-                                <h4 className="font-semibold text-white">{game?.title}</h4>
-                                <StarRating rating={review.rating} />
-                                <span className="text-sm text-gray-400">{review.date}</span>
-                              </div>
-                              <p className="text-gray-300 text-sm line-clamp-2">{review.text}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sidebar - Exact structure from ProfilePage */}
-                <div className="space-y-6">
-                  {/* Quick Stats */}
-                  <div className="bg-gray-700 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Quick Stats</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Games Completed</span>
-                        <span className="text-white font-semibold">{stats.completedGames}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Currently Playing</span>
-                        <span className="text-white font-semibold">{stats.currentlyPlaying}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Wishlist</span>
-                        <span className="text-white font-semibold">{stats.wishlistCount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Avg. Rating</span>
-                        <span className="text-white font-semibold">{stats.averageRating}/10</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Recent Activity */}
-                  <div className="bg-gray-700 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
-                    <div className="space-y-3">
-                      {recentActivity.map((activity, index) => (
-                        <div key={index} className="flex items-start gap-3">
-                          {getActivityIcon(activity.type)}
-                          <div className="flex-1">
-                            <p className="text-gray-300 text-sm">{getActivityText(activity)}</p>
-                            <p className="text-gray-500 text-xs">{activity.date}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Reviews Tab - Exact structure from ProfilePage */}
-            {activeTab === 'reviews' && (
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-semibold text-white">My Reviews ({stats.reviewsWritten})</h3>
-                  <select
-                    value={reviewFilter}
-                    onChange={(e) => setReviewFilter(e.target.value)}
-                    className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+      {/* Content Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Profile Tab */}
+        {activeTab === 'profile' && (
+          <div className="space-y-8">
+            {/* Favorite Games Section */}
+            <div>
+              <h2 className="text-lg font-semibold text-white mb-4 uppercase tracking-wide">FAVORITE GAMES</h2>
+              <div className="grid grid-cols-4 gap-4">
+                {userFavoriteGames.map((game, index) => (
+                  <Link
+                    key={game.id}
+                    to={`/game/${game.id}`}
+                    className="group relative aspect-[3/4] rounded-lg overflow-hidden hover:scale-105 transition-transform"
                   >
-                    <option value="recent">Most Recent</option>
-                    <option value="highest">Highest Rated</option>
-                    <option value="lowest">Lowest Rated</option>
-                    <option value="oldest">Oldest</option>
-                  </select>
-                </div>
-                <div className="grid gap-6">
-                  {userReviews.map((review) => {
-                    const game = mockGames.find(g => g.id === review.gameId);
-                    return (
-                      <div key={review.id} className="flex gap-4 p-6 bg-gray-700 rounded-lg">
+                    <img
+                      src={game.coverImage}
+                      alt={game.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-white font-semibold text-sm mb-1">{game.title}</div>
+                        <StarRating rating={game.rating} size="sm" />
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div>
+              <h2 className="text-lg font-semibold text-white mb-4 uppercase tracking-wide">RECENT ACTIVITY</h2>
+              <div className="grid grid-cols-8 gap-3">
+                {userRecentGames.map((game) => (
+                  <Link
+                    key={game.id}
+                    to={`/game/${game.id}`}
+                    className="group relative aspect-[3/4] rounded overflow-hidden hover:scale-105 transition-transform"
+                  >
+                    <img
+                      src={game.coverImage}
+                      alt={game.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="text-white text-xs font-medium text-center px-1">
+                        {game.title}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Reviews */}
+            <div>
+              <h2 className="text-lg font-semibold text-white mb-4 uppercase tracking-wide">RECENT REVIEWS</h2>
+              <div className="space-y-4">
+                {sortedReviews.slice(0, 3).map((review) => {
+                  const game = mockGames.find(g => g.id === review.gameId);
+                  return (
+                    <div key={review.id} className="flex gap-4 p-4 bg-gray-800 rounded-lg">
+                      <Link to={`/game/${game?.id}`} className="flex-shrink-0">
                         <img
                           src={game?.coverImage}
                           alt={game?.title}
-                          className="w-20 h-20 object-cover rounded"
+                          className="w-16 h-20 object-cover rounded"
                         />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-4 mb-3">
-                            <h4 className="text-lg font-semibold text-white">{game?.title}</h4>
-                            <StarRating rating={review.rating} />
-                            <span className="text-sm text-gray-400">{review.date}</span>
-                          </div>
-                          <p className="text-gray-300 leading-relaxed">{review.text}</p>
+                      </Link>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-4 mb-2">
+                          <Link 
+                            to={`/game/${game?.id}`}
+                            className="font-semibold text-white hover:text-green-400 transition-colors"
+                          >
+                            {game?.title}
+                          </Link>
+                          <StarRating rating={review.rating} size="sm" />
+                          <span className="text-sm text-gray-400">{review.date}</span>
                         </div>
+                        <p className="text-gray-300 text-sm leading-relaxed">{review.text}</p>
                       </div>
-                    );
-                  })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Upgrade Prompt (like Letterboxd) */}
+            <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-lg p-6 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
+              <div className="relative">
+                <h3 className="text-xl font-bold text-white mb-2">NEED AN UPGRADE?</h3>
+                <p className="text-gray-300 mb-4">
+                  Profile stats, filtering by favorite streaming services, watchlist alerts and no ads!
+                </p>
+                <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded font-medium transition-colors">
+                  GET PRO
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Games Tab */}
+        {activeTab === 'films' && (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-white">Games ({stats.films.toLocaleString()})</h2>
+              <div className="flex items-center gap-4">
+                <select
+                  value={reviewFilter}
+                  onChange={(e) => setReviewFilter(e.target.value)}
+                  className="px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-green-500"
+                >
+                  <option value="recent">Recently Added</option>
+                  <option value="highest">Highest Rated</option>
+                  <option value="lowest">Lowest Rated</option>
+                  <option value="oldest">Oldest</option>
+                </select>
+                <div className="flex items-center gap-1 bg-gray-800 rounded p-1">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded transition-colors ${
+                      viewMode === 'grid' 
+                        ? 'bg-green-600 text-white' 
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Grid className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded transition-colors ${
+                      viewMode === 'list' 
+                        ? 'bg-green-600 text-white' 
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <List className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Lists Tab - Exact structure from ProfilePage */}
-            {activeTab === 'lists' && (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">Wishlist</h3>
-                    <span className="text-purple-400 font-semibold">{stats.wishlistCount}</span>
-                  </div>
-                  <p className="text-gray-400 text-sm mb-4">Games I want to play</p>
-                  <Link to="/wishlist" className="text-purple-400 hover:text-purple-300 text-sm">
-                    View List →
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
+                {mockGames.map((game) => (
+                  <Link
+                    key={game.id}
+                    to={`/game/${game.id}`}
+                    className="group relative aspect-[3/4] rounded overflow-hidden hover:scale-105 transition-transform"
+                  >
+                    <img
+                      src={game.coverImage}
+                      alt={game.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="text-white text-xs font-medium text-center px-1">
+                        {game.title}
+                      </div>
+                    </div>
                   </Link>
-                </div>
-                
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">Currently Playing</h3>
-                    <span className="text-blue-400 font-semibold">{stats.currentlyPlaying}</span>
-                  </div>
-                  <p className="text-gray-400 text-sm mb-4">Games I'm actively playing</p>
-                  <Link to="/playing" className="text-purple-400 hover:text-purple-300 text-sm">
-                    View List →
-                  </Link>
-                </div>
-                
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">Completed</h3>
-                    <span className="text-green-400 font-semibold">{stats.completedGames}</span>
-                  </div>
-                  <p className="text-gray-400 text-sm mb-4">Games I've finished</p>
-                  <Link to="/completed" className="text-purple-400 hover:text-purple-300 text-sm">
-                    View List →
-                  </Link>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">Top Rated</h3>
-                    <span className="text-yellow-400 font-semibold">25</span>
-                  </div>
-                  <p className="text-gray-400 text-sm mb-4">My highest rated games</p>
-                  <Link to="/top-rated" className="text-purple-400 hover:text-purple-300 text-sm">
-                    View List →
-                  </Link>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">Favorites</h3>
-                    <span className="text-red-400 font-semibold">18</span>
-                  </div>
-                  <p className="text-gray-400 text-sm mb-4">My all-time favorite games</p>
-                  <Link to="/favorites" className="text-purple-400 hover:text-purple-300 text-sm">
-                    View List →
-                  </Link>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">Custom Lists</h3>
-                    <span className="text-purple-400 font-semibold">{stats.lists}</span>
-                  </div>
-                  <p className="text-gray-400 text-sm mb-4">My custom game collections</p>
-                  <Link to="/custom-lists" className="text-purple-400 hover:text-purple-300 text-sm">
-                    View Lists →
-                  </Link>
-                </div>
+                ))}
               </div>
-            )}
-
-            {/* Statistics Tab - Exact structure from ProfilePage */}
-            {activeTab === 'stats' && (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Trophy className="h-8 w-8 text-yellow-400" />
-                    <h3 className="text-lg font-semibold text-white">Gaming Stats</h3>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Total Games</span>
-                      <span className="text-white font-semibold">{stats.totalGames}</span>
+            ) : (
+              <div className="space-y-2">
+                {mockGames.map((game) => (
+                  <div key={game.id} className="flex items-center gap-4 p-3 bg-gray-800 rounded hover:bg-gray-750 transition-colors">
+                    <Link to={`/game/${game.id}`} className="flex-shrink-0">
+                      <img
+                        src={game.coverImage}
+                        alt={game.title}
+                        className="w-12 h-16 object-cover rounded"
+                      />
+                    </Link>
+                    <div className="flex-1">
+                      <Link 
+                        to={`/game/${game.id}`}
+                        className="font-medium text-white hover:text-green-400 transition-colors"
+                      >
+                        {game.title}
+                      </Link>
+                      <div className="text-sm text-gray-400">{game.releaseDate}</div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Hours Played</span>
-                      <span className="text-white font-semibold">{stats.hoursPlayed}h</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Achievements</span>
-                      <span className="text-white font-semibold">{stats.achievementsUnlocked}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">This Year</span>
-                      <span className="text-white font-semibold">{stats.thisYear}</span>
+                    <div className="flex items-center gap-2">
+                      <StarRating rating={game.rating} size="sm" />
+                      <span className="text-sm text-gray-400">{game.rating.toFixed(1)}</span>
                     </div>
                   </div>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Star className="h-8 w-8 text-purple-400" />
-                    <h3 className="text-lg font-semibold text-white">Review Stats</h3>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Reviews Written</span>
-                      <span className="text-white font-semibold">{stats.reviewsWritten}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Average Rating</span>
-                      <span className="text-white font-semibold">{stats.averageRating}/10</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Completion Rate</span>
-                      <span className="text-white font-semibold">
-                        {Math.round((stats.completedGames / stats.totalGames) * 100)}%
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Review Length</span>
-                      <span className="text-white font-semibold">247 avg</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Users className="h-8 w-8 text-blue-400" />
-                    <h3 className="text-lg font-semibold text-white">Social Stats</h3>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Followers</span>
-                      <span className="text-white font-semibold">{stats.followers}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Following</span>
-                      <span className="text-white font-semibold">{stats.following}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Profile Views</span>
-                      <span className="text-white font-semibold">1,247</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Lists Created</span>
-                      <span className="text-white font-semibold">{stats.lists}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Calendar className="h-8 w-8 text-green-400" />
-                    <h3 className="text-lg font-semibold text-white">Activity Stats</h3>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Days Active</span>
-                      <span className="text-white font-semibold">342</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Streak (Days)</span>
-                      <span className="text-white font-semibold">15</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Last Active</span>
-                      <span className="text-white font-semibold">Today</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Avg. Session</span>
-                      <span className="text-white font-semibold">2.3h</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <BookOpen className="h-8 w-8 text-pink-400" />
-                    <h3 className="text-lg font-semibold text-white">Genre Preferences</h3>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">RPG</span>
-                      <span className="text-white font-semibold">45%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Action</span>
-                      <span className="text-white font-semibold">28%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Adventure</span>
-                      <span className="text-white font-semibold">18%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Strategy</span>
-                      <span className="text-white font-semibold">9%</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Clock className="h-8 w-8 text-orange-400" />
-                    <h3 className="text-lg font-semibold text-white">Platform Stats</h3>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">PC</span>
-                      <span className="text-white font-semibold">156</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">PlayStation 5</span>
-                      <span className="text-white font-semibold">67</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Nintendo Switch</span>
-                      <span className="text-white font-semibold">24</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Xbox Series X</span>
-                      <span className="text-white font-semibold">12</span>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             )}
           </div>
-        </div>
+        )}
+
+        {/* Reviews Tab */}
+        {activeTab === 'reviews' && (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-white">Reviews ({userReviews.length})</h2>
+              <select
+                value={reviewFilter}
+                onChange={(e) => setReviewFilter(e.target.value)}
+                className="px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-green-500"
+              >
+                <option value="recent">Most Recent</option>
+                <option value="highest">Highest Rated</option>
+                <option value="lowest">Lowest Rated</option>
+                <option value="oldest">Oldest</option>
+              </select>
+            </div>
+            <div className="space-y-6">
+              {sortedReviews.map((review) => {
+                const game = mockGames.find(g => g.id === review.gameId);
+                return (
+                  <div key={review.id} className="flex gap-4 p-6 bg-gray-800 rounded-lg">
+                    <Link to={`/game/${game?.id}`} className="flex-shrink-0">
+                      <img
+                        src={game?.coverImage}
+                        alt={game?.title}
+                        className="w-20 h-28 object-cover rounded"
+                      />
+                    </Link>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-4 mb-3">
+                        <Link 
+                          to={`/game/${game?.id}`}
+                          className="text-lg font-semibold text-white hover:text-green-400 transition-colors"
+                        >
+                          {game?.title}
+                        </Link>
+                        <StarRating rating={review.rating} />
+                        <span className="text-sm text-gray-400">{review.date}</span>
+                      </div>
+                      <p className="text-gray-300 leading-relaxed">{review.text}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Other tabs placeholder content */}
+        {activeTab === 'diary' && (
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold text-white mb-4">Gaming Diary</h2>
+            <p className="text-gray-400">Track your daily gaming activity and progress.</p>
+          </div>
+        )}
+
+        {activeTab === 'watchlist' && (
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold text-white mb-4">Wishlist</h2>
+            <p className="text-gray-400">Games you want to play in the future.</p>
+          </div>
+        )}
+
+        {activeTab === 'lists' && (
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold text-white mb-4">Lists</h2>
+            <p className="text-gray-400">Custom collections and curated game lists.</p>
+          </div>
+        )}
+
+        {activeTab === 'likes' && (
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold text-white mb-4">Likes</h2>
+            <p className="text-gray-400">Reviews and content you've liked.</p>
+          </div>
+        )}
+
+        {activeTab === 'tags' && (
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold text-white mb-4">Tags</h2>
+            <p className="text-gray-400">Organize games with custom tags.</p>
+          </div>
+        )}
+
+        {activeTab === 'network' && (
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold text-white mb-4">Network</h2>
+            <p className="text-gray-400">Friends, followers, and gaming connections.</p>
+          </div>
+        )}
+
+        {activeTab === 'stats' && (
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold text-white mb-4">Statistics</h2>
+            <p className="text-gray-400">Detailed analytics about your gaming habits.</p>
+          </div>
+        )}
       </div>
     </div>
   );
