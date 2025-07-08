@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => {
               proxyReq.setHeader('Client-ID', env.VITE_IGDB_CLIENT_ID);
               proxyReq.setHeader('Authorization', `Bearer ${env.VITE_IGDB_ACCESS_TOKEN}`);
               proxyReq.setHeader('Accept', 'application/json');
+              proxyReq.setHeader('Content-Type', 'text/plain');
               
               console.log('Proxying request to IGDB:', req.url);
               console.log('Target URL:', `https://api.igdb.com/v4${req.url.replace('/api/igdb', '')}`);
