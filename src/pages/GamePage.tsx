@@ -150,39 +150,50 @@ export const GamePage: React.FC = () => {
                   </div>
                   <p className="text-gray-300 mb-6 leading-relaxed">{game.description}</p>
                   
-                  {/* User Actions */}
-                  <div className="flex flex-wrap gap-4">
-                    <button
-                      onClick={() => setIsInWishlist(!isInWishlist)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-colors ${
-                        isInWishlist 
-                          ? 'bg-green-600 border-green-600 text-white' 
-                          : 'border-green-600 text-green-600 hover:bg-green-600 hover:text-white'
-                      }`}
-                    >
-                      {isInWishlist ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                      {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
-                    </button>
-                    <button
-                      onClick={() => setIsCompleted(!isCompleted)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-colors ${
-                        isCompleted 
-                          ? 'bg-blue-600 border-blue-600 text-white' 
-                          : 'border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white'
-                      }`}
-                    >
-                      {isCompleted ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                      {isCompleted ? 'Completed' : 'Mark as Completed'}
-                    </button>
-                    <Link
-                      to={`/review/${game.id}`}
-                      className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      Write Review
-                    </Link>
-                  </div>
                 </div>
+              </div>
+              
+              {/* User Actions - Checkboxes and Write Review */}
+              <div className="flex items-center gap-4 p-6 border-t border-gray-700">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setIsInWishlist(!isInWishlist)}
+                    className={`w-6 h-6 border-2 border-gray-400 rounded transition-all duration-200 flex items-center justify-center ${
+                      isInWishlist 
+                        ? 'bg-gray-300 border-gray-300' 
+                        : 'bg-white hover:bg-gray-100'
+                    }`}
+                  >
+                    {isInWishlist && (
+                      <Check className="h-4 w-4 text-green-600" />
+                    )}
+                  </button>
+                  <span className="text-gray-300 text-sm">Wishlist</span>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setIsCompleted(!isCompleted)}
+                    className={`w-6 h-6 border-2 border-gray-400 rounded transition-all duration-200 flex items-center justify-center ${
+                      isCompleted 
+                        ? 'bg-gray-300 border-gray-300' 
+                        : 'bg-white hover:bg-gray-100'
+                    }`}
+                  >
+                    {isCompleted && (
+                      <Check className="h-4 w-4 text-green-600" />
+                    )}
+                  </button>
+                  <span className="text-gray-300 text-sm">Completed</span>
+                </div>
+                
+                <Link
+                  to={`/review/${game.id}`}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors ml-4"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Write Review
+                </Link>
               </div>
             </div>
           </div>
