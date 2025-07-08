@@ -1,6 +1,8 @@
 const IGDB_CLIENT_ID = '4hooxi4jnd1na6pbslynp0bo8desfp';
 const IGDB_ACCESS_TOKEN = 'r7x5fuhcfvkhub70xd2asdwrgjrcw2';
 const IGDB_BASE_URL = '/api/igdb';
+
+interface IGDBGame {
   id: number;
   name: string;
   summary?: string;
