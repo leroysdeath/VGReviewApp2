@@ -38,9 +38,11 @@ export const Navbar: React.FC = () => {
                 <TestTube className="h-5 w-5 text-white" />
               </Link>
             </div>
+          </div>
 
-            {/* Desktop Search */}
-            <form onSubmit={handleSearch} className="relative ml-8 flex-1 max-w-md">
+          {/* Search Bar */}
+          <div className="hidden md:block flex-1 max-w-lg mx-8">
+            <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
