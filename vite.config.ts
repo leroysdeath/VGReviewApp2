@@ -20,6 +20,16 @@ export default defineConfig(({ mode }) => {
               // Ensure we have the required headers
               if (!env.VITE_IGDB_CLIENT_ID || !env.VITE_IGDB_ACCESS_TOKEN) {
                 console.error('Missing IGDB API credentials in environment variables');
+                console.error('Please update your .env file with valid IGDB credentials');
+                console.error('Visit https://dev.twitch.tv/console/apps to get credentials');
+                return;
+              }
+              
+              // Check for placeholder credentials
+              if (env.VITE_IGDB_CLIENT_ID === 'your_client_id_here' || 
+                  env.VITE_IGDB_ACCESS_TOKEN === 'your_access_token_here') {
+                console.error('IGDB API credentials are still using placeholder values');
+                console.error('Please update your .env file with valid IGDB credentials');
                 return;
               }
               
@@ -37,12 +47,16 @@ export default defineConfig(({ mode }) => {
               console.log('IGDB API response status:', proxyRes.statusCode);
               if (proxyRes.statusCode >= 400) {
                 console.error('IGDB API error response:', proxyRes.statusCode, proxyRes.statusMessage);
+                if (proxyRes.statusCode === 401) {
+                  console.error('Authentication failed - check your IGDB credentials');
+                }
               }
             });
             
             proxy.on('error', (err, req, res) => {
               console.error('Proxy error:', err.message);
               console.error('Request URL:', req.url);
+              console.error('This might be due to invalid IGDB credentials or network issues');
             });
           }
         }

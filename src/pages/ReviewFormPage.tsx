@@ -27,7 +27,7 @@ export const ReviewFormPage: React.FC = () => {
     if (gameId) {
       const loadGame = async () => {
         try {
-          const game = await igdbService.getGameById(gameId);
+          const game = await igdbService.getGameByStringId(gameId);
           if (game) {
             setSelectedGame(game);
           }

@@ -108,6 +108,11 @@ limit ${limit};`;
   }
 
   async getGameById(id: number): Promise<Game> {
+    // Validate that id is a valid number
+    if (!id || isNaN(id)) {
+      throw new Error('Invalid game ID provided');
+    }
+    
     const query = `fields name, cover.url, rating, rating_count, first_release_date, summary, genres.name, platforms.name, screenshots.url, videos.video_id, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
 where id = ${id};`;
     
@@ -121,6 +126,21 @@ where id = ${id};`;
     } catch (error) {
       console.error('Failed to get game by ID:', error);
       throw error;
+    }
+  }
+
+  // Helper method to get game by string ID (converts to number)
+  async getGameByStringId(id: string): Promise<Game | null> {
+    const numericId = parseInt(id, 10);
+    if (isNaN(numericId)) {
+      return null;
+    }
+    
+    try {
+      return await this.getGameById(numericId);
+    } catch (error) {
+      console.error('Failed to get game by string ID:', error);
+      return null;
     }
   }
 }

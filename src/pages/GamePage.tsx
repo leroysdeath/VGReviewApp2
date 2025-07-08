@@ -23,7 +23,7 @@ export const GamePage: React.FC = () => {
       setError(null);
       
       try {
-        const gameData = await igdbService.getGameById(id);
+        const gameData = await igdbService.getGameByStringId(id);
         if (gameData) {
           setGame(gameData);
         } else {

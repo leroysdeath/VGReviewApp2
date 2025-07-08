@@ -13,6 +13,15 @@ export const DummyGamePage: React.FC = () => {
 
   useEffect(() => {
     const fetchBOTWCover = async () => {
+      // Skip API call if credentials are not properly configured
+      if (!import.meta.env.VITE_IGDB_CLIENT_ID || 
+          !import.meta.env.VITE_IGDB_ACCESS_TOKEN ||
+          import.meta.env.VITE_IGDB_CLIENT_ID === 'your_client_id_here') {
+        console.warn('IGDB API credentials not configured, using fallback image');
+        setLoading(false);
+        return;
+      }
+      
       try {
         // Search for Breath of the Wild specifically
         const games = await igdbService.searchGames('The Legend of Zelda Breath of the Wild', 1);
