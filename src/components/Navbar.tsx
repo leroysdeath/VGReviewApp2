@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2, TestTube } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2 } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 
 export const Navbar: React.FC = () => {
@@ -29,13 +29,6 @@ export const Navbar: React.FC = () => {
               <Link to="/" className="flex items-center space-x-2">
                 <Gamepad2 className="h-8 w-8 text-purple-400" />
                 <span className="text-xl font-bold text-white">GameVault</span>
-              </Link>
-              <Link
-                to="/dummy-game"
-                className="p-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
-                title="Dummy Test Game"
-              >
-                <TestTube className="h-5 w-5 text-white" />
               </Link>
             </div>
           </div>

@@ -10,7 +10,6 @@ import { UserSearchPage } from './pages/UserSearchPage';
 import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ProfilePage } from './pages/ProfilePage';
-import { DummyGamePage } from './pages/DummyGamePage';
 
 function App() {
   return (
@@ -27,7 +26,6 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/review/:gameId?" element={<ReviewFormPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/dummy-game" element={<DummyGamePage />} />
         </Routes>
       </div>
     </Router>
