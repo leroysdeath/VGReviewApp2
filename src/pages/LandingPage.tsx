@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, TrendingUp, Users, Search, ArrowRight } from 'lucide-react';
+import { Star, TrendingUp, Users, Search, ArrowRight, TestTube } from 'lucide-react';
 import { GameCard } from '../components/GameCard';
 import { ReviewCard } from '../components/ReviewCard';
 import { mockReviews } from '../data/mockData';
@@ -34,6 +34,20 @@ export const LandingPage: React.FC = () => {
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
+            {/* Dummy Test Game Link */}
+            <div className="flex justify-center items-center gap-4 mb-8">
+              <Link to="/" className="flex items-center space-x-2">
+                <span className="text-xl font-bold text-white">GameVault</span>
+              </Link>
+              <Link
+                to="/dummy-game"
+                className="p-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+                title="Dummy Test Game"
+              >
+                <TestTube className="h-5 w-5 text-white" />
+              </Link>
+            </div>
+            
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
               Discover Your Next
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
