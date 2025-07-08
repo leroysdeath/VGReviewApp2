@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, TrendingUp, Users, Search, ArrowRight, Gamepad2 } from 'lucide-react';
+import { Star, TrendingUp, Users, Search, ArrowRight } from 'lucide-react';
 import { GameCard } from '../components/GameCard';
 import { ReviewCard } from '../components/ReviewCard';
 import { mockReviews } from '../data/mockData';
