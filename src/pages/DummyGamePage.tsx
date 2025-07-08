@@ -1,18 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, Play, Download, Share2, Bookmark, Trophy, Clock, Users as UsersIcon } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
+import { igdbService } from '../services/igdbApi';
 
 export const DummyGamePage: React.FC = () => {
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [coverImage, setCoverImage] = useState('https://images.pexels.com/photos/3945667/pexels-photo-3945667.jpeg?auto=compress&cs=tinysrgb&w=400');
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const fetchBOTWCover = async () => {
+      try {
+        // Search for Breath of the Wild specifically
+        const games = await igdbService.searchGames('The Legend of Zelda Breath of the Wild', 1);
+        if (games.length > 0 && games[0].coverImage) {
+          setCoverImage(games[0].coverImage);
+        }
+      } catch (error) {
+        console.error('Failed to fetch BOTW cover from IGDB:', error);
+        // Keep the fallback image if API fails
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBOTWCover();
+  }, []);
   // Comprehensive dummy game data
   const dummyGame = {
     id: 'dummy-test-game',
     title: 'The Legend of Zelda: Breath of the Wild',
-    coverImage: 'https://images.pexels.com/photos/3945667/pexels-photo-3945667.jpeg?auto=compress&cs=tinysrgb&w=400',
+    coverImage: coverImage,
     releaseDate: '2017-03-03',
     genre: 'Action-Adventure',
     rating: 9.7,
@@ -174,11 +195,17 @@ export const DummyGamePage: React.FC = () => {
             <div className="bg-gray-800 rounded-lg overflow-hidden">
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
+                  {loading ? (
+                    <div className="h-64 w-full md:h-80 md:w-64 bg-gray-700 animate-pulse flex items-center justify-center">
+                      <span className="text-gray-400">Loading cover...</span>
+                    </div>
+                  ) : (
                   <img
                     src={dummyGame.coverImage}
                     alt={dummyGame.title}
                     className="h-64 w-full object-cover md:h-80 md:w-64"
                   />
+                  )}
                 </div>
                 <div className="p-8">
                   <h1 className="text-3xl font-bold text-white mb-4">{dummyGame.title}</h1>
