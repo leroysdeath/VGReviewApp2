@@ -37,6 +37,13 @@ export const Navbar: React.FC = () => {
               >
                 <Gamepad2 className="h-5 w-5 text-white" />
               </Link>
+              <Link
+                to="/dummy-user"
+                className="p-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                title="Dummy Test User"
+              >
+                <User className="h-5 w-5 text-white" />
+              </Link>
             </div>
           </div>
 
@@ -152,6 +159,13 @@ export const Navbar: React.FC = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               Dummy Profile Test
+            </Link>
+            <Link
+              to="/dummy-user"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Dummy User Test
             </Link>
           </div>
         </div>

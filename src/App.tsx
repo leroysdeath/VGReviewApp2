@@ -11,6 +11,7 @@ import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { DummyGamePage } from './pages/DummyGamePage';
+import { DummyUserPage } from './pages/DummyUserPage';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/review/:gameId?" element={<ReviewFormPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/dummy-game" element={<DummyGamePage />} />
+          <Route path="/dummy-user" element={<DummyUserPage />} />
         </Routes>
       </div>
     </Router>
