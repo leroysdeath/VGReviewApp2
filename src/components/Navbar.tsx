@@ -48,11 +48,24 @@ export const Navbar: React.FC = () => {
           {/* Desktop User Menu */}
           <div className="hidden md:block">
             <div className="ml-4 flex items-center md:ml-6">
-              <Link
-                to="/profile"
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
                 className="p-2 text-gray-400 hover:text-white transition-colors"
               >
                 <User className="h-6 w-6" />
+              </button>
+              
+              {/* Dummy Profile Test */}
+              <Link
+                to="/profile"
+                className="ml-2 p-1 rounded-full hover:ring-2 hover:ring-purple-400 transition-all"
+                title="Dummy Profile Test"
+              >
+                <img
+                  src="https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=150"
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full object-cover"
+                />
               </Link>
             </div>
           </div>
@@ -118,10 +131,19 @@ export const Navbar: React.FC = () => {
                 setIsLoginModalOpen(true);
                 setIsMenuOpen(false);
               }}
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+              className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors"
             >
               Login
             </button>
+            
+            {/* Dummy Profile Test - Mobile */}
+            <Link
+              to="/profile"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Dummy Profile Test
+            </Link>
           </div>
         </div>
       )}
