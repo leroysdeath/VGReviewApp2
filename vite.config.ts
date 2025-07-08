@@ -14,16 +14,34 @@ export default defineConfig(({ mode }) => {
           target: 'https://api.igdb.com/v4',
           changeOrigin: true,
           secure: true,
-          rewrite: (path) => path.replace(/^\/api\/igdb/, ''),
+          rewrite: (path) => path.replace(/^\/api\/igdb\//, '/'),
           configure: (proxy, options) => {
-            // Add any additional headers if needed
             proxy.on('proxyReq', (proxyReq, req, res) => {
+              // Ensure we have the required headers
+              if (!env.VITE_IGDB_CLIENT_ID || !env.VITE_IGDB_ACCESS_TOKEN) {
+                console.error('Missing IGDB API credentials in environment variables');
+                return;
+              }
+              
               // Add IGDB API credentials to the proxied request
-              proxyReq.setHeader('Client-ID', env.VITE_IGDB_CLIENT_ID || '');
-              proxyReq.setHeader('Authorization', `Bearer ${env.VITE_IGDB_ACCESS_TOKEN || ''}`);
+              proxyReq.setHeader('Client-ID', env.VITE_IGDB_CLIENT_ID);
+              proxyReq.setHeader('Authorization', `Bearer ${env.VITE_IGDB_ACCESS_TOKEN}`);
+              proxyReq.setHeader('Accept', 'application/json');
+              
               console.log('Proxying request to IGDB:', req.url);
-              console.log('Using Client-ID:', env.VITE_IGDB_CLIENT_ID ? 'Set' : 'Missing');
-              console.log('Using Access Token:', env.VITE_IGDB_ACCESS_TOKEN ? 'Set' : 'Missing');
+              console.log('Target URL:', `https://api.igdb.com/v4${req.url.replace('/api/igdb', '')}`);
+            });
+            
+            proxy.on('proxyRes', (proxyRes, req, res) => {
+              console.log('IGDB API response status:', proxyRes.statusCode);
+              if (proxyRes.statusCode >= 400) {
+                console.error('IGDB API error response:', proxyRes.statusCode, proxyRes.statusMessage);
+              }
+            });
+            
+            proxy.on('error', (err, req, res) => {
+              console.error('Proxy error:', err.message);
+              console.error('Request URL:', req.url);
             });
           }
         }

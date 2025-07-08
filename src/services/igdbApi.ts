@@ -19,19 +19,28 @@ export interface Game {
 class IGDBService {
   private async makeRequest(endpoint: string, body: string) {
     try {
+      console.log(`Making request to: ${IGDB_BASE_URL}/${endpoint}`);
+      console.log('Request body:', body);
+      
       const response = await fetch(`${IGDB_BASE_URL}/${endpoint}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/plain', // IGDB expects text/plain for the query
         },
         body,
       });
 
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`IGDB API error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('IGDB API error response:', errorText);
+        throw new Error(`IGDB API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log('Response data:', data);
+      return data;
     } catch (error) {
       console.error('IGDB API request failed:', error);
       throw error;
@@ -70,12 +79,10 @@ class IGDBService {
   }
 
   async getPopularGames(limit: number = 20): Promise<Game[]> {
-    const query = `
-      fields name, cover.url, rating, rating_count, first_release_date, summary, genres.name, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
-      where rating_count > 100 & rating > 75;
-      sort rating desc;
-      limit ${limit};
-    `;
+    const query = `fields name, cover.url, rating, rating_count, first_release_date, summary, genres.name, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
+where rating_count > 100 & rating > 75;
+sort rating desc;
+limit ${limit};`;
     
     try {
       const games = await this.makeRequest('games', query);
@@ -87,11 +94,9 @@ class IGDBService {
   }
 
   async searchGames(query: string, limit: number = 20): Promise<Game[]> {
-    const searchQuery = `
-      fields name, cover.url, rating, rating_count, first_release_date, summary, genres.name, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
-      search "${query}";
-      limit ${limit};
-    `;
+    const searchQuery = `fields name, cover.url, rating, rating_count, first_release_date, summary, genres.name, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
+search "${query}";
+limit ${limit};`;
     
     try {
       const games = await this.makeRequest('games', searchQuery);
@@ -103,10 +108,8 @@ class IGDBService {
   }
 
   async getGameById(id: number): Promise<Game> {
-    const query = `
-      fields name, cover.url, rating, rating_count, first_release_date, summary, genres.name, platforms.name, screenshots.url, videos.video_id, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
-      where id = ${id};
-    `;
+    const query = `fields name, cover.url, rating, rating_count, first_release_date, summary, genres.name, platforms.name, screenshots.url, videos.video_id, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
+where id = ${id};`;
     
     try {
       const games = await this.makeRequest('games', query);
