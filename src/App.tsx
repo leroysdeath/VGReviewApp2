@@ -9,6 +9,7 @@ import { UserPage } from './pages/UserPage';
 import { UserSearchPage } from './pages/UserSearchPage';
 import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
+import { ProfilePage } from './pages/ProfilePage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/users" element={<UserSearchPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/review/:gameId?" element={<ReviewFormPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Routes>
       </div>
     </Router>

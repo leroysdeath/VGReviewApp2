@@ -48,12 +48,12 @@ export const Navbar: React.FC = () => {
           {/* Desktop User Menu */}
           <div className="hidden md:block">
             <div className="ml-4 flex items-center md:ml-6">
-              <button
-                onClick={() => setIsLoginModalOpen(true)}
+              <Link
+                to="/profile"
                 className="p-2 text-gray-400 hover:text-white transition-colors"
               >
                 <User className="h-6 w-6" />
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -113,19 +113,12 @@ export const Navbar: React.FC = () => {
             >
               Profile
             </Link>
-            <Link
-              to="/user/1"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Profile
-            </Link>
             <button
               onClick={() => {
                 setIsLoginModalOpen(true);
                 setIsMenuOpen(false);
               }}
-              className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
             >
               Login
             </button>
