@@ -1,21 +1,5 @@
 import { useState, useCallback } from 'react';
-import { mockGames } from '../data/mockData';
-
-export interface Game {
-  id: number;
-  title: string;
-  developer: string;
-  publisher: string;
-  releaseDate: string;
-  genre: string[];
-  platforms: string[];
-  rating: number;
-  reviewCount: number;
-  price: number;
-  description: string;
-  screenshots: string[];
-  coverImage: string;
-}
+import { igdbService, Game } from '../services/igdbApi';
 
 export const useGames = () => {
   const [games, setGames] = useState<Game[]>([]);
@@ -27,21 +11,11 @@ export const useGames = () => {
     setError(null);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Filter games based on search query
-      const filteredGames = mockGames.filter(game =>
-        game.title.toLowerCase().includes(query.toLowerCase()) ||
-        game.developer.toLowerCase().includes(query.toLowerCase()) ||
-        game.publisher.toLowerCase().includes(query.toLowerCase()) ||
-        game.genre.some(g => g.toLowerCase().includes(query.toLowerCase())) ||
-        game.description.toLowerCase().includes(query.toLowerCase())
-      );
-
-      setGames(filteredGames);
+      const searchResults = await igdbService.searchGames(query);
+      setGames(searchResults);
     } catch (err) {
-      setError('Failed to search games');
+      setError('Failed to search games. Please try again.');
+      console.error('Search error:', err);
     } finally {
       setLoading(false);
     }
@@ -52,11 +26,26 @@ export const useGames = () => {
     setError(null);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setGames(mockGames);
+      const popularGames = await igdbService.getPopularGames();
+      setGames(popularGames);
     } catch (err) {
-      setError('Failed to load games');
+      setError('Failed to load games. Please try again.');
+      console.error('Load games error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getRecentGames = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const recentGames = await igdbService.getRecentGames();
+      setGames(recentGames);
+    } catch (err) {
+      setError('Failed to load recent games. Please try again.');
+      console.error('Load recent games error:', err);
     } finally {
       setLoading(false);
     }
@@ -67,6 +56,7 @@ export const useGames = () => {
     loading,
     error,
     searchGames,
-    getAllGames
+    getAllGames,
+    getRecentGames
   };
 };

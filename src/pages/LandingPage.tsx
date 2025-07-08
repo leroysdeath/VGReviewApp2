@@ -1,13 +1,31 @@
 import React from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, TrendingUp, Users, Search, ArrowRight } from 'lucide-react';
 import { GameCard } from '../components/GameCard';
 import { ReviewCard } from '../components/ReviewCard';
-import { mockGames, mockReviews } from '../data/mockData';
+import { mockReviews } from '../data/mockData';
+import { igdbService, Game } from '../services/igdbApi';
 
 export const LandingPage: React.FC = () => {
-  const featuredGames = mockGames.slice(0, 6);
+  const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(true);
   const recentReviews = mockReviews.slice(0, 4);
+
+  useEffect(() => {
+    const loadFeaturedGames = async () => {
+      try {
+        const games = await igdbService.getPopularGames(6);
+        setFeaturedGames(games);
+      } catch (error) {
+        console.error('Failed to load featured games:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFeaturedGames();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -85,11 +103,26 @@ export const LandingPage: React.FC = () => {
               View All <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredGames.map((game) => (
-              <GameCard key={game.id} game={game} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
+                  <div className="aspect-[3/4] bg-gray-700"></div>
+                  <div className="p-4">
+                    <div className="h-4 bg-gray-700 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-700 rounded w-2/3 mb-3"></div>
+                    <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredGames.map((game) => (
+                <GameCard key={game.id} game={game} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { Search, Filter, Grid, List } from 'lucide-react';
 import { GameCard } from '../components/GameCard';
-import { mockGames } from '../data/mockData';
+import { useGames } from '../hooks/useGames';
 
 export const GameSearchPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -9,6 +10,26 @@ export const GameSearchPage: React.FC = () => {
   const [sortBy, setSortBy] = useState('popularity');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
+
+  const { games, loading, error, searchGames, getAllGames } = useGames();
+
+  useEffect(() => {
+    // Load popular games on initial page load
+    getAllGames();
+  }, [getAllGames]);
+
+  useEffect(() => {
+    // Search games when search term changes
+    if (searchTerm.trim()) {
+      const timeoutId = setTimeout(() => {
+        searchGames(searchTerm);
+      }, 500); // Debounce search
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      getAllGames();
+    }
+  }, [searchTerm, searchGames, getAllGames]);
 
   const genres = ['Action', 'Adventure', 'RPG', 'Strategy', 'Simulation', 'Sports', 'Racing'];
   const sortOptions = [
@@ -18,11 +39,9 @@ export const GameSearchPage: React.FC = () => {
     { value: 'title', label: 'Title A-Z' },
   ];
 
-  const filteredGames = mockGames.filter(game => {
-    const matchesSearch = game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         game.genre.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredGames = games.filter(game => {
     const matchesGenre = !selectedGenre || game.genre === selectedGenre;
-    return matchesSearch && matchesGenre;
+    return matchesGenre;
   });
 
   return (
@@ -149,25 +168,58 @@ export const GameSearchPage: React.FC = () => {
         {/* Results */}
         <div className="mb-6">
           <p className="text-gray-400">
-            Found {filteredGames.length} games
+            {loading ? 'Searching...' : `Found ${filteredGames.length} games`}
             {searchTerm && ` for "${searchTerm}"`}
             {selectedGenre && ` in ${selectedGenre}`}
           </p>
         </div>
 
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <p className="text-red-400 mb-4">{error}</p>
+            <button
+              onClick={() => searchTerm ? searchGames(searchTerm) : getAllGames()}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+
         {/* Games Grid */}
-        <div className={`grid gap-6 ${
-          viewMode === 'grid' 
-            ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-            : 'grid-cols-1'
-        }`}>
-          {filteredGames.map((game) => (
-            <GameCard key={game.id} game={game} listView={viewMode === 'list'} />
-          ))}
-        </div>
+        {loading ? (
+          <div className={`grid gap-6 ${
+            viewMode === 'grid' 
+              ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+              : 'grid-cols-1'
+          }`}>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
+                <div className="aspect-[3/4] bg-gray-700"></div>
+                <div className="p-4">
+                  <div className="h-4 bg-gray-700 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-700 rounded w-2/3 mb-3"></div>
+                  <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : !error && (
+          <div className={`grid gap-6 ${
+            viewMode === 'grid' 
+              ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+              : 'grid-cols-1'
+          }`}>
+            {filteredGames.map((game) => (
+              <GameCard key={game.id} game={game} listView={viewMode === 'list'} />
+            ))}
+          </div>
+        )}
 
         {/* Pagination */}
-        <div className="mt-12 flex justify-center">
+        {!loading && !error && filteredGames.length > 0 && (
+          <div className="mt-12 flex justify-center">
           <div className="flex items-center gap-2">
             <button className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
               Previous
@@ -180,6 +232,7 @@ export const GameSearchPage: React.FC = () => {
             </button>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

@@ -1,16 +1,45 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Calendar, User, MessageCircle, Plus, Check, Heart } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
-import { mockGames, mockReviews } from '../data/mockData';
+import { mockReviews } from '../data/mockData';
+import { igdbService, Game } from '../services/igdbApi';
 
 export const GamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [game, setGame] = useState<Game | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const game = mockGames.find(g => g.id === id) || mockGames[0];
+  useEffect(() => {
+    const loadGame = async () => {
+      if (!id) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const gameData = await igdbService.getGameById(id);
+        if (gameData) {
+          setGame(gameData);
+        } else {
+          setError('Game not found');
+        }
+      } catch (err) {
+        setError('Failed to load game details');
+        console.error('Error loading game:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGame();
+  }, [id]);
+
   const gameReviews = mockReviews.filter(r => r.gameId === id);
   const topReviews = gameReviews.filter(r => r.rating >= 8).slice(0, 3);
   const recentReviews = gameReviews.slice(0, 5);
@@ -29,6 +58,68 @@ export const GamePage: React.FC = () => {
   ];
 
   const maxCount = Math.max(...ratingDistribution.map(d => d.count));
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-3 gap-8 mb-12">
+            <div className="lg:col-span-2">
+              <div className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
+                <div className="md:flex">
+                  <div className="md:flex-shrink-0">
+                    <div className="h-64 w-full bg-gray-700 md:h-80 md:w-64"></div>
+                  </div>
+                  <div className="p-8">
+                    <div className="h-8 bg-gray-700 rounded mb-4"></div>
+                    <div className="space-y-2 mb-6">
+                      <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+                      <div className="h-4 bg-gray-700 rounded w-2/3"></div>
+                      <div className="h-4 bg-gray-700 rounded w-1/3"></div>
+                    </div>
+                    <div className="h-20 bg-gray-700 rounded mb-6"></div>
+                    <div className="flex gap-4">
+                      <div className="h-10 bg-gray-700 rounded w-32"></div>
+                      <div className="h-10 bg-gray-700 rounded w-32"></div>
+                      <div className="h-10 bg-gray-700 rounded w-32"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-800 rounded-lg p-6 animate-pulse">
+              <div className="h-6 bg-gray-700 rounded mb-4"></div>
+              <div className="text-center mb-6">
+                <div className="h-12 bg-gray-700 rounded mb-2"></div>
+                <div className="h-6 bg-gray-700 rounded mb-2"></div>
+                <div className="h-4 bg-gray-700 rounded w-1/2 mx-auto"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !game) {
+    return (
+      <div className="min-h-screen bg-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold text-white mb-4">
+              {error || 'Game not found'}
+            </h1>
+            <Link
+              to="/search"
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              Browse other games
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 py-8">

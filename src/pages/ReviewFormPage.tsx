@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Search, Star, Save, Eye, EyeOff } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
-import { mockGames } from '../data/mockData';
+import { useGames } from '../hooks/useGames';
+import { igdbService, Game } from '../services/igdbApi';
 
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const [selectedGame, setSelectedGame] = useState(
-    gameId ? mockGames.find(g => g.id === gameId) : null
-  );
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [gameSearch, setGameSearch] = useState('');
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
@@ -20,11 +20,40 @@ export const ReviewFormPage: React.FC = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
 
-  const filteredGames = mockGames.filter(game =>
+  const { games, searchGames } = useGames();
+
+  useEffect(() => {
+    // Load game if gameId is provided
+    if (gameId) {
+      const loadGame = async () => {
+        try {
+          const game = await igdbService.getGameById(gameId);
+          if (game) {
+            setSelectedGame(game);
+          }
+        } catch (error) {
+          console.error('Failed to load game:', error);
+        }
+      };
+      loadGame();
+    }
+  }, [gameId]);
+
+  useEffect(() => {
+    // Search games when user types
+    if (gameSearch.trim()) {
+      const timeoutId = setTimeout(() => {
+        searchGames(gameSearch);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [gameSearch, searchGames]);
+
+  const filteredGames = games.filter(game =>
     game.title.toLowerCase().includes(gameSearch.toLowerCase())
   );
 
-  const handleGameSelect = (game: typeof mockGames[0]) => {
+  const handleGameSelect = (game: Game) => {
     setSelectedGame(game);
     setGameSearch('');
   };

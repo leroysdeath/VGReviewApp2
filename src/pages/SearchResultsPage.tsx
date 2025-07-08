@@ -122,10 +122,14 @@ export const SearchResultsPage: React.FC = () => {
 
             {/* Loading State */}
             {loading && (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className={`grid gap-6 ${
+                viewMode === 'grid' 
+                  ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+                  : 'grid-cols-1'
+              }`}>
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
-                    <div className="aspect-[3/4] bg-gray-700"></div>
+                    <div className={`${viewMode === 'grid' ? 'aspect-[3/4]' : 'h-20'} bg-gray-700`}></div>
                     <div className="p-4">
                       <div className="h-4 bg-gray-700 rounded mb-2"></div>
                       <div className="h-3 bg-gray-700 rounded w-2/3"></div>
