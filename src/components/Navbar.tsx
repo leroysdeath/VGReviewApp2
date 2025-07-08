@@ -30,6 +30,13 @@ export const Navbar: React.FC = () => {
                 <Gamepad2 className="h-8 w-8 text-purple-400" />
                 <span className="text-xl font-bold text-white">GameVault</span>
               </Link>
+              <Link
+                to="/dummy-game"
+                className="p-2 bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                title="Dummy Test Game"
+              >
+                <Gamepad2 className="h-5 w-5 text-white" />
+              </Link>
             </div>
           </div>
 
