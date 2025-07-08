@@ -11,50 +11,50 @@ export const DummyGamePage: React.FC = () => {
   // Comprehensive dummy game data
   const dummyGame = {
     id: 'dummy-test-game',
-    title: 'Mystic Realms: Chronicles of Aetheria',
+    title: 'The Legend of Zelda: Breath of the Wild',
     coverImage: 'https://images.pexels.com/photos/3945667/pexels-photo-3945667.jpeg?auto=compress&cs=tinysrgb&w=400',
-    releaseDate: '2024-03-15',
-    genre: 'Fantasy RPG',
-    rating: 9.2,
-    description: 'Embark on an epic journey through the mystical lands of Aetheria, where ancient magic meets cutting-edge technology. As the chosen Guardian, you must unite the fractured realms and restore balance to a world on the brink of chaos. With over 100 hours of content, deep character customization, and a branching narrative that responds to your choices, Mystic Realms offers an unparalleled fantasy adventure that will captivate both newcomers and veterans of the genre.',
-    developer: 'Ethereal Studios',
-    publisher: 'Nexus Entertainment',
-    platforms: ['PC', 'PlayStation 5', 'Xbox Series X/S', 'Nintendo Switch'],
+    releaseDate: '2017-03-03',
+    genre: 'Action-Adventure',
+    rating: 9.7,
+    description: 'Step into a world of discovery, exploration, and adventure in The Legend of Zelda: Breath of the Wild. Travel across vast fields, through forests, and to mountain peaks as you discover what has become of the kingdom of Hyrule in this stunning Open-Air adventure. Now on Nintendo Switch, your journey is freer and more open than ever. Take your system anywhere, and adventure as Link any way you like.',
+    developer: 'Nintendo EPD',
+    publisher: 'Nintendo',
+    platforms: ['Nintendo Switch', 'Wii U'],
     price: '$59.99',
-    metacriticScore: 92,
-    steamReviews: 'Overwhelmingly Positive (47,892 reviews)',
-    esrbRating: 'T for Teen',
+    metacriticScore: 97,
+    steamReviews: 'Universal Acclaim (Critics and Players)',
+    esrbRating: 'E10+ for Everyone 10 and older',
     languages: ['English', 'Spanish', 'French', 'German', 'Japanese', 'Korean', 'Chinese'],
-    fileSize: '85 GB',
+    fileSize: '13.4 GB',
     systemRequirements: {
       minimum: {
-        os: 'Windows 10 64-bit',
-        processor: 'Intel Core i5-8400 / AMD Ryzen 5 2600',
-        memory: '8 GB RAM',
-        graphics: 'NVIDIA GTX 1060 6GB / AMD RX 580 8GB',
-        storage: '85 GB available space'
+        os: 'Nintendo Switch System Software 10.0.0 or later',
+        processor: 'NVIDIA Custom Tegra processor',
+        memory: '4 GB RAM',
+        graphics: 'NVIDIA Custom Tegra GPU',
+        storage: '13.4 GB available space'
       },
       recommended: {
-        os: 'Windows 11 64-bit',
-        processor: 'Intel Core i7-10700K / AMD Ryzen 7 3700X',
-        memory: '16 GB RAM',
-        graphics: 'NVIDIA RTX 3070 / AMD RX 6700 XT',
-        storage: '85 GB SSD space'
+        os: 'Nintendo Switch System Software 10.0.0 or later',
+        processor: 'NVIDIA Custom Tegra processor',
+        memory: '4 GB RAM',
+        graphics: 'NVIDIA Custom Tegra GPU',
+        storage: '13.4 GB available space (microSD recommended)'
       }
     },
     features: [
-      'Single-player campaign (80+ hours)',
-      'Co-op multiplayer (up to 4 players)',
-      'Character customization',
-      'Crafting system',
+      'Open-world exploration (100+ hours)',
+      'Physics-based gameplay',
+      'Weapon crafting and cooking',
+      'Climbing and gliding mechanics',
       'Dynamic weather system',
       'Day/night cycle',
-      'Multiple endings',
-      'New Game Plus',
-      'Photo mode',
-      'Accessibility options',
-      'Cross-platform play',
-      'Cloud saves'
+      'Shrine puzzles (120 shrines)',
+      'Divine Beast dungeons',
+      'Amiibo support',
+      'Master Mode (Hard difficulty)',
+      'DLC expansion content',
+      'Portable and docked play'
     ],
     screenshots: [
       'https://images.pexels.com/photos/3945654/pexels-photo-3945654.jpeg?auto=compress&cs=tinysrgb&w=800',
@@ -73,10 +73,10 @@ export const DummyGamePage: React.FC = () => {
       userId: '1',
       gameId: 'dummy-test-game',
       rating: 9.5,
-      text: 'Absolutely phenomenal! The world-building is incredible and the story kept me hooked for weeks. The magic system is innovative and the character progression feels rewarding. This is easily one of the best RPGs I\'ve played in years. The attention to detail in every quest, every NPC interaction, and every environmental storytelling element is remarkable.',
+      text: 'Absolutely phenomenal! The open world is breathtaking and the freedom of exploration is unmatched. The physics engine creates endless possibilities for creative problem-solving. This is easily one of the best adventure games ever made. Every mountain you see can be climbed, every area explored.',
       date: '2024-01-20',
       hasText: true,
-      author: 'FantasyGamer92',
+      author: 'ZeldaFan92',
       authorAvatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
     },
     {
@@ -84,10 +84,10 @@ export const DummyGamePage: React.FC = () => {
       userId: '2',
       gameId: 'dummy-test-game',
       rating: 8.5,
-      text: 'Great game with stunning visuals and solid gameplay mechanics. The co-op mode is a blast to play with friends. Some minor bugs here and there, but nothing game-breaking. Definitely worth the price. The character customization options are extensive and the combat feels satisfying.',
+      text: 'Great game with stunning visuals and innovative gameplay mechanics. The cooking and weapon systems add depth to the survival elements. Some weapon durability issues, but nothing game-breaking. Definitely worth the price. The shrines provide excellent puzzle variety.',
       date: '2024-01-18',
       hasText: true,
-      author: 'RPGMaster',
+      author: 'AdventureSeeker',
       authorAvatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150'
     },
     {
@@ -95,10 +95,10 @@ export const DummyGamePage: React.FC = () => {
       userId: '3',
       gameId: 'dummy-test-game',
       rating: 9.0,
-      text: 'The attention to detail is remarkable. Every NPC feels alive, every quest has meaning, and the world reacts to your choices in meaningful ways. The soundtrack is also absolutely beautiful. I found myself just standing in certain areas to listen to the ambient music.',
+      text: 'The attention to detail is remarkable. Every corner of Hyrule tells a story, and the environmental storytelling is masterful. The soundtrack is also absolutely beautiful. I found myself just standing on mountaintops to take in the scenery and listen to the ambient sounds.',
       date: '2024-01-15',
       hasText: true,
-      author: 'StorySeeker',
+      author: 'HyruleExplorer',
       authorAvatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150'
     },
     {
@@ -106,10 +106,10 @@ export const DummyGamePage: React.FC = () => {
       userId: '4',
       gameId: 'dummy-test-game',
       rating: 8.0,
-      text: 'Solid RPG with great production values. The combat system takes some getting used to, but once you master it, it\'s very satisfying. Lots of content to keep you busy for months. The side quests are surprisingly well-written.',
+      text: 'Solid adventure game with great production values. The combat system takes some getting used to, but once you master it, it\'s very satisfying. Lots of content to keep you busy for months. The shrine quests are surprisingly creative and well-designed.',
       date: '2024-01-12',
       hasText: true,
-      author: 'CasualGamer',
+      author: 'NintendoFan',
       authorAvatar: 'https://images.pexels.com/photos/1310522/pexels-photo-1310522.jpeg?auto=compress&cs=tinysrgb&w=150'
     },
     {
@@ -117,10 +117,10 @@ export const DummyGamePage: React.FC = () => {
       userId: '5',
       gameId: 'dummy-test-game',
       rating: 9.5,
-      text: 'This game exceeded all my expectations. The character customization is deep, the world is vast and beautiful, and the story is emotionally engaging. A true masterpiece that sets a new standard for fantasy RPGs.',
+      text: 'This game exceeded all my expectations. The world is vast and beautiful, and the sense of discovery is unmatched. A true masterpiece that sets a new standard for open-world adventure games. Link\'s journey feels truly epic.',
       date: '2024-01-10',
       hasText: true,
-      author: 'EpicGamer',
+      author: 'OpenWorldLover',
       authorAvatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=150'
     },
     {
@@ -128,10 +128,10 @@ export const DummyGamePage: React.FC = () => {
       userId: '6',
       gameId: 'dummy-test-game',
       rating: 7.5,
-      text: 'Beautiful game with an engaging story, but the pacing can be slow at times. The graphics are stunning and the voice acting is top-notch. Worth playing if you enjoy narrative-driven RPGs.',
+      text: 'Beautiful game with an engaging world, but the weapon durability system can be frustrating at times. The graphics are stunning and the exploration is addictive. Worth playing if you enjoy open-world adventures with a focus on discovery.',
       date: '2024-01-08',
       hasText: true,
-      author: 'CriticGamer',
+      author: 'GameCritic2024',
       authorAvatar: 'https://images.pexels.com/photos/1310522/pexels-photo-1310522.jpeg?auto=compress&cs=tinysrgb&w=150'
     }
   ];
@@ -144,16 +144,16 @@ export const DummyGamePage: React.FC = () => {
     : 0;
 
   const ratingDistribution = [
-    { rating: 10, count: 28 },
-    { rating: 9, count: 45 },
-    { rating: 8, count: 32 },
-    { rating: 7, count: 15 },
-    { rating: 6, count: 8 },
-    { rating: 5, count: 3 },
-    { rating: 4, count: 2 },
-    { rating: 3, count: 1 },
+    { rating: 10, count: 42 },
+    { rating: 9, count: 38 },
+    { rating: 8, count: 15 },
+    { rating: 7, count: 3 },
+    { rating: 6, count: 1 },
+    { rating: 5, count: 1 },
+    { rating: 4, count: 0 },
+    { rating: 3, count: 0 },
     { rating: 2, count: 0 },
-    { rating: 1, count: 1 },
+    { rating: 1, count: 0 },
   ];
 
   const maxCount = Math.max(...ratingDistribution.map(d => d.count));
