@@ -158,14 +158,14 @@ export const GamePage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setIsInWishlist(!isInWishlist)}
-                    className={`w-6 h-6 border-2 border-gray-400 rounded transition-all duration-200 flex items-center justify-center ${
+                    className={`relative w-6 h-6 border-2 border-gray-400 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
                       isInWishlist 
-                        ? 'bg-gray-300 border-gray-300' 
-                        : 'bg-white hover:bg-gray-100'
+                        ? 'bg-gray-800 border-gray-300' 
+                        : 'bg-gray-800 hover:bg-gray-700'
                     }`}
                   >
                     {isInWishlist && (
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-7 w-7 text-green-500 stroke-[3] absolute -top-0.5 -left-0.5" />
                     )}
                   </button>
                   <span className="text-gray-300 text-sm">Wishlist</span>
@@ -174,14 +174,14 @@ export const GamePage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setIsCompleted(!isCompleted)}
-                    className={`w-6 h-6 border-2 border-gray-400 rounded transition-all duration-200 flex items-center justify-center ${
+                    className={`relative w-6 h-6 border-2 border-gray-400 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
                       isCompleted 
-                        ? 'bg-gray-300 border-gray-300' 
-                        : 'bg-white hover:bg-gray-100'
+                        ? 'bg-gray-800 border-gray-300' 
+                        : 'bg-gray-800 hover:bg-gray-700'
                     }`}
                   >
                     {isCompleted && (
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-7 w-7 text-green-500 stroke-[3] absolute -top-0.5 -left-0.5" />
                     )}
                   </button>
                   <span className="text-gray-300 text-sm">Completed</span>
