@@ -151,28 +151,6 @@ export const Navbar: React.FC = () => {
             >
               Login
             </button>
-            
-            {/* Dummy Profile Test - Mobile */}
-            <Link
-              to="/profile"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Dummy Profile Test
-            </Link>
-            <Link
-              to="/dummy-user"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Dummy User Test
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Login Modal */}
-      <LoginModal 
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
       />
