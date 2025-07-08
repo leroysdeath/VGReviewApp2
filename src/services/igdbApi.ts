@@ -1,45 +1,71 @@
-const IGDB_BASE_URL = '/api/igdb';
+// IGDB API service using Supabase Edge Function proxy
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
-// Define the Game interface to match what components expect
-export interface Game {
-  id: string;
-  title: string;
-  coverImage: string;
-  releaseDate: string;
-  genre: string;
-  rating: number;
-  description: string;
-  developer: string;
-  publisher: string;
-  platforms: string[];
-  screenshots?: string[];
-  videos?: string[];
+if (!SUPABASE_URL) {
+  throw new Error('VITE_SUPABASE_URL is not defined in environment variables');
 }
 
-class IGDBService {
-  private async makeRequest(endpoint: string, body: string) {
+const IGDB_PROXY_URL = `${SUPABASE_URL}/functions/v1/igdb-proxy`;
+
+export interface IGDBGame {
+  id: number;
+  name: string;
+  summary?: string;
+  cover?: {
+    id: number;
+    url: string;
+  };
+  first_release_date?: number;
+  genres?: Array<{
+    id: number;
+    name: string;
+  }>;
+  platforms?: Array<{
+    id: number;
+    name: string;
+  }>;
+  rating?: number;
+  rating_count?: number;
+  screenshots?: Array<{
+    id: number;
+    url: string;
+  }>;
+  videos?: Array<{
+    id: number;
+    video_id: string;
+  }>;
+  involved_companies?: Array<{
+    company: {
+      id: number;
+      name: string;
+    };
+    developer: boolean;
+    publisher: boolean;
+  }>;
+}
+
+class IGDBApiService {
+  private async makeRequest(endpoint: string, body: string): Promise<any> {
     try {
-      console.log(`Making request to: ${IGDB_BASE_URL}/${endpoint}`);
-      console.log('Request body:', body);
-      
-      const response = await fetch(`${IGDB_BASE_URL}/${endpoint}`, {
+      console.log(`Making IGDB request to: ${endpoint}`);
+      console.log(`Request body: ${body}`);
+
+      const response = await fetch(`${IGDB_PROXY_URL}/${endpoint}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'text/plain', // IGDB expects text/plain for the query
+          'Content-Type': 'text/plain',
         },
-        body,
+        body: body,
       });
 
-      console.log('Response status:', response.status);
-      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('IGDB API error response:', errorText);
-        throw new Error(`IGDB API error: ${response.status} ${response.statusText} - ${errorText}`);
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('IGDB API error:', response.status, errorData);
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Response data:', data);
+      console.log(`IGDB response:`, data);
       return data;
     } catch (error) {
       console.error('IGDB API request failed:', error);
@@ -47,102 +73,83 @@ class IGDBService {
     }
   }
 
-  private mapGameData(game: any): Game {
-    // Extract developer and publisher from involved_companies
-    let developer = '';
-    let publisher = '';
-    
-    if (game.involved_companies) {
-      const devCompany = game.involved_companies.find((ic: any) => ic.developer);
-      const pubCompany = game.involved_companies.find((ic: any) => ic.publisher);
-      
-      developer = devCompany?.company?.name || '';
-      publisher = pubCompany?.company?.name || '';
-    }
+  async searchGames(query: string, limit: number = 10): Promise<IGDBGame[]> {
+    const body = `
+      search "${query}";
+      fields name, summary, cover.url, first_release_date, genres.name, platforms.name, rating, rating_count;
+      limit ${limit};
+      where version_parent = null;
+    `;
 
-    return {
-      id: game.id.toString(),
-      title: game.name || '',
-      coverImage: game.cover?.url ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}` : '',
-      releaseDate: game.first_release_date 
-        ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
-        : '',
-      genre: game.genres?.[0]?.name || '',
-      rating: game.rating ? Math.round(game.rating / 10) : 0, // Scale from 0-100 to 0-10
-      description: game.summary || '',
-      developer,
-      publisher,
-      platforms: game.platforms?.map((p: any) => p.name) || [],
-      screenshots: game.screenshots?.map((s: any) => `https:${s.url.replace('t_thumb', 't_screenshot_med')}`) || [],
-      videos: game.videos?.map((v: any) => v.video_id) || [],
-    };
+    return this.makeRequest('games', body);
   }
 
-  async getPopularGames(limit: number = 20): Promise<Game[]> {
-    const query = `fields name, cover.url, rating, rating_count, first_release_date, summary, genres.name, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
-where rating_count > 100 & rating > 75;
-sort rating desc;
-limit ${limit};`;
-    
-    try {
-      const games = await this.makeRequest('games', query);
-      return games.map((game: any) => this.mapGameData(game));
-    } catch (error) {
-      console.error('Failed to get popular games:', error);
-      throw error;
+  async getGameById(id: number): Promise<IGDBGame> {
+    const body = `
+      fields name, summary, cover.url, first_release_date, genres.name, platforms.name, 
+             rating, rating_count, screenshots.url, videos.video_id,
+             involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
+      where id = ${id};
+    `;
+
+    const games = await this.makeRequest('games', body);
+    if (!games || games.length === 0) {
+      throw new Error(`Game with ID ${id} not found`);
     }
+    return games[0];
   }
 
-  async searchGames(query: string, limit: number = 20): Promise<Game[]> {
-    const searchQuery = `fields name, cover.url, rating, rating_count, first_release_date, summary, genres.name, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
-search "${query}";
-limit ${limit};`;
-    
-    try {
-      const games = await this.makeRequest('games', searchQuery);
-      return games.map((game: any) => this.mapGameData(game));
-    } catch (error) {
-      console.error('Failed to search games:', error);
-      throw error;
-    }
+  async getPopularGames(limit: number = 20): Promise<IGDBGame[]> {
+    const body = `
+      fields name, summary, cover.url, first_release_date, genres.name, platforms.name, rating, rating_count;
+      where rating_count > 100 & rating > 70;
+      sort rating desc;
+      limit ${limit};
+    `;
+
+    return this.makeRequest('games', body);
   }
 
-  async getGameById(id: number): Promise<Game> {
-    // Validate that id is a valid number
-    if (!id || isNaN(id)) {
-      throw new Error('Invalid game ID provided');
-    }
-    
-    const query = `fields name, cover.url, rating, rating_count, first_release_date, summary, genres.name, platforms.name, screenshots.url, videos.video_id, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
-where id = ${id};`;
-    
-    try {
-      const games = await this.makeRequest('games', query);
-      if (games.length === 0) {
-        throw new Error('Game not found');
-      }
-      
-      return this.mapGameData(games[0]);
-    } catch (error) {
-      console.error('Failed to get game by ID:', error);
-      throw error;
-    }
+  async getGamesByGenre(genreId: number, limit: number = 20): Promise<IGDBGame[]> {
+    const body = `
+      fields name, summary, cover.url, first_release_date, genres.name, platforms.name, rating, rating_count;
+      where genres = ${genreId} & rating_count > 10;
+      sort rating desc;
+      limit ${limit};
+    `;
+
+    return this.makeRequest('games', body);
   }
 
-  // Helper method to get game by string ID (converts to number)
-  async getGameByStringId(id: string): Promise<Game | null> {
-    const numericId = parseInt(id, 10);
-    if (isNaN(numericId)) {
-      return null;
+  async getRecentGames(limit: number = 20): Promise<IGDBGame[]> {
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+    const oneYearAgo = currentTimestamp - (365 * 24 * 60 * 60);
+
+    const body = `
+      fields name, summary, cover.url, first_release_date, genres.name, platforms.name, rating, rating_count;
+      where first_release_date > ${oneYearAgo} & first_release_date < ${currentTimestamp};
+      sort first_release_date desc;
+      limit ${limit};
+    `;
+
+    return this.makeRequest('games', body);
+  }
+
+  // Helper method to format image URLs
+  formatImageUrl(url: string, size: string = 'cover_big'): string {
+    if (!url) return '';
+    
+    // IGDB returns URLs like "//images.igdb.com/igdb/image/upload/t_thumb/co1uog.jpg"
+    // We need to add https: and potentially change the size
+    const cleanUrl = url.replace('//', 'https://');
+    
+    // Replace the size parameter if needed
+    if (size !== 'thumb') {
+      return cleanUrl.replace('/t_thumb/', `/t_${size}/`);
     }
     
-    try {
-      return await this.getGameById(numericId);
-    } catch (error) {
-      console.error('Failed to get game by string ID:', error);
-      return null;
-    }
+    return cleanUrl;
   }
 }
 
-export const igdbService = new IGDBService();
+export const igdbApi = new IGDBApiService();
