@@ -17,25 +17,11 @@ export interface Game {
 }
 
 class IGDBService {
-  private clientId: string;
-  private accessToken: string;
-
-  constructor() {
-    this.clientId = import.meta.env.VITE_IGDB_CLIENT_ID;
-    this.accessToken = import.meta.env.VITE_IGDB_ACCESS_TOKEN;
-    
-    if (!this.clientId || !this.accessToken) {
-      throw new Error('IGDB API credentials not found in environment variables');
-    }
-  }
-
   private async makeRequest(endpoint: string, body: string) {
     try {
       const response = await fetch(`${IGDB_BASE_URL}/${endpoint}`, {
         method: 'POST',
         headers: {
-          'Client-ID': this.clientId,
-          'Authorization': `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
         },
         body,
