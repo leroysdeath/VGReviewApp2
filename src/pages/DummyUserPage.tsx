@@ -15,8 +15,8 @@ export const DummyUserPage: React.FC = () => {
     avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=150',
     bio: 'beCAUSE it\'s so much FUN, jAn. GET IT',
     joinDate: 'January 2024',
-    location: 'Test City, TC',
-    website: 'https://dummytestuser.com'
+    location: 'Test City, TC', 
+    website: 'https://dummytestuser.card.co'
   };
 
   // User's gaming stats - matches Letterboxd structure
@@ -29,8 +29,6 @@ export const DummyUserPage: React.FC = () => {
   };
 
   // User's favorite games (top 4 for the grid)
-  const userFavoriteGames = mockGames.slice(0, 4);
-  const userRecentGames = mockGames.slice(0, 8);
   const userReviews = mockReviews.slice(0, 6);
 
   const sortedReviews = [...userReviews].sort((a, b) => {
@@ -56,15 +54,10 @@ export const DummyUserPage: React.FC = () => {
     >
       <UserPageContent
         activeTab={activeTab}
-        userFavoriteGames={userFavoriteGames}
-        userRecentGames={userRecentGames}
         sortedReviews={sortedReviews}
         allGames={mockGames}
-        stats={stats}
         reviewFilter={reviewFilter}
         onReviewFilterChange={setReviewFilter}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
         isDummy={true}
       />
     </UserPageLayout>
