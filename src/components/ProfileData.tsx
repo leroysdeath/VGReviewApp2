@@ -65,11 +65,9 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                   className="w-48 h-64 object-cover rounded-lg"
                 />
                 {/* Rating at the bottom of cover art */}
-                <div className="absolute bottom-2 left-2 right-2 bg-black/80 rounded px-2 py-1">
-                  <div className="flex items-center justify-center">
-                    <div className="bg-gray-500 px-2 py-1 rounded">
-                      <span className="text-white text-sm font-bold">{game.rating.toFixed(1)}</span>
-                    </div>
+                <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-2 py-1">
+                  <div className="text-center">
+                    <span className="text-white text-sm font-bold">{game.rating.toFixed(1)}</span>
                   </div>
                 </div>
                 {/* Rank number */}
@@ -113,11 +111,9 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                   className="w-full aspect-[3/4] object-cover rounded"
                 />
                 {/* Rating at the bottom of cover art */}
-                <div className="absolute bottom-1 left-1 right-1 bg-black/80 rounded px-1 py-0.5">
-                  <div className="flex items-center justify-center">
-                    <div className="bg-gray-500 px-1 py-0.5 rounded">
-                      <span className="text-white text-xs font-bold">{game.rating.toFixed(1)}</span>
-                    </div>
+                <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
+                  <div className="text-center">
+                    <span className="text-white text-xs font-bold">{game.rating.toFixed(1)}</span>
                   </div>
                 </div>
                 {/* Rank number */}
