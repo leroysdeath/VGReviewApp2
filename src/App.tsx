@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Navbar } from './components/Navbar';
-import { LandingPage } from './pages/LandingPage';
+import { ResponsiveNavbar } from './components/ResponsiveNavbar';
+import { ResponsiveLandingPage } from './components/ResponsiveLandingPage';
 import { GamePage } from './pages/GamePage';
 import { GameSearchPage } from './pages/GameSearchPage';
 import { SearchResultsPage } from './pages/SearchResultsPage';
@@ -21,9 +21,9 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-900">
-        <Navbar />
+        <ResponsiveNavbar />
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<ResponsiveLandingPage />} />
           <Route path="/game/:id" element={<GamePage />} />
           <Route path="/search" element={<GameSearchPage />} />
           <Route path="/search-results" element={<SearchResultsPage />} />
@@ -34,10 +34,6 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/dummy-game" element={<DummyGamePage />} />
           <Route path="/dummy-user" element={<DummyUserPage />} />
-          <Route path="/mobile-preview" element={<MobilePreviewPage />} />
-          <Route path="/mobile-website" element={<MobileWebsitePage />} />
-          <Route path="/mobile-dummy-game" element={<MobileDummyGamePreview />} />
-          <Route path="/mobile-user" element={<MobileUserPreview />} />
         </Routes>
       </div>
     </Router>

@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Search, Filter, Grid, List } from 'lucide-react';
 import { GameCard } from '../components/GameCard';
 import { useGames } from '../hooks/useGames';
+import { useResponsive } from '../hooks/useResponsive';
 
 export const GameSearchPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -12,6 +13,7 @@ export const GameSearchPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   const { games, loading, error, searchGames, getAllGames } = useGames();
+  const { isMobile } = useResponsive();
 
   useEffect(() => {
     // Load popular games on initial page load
@@ -46,9 +48,9 @@ export const GameSearchPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className={`mx-auto px-4 sm:px-6 lg:px-8 ${isMobile ? '' : 'max-w-7xl'}`}>
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-6">Discover Games</h1>
+          <h1 className={`font-bold text-white mb-6 ${isMobile ? 'text-2xl' : 'text-3xl'}`}>Discover Games</h1>
           
           {/* Search Bar */}
           <div className="relative mb-6">
@@ -63,7 +65,7 @@ export const GameSearchPage: React.FC = () => {
           </div>
 
           {/* Filter Bar */}
-          <div className="flex flex-wrap gap-4 items-center justify-between">
+          <div className={`gap-4 items-center justify-between ${isMobile ? 'flex flex-col space-y-4' : 'flex flex-wrap'}`}>
             <div className="flex flex-wrap gap-4 items-center">
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -95,7 +97,8 @@ export const GameSearchPage: React.FC = () => {
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
+            {!isMobile && (
+              <div className="flex items-center gap-2">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-lg transition-colors ${
@@ -117,6 +120,7 @@ export const GameSearchPage: React.FC = () => {
                 <List className="h-4 w-4" />
               </button>
             </div>
+            )}
           </div>
 
           {/* Advanced Filters */}
@@ -190,9 +194,11 @@ export const GameSearchPage: React.FC = () => {
         {/* Games Grid */}
         {loading ? (
           <div className={`grid gap-6 ${
-            viewMode === 'grid' 
-              ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-              : 'grid-cols-1'
+            isMobile 
+              ? 'grid-cols-2' 
+              : viewMode === 'grid' 
+                ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+                : 'grid-cols-1'
           }`}>
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
@@ -207,18 +213,20 @@ export const GameSearchPage: React.FC = () => {
           </div>
         ) : !error && (
           <div className={`grid gap-6 ${
-            viewMode === 'grid' 
-              ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-              : 'grid-cols-1'
+            isMobile 
+              ? 'grid-cols-2' 
+              : viewMode === 'grid' 
+                ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+                : 'grid-cols-1'
           }`}>
             {filteredGames.map((game) => (
-              <GameCard key={game.id} game={game} listView={viewMode === 'list'} />
+              <GameCard key={game.id} game={game} listView={!isMobile && viewMode === 'list'} />
             ))}
           </div>
         )}
 
         {/* Pagination */}
-        {!loading && !error && filteredGames.length > 0 && (
+        {!loading && !error && filteredGames.length > 0 && !isMobile && (
           <div className="mt-12 flex justify-center">
           <div className="flex items-center gap-2">
             <button className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
