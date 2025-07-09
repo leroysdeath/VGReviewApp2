@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { MobileLandingPage } from '../components/mobile/MobileLandingPage';
 import { MobileGameSearchPage } from '../components/mobile/MobileGameSearchPage';
 import { MobileGamePage } from '../components/mobile/MobileGamePage';
@@ -54,9 +54,7 @@ export const MobileWebsitePage: React.FC = () => {
 
           {/* Mobile Website Content */}
           <div className="h-full overflow-hidden">
-            <Router>
-              <MobileWebsiteContent />
-            </Router>
+            <MobileWebsiteContent />
           </div>
         </div>
 
