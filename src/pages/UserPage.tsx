@@ -43,7 +43,7 @@ export const UserPage: React.FC = () => {
       {/* Profile Header */}
       <div className="bg-gray-800 border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-start gap-6">
+          <div className="flex items-start justify-between gap-6">
             {/* Profile Image */}
             <div className="relative flex-shrink-0">
               <img
@@ -54,7 +54,7 @@ export const UserPage: React.FC = () => {
             </div>
             
             {/* Profile Info */}
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-2xl font-bold text-white">{user.username}</h1>
                 <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
@@ -72,37 +72,38 @@ export const UserPage: React.FC = () => {
                 <span className="mx-2">🔗</span>
                 <span>gamevault.card.co</span>
               </div>
+            </div>
 
-              {/* Stats */}
-              <div className="flex items-center gap-8">
+            {/* Stats Section - Moved to the right */}
+            <div className="flex-shrink-0 flex flex-col gap-4">
+              {/* Main Stats */}
+              <div className="flex items-center gap-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{stats.films.toLocaleString()}</div>
+                  <div className="text-xl font-bold text-white">{stats.games.toLocaleString()}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">GAMES</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{stats.thisYear}</div>
+                  <div className="text-xl font-bold text-white">{stats.thisYear}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{stats.lists}</div>
+                  <div className="text-xl font-bold text-white">{stats.lists}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{stats.following}</div>
+                  <div className="text-xl font-bold text-white">{stats.following}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWING</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{stats.followers.toLocaleString()}</div>
+                  <div className="text-xl font-bold text-white">{stats.followers.toLocaleString()}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
                 </div>
               </div>
-            </div>
-
-            {/* Year Stats Widget */}
-            <div className="flex-shrink-0">
-              <div className="bg-gray-700 rounded-lg p-4 text-center min-w-[120px]">
+              
+              {/* Year Stats Widget */}
+              <div className="bg-gray-700 rounded-lg p-3 text-center min-w-[120px] self-end">
                 <div className="text-sm text-gray-400 mb-1">STATS FOR</div>
-                <div className="text-xl font-bold text-white mb-2">{currentYear}</div>
+                <div className="text-lg font-bold text-white mb-1">{currentYear}</div>
                 <button className="text-gray-400 hover:text-white">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
