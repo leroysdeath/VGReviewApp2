@@ -12,8 +12,6 @@ export const UserPage: React.FC = () => {
 
   const user = mockUsers.find(u => u.id === id) || mockUsers[0];
   const userReviews = mockReviews.filter(r => r.userId === id);
-  const userFavoriteGames = mockGames.slice(0, 4); // Top 4 favorite games
-  const userRecentGames = mockGames.slice(0, 8); // Recent games
 
   const stats = {
     films: 1322,
@@ -42,7 +40,9 @@ export const UserPage: React.FC = () => {
     username: user.username,
     avatar: user.avatar,
     bio: user.bio,
-    joinDate: user.joinDate
+    joinDate: user.joinDate,
+    location: 'San Francisco, CA', // This would come from user data
+    website: 'https://gamevault.card.co'
   };
 
   return (
@@ -55,15 +55,10 @@ export const UserPage: React.FC = () => {
     >
       <UserPageContent
         activeTab={activeTab}
-        userFavoriteGames={userFavoriteGames}
-        userRecentGames={userRecentGames}
         sortedReviews={sortedReviews}
         allGames={mockGames}
-        stats={stats}
         reviewFilter={reviewFilter}
         onReviewFilterChange={setReviewFilter}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
         isDummy={false}
       />
     </UserPageLayout>
