@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { MobileUserPageLayout } from './MobileUserPageLayout';
-import { ProfileDataWithPreview } from '../ProfileDataWithPreview';
+import { ProfileData } from '../ProfileData';
 import { mockUsers, mockGames, mockReviews } from '../../data/mockData';
 
 export const MobileUserPage: React.FC = () => {
@@ -50,13 +50,12 @@ export const MobileUserPage: React.FC = () => {
       activeTab={activeTab}
       onTabChange={(tab) => setActiveTab(tab as any)}
     >
-      <ProfileDataWithPreview
+      <ProfileData
         activeTab={activeTab}
         allGames={mockGames}
         sortedReviews={sortedReviews}
         reviewFilter={reviewFilter}
         onReviewFilterChange={setReviewFilter}
-        forceMobileView={true}
       />
     </MobileUserPageLayout>
   );

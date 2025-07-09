@@ -15,6 +15,7 @@ import { DummyUserPage } from './pages/DummyUserPage';
 import { MobilePreviewPage } from './pages/MobilePreviewPage';
 import { MobileWebsitePage } from './pages/MobileWebsitePage';
 import { MobileDummyGamePreview } from './pages/MobileDummyGamePreview';
+import { MobileUserPreview } from './pages/MobileUserPreview';
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
           <Route path="/mobile-preview" element={<MobilePreviewPage />} />
           <Route path="/mobile-website" element={<MobileWebsitePage />} />
           <Route path="/mobile-dummy-game" element={<MobileDummyGamePreview />} />
+          <Route path="/mobile-user" element={<MobileUserPreview />} />
         </Routes>
       </div>
     </Router>
