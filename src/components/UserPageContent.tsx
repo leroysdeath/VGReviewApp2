@@ -1,5 +1,6 @@
 import React from 'react';
-import { ProfileData } from './ProfileData';
+import { ProfileDataWithPreview } from './ProfileDataWithPreview';
+import { MobilePreviewToggle } from './MobilePreviewToggle';
 
 interface Game {
   id: string;
@@ -43,6 +44,7 @@ interface UserPageContentProps {
   viewMode: 'grid' | 'list';
   onViewModeChange: (mode: 'grid' | 'list') => void;
   isDummy?: boolean;
+  showPreviewToggle?: boolean;
 }
 
 export const UserPageContent: React.FC<UserPageContentProps> = ({
@@ -51,14 +53,23 @@ export const UserPageContent: React.FC<UserPageContentProps> = ({
   allGames,
   reviewFilter,
   onReviewFilterChange,
+  showPreviewToggle = false,
 }) => {
+  const [forceMobileView, setForceMobileView] = React.useState(false);
+
   return (
-    <ProfileData
-      activeTab={activeTab}
-      allGames={allGames}
-      sortedReviews={sortedReviews}
-      reviewFilter={reviewFilter}
-      onReviewFilterChange={onReviewFilterChange}
-    />
+    <>
+      {showPreviewToggle && (
+        <MobilePreviewToggle onViewChange={setForceMobileView} />
+      )}
+      <ProfileDataWithPreview
+        activeTab={activeTab}
+        allGames={allGames}
+        sortedReviews={sortedReviews}
+        reviewFilter={reviewFilter}
+        onReviewFilterChange={onReviewFilterChange}
+        forceMobileView={forceMobileView}
+      />
+    </>
   );
 };

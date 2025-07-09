@@ -58,6 +58,7 @@ export const DummyUserPage: React.FC = () => {
         reviewFilter={reviewFilter}
         onReviewFilterChange={setReviewFilter}
         isDummy={true}
+        showPreviewToggle={true}
       />
     </UserPageLayout>
   );
