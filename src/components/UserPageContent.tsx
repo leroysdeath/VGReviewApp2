@@ -60,205 +60,96 @@ export const UserPageContent: React.FC<UserPageContentProps> = ({
   onViewModeChange,
   isDummy = false
 }) => {
-  // Profile Tab Content
-  if (activeTab === 'profile') {
+  // Top 5 Tab Content
+  if (activeTab === 'top5') {
+    // Get top 5 highest rated games
+    const top5Games = [...allGames]
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 5);
+
     return (
-      <div className="space-y-8">
-        {/* Favorite Games Section */}
-        <div>
-          <h2 className="text-lg font-semibold text-white mb-4 uppercase tracking-wide">FAVORITE GAMES</h2>
-          <div className="grid grid-cols-4 gap-4">
-            {userFavoriteGames.map((game, index) => (
-              <Link
-                key={game.id}
-                to={`/game/${game.id}`}
-                className="group relative aspect-[3/4] rounded-lg overflow-hidden hover:scale-105 transition-transform"
-              >
+      <div>
+        <h2 className="text-xl font-semibold text-white mb-6">Top 5 Highest Rated Games</h2>
+        <div className="flex gap-6 justify-center">
+          {top5Games.map((game, index) => (
+            <Link
+              key={game.id}
+              to={`/game/${game.id}`}
+              className="group relative flex-shrink-0 hover:scale-105 transition-transform"
+            >
+              <div className="relative">
                 <img
                   src={game.coverImage}
                   alt={game.title}
-                  className="w-full h-full object-cover"
+                  className="w-48 h-64 object-cover rounded-lg"
                 />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-white font-semibold text-sm mb-1">{game.title}</div>
+                {/* Rating at the bottom of cover art */}
+                <div className="absolute bottom-2 left-2 right-2 bg-black/80 rounded px-2 py-1">
+                  <div className="flex items-center justify-center gap-1">
                     <StarRating rating={game.rating} size="sm" />
+                    <span className="text-white text-sm font-bold">{game.rating.toFixed(1)}</span>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div>
-          <h2 className="text-lg font-semibold text-white mb-4 uppercase tracking-wide">RECENT ACTIVITY</h2>
-          <div className="grid grid-cols-8 gap-3">
-            {userRecentGames.map((game) => (
-              <Link
-                key={game.id}
-                to={`/game/${game.id}`}
-                className="group relative aspect-[3/4] rounded overflow-hidden hover:scale-105 transition-transform"
-              >
-                <img
-                  src={game.coverImage}
-                  alt={game.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="text-white text-xs font-medium text-center px-1">
-                    {game.title}
-                  </div>
+                {/* Rank number */}
+                <div className="absolute top-2 left-2 bg-purple-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">
+                  {index + 1}
                 </div>
-              </Link>
-            ))}
-          </div>
+              </div>
+              <div className="mt-2 text-center">
+                <h3 className="text-white font-medium text-sm group-hover:text-purple-400 transition-colors">
+                  {game.title}
+                </h3>
+              </div>
+            </Link>
+          ))}
         </div>
-
-        {/* Recent Reviews */}
-        <div>
-          <h2 className="text-lg font-semibold text-white mb-4 uppercase tracking-wide">RECENT REVIEWS</h2>
-          <div className="space-y-4">
-            {sortedReviews.slice(0, 3).map((review) => {
-              const game = allGames.find(g => g.id === review.gameId);
-              return (
-                <div key={review.id} className="flex gap-4 p-4 bg-gray-800 rounded-lg">
-                  <Link to={`/game/${game?.id}`} className="flex-shrink-0">
-                    <img
-                      src={game?.coverImage}
-                      alt={game?.title}
-                      className="w-16 h-20 object-cover rounded"
-                    />
-                  </Link>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-2">
-                      <Link 
-                        to={`/game/${game?.id}`}
-                        className="font-semibold text-white hover:text-green-400 transition-colors"
-                      >
-                        {game?.title}
-                      </Link>
-                      <StarRating rating={review.rating} size="sm" />
-                      <span className="text-sm text-gray-400">{review.date}</span>
-                    </div>
-                    <p className="text-gray-300 text-sm leading-relaxed">{review.text}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Upgrade Prompt (like Letterboxd) - only show for dummy */}
-        {isDummy && (
-          <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-lg p-6 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
-            <div className="relative">
-              <h3 className="text-xl font-bold text-white mb-2">NEED AN UPGRADE?</h3>
-              <p className="text-gray-300 mb-4">
-                Profile stats, filtering by favorite streaming services, watchlist alerts and no ads!
-              </p>
-              <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded font-medium transition-colors">
-                GET PRO
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
 
-  // Games Tab Content
-  if (activeTab === 'films') {
+  // Top 50 Tab Content
+  if (activeTab === 'top50') {
+    // Get top 50 highest rated games
+    const top50Games = [...allGames]
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 50);
+
     return (
       <div>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-white">Games ({stats.films.toLocaleString()})</h2>
-          <div className="flex items-center gap-4">
-            <select
-              value={reviewFilter}
-              onChange={(e) => onReviewFilterChange(e.target.value)}
-              className="px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-green-500"
+        <h2 className="text-xl font-semibold text-white mb-6">Top 50 Highest Rated Games</h2>
+        <div className="grid grid-cols-10 gap-4">
+          {top50Games.map((game, index) => (
+            <Link
+              key={game.id}
+              to={`/game/${game.id}`}
+              className="group relative hover:scale-105 transition-transform"
             >
-              <option value="recent">Recently Added</option>
-              <option value="highest">Highest Rated</option>
-              <option value="lowest">Lowest Rated</option>
-              <option value="oldest">Oldest</option>
-            </select>
-            <div className="flex items-center gap-1 bg-gray-800 rounded p-1">
-              <button
-                onClick={() => onViewModeChange('grid')}
-                className={`p-2 rounded transition-colors ${
-                  viewMode === 'grid' 
-                    ? 'bg-green-600 text-white' 
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                <Grid className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => onViewModeChange('list')}
-                className={`p-2 rounded transition-colors ${
-                  viewMode === 'list' 
-                    ? 'bg-green-600 text-white' 
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {viewMode === 'grid' ? (
-          <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
-            {allGames.map((game) => (
-              <Link
-                key={game.id}
-                to={`/game/${game.id}`}
-                className="group relative aspect-[3/4] rounded overflow-hidden hover:scale-105 transition-transform"
-              >
+              <div className="relative">
                 <img
                   src={game.coverImage}
                   alt={game.title}
-                  className="w-full h-full object-cover"
+                  className="w-full aspect-[3/4] object-cover rounded"
                 />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="text-white text-xs font-medium text-center px-1">
-                    {game.title}
+                {/* Rating at the bottom of cover art */}
+                <div className="absolute bottom-1 left-1 right-1 bg-black/80 rounded px-1 py-0.5">
+                  <div className="flex items-center justify-center gap-1">
+                    <StarRating rating={game.rating} size="sm" />
+                    <span className="text-white text-xs font-bold">{game.rating.toFixed(1)}</span>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {allGames.map((game) => (
-              <div key={game.id} className="flex items-center gap-4 p-3 bg-gray-800 rounded hover:bg-gray-750 transition-colors">
-                <Link to={`/game/${game.id}`} className="flex-shrink-0">
-                  <img
-                    src={game.coverImage}
-                    alt={game.title}
-                    className="w-12 h-16 object-cover rounded"
-                  />
-                </Link>
-                <div className="flex-1">
-                  <Link 
-                    to={`/game/${game.id}`}
-                    className="font-medium text-white hover:text-green-400 transition-colors"
-                  >
-                    {game.title}
-                  </Link>
-                  <div className="text-sm text-gray-400">{game.releaseDate}</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <StarRating rating={game.rating} size="sm" />
-                  <span className="text-sm text-gray-400">{game.rating.toFixed(1)}</span>
+                {/* Rank number */}
+                <div className="absolute top-1 left-1 bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                  {index + 1}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+              <div className="mt-1">
+                <h3 className="text-white text-xs font-medium group-hover:text-purple-400 transition-colors line-clamp-2">
+                  {game.title}
+                </h3>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     );
   }

@@ -4,7 +4,7 @@ import { UserPageContent } from '../components/UserPageContent';
 import { mockGames, mockReviews } from '../data/mockData';
 
 export const DummyUserPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'films' | 'diary' | 'reviews' | 'watchlist' | 'lists' | 'likes' | 'tags' | 'network' | 'stats'>('profile');
+  const [activeTab, setActiveTab] = useState<'top5' | 'top50' | 'reviews'>('top5');
   const [reviewFilter, setReviewFilter] = useState('recent');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 

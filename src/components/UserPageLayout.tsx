@@ -29,16 +29,9 @@ interface UserPageLayoutProps {
 }
 
 const TABS = [
-  { key: 'profile', label: 'Profile' },
-  { key: 'films', label: 'Games' },
-  { key: 'diary', label: 'Diary' },
+  { key: 'top5', label: 'Top 5' },
+  { key: 'top50', label: 'Top 50' },
   { key: 'reviews', label: 'Reviews' },
-  { key: 'watchlist', label: 'Wishlist' },
-  { key: 'lists', label: 'Lists' },
-  { key: 'likes', label: 'Likes' },
-  { key: 'tags', label: 'Tags' },
-  { key: 'network', label: 'Network' },
-  { key: 'stats', label: 'Stats' }
 ];
 
 export const UserPageLayout: React.FC<UserPageLayoutProps> = ({
