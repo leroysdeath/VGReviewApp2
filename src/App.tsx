@@ -12,6 +12,7 @@ import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { DummyGamePage } from './pages/DummyGamePage';
 import { DummyUserPage } from './pages/DummyUserPage';
+import { MobilePreviewPage } from './pages/MobilePreviewPage';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/dummy-game" element={<DummyGamePage />} />
           <Route path="/dummy-user" element={<DummyUserPage />} />
+          <Route path="/mobile-preview" element={<MobilePreviewPage />} />
         </Routes>
       </div>
     </Router>

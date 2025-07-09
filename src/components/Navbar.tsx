@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2 } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2, Smartphone } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 
 export const Navbar: React.FC = () => {
@@ -43,6 +43,13 @@ export const Navbar: React.FC = () => {
                 title="Dummy Test User"
               >
                 <User className="h-5 w-5 text-white" />
+              </Link>
+              <Link
+                to="/mobile-preview"
+                className="p-2 bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors"
+                title="iPhone 16 Mobile Preview"
+              >
+                <Smartphone className="h-5 w-5 text-white" />
               </Link>
             </div>
           </div>
