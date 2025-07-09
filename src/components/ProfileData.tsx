@@ -163,11 +163,13 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                     alt={game?.title}
                     className="w-20 h-28 object-cover rounded"
                   />
-                </Link>
+                  {/* Rating line at the bottom of cover art */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-4 mb-3">
-                    <Link 
-                      to={`/game/${game?.id}`}
+                    <div className="flex items-center justify-center">
+                      <div className="w-full h-3 bg-gray-500 rounded flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">{game.rating.toFixed(1)}</span>
+                      </div>
+                      </div>
                       className="text-lg font-semibold text-white hover:text-green-400 transition-colors"
                     >
                       {game?.title}
