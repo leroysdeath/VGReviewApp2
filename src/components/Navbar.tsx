@@ -51,6 +51,13 @@ export const Navbar: React.FC = () => {
               >
                 <Smartphone className="h-5 w-5 text-white" />
               </Link>
+              <Link
+                to="/mobile-website"
+                className="p-2 bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                title="Complete Mobile Website"
+              >
+                <Smartphone className="h-5 w-5 text-white" />
+              </Link>
             </div>
           </div>
 
