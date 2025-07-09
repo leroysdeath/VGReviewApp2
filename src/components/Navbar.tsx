@@ -58,6 +58,13 @@ export const Navbar: React.FC = () => {
               >
                 <Smartphone className="h-5 w-5 text-white" />
               </Link>
+              <Link
+                to="/mobile-dummy-game"
+                className="p-2 bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                title="Mobile Dummy Game Page"
+              >
+                <Smartphone className="h-5 w-5 text-white" />
+              </Link>
             </div>
           </div>
 
