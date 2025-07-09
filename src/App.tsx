@@ -10,12 +10,8 @@ import { UserSearchPage } from './pages/UserSearchPage';
 import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ProfilePage } from './pages/ProfilePage';
-import { DummyGamePage } from './pages/DummyGamePage';
-import { DummyUserPage } from './pages/DummyUserPage';
-import { MobilePreviewPage } from './pages/MobilePreviewPage';
-import { MobileWebsitePage } from './pages/MobileWebsitePage';
-import { MobileDummyGamePreview } from './pages/MobileDummyGamePreview';
-import { MobileUserPreview } from './pages/MobileUserPreview';
+import { ResponsiveDummyGamePage } from './pages/ResponsiveDummyGamePage';
+import { ResponsiveDummyUserPage } from './pages/ResponsiveDummyUserPage';
 
 function App() {
   return (
@@ -32,8 +28,8 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/review/:gameId?" element={<ReviewFormPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/dummy-game" element={<DummyGamePage />} />
-          <Route path="/dummy-user" element={<DummyUserPage />} />
+          <Route path="/dummy-game" element={<ResponsiveDummyGamePage />} />
+          <Route path="/dummy-user" element={<ResponsiveDummyUserPage />} />
         </Routes>
       </div>
     </Router>

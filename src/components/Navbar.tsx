@@ -45,6 +45,20 @@ export const Navbar: React.FC = () => {
                 <User className="h-5 w-5 text-white" />
               </Link>
               <Link
+                to="/dummy-game"
+                className="p-2 bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                title="Dummy Test Game"
+              >
+                <Gamepad2 className="h-5 w-5 text-white" />
+              </Link>
+              <Link
+                to="/dummy-user"
+                className="p-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                title="Dummy Test User"
+              >
+                <User className="h-5 w-5 text-white" />
+              </Link>
+              <Link
                 to="/mobile-preview"
                 className="p-2 bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors"
                 title="iPhone 16 Mobile Preview"
