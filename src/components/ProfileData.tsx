@@ -51,7 +51,9 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
     return (
       <div>
         <h2 className="text-xl font-semibold text-white mb-6">Top 5 Highest Rated Games</h2>
-        <div className="flex gap-6 justify-center">
+        
+        {/* Desktop Version */}
+        <div className="hidden md:flex gap-6 justify-center">
           {top5Games.map((game, index) => (
             <Link
               key={game.id}
@@ -64,7 +66,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                   alt={game.title}
                   className="w-48 h-64 object-cover rounded-lg"
                 />
-                {/* Rating at the bottom of cover art */}
+                {/* Rating at the bottom of cover art - full width */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-2 py-1">
                   <div className="text-center">
                     <span className="text-white text-sm font-bold">{game.rating.toFixed(1)}</span>
@@ -83,6 +85,41 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
             </Link>
           ))}
         </div>
+
+        {/* Mobile Version */}
+        <div className="md:hidden space-y-4">
+          {top5Games.map((game, index) => (
+            <Link
+              key={game.id}
+              to={`/game/${game.id}`}
+              className="group flex items-center gap-4 p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              <div className="relative flex-shrink-0">
+                <img
+                  src={game.coverImage}
+                  alt={game.title}
+                  className="w-16 h-20 object-cover rounded"
+                />
+                {/* Rating overlay for mobile */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
+                  <div className="text-center">
+                    <span className="text-white text-xs font-bold">{game.rating.toFixed(1)}</span>
+                  </div>
+                </div>
+                {/* Rank number for mobile */}
+                <div className="absolute top-1 left-1 bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                  {index + 1}
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-white font-medium group-hover:text-purple-400 transition-colors">
+                  {game.title}
+                </h3>
+                <p className="text-gray-400 text-sm">{game.genre}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     );
   }
@@ -97,7 +134,9 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
     return (
       <div>
         <h2 className="text-xl font-semibold text-white mb-6">Top 50 Highest Rated Games</h2>
-        <div className="grid grid-cols-10 gap-4">
+        
+        {/* Desktop Version - 10 columns */}
+        <div className="hidden lg:grid lg:grid-cols-10 gap-4">
           {top50Games.map((game, index) => (
             <Link
               key={game.id}
@@ -110,7 +149,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                   alt={game.title}
                   className="w-full aspect-[3/4] object-cover rounded"
                 />
-                {/* Rating at the bottom of cover art */}
+                {/* Rating at the bottom of cover art - full width */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
                   <div className="text-center">
                     <span className="text-white text-xs font-bold">{game.rating.toFixed(1)}</span>
@@ -129,6 +168,76 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
             </Link>
           ))}
         </div>
+
+        {/* Tablet Version - 6 columns */}
+        <div className="hidden md:grid lg:hidden md:grid-cols-6 gap-3">
+          {top50Games.map((game, index) => (
+            <Link
+              key={game.id}
+              to={`/game/${game.id}`}
+              className="group relative hover:scale-105 transition-transform"
+            >
+              <div className="relative">
+                <img
+                  src={game.coverImage}
+                  alt={game.title}
+                  className="w-full aspect-[3/4] object-cover rounded"
+                />
+                {/* Rating at the bottom of cover art - full width */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
+                  <div className="text-center">
+                    <span className="text-white text-xs font-bold">{game.rating.toFixed(1)}</span>
+                  </div>
+                </div>
+                {/* Rank number */}
+                <div className="absolute top-1 left-1 bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                  {index + 1}
+                </div>
+              </div>
+              <div className="mt-1">
+                <h3 className="text-white text-xs font-medium group-hover:text-purple-400 transition-colors line-clamp-2">
+                  {game.title}
+                </h3>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Mobile Version - List format */}
+        <div className="md:hidden space-y-3">
+          {top50Games.map((game, index) => (
+            <Link
+              key={game.id}
+              to={`/game/${game.id}`}
+              className="group flex items-center gap-3 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              <div className="relative flex-shrink-0">
+                <img
+                  src={game.coverImage}
+                  alt={game.title}
+                  className="w-12 h-16 object-cover rounded"
+                />
+                {/* Rating overlay for mobile */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
+                  <div className="text-center">
+                    <span className="text-white text-xs font-bold">{game.rating.toFixed(1)}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                    {index + 1}
+                  </div>
+                  <h3 className="text-white font-medium text-sm group-hover:text-purple-400 transition-colors">
+                    {game.title}
+                  </h3>
+                </div>
+                <p className="text-gray-400 text-xs">{game.genre}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     );
   }
@@ -137,12 +246,12 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
   if (activeTab === 'reviews') {
     return (
       <div>
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
           <h2 className="text-xl font-semibold text-white">Reviews ({sortedReviews.length})</h2>
           <select
             value={reviewFilter}
             onChange={(e) => onReviewFilterChange(e.target.value)}
-            className="px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-green-500"
+            className="px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-green-500 w-full sm:w-auto"
           >
             <option value="recent">Most Recent</option>
             <option value="highest">Highest Rated</option>
@@ -150,20 +259,20 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
             <option value="oldest">Oldest</option>
           </select>
         </div>
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {sortedReviews.map((review) => {
             const game = allGames.find(g => g.id === review.gameId);
             return (
-              <div key={review.id} className="flex gap-4 p-6 bg-gray-800 rounded-lg">
-                <Link to={`/game/${game?.id}`} className="flex-shrink-0">
+              <div key={review.id} className="flex flex-col sm:flex-row gap-4 p-4 sm:p-6 bg-gray-800 rounded-lg">
+                <Link to={`/game/${game?.id}`} className="flex-shrink-0 self-start">
                   <img
                     src={game?.coverImage}
                     alt={game?.title}
-                    className="w-20 h-28 object-cover rounded"
+                    className="w-16 h-20 sm:w-20 sm:h-28 object-cover rounded mx-auto sm:mx-0"
                   />
                 </Link>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                     <Link
                       to={`/game/${game?.id}`}
                       className="text-lg font-semibold text-white hover:text-green-400 transition-colors"
@@ -171,11 +280,11 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                       {game?.title}
                     </Link>
                   </div>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                     <StarRating rating={review.rating} />
                     <span className="text-sm text-gray-400">{review.date}</span>
                   </div>
-                  <p className="text-gray-300 leading-relaxed">{review.text}</p>
+                  <p className="text-gray-300 leading-relaxed text-sm sm:text-base">{review.text}</p>
                 </div>
               </div>
             );
