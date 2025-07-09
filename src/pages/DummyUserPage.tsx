@@ -61,7 +61,7 @@ export const DummyUserPage: React.FC = () => {
       {/* Profile Header */}
       <div className="bg-gray-800 border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-start gap-6">
+          <div className="flex items-start justify-between gap-6">
             {/* Profile Image */}
             <div className="relative flex-shrink-0">
               <img
@@ -90,42 +90,32 @@ export const DummyUserPage: React.FC = () => {
                 <span className="mx-2">🔗</span>
                 <span>dummytestuser.card.co</span>
               </div>
+            </div>
 
-              {/* Stats */}
-              <div className="flex items-center gap-8">
+            {/* Stats Section - Moved to the right */}
+            <div className="flex-shrink-0 flex flex-col gap-4">
+              {/* Main Stats */}
+              <div className="flex items-center gap-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{stats.films.toLocaleString()}</div>
+                  <div className="text-xl font-bold text-white">{stats.films.toLocaleString()}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">GAMES</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{stats.thisYear}</div>
+                  <div className="text-xl font-bold text-white">{stats.thisYear}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{stats.lists}</div>
+                  <div className="text-xl font-bold text-white">{stats.lists}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{stats.following}</div>
+                  <div className="text-xl font-bold text-white">{stats.following}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWING</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{stats.followers.toLocaleString()}</div>
+                  <div className="text-xl font-bold text-white">{stats.followers.toLocaleString()}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
                 </div>
-              </div>
-            </div>
-
-            {/* Year Stats Widget */}
-            <div className="flex-shrink-0">
-              <div className="bg-gray-700 rounded-lg p-4 text-center min-w-[120px]">
-                <div className="text-sm text-gray-400 mb-1">STATS FOR</div>
-                <div className="text-xl font-bold text-white mb-2">{currentYear}</div>
-                <button className="text-gray-400 hover:text-white">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
               </div>
             </div>
           </div>
