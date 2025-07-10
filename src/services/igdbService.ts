@@ -1,4 +1,4 @@
-// Enhanced IGDB API service using Netlify functions
+// Enhanced IGDB API service using Netlify functions with comprehensive error handling
 export interface IGDBGame {
   id: number;
   name: string;
@@ -43,12 +43,15 @@ interface NetlifyFunctionResponse {
   total: number;
   searchTerm: string;
   limit: number;
+  timestamp: string;
 }
 
 interface ErrorResponse {
   error: string;
   message: string;
   status?: number;
+  timestamp?: string;
+  details?: any;
 }
 
 class IGDBService {
@@ -123,20 +126,6 @@ class IGDBService {
   }
 
   /**
-   * Extract platform names from platforms array
-   */
-  private getPlatformNames(platforms?: Array<{ name: string }>): string[] {
-    return platforms?.map(p => p.name) || [];
-  }
-
-  /**
-   * Extract genre names from genres array
-   */
-  private getGenreNames(genres?: Array<{ name: string }>): string[] {
-    return genres?.map(g => g.name) || [];
-  }
-
-  /**
    * Transform Netlify function response to Game format
    */
   private transformNetlifyResponseToGame(gameData: NetlifyFunctionResponse['games'][0]): Game {
@@ -158,6 +147,66 @@ class IGDBService {
   }
 
   /**
+   * Parse response text safely with detailed logging
+   */
+  private async parseResponseSafely(response: Response): Promise<any> {
+    const responseUrl = response.url;
+    const responseStatus = response.status;
+    const responseStatusText = response.statusText;
+    
+    console.log('📄 Parsing response:', {
+      url: responseUrl,
+      status: responseStatus,
+      statusText: responseStatusText,
+      contentType: response.headers.get('content-type'),
+      contentLength: response.headers.get('content-length')
+    });
+
+    let responseText: string;
+    
+    try {
+      responseText = await response.text();
+      console.log('📝 Raw response text:', {
+        length: responseText.length,
+        preview: responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''),
+        isEmpty: responseText.trim().length === 0
+      });
+    } catch (textError) {
+      console.error('❌ Failed to read response text:', textError);
+      throw new Error('Failed to read response from server');
+    }
+
+    // Handle empty responses
+    if (!responseText || responseText.trim().length === 0) {
+      console.warn('⚠️ Received empty response');
+      return { games: [], total: 0, searchTerm: '', limit: 0 };
+    }
+
+    // Try to parse JSON
+    try {
+      const parsedData = JSON.parse(responseText);
+      console.log('✅ Successfully parsed JSON:', {
+        type: typeof parsedData,
+        hasGames: Array.isArray(parsedData?.games),
+        gamesCount: parsedData?.games?.length || 0
+      });
+      return parsedData;
+    } catch (jsonError) {
+      console.error('❌ JSON parse error:', {
+        error: jsonError.message,
+        responseText: responseText.substring(0, 500)
+      });
+      
+      // If it looks like HTML (404 page), provide specific error
+      if (responseText.includes('<html') || responseText.includes('<!DOCTYPE')) {
+        throw new Error('Netlify function not found. The function may not be deployed or the URL is incorrect.');
+      }
+      
+      throw new Error(`Invalid JSON response from server: ${jsonError.message}`);
+    }
+  }
+
+  /**
    * Make request to Netlify function with comprehensive error handling
    */
   private async makeNetlifyRequest(searchTerm: string, limit: number = 20): Promise<NetlifyFunctionResponse> {
@@ -176,9 +225,11 @@ class IGDBService {
       timestamp: new Date().toISOString()
     });
 
+    let response: Response;
+    const requestStart = Date.now();
+
     try {
-      const requestStart = Date.now();
-      const response = await fetch(this.NETLIFY_FUNCTION_URL, {
+      response = await fetch(this.NETLIFY_FUNCTION_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -188,72 +239,115 @@ class IGDBService {
           limit
         })
       });
-
+    } catch (fetchError) {
       const requestDuration = Date.now() - requestStart;
-      console.log('📡 IGDB Service: Netlify function response:', {
+      console.error('❌ Network fetch failed:', {
+        error: fetchError.message,
+        duration: `${requestDuration}ms`,
+        functionUrl: this.NETLIFY_FUNCTION_URL
+      });
+      
+      if (fetchError instanceof TypeError) {
+        throw new Error('Network connection failed. Please check your internet connection and try again.');
+      }
+      
+      throw new Error(`Request failed: ${fetchError.message}`);
+    }
+
+    const requestDuration = Date.now() - requestStart;
+    console.log('📡 IGDB Service: Received response:', {
+      status: response.status,
+      statusText: response.statusText,
+      duration: `${requestDuration}ms`,
+      ok: response.ok,
+      headers: {
+        'content-type': response.headers.get('content-type'),
+        'content-length': response.headers.get('content-length')
+      }
+    });
+
+    // Check response.ok before parsing
+    if (!response.ok) {
+      console.error('❌ HTTP Error Response:', {
         status: response.status,
         statusText: response.statusText,
-        duration: `${requestDuration}ms`,
-        headers: {
-          'content-type': response.headers.get('content-type'),
-          'content-length': response.headers.get('content-length')
-        }
+        url: response.url
       });
 
-      if (!response.ok) {
-        let errorData: ErrorResponse;
+      let errorData: ErrorResponse;
+      
+      try {
+        errorData = await this.parseResponseSafely(response);
+        console.error('❌ Error response data:', errorData);
+      } catch (parseError) {
+        console.error('❌ Failed to parse error response:', parseError.message);
         
-        try {
-          errorData = await response.json();
-          console.error('❌ IGDB Service: Error response data:', errorData);
-        } catch (parseError) {
-          console.error('❌ IGDB Service: Failed to parse error response:', parseError);
-          throw new Error(`Request failed with status ${response.status}`);
-        }
-
-        console.error('❌ IGDB Service: Netlify function error:', errorData);
-
-        // Handle specific error types with user-friendly messages
+        // Handle specific HTTP status codes with user-friendly messages
         switch (response.status) {
-          case 401:
-            throw new Error('Authentication failed. Please check API credentials.');
-          case 429:
-            throw new Error('Too many requests. Please wait a moment and try again.');
-          case 403:
-            throw new Error('Access denied. Please check API permissions.');
+          case 404:
+            throw new Error('Netlify function not found. Please ensure the function is deployed and the URL is correct.');
           case 500:
-            throw new Error('Server configuration error. Please contact support.');
+            throw new Error('Server error occurred. Please try again later.');
+          case 502:
+            throw new Error('Bad gateway error. The Netlify function may be misconfigured.');
           case 503:
-            throw new Error('Game database is temporarily unavailable. Please try again later.');
+            throw new Error('Service temporarily unavailable. Please try again in a few moments.');
           default:
-            throw new Error(errorData.message || `Request failed: ${errorData.error}`);
+            throw new Error(`Request failed with status ${response.status}: ${response.statusText}`);
         }
       }
 
-      const data: NetlifyFunctionResponse = await response.json();
-      console.log('✅ IGDB Service: Successfully received response:', {
-        gamesCount: data.games.length,
-        total: data.total,
-        searchTerm: data.searchTerm,
-        limit: data.limit
-      });
-
-      this.setCache(cacheKey, data);
-      return data;
-
-    } catch (error) {
-      console.error('🚨 IGDB Service: Network error in request:', error);
-      
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Network connection failed. Please check your internet connection.');
+      // Handle specific error types with user-friendly messages
+      switch (response.status) {
+        case 401:
+          throw new Error('Authentication failed. Please check IGDB API credentials.');
+        case 429:
+          throw new Error('Too many requests. Please wait a moment and try again.');
+        case 403:
+          throw new Error('Access denied. Please check API permissions.');
+        case 404:
+          throw new Error('Netlify function not found. Please ensure the IGDB search function is deployed.');
+        case 500:
+          throw new Error('Server configuration error. Please contact support.');
+        case 502:
+          throw new Error('Bad gateway. The Netlify function may be misconfigured.');
+        case 503:
+          throw new Error('Game database is temporarily unavailable. Please try again later.');
+        default:
+          throw new Error(errorData.message || `Request failed: ${errorData.error || 'Unknown error'}`);
       }
-      
-      if (error instanceof Error) {
-        throw error;
-      }
-      
-      throw new Error('An unexpected error occurred while searching for games.');
     }
+
+    // Parse successful response
+    let data: NetlifyFunctionResponse;
+    
+    try {
+      data = await this.parseResponseSafely(response);
+    } catch (parseError) {
+      console.error('❌ Failed to parse successful response:', parseError.message);
+      throw parseError;
+    }
+
+    // Validate response structure
+    if (!data || typeof data !== 'object') {
+      console.error('❌ Invalid response structure:', typeof data);
+      throw new Error('Received invalid response structure from server');
+    }
+
+    if (!Array.isArray(data.games)) {
+      console.warn('⚠️ Response missing games array, using empty array');
+      data.games = [];
+    }
+
+    console.log('✅ IGDB Service: Successfully received response:', {
+      gamesCount: data.games.length,
+      total: data.total,
+      searchTerm: data.searchTerm,
+      limit: data.limit
+    });
+
+    this.setCache(cacheKey, data);
+    return data;
   }
 
   /**
@@ -274,6 +368,13 @@ class IGDBService {
 
     try {
       const response = await this.makeNetlifyRequest(trimmedQuery, limit);
+      
+      // Handle empty or invalid response
+      if (!response || !Array.isArray(response.games)) {
+        console.warn('⚠️ Invalid or empty response, returning empty array');
+        return [];
+      }
+
       const games = response.games.map(game => this.transformNetlifyResponseToGame(game));
       
       console.log('🎯 IGDB Service: Search completed:', {
@@ -285,15 +386,20 @@ class IGDBService {
       
       return games;
     } catch (error) {
-      console.error('❌ IGDB Service: Search games failed:', error);
+      console.error('❌ IGDB Service: Search games failed:', {
+        query: trimmedQuery,
+        error: error.message,
+        stack: error.stack
+      });
       
       // Return fallback data for development/demo purposes
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.log('🔄 IGDB Service: Returning fallback data for development');
         return this.getFallbackGames(trimmedQuery, limit);
       }
       
-      throw error;
+      // Re-throw the error with context
+      throw new Error(`Failed to search for "${trimmedQuery}": ${error.message}`);
     }
   }
 
@@ -312,7 +418,7 @@ class IGDBService {
     } catch (error) {
       console.error('❌ IGDB Service: Get popular games failed:', error);
       
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         return this.getFallbackGames('popular', limit);
       }
       
@@ -332,7 +438,7 @@ class IGDBService {
     } catch (error) {
       console.error('❌ IGDB Service: Get recent games failed:', error);
       
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         return this.getFallbackGames('recent', limit);
       }
       
@@ -397,10 +503,46 @@ class IGDBService {
         description: 'America, 1899. Arthur Morgan and the Van der Linde gang are outlaws on the run.',
         developer: 'Rockstar Games',
         publisher: 'Rockstar Games'
+      },
+      {
+        id: '4',
+        title: 'The Legend of Zelda: Breath of the Wild',
+        coverImage: 'https://images.pexels.com/photos/3945654/pexels-photo-3945654.jpeg?auto=compress&cs=tinysrgb&w=400',
+        releaseDate: '2017-03-03',
+        genre: 'Action-Adventure',
+        rating: 9.7,
+        description: 'Step into a world of discovery, exploration, and adventure.',
+        developer: 'Nintendo EPD',
+        publisher: 'Nintendo'
+      },
+      {
+        id: '5',
+        title: 'God of War',
+        coverImage: 'https://images.pexels.com/photos/3945670/pexels-photo-3945670.jpeg?auto=compress&cs=tinysrgb&w=400',
+        releaseDate: '2018-04-20',
+        genre: 'Action',
+        rating: 9.5,
+        description: 'His vengeance against the Gods of Olympus years behind him.',
+        developer: 'Santa Monica Studio',
+        publisher: 'Sony Interactive Entertainment'
       }
     ];
 
     console.log('🔄 IGDB Service: Using fallback games for query:', query);
+    
+    // Filter games based on query if provided
+    if (query && query !== 'popular' && query !== 'recent') {
+      const filtered = fallbackGames.filter(game => 
+        game.title.toLowerCase().includes(query.toLowerCase()) ||
+        game.genre.toLowerCase().includes(query.toLowerCase()) ||
+        game.developer.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      if (filtered.length > 0) {
+        return filtered.slice(0, limit);
+      }
+    }
+    
     return fallbackGames.slice(0, limit);
   }
 
@@ -420,6 +562,51 @@ class IGDBService {
       size: this.cache.size,
       keys: Array.from(this.cache.keys())
     };
+  }
+
+  /**
+   * Test the Netlify function connection
+   */
+  async testConnection(): Promise<{ success: boolean; message: string; details?: any }> {
+    console.log('🔧 Testing Netlify function connection...');
+    
+    try {
+      const response = await fetch(this.NETLIFY_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          searchTerm: 'test',
+          limit: 1
+        })
+      });
+
+      if (response.ok) {
+        const data = await this.parseResponseSafely(response);
+        return {
+          success: true,
+          message: 'Connection successful',
+          details: {
+            status: response.status,
+            gamesFound: data.games?.length || 0
+          }
+        };
+      } else {
+        const errorData = await this.parseResponseSafely(response);
+        return {
+          success: false,
+          message: `Connection failed: ${response.status} ${response.statusText}`,
+          details: errorData
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: `Connection test failed: ${error.message}`,
+        details: { error: error.message }
+      };
+    }
   }
 }
 
