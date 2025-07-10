@@ -276,7 +276,6 @@ class IGDBService {
         error: fetchError.message,
         duration: `${requestDuration}ms`,
         functionUrl: this.NETLIFY_FUNCTION_URL
-        functionUrl: this.NETLIFY_FUNCTION_URL,
       });
       
       if (fetchError instanceof TypeError) {
