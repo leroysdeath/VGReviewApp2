@@ -168,6 +168,36 @@ If you see an environment configuration error, make sure all required variables 
 
 ## 🚀 Deployment
 
+### Netlify Deployment (Recommended)
+
+The application includes Netlify Functions for IGDB API integration, providing better performance and reliability.
+
+1. **Connect Repository to Netlify**
+   - Go to [Netlify Dashboard](https://app.netlify.com/)
+   - Click "New site from Git"
+   - Connect your repository
+
+2. **Configure Build Settings**
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+   - Functions directory: `netlify/functions`
+
+3. **Set Environment Variables in Netlify**
+   - Go to Site settings → Environment variables
+   - Add all required variables:
+     ```
+     VITE_SUPABASE_URL=your_supabase_url
+     VITE_SUPABASE_ANON_KEY=your_supabase_key
+     VITE_IGDB_CLIENT_ID=your_igdb_client_id
+     VITE_IGDB_ACCESS_TOKEN=your_igdb_access_token
+     VITE_APP_ENV=production
+     VITE_APP_URL=https://your-site.netlify.app
+     ```
+
+4. **Deploy**
+   - Netlify will automatically build and deploy your site
+   - Functions will be available at `/.netlify/functions/`
+
 ### Vercel Deployment
 
 1. **Connect Repository**
@@ -196,6 +226,27 @@ If you see an environment configuration error, make sure all required variables 
 
 3. **Deploy**
    - Connect repository and deploy
+
+## 🔧 API Integration
+
+The application supports multiple IGDB API integration methods:
+
+### 1. Netlify Functions (Recommended for Netlify deployments)
+- **Endpoint**: `/.netlify/functions/igdb-search`
+- **Benefits**: Better performance, automatic scaling, built-in caching
+- **Setup**: Automatically configured when deploying to Netlify
+
+### 2. Supabase Edge Functions
+- **Endpoint**: `${SUPABASE_URL}/functions/v1/igdb-proxy`
+- **Benefits**: Integrated with Supabase ecosystem
+- **Setup**: Requires Supabase project with edge functions enabled
+
+### 3. Mock Data Fallback
+- **Usage**: When API services are unavailable
+- **Benefits**: Ensures app functionality during development
+- **Data**: Curated set of popular games for testing
+
+The application automatically detects and uses the best available option.
 
 ## 📱 PWA Features
 

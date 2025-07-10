@@ -1,5 +1,6 @@
 // IGDB API service using fallback to mock data when API is not available
 import { getEnvVar } from '../utils/envValidation';
+import { netlifyIgdbService } from './netlifyIgdbApi';
 
 // Get validated environment variables
 const SUPABASE_URL = getEnvVar('VITE_SUPABASE_URL');
@@ -115,7 +116,35 @@ const mockGamesData: Game[] = [
 ];
 
 class IGDBService {
+  private useNetlifyFunctions = false;
+
+  constructor() {
+    this.initializeService();
+  }
+
+  private async initializeService() {
+    // Check if Netlify functions are available
+    try {
+      this.useNetlifyFunctions = await netlifyIgdbService.isAvailable();
+      if (this.useNetlifyFunctions) {
+        console.log('Using Netlify functions for IGDB API');
+      }
+    } catch (error) {
+      console.log('Netlify functions not available, using Supabase edge functions');
+    }
+  }
+
   private async makeRequest(endpoint: string, body: string): Promise<any> {
+    // If Netlify functions are available, use them first
+    if (this.useNetlifyFunctions) {
+      try {
+        return await this.makeNetlifyRequest(endpoint, body);
+      } catch (error) {
+        console.warn('Netlify function failed, falling back to Supabase:', error);
+        this.useNetlifyFunctions = false;
+      }
+    }
+
     // Check if Supabase URL is available
     if (!SUPABASE_URL) {
       console.warn('Supabase URL not configured, using mock data');
@@ -141,6 +170,30 @@ class IGDBService {
       console.warn('IGDB API request failed, falling back to mock data:', error);
       return this.getMockData(endpoint, body);
     }
+  }
+
+  private async makeNetlifyRequest(endpoint: string, body: string): Promise<any> {
+    // Convert IGDB query to Netlify function parameters
+    if (endpoint === 'games') {
+      if (body.includes('search')) {
+        const searchMatch = body.match(/search "([^"]+)"/);
+        const limitMatch = body.match(/limit (\d+)/);
+        
+        if (searchMatch) {
+          return await netlifyIgdbService.searchGames(
+            searchMatch[1], 
+            limitMatch ? parseInt(limitMatch[1]) : 20
+          );
+        }
+      } else if (body.includes('rating_count > 100')) {
+        const limitMatch = body.match(/limit (\d+)/);
+        return await netlifyIgdbService.getPopularGames(
+          limitMatch ? parseInt(limitMatch[1]) : 20
+        );
+      }
+    }
+    
+    throw new Error('Unsupported query for Netlify functions');
   }
 
   private getMockData(endpoint: string, body: string): any {
@@ -229,6 +282,16 @@ class IGDBService {
   }
 
   async getGameById(id: string): Promise<Game | null> {
+    // Try Netlify functions first
+    if (this.useNetlifyFunctions) {
+      try {
+        return await netlifyIgdbService.getGameById(id);
+      } catch (error) {
+        console.warn('Netlify function failed for getGameById, falling back');
+        this.useNetlifyFunctions = false;
+      }
+    }
+
     // Try to find in mock data first
     const mockGame = mockGamesData.find(game => game.id === id);
     if (mockGame) {
@@ -260,6 +323,19 @@ class IGDBService {
 
   async getGameByStringId(id: string): Promise<Game | null> {
     return this.getGameById(id);
+  }
+
+  // Method to manually switch to Netlify functions
+  async useNetlifyFunctionsIfAvailable(): Promise<boolean> {
+    this.useNetlifyFunctions = await netlifyIgdbService.isAvailable();
+    return this.useNetlifyFunctions;
+  }
+
+  // Method to check current service being used
+  getCurrentService(): string {
+    if (this.useNetlifyFunctions) return 'Netlify Functions';
+    if (SUPABASE_URL) return 'Supabase Edge Functions';
+    return 'Mock Data';
   }
 
   async getRecentGames(limit: number = 20): Promise<Game[]> {
