@@ -14,7 +14,6 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.50.3",
     "@types/react-router-dom": "^5.3.3",
-    "caniuse-lite": "^1.0.30001727",
     "dotenv": "^17.1.0",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
