@@ -74,18 +74,18 @@ class IGDBService {
   private getFromCache(key: string): any | null {
     const cached = this.cache.get(key);
     if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      console.log('🎯 Cache hit for:', key);
+      console.log('🎯 IGDB Cache hit for:', key);
       return cached.data;
     }
     if (cached) {
-      console.log('⏰ Cache expired for:', key);
+      console.log('⏰ IGDB Cache expired for:', key);
       this.cache.delete(key);
     }
     return null;
   }
 
   private setCache(key: string, data: any): void {
-    console.log('💾 Caching data for:', key);
+    console.log('💾 IGDB Caching data for:', key);
     this.cache.set(key, { data, timestamp: Date.now() });
   }
 
@@ -169,9 +169,15 @@ class IGDBService {
 
     await this.rateLimit();
 
-    console.log('🔍 Making IGDB search request:', { searchTerm, limit });
+    console.log('🔍 IGDB Service: Making search request:', { 
+      searchTerm, 
+      limit,
+      functionUrl: this.NETLIFY_FUNCTION_URL,
+      timestamp: new Date().toISOString()
+    });
 
     try {
+      const requestStart = Date.now();
       const response = await fetch(this.NETLIFY_FUNCTION_URL, {
         method: 'POST',
         headers: {
@@ -183,19 +189,29 @@ class IGDBService {
         })
       });
 
-      console.log('📡 Netlify function response status:', response.status);
+      const requestDuration = Date.now() - requestStart;
+      console.log('📡 IGDB Service: Netlify function response:', {
+        status: response.status,
+        statusText: response.statusText,
+        duration: `${requestDuration}ms`,
+        headers: {
+          'content-type': response.headers.get('content-type'),
+          'content-length': response.headers.get('content-length')
+        }
+      });
 
       if (!response.ok) {
         let errorData: ErrorResponse;
         
         try {
           errorData = await response.json();
+          console.error('❌ IGDB Service: Error response data:', errorData);
         } catch (parseError) {
-          console.error('Failed to parse error response:', parseError);
+          console.error('❌ IGDB Service: Failed to parse error response:', parseError);
           throw new Error(`Request failed with status ${response.status}`);
         }
 
-        console.error('❌ Netlify function error:', errorData);
+        console.error('❌ IGDB Service: Netlify function error:', errorData);
 
         // Handle specific error types with user-friendly messages
         switch (response.status) {
@@ -215,13 +231,18 @@ class IGDBService {
       }
 
       const data: NetlifyFunctionResponse = await response.json();
-      console.log('✅ Successfully received', data.games.length, 'games');
+      console.log('✅ IGDB Service: Successfully received response:', {
+        gamesCount: data.games.length,
+        total: data.total,
+        searchTerm: data.searchTerm,
+        limit: data.limit
+      });
 
       this.setCache(cacheKey, data);
       return data;
 
     } catch (error) {
-      console.error('🚨 Network error in IGDB request:', error);
+      console.error('🚨 IGDB Service: Network error in request:', error);
       
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('Network connection failed. Please check your internet connection.');
@@ -245,25 +266,30 @@ class IGDBService {
     }
 
     const trimmedQuery = query.trim();
-    console.log('🎮 Searching games:', { query: trimmedQuery, limit });
+    console.log('🎮 IGDB Service: Searching games:', { 
+      query: trimmedQuery, 
+      limit,
+      cacheSize: this.cache.size
+    });
 
     try {
       const response = await this.makeNetlifyRequest(trimmedQuery, limit);
       const games = response.games.map(game => this.transformNetlifyResponseToGame(game));
       
-      console.log('🎯 Search completed:', {
+      console.log('🎯 IGDB Service: Search completed:', {
         query: trimmedQuery,
         found: games.length,
-        total: response.total
+        total: response.total,
+        cached: this.getFromCache(this.getCacheKey(trimmedQuery, limit)) !== null
       });
       
       return games;
     } catch (error) {
-      console.error('❌ Search games failed:', error);
+      console.error('❌ IGDB Service: Search games failed:', error);
       
       // Return fallback data for development/demo purposes
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔄 Returning fallback data for development');
+        console.log('🔄 IGDB Service: Returning fallback data for development');
         return this.getFallbackGames(trimmedQuery, limit);
       }
       
@@ -275,7 +301,7 @@ class IGDBService {
    * Get popular games (uses a generic search for popular titles)
    */
   async getPopularGames(limit = 20): Promise<Game[]> {
-    console.log('🔥 Getting popular games:', { limit });
+    console.log('🔥 IGDB Service: Getting popular games:', { limit });
     
     try {
       // Search for popular game titles to get diverse results
@@ -284,7 +310,7 @@ class IGDBService {
       
       return await this.searchGames(randomTerm, limit);
     } catch (error) {
-      console.error('❌ Get popular games failed:', error);
+      console.error('❌ IGDB Service: Get popular games failed:', error);
       
       if (process.env.NODE_ENV === 'development') {
         return this.getFallbackGames('popular', limit);
@@ -298,13 +324,13 @@ class IGDBService {
    * Get recent games (uses current year search)
    */
   async getRecentGames(limit = 20): Promise<Game[]> {
-    console.log('📅 Getting recent games:', { limit });
+    console.log('📅 IGDB Service: Getting recent games:', { limit });
     
     try {
       const currentYear = new Date().getFullYear();
       return await this.searchGames(`${currentYear}`, limit);
     } catch (error) {
-      console.error('❌ Get recent games failed:', error);
+      console.error('❌ IGDB Service: Get recent games failed:', error);
       
       if (process.env.NODE_ENV === 'development') {
         return this.getFallbackGames('recent', limit);
@@ -318,14 +344,14 @@ class IGDBService {
    * Get game by ID (searches by name since we don't have direct ID lookup)
    */
   async getGameById(id: string): Promise<Game | null> {
-    console.log('🔍 Getting game by ID:', id);
+    console.log('🔍 IGDB Service: Getting game by ID:', id);
     
     try {
       // Try to search by the ID first, then fallback to cached data
       const games = await this.searchGames(id, 1);
       return games.length > 0 ? games[0] : null;
     } catch (error) {
-      console.error('❌ Get game by ID failed:', error);
+      console.error('❌ IGDB Service: Get game by ID failed:', error);
       return null;
     }
   }
@@ -374,7 +400,7 @@ class IGDBService {
       }
     ];
 
-    console.log('🔄 Using fallback games for query:', query);
+    console.log('🔄 IGDB Service: Using fallback games for query:', query);
     return fallbackGames.slice(0, limit);
   }
 
@@ -382,7 +408,7 @@ class IGDBService {
    * Clear the cache
    */
   clearCache(): void {
-    console.log('🗑️ Clearing IGDB cache');
+    console.log('🗑️ IGDB Service: Clearing cache');
     this.cache.clear();
   }
 

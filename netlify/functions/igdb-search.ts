@@ -129,10 +129,15 @@ export const handler: Handler = async (
   event: HandlerEvent,
   context: HandlerContext
 ) => {
-  console.log('IGDB Search function called:', {
+  console.log('🚀 IGDB Search function called:', {
     method: event.httpMethod,
-    headers: event.headers,
-    body: event.body ? 'present' : 'empty'
+    headers: {
+      'content-type': event.headers['content-type'],
+      'user-agent': event.headers['user-agent'],
+      origin: event.headers.origin
+    },
+    body: event.body ? 'present' : 'empty',
+    timestamp: new Date().toISOString()
   });
 
   // Handle CORS preflight requests
@@ -157,7 +162,7 @@ export const handler: Handler = async (
     // Validate environment variables
     const env = validateEnvironment();
     if (!env) {
-      console.error('Missing or invalid environment variables');
+      console.error('❌ Missing or invalid environment variables');
       return createErrorResponse(
         500,
         'Configuration Error',
@@ -177,7 +182,9 @@ export const handler: Handler = async (
     let requestData: SearchRequest;
     try {
       requestData = JSON.parse(event.body);
+      console.log('📝 Parsed request data:', requestData);
     } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError);
       return createErrorResponse(
         400,
         'Bad Request',
@@ -205,13 +212,16 @@ export const handler: Handler = async (
     const limit = requestData.limit && requestData.limit > 0 ? Math.min(requestData.limit, 50) : 20;
     const query = buildSearchQuery(requestData.searchTerm.trim(), limit);
 
-    console.log('Making IGDB API request:', {
+    console.log('🔍 Making IGDB API request:', {
       searchTerm: requestData.searchTerm,
       limit,
-      query: query.substring(0, 100) + '...'
+      clientId: env.clientId.substring(0, 8) + '...',
+      hasToken: !!env.accessToken,
+      query: query.replace(/\s+/g, ' ').trim()
     });
 
     // Make request to IGDB API
+    const requestStart = Date.now();
     const igdbResponse = await fetch('https://api.igdb.com/v4/games', {
       method: 'POST',
       headers: {
@@ -223,12 +233,21 @@ export const handler: Handler = async (
       body: query,
     });
 
-    console.log('IGDB API response status:', igdbResponse.status);
+    const requestDuration = Date.now() - requestStart;
+    console.log('📡 IGDB API response:', {
+      status: igdbResponse.status,
+      statusText: igdbResponse.statusText,
+      duration: `${requestDuration}ms`,
+      headers: {
+        'content-type': igdbResponse.headers.get('content-type'),
+        'content-length': igdbResponse.headers.get('content-length')
+      }
+    });
 
     // Handle different error status codes
     if (!igdbResponse.ok) {
       const errorText = await igdbResponse.text();
-      console.error(`IGDB API error: ${igdbResponse.status} - ${errorText}`);
+      console.error(`❌ IGDB API error: ${igdbResponse.status} - ${errorText}`);
 
       switch (igdbResponse.status) {
         case 401:
@@ -271,8 +290,17 @@ export const handler: Handler = async (
     let games: IGDBGame[];
     try {
       games = await igdbResponse.json();
+      console.log('✅ Successfully parsed IGDB response:', {
+        gamesCount: games.length,
+        firstGame: games[0] ? {
+          id: games[0].id,
+          name: games[0].name,
+          hasCover: !!games[0].cover,
+          platformsCount: games[0].platforms?.length || 0
+        } : null
+      });
     } catch (parseError) {
-      console.error('Failed to parse IGDB response:', parseError);
+      console.error('❌ Failed to parse IGDB response:', parseError);
       return createErrorResponse(
         502,
         'Invalid Response',
@@ -283,7 +311,7 @@ export const handler: Handler = async (
     // Transform and return results
     const transformedGames = games.map(transformIGDBGame);
     
-    console.log(`Successfully processed ${transformedGames.length} games`);
+    console.log(`🎮 Successfully processed ${transformedGames.length} games for "${requestData.searchTerm}"`);
     
     return createSuccessResponse({
       games: transformedGames,
@@ -293,7 +321,7 @@ export const handler: Handler = async (
     });
 
   } catch (error) {
-    console.error('Unexpected error in IGDB search function:', error);
+    console.error('💥 Unexpected error in IGDB search function:', error);
     
     return createErrorResponse(
       500,

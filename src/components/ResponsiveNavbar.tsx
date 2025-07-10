@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2, Home, Users } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 import { useResponsive } from '../hooks/useResponsive';
 
@@ -172,6 +172,15 @@ export const ResponsiveNavbar: React.FC = () => {
               >
                 <User className="h-5 w-5 text-white" />
               </Link>
+              {import.meta.env.DEV && (
+                <Link
+                  to="/igdb-test"
+                  className="p-2 bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors"
+                  title="IGDB API Test"
+                >
+                  <TestTube className="h-5 w-5 text-white" />
+                </Link>
+              )}
             </div>
           </div>
 
