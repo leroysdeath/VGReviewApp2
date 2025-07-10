@@ -1,4 +1,4 @@
-// Enhanced IGDB API service using Netlify functions with comprehensive error handling
+// Enhanced IGDB API service using Netlify functions with comprehensive debugging and error handling
 export interface IGDBGame {
   id: number;
   name: string;
@@ -59,6 +59,7 @@ class IGDBService {
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
   private readonly RATE_LIMIT_DELAY = 250; // 250ms between requests
   private lastRequestTime = 0;
+  private readonly DEBUG_MODE = import.meta.env.DEV;
   private readonly NETLIFY_FUNCTION_URL = '/.netlify/functions/igdb-search';
 
   private async rateLimit() {
@@ -72,6 +73,7 @@ class IGDBService {
 
   private getCacheKey(searchTerm: string, limit: number): string {
     return `search:${searchTerm}:${limit}`;
+    console.log('🔑 Generated cache key:', key);
   }
 
   private getFromCache(key: string): any | null {
@@ -149,6 +151,15 @@ class IGDBService {
   /**
    * Parse response text safely with detailed logging
    */
+  private logDebugInfo(message: string, data: any) {
+    if (this.DEBUG_MODE) {
+      console.log(`🐛 [DEBUG] ${message}:`, data);
+    }
+  }
+
+  /**
+   * Parse response text safely with detailed logging
+   */
   private async parseResponseSafely(response: Response): Promise<any> {
     const responseUrl = response.url;
     const responseStatus = response.status;
@@ -162,6 +173,8 @@ class IGDBService {
       contentLength: response.headers.get('content-length')
     });
 
+    this.logDebugInfo('Response headers', Object.fromEntries(response.headers.entries()));
+
     let responseText: string;
     
     try {
@@ -171,6 +184,7 @@ class IGDBService {
         preview: responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''),
         isEmpty: responseText.trim().length === 0
       });
+      this.logDebugInfo('Full response text', responseText);
     } catch (textError) {
       console.error('❌ Failed to read response text:', textError);
       throw new Error('Failed to read response from server');
@@ -178,6 +192,7 @@ class IGDBService {
 
     // Handle empty responses
     if (!responseText || responseText.trim().length === 0) {
+      this.logDebugInfo('Empty response detected', { url: responseUrl, status: responseStatus });
       console.warn('⚠️ Received empty response');
       return { games: [], total: 0, searchTerm: '', limit: 0 };
     }
@@ -190,6 +205,7 @@ class IGDBService {
         hasGames: Array.isArray(parsedData?.games),
         gamesCount: parsedData?.games?.length || 0
       });
+      this.logDebugInfo('Parsed JSON data', parsedData);
       return parsedData;
     } catch (jsonError) {
       console.error('❌ JSON parse error:', {
@@ -199,6 +215,7 @@ class IGDBService {
       
       // If it looks like HTML (404 page), provide specific error
       if (responseText.includes('<html') || responseText.includes('<!DOCTYPE')) {
+        this.logDebugInfo('HTML response detected (likely 404)', { responseText: responseText.substring(0, 500) });
         throw new Error('Netlify function not found. The function may not be deployed or the URL is incorrect.');
       }
       
@@ -222,11 +239,25 @@ class IGDBService {
       searchTerm, 
       limit,
       functionUrl: this.NETLIFY_FUNCTION_URL,
+      timestamp: new Date().toISOString(),
+      currentUrl: window.location.href,
+      searchTerm, 
+      limit,
+      functionUrl: this.NETLIFY_FUNCTION_URL,
       timestamp: new Date().toISOString()
     });
 
     let response: Response;
     const requestStart = Date.now();
+
+    // Log the exact request being made
+    const requestPayload = {
+      searchTerm,
+      limit
+    };
+    
+    this.logDebugInfo('Request payload', requestPayload);
+    this.logDebugInfo('Function URL being called', this.NETLIFY_FUNCTION_URL);
 
     try {
       response = await fetch(this.NETLIFY_FUNCTION_URL, {
@@ -235,7 +266,7 @@ class IGDBService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          searchTerm,
+          searchTerm, 
           limit
         })
       });
@@ -245,6 +276,7 @@ class IGDBService {
         error: fetchError.message,
         duration: `${requestDuration}ms`,
         functionUrl: this.NETLIFY_FUNCTION_URL
+        functionUrl: this.NETLIFY_FUNCTION_URL,
       });
       
       if (fetchError instanceof TypeError) {
@@ -266,6 +298,8 @@ class IGDBService {
       }
     });
 
+    this.logDebugInfo('Response object', { url: response.url, type: response.type, redirected: response.redirected });
+
     // Check response.ok before parsing
     if (!response.ok) {
       console.error('❌ HTTP Error Response:', {
@@ -273,6 +307,8 @@ class IGDBService {
         statusText: response.statusText,
         url: response.url
       });
+
+      this.logDebugInfo('Error response details', { status: response.status, statusText: response.statusText });
 
       let errorData: ErrorResponse;
       
@@ -283,6 +319,7 @@ class IGDBService {
         console.error('❌ Failed to parse error response:', parseError.message);
         
         // Handle specific HTTP status codes with user-friendly messages
+        this.logDebugInfo('Failed to parse error response', { parseError: parseError.message, status: response.status });
         switch (response.status) {
           case 404:
             throw new Error('Netlify function not found. Please ensure the function is deployed and the URL is correct.');
@@ -331,6 +368,7 @@ class IGDBService {
     // Validate response structure
     if (!data || typeof data !== 'object') {
       console.error('❌ Invalid response structure:', typeof data);
+      this.logDebugInfo('Invalid response structure', { data, type: typeof data });
       throw new Error('Received invalid response structure from server');
     }
 
@@ -339,6 +377,7 @@ class IGDBService {
       data.games = [];
     }
 
+    this.logDebugInfo('Final processed response', data);
     console.log('✅ IGDB Service: Successfully received response:', {
       gamesCount: data.games.length,
       total: data.total,
@@ -356,6 +395,7 @@ class IGDBService {
   async searchGames(query: string, limit = 20): Promise<Game[]> {
     if (!query || query.trim().length === 0) {
       console.warn('Empty search query provided');
+      this.logDebugInfo('Empty search query', { query, limit });
       return [];
     }
 
@@ -365,6 +405,7 @@ class IGDBService {
       limit,
       cacheSize: this.cache.size
     });
+    this.logDebugInfo('Search initiated', { query: trimmedQuery, limit, cacheSize: this.cache.size });
 
     try {
       const response = await this.makeNetlifyRequest(trimmedQuery, limit);
@@ -372,6 +413,7 @@ class IGDBService {
       // Handle empty or invalid response
       if (!response || !Array.isArray(response.games)) {
         console.warn('⚠️ Invalid or empty response, returning empty array');
+        this.logDebugInfo('Invalid response structure in searchGames', response);
         return [];
       }
 
@@ -383,6 +425,7 @@ class IGDBService {
         total: response.total,
         cached: this.getFromCache(this.getCacheKey(trimmedQuery, limit)) !== null
       });
+      this.logDebugInfo('Search completed successfully', { games: games.length, query: trimmedQuery });
       
       return games;
     } catch (error) {
@@ -391,6 +434,7 @@ class IGDBService {
         error: error.message,
         stack: error.stack
       });
+      this.logDebugInfo('Search failed', { query: trimmedQuery, error: error.message, stack: error.stack });
       
       // Return fallback data for development/demo purposes
       if (import.meta.env.DEV) {
@@ -409,6 +453,7 @@ class IGDBService {
   async getPopularGames(limit = 20): Promise<Game[]> {
     console.log('🔥 IGDB Service: Getting popular games:', { limit });
     
+    this.logDebugInfo('Getting popular games', { limit });
     try {
       // Search for popular game titles to get diverse results
       const popularSearchTerms = ['zelda', 'mario', 'witcher', 'cyberpunk', 'god of war'];
@@ -417,6 +462,7 @@ class IGDBService {
       return await this.searchGames(randomTerm, limit);
     } catch (error) {
       console.error('❌ IGDB Service: Get popular games failed:', error);
+      this.logDebugInfo('Get popular games failed', { error: error.message });
       
       if (import.meta.env.DEV) {
         return this.getFallbackGames('popular', limit);
@@ -432,11 +478,13 @@ class IGDBService {
   async getRecentGames(limit = 20): Promise<Game[]> {
     console.log('📅 IGDB Service: Getting recent games:', { limit });
     
+    this.logDebugInfo('Getting recent games', { limit });
     try {
       const currentYear = new Date().getFullYear();
       return await this.searchGames(`${currentYear}`, limit);
     } catch (error) {
       console.error('❌ IGDB Service: Get recent games failed:', error);
+      this.logDebugInfo('Get recent games failed', { error: error.message });
       
       if (import.meta.env.DEV) {
         return this.getFallbackGames('recent', limit);
@@ -452,11 +500,13 @@ class IGDBService {
   async getGameById(id: string): Promise<Game | null> {
     console.log('🔍 IGDB Service: Getting game by ID:', id);
     
+    this.logDebugInfo('Getting game by ID', { id });
     try {
       // Try to search by the ID first, then fallback to cached data
       const games = await this.searchGames(id, 1);
       return games.length > 0 ? games[0] : null;
     } catch (error) {
+      this.logDebugInfo('Get game by ID failed', { id, error: error.message });
       console.error('❌ IGDB Service: Get game by ID failed:', error);
       return null;
     }
@@ -568,6 +618,7 @@ class IGDBService {
    * Test the Netlify function connection
    */
   async testConnection(): Promise<{ success: boolean; message: string; details?: any }> {
+  async testConnection(): Promise<{ success: boolean; message: string; details?: any }> {
     console.log('🔧 Testing Netlify function connection...');
     
     try {
@@ -582,6 +633,7 @@ class IGDBService {
         })
       });
 
+      this.logDebugInfo('Test connection response', { status: response.status, ok: response.ok });
       if (response.ok) {
         const data = await this.parseResponseSafely(response);
         return {
@@ -592,6 +644,7 @@ class IGDBService {
             gamesFound: data.games?.length || 0
           }
         };
+        };
       } else {
         const errorData = await this.parseResponseSafely(response);
         return {
@@ -601,6 +654,7 @@ class IGDBService {
         };
       }
     } catch (error) {
+      this.logDebugInfo('Test connection failed', { error: error.message });
       return {
         success: false,
         message: `Connection test failed: ${error.message}`,

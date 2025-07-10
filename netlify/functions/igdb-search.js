@@ -1,4 +1,4 @@
-// IGDB Search Netlify Function - Fixed version with CommonJS exports
+// IGDB Search Netlify Function - Enhanced with comprehensive debugging
 // This function handles IGDB API requests with proper error handling and JSON responses
 
 // CORS headers for browser requests
@@ -7,6 +7,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Max-Age': '86400',
+};
+
+// Debug logging helper
+const debugLog = (message, data = null) => {
+  console.log(`🐛 [DEBUG] ${message}`, data || '');
 };
 
 // Helper function to create standardized error responses
@@ -21,6 +26,8 @@ const createErrorResponse = (statusCode, error, message, details = null) => {
   if (details) {
     errorResponse.details = details;
   }
+  
+  debugLog('Creating error response', errorResponse);
 
   console.error(`❌ Error Response [${statusCode}]:`, errorResponse);
 
@@ -37,6 +44,7 @@ const createErrorResponse = (statusCode, error, message, details = null) => {
 // Helper function to create success responses
 const createSuccessResponse = (data) => {
   console.log('✅ Success Response:', {
+  debugLog('Creating success response', { gamesCount: data.games?.length, total: data.total });
     gamesCount: data.games?.length || 0,
     total: data.total || 0,
     searchTerm: data.searchTerm
@@ -55,6 +63,7 @@ const createSuccessResponse = (data) => {
 
 // Validate environment variables
 const validateEnvironment = () => {
+  debugLog('Starting environment validation');
   console.log('🔧 Validating environment variables...');
   
   const clientId = process.env.TWITCH_CLIENT_ID;
@@ -67,6 +76,8 @@ const validateEnvironment = () => {
     tokenLength: accessToken ? accessToken.length : 0
   });
 
+  debugLog('Environment variables check', { hasClientId: !!clientId, hasAccessToken: !!accessToken });
+
   if (!clientId || !accessToken) {
     console.error('❌ Missing environment variables');
     return null;
@@ -78,6 +89,7 @@ const validateEnvironment = () => {
       accessToken === 'your_access_token' || 
       accessToken === 'your_twitch_app_access_token') {
     console.error('❌ Environment variables contain placeholder values');
+    debugLog('Placeholder values detected', { clientId: clientId?.substring(0, 10), accessToken: accessToken?.substring(0, 10) });
     return null;
   }
 
@@ -87,6 +99,7 @@ const validateEnvironment = () => {
 
 // Parse and validate request body
 const parseRequestBody = (body) => {
+  debugLog('Parsing request body', { hasBody: !!body, bodyLength: body?.length });
   if (!body) {
     throw new Error('Request body is required');
   }
@@ -94,6 +107,7 @@ const parseRequestBody = (body) => {
   let requestData;
   try {
     requestData = JSON.parse(body);
+    debugLog('Successfully parsed JSON', requestData);
     console.log('📝 Parsed request data:', {
       searchTerm: requestData.searchTerm,
       limit: requestData.limit,
@@ -101,6 +115,7 @@ const parseRequestBody = (body) => {
     });
   } catch (parseError) {
     console.error('❌ JSON parse error:', parseError.message);
+    debugLog('JSON parse failed', { error: parseError.message, body: body?.substring(0, 200) });
     throw new Error('Invalid JSON in request body');
   }
 
@@ -111,6 +126,7 @@ const parseRequestBody = (body) => {
 
   if (requestData.searchTerm.trim().length === 0) {
     throw new Error('searchTerm cannot be empty');
+    debugLog('Empty search term detected');
   }
 
   return {
@@ -121,6 +137,7 @@ const parseRequestBody = (body) => {
 
 // Build IGDB Apicalypse query
 const buildSearchQuery = (searchTerm, limit) => {
+  debugLog('Building IGDB query', { searchTerm, limit });
   const query = `
     fields name, summary, cover.url, platforms.name, first_release_date, rating, genres.name;
     search "${searchTerm}";
@@ -128,6 +145,7 @@ const buildSearchQuery = (searchTerm, limit) => {
     limit ${limit};
   `.trim();
 
+  debugLog('Generated query', { query, length: query.length });
   console.log('🔍 Built IGDB query:', {
     searchTerm,
     limit,
@@ -139,6 +157,7 @@ const buildSearchQuery = (searchTerm, limit) => {
 
 // Transform IGDB game data to our format
 const transformIGDBGame = (game) => {
+  debugLog('Transforming IGDB game', { id: game.id, name: game.name });
   const transformed = {
     id: game.id.toString(),
     name: game.name,
@@ -154,12 +173,14 @@ const transformIGDBGame = (game) => {
     genres: game.genres?.map(g => g.name) || [],
   };
 
+  debugLog('Transformed game result', transformed);
   return transformed;
 };
 
 // Make request to IGDB API
 const makeIGDBRequest = async (query, clientId, accessToken) => {
   console.log('📡 Making IGDB API request...');
+  debugLog('Starting IGDB API request', { queryLength: query.length, hasClientId: !!clientId, hasAccessToken: !!accessToken });
   
   const requestStart = Date.now();
   
@@ -176,6 +197,7 @@ const makeIGDBRequest = async (query, clientId, accessToken) => {
     });
 
     const requestDuration = Date.now() - requestStart;
+    debugLog('IGDB API request completed', { duration: requestDuration, status: response.status });
     
     console.log('📡 IGDB API response received:', {
       status: response.status,
@@ -186,6 +208,7 @@ const makeIGDBRequest = async (query, clientId, accessToken) => {
     });
 
     if (!response.ok) {
+      debugLog('IGDB API returned error status', { status: response.status, statusText: response.statusText });
       let errorText = '';
       try {
         errorText = await response.text();
@@ -193,6 +216,7 @@ const makeIGDBRequest = async (query, clientId, accessToken) => {
         errorText = 'Unable to read error response';
       }
 
+      debugLog('IGDB API error text', { errorText: errorText?.substring(0, 500) });
       console.error(`❌ IGDB API error: ${response.status} - ${errorText}`);
 
       // Handle specific HTTP status codes
@@ -216,6 +240,7 @@ const makeIGDBRequest = async (query, clientId, accessToken) => {
     // Parse JSON response
     let games;
     try {
+      debugLog('Parsing IGDB JSON response');
       games = await response.json();
       console.log('✅ Successfully parsed IGDB response:', {
         gamesCount: games.length,
@@ -224,6 +249,7 @@ const makeIGDBRequest = async (query, clientId, accessToken) => {
       });
     } catch (parseError) {
       console.error('❌ Failed to parse IGDB JSON response:', parseError.message);
+      debugLog('IGDB JSON parse failed', { error: parseError.message });
       throw new Error('Received invalid response from IGDB API');
     }
 
@@ -231,6 +257,7 @@ const makeIGDBRequest = async (query, clientId, accessToken) => {
     if (!Array.isArray(games)) {
       console.warn('⚠️ IGDB response is not an array:', typeof games);
       return [];
+      debugLog('IGDB response not an array', { type: typeof games, games });
     }
 
     return games;
@@ -243,6 +270,7 @@ const makeIGDBRequest = async (query, clientId, accessToken) => {
 
 // Main handler function using CommonJS exports
 exports.handler = async (event, context) => {
+  debugLog('Function invoked', { method: event.httpMethod, path: event.path });
   console.log('🚀 IGDB Search function invoked:', {
     method: event.httpMethod,
     path: event.path,
@@ -259,6 +287,7 @@ exports.handler = async (event, context) => {
   try {
     // Handle CORS preflight requests
     if (event.httpMethod === 'OPTIONS') {
+      debugLog('Handling CORS preflight');
       console.log('✅ Handling CORS preflight request');
       return {
         statusCode: 200,
@@ -269,6 +298,7 @@ exports.handler = async (event, context) => {
 
     // Only allow POST requests
     if (event.httpMethod !== 'POST') {
+      debugLog('Invalid HTTP method', { method: event.httpMethod });
       return createErrorResponse(
         405,
         'Method Not Allowed',
@@ -279,6 +309,7 @@ exports.handler = async (event, context) => {
 
     // Validate environment variables
     const env = validateEnvironment();
+    debugLog('Environment validation result', { hasEnv: !!env });
     if (!env) {
       return createErrorResponse(
         500,
@@ -294,6 +325,7 @@ exports.handler = async (event, context) => {
     // Parse and validate request body
     let requestData;
     try {
+      debugLog('Attempting to parse request body');
       requestData = parseRequestBody(event.body);
     } catch (error) {
       return createErrorResponse(
@@ -305,6 +337,7 @@ exports.handler = async (event, context) => {
     }
 
     // Build IGDB query
+    debugLog('Building IGDB query for request', requestData);
     const query = buildSearchQuery(requestData.searchTerm, requestData.limit);
 
     // Make IGDB API request
@@ -312,6 +345,7 @@ exports.handler = async (event, context) => {
     try {
       games = await makeIGDBRequest(query, env.clientId, env.accessToken);
     } catch (error) {
+      debugLog('IGDB API request failed', { error: error.message });
       // Determine appropriate status code based on error type
       let statusCode = 502; // Bad Gateway (external API error)
       
@@ -337,6 +371,7 @@ exports.handler = async (event, context) => {
     }
 
     // Transform games data
+    debugLog('Transforming games data', { count: games.length });
     const transformedGames = games.map(transformIGDBGame);
     
     console.log(`🎮 Successfully processed ${transformedGames.length} games for "${requestData.searchTerm}"`);
@@ -352,6 +387,7 @@ exports.handler = async (event, context) => {
 
   } catch (error) {
     console.error('💥 Unexpected error in IGDB search function:', {
+    debugLog('Unexpected error in function', { message: error.message, stack: error.stack });
       message: error.message,
       stack: error.stack,
       name: error.name

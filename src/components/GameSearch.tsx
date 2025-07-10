@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, AlertCircle, Calendar, Star, Gamepad2, Grid, List, Activity } from 'lucide-react';
+import { Search, Loader2, AlertCircle, Calendar, Star, Gamepad2, Grid, List, Activity, Bug } from 'lucide-react';
 import { igdbService, Game } from '../services/igdbService';
 
 interface GameSearchProps {
@@ -40,6 +40,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialViewMode);
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
+  const DEBUG_MODE = import.meta.env.DEV;
   // Debounced search function
   const performSearch = useCallback(async (searchTerm: string) => {
     if (!searchTerm.trim()) {
@@ -62,6 +63,10 @@ export const GameSearch: React.FC<GameSearchProps> = ({
 
     try {
       console.log('🔍 Performing search for:', searchTerm);
+      if (DEBUG_MODE) {
+        console.log('🐛 [DEBUG] Search context:', { searchTerm, maxResults, timestamp: new Date().toISOString() });
+        console.log('🐛 [DEBUG] Current URL:', window.location.href);
+      }
       const games = await igdbService.searchGames(searchTerm, maxResults);
       
       setSearchState(prev => ({
@@ -72,12 +77,19 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       }));
       
       console.log('✅ Search completed, found', games.length, 'games');
+      if (DEBUG_MODE) {
+        console.log('🐛 [DEBUG] Search results:', games);
+      }
     } catch (error) {
       console.error('❌ Search failed:', error);
       
       const errorMessage = error instanceof Error 
         ? error.message 
         : 'Failed to search games. Please try again.';
+      
+      if (DEBUG_MODE) {
+        console.log('🐛 [DEBUG] Search error details:', { error, searchTerm, stack: error instanceof Error ? error.stack : 'No stack' });
+      }
       
       setSearchState(prev => ({
         ...prev,
@@ -102,6 +114,10 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       clearTimeout(debounceTimer);
     }
 
+    if (DEBUG_MODE) {
+      console.log('🐛 [DEBUG] Input changed:', { newQuery, willSearch: newQuery.trim().length > 0 });
+    }
+
     // Set new timer for debounced search
     const timer = setTimeout(() => {
       performSearch(newQuery);
@@ -122,6 +138,9 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   // Handle game selection
   const handleGameClick = (game: Game) => {
     if (onGameSelect) {
+      if (DEBUG_MODE) {
+        console.log('🐛 [DEBUG] Game selected:', game);
+      }
       onGameSelect(game);
     }
   };
@@ -140,6 +159,29 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       return date.getFullYear().toString();
     } catch {
       return 'TBA';
+    }
+  };
+
+  // Debug function to test the API directly
+  const testAPIDirectly = async () => {
+    console.log('🧪 Testing API directly...');
+    try {
+      const response = await fetch('/.netlify/functions/igdb-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ searchTerm: 'test', limit: 1 })
+      });
+      
+      console.log('🧪 Direct API test response:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      
+      const data = await response.text();
+      console.log('🧪 Direct API test data:', data);
+    } catch (error) {
+      console.error('🧪 Direct API test failed:', error);
     }
   };
 
@@ -268,6 +310,20 @@ export const GameSearch: React.FC<GameSearchProps> = ({
 
   return (
     <div className={`w-full ${className}`}>
+      {/* Debug Panel for Development */}
+      {DEBUG_MODE && (
+        <div className="mb-4 p-3 bg-gray-800 rounded-lg border border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bug className="h-4 w-4 text-purple-400" />
+              <span className="text-gray-300 text-sm">Debug Panel</span>
+            </div>
+            <button onClick={testAPIDirectly} className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm">
+              Test API Directly
+            </button>
+          </div>
+        </div>
+      )}
       {/* Health Check Button */}
       {showHealthCheck && import.meta.env.DEV && (
         <div className="mb-4 p-3 bg-gray-800 rounded-lg border border-gray-700">
@@ -279,6 +335,9 @@ export const GameSearch: React.FC<GameSearchProps> = ({
             <button
               onClick={async () => {
                 try {
+                  console.log('🏥 Starting health check...');
+                  console.log('🏥 Function URL:', '/.netlify/functions/igdb-search');
+                  console.log('🏥 Current location:', window.location.href);
                   const response = await fetch('/.netlify/functions/igdb-search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -286,6 +345,12 @@ export const GameSearch: React.FC<GameSearchProps> = ({
                   });
                   const data = await response.json();
                   console.log('Health check result:', { status: response.status, data });
+                  console.log('🏥 Response headers:', Object.fromEntries(response.headers.entries()));
+                  console.log('🏥 Response URL:', response.url);
+                  console.log('🏥 Response type:', response.type);
+                  console.log('🏥 Response redirected:', response.redirected);
+                  console.log('🏥 Response ok:', response.ok);
+                  console.log('🏥 Full response object:', response);
                   alert(`Function ${response.ok ? 'working' : 'has issues'}: ${response.status}`);
                 } catch (error) {
                   console.error('Health check failed:', error);
@@ -311,6 +376,9 @@ export const GameSearch: React.FC<GameSearchProps> = ({
             placeholder={placeholder}
             className="w-full pl-10 pr-12 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all"
           />
+          {DEBUG_MODE && (
+            <div className="absolute right-12 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">DEBUG</div>
+          )}
           {searchState.loading && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
               <Loader2 className="h-5 w-5 text-purple-400 animate-spin" />
