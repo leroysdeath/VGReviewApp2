@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
-// These should be set in your Supabase project's environment variables
+// Environment variables for IGDB API
 const IGDB_CLIENT_ID = Deno.env.get('IGDB_CLIENT_ID')
 const IGDB_ACCESS_TOKEN = Deno.env.get('IGDB_ACCESS_TOKEN')
 
@@ -17,9 +17,9 @@ serve(async (req) => {
   }
 
   try {
-    // Check if credentials are available
+    // Validate credentials
     if (!IGDB_CLIENT_ID || !IGDB_ACCESS_TOKEN) {
-      console.error('Missing IGDB credentials in environment variables')
+      console.error('Missing IGDB credentials')
       return new Response(
         JSON.stringify({ 
           error: 'IGDB API credentials not configured',
@@ -33,8 +33,8 @@ serve(async (req) => {
     }
 
     // Check for placeholder values
-    if (IGDB_CLIENT_ID === 'your_client_id_here' || IGDB_ACCESS_TOKEN === 'your_access_token_here') {
-      console.error('IGDB credentials are still using placeholder values')
+    if (IGDB_CLIENT_ID === 'your_igdb_client_id' || IGDB_ACCESS_TOKEN === 'your_igdb_access_token') {
+      console.error('IGDB credentials are placeholder values')
       return new Response(
         JSON.stringify({ 
           error: 'Invalid IGDB credentials',
@@ -47,13 +47,12 @@ serve(async (req) => {
       )
     }
 
-    // Extract the endpoint from the URL
-    const url = new URL(req.url)
-    const endpoint = url.pathname.replace('/functions/v1/igdb-proxy/', '')
+    // Parse request body
+    const { endpoint, query } = await req.json()
     
-    if (!endpoint) {
+    if (!endpoint || !query) {
       return new Response(
-        JSON.stringify({ error: 'No endpoint specified' }),
+        JSON.stringify({ error: 'Missing endpoint or query' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -61,23 +60,19 @@ serve(async (req) => {
       )
     }
 
-    // Get the request body for POST requests
-    const body = req.method === 'POST' ? await req.text() : undefined
+    console.log(`IGDB API request: ${endpoint}`)
+    console.log(`Query: ${query}`)
 
-    console.log(`Proxying request to IGDB: ${endpoint}`)
-    console.log(`Request method: ${req.method}`)
-    if (body) console.log(`Request body: ${body}`)
-
-    // Make the request to IGDB API
+    // Make request to IGDB API
     const igdbResponse = await fetch(`https://api.igdb.com/v4/${endpoint}`, {
-      method: req.method,
+      method: 'POST',
       headers: {
         'Client-ID': IGDB_CLIENT_ID,
         'Authorization': `Bearer ${IGDB_ACCESS_TOKEN}`,
         'Accept': 'application/json',
         'Content-Type': 'text/plain',
       },
-      body: body,
+      body: query,
     })
 
     console.log(`IGDB API response status: ${igdbResponse.status}`)
@@ -119,7 +114,8 @@ serve(async (req) => {
       { 
         headers: { 
           ...corsHeaders, 
-          'Content-Type': 'application/json' 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=300' // Cache for 5 minutes
         } 
       }
     )
