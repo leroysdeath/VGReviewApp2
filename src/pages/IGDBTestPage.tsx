@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GameSearch } from '../components/GameSearch';
 import { IGDBDebug } from '../components/IGDBDebug';
+import { NetlifyFunctionHealthCheck } from '../components/NetlifyFunctionHealthCheck';
 import { Game } from '../services/igdbService';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -223,6 +224,7 @@ export const IGDBTestPage: React.FC = () => {
           {/* Debug Panel */}
           {showDebugPanel && (
             <div className="space-y-6">
+              <NetlifyFunctionHealthCheck />
               <IGDBDebug />
             </div>
           )}

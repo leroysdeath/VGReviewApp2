@@ -118,6 +118,7 @@ export const GameSearchPage: React.FC = () => {
           showViewToggle={!isMobile}
           initialViewMode="grid"
           maxResults={50}
+          showHealthCheck={import.meta.env.DEV}
         />
       </div>
     </div>

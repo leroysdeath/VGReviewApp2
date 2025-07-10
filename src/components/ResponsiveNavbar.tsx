@@ -175,10 +175,11 @@ export const ResponsiveNavbar: React.FC = () => {
               {import.meta.env.DEV && (
                 <Link
                   to="/igdb-test"
-                  className="p-2 bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors"
+                  className="p-2 bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors relative"
                   title="IGDB API Test"
                 >
                   <TestTube className="h-5 w-5 text-white" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                 </Link>
               )}
             </div>

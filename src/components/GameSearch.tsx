@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, AlertCircle, Calendar, Star, Gamepad2, Grid, List } from 'lucide-react';
+import { Search, Loader2, AlertCircle, Calendar, Star, Gamepad2, Grid, List, Activity } from 'lucide-react';
 import { igdbService, Game } from '../services/igdbService';
 
 interface GameSearchProps {
@@ -9,6 +9,7 @@ interface GameSearchProps {
   initialViewMode?: 'grid' | 'list';
   maxResults?: number;
   className?: string;
+  showHealthCheck?: boolean;
 }
 
 interface SearchState {
@@ -25,7 +26,8 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   showViewToggle = true,
   initialViewMode = 'grid',
   maxResults = 20,
-  className = ''
+  className = '',
+  showHealthCheck = false
 }) => {
   const [searchState, setSearchState] = useState<SearchState>({
     query: '',
@@ -266,6 +268,38 @@ export const GameSearch: React.FC<GameSearchProps> = ({
 
   return (
     <div className={`w-full ${className}`}>
+      {/* Health Check Button */}
+      {showHealthCheck && import.meta.env.DEV && (
+        <div className="mb-4 p-3 bg-gray-800 rounded-lg border border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-purple-400" />
+              <span className="text-gray-300 text-sm">Function Health Check</span>
+            </div>
+            <button
+              onClick={async () => {
+                try {
+                  const response = await fetch('/.netlify/functions/igdb-search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ searchTerm: 'test', limit: 1 })
+                  });
+                  const data = await response.json();
+                  console.log('Health check result:', { status: response.status, data });
+                  alert(`Function ${response.ok ? 'working' : 'has issues'}: ${response.status}`);
+                } catch (error) {
+                  console.error('Health check failed:', error);
+                  alert(`Function error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                }
+              }}
+              className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm"
+            >
+              Test Function
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Search Input */}
       <div className="relative mb-6">
         <div className="relative">
