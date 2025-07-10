@@ -99,6 +99,36 @@ A modern, production-ready gaming community platform built with React, TypeScrip
 
 ## 🚀 Deployment
 
+### Netlify Deployment
+
+1. **Connect Repository**
+   - Connect your GitHub repository to Netlify
+   - Netlify will automatically detect the build settings from `netlify.toml`
+
+2. **Environment Variables**
+   - Go to Site settings > Environment variables in Netlify dashboard
+   - Add the following variables:
+   ```
+   TWITCH_CLIENT_ID=your_twitch_client_id
+   TWITCH_APP_ACCESS_TOKEN=your_twitch_app_access_token
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+3. **IGDB API Setup**
+   - Create app at [Twitch Developer Console](https://dev.twitch.tv/console/apps)
+   - Get Client ID and generate App Access Token:
+   ```bash
+   curl -X POST 'https://id.twitch.tv/oauth2/token' \
+     -H 'Content-Type: application/x-www-form-urlencoded' \
+     -d 'client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET&grant_type=client_credentials'
+   ```
+
+4. **Deploy**
+   - Push to your main branch
+   - Netlify will automatically build and deploy
+   - Functions will be available at `/.netlify/functions/igdb-search`
+
 ### Vercel Deployment
 
 1. **Connect Repository**
