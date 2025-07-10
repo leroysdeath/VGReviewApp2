@@ -49,19 +49,8 @@ class NetlifyIGDBService {
   private accessToken: string;
 
   constructor() {
-    try {
-      this.clientId = getEnvVar('VITE_IGDB_CLIENT_ID');
-      this.accessToken = getEnvVar('VITE_IGDB_ACCESS_TOKEN');
-    } catch (error) {
-      // In development, use mock values to prevent crashes
-      if (import.meta.env.DEV) {
-        console.warn('Using mock IGDB credentials for development');
-        this.clientId = 'mock_client_id';
-        this.accessToken = 'mock_access_token';
-      } else {
-        throw error;
-      }
-    }
+    this.clientId = getEnvVar('VITE_IGDB_CLIENT_ID');
+    this.accessToken = getEnvVar('VITE_IGDB_ACCESS_TOKEN');
     
     // Determine base URL for Netlify functions
     const appUrl = getEnvVar('VITE_APP_URL') || window.location.origin;
@@ -86,12 +75,6 @@ class NetlifyIGDBService {
   }
 
   private async makeRequest(endpoint: string, body: any): Promise<any> {
-    // If using mock credentials, return mock data
-    if (this.clientId === 'mock_client_id') {
-      console.warn('Returning mock data due to missing IGDB credentials');
-      return this.getMockData(endpoint);
-    }
-
     const cacheKey = this.getCacheKey(endpoint, body);
     const cached = this.getFromCache(cacheKey);
     if (cached) {
@@ -119,35 +102,6 @@ class NetlifyIGDBService {
       console.error(`Netlify IGDB API error (${endpoint}):`, error);
       throw error;
     }
-  }
-
-  private getMockData(endpoint: string): any {
-    // Return appropriate mock data based on endpoint
-    if (endpoint.includes('search')) {
-      return [
-        {
-          id: 1,
-          name: 'Mock Game 1',
-          summary: 'This is a mock game for development',
-          cover: { url: 'https://via.placeholder.com/300x400' },
-          first_release_date: Date.now() / 1000,
-          genres: [{ name: 'Action' }],
-          platforms: [{ name: 'PC' }]
-        }
-      ];
-    } else if (endpoint.includes('popular')) {
-      return [
-        {
-          id: 2,
-          name: 'Popular Mock Game',
-          summary: 'This is a popular mock game',
-          cover: { url: 'https://via.placeholder.com/300x400' },
-          rating: 85,
-          genres: [{ name: 'RPG' }]
-        }
-      ];
-    }
-    return [];
   }
 
   private mapIGDBToGame(igdbGame: NetlifyIGDBGame): Game {
