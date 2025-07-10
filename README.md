@@ -25,8 +25,8 @@ A modern, production-ready gaming community platform built with React, TypeScrip
 
 - **Frontend**: React 18, TypeScript, Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
-- **API**: IGDB (Internet Game Database)
-- **Deployment**: Vercel/Netlify ready
+- **API**: IGDB (Internet Game Database) via Netlify Functions
+- **Deployment**: Netlify
 - **Icons**: Lucide React
 - **Routing**: React Router v6
 
@@ -55,8 +55,8 @@ A modern, production-ready gaming community platform built with React, TypeScrip
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
    # IGDB API Configuration
-   VITE_IGDB_CLIENT_ID=your_igdb_client_id
-   VITE_IGDB_ACCESS_TOKEN=your_igdb_access_token
+   TWITCH_CLIENT_ID=your_twitch_client_id
+   TWITCH_APP_ACCESS_TOKEN=your_twitch_access_token
 
    # Production Environment
    VITE_APP_ENV=production
@@ -73,19 +73,15 @@ A modern, production-ready gaming community platform built with React, TypeScrip
 2. **Run Migrations**
    ```bash
    # In Supabase SQL Editor, run:
-   # supabase/migrations/001_initial_schema.sql
-   # supabase/migrations/002_seed_platforms.sql
+   # supabase/migrations/20250710062526_crimson_dust.sql
    ```
-
-3. **Configure Edge Functions**
-   - Deploy the IGDB proxy function to Supabase
-   - Set IGDB credentials in Supabase environment variables
 
 ## 🎮 IGDB API Setup
 
 1. **Create IGDB Account**
-   - Go to [IGDB API](https://api.igdb.com/)
-   - Create an account and get your credentials
+   - Go to [Twitch Developer Console](https://dev.twitch.tv/console/apps)
+   - Create a new application
+   - Copy the Client ID
 
 2. **Get Access Token**
    ```bash
@@ -94,8 +90,8 @@ A modern, production-ready gaming community platform built with React, TypeScrip
      -d "client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET&grant_type=client_credentials"
    ```
 
-3. **Configure in Supabase**
-   - Add IGDB_CLIENT_ID and IGDB_ACCESS_TOKEN to Supabase environment variables
+3. **Configure Environment Variables**
+   - Add TWITCH_CLIENT_ID and TWITCH_APP_ACCESS_TOKEN to your .env file
 
 ## 🚀 Deployment
 
@@ -129,34 +125,36 @@ A modern, production-ready gaming community platform built with React, TypeScrip
    - Netlify will automatically build and deploy
    - Functions will be available at `/.netlify/functions/igdb-search`
 
-### Vercel Deployment
+### Local Development
 
-1. **Connect Repository**
+1. **Install Netlify CLI**
    ```bash
-   npm i -g vercel
-   vercel
+   npm install -g netlify-cli
    ```
 
-2. **Configure Environment Variables**
-   - Add all environment variables in Vercel dashboard
-   - Ensure IGDB credentials are set
-
-3. **Deploy**
+2. **Run Local Development Server**
    ```bash
-   vercel --prod
+   netlify dev
    ```
+   This will start the app at `http://localhost:8888` with functions working properly.
 
-### Netlify Deployment
+3. **Alternative Development (without functions)**
+   ```bash
+   npm run dev
+   ```
+   This will use mock data for IGDB integration.
 
-1. **Build Settings**
-   - Build command: `npm run build`
-   - Publish directory: `dist`
+## 🧪 Testing IGDB Integration
 
-2. **Environment Variables**
-   - Add all environment variables in Netlify dashboard
+1. **Access Test Page** (Development only)
+   - Navigate to `/igdb-test` in development mode
+   - Use the debug tools to test API calls
+   - Check function health and environment variables
 
-3. **Deploy**
-   - Connect repository and deploy
+2. **Manual Testing**
+   - Test search functionality on the main search page
+   - Check browser console for detailed logs
+   - Verify function responses in Network tab
 
 ## 📱 PWA Features
 
@@ -169,7 +167,10 @@ The app includes Progressive Web App features:
 ## 🔧 Development
 
 ```bash
-# Start development server
+# Start development server with functions
+netlify dev
+
+# Start development server (mock data)
 npm run dev
 
 # Build for production

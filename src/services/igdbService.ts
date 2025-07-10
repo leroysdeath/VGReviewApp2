@@ -1,4 +1,4 @@
-// Mock IGDB API service for development
+// IGDB API service with Netlify function integration
 export interface IGDBGame {
   id: number;
   name: string;
@@ -11,6 +11,7 @@ export interface IGDBGame {
   genres?: Array<{ id: number; name: string }>;
   first_release_date?: number;
   rating?: number;
+  screenshots?: Array<{ id: number; url: string }>;
 }
 
 export interface Game {
@@ -32,6 +33,7 @@ export interface Game {
 class IGDBService {
   private cache = new Map<string, { data: any; timestamp: number }>();
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  private readonly NETLIFY_FUNCTION_URL = '/.netlify/functions/igdb-search';
 
   private getCacheKey(searchTerm: string, limit: number): string {
     return `search:${searchTerm}:${limit}`;
@@ -55,128 +57,106 @@ class IGDBService {
     this.cache.set(key, { data, timestamp: Date.now() });
   }
 
-  private getMockGames(searchTerm: string, limit: number): Game[] {
-    const mockGames: Game[] = [
-      {
-        id: '1',
-        title: `${searchTerm} - The Witcher 3: Wild Hunt`,
-        coverImage: 'https://images.pexels.com/photos/442576/pexels-photo-442576.jpeg?auto=compress&cs=tinysrgb&w=400',
-        releaseDate: '2015-05-19',
-        genre: 'RPG',
-        rating: 9.3,
-        description: 'You are Geralt of Rivia, mercenary monster slayer. Before you stands a war-torn, monster-infested continent you can explore at will.',
-        developer: 'CD Projekt Red',
-        publisher: 'CD Projekt',
-        platforms: ['PC', 'PlayStation 4', 'Xbox One', 'Nintendo Switch'],
-        screenshots: [
-          'https://images.pexels.com/photos/442576/pexels-photo-442576.jpeg?auto=compress&cs=tinysrgb&w=800',
-          'https://images.pexels.com/photos/3165335/pexels-photo-3165335.jpeg?auto=compress&cs=tinysrgb&w=800'
-        ],
-        videos: [],
-        igdbId: 1942
-      },
-      {
-        id: '2',
-        title: `${searchTerm} - Cyberpunk 2077`,
-        coverImage: 'https://images.pexels.com/photos/2047905/pexels-photo-2047905.jpeg?auto=compress&cs=tinysrgb&w=400',
-        releaseDate: '2020-12-10',
-        genre: 'RPG',
-        rating: 7.8,
-        description: 'Cyberpunk 2077 is an open-world, action-adventure story set in Night City, a megalopolis obsessed with power, glamour and body modification.',
-        developer: 'CD Projekt Red',
-        publisher: 'CD Projekt',
-        platforms: ['PC', 'PlayStation 4', 'PlayStation 5', 'Xbox One', 'Xbox Series X/S'],
-        screenshots: [
-          'https://images.pexels.com/photos/2047905/pexels-photo-2047905.jpeg?auto=compress&cs=tinysrgb&w=800'
-        ],
-        videos: [],
-        igdbId: 1877
-      },
-      {
-        id: '3',
-        title: `${searchTerm} - Red Dead Redemption 2`,
-        coverImage: 'https://images.pexels.com/photos/3165335/pexels-photo-3165335.jpeg?auto=compress&cs=tinysrgb&w=400',
-        releaseDate: '2018-10-26',
-        genre: 'Action',
-        rating: 9.7,
-        description: 'America, 1899. Arthur Morgan and the Van der Linde gang are outlaws on the run. With federal agents and the best bounty hunters in the nation massing on their heels.',
-        developer: 'Rockstar Games',
-        publisher: 'Rockstar Games',
-        platforms: ['PC', 'PlayStation 4', 'Xbox One'],
-        screenshots: [
-          'https://images.pexels.com/photos/3165335/pexels-photo-3165335.jpeg?auto=compress&cs=tinysrgb&w=800'
-        ],
-        videos: [],
-        igdbId: 25076
-      },
-      {
-        id: '4',
-        title: `${searchTerm} - The Legend of Zelda: Breath of the Wild`,
-        coverImage: 'https://images.pexels.com/photos/3945654/pexels-photo-3945654.jpeg?auto=compress&cs=tinysrgb&w=400',
-        releaseDate: '2017-03-03',
-        genre: 'Action-Adventure',
-        rating: 9.7,
-        description: 'Step into a world of discovery, exploration, and adventure in The Legend of Zelda: Breath of the Wild.',
-        developer: 'Nintendo EPD',
-        publisher: 'Nintendo',
-        platforms: ['Nintendo Switch', 'Wii U'],
-        screenshots: [
-          'https://images.pexels.com/photos/3945654/pexels-photo-3945654.jpeg?auto=compress&cs=tinysrgb&w=800'
-        ],
-        videos: [],
-        igdbId: 7346
-      },
-      {
-        id: '5',
-        title: `${searchTerm} - God of War`,
-        coverImage: 'https://images.pexels.com/photos/3945670/pexels-photo-3945670.jpeg?auto=compress&cs=tinysrgb&w=400',
-        releaseDate: '2018-04-20',
-        genre: 'Action',
-        rating: 9.5,
-        description: 'His vengeance against the Gods of Olympus years behind him, Kratos now lives as a man in the realm of Norse Gods and monsters.',
-        developer: 'Santa Monica Studio',
-        publisher: 'Sony Interactive Entertainment',
-        platforms: ['PlayStation 4', 'PC'],
-        screenshots: [
-          'https://images.pexels.com/photos/3945670/pexels-photo-3945670.jpeg?auto=compress&cs=tinysrgb&w=800'
-        ],
-        videos: [],
-        igdbId: 1009
-      },
-      {
-        id: '6',
-        title: `${searchTerm} - Elden Ring`,
-        coverImage: 'https://images.pexels.com/photos/7862492/pexels-photo-7862492.jpeg?auto=compress&cs=tinysrgb&w=400',
-        releaseDate: '2022-02-25',
-        genre: 'Action RPG',
-        rating: 9.6,
-        description: 'Rise, Tarnished, and be guided by grace to brandish the power of the Elden Ring and become an Elden Lord in the Lands Between.',
-        developer: 'FromSoftware',
-        publisher: 'Bandai Namco Entertainment',
-        platforms: ['PC', 'PlayStation 4', 'PlayStation 5', 'Xbox One', 'Xbox Series X/S'],
-        screenshots: [
-          'https://images.pexels.com/photos/7862492/pexels-photo-7862492.jpeg?auto=compress&cs=tinysrgb&w=800'
-        ],
-        videos: [],
-        igdbId: 119171
-      }
-    ];
+  private mapIGDBToGame(igdbGame: IGDBGame): Game {
+    return {
+      id: igdbGame.id.toString(),
+      title: igdbGame.name,
+      coverImage: igdbGame.cover?.url || 'https://images.pexels.com/photos/442576/pexels-photo-442576.jpeg?auto=compress&cs=tinysrgb&w=400',
+      releaseDate: igdbGame.first_release_date 
+        ? new Date(igdbGame.first_release_date * 1000).toISOString().split('T')[0]
+        : '',
+      genre: igdbGame.genres?.[0]?.name || 'Unknown',
+      rating: igdbGame.rating ? Math.round(igdbGame.rating / 10) : 0,
+      description: igdbGame.summary || '',
+      developer: 'Unknown', // IGDB doesn't always provide this in the basic query
+      publisher: 'Unknown', // IGDB doesn't always provide this in the basic query
+      platforms: igdbGame.platforms?.map(p => p.name) || [],
+      screenshots: igdbGame.screenshots?.map(s => s.url) || [],
+      videos: [],
+      igdbId: igdbGame.id
+    };
+  }
 
-    // Filter games based on search term if it's not a generic search
-    if (searchTerm && !['popular', 'recent', 'test'].includes(searchTerm.toLowerCase())) {
-      const filtered = mockGames.filter(game => 
-        game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        game.genre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        game.developer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        game.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      
-      if (filtered.length > 0) {
-        return filtered.slice(0, limit);
-      }
-    }
+  private async makeNetlifyRequest(searchTerm: string, limit: number): Promise<IGDBGame[]> {
+    const requestStartTime = Date.now();
     
-    return mockGames.slice(0, limit);
+    console.log('🌐 Making Netlify function request:', {
+      url: this.NETLIFY_FUNCTION_URL,
+      searchTerm,
+      limit,
+      timestamp: new Date().toISOString()
+    });
+
+    try {
+      const response = await fetch(this.NETLIFY_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          searchTerm,
+          limit
+        })
+      });
+
+      const requestDuration = Date.now() - requestStartTime;
+      
+      console.log('📡 Netlify function response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        duration: `${requestDuration}ms`,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          const errorText = await response.text();
+          console.log('📄 Error response text:', errorText);
+          errorData = JSON.parse(errorText);
+        } catch (parseError) {
+          console.error('❌ Failed to parse error response:', parseError);
+          errorData = { error: 'Unknown error', details: 'Failed to parse error response' };
+        }
+        
+        throw new Error(`HTTP ${response.status}: ${errorData.error || errorData.message || 'Unknown error'}`);
+      }
+
+      let data;
+      try {
+        const responseText = await response.text();
+        console.log('📄 Response text length:', responseText.length);
+        
+        if (!responseText) {
+          console.warn('⚠️ Empty response from Netlify function');
+          return [];
+        }
+        
+        data = JSON.parse(responseText);
+        console.log('✅ Successfully parsed response:', {
+          type: Array.isArray(data) ? 'array' : typeof data,
+          length: Array.isArray(data) ? data.length : 'N/A'
+        });
+      } catch (parseError) {
+        console.error('❌ Failed to parse JSON response:', parseError);
+        throw new Error('Invalid JSON response from function');
+      }
+
+      return Array.isArray(data) ? data : [];
+
+    } catch (error) {
+      const requestDuration = Date.now() - requestStartTime;
+      
+      console.error('💥 Netlify function request failed:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        duration: `${requestDuration}ms`,
+        searchTerm,
+        limit
+      });
+      
+      throw error;
+    }
   }
 
   /**
@@ -191,7 +171,7 @@ class IGDBService {
     const trimmedQuery = query.trim();
     const cacheKey = this.getCacheKey(trimmedQuery, limit);
     
-    console.log('🎮 IGDB Service (Mock): Searching games:', { 
+    console.log('🎮 IGDB Service: Searching games:', { 
       query: trimmedQuery, 
       limit,
       cacheSize: this.cache.size
@@ -203,15 +183,14 @@ class IGDBService {
       return cached;
     }
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-
     try {
-      const games = this.getMockGames(trimmedQuery, limit);
+      const igdbGames = await this.makeNetlifyRequest(trimmedQuery, limit);
+      const games = igdbGames.map(game => this.mapIGDBToGame(game));
       
-      console.log('🎯 IGDB Service (Mock): Search completed:', {
+      console.log('🎯 IGDB Service: Search completed:', {
         query: trimmedQuery,
-        found: games.length
+        found: games.length,
+        firstGame: games[0]?.title || 'None'
       });
       
       // Cache the results
@@ -219,12 +198,12 @@ class IGDBService {
       
       return games;
     } catch (error) {
-      console.error('❌ IGDB Service (Mock): Search games failed:', {
+      console.error('❌ IGDB Service: Search games failed:', {
         query: trimmedQuery,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
       
-      throw new Error(`Failed to search for "${trimmedQuery}": ${error.message}`);
+      throw new Error(`Failed to search for "${trimmedQuery}": ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -232,12 +211,13 @@ class IGDBService {
    * Get popular games
    */
   async getPopularGames(limit = 20): Promise<Game[]> {
-    console.log('🔥 IGDB Service (Mock): Getting popular games:', { limit });
+    console.log('🔥 IGDB Service: Getting popular games:', { limit });
     
     try {
-      return await this.searchGames('popular', limit);
+      // Use a popular search term to get good results
+      return await this.searchGames('zelda mario witcher', limit);
     } catch (error) {
-      console.error('❌ IGDB Service (Mock): Get popular games failed:', error);
+      console.error('❌ IGDB Service: Get popular games failed:', error);
       throw new Error('Failed to load popular games. Please try again later.');
     }
   }
@@ -246,13 +226,13 @@ class IGDBService {
    * Get recent games
    */
   async getRecentGames(limit = 20): Promise<Game[]> {
-    console.log('📅 IGDB Service (Mock): Getting recent games:', { limit });
+    console.log('📅 IGDB Service: Getting recent games:', { limit });
     
     try {
       const currentYear = new Date().getFullYear();
-      return await this.searchGames(`recent ${currentYear}`, limit);
+      return await this.searchGames(`cyberpunk elden ring`, limit);
     } catch (error) {
-      console.error('❌ IGDB Service (Mock): Get recent games failed:', error);
+      console.error('❌ IGDB Service: Get recent games failed:', error);
       throw new Error('Failed to load recent games. Please try again later.');
     }
   }
@@ -261,13 +241,15 @@ class IGDBService {
    * Get game by ID
    */
   async getGameById(id: string): Promise<Game | null> {
-    console.log('🔍 IGDB Service (Mock): Getting game by ID:', id);
+    console.log('🔍 IGDB Service: Getting game by ID:', id);
     
     try {
+      // For now, we'll search by a generic term and try to find the game
+      // In a real implementation, you'd want a separate endpoint for this
       const games = await this.searchGames(`game ${id}`, 1);
       return games.length > 0 ? games[0] : null;
     } catch (error) {
-      console.error('❌ IGDB Service (Mock): Get game by ID failed:', error);
+      console.error('❌ IGDB Service: Get game by ID failed:', error);
       return null;
     }
   }
@@ -280,7 +262,7 @@ class IGDBService {
    * Clear the cache
    */
   clearCache(): void {
-    console.log('🗑️ IGDB Service (Mock): Clearing cache');
+    console.log('🗑️ IGDB Service: Clearing cache');
     this.cache.clear();
   }
 
@@ -298,23 +280,27 @@ class IGDBService {
    * Test the service connection
    */
   async testConnection(): Promise<{ success: boolean; message: string; details?: any }> {
-    console.log('🔧 Testing mock IGDB service connection...');
+    console.log('🔧 Testing IGDB service connection...');
     
     try {
       const testGames = await this.searchGames('test', 1);
       return {
         success: true,
-        message: 'Mock service connection successful',
+        message: 'IGDB service connection successful',
         details: {
           gamesFound: testGames.length,
-          cacheSize: this.cache.size
+          cacheSize: this.cache.size,
+          functionUrl: this.NETLIFY_FUNCTION_URL
         }
       };
     } catch (error) {
       return {
         success: false,
-        message: `Mock service test failed: ${error.message}`,
-        details: { error: error.message }
+        message: `IGDB service test failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        details: { 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          functionUrl: this.NETLIFY_FUNCTION_URL
+        }
       };
     }
   }
