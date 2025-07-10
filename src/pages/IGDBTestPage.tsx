@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameSearch } from '../components/GameSearch';
 import { IGDBDebug } from '../components/IGDBDebug';
 import { NetlifyFunctionHealthCheck } from '../components/NetlifyFunctionHealthCheck';
@@ -8,7 +8,8 @@ import {
   TestTube, 
   Search, 
   Bug, 
-  Eye, 
+  Eye,
+  Zap,
   EyeOff, 
   Gamepad2,
   ArrowLeft,
@@ -18,12 +19,52 @@ import {
 export const IGDBTestPage: React.FC = () => {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [showDebugPanel, setShowDebugPanel] = useState(true);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const navigate = useNavigate();
 
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game);
     console.log('🎮 Game selected:', game);
   };
+
+  // Capture console logs for debugging
+  useEffect(() => {
+    const originalLog = console.log;
+    const originalError = console.error;
+    const originalWarn = console.warn;
+
+    const captureLog = (level: string, ...args: any[]) => {
+      const timestamp = new Date().toLocaleTimeString();
+      const message = `[${timestamp}] ${level}: ${args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+      ).join(' ')}`;
+      
+      setDebugLogs(prev => [...prev.slice(-49), message]); // Keep last 50 logs
+    };
+
+    console.log = (...args) => {
+      originalLog(...args);
+      if (args[0]?.includes?.('🔍') || args[0]?.includes?.('IGDB') || args[0]?.includes?.('🐛')) {
+        captureLog('LOG', ...args);
+      }
+    };
+
+    console.error = (...args) => {
+      originalError(...args);
+      captureLog('ERROR', ...args);
+    };
+
+    console.warn = (...args) => {
+      originalWarn(...args);
+      captureLog('WARN', ...args);
+    };
+
+    return () => {
+      console.log = originalLog;
+      console.error = originalError;
+      console.warn = originalWarn;
+    };
+  }, []);
 
   const exampleSearchTerms = [
     'zelda',
@@ -37,6 +78,26 @@ export const IGDBTestPage: React.FC = () => {
     'hollow knight',
     'hades'
   ];
+
+  const runQuickDiagnostic = async () => {
+    console.log('🔧 Running quick diagnostic...');
+    
+    // Test 1: Check if function URL is accessible
+    try {
+      const response = await fetch('/.netlify/functions/igdb-search', { method: 'OPTIONS' });
+      console.log('✅ CORS preflight test:', response.status);
+    } catch (error) {
+      console.error('❌ CORS preflight failed:', error);
+    }
+
+    // Test 2: Check environment variables (client-side)
+    console.log('🔧 Environment check:', {
+      hasClientId: !!import.meta.env.VITE_TWITCH_CLIENT_ID,
+      hasAccessToken: !!import.meta.env.VITE_TWITCH_APP_ACCESS_TOKEN,
+      currentUrl: window.location.href,
+      userAgent: navigator.userAgent
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -63,6 +124,13 @@ export const IGDBTestPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                onClick={runQuickDiagnostic}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Zap className="h-4 w-4" />
+                Quick Diagnostic
+              </button>
               <button
                 onClick={() => setShowDebugPanel(!showDebugPanel)}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
@@ -229,6 +297,26 @@ export const IGDBTestPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Debug Logs Panel */}
+        {showDebugPanel && debugLogs.length > 0 && (
+          <div className="mt-8 bg-gray-800 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white">Live Debug Logs</h2>
+              <button
+                onClick={() => setDebugLogs([])}
+                className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors text-sm"
+              >
+                Clear Logs
+              </button>
+            </div>
+            <div className="bg-gray-900 rounded p-4 max-h-60 overflow-y-auto">
+              {debugLogs.map((log, index) => (
+                <div key={index} className="text-xs text-gray-300 font-mono mb-1">{log}</div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Instructions */}
         <div className="mt-8 bg-gray-800 rounded-lg p-6">
