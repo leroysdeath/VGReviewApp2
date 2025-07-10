@@ -48,20 +48,89 @@ A modern, production-ready gaming community platform built with React, TypeScrip
    cp .env.example .env
    ```
 
-4. **Configure environment variables**
+4. **Configure environment variables** ⚠️ **IMPORTANT**
+   
+   Open the `.env` file and replace all placeholder values with your actual API keys and URLs:
+   
    ```env
    # Supabase Configuration
-   VITE_SUPABASE_URL=your_supabase_project_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your_actual_supabase_anon_key
 
    # IGDB API Configuration
-   VITE_IGDB_CLIENT_ID=your_igdb_client_id
-   VITE_IGDB_ACCESS_TOKEN=your_igdb_access_token
+   VITE_IGDB_CLIENT_ID=your_actual_igdb_client_id
+   VITE_IGDB_ACCESS_TOKEN=your_actual_igdb_access_token
 
    # Production Environment
    VITE_APP_ENV=production
    VITE_APP_URL=https://your-domain.com
    ```
+   
+   **⚠️ Security Note**: Never commit the `.env` file to version control. It's already included in `.gitignore`.
+
+## 🔐 Environment Variables Setup
+
+### Required Variables
+
+The application requires the following environment variables to function properly:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `VITE_SUPABASE_URL` | Your Supabase project URL | `https://abc123.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Your Supabase anonymous key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+| `VITE_IGDB_CLIENT_ID` | Your IGDB API client ID | `your_client_id` |
+| `VITE_IGDB_ACCESS_TOKEN` | Your IGDB API access token | `your_access_token` |
+
+### Optional Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_APP_ENV` | Application environment | `development` |
+| `VITE_APP_URL` | Application URL | `http://localhost:5173` |
+| `VITE_GOOGLE_ANALYTICS_ID` | Google Analytics tracking ID | - |
+| `VITE_SENTRY_DSN` | Sentry error tracking DSN | - |
+
+### Setup Instructions
+
+1. **Copy the example file**:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Get your Supabase credentials**:
+   - Go to [Supabase Dashboard](https://supabase.com/dashboard)
+   - Select your project
+   - Go to Settings → API
+   - Copy the Project URL and anon public key
+
+3. **Get your IGDB credentials**:
+   - Go to [IGDB API](https://api.igdb.com/)
+   - Create an account and register your application
+   - Get your Client ID and Access Token
+
+4. **Update your `.env` file** with the actual values
+
+5. **Restart your development server** after updating environment variables
+
+### Environment Validation
+
+The application includes automatic environment variable validation that will:
+- Check for missing required variables
+- Detect placeholder values that haven't been replaced
+- Validate URL formats
+- Show helpful error messages in development
+
+If you see an environment configuration error, make sure all required variables are set with valid values.
+
+### Security Best Practices
+
+- ✅ **DO**: Use environment variables for all secrets and configuration
+- ✅ **DO**: Keep `.env` files out of version control
+- ✅ **DO**: Use different values for development and production
+- ✅ **DO**: Regularly rotate API keys and tokens
+- ❌ **DON'T**: Hardcode secrets in source files
+- ❌ **DON'T**: Commit `.env` files to Git
+- ❌ **DON'T**: Share environment files via insecure channels
 
 ## 🗄️ Database Setup
 

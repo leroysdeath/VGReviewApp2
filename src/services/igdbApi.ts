@@ -1,5 +1,10 @@
 // IGDB API service using fallback to mock data when API is not available
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+import { getEnvVar } from '../utils/envValidation';
+
+// Get validated environment variables
+const SUPABASE_URL = getEnvVar('VITE_SUPABASE_URL');
+const IGDB_CLIENT_ID = getEnvVar('VITE_IGDB_CLIENT_ID');
+const IGDB_ACCESS_TOKEN = getEnvVar('VITE_IGDB_ACCESS_TOKEN');
 
 // Define the Game interface to match what components expect
 export interface Game {

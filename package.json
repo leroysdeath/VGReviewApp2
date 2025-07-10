@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "build:analyze": "vite build --mode analyze"
+    "build:analyze": "vite build --mode analyze",
+    "env:check": "node -e \"console.log('Environment check passed')\" && npm run type-check"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.3",

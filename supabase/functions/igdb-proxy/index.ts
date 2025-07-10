@@ -7,8 +7,8 @@ const corsHeaders = {
 }
 
 // Environment variables for IGDB API
-const IGDB_CLIENT_ID = Deno.env.get('IGDB_CLIENT_ID')
-const IGDB_ACCESS_TOKEN = Deno.env.get('IGDB_ACCESS_TOKEN')
+const IGDB_CLIENT_ID = Deno.env.get('VITE_IGDB_CLIENT_ID') || Deno.env.get('IGDB_CLIENT_ID')
+const IGDB_ACCESS_TOKEN = Deno.env.get('VITE_IGDB_ACCESS_TOKEN') || Deno.env.get('IGDB_ACCESS_TOKEN')
 
 serve(async (req) => {
   // Handle CORS preflight requests

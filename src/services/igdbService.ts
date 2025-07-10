@@ -1,5 +1,6 @@
 // Enhanced IGDB API service with caching and error handling
 import { supabase } from './supabase';
+import { getEnvVar } from '../utils/envValidation';
 
 export interface IGDBGame {
   id: number;

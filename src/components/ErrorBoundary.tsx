@@ -1,6 +1,7 @@
 // Error Boundary Component
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { envValidator } from '../utils/envValidation';
 
 interface Props {
   children: ReactNode;
@@ -26,8 +27,14 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('Error caught by boundary:', error, errorInfo);
     
     // Send to error tracking service (e.g., Sentry)
-    if (import.meta.env.VITE_SENTRY_DSN) {
+    try {
+      const sentryDsn = envValidator.getEnvVar('VITE_SENTRY_DSN');
+      if (sentryDsn) {
       // Sentry.captureException(error, { extra: errorInfo });
+      }
+    } catch (envError) {
+      // Environment validation failed, skip Sentry reporting
+      console.warn('Could not report error to Sentry due to environment configuration issues');
     }
   }
 

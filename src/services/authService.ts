@@ -1,6 +1,7 @@
 // Supabase Authentication Service
 import { supabase } from './supabase';
 import type { User, Session } from '@supabase/supabase-js';
+import { getEnvVar } from '../utils/envValidation';
 
 export interface AuthUser {
   id: string;
