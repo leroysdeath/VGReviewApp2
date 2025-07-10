@@ -9,8 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "build:analyze": "vite build --mode analyze",
-    "env:check": "node -e \"console.log('Environment check passed')\" && npm run type-check"
+    "build:analyze": "vite build --mode analyze"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.3",
@@ -24,7 +23,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
-    "@netlify/functions": "^4.1.10",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",

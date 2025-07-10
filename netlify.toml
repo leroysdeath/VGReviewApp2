@@ -1,13 +1,9 @@
 [build]
   publish = "dist"
   command = "npm run build"
-  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "18"
-  # Environment variables for Netlify functions
-  VITE_IGDB_CLIENT_ID = ""
-  VITE_IGDB_ACCESS_TOKEN = ""
 
 [[redirects]]
   from = "/*"
@@ -42,18 +38,3 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-
-# Function-specific settings
-[functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
-
-# Environment variables for functions
-[context.production.environment]
-  NODE_ENV = "production"
-
-[context.deploy-preview.environment]
-  NODE_ENV = "development"
-
-[context.branch-deploy.environment]
-  NODE_ENV = "development"
