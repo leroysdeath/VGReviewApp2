@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2, Home, Users } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 import { useResponsive } from '../hooks/useResponsive';
 
@@ -121,6 +121,18 @@ export const ResponsiveNavbar: React.FC = () => {
                     <User className="h-5 w-5" />
                     Profile
                   </Link>
+                  {import.meta.env.DEV && (
+                    <Link
+                      to="/igdb-test"
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                        isActive('/igdb-test') ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      }`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <TestTube className="h-5 w-5" />
+                      IGDB Test
+                    </Link>
+                  )}
                 </div>
 
                 {/* Login Button */}
@@ -172,6 +184,16 @@ export const ResponsiveNavbar: React.FC = () => {
               >
                 <User className="h-5 w-5 text-white" />
               </Link>
+              {import.meta.env.DEV && (
+                <Link
+                  to="/igdb-test"
+                  className="p-2 bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors relative"
+                  title="IGDB API Test & Debug"
+                >
+                  <TestTube className="h-5 w-5 text-white" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                </Link>
+              )}
             </div>
           </div>
 

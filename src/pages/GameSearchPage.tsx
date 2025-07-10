@@ -1,37 +1,17 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
-import { Search, Filter, Grid, List } from 'lucide-react';
-import { GameCard } from '../components/GameCard';
-import { useGames } from '../hooks/useGames';
+import { Filter } from 'lucide-react';
+import { GameSearch } from '../components/GameSearch';
+import { Game } from '../services/igdbService';
 import { useResponsive } from '../hooks/useResponsive';
+import { useNavigate } from 'react-router-dom';
 
 export const GameSearchPage: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [sortBy, setSortBy] = useState('popularity');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
-
-  const { games, loading, error, searchGames, getAllGames } = useGames();
   const { isMobile } = useResponsive();
-
-  useEffect(() => {
-    // Load popular games on initial page load
-    getAllGames();
-  }, [getAllGames]);
-
-  useEffect(() => {
-    // Search games when search term changes
-    if (searchTerm.trim()) {
-      const timeoutId = setTimeout(() => {
-        searchGames(searchTerm);
-      }, 500); // Debounce search
-
-      return () => clearTimeout(timeoutId);
-    } else {
-      getAllGames();
-    }
-  }, [searchTerm, searchGames, getAllGames]);
+  const navigate = useNavigate();
 
   const genres = ['Action', 'Adventure', 'RPG', 'Strategy', 'Simulation', 'Sports', 'Racing'];
   const sortOptions = [
@@ -41,10 +21,9 @@ export const GameSearchPage: React.FC = () => {
     { value: 'title', label: 'Title A-Z' },
   ];
 
-  const filteredGames = games.filter(game => {
-    const matchesGenre = !selectedGenre || game.genre === selectedGenre;
-    return matchesGenre;
-  });
+  const handleGameSelect = (game: Game) => {
+    navigate(`/game/${game.id}`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 py-8">
@@ -52,21 +31,9 @@ export const GameSearchPage: React.FC = () => {
         <div className="mb-8">
           <h1 className={`font-bold text-white mb-6 ${isMobile ? 'text-2xl' : 'text-3xl'}`}>Discover Games</h1>
           
-          {/* Search Bar */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search games..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-            />
-          </div>
-
           {/* Filter Bar */}
-          <div className={`gap-4 items-center justify-between ${isMobile ? 'flex flex-col space-y-4' : 'flex flex-wrap'}`}>
-            <div className="flex flex-wrap gap-4 items-center">
+          <div className={`gap-4 items-center justify-between mb-6 ${isMobile ? 'flex flex-col space-y-4' : 'flex flex-wrap'}`}>
+            <div className="flex flex-wrap gap-4 items-center flex-1">
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
@@ -96,31 +63,6 @@ export const GameSearchPage: React.FC = () => {
                 ))}
               </select>
             </div>
-
-            {!isMobile && (
-              <div className="flex items-center gap-2">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === 'grid' 
-                    ? 'bg-purple-600 text-white' 
-                    : 'bg-gray-800 text-gray-400 hover:text-white'
-                }`}
-              >
-                <Grid className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === 'list' 
-                    ? 'bg-purple-600 text-white' 
-                    : 'bg-gray-800 text-gray-400 hover:text-white'
-                }`}
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
-            )}
           </div>
 
           {/* Advanced Filters */}
@@ -169,78 +111,15 @@ export const GameSearchPage: React.FC = () => {
           )}
         </div>
 
-        {/* Results */}
-        <div className="mb-6">
-          <p className="text-gray-400">
-            {loading ? 'Searching...' : `Found ${filteredGames.length} games`}
-            {searchTerm && ` for "${searchTerm}"`}
-            {selectedGenre && ` in ${selectedGenre}`}
-          </p>
-        </div>
-
-        {/* Error State */}
-        {error && (
-          <div className="text-center py-12">
-            <p className="text-red-400 mb-4">{error}</p>
-            <button
-              onClick={() => searchTerm ? searchGames(searchTerm) : getAllGames()}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        )}
-
-        {/* Games Grid */}
-        {loading ? (
-          <div className={`grid gap-6 ${
-            isMobile 
-              ? 'grid-cols-2' 
-              : viewMode === 'grid' 
-                ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-                : 'grid-cols-1'
-          }`}>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
-                <div className="aspect-[3/4] bg-gray-700"></div>
-                <div className="p-4">
-                  <div className="h-4 bg-gray-700 rounded mb-2"></div>
-                  <div className="h-3 bg-gray-700 rounded w-2/3 mb-3"></div>
-                  <div className="h-3 bg-gray-700 rounded w-1/2"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : !error && (
-          <div className={`grid gap-6 ${
-            isMobile 
-              ? 'grid-cols-2' 
-              : viewMode === 'grid' 
-                ? 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-                : 'grid-cols-1'
-          }`}>
-            {filteredGames.map((game) => (
-              <GameCard key={game.id} game={game} listView={!isMobile && viewMode === 'list'} />
-            ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {!loading && !error && filteredGames.length > 0 && !isMobile && (
-          <div className="mt-12 flex justify-center">
-          <div className="flex items-center gap-2">
-            <button className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
-              Previous
-            </button>
-            <span className="px-4 py-2 bg-purple-600 text-white rounded-lg">1</span>
-            <span className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors cursor-pointer">2</span>
-            <span className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors cursor-pointer">3</span>
-            <button className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
-              Next
-            </button>
-          </div>
-        </div>
-        )}
+        {/* Game Search Component */}
+        <GameSearch
+          onGameSelect={handleGameSelect}
+          placeholder="Search for games..."
+          showViewToggle={!isMobile}
+          initialViewMode="grid"
+          maxResults={50}
+          showHealthCheck={import.meta.env.DEV}
+        />
       </div>
     </div>
   );
