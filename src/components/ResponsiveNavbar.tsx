@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube, Compass } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 import { useResponsive } from '../hooks/useResponsive';
 
@@ -102,6 +102,16 @@ export const ResponsiveNavbar: React.FC = () => {
                     Games
                   </Link>
                   <Link
+                    to="/discover"
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive('/discover') ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Compass className="h-5 w-5" />
+                    Discover
+                  </Link>
+                  <Link
                     to="/users"
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                       isActive('/users') ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
@@ -169,6 +179,13 @@ export const ResponsiveNavbar: React.FC = () => {
               <Link to="/" className="flex items-center space-x-2">
                 <Gamepad2 className="h-8 w-8 text-purple-400" />
                 <span className="text-xl font-bold text-white">GameVault</span>
+              </Link>
+              <Link
+                to="/discover"
+                className="p-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+                title="Game Discovery"
+              >
+                <Compass className="h-5 w-5 text-white" />
               </Link>
               <Link
                 to="/dummy-game"
