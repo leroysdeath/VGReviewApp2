@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Edit, Calendar, MessageCircle, Star, Trophy, Users, BookOpen, Settings, Heart, Clock, CheckCircle, Plus } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
+import { ProfileGamification } from '../components/ProfileGamification';
 import { mockGames, mockReviews } from '../data/mockData';
 
 export const ProfilePage: React.FC = () => {
@@ -141,6 +142,16 @@ export const ProfilePage: React.FC = () => {
                 Overview
               </button>
               <button
+                onClick={() => setActiveTab('achievements')}
+                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'achievements'
+                    ? 'border-purple-500 text-purple-400'
+                    : 'border-transparent text-gray-400 hover:text-white'
+                }`}
+              >
+                Achievements
+              </button>
+              <button
                 onClick={() => setActiveTab('reviews')}
                 className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'reviews'
@@ -277,6 +288,11 @@ export const ProfilePage: React.FC = () => {
                   </div>
                 </div>
               </div>
+            )}
+            
+            {/* Achievements Tab */}
+            {activeTab === 'achievements' && (
+              <ProfileGamification userId={1} />
             )}
 
             {/* Reviews Tab */}

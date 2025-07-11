@@ -14,6 +14,7 @@ import { ActivityFeedPage } from './pages/ActivityFeedPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { NotificationSettingsPage } from './pages/NotificationSettingsPage';
 import { LoginPage } from './pages/LoginPage';
+import { GamificationPage } from './pages/GamificationPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ResponsiveDummyGamePage } from './pages/ResponsiveDummyGamePage';
@@ -39,6 +40,7 @@ function App() {
               <Route path="/activity" element={<ActivityFeedPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
+              <Route path="/achievements" element={<GamificationPage />} />
               <Route path="/users" element={<UserSearchPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/review/:gameId?" element={<ReviewFormPage />} />
