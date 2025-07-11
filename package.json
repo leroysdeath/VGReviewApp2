@@ -12,6 +12,7 @@
     "build:analyze": "vite build --mode analyze"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.1.1",
     "@radix-ui/react-tabs": "^1.1.12",
     "@supabase/supabase-js": "^2.50.3",
     "@types/react-router-dom": "^5.3.3",
@@ -24,11 +25,13 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.3.1",
     "react-helmet-async": "^2.0.5",
+    "react-hook-form": "^7.60.0",
     "react-intersection-observer": "^9.16.0",
     "react-player": "^3.2.0",
     "react-router-dom": "^7.6.3",
     "react-virtualized": "^9.22.6",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

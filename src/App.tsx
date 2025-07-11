@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { AuthProvider } from './components/AuthProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ModernHeader } from './components/ModernHeader';
 import { ResponsiveLandingPage } from './components/ResponsiveLandingPage';
@@ -24,6 +25,7 @@ import { ResponsiveDummyUserPage } from './pages/ResponsiveDummyUserPage';
 import { GameCardExamples } from './pages/GameCardExamples';
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { SEOHead } from './components/SEOHead';
+import { AuthPage } from './pages/AuthPage';
 import { SearchPage } from './pages/SearchPage';
 import { AdvancedSearchPage } from './pages/AdvancedSearchPage';
 
@@ -31,37 +33,39 @@ function App() {
   return (
     <HelmetProvider>
       <ErrorBoundary>
-        <Router>
-          <div className="min-h-screen bg-gray-900">
-            <SEOHead />
-            <ModernHeader onAuthClick={() => console.log('Auth clicked')} />
-            <div className="pt-16">
-            <Routes>
-              <Route path="/" element={<ResponsiveLandingPage />} />
-              <Route path="/game/:id" element={<GamePage />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/advanced-search" element={<AdvancedSearchPage />} />
-              <Route path="/discover" element={<GameDiscoveryPage />} />
-              <Route path="/search-results" element={<SearchResultsPage />} />
-              <Route path="/user/:id" element={<UserPage />} />
-              <Route path="/community" element={<SocialFeaturesPage />} />
-              <Route path="/activity" element={<ActivityFeedPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
-              <Route path="/achievements" element={<GamificationPage />} />
-              <Route path="/users" element={<UserSearchPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/review/:gameId?" element={<ReviewFormPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/dummy-game" element={<ResponsiveDummyGamePage />} />
-              <Route path="/dummy-user" element={<ResponsiveDummyUserPage />} />
-              <Route path="/game-cards" element={<GameCardExamples />} />
-              <Route path="/review-cards" element={<ReviewCardExamples />} />
-              {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
-            </Routes>
+        <AuthProvider>
+          <Router>
+            <div className="min-h-screen bg-gray-900">
+              <SEOHead />
+              <ModernHeader onAuthClick={() => console.log('Auth clicked')} />
+              <div className="pt-16">
+              <Routes>
+                <Route path="/" element={<ResponsiveLandingPage />} />
+                <Route path="/game/:id" element={<GamePage />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/advanced-search" element={<AdvancedSearchPage />} />
+                <Route path="/discover" element={<GameDiscoveryPage />} />
+                <Route path="/search-results" element={<SearchResultsPage />} />
+                <Route path="/user/:id" element={<UserPage />} />
+                <Route path="/community" element={<SocialFeaturesPage />} />
+                <Route path="/activity" element={<ActivityFeedPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
+                <Route path="/achievements" element={<GamificationPage />} />
+                <Route path="/users" element={<UserSearchPage />} />
+                <Route path="/login" element={<AuthPage />} />
+                <Route path="/review/:gameId?" element={<ReviewFormPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/dummy-game" element={<ResponsiveDummyGamePage />} />
+                <Route path="/dummy-user" element={<ResponsiveDummyUserPage />} />
+                <Route path="/game-cards" element={<GameCardExamples />} />
+                <Route path="/review-cards" element={<ReviewCardExamples />} />
+                {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
+              </Routes>
+              </div>
             </div>
-          </div>
-        </Router>
+          </Router>
+        </AuthProvider>
       </ErrorBoundary>
     </HelmetProvider>
   );
