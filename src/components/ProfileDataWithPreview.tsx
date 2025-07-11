@@ -42,7 +42,7 @@ export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
   reviewFilter,
   onReviewFilterChange,
   forceMobileView = false,
-  isDummy = false
+  isDummy = false,
   ...props
 }) => {
   return (
