@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { ResponsiveNavbar } from './components/ResponsiveNavbar';
+import { ModernHeader } from './components/ModernHeader';
 import { ResponsiveLandingPage } from './components/ResponsiveLandingPage';
 import { GamePage } from './pages/GamePage';
 import { GameSearchPage } from './pages/GameSearchPage';
@@ -30,7 +30,8 @@ function App() {
         <Router>
           <div className="min-h-screen bg-gray-900">
             <SEOHead />
-            <ResponsiveNavbar />
+            <ModernHeader onAuthClick={() => console.log('Auth clicked')} />
+            <div className="pt-16">
             <Routes>
               <Route path="/" element={<ResponsiveLandingPage />} />
               <Route path="/game/:id" element={<GamePage />} />
@@ -51,6 +52,7 @@ function App() {
               <Route path="/dummy-user" element={<ResponsiveDummyUserPage />} />
               {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
             </Routes>
+            </div>
           </div>
         </Router>
       </ErrorBoundary>
