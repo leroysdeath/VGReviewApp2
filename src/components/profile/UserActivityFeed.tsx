@@ -143,7 +143,7 @@ export const UserActivityFeed: React.FC<UserActivityFeedProps> = ({
   // Loading state
   if (isLoading) {
     return (
-      <div className={\`space-y-4 ${className}`}>
+      <div className={"space-y-4 " + className}>
         {Array.from({ length: 5 }).map((_, index) => (
           <div key={index} className="flex gap-4 animate-pulse">
             <div className="w-10 h-10 bg-gray-700 rounded-full flex-shrink-0"></div>
@@ -160,7 +160,7 @@ export const UserActivityFeed: React.FC<UserActivityFeedProps> = ({
   // Empty state
   if (activities.length === 0) {
     return (
-      <div className={\`text-center py-8 ${className}`}>
+      <div className={"text-center py-8 " + className}>
         <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
           <Calendar className="h-8 w-8 text-gray-500" />
         </div>
@@ -173,7 +173,7 @@ export const UserActivityFeed: React.FC<UserActivityFeedProps> = ({
   }
 
   return (
-    <div className={\`space-y-4 ${className}`}>
+    <div className={"space-y-4 " + className}>
       {activities.map((activity) => (
         <div key={activity.id} className="flex gap-4 p-4 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors">
           {/* Activity Icon */}
