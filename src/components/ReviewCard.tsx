@@ -42,7 +42,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 
   // Get user initial for avatar fallback
   const getUserInitial = () => {
-    return (review.username || '').charAt(0).toUpperCase();
+    if (!review || (!review.username && !review.author)) {
+      return '?';
+    }
+    const name = review.username || review.author || '';
+    return name.charAt(0).toUpperCase();
   };
 
   // Get avatar gradient background
