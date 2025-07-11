@@ -12,14 +12,22 @@
     "build:analyze": "vite build --mode analyze"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.1.1",
     "@supabase/supabase-js": "^2.50.3",
+    "@types/react-datepicker": "^7.0.0",
     "@types/react-router-dom": "^5.3.3",
+    "@types/react-select": "^5.0.1",
     "dotenv": "^17.1.0",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
+    "react-datepicker": "^8.4.0",
     "react-dom": "^18.3.1",
     "react-helmet-async": "^2.0.5",
-    "react-router-dom": "^7.6.3"
+    "react-hook-form": "^7.60.0",
+    "react-router-dom": "^7.6.3",
+    "react-select": "^5.10.1",
+    "react-slider": "^2.0.6",
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

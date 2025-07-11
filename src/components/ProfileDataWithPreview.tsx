@@ -43,7 +43,11 @@ export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
   onReviewFilterChange,
   forceMobileView = false,
   isDummy = false,
-  ...props
+  viewMode?: string;
+  onViewModeChange?: (mode: string) => void;
+  userFavoriteGames?: Game[];
+  userRecentGames?: Game[];
+  stats?: any;
 }) => {
   return (
     <div className={forceMobileView ? 'mobile-preview-context' : ''}>
