@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, 
-  Play, Download, Share2, Bookmark, Trophy, Clock, Users as UsersIcon, 
-  Gamepad2, ChevronLeft, ChevronRight, X, ExternalLink, Filter,
-  ThumbsUp, ThumbsDown, Flag, MoreHorizontal, Grid, List, Search,
-  Facebook, Twitter, Instagram, Youtube, Twitch, Steam, ArrowLeft,
-  Home, ChevronDown, Eye, Camera, Info, Award, Globe, Zap
-} from 'lucide-react';
+import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, Play, Download, Share2, Bookmark, Trophy, Clock, Users as UsersIcon, Gamepad2, ChevronLeft, ChevronRight, X, ExternalLink, Filter, ThumbsUp, ThumbsDown, Flag, MoreHorizontal, Grid, List, Search, Facebook, Twitter, Instagram, Youtube, Twitch, Stamp as Steam, ArrowLeft, Home, ChevronDown, Eye, Camera, Info, Award, Globe, Zap } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { SEOHead } from '../components/SEOHead';
