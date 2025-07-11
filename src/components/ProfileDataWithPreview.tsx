@@ -27,21 +27,10 @@ interface Review {
 
 interface ProfileDataWithPreviewProps {
   activeTab: string;
-  userFavoriteGames: Game[];
-  userRecentGames: Game[];
   sortedReviews: Review[];
   allGames: Game[];
-  stats: {
-    films: number;
-    thisYear: number;
-    lists: number;
-    following: number;
-    followers: number;
-  };
   reviewFilter: string;
   onReviewFilterChange: (filter: string) => void;
-  viewMode: 'grid' | 'list';
-  onViewModeChange: (mode: 'grid' | 'list') => void;
   isDummy?: boolean;
   forceMobileView?: boolean;
 }
@@ -53,6 +42,7 @@ export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
   reviewFilter,
   onReviewFilterChange,
   forceMobileView = false,
+  isDummy = false
   ...props
 }) => {
   return (
@@ -63,6 +53,7 @@ export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
         sortedReviews={sortedReviews}
         reviewFilter={reviewFilter}
         onReviewFilterChange={onReviewFilterChange}
+        isDummy={isDummy}
       />
     </div>
   );

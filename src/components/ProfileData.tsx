@@ -32,6 +32,7 @@ interface ProfileDataProps {
   sortedReviews: Review[];
   reviewFilter: string;
   onReviewFilterChange: (filter: string) => void;
+  isDummy?: boolean;
 }
 
 export const ProfileData: React.FC<ProfileDataProps> = ({
@@ -39,7 +40,8 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
   allGames,
   sortedReviews,
   reviewFilter,
-  onReviewFilterChange
+  onReviewFilterChange,
+  isDummy = false
 }) => {
   // Top 5 Tab Content
   if (activeTab === 'top5') {
@@ -50,7 +52,9 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
 
     return (
       <div>
-        <h2 className="text-xl font-semibold text-white mb-6">Top 5 Highest Rated Games</h2>
+        <h2 className="text-xl font-semibold text-white mb-6">
+          {isDummy ? 'Dummy ' : ''}Top 5 Highest Rated Games
+        </h2>
         
         {/* Desktop Version */}
         <div className="hidden md:flex gap-6 justify-center">
@@ -133,7 +137,9 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
 
     return (
       <div>
-        <h2 className="text-xl font-semibold text-white mb-6">Top 50 Highest Rated Games</h2>
+        <h2 className="text-xl font-semibold text-white mb-6">
+          {isDummy ? 'Dummy ' : ''}Top 50 Highest Rated Games
+        </h2>
         
         {/* Desktop Version - 10 columns */}
         <div className="hidden lg:grid lg:grid-cols-10 gap-4">
@@ -246,8 +252,10 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
   if (activeTab === 'reviews') {
     return (
       <div>
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-          <h2 className="text-xl font-semibold text-white">Reviews ({sortedReviews.length})</h2>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">          
+          <h2 className="text-xl font-semibold text-white">
+            {isDummy ? 'Dummy ' : ''}Reviews ({sortedReviews.length})
+          </h2>
           <select
             value={reviewFilter}
             onChange={(e) => onReviewFilterChange(e.target.value)}
@@ -297,7 +305,9 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
   // Default content for unknown tabs
   return (
     <div className="text-center py-12">
-      <h2 className="text-xl font-semibold text-white mb-4">Coming Soon</h2>
+      <h2 className="text-xl font-semibold text-white mb-4">
+        {isDummy ? 'Dummy ' : ''}Coming Soon
+      </h2>
       <p className="text-gray-400">This feature is coming soon.</p>
     </div>
   );

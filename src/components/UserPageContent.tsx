@@ -28,21 +28,10 @@ interface Review {
 
 interface UserPageContentProps {
   activeTab: string;
-  userFavoriteGames: Game[];
-  userRecentGames: Game[];
   sortedReviews: Review[];
   allGames: Game[];
-  stats: {
-    films: number;
-    thisYear: number;
-    lists: number;
-    following: number;
-    followers: number;
-  };
   reviewFilter: string;
   onReviewFilterChange: (filter: string) => void;
-  viewMode: 'grid' | 'list';
-  onViewModeChange: (mode: 'grid' | 'list') => void;
   isDummy?: boolean;
   showPreviewToggle?: boolean;
 }
@@ -54,6 +43,7 @@ export const UserPageContent: React.FC<UserPageContentProps> = ({
   reviewFilter,
   onReviewFilterChange,
   showPreviewToggle = false,
+  isDummy = false
 }) => {
   const [forceMobileView, setForceMobileView] = React.useState(false);
 
@@ -69,6 +59,7 @@ export const UserPageContent: React.FC<UserPageContentProps> = ({
         reviewFilter={reviewFilter}
         onReviewFilterChange={onReviewFilterChange}
         forceMobileView={forceMobileView}
+        isDummy={isDummy}
       />
     </>
   );
