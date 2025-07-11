@@ -10,6 +10,8 @@ interface GameSearchProps {
   maxResults?: number;
   className?: string;
   showHealthCheck?: boolean;
+  debounceMs?: number;
+  autoSearch?: boolean;
 }
 
 interface SearchState {
@@ -27,7 +29,9 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   initialViewMode = 'grid',
   maxResults = 20,
   className = '',
-  showHealthCheck = false
+  showHealthCheck = false,
+  debounceMs = 300,
+  autoSearch = true
 }) => {
   const [searchState, setSearchState] = useState<SearchState>({
     query: '',
@@ -41,6 +45,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
   const DEBUG_MODE = import.meta.env.DEV;
+  
   // Debounced search function
   const performSearch = useCallback(async (searchTerm: string) => {
     if (!searchTerm.trim()) {
@@ -98,7 +103,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         error: errorMessage
       }));
     }
-  }, [maxResults]);
+  }, [maxResults, DEBUG_MODE]);
 
   // Handle input change with debouncing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,15 +120,22 @@ export const GameSearch: React.FC<GameSearchProps> = ({
     }
 
     if (DEBUG_MODE) {
-      console.log('🐛 [DEBUG] Input changed:', { newQuery, willSearch: newQuery.trim().length > 0 });
+      console.log('🐛 [DEBUG] Input changed:', { newQuery, willSearch: newQuery.trim().length > 0 && autoSearch });
     }
 
     // Set new timer for debounced search
-    const timer = setTimeout(() => {
-      performSearch(newQuery);
-    }, 300);
+    if (autoSearch) {
+      const timer = setTimeout(() => {
+        performSearch(newQuery);
+      }, debounceMs);
 
-    setDebounceTimer(timer);
+      setDebounceTimer(timer);
+    }
+  };
+
+  // Manual search function
+  const handleSearch = () => {
+    performSearch(searchState.query);
   };
 
   // Cleanup timer on unmount
@@ -324,6 +336,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
           </div>
         </div>
       )}
+      
       {/* Health Check Button */}
       {showHealthCheck && import.meta.env.DEV && (
         <div className="mb-4 p-3 bg-gray-800 rounded-lg border border-gray-700">
@@ -375,6 +388,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
             onChange={handleInputChange}
             placeholder={placeholder}
             className="w-full pl-10 pr-12 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all"
+            aria-label="Search games"
           />
           {DEBUG_MODE && (
             <div className="absolute right-12 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">DEBUG</div>
@@ -385,6 +399,15 @@ export const GameSearch: React.FC<GameSearchProps> = ({
             </div>
           )}
         </div>
+        
+        {!autoSearch && (
+          <button
+            onClick={handleSearch}
+            className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Search
+          </button>
+        )}
       </div>
 
       {/* View Toggle */}
@@ -404,6 +427,8 @@ export const GameSearch: React.FC<GameSearchProps> = ({
                   : 'text-gray-400 hover:text-white'
               }`}
               title="Grid view"
+              aria-label="Grid view"
+              aria-pressed={viewMode === 'grid'}
             >
               <Grid className="h-4 w-4" />
             </button>
@@ -415,6 +440,8 @@ export const GameSearch: React.FC<GameSearchProps> = ({
                   : 'text-gray-400 hover:text-white'
               }`}
               title="List view"
+              aria-label="List view"
+              aria-pressed={viewMode === 'list'}
             >
               <List className="h-4 w-4" />
             </button>

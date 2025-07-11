@@ -24,6 +24,8 @@ import { ResponsiveDummyUserPage } from './pages/ResponsiveDummyUserPage';
 import { GameCardExamples } from './pages/GameCardExamples';
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { SEOHead } from './components/SEOHead';
+import { SearchPage } from './pages/SearchPage';
+import { AdvancedSearchPage } from './pages/AdvancedSearchPage';
 
 function App() {
   return (
@@ -37,7 +39,8 @@ function App() {
             <Routes>
               <Route path="/" element={<ResponsiveLandingPage />} />
               <Route path="/game/:id" element={<GamePage />} />
-              <Route path="/search" element={<GameSearchPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/advanced-search" element={<AdvancedSearchPage />} />
               <Route path="/discover" element={<GameDiscoveryPage />} />
               <Route path="/search-results" element={<SearchResultsPage />} />
               <Route path="/user/:id" element={<UserPage />} />
