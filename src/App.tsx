@@ -19,6 +19,7 @@ import { GameHeroDemoPage } from './pages/GameHeroDemoPage';
 import { GameCardDemoPage } from './pages/GameCardDemoPage';
 import { StatsDemoPage } from './pages/StatsDemoPage';
 import { IGDBTestPage } from './pages/IGDBTestPage';
+import { ReviewDemoPage } from './pages/ReviewDemoPage';
 import { SEOHead } from './components/SEOHead';
 
 function App() {
