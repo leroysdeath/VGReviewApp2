@@ -14,6 +14,11 @@
   50% { transform: translate(-20px, 20px); }
 }
 
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes float-medium {
   0%, 100% { transform: translate(0, 0); }
   50% { transform: translate(20px, -20px); }

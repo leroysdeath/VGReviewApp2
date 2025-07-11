@@ -1,5 +1,6 @@
 import React from 'react';
 import { HeroSection } from '../components/HeroSection';
+import { AnimatedStatsSection } from '../components/AnimatedStatsSection';
 import { GameCard } from '../components/GameCard';
 import { ReviewCard } from '../components/ReviewCard';
 import { mockReviews } from '../data/mockData';
@@ -32,6 +33,9 @@ export const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-gray-900">
       {/* New Hero Section */}
       <HeroSection />
+
+      {/* Animated Stats Section */}
+      <AnimatedStatsSection />
 
       {/* Features Section */}
       <div className="py-16 bg-gray-800">
