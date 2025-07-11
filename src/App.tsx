@@ -10,6 +10,9 @@ import { SearchResultsPage } from './pages/SearchResultsPage';
 import { GameDiscoveryPage } from './pages/GameDiscoveryPage';
 import { UserPage } from './pages/UserPage';
 import { UserSearchPage } from './pages/UserSearchPage';
+import { ActivityFeedPage } from './pages/ActivityFeedPage';
+import { NotificationsPage } from './pages/NotificationsPage';
+import { NotificationSettingsPage } from './pages/NotificationSettingsPage';
 import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -33,6 +36,9 @@ function App() {
               <Route path="/discover" element={<GameDiscoveryPage />} />
               <Route path="/search-results" element={<SearchResultsPage />} />
               <Route path="/user/:id" element={<UserPage />} />
+              <Route path="/activity" element={<ActivityFeedPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
               <Route path="/users" element={<UserSearchPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/review/:gameId?" element={<ReviewFormPage />} />

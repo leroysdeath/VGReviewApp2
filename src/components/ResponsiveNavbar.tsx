@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube, Compass } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube, Compass, Bell } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 import { useResponsive } from '../hooks/useResponsive';
+import { useNotifications } from '../hooks/useNotifications';
+import { NotificationCenter } from './NotificationCenter';
 
 export const ResponsiveNavbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -11,6 +13,21 @@ export const ResponsiveNavbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
+  
+  // Notifications
+  const {
+    notifications,
+    groupedNotifications,
+    unreadCount,
+    loading: notificationsLoading,
+    markAsRead,
+    markAllAsRead,
+    loadMore,
+    hasMore,
+    refresh: refreshNotifications
+  } = useNotifications({
+    pageSize: 10
+  });
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -156,6 +173,17 @@ export const ResponsiveNavbar: React.FC = () => {
                   <User className="h-5 w-5" />
                   Login
                 </button>
+                <Link
+                  to="/notifications"
+                  className="touch-target flex items-center justify-center text-gray-400 hover:text-white transition-colors relative"
+                >
+                  <Bell className="h-6 w-6" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
               </div>
             </div>
           </div>
@@ -231,6 +259,16 @@ export const ResponsiveNavbar: React.FC = () => {
           {/* Desktop User Menu */}
           <div className="hidden md:block">
             <div className="ml-4 flex items-center md:ml-6">
+              <NotificationCenter
+                notifications={notifications}
+                groupedNotifications={groupedNotifications}
+                unreadCount={unreadCount}
+                loading={notificationsLoading}
+                onMarkAsRead={markAsRead}
+                onMarkAllAsRead={markAllAsRead}
+                onLoadMore={loadMore}
+                hasMore={hasMore}
+              />
               <button
                 onClick={() => setIsLoginModalOpen(true)}
                 className="p-2 text-gray-400 hover:text-white transition-colors"
@@ -288,6 +326,18 @@ export const ResponsiveNavbar: React.FC = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               Users
+            </Link>
+            <Link
+              to="/notifications"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Notifications
+              {unreadCount > 0 && (
+                <span className="ml-2 bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
+                  {unreadCount}
+                </span>
+              )}
             </Link>
             <Link
               to="/user/1"

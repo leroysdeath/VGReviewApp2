@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameVault - Offline</title>
+  <style>
+    body {
+      font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+      background-color: #0f0f23;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 500px;
+      padding: 30px;
+      background-color: #1f2937;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #6366f1;
+    }
+    p {
+      margin-bottom: 1.5rem;
+      color: #d1d5db;
+      line-height: 1.6;
+    }
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      color: #6366f1;
+    }
+    .button {
+      display: inline-block;
+      background-color: #6366f1;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background-color 0.3s;
+    }
+    .button:hover {
+      background-color: #4f46e5;
+    }
+    .status {
+      margin-top: 2rem;
+      padding: 10px;
+      background-color: #374151;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    <h1>You're Offline</h1>
+    <p>It looks like you've lost your internet connection. GameVault requires an internet connection to access most features.</p>
+    <p>Some of your previously viewed content may be available offline.</p>
+    <a href="/" class="button">Try Again</a>
+    <div class="status">
+      <p>We'll automatically reconnect when you're back online.</p>
+    </div>
+  </div>
+
+  <script>
+    // Check for online status changes
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>
