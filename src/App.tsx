@@ -17,6 +17,7 @@ import { ResponsiveDummyUserPage } from './pages/ResponsiveDummyUserPage';
 import { ModernNavbarDemoPage } from './pages/ModernNavbarDemoPage';
 import { GameHeroDemoPage } from './pages/GameHeroDemoPage';
 import { GameCardDemoPage } from './pages/GameCardDemoPage';
+import { StatsDemoPage } from './pages/StatsDemoPage';
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { SEOHead } from './components/SEOHead';
 
@@ -43,6 +44,7 @@ function App() {
               <Route path="/modern-navbar" element={<ModernNavbarDemoPage />} />
               <Route path="/hero-demo" element={<GameHeroDemoPage />} />
               <Route path="/game-cards" element={<GameCardDemoPage />} />
+              <Route path="/stats-demo" element={<StatsDemoPage />} />
               {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
             </Routes>
           </div>
