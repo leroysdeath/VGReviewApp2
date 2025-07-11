@@ -45,6 +45,7 @@ function App() {
               <Route path="/hero-demo" element={<GameHeroDemoPage />} />
               <Route path="/game-cards" element={<GameCardDemoPage />} />
               <Route path="/stats-demo" element={<StatsDemoPage />} />
+              <Route path="/review-cards" element={<ReviewDemoPage />} />
               {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
             </Routes>
           </div>
