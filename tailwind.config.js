@@ -26,6 +26,8 @@ export default {
         'gradient-text': 'gradientText 3s ease-in-out infinite',
         'gradient-text-delayed': 'gradientText 3s ease-in-out infinite 1.5s',
         'glow-pulse': 'glowPulse 2s ease-in-out infinite',
+        'spin-slow': 'spin 3s linear infinite',
+        'bounce-slow': 'bounce 3s ease-in-out infinite',
       },
       keyframes: {
         slideUp: {
@@ -54,6 +56,10 @@ export default {
           '0%, 100%': { boxShadow: '0 0 20px rgba(99, 102, 241, 0.5)' },
           '50%': { boxShadow: '0 0 40px rgba(99, 102, 241, 0.8)' },
         },
+      },
+      lineClamp: {
+        2: '2',
+        3: '3',
       },
     },
   },
