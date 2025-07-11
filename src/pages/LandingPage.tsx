@@ -1,13 +1,11 @@
 import React from 'react';
-import { HeroSection } from '../components/HeroSection';
-import { AnimatedStatsSection } from '../components/AnimatedStatsSection';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Star, TrendingUp, Users, Search, ArrowRight } from 'lucide-react';
 import { GameCard } from '../components/GameCard';
 import { ReviewCard } from '../components/ReviewCard';
 import { mockReviews } from '../data/mockData';
 import { igdbService, Game } from '../services/igdbApi';
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Star, TrendingUp, Users, ArrowRight } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
@@ -31,11 +29,40 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      {/* New Hero Section */}
-      <HeroSection />
-
-      {/* Animated Stats Section */}
-      <AnimatedStatsSection />
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-br from-purple-900 via-blue-900 to-gray-900 overflow-hidden">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+              Discover Your Next
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
+                {' '}Gaming Adventure
+              </span>
+            </h1>
+            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Join the ultimate gaming community. Rate, review, and discover games 
+              through the power of social gaming. Your next favorite game is just a click away.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link
+                to="/search"
+                className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 text-lg font-medium"
+              >
+                <Search className="h-5 w-5" />
+                Explore Games
+              </Link>
+              <Link
+                to="/login"
+                className="px-8 py-3 bg-transparent border-2 border-purple-400 text-purple-400 rounded-lg hover:bg-purple-400 hover:text-white transition-colors flex items-center gap-2 text-lg font-medium"
+              >
+                Join Community
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Features Section */}
       <div className="py-16 bg-gray-800">
