@@ -7,6 +7,7 @@ import { ResponsiveLandingPage } from './components/ResponsiveLandingPage';
 import { GamePage } from './pages/GamePage';
 import { GameSearchPage } from './pages/GameSearchPage';
 import { SearchResultsPage } from './pages/SearchResultsPage';
+import { GameDiscoveryPage } from './pages/GameDiscoveryPage';
 import { UserPage } from './pages/UserPage';
 import { UserSearchPage } from './pages/UserSearchPage';
 import { LoginPage } from './pages/LoginPage';
@@ -29,6 +30,7 @@ function App() {
               <Route path="/" element={<ResponsiveLandingPage />} />
               <Route path="/game/:id" element={<GamePage />} />
               <Route path="/search" element={<GameSearchPage />} />
+              <Route path="/discover" element={<GameDiscoveryPage />} />
               <Route path="/search-results" element={<SearchResultsPage />} />
               <Route path="/user/:id" element={<UserPage />} />
               <Route path="/users" element={<UserSearchPage />} />
