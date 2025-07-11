@@ -7,9 +7,18 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "type-check": "tsc --noEmit",
-    "build:analyze": "vite build --mode analyze"
+    "preview": "vite preview", 
+    "type-check": "tsc --noEmit", 
+    "build:analyze": "vite build --mode analyze",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "cypress run",
+    "test:a11y": "jest -t 'accessibility'",
+    "prepare": "husky install",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "chromatic": "chromatic"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
