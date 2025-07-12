@@ -363,26 +363,31 @@ export const DummyGamePage: React.FC = () => {
           {/* Rating Summary and Additional Info */}
           <div className="space-y-6">
             <div className="bg-gray-800 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-white mb-4">Community Rating</h3>
-              <div className="text-center mb-6">
-                <div className="text-4xl font-bold text-green-400 mb-2">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
+                <span className="text-sm text-blue-400">{dummyReviews.length}k fans</span>
+              </div>
+              <div className="border-b border-gray-700 mb-4"></div>
+              <div className="flex items-end justify-between">
+                <div className="flex items-end gap-1">
+                  <span className="text-green-500 text-sm">1</span>
+                  <div className="flex items-end gap-[2px]">
+                    {ratingDistribution.map((item) => (
+                      <div 
+                        key={item.rating} 
+                        className="w-6 bg-gray-700 rounded-sm"
+                        style={{ 
+                          height: `${Math.max(4, (item.count / maxCount) * 40)}px`,
+                          backgroundColor: item.rating >= 8 ? '#4ade80' : '#374151'
+                        }}
+                      ></div>
+                    ))}
+                  </div>
+                  <span className="text-green-500 text-sm">10</span>
+                </div>
+                <div className="text-2xl font-bold text-green-400">
                   {averageRating.toFixed(1)}
                 </div>
-                <div className="flex items-center justify-center gap-1 mb-2">
-                  {ratingDistribution.map((item) => (
-                    <div key={item.rating} className="w-6 h-16 bg-gray-700 rounded-sm relative overflow-hidden">
-                      <div
-                        className="absolute bottom-0 w-full bg-green-600 transition-all duration-300"
-                        style={{ height: `${(item.count / maxCount) * 100}%` }}
-                      ></div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between text-gray-400 text-xs">
-                  <span>1</span>
-                  <span>10</span>
-                </div>
-                <div className="text-gray-400 mt-2">{dummyReviews.length} reviews</div>
               </div>
             </div>
 
