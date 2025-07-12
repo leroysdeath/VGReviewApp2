@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { StarRating } from './StarRating';
+import { Calendar, ListMusic } from 'lucide-react';
 
 interface Game {
   id: string;
@@ -27,7 +28,7 @@ interface Review {
 }
 
 interface ProfileDataProps {
-  activeTab: string;
+  activeTab: 'top5' | 'last5' | 'reviews' | 'activity' | 'lists';
   allGames: Game[];
   sortedReviews: Review[];
   reviewFilter: string;
@@ -297,6 +298,48 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
               </div>
             );
           })}
+        </div>
+      </div>
+    );
+  }
+  
+  // Activity Tab Content
+  if (activeTab === 'activity') {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold text-white mb-6">
+          {isDummy ? 'Dummy ' : ''}Activity Feed
+        </h2>
+        
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Calendar className="h-8 w-8 text-gray-500" />
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">Activity Coming Soon</h3>
+          <p className="text-gray-400">
+            This feature is currently under development. Check back soon!
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Lists Tab Content
+  if (activeTab === 'lists') {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold text-white mb-6">
+          {isDummy ? 'Dummy ' : ''}Game Lists
+        </h2>
+        
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ListMusic className="h-8 w-8 text-gray-500" />
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">Lists Coming Soon</h3>
+          <p className="text-gray-400">
+            Create and share your favorite game lists. This feature is coming soon!
+          </p>
         </div>
       </div>
     );
