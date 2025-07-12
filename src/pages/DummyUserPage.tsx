@@ -59,6 +59,9 @@ export const DummyUserPage: React.FC = () => {
         onReviewFilterChange={setReviewFilter}
         isDummy={true}
         showPreviewToggle={true}
+        userFavoriteGames={mockGames.slice(0, 5)}
+        userRecentGames={mockGames.slice(5, 10)}
+        stats={stats}
       />
     </UserPageLayout>
   );
