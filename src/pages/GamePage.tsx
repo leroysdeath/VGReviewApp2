@@ -234,28 +234,26 @@ export const GamePage: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+              <div className="text-4xl font-bold text-green-400 mb-2">
 
         {/* Reviews Section */}
-        <div className="grid lg:grid-cols-2 gap-8">
+              <div className="flex items-center justify-center gap-1 mb-2">
+                {ratingDistribution.map((item) => (
+                  <div key={item.rating} className="w-6 h-16 bg-gray-700 rounded-sm relative overflow-hidden">
+                    <div
+                      className="absolute bottom-0 w-full bg-green-600 transition-all duration-300"
+                      style={{ height: `${(item.count / maxCount) * 100}%` }}
+                    ></div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between text-gray-400 text-xs">
+                <span>1</span>
+                <span>10</span>
+              </div>
           {/* Top Reviews */}
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">Top Reviews</h2>
-            <div className="space-y-4">
-              {topReviews.map((review) => (
-                <ReviewCard key={review.id} review={review} compact />
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Reviews */}
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-6">Recent Reviews</h2>
-            <div className="space-y-4">
-              {recentReviews.map((review) => (
-                <ReviewCard key={review.id} review={review} compact />
-              ))}
-            </div>
           </div>
         </div>
       </div>

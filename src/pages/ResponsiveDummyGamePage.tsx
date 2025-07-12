@@ -514,27 +514,24 @@ export const ResponsiveDummyGamePage: React.FC = () => {
             <div className="bg-gray-800 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-white mb-4">Community Rating</h3>
               <div className="text-center mb-6">
-                <div className="text-4xl font-bold text-purple-400 mb-2">
+                <div className="text-4xl font-bold text-green-400 mb-2">
                   {averageRating.toFixed(1)}
                 </div>
-                <StarRating rating={averageRating} size="lg" />
-                <div className="text-gray-400 mt-2">{dummyReviews.length} reviews</div>
-              </div>
-              
-              {/* Rating Distribution */}
-              <div className="space-y-2">
-                {ratingDistribution.map((item) => (
-                  <div key={item.rating} className="flex items-center gap-2">
-                    <span className="text-gray-400 w-6">{item.rating}</span>
-                    <div className="flex-1 bg-gray-700 rounded-full h-2">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  {ratingDistribution.map((item) => (
+                    <div key={item.rating} className="w-6 h-16 bg-gray-700 rounded-sm relative overflow-hidden">
                       <div
-                        className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${(item.count / maxCount) * 100}%` }}
+                        className="absolute bottom-0 w-full bg-green-600 transition-all duration-300"
+                        style={{ height: `${(item.count / maxCount) * 100}%` }}
                       ></div>
                     </div>
-                    <span className="text-gray-400 text-sm w-8">{item.count}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <div className="flex items-center justify-between text-gray-400 text-xs">
+                  <span>1</span>
+                  <span>10</span>
+                </div>
+                <div className="text-gray-400 mt-2">{dummyReviews.length} reviews</div>
               </div>
             </div>
 
