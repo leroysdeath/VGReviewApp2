@@ -40,9 +40,16 @@ export const Navbar: React.FC = () => {
               <Link
                 to="/dummy-user"
                 className="p-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                title="Dummy Test User"
+                title="Dummy Test User Page"
               >
                 <User className="h-5 w-5 text-white" />
+              </Link>
+              <Link
+                to="/dummy-review"
+                className="p-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+                title="Dummy Test Review Page"
+              >
+                <MessageSquare className="h-5 w-5 text-white" />
               </Link>
               <Link
                 to="/dummy-game"

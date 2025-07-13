@@ -4,7 +4,7 @@ import { UserPageContent } from '../components/UserPageContent';
 import { mockGames, mockReviews } from '../data/mockData';
 
 export const DummyUserPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'top5' | 'top50' | 'reviews'>('top5');
+  const [activeTab, setActiveTab] = useState<'top5' | 'last5' | 'reviews' | 'activity' | 'lists'>('top5');
   const [reviewFilter, setReviewFilter] = useState('recent');
 
   // Current user data (dummy data for testing) - matches new Letterboxd-style structure
@@ -59,6 +59,9 @@ export const DummyUserPage: React.FC = () => {
         onReviewFilterChange={setReviewFilter}
         isDummy={true}
         showPreviewToggle={true}
+        userFavoriteGames={mockGames.slice(0, 5)}
+        userRecentGames={mockGames.slice(5, 10)}
+        stats={stats}
       />
     </UserPageLayout>
   );

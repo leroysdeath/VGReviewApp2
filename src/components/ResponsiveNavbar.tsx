@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube, MessageSquare } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 import { useResponsive } from '../hooks/useResponsive';
 
@@ -184,6 +184,13 @@ export const ResponsiveNavbar: React.FC = () => {
               >
                 <User className="h-5 w-5 text-white" />
               </Link>
+              <Link
+                to="/dummy-review"
+                className="p-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+                title="Dummy Test Review"
+              >
+                <MessageSquare className="h-5 w-5 text-white" />
+              </Link>
               {import.meta.env.DEV && (
                 <Link
                   to="/igdb-test"
@@ -271,6 +278,20 @@ export const ResponsiveNavbar: React.FC = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               Users
+            </Link>
+            <Link
+              to="/dummy-review"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Dummy Review
+            </Link>
+            <Link
+              to="/dummy-review"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Dummy Review
             </Link>
             <Link
               to="/user/1"

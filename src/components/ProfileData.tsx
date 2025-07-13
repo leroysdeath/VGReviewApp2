@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { StarRating } from './StarRating';
+import { Calendar, ListMusic } from 'lucide-react';
 
 interface Game {
   id: string;
@@ -27,11 +28,12 @@ interface Review {
 }
 
 interface ProfileDataProps {
-  activeTab: string;
+  activeTab: 'top5' | 'last5' | 'reviews' | 'activity' | 'lists';
   allGames: Game[];
   sortedReviews: Review[];
   reviewFilter: string;
   onReviewFilterChange: (filter: string) => void;
+  isDummy?: boolean;
 }
 
 export const ProfileData: React.FC<ProfileDataProps> = ({
@@ -39,7 +41,8 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
   allGames,
   sortedReviews,
   reviewFilter,
-  onReviewFilterChange
+  onReviewFilterChange,
+  isDummy = false
 }) => {
   // Top 5 Tab Content
   if (activeTab === 'top5') {
@@ -50,7 +53,9 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
 
     return (
       <div>
-        <h2 className="text-xl font-semibold text-white mb-6">Top 5 Highest Rated Games</h2>
+        <h2 className="text-xl font-semibold text-white mb-6">
+          {isDummy ? 'Dummy ' : ''}Top 5 Highest Rated Games
+        </h2>
         
         {/* Desktop Version */}
         <div className="hidden md:flex gap-6 justify-center">
@@ -133,7 +138,9 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
 
     return (
       <div>
-        <h2 className="text-xl font-semibold text-white mb-6">Top 50 Highest Rated Games</h2>
+        <h2 className="text-xl font-semibold text-white mb-6">
+          {isDummy ? 'Dummy ' : ''}Top 50 Highest Rated Games
+        </h2>
         
         {/* Desktop Version - 10 columns */}
         <div className="hidden lg:grid lg:grid-cols-10 gap-4">
@@ -246,8 +253,10 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
   if (activeTab === 'reviews') {
     return (
       <div>
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-          <h2 className="text-xl font-semibold text-white">Reviews ({sortedReviews.length})</h2>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">          
+          <h2 className="text-xl font-semibold text-white">
+            {isDummy ? 'Dummy ' : ''}Reviews ({sortedReviews.length})
+          </h2>
           <select
             value={reviewFilter}
             onChange={(e) => onReviewFilterChange(e.target.value)}
@@ -293,11 +302,55 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
       </div>
     );
   }
+  
+  // Activity Tab Content
+  if (activeTab === 'activity') {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold text-white mb-6">
+          {isDummy ? 'Dummy ' : ''}Activity Feed
+        </h2>
+        
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Calendar className="h-8 w-8 text-gray-500" />
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">Activity Coming Soon</h3>
+          <p className="text-gray-400">
+            This feature is currently under development. Check back soon!
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Lists Tab Content
+  if (activeTab === 'lists') {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold text-white mb-6">
+          {isDummy ? 'Dummy ' : ''}Game Lists
+        </h2>
+        
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ListMusic className="h-8 w-8 text-gray-500" />
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">Lists Coming Soon</h3>
+          <p className="text-gray-400">
+            Create and share your favorite game lists. This feature is coming soon!
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Default content for unknown tabs
   return (
     <div className="text-center py-12">
-      <h2 className="text-xl font-semibold text-white mb-4">Coming Soon</h2>
+      <h2 className="text-xl font-semibold text-white mb-4">
+        {isDummy ? 'Dummy ' : ''}Coming Soon
+      </h2>
       <p className="text-gray-400">This feature is coming soon.</p>
     </div>
   );

@@ -2,18 +2,23 @@ import React from 'react';
 import { Smartphone, Monitor } from 'lucide-react';
 
 interface MobilePreviewToggleProps {
-  isMobilePreview: boolean;
-  onToggle: (isMobile: boolean) => void;
+  onViewChange: (forceMobileView: boolean) => void;
 }
 
 export const MobilePreviewToggle: React.FC<MobilePreviewToggleProps> = ({
-  isMobilePreview,
-  onToggle
+  onViewChange
 }) => {
+  const [isMobilePreview, setIsMobilePreview] = React.useState(false);
+  
+  const handleToggle = (isMobile: boolean) => {
+    setIsMobilePreview(isMobile);
+    onViewChange(isMobile);
+  };
+  
   return (
     <div className="flex items-center gap-2 p-2 bg-gray-800 rounded-lg">
       <button
-        onClick={() => onToggle(false)}
+        onClick={() => handleToggle(false)}
         className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
           !isMobilePreview
             ? 'bg-purple-600 text-white'
@@ -24,7 +29,7 @@ export const MobilePreviewToggle: React.FC<MobilePreviewToggleProps> = ({
         <span className="text-sm">Desktop</span>
       </button>
       <button
-        onClick={() => onToggle(true)}
+        onClick={() => handleToggle(true)}
         className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
           isMobilePreview
             ? 'bg-purple-600 text-white'
