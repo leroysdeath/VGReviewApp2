@@ -7,7 +7,7 @@ import {
   truncateText,
   ActivityType
 } from '../utils/activityFormatters';
-import { ActivityItem } from '../components/ActivityItem';
+import ActivityItem from '../components/ActivityItem';
 
 // Sample activity data
 const sampleActivities = [
