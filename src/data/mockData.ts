@@ -141,6 +141,8 @@ export const mockReviews = [
     text: 'The Witcher 3 is an absolute masterpiece. The world-building is phenomenal, characters are deep and complex, and the side quests are better than most games\' main stories. Geralt\'s journey is both personal and epic in scope.',
     date: '2024-01-15',
     hasText: true,
+    likeCount: 24,
+    commentCount: 3,
     author: 'GameMaster92',
     authorAvatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
   },
@@ -152,6 +154,8 @@ export const mockReviews = [
     text: 'Cyberpunk 2077 has improved significantly since launch. The world is stunning and the story is engaging, but technical issues still persist. Worth playing if you can look past the bugs.',
     date: '2024-01-10',
     hasText: true,
+    likeCount: 15,
+    commentCount: 2,
     author: 'PixelPundit',
     authorAvatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150'
   },
@@ -163,6 +167,8 @@ export const mockReviews = [
     text: 'Red Dead Redemption 2 is a technical and narrative marvel. The attention to detail is unprecedented, and Arthur Morgan\'s story is one of the best in gaming. A true work of art.',
     date: '2024-01-08',
     hasText: true,
+    likeCount: 42,
+    commentCount: 7,
     author: 'NightOwlGamer',
     authorAvatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150'
   },
@@ -174,6 +180,8 @@ export const mockReviews = [
     text: 'The Last of Us Part II is emotionally devastating and mechanically refined. The story is divisive, but the gameplay and production values are top-notch.',
     date: '2024-01-05',
     hasText: true,
+    likeCount: 18,
+    commentCount: 5,
     author: 'CasualCritic',
     authorAvatar: 'https://images.pexels.com/photos/1310522/pexels-photo-1310522.jpeg?auto=compress&cs=tinysrgb&w=150'
   },
@@ -185,6 +193,8 @@ export const mockReviews = [
     text: 'Elden Ring successfully translates the Souls formula to an open world. The exploration is rewarding and the boss fights are memorable. A must-play for RPG fans.',
     date: '2024-01-03',
     hasText: true,
+    likeCount: 31,
+    commentCount: 4,
     author: 'GameMaster92',
     authorAvatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
   },
@@ -196,6 +206,8 @@ export const mockReviews = [
     text: 'Ghost of Tsushima is visually stunning with satisfying combat. The open world activities can feel repetitive, but the main story and atmosphere make up for it.',
     date: '2024-01-01',
     hasText: true,
+    likeCount: 12,
+    commentCount: 1,
     author: 'PixelPundit',
     authorAvatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150'
   }

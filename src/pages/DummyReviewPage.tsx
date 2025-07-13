@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, ThumbsUp, ThumbsDown, MessageSquare, Calendar, User, Share2, Flag, Heart } from 'lucide-react';
+import { Star, MessageSquare, Calendar, User, Share2, Flag, Heart } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { mockGames } from '../data/mockData';
+import { ReviewInteractions } from '../components/ReviewInteractions';
 
 export const DummyReviewPage: React.FC = () => {
   const [isHelpful, setIsHelpful] = useState<boolean | null>(null);
   const [isLiked, setIsLiked] = useState(false);
+  const [showComments, setShowComments] = useState(false);
 
   // Mock review data
   const dummyReview = {
@@ -32,7 +34,8 @@ In conclusion, The Witcher 3 sets a high bar for open-world RPGs with its incred
     author: {
       id: 'user-1',
       username: 'RPGMaster',
-      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
+      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
+      userId: 1
     },
     date: '2024-01-15',
     helpfulCount: 342,
@@ -42,6 +45,68 @@ In conclusion, The Witcher 3 sets a high bar for open-world RPGs with its incred
     playTime: '120+ hours',
     completionStatus: 'Completed'
   };
+
+  // Mock comments data
+  const mockComments = [
+    {
+      id: 1,
+      userId: 2,
+      reviewId: 1,
+      content: 'I completely agree with your assessment of the side quests. The Bloody Baron questline is some of the best storytelling I\'ve ever experienced in a game.',
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      user: {
+        id: 2,
+        name: 'PixelPundit',
+        picurl: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150'
+      },
+      replies: []
+    },
+    {
+      id: 2,
+      userId: 3,
+      reviewId: 1,
+      content: 'Have you played the DLCs? Blood and Wine is practically a whole new game with one of the most beautiful game worlds ever created.',
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      user: {
+        id: 3,
+        name: 'GameExplorer',
+        picurl: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150'
+      },
+      replies: [
+        {
+          id: 3,
+          userId: 1,
+          reviewId: 1,
+          content: 'Absolutely! Blood and Wine is incredible - Toussaint is such a refreshing change from the war-torn landscapes of the main game.',
+          parentId: 2,
+          createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+          user: {
+            id: 1,
+            name: 'RPGMaster',
+            picurl: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
+          },
+          replies: []
+        }
+      ]
+    },
+    {
+      id: 4,
+      userId: 4,
+      reviewId: 1,
+      content: 'I think you\'re being a bit too generous with the combat. It\'s definitely the weakest part of the game.',
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      user: {
+        id: 4,
+        name: 'OpenWorldLover',
+        picurl: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=150'
+      },
+      replies: []
+    }
+  ];
 
   // Get game data
   const game = mockGames.find(g => g.id === dummyReview.gameId);
@@ -54,6 +119,14 @@ In conclusion, The Witcher 3 sets a high bar for open-world RPGs with its incred
   // Toggle like
   const toggleLike = () => {
     setIsLiked(!isLiked);
+  };
+  
+  // Mock comment submission
+  const handleAddComment = async (content: string, parentId?: number) => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('Adding comment:', { content, parentId });
+    // In a real app, this would call an API and update the comments state
   };
 
   if (!game) {
@@ -186,204 +259,19 @@ In conclusion, The Witcher 3 sets a high bar for open-world RPGs with its incred
           </div>
 
           {/* Review Actions */}
-          <div className="border-t border-gray-700 pt-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="text-sm text-gray-400">Was this review helpful?</div>
-                <button
-                  onClick={() => handleHelpfulVote(true)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    isHelpful === true
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  <ThumbsUp className="h-4 w-4" />
-                  <span>Yes ({isHelpful === true ? dummyReview.helpfulCount + 1 : dummyReview.helpfulCount})</span>
-                </button>
-                <button
-                  onClick={() => handleHelpfulVote(false)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    isHelpful === false
-                      ? 'bg-red-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  <ThumbsDown className="h-4 w-4" />
-                  <span>No ({isHelpful === false ? dummyReview.unhelpfulCount + 1 : dummyReview.unhelpfulCount})</span>
-                </button>
-              </div>
-              <Link
-                to="#comments"
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                <MessageSquare className="h-4 w-4" />
-                <span>Comments ({dummyReview.commentCount})</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Comments Section */}
-        <div id="comments" className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-bold text-white mb-6">Comments ({dummyReview.commentCount})</h2>
-          
-          {/* Comment Form */}
-          <div className="mb-8">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-                  <User className="h-5 w-5 text-gray-500" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <textarea
-                  placeholder="Add a comment..."
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                  rows={3}
-                ></textarea>
-                <div className="flex justify-end mt-2">
-                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                    Post Comment
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Sample Comments */}
-          <div className="space-y-6">
-            {/* Comment 1 */}
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                <img
-                  src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150"
-                  alt="User Avatar"
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-white">PixelPundit</span>
-                  <span className="text-gray-400 text-sm">2 days ago</span>
-                </div>
-                <p className="text-gray-300 text-sm mb-2">
-                  I completely agree with your assessment of the side quests. The Bloody Baron questline is some of the best storytelling I've ever experienced in a game. The moral ambiguity and complex characters really set a new standard for RPGs.
-                </p>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <button className="flex items-center gap-1 hover:text-white transition-colors">
-                    <ThumbsUp className="h-3.5 w-3.5" />
-                    <span>24</span>
-                  </button>
-                  <button className="flex items-center gap-1 hover:text-white transition-colors">
-                    <ThumbsDown className="h-3.5 w-3.5" />
-                    <span>2</span>
-                  </button>
-                  <button className="hover:text-white transition-colors">Reply</button>
-                </div>
-              </div>
-            </div>
-            
-            {/* Comment 2 */}
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                <img
-                  src="https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150"
-                  alt="User Avatar"
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-white">GameExplorer</span>
-                  <span className="text-gray-400 text-sm">5 days ago</span>
-                </div>
-                <p className="text-gray-300 text-sm mb-2">
-                  Have you played the DLCs? Blood and Wine is practically a whole new game with one of the most beautiful game worlds ever created. Hearts of Stone has an incredible story too.
-                </p>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <button className="flex items-center gap-1 hover:text-white transition-colors">
-                    <ThumbsUp className="h-3.5 w-3.5" />
-                    <span>18</span>
-                  </button>
-                  <button className="flex items-center gap-1 hover:text-white transition-colors">
-                    <ThumbsDown className="h-3.5 w-3.5" />
-                    <span>0</span>
-                  </button>
-                  <button className="hover:text-white transition-colors">Reply</button>
-                </div>
-                
-                {/* Nested Reply */}
-                <div className="mt-4 ml-6 flex gap-4">
-                  <div className="flex-shrink-0">
-                    <img
-                      src={dummyReview.author.avatar}
-                      alt={dummyReview.author.username}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-white">{dummyReview.author.username}</span>
-                      <span className="text-gray-400 text-sm">4 days ago</span>
-                    </div>
-                    <p className="text-gray-300 text-sm mb-2">
-                      Absolutely! Blood and Wine is incredible - Toussaint is such a refreshing change from the war-torn landscapes of the main game. And the story in Hearts of Stone is probably the best in the entire game. Gaunter O'Dimm is such a fascinating villain.
-                    </p>
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <button className="flex items-center gap-1 hover:text-white transition-colors">
-                        <ThumbsUp className="h-3.5 w-3.5" />
-                        <span>12</span>
-                      </button>
-                      <button className="flex items-center gap-1 hover:text-white transition-colors">
-                        <ThumbsDown className="h-3.5 w-3.5" />
-                        <span>1</span>
-                      </button>
-                      <button className="hover:text-white transition-colors">Reply</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Comment 3 */}
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                <img
-                  src="https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=150"
-                  alt="User Avatar"
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-white">OpenWorldLover</span>
-                  <span className="text-gray-400 text-sm">1 week ago</span>
-                </div>
-                <p className="text-gray-300 text-sm mb-2">
-                  I think you're being a bit too generous with the combat. It's definitely the weakest part of the game. Compared to something like Dark Souls or even the newer God of War, it feels clunky and repetitive. Still a 9/10 game overall though!
-                </p>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <button className="flex items-center gap-1 hover:text-white transition-colors">
-                    <ThumbsUp className="h-3.5 w-3.5" />
-                    <span>7</span>
-                  </button>
-                  <button className="flex items-center gap-1 hover:text-white transition-colors">
-                    <ThumbsDown className="h-3.5 w-3.5" />
-                    <span>5</span>
-                  </button>
-                  <button className="hover:text-white transition-colors">Reply</button>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Load More Comments */}
-          <div className="mt-8 text-center">
-            <button className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
-              Load More Comments
-            </button>
-          </div>
+          <ReviewInteractions
+            reviewId={dummyReview.id}
+            initialLikeCount={dummyReview.helpfulCount}
+            initialCommentCount={dummyReview.commentCount}
+            isLiked={isLiked}
+            onLike={toggleLike}
+            onUnlike={toggleLike}
+            comments={mockComments}
+            onAddComment={handleAddComment}
+            isLoadingComments={false}
+            isLoadingLike={false}
+            className="mt-6 pt-6 border-t border-gray-700"
+          />
         </div>
       </div>
     </div>
