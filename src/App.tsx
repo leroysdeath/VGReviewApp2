@@ -28,6 +28,7 @@ import { ReviewDemoPage } from './pages/ReviewDemoPage';
 import { AdvancedSearchDemo } from './pages/AdvancedSearchDemo';
 import { AuthDemoPage } from './pages/AuthDemoPage';
 import { CommentsDemoPage } from './pages/CommentsDemoPage';
+import { ActivityFeedDemo } from './pages/ActivityFeedDemo';
 import { SEOHead } from './components/SEOHead';
 
 function App() {
@@ -63,6 +64,7 @@ function App() {
               <Route path="/advanced-search" element={<AdvancedSearchDemo />} />
               <Route path="/auth-demo" element={<AuthDemoPage />} />
              <Route path="/comments" element={<CommentsDemoPage />} />
+             <Route path="/activity-feed" element={<ActivityFeedDemo />} />
               {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
               </Routes>
             </div>

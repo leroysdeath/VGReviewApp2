@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   MessageSquare, 
@@ -10,7 +10,6 @@ import {
   RefreshCw,
   ChevronDown
 } from 'lucide-react';
-import { getUserActivities } from '../services/activityService';
 
 // Activity types
 export type ActivityType = 'review' | 'review_like' | 'comment' | 'comment_like' | 'comment_reply';
@@ -48,30 +47,24 @@ export interface Activity {
 }
 
 interface ActivityFeedProps {
-  userId?: string;
-  initialActivities?: Activity[];
+  activities?: Activity[];
   isLoading?: boolean;
   error?: string;
-  pageSize?: number;
+  onRetry?: () => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
   className?: string;
 }
 
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({
-  userId,
-  initialActivities = [],
-  isLoading: initialLoading = false,
-  error: initialError = null,
-  pageSize = 10,
+  activities = [],
+  isLoading = false,
+  error = null,
+  onRetry,
+  onLoadMore,
+  hasMore = false,
   className = ''
 }) => {
-  const [activities, setActivities] = useState<Activity[]>(initialActivities);
-  const [loading, setLoading] = useState<boolean>(initialLoading);
-  const [error, setError] = useState<string | null>(initialError);
-  const [hasMore, setHasMore] = useState<boolean>(true);
-  const [page, setPage] = useState<number>(0);
-  const observer = useRef<IntersectionObserver | null>(null);
-  const loadingRef = useRef<HTMLDivElement>(null);
-
   // Format relative time
   const formatRelativeTime = (timestamp: string): string => {
     const date = new Date(timestamp);
@@ -97,7 +90,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
   const getActivityIcon = (type: ActivityType) => {
     switch (type) {
       case 'review':
-        return <MessageSquare className="h-5 w-5 text-[#7289DA]" />;
+        return <Star className="h-5 w-5 text-[#7289DA]" />;
       case 'review_like':
         return <ThumbsUp className="h-5 w-5 text-[#7289DA]" />;
       case 'comment':
@@ -110,110 +103,6 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
         return <Clock className="h-5 w-5 text-[#7289DA]" />;
     }
   };
-
-  // Render star rating
-  const renderStarRating = (rating: number) => {
-    const fullStars = Math.floor(rating / 2);
-    const hasHalfStar = rating % 2 >= 1;
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-    
-    return (
-      <div className="flex items-center" aria-label={`${rating} out of 10 rating`}>
-        {Array.from({ length: fullStars }).map((_, i) => (
-          <Star key={`full-${i}`} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-        ))}
-        {hasHalfStar && (
-          <div className="relative">
-            <Star className="h-4 w-4 text-gray-600" />
-            <div className="absolute inset-0 overflow-hidden w-1/2">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            </div>
-          </div>
-        )}
-        {Array.from({ length: emptyStars }).map((_, i) => (
-          <Star key={`empty-${i}`} className="h-4 w-4 text-gray-600" />
-        ))}
-      </div>
-    );
-  };
-
-  // Load more activities
-  const loadMoreActivities = useCallback(async () => {
-    if (!userId || loading || !hasMore) return;
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const offset = page * pageSize;
-      const response = await getUserActivities(parseInt(userId), { limit: pageSize, offset });
-      
-      if (response.success && response.data) {
-        // Transform data to match our Activity interface
-        const newActivities = response.data.map((item: any): Activity => ({
-          id: item.id.toString(),
-          type: item.type as ActivityType,
-          timestamp: item.timestamp,
-          user: {
-            id: item.user?.id.toString() || '',
-            name: item.user?.name || 'Unknown User',
-            avatar: item.user?.picurl
-          },
-          game: item.game ? {
-            id: item.game.id.toString(),
-            title: item.game.name,
-            coverImage: item.game.pic_url
-          } : undefined,
-          review: item.review ? {
-            id: item.review.id.toString(),
-            rating: item.review.rating,
-            content: item.review.review || ''
-          } : undefined,
-          comment: item.comment ? {
-            id: item.comment.id.toString(),
-            content: item.comment.content,
-            parentId: item.comment.parent_id?.toString()
-          } : undefined
-        }));
-        
-        setActivities(prev => [...prev, ...newActivities]);
-        setPage(prev => prev + 1);
-        setHasMore(newActivities.length === pageSize && (!response.count || offset + pageSize < response.count));
-      } else {
-        setError(response.error || 'Failed to load activities');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred while loading activities');
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, loading, hasMore, page, pageSize]);
-
-  // Set up intersection observer for infinite scroll
-  useEffect(() => {
-    if (loading) return;
-    
-    if (observer.current) observer.current.disconnect();
-    
-    const callback = (entries: IntersectionObserverEntry[]) => {
-      if (entries[0].isIntersecting && hasMore) {
-        loadMoreActivities();
-      }
-    };
-    
-    observer.current = new IntersectionObserver(callback, { rootMargin: '100px' });
-    
-    if (loadingRef.current) {
-      observer.current.observe(loadingRef.current);
-    }
-  }, [loading, hasMore, loadMoreActivities]);
-
-  // Initial load
-  useEffect(() => {
-    if (userId && activities.length === 0 && !initialActivities.length) {
-      loadMoreActivities();
-    }
-  }, [userId, activities.length, initialActivities.length, loadMoreActivities]);
 
   // Render activity content based on type
   const renderActivityContent = (activity: Activity) => {
@@ -340,10 +229,36 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
     }
   };
 
-  // Empty state
-  if (activities.length === 0 && !loading && !error) {
+  // Render star rating
+  const renderStarRating = (rating: number) => {
+    const fullStars = Math.floor(rating / 2);
+    const hasHalfStar = rating % 2 >= 1;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    
     return (
-      <div className={`bg-[#121212] rounded-lg p-6 text-center ${className}`}>
+      <div className="flex items-center" aria-label={`${rating} out of 10 rating`}>
+        {Array.from({ length: fullStars }).map((_, i) => (
+          <Star key={`full-${i}`} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+        ))}
+        {hasHalfStar && (
+          <div className="relative">
+            <Star className="h-4 w-4 text-gray-600" />
+            <div className="absolute inset-0 overflow-hidden w-1/2">
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            </div>
+          </div>
+        )}
+        {Array.from({ length: emptyStars }).map((_, i) => (
+          <Star key={`empty-${i}`} className="h-4 w-4 text-gray-600" />
+        ))}
+      </div>
+    );
+  };
+
+  // Empty state
+  if (activities.length === 0 && !isLoading && !error) {
+    return (
+      <div className={`bg-[#1E1E1E] rounded-lg p-6 text-center ${className}`}>
         <Clock className="h-12 w-12 text-[#7289DA] mx-auto mb-4" />
         <h3 className="text-white text-lg font-medium mb-2">No Activity Yet</h3>
         <p className="text-[#B3B3B3]">
@@ -362,15 +277,44 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
             <AlertCircle className="h-5 w-5 text-red-400" />
             <p className="text-red-300">{error}</p>
           </div>
-          <button
-            onClick={() => {
-              setError(null);
-              loadMoreActivities();
-            }}
-            className="mt-2 px-4 py-2 bg-red-800/50 text-white rounded-lg hover:bg-red-700/50 transition-colors text-sm"
-          >
-            Try Again
-          </button>
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="mt-2 px-4 py-2 bg-red-800/50 text-white rounded-lg hover:bg-red-700/50 transition-colors text-sm"
+            >
+              Try Again
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Loading skeleton */}
+      {isLoading && activities.length === 0 && (
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div 
+              key={index}
+              className="bg-[#1E1E1E] rounded-lg p-4 animate-pulse"
+              aria-busy="true"
+              aria-label="Loading activity item"
+            >
+              <div className="flex gap-3">
+                {/* Avatar skeleton */}
+                <div className="w-10 h-10 bg-[#121212] rounded-full flex-shrink-0"></div>
+                
+                {/* Content skeleton */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="h-4 bg-[#121212] rounded w-32"></div>
+                    <div className="h-4 bg-[#121212] rounded w-16"></div>
+                  </div>
+                  <div className="h-4 bg-[#121212] rounded w-full mb-2"></div>
+                  <div className="h-4 bg-[#121212] rounded w-3/4"></div>
+                  <div className="h-16 bg-[#121212] rounded w-full mt-2"></div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -423,7 +367,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
       </div>
 
       {/* Loading indicator */}
-      {loading && (
+      {isLoading && activities.length > 0 && (
         <div className="flex justify-center items-center py-4">
           <RefreshCw className="h-6 w-6 text-[#7289DA] animate-spin" />
           <span className="ml-2 text-[#B3B3B3]">Loading activities...</span>
@@ -431,11 +375,10 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
       )}
 
       {/* Load more trigger */}
-      {hasMore && !loading && (
+      {hasMore && !isLoading && onLoadMore && (
         <div 
-          ref={loadingRef}
           className="flex justify-center items-center py-4 cursor-pointer hover:bg-[#1E1E1E] rounded-lg transition-colors"
-          onClick={loadMoreActivities}
+          onClick={onLoadMore}
         >
           <ChevronDown className="h-5 w-5 text-[#7289DA]" />
           <span className="ml-2 text-[#B3B3B3]">Load more</span>
@@ -443,7 +386,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
       )}
 
       {/* End of feed message */}
-      {!hasMore && activities.length > 0 && (
+      {!hasMore && activities.length > 0 && !isLoading && (
         <div className="text-center py-4 text-[#B3B3B3] text-sm">
           You've reached the end of the feed
         </div>
