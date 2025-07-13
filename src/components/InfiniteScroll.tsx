@@ -71,8 +71,8 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
       {loading && (
         <div className="flex items-center justify-center py-8">
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
-            <span className="text-gray-400">Loading more reviews...</span>
+            <div className="w-6 h-6 border-2 border-[#7289DA] border-t-transparent rounded-full animate-spin" />
+            <span className="text-[#B3B3B3]">Loading more activities...</span>
           </div>
         </div>
       )}
@@ -80,7 +80,7 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
       {/* End of content indicator */}
       {!hasMore && !loading && (
         <div className="text-center py-8">
-          <p className="text-gray-400">You've reached the end of the reviews</p>
+          <p className="text-[#B3B3B3]">You've reached the end of the feed</p>
         </div>
       )}
     </div>

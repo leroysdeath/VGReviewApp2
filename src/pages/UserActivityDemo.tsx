@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import ActivityFeed from '../components/user/ActivityFeed';
 import TabPanel from '../components/user/ActivityFeed/TabPanel';
+import { useActivityFeed } from '../hooks/useActivityFeed';
 
 function a11yProps(index: number) {
   return {
@@ -22,27 +23,37 @@ function a11yProps(index: number) {
 
 const UserActivityDemo: React.FC = () => {
   const [value, setValue] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasError, setHasError] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const userId = "user123";
+  
+  // Use the activity feed hook
+  const {
+    isLoading,
+    error,
+    refresh,
+    retry
+  } = useActivityFeed({
+    userId,
+    isActive: isActive && value === 2,
+    initialPageSize: 10
+  });
 
   const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
 
   const simulateLoading = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
+    refresh();
   };
 
   const simulateError = () => {
-    setHasError(true);
+    // This is just for demo purposes
+    // In a real app, you would handle errors through the API
+    throw new Error("Simulated error in activity feed");
   };
 
   const clearError = () => {
-    setHasError(false);
+    retry();
   };
 
   return (
@@ -68,11 +79,11 @@ const UserActivityDemo: React.FC = () => {
             variant="contained" 
             color="error" 
             onClick={simulateError}
-            disabled={hasError}
+            disabled={!!error}
           >
             Simulate Error
           </Button>
-          {hasError && (
+          {error && (
             <Button 
               variant="outlined" 
               onClick={clearError}
@@ -116,11 +127,8 @@ const UserActivityDemo: React.FC = () => {
         
         <TabPanel value={value} index={2}>
           <ActivityFeed 
-            userId="user123"
+            userId={userId}
             isActive={isActive && value === 2}
-            isLoading={isLoading}
-            error={hasError ? "Failed to load activity feed. Please try again." : undefined}
-            onRetry={clearError}
           />
         </TabPanel>
         

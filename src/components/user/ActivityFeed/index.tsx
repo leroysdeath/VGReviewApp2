@@ -6,7 +6,6 @@ import {
   Card, 
   CardContent, 
   Link, 
-  Divider,
   Button,
   Alert,
   AlertTitle,
@@ -24,6 +23,8 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { ActivityFeedProps, ActivityItem, ActivityType } from './types';
 import ActivityFeedSkeleton from './ActivityFeedSkeleton';
+import { useActivityFeed } from '../../../hooks/useActivityFeed';
+import { InfiniteScroll } from '../../InfiniteScroll';
 
 // Helper function to format relative time
 const formatRelativeTime = (date: Date): string => {
@@ -135,26 +136,25 @@ const placeholderActivities: ActivityItem[] = [
 const ActivityFeed: React.FC<ActivityFeedProps> = ({
   userId,
   isActive,
-  activities = placeholderActivities,
-  isLoading = false,
-  error,
-  onRetry
+  activities: initialActivities,
+  isLoading: initialLoading,
+  error: initialError,
+  onRetry: initialRetry
 }) => {
-  const [localActivities, setLocalActivities] = useState<ActivityItem[]>(activities);
-  const [loading, setLoading] = useState<boolean>(isLoading);
-  const [localError, setLocalError] = useState<string | undefined>(error);
-  
-  useEffect(() => {
-    // This would be replaced with actual data fetching logic
-    if (isActive && !activities.length && !isLoading) {
-      setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setLocalActivities(placeholderActivities);
-        setLoading(false);
-      }, 1500);
-    }
-  }, [isActive, activities, isLoading]);
+  // Use the custom hook for data fetching
+  const {
+    activities = initialActivities || placeholderActivities,
+    isLoading = initialLoading || false,
+    error = initialError,
+    hasMore,
+    loadMore,
+    retry = initialRetry,
+    refresh
+  } = useActivityFeed({
+    userId,
+    isActive,
+    initialPageSize: 10
+  });
   
   // Don't render anything if tab is not active
   if (!isActive) return null;
@@ -271,22 +271,22 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   };
   
   // Loading state
-  if (loading) {
+  if (isLoading && activities.length === 0) {
     return <ActivityFeedSkeleton />;
   }
   
   // Error state
-  if (localError) {
+  if (error && activities.length === 0) {
     return (
       <Alert 
         severity="error" 
         sx={{ mb: 2 }}
         action={
-          onRetry && (
+          retry && (
             <Button 
               color="inherit" 
               size="small" 
-              onClick={onRetry}
+              onClick={retry}
               startIcon={<RefreshIcon />}
             >
               Retry
@@ -295,13 +295,13 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
         }
       >
         <AlertTitle>Error</AlertTitle>
-        {localError}
+        {error}
       </Alert>
     );
   }
   
   // Empty state
-  if (!localActivities.length) {
+  if (!activities.length) {
     return (
       <Box 
         sx={{ 
@@ -321,157 +321,164 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   }
   
   return (
-    <Stack spacing={2} sx={{ width: '100%' }}>
-      {localActivities.map((activity) => (
-        <Card 
-          key={activity.id} 
-          sx={{ 
-            bgcolor: '#1E1E1E',
-            '&:hover': {
-              bgcolor: '#2A2A2A',
-              transition: 'background-color 0.3s'
-            }
-          }}
-        >
-          <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              {/* Activity icon */}
-              <Box 
-                sx={{ 
-                  width: 40, 
-                  height: 40, 
-                  borderRadius: '50%', 
-                  bgcolor: '#121212', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}
-              >
-                {getActivityIcon(activity.type)}
-              </Box>
-              
-              {/* Activity content */}
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Link 
-                      component={RouterLink} 
-                      to={`/user/${activity.user.id}`}
-                      sx={{ 
-                        fontWeight: 'bold', 
-                        color: '#FFFFFF',
-                        textDecoration: 'none',
-                        '&:hover': { color: '#7289DA' }
-                      }}
-                    >
-                      {activity.user.name}
-                    </Link>
-                    <Typography variant="body2" color="#818384">
-                      {formatRelativeTime(activity.timestamp)}
-                    </Typography>
-                  </Box>
-                  
-                  {activity.game?.coverImage && (
-                    <Link component={RouterLink} to={`/game/${activity.game.id}`}>
-                      <Box 
-                        component="img" 
-                        src={activity.game.coverImage}
-                        alt={activity.game.title}
-                        sx={{ 
-                          width: 32, 
-                          height: 32, 
-                          borderRadius: 1,
-                          objectFit: 'cover'
-                        }}
-                      />
-                    </Link>
-                  )}
+    <InfiniteScroll
+      hasMore={hasMore}
+      loading={isLoading}
+      onLoadMore={loadMore}
+      className="w-full"
+    >
+      <Stack spacing={2} sx={{ width: '100%' }}>
+        {activities.map((activity) => (
+          <Card 
+            key={activity.id} 
+            sx={{ 
+              bgcolor: '#1E1E1E',
+              '&:hover': {
+                bgcolor: '#2A2A2A',
+                transition: 'background-color 0.3s'
+              }
+            }}
+          >
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                {/* Activity icon */}
+                <Box 
+                  sx={{ 
+                    width: 40, 
+                    height: 40, 
+                    borderRadius: '50%', 
+                    bgcolor: '#121212', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}
+                >
+                  {getActivityIcon(activity.type)}
                 </Box>
                 
-                {/* Activity description */}
-                {getActivityDescription(activity)}
-                
-                {/* Activity content preview */}
-                {activity.content && (
-                  <Box 
-                    sx={{ 
-                      mt: 1, 
-                      p: 1.5, 
-                      bgcolor: '#121212', 
-                      borderRadius: 1,
-                      maxHeight: '4.5em',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical'
-                    }}
-                  >
-                    <Typography variant="body2" color="#B3B3B3">
-                      {activity.content}
-                    </Typography>
-                  </Box>
-                )}
-                
-                {/* Game image for certain activities */}
-                {(activity.type === 'review' || activity.type === 'game_completed') && 
-                 activity.game?.coverImage && (
-                  <Box sx={{ mt: 1 }}>
-                    <Link component={RouterLink} to={`/game/${activity.game.id}`}>
-                      <Box 
-                        component="img" 
-                        src={activity.game.coverImage}
-                        alt={activity.game.title}
+                {/* Activity content */}
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Link 
+                        component={RouterLink} 
+                        to={`/user/${activity.user.id}`}
                         sx={{ 
-                          height: 60, 
-                          borderRadius: 1,
-                          objectFit: 'cover'
+                          fontWeight: 'bold', 
+                          color: '#FFFFFF',
+                          textDecoration: 'none',
+                          '&:hover': { color: '#7289DA' }
                         }}
+                      >
+                        {activity.user.name}
+                      </Link>
+                      <Typography variant="body2" color="#818384">
+                        {formatRelativeTime(activity.timestamp)}
+                      </Typography>
+                    </Box>
+                    
+                    {activity.game?.coverImage && (
+                      <Link component={RouterLink} to={`/game/${activity.game.id}`}>
+                        <Box 
+                          component="img" 
+                          src={activity.game.coverImage}
+                          alt={activity.game.title}
+                          sx={{ 
+                            width: 32, 
+                            height: 32, 
+                            borderRadius: 1,
+                            objectFit: 'cover'
+                          }}
+                        />
+                      </Link>
+                    )}
+                  </Box>
+                  
+                  {/* Activity description */}
+                  {getActivityDescription(activity)}
+                  
+                  {/* Activity content preview */}
+                  {activity.content && (
+                    <Box 
+                      sx={{ 
+                        mt: 1, 
+                        p: 1.5, 
+                        bgcolor: '#121212', 
+                        borderRadius: 1,
+                        maxHeight: '4.5em',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical'
+                      }}
+                    >
+                      <Typography variant="body2" color="#B3B3B3">
+                        {activity.content}
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {/* Game image for certain activities */}
+                  {(activity.type === 'review' || activity.type === 'game_completed') && 
+                   activity.game?.coverImage && (
+                    <Box sx={{ mt: 1 }}>
+                      <Link component={RouterLink} to={`/game/${activity.game.id}`}>
+                        <Box 
+                          component="img" 
+                          src={activity.game.coverImage}
+                          alt={activity.game.title}
+                          sx={{ 
+                            height: 60, 
+                            borderRadius: 1,
+                            objectFit: 'cover'
+                          }}
+                        />
+                      </Link>
+                    </Box>
+                  )}
+                  
+                  {/* User avatar */}
+                  {activity.user.avatar && (
+                    <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Avatar 
+                        src={activity.user.avatar} 
+                        alt={activity.user.name}
+                        sx={{ width: 24, height: 24 }}
                       />
-                    </Link>
-                  </Box>
-                )}
-                
-                {/* User avatar */}
-                {activity.user.avatar && (
-                  <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Avatar 
-                      src={activity.user.avatar} 
-                      alt={activity.user.name}
-                      sx={{ width: 24, height: 24 }}
-                    />
-                    <Typography variant="caption" color="#818384">
-                      {activity.user.name}
-                    </Typography>
-                  </Box>
-                )}
+                      <Typography variant="caption" color="#818384">
+                        {activity.user.name}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
               </Box>
-            </Box>
-          </CardContent>
-        </Card>
-      ))}
-      
-      {/* Load more button */}
-      <Box sx={{ textAlign: 'center', py: 2 }}>
-        <Button 
-          variant="outlined" 
-          color="primary"
-          startIcon={loading ? <CircularProgress size={16} /> : undefined}
-          disabled={loading}
-          onClick={() => {
-            // This would be replaced with actual pagination logic
-            setLoading(true);
-            setTimeout(() => {
-              setLocalActivities(prev => [...prev, ...placeholderActivities]);
-              setLoading(false);
-            }, 1500);
-          }}
-        >
-          {loading ? 'Loading...' : 'Load More'}
-        </Button>
-      </Box>
-    </Stack>
+            </CardContent>
+          </Card>
+        ))}
+        
+        {/* Error state within the feed */}
+        {error && activities.length > 0 && (
+          <Alert 
+            severity="error" 
+            sx={{ mb: 2 }}
+            action={
+              <Button 
+                color="inherit" 
+                size="small" 
+                onClick={retry}
+                startIcon={<RefreshIcon />}
+              >
+                Retry
+              </Button>
+            }
+          >
+            {error}
+          </Alert>
+        )}
+      </Stack>
+    </InfiniteScroll>
   );
 };
 
