@@ -5,6 +5,7 @@ interface InfiniteScrollProps {
   hasMore: boolean;
   loading: boolean;
   onLoadMore: () => void;
+  onScroll?: () => void;
   threshold?: number; // Percentage of scroll (0-100) to trigger load more
   debounceMs?: number; // Debounce time in milliseconds
   className?: string;
@@ -15,6 +16,7 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   hasMore,
   loading,
   onLoadMore,
+  onScroll,
   threshold = 100,
   debounceMs = 150,
   className = ''
@@ -26,6 +28,11 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   const handleIntersection = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       const [entry] = entries;
+      
+      // Call onScroll callback if provided
+      if (entry.isIntersecting && onScroll) {
+        onScroll();
+      }
       
       if (
         entry.isIntersecting &&
@@ -50,7 +57,7 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
         }, debounceMs);
       }
     },
-    [hasMore, loading, onLoadMore, debounceMs]
+    [hasMore, loading, onLoadMore, onScroll, debounceMs]
   );
 
   useEffect(() => {

@@ -25,6 +25,7 @@ import { ActivityFeedDemo } from './pages/ActivityFeedDemo';
 import { DummyReviewPage } from './pages/DummyReviewPage';
 import OptimizedActivityFeedDemo from './pages/OptimizedActivityFeedDemo';
 import { ActivityFormatterDemo } from './pages/ActivityFormatterDemo';
+import RealTimeActivityDemo from './pages/RealTimeActivityDemo';
 import { ReviewDemoPage } from './pages/ReviewDemoPage';
 import { AdvancedSearchDemo } from './pages/AdvancedSearchDemo';
 import { AuthDemoPage } from './pages/AuthDemoPage';
@@ -61,6 +62,7 @@ function App() {
               <Route path="/activity-formatters" element={<ActivityFormatterDemo />} />
               <Route path="/activity-feed" element={<ActivityFeedDemo />} />
               <Route path="/optimized-activity-feed" element={<OptimizedActivityFeedDemo />} />
+              <Route path="/real-time-activity" element={<RealTimeActivityDemo />} />
               <Route path="/review-cards" element={<ReviewDemoPage />} />
               <Route path="/advanced-search" element={<AdvancedSearchDemo />} />
               <Route path="/auth-demo" element={<AuthDemoPage />} />
