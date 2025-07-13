@@ -3,6 +3,8 @@
   command = "npm run build"
 
 [build.environment]
+  IGDB_CLIENT_ID = "4hooxi4jnd1na6pbslynp0bo8desfp"
+  IGDB_ACCESS_TOKEN = "r7x5fuhcfvkhub70xd2asdwrgjrcw2"
   NODE_VERSION = "18"
 
 [functions]
@@ -42,3 +44,7 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[dev]
+  functions = "netlify/functions"
+
