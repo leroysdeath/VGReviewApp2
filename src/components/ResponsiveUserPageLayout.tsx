@@ -33,6 +33,8 @@ const TABS = [
   { key: 'top5', label: 'Top 5' },
   { key: 'top50', label: 'Top 50' },
   { key: 'reviews', label: 'Reviews' },
+  { key: 'activity', label: 'Activity' },
+  { key: 'lists', label: 'Lists' },
 ];
 
 export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> = ({

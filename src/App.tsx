@@ -14,7 +14,15 @@ import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ResponsiveDummyGamePage } from './pages/ResponsiveDummyGamePage';
 import { ResponsiveDummyUserPage } from './pages/ResponsiveDummyUserPage';
+import { ModernNavbarDemoPage } from './pages/ModernNavbarDemoPage';
+import { GameHeroDemoPage } from './pages/GameHeroDemoPage';
+import { GameCardDemoPage } from './pages/GameCardDemoPage';
+import { StatsDemoPage } from './pages/StatsDemoPage';
 import { IGDBTestPage } from './pages/IGDBTestPage';
+import { DummyReviewPage } from './pages/DummyReviewPage';
+import { ReviewDemoPage } from './pages/ReviewDemoPage';
+import { AdvancedSearchDemo } from './pages/AdvancedSearchDemo';
+import { AuthDemoPage } from './pages/AuthDemoPage';
 import { SEOHead } from './components/SEOHead';
 
 function App() {
@@ -37,6 +45,14 @@ function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/dummy-game" element={<ResponsiveDummyGamePage />} />
               <Route path="/dummy-user" element={<ResponsiveDummyUserPage />} />
+              <Route path="/dummy-review" element={<DummyReviewPage />} />
+              <Route path="/modern-navbar" element={<ModernNavbarDemoPage />} />
+              <Route path="/hero-demo" element={<GameHeroDemoPage />} />
+              <Route path="/game-cards" element={<GameCardDemoPage />} />
+              <Route path="/stats-demo" element={<StatsDemoPage />} />
+              <Route path="/review-cards" element={<ReviewDemoPage />} />
+              <Route path="/advanced-search" element={<AdvancedSearchDemo />} />
+              <Route path="/auth-demo" element={<AuthDemoPage />} />
               {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
             </Routes>
           </div>

@@ -26,24 +26,18 @@ interface Review {
 }
 
 interface ProfileDataWithPreviewProps {
-  activeTab: string;
-  userFavoriteGames: Game[];
-  userRecentGames: Game[];
+  activeTab: 'top5' | 'last5' | 'reviews' | 'activity' | 'lists';
   sortedReviews: Review[];
   allGames: Game[];
-  stats: {
-    films: number;
-    thisYear: number;
-    lists: number;
-    following: number;
-    followers: number;
-  };
   reviewFilter: string;
   onReviewFilterChange: (filter: string) => void;
-  viewMode: 'grid' | 'list';
-  onViewModeChange: (mode: 'grid' | 'list') => void;
   isDummy?: boolean;
   forceMobileView?: boolean;
+  viewMode?: string;
+  onViewModeChange?: (mode: string) => void;
+  userFavoriteGames?: Game[];
+  userRecentGames?: Game[];
+  stats?: any;
 }
 
 export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
@@ -53,7 +47,12 @@ export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
   reviewFilter,
   onReviewFilterChange,
   forceMobileView = false,
-  ...props
+  isDummy = false,
+  viewMode,
+  onViewModeChange,
+  userFavoriteGames,
+  userRecentGames,
+  stats
 }) => {
   return (
     <div className={forceMobileView ? 'mobile-preview-context' : ''}>
@@ -63,6 +62,7 @@ export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
         sortedReviews={sortedReviews}
         reviewFilter={reviewFilter}
         onReviewFilterChange={onReviewFilterChange}
+        isDummy={isDummy}
       />
     </div>
   );

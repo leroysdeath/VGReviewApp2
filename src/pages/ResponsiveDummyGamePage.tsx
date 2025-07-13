@@ -313,13 +313,31 @@ export const ResponsiveDummyGamePage: React.FC = () => {
 
         {/* Mobile Rating Summary */}
         <div className="p-4 bg-gray-800 border-t border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-3">Community Rating</h3>
-          <div className="text-center mb-4">
-            <div className="text-3xl font-bold text-purple-400 mb-2">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
+            <span className="text-sm text-blue-400">{dummyReviews.length}k fans</span>
+          </div>
+          <div className="border-b border-gray-700 mb-4"></div>
+          <div className="flex items-end justify-between">
+            <div className="flex items-end gap-1">
+              <span className="text-green-500 text-sm">1</span>
+              <div className="flex items-end gap-[2px]">
+                {ratingDistribution.map((item) => (
+                  <div 
+                    key={item.rating} 
+                    className="w-5 bg-gray-700 rounded-sm"
+                    style={{ 
+                      height: `${Math.max(4, (item.count / maxCount) * 30)}px`,
+                      backgroundColor: item.rating >= 8 ? '#4ade80' : '#374151'
+                    }}
+                  ></div>
+                ))}
+              </div>
+              <span className="text-green-500 text-sm">10</span>
+            </div>
+            <div className="text-2xl font-bold text-green-400">
               {averageRating.toFixed(1)}
             </div>
-            <StarRating rating={averageRating} size="lg" />
-            <div className="text-gray-400 mt-2">{dummyReviews.length} reviews</div>
           </div>
         </div>
 
@@ -512,29 +530,31 @@ export const ResponsiveDummyGamePage: React.FC = () => {
           {/* Rating Summary and Additional Info */}
           <div className="space-y-6">
             <div className="bg-gray-800 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-white mb-4">Community Rating</h3>
-              <div className="text-center mb-6">
-                <div className="text-4xl font-bold text-purple-400 mb-2">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
+                <span className="text-sm text-blue-400">{dummyReviews.length}k fans</span>
+              </div>
+              <div className="border-b border-gray-700 mb-4"></div>
+              <div className="flex items-end justify-between">
+                <div className="flex items-end gap-1">
+                  <span className="text-green-500 text-sm">1</span>
+                  <div className="flex items-end gap-[2px]">
+                    {ratingDistribution.map((item) => (
+                      <div 
+                        key={item.rating} 
+                        className="w-6 bg-gray-700 rounded-sm"
+                        style={{ 
+                          height: `${Math.max(4, (item.count / maxCount) * 40)}px`,
+                          backgroundColor: item.rating >= 8 ? '#4ade80' : '#374151'
+                        }}
+                      ></div>
+                    ))}
+                  </div>
+                  <span className="text-green-500 text-sm">10</span>
+                </div>
+                <div className="text-2xl font-bold text-green-400">
                   {averageRating.toFixed(1)}
                 </div>
-                <StarRating rating={averageRating} size="lg" />
-                <div className="text-gray-400 mt-2">{dummyReviews.length} reviews</div>
-              </div>
-              
-              {/* Rating Distribution */}
-              <div className="space-y-2">
-                {ratingDistribution.map((item) => (
-                  <div key={item.rating} className="flex items-center gap-2">
-                    <span className="text-gray-400 w-6">{item.rating}</span>
-                    <div className="flex-1 bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${(item.count / maxCount) * 100}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-gray-400 text-sm w-8">{item.count}</span>
-                  </div>
-                ))}
               </div>
             </div>
 
