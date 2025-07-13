@@ -25,6 +25,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   className = ''
 }) => {
   const { markAsRead } = useNotificationStore();
+  const itemRef = useRef<HTMLDivElement | null>(null);
   
   // Format relative time
   const formatRelativeTime = (timestamp: string): string => {
@@ -77,6 +78,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   // Handle click on notification
   const handleClick = () => {
     if (!notification.isRead) {
+      // Provide haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
       markAsRead(notification.id);
     }
     
@@ -89,6 +94,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   const handleMarkAsRead = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+
+    // Provide haptic feedback if available
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
     
     if (!notification.isRead) {
       markAsRead(notification.id);
@@ -96,7 +106,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   };
   
   const NotificationContent = () => (
-    <div className="flex gap-3 w-full">
+    <div className="flex gap-3 w-full" ref={itemRef}>
       {/* Notification Icon */}
       <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
         notification.isRead ? 'bg-gray-700' : 'bg-gray-700/50'
@@ -135,7 +145,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           {!notification.isRead && (
             <button
               onClick={handleMarkAsRead}
-              className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              className="text-xs text-blue-400 hover:text-blue-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Mark notification as read"
             >
               Mark as read
             </button>
@@ -148,19 +159,29 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   return notification.link ? (
     <Link
       to={notification.link}
-      className={`block p-4 ${
+      className={`block p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
         notification.isRead ? 'bg-gray-800' : 'bg-gray-800/70 border-l-2 border-blue-500'
       } hover:bg-gray-750 transition-colors ${className}`}
       onClick={handleClick}
+      aria-label={`${notification.title}. ${notification.isRead ? 'Read' : 'Unread'}`}
     >
       <NotificationContent />
     </Link>
   ) : (
     <div
-      className={`p-4 ${
+      className={`p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
         notification.isRead ? 'bg-gray-800' : 'bg-gray-800/70 border-l-2 border-blue-500'
       } hover:bg-gray-750 transition-colors cursor-pointer ${className}`}
       onClick={handleClick}
+      tabIndex={0}
+      role="button"
+      aria-label={`${notification.title}. ${notification.isRead ? 'Read' : 'Unread'}`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
     >
       <NotificationContent />
     </div>

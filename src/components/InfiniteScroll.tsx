@@ -24,6 +24,7 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const handleIntersection = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -61,10 +62,13 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   );
 
   useEffect(() => {
-    const observer = new IntersectionObserver(handleIntersection, {
+    // Use IntersectionObserver with better options for mobile
+    const observerOptions = {
       threshold: 0.1,
-      rootMargin: `0px 0px ${threshold}px 0px` // Load when sentinel is threshold pixels away from viewport
-    });
+      rootMargin: `0px 0px ${threshold}px 0px`, // Load when sentinel is threshold pixels away from viewport
+    };
+    
+    const observer = new IntersectionObserver(handleIntersection, observerOptions);
 
     const sentinel = sentinelRef.current;
     if (sentinel) {
@@ -84,17 +88,36 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   }, [handleIntersection, threshold, debounceMs]);
 
   return (
-    <div className={className}>
+    <div 
+      ref={scrollContainerRef}
+      className={className}
+      style={{ overscrollBehavior: 'contain' }}
+      role="region"
+      aria-label={loading ? "Loading more content" : hasMore ? "More content available" : "End of content"}
+    >
       {children}
       
       {/* Sentinel element for intersection observer */}
-      <div ref={sentinelRef} className="h-4" aria-hidden="true" />
+      <div 
+        ref={sentinelRef} 
+        className="h-4" 
+        aria-hidden="true" 
+        data-testid="infinite-scroll-sentinel"
+      />
       
       {/* Loading indicator */}
       {loading && (
-        <div className="flex items-center justify-center py-8" aria-live="polite" role="status">
+        <div 
+          className="flex items-center justify-center py-8 min-h-[44px]" 
+          aria-live="polite" 
+          role="status"
+          aria-label="Loading more content"
+        >
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 border-2 border-[#7289DA] border-t-transparent rounded-full animate-spin" />
+            <div 
+              className="w-6 h-6 border-2 border-[#7289DA] border-t-transparent rounded-full animate-spin" 
+              aria-hidden="true"
+            />
             <span className="text-[#B3B3B3]">Loading more activities...</span>
           </div>
         </div>
@@ -102,7 +125,12 @@ export const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
       
       {/* End of content indicator */}
       {!hasMore && !loading && (
-        <div className="text-center py-8" aria-live="polite">
+        <div 
+          className="text-center py-8" 
+          aria-live="polite"
+          role="status"
+          aria-label="You've reached the end of the feed"
+        >
           <p className="text-[#B3B3B3]">You've reached the end of the feed</p>
         </div>
       )}
