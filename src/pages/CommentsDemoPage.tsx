@@ -6,7 +6,7 @@ import { Comment } from '../components/comments/CommentItem';
 const initialComments: Comment[] = [
   {
     id: '1',
-    content: 'This game is absolutely incredible. The open world design and attention to detail are unmatched. I\'ve spent over 100 hours exploring and still haven't seen everything.',
+    content: 'This game is absolutely incredible. The open world design and attention to detail are unmatched. I\'ve spent over 100 hours exploring and still haven\'t seen everything.',
     userId: 'user1',
     username: 'GameExplorer',
     userAvatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
@@ -54,7 +54,7 @@ const initialComments: Comment[] = [
   },
   {
     id: '5',
-    content: 'The story is phenomenal. I wasn\'t expecting such an emotional journey. The character development throughout the game is some of the best I've seen in years.',
+    content: 'The story is phenomenal. I wasn\'t expecting such an emotional journey. The character development throughout the game is some of the best I\'ve seen in years.',
     userId: 'user4',
     username: 'StoryLover',
     userAvatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150',
