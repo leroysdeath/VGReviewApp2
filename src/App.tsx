@@ -19,6 +19,7 @@ import { ModernNavbarDemoPage } from './pages/ModernNavbarDemoPage';
 import { GameHeroDemoPage } from './pages/GameHeroDemoPage';
 import { GameCardDemoPage } from './pages/GameCardDemoPage';
 import { StatsDemoPage } from './pages/StatsDemoPage';
+import UserActivityDemo from './pages/UserActivityDemo';
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { ActivityFeedDemo } from './pages/ActivityFeedDemo';
 import { DummyReviewPage } from './pages/DummyReviewPage';
@@ -55,6 +56,7 @@ function App() {
               <Route path="/hero-demo" element={<GameHeroDemoPage />} />
               <Route path="/game-cards" element={<GameCardDemoPage />} />
               <Route path="/stats-demo" element={<StatsDemoPage />} />
+              <Route path="/user-activity" element={<UserActivityDemo />} />
               <Route path="/activity-formatters" element={<ActivityFormatterDemo />} />
               <Route path="/activity-feed" element={<ActivityFeedDemo />} />
               <Route path="/review-cards" element={<ReviewDemoPage />} />
