@@ -1,10 +1,11 @@
 // Error Boundary Component
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Bug, Copy } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Bug, Copy, RotateCcw } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  onReset?: () => void;
 }
 
 interface State {
@@ -49,11 +50,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
   handleRetry = () => {
     this.setState({ 
-      hasError: false, 
-      error: undefined, 
+      hasError: false,
+      error: undefined,
       errorInfo: undefined,
-      errorId: undefined 
+      errorId: undefined
     });
+    
+    // Call onReset if provided
+    if (this.props.onReset) {
+      this.props.onReset();
+    }
   };
 
   copyErrorDetails = () => {
@@ -112,6 +118,19 @@ export class ErrorBoundary extends Component<Props, State> {
               >
                 <RefreshCw className="h-4 w-4" />
                 Try Again
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Refresh Page
+              </button>
+              <button
+                onClick={this.handleRetry}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Reset Component
               </button>
               <button
                 onClick={() => window.location.reload()}

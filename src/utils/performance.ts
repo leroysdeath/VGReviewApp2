@@ -108,6 +108,27 @@ export const calculateVisibleItems = (
   };
 };
 
+// Measure rendering performance
+export const measureRenderTime = (componentName: string) => {
+  const startTime = performance.now();
+  
+  return () => {
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+    console.log(`[Performance] ${componentName} rendered in ${duration.toFixed(2)}ms`);
+  };
+};
+
+// Track component re-renders
+export const trackRenders = (componentName: string) => {
+  const renderCount = useRef(0);
+  
+  useEffect(() => {
+    renderCount.current += 1;
+    console.log(`[Renders] ${componentName} rendered ${renderCount.current} times`);
+  });
+};
+
 // Preload critical resources
 export const preloadResource = (url: string, type: 'image' | 'script' | 'style' | 'font') => {
   const link = document.createElement('link');

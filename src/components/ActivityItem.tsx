@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Star, 
@@ -37,9 +37,10 @@ interface ActivityItemProps {
   content?: string;
   currentUserId?: string;
   className?: string;
+  onClick?: () => void;
 }
 
-export const ActivityItem: React.FC<ActivityItemProps> = ({
+const ActivityItem: React.FC<ActivityItemProps> = ({
   id,
   type,
   timestamp,
@@ -48,7 +49,8 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
   game,
   content,
   currentUserId,
-  className = ''
+  className = '',
+  onClick
 }) => {
   // Get icon based on activity type
   const getActivityIcon = () => {
@@ -262,7 +264,13 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
   };
 
   return (
-    <div className={`bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition-colors ${className}`}>
+    <div 
+      className={`bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition-colors ${className}`}
+      onClick={onClick}
+      tabIndex={onClick ? 0 : undefined}
+      role={onClick ? 'button' : undefined}
+      onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
+    >
       <div className="flex gap-3">
         {/* Activity Icon */}
         <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
@@ -297,6 +305,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
                   src={game.coverImage} 
                   alt={game.name}
                   className="h-16 rounded object-cover"
+                  loading="lazy"
                 />
               </Link>
             </div>
@@ -310,6 +319,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
                   src={actor.avatar}
                   alt={actor.username}
                   className="w-6 h-6 rounded-full object-cover"
+                  loading="lazy"
                 />
               ) : (
                 <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs">
@@ -326,3 +336,6 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
     </div>
   );
 };
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(ActivityItem);

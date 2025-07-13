@@ -23,6 +23,7 @@ import UserActivityDemo from './pages/UserActivityDemo';
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { ActivityFeedDemo } from './pages/ActivityFeedDemo';
 import { DummyReviewPage } from './pages/DummyReviewPage';
+import OptimizedActivityFeedDemo from './pages/OptimizedActivityFeedDemo';
 import { ActivityFormatterDemo } from './pages/ActivityFormatterDemo';
 import { ReviewDemoPage } from './pages/ReviewDemoPage';
 import { AdvancedSearchDemo } from './pages/AdvancedSearchDemo';
@@ -59,6 +60,7 @@ function App() {
               <Route path="/user-activity" element={<UserActivityDemo />} />
               <Route path="/activity-formatters" element={<ActivityFormatterDemo />} />
               <Route path="/activity-feed" element={<ActivityFeedDemo />} />
+              <Route path="/optimized-activity-feed" element={<OptimizedActivityFeedDemo />} />
               <Route path="/review-cards" element={<ReviewDemoPage />} />
               <Route path="/advanced-search" element={<AdvancedSearchDemo />} />
               <Route path="/auth-demo" element={<AuthDemoPage />} />
