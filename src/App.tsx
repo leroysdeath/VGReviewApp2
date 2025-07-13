@@ -4,6 +4,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ResponsiveNavbar } from './components/ResponsiveNavbar';
 import { ResponsiveLandingPage } from './components/ResponsiveLandingPage';
+import { ReviewProvider } from './context/ReviewContext';
 import { GamePage } from './pages/GamePage';
 import { GameSearchPage } from './pages/GameSearchPage';
 import { SearchResultsPage } from './pages/SearchResultsPage';
@@ -31,13 +32,14 @@ function App() {
   return (
     <HelmetProvider>
       <ErrorBoundary>
-        <Router>
-          <div className="min-h-screen bg-gray-900">
-            <SEOHead />
-            <ResponsiveNavbar />
-            <Routes>
-              <Route path="/" element={<ResponsiveLandingPage />} />
-              <Route path="/game/:id" element={<GamePage />} />
+        <ReviewProvider currentUserId={1}> {/* Using a dummy user ID for demo purposes */}
+          <Router>
+            <div className="min-h-screen bg-gray-900">
+              <SEOHead />
+              <ResponsiveNavbar />
+              <Routes>
+                <Route path="/" element={<ResponsiveLandingPage />} />
+                <Route path="/game/:id" element={<GamePage />} />
               <Route path="/search" element={<GameSearchPage />} />
               <Route path="/search-results" element={<SearchResultsPage />} />
               <Route path="/user/:id" element={<UserPage />} />
@@ -58,9 +60,10 @@ function App() {
               <Route path="/auth-demo" element={<AuthDemoPage />} />
              <Route path="/comments" element={<CommentsDemoPage />} />
               {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
-            </Routes>
-          </div>
-        </Router>
+              </Routes>
+            </div>
+          </Router>
+        </ReviewProvider>
       </ErrorBoundary>
     </HelmetProvider>
   );

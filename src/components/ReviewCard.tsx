@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MessageCircle, ThumbsUp, ThumbsDown, Calendar, Star } from 'lucide-react';
+import { Calendar, Star } from 'lucide-react';
 import { StarRating } from './StarRating';
+import { ReviewInteractions } from './ReviewInteractions';
+import { useReviewInteractions } from '../hooks/useReviewInteractions';
 
 // TypeScript interfaces for review data
 export interface ReviewData {
@@ -15,6 +17,8 @@ export interface ReviewData {
   hasText: boolean;
   author: string;
   authorAvatar: string;
+  likeCount?: number;
+  commentCount?: number;
   theme?: 'purple' | 'green' | 'orange' | 'blue' | 'red';
 }
 
@@ -23,6 +27,7 @@ interface ReviewCardProps {
   compact?: boolean;
   showGameTitle?: boolean;
   className?: string;
+  currentUserId?: number;
 }
 
 // Theme configurations for border colors
@@ -63,10 +68,28 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   review, 
   compact = false, 
   showGameTitle = true,
-  className = ''
+  className = '',
+  currentUserId
 }) => {
   const theme = review.theme || 'purple';
   const themeStyles = themeConfig[theme];
+  
+  // Use the review interactions hook
+  const {
+    likeCount,
+    commentCount,
+    isLiked,
+    comments,
+    isLoadingLike,
+    isLoadingComments,
+    error,
+    toggleLike,
+    loadComments,
+    postComment
+  } = useReviewInteractions({
+    reviewId: parseInt(review.id),
+    userId: currentUserId
+  });
 
   // Generate user initial from username
   const getUserInitial = (username: string): string => {
@@ -194,22 +217,22 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
             </p>
           )}
 
-          {/* Action Buttons (only show in non-compact mode) */}
-          {!compact && review.hasText && (
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <button className="flex items-center gap-1 hover:text-green-400 transition-colors">
-                <ThumbsUp className="h-4 w-4" />
-                <span>Helpful</span>
-              </button>
-              <button className="flex items-center gap-1 hover:text-red-400 transition-colors">
-                <ThumbsDown className="h-4 w-4" />
-                <span>Not helpful</span>
-              </button>
-              <button className={`flex items-center gap-1 hover:${themeStyles.accent.replace('text-', 'text-')} transition-colors`}>
-                <MessageCircle className="h-4 w-4" />
-                <span>Discuss</span>
-              </button>
-            </div>
+          {/* Review Interactions */}
+          {!compact && (
+            <ReviewInteractions
+              reviewId={review.id}
+              initialLikeCount={review.likeCount || likeCount}
+              initialCommentCount={review.commentCount || commentCount}
+              isLiked={isLiked}
+              onLike={toggleLike}
+              onUnlike={toggleLike}
+              comments={comments}
+              onAddComment={postComment}
+              isLoadingComments={isLoadingComments}
+              isLoadingLike={isLoadingLike}
+              error={error || undefined}
+              className="mt-3"
+            />
           )}
         </div>
       </div>
