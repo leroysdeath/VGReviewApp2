@@ -8,8 +8,11 @@ import {
   Clock, 
   AlertCircle,
   RefreshCw,
-  ChevronDown
+  ChevronDown,
+  Bell,
+  CheckCheck
 } from 'lucide-react';
+import { useNotificationStore } from '../store/notificationStore';
 
 // Activity types
 export type ActivityType = 'review' | 'review_like' | 'comment' | 'comment_like' | 'comment_reply';
@@ -53,6 +56,8 @@ interface ActivityFeedProps {
   onRetry?: () => void;
   onLoadMore?: () => void;
   hasMore?: boolean;
+  showNotificationControls?: boolean;
+  userId?: string;
   className?: string;
 }
 
@@ -63,8 +68,12 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
   onRetry,
   onLoadMore,
   hasMore = false,
+  showNotificationControls = false,
+  userId,
   className = ''
 }) => {
+  const { unreadCount, markAllAsRead } = useNotificationStore();
+  
   // Format relative time
   const formatRelativeTime = (timestamp: string): string => {
     const date = new Date(timestamp);
@@ -270,6 +279,31 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
 
   return (
     <div className={`space-y-4 ${className}`} aria-label="Activity feed">
+      {/* Notification Controls */}
+      {showNotificationControls && (
+        <div className="flex items-center justify-between bg-gray-800 rounded-lg p-3 mb-2">
+          <div className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-blue-400" />
+            <span className="text-white font-medium">Activity Feed</span>
+            {unreadCount > 0 && (
+              <span className="px-2 py-0.5 bg-blue-500 text-white text-xs font-medium rounded-full">
+                {unreadCount} new
+              </span>
+            )}
+          </div>
+          
+          {unreadCount > 0 && (
+            <button
+              onClick={() => markAllAsRead()}
+              className="flex items-center gap-1 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white rounded-lg transition-colors text-sm"
+            >
+              <CheckCheck className="h-4 w-4" />
+              <span>Mark all as read</span>
+            </button>
+          )}
+        </div>
+      )}
+      
       {/* Error message */}
       {error && (
         <div className="bg-red-900/30 border border-red-800/50 rounded-lg p-4 mb-4">

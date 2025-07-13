@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube, MessageSquare } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube, MessageSquare, Bell } from 'lucide-react';
 import { LoginModal } from './LoginModal';
 import { useResponsive } from '../hooks/useResponsive';
+import { NotificationBadge } from './NotificationBadge';
+import { NotificationCenter } from './NotificationCenter';
 
 export const ResponsiveNavbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
@@ -220,7 +223,8 @@ export const ResponsiveNavbar: React.FC = () => {
 
           {/* Desktop User Menu */}
           <div className="hidden md:block">
-            <div className="ml-4 flex items-center md:ml-6">
+            <div className="ml-4 flex items-center gap-2 md:ml-6">
+              <NotificationBadge onClick={() => setIsNotificationCenterOpen(true)} />
               <button
                 onClick={() => setIsLoginModalOpen(true)}
                 className="p-2 text-gray-400 hover:text-white transition-colors"
@@ -316,6 +320,13 @@ export const ResponsiveNavbar: React.FC = () => {
       <LoginModal 
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
+      />
+      
+      {/* Notification Center */}
+      <NotificationCenter
+        userId="user123" // This would come from auth context in a real app
+        isOpen={isNotificationCenterOpen}
+        onClose={() => setIsNotificationCenterOpen(false)}
       />
     </nav>
   );

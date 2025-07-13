@@ -20,6 +20,7 @@ import { GameHeroDemoPage } from './pages/GameHeroDemoPage';
 import { GameCardDemoPage } from './pages/GameCardDemoPage';
 import { StatsDemoPage } from './pages/StatsDemoPage';
 import UserActivityDemo from './pages/UserActivityDemo';
+import { NotificationDemoPage } from './pages/NotificationDemoPage';
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { ActivityFeedDemo } from './pages/ActivityFeedDemo';
 import { DummyReviewPage } from './pages/DummyReviewPage';
@@ -66,7 +67,8 @@ function App() {
               <Route path="/review-cards" element={<ReviewDemoPage />} />
               <Route path="/advanced-search" element={<AdvancedSearchDemo />} />
               <Route path="/auth-demo" element={<AuthDemoPage />} />
-             <Route path="/comments" element={<CommentsDemoPage />} />
+              <Route path="/comments" element={<CommentsDemoPage />} />
+              <Route path="/notifications" element={<NotificationDemoPage />} />
               {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
               </Routes>
             </div>
