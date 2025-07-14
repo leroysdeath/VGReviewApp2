@@ -187,13 +187,13 @@ export const supabaseHelpers = {
     const averageRating = totalGames > 0 
       ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalGames 
       : 0;
-    const totalReviews = ratings.filter(r => r.review && r.review.trim().length > 0).length;
+    // const totalReviews = ratings.filter(r => r.review && r.review.trim().length > 0).length;
 
     return {
       totalGames,
       completedGames,
       averageRating,
-      totalReviews
+      // totalReviews
     };
   },
 

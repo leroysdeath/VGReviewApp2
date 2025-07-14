@@ -10,10 +10,3 @@ createRoot(document.getElementById('root')!).render(
 );
 
 
-// src/main.tsx or wherever you call it
-fetch('/.netlify/functions/igdb-search', {
-  method: 'POST'
-})
-  .then(res => res.json())
-  .then(data => console.log('IGDB Data:', data))
-  .catch(err => console.error(err));

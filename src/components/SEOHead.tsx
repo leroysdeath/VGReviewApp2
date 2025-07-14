@@ -29,10 +29,11 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
   const siteName = 'GameVault';
   const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`;
   const fullImage = image.startsWith('http') ? image : `${window.location.origin}${image}`;
-
+  
   return (
     <Helmet>
       {/* Basic Meta Tags */}
+
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
