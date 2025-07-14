@@ -11,10 +11,8 @@ import { ConvertSearch, GameSearch } from '../GameSearch';
 export const ResponsiveLandingPage: React.FC = () => {
   const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
-  const [apiData, setApiData] = useState(null);
   const { isMobile } = useResponsive();
   const recentReviews = mockReviews.slice(0, isMobile ? 3 : 4);
-  let ApiModels:GameSearch[] =[];
 
   useEffect(() => {
     const loadFeaturedGames = async () => {
@@ -31,24 +29,23 @@ export const ResponsiveLandingPage: React.FC = () => {
     loadFeaturedGames();
   }, [isMobile]);
 
+
+const [apiModels, setApiModels] = useState<GameSearch[] | null>(null);
+
 useEffect(() => {
   const fetchData = async () => {
     try {
       const res = await fetch('/.netlify/functions/igdb-search', { method: 'POST' });
       const data = await res.json();
-      // let converter:ConvertSearch = new ConvertSearch();
-      ApiModels = ConvertSearch.toGameSearch(data);
-      
       console.log('IGDB Data:', data);
-      setApiData(data);
+      setApiModels(data); // ✅ No extra conversion needed!
     } catch (err) {
       console.error(err);
     }
   };
 
   fetchData();
-}, []); // ✅ <-- Stops the infinite loop
-
+}, []);
 
   if (isMobile) {
     return (
@@ -186,9 +183,9 @@ useEffect(() => {
              {/* {apiData && JSON.stringify(apiData, null, 2)}   */}
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
               Join the ultimate gaming community. Rate, review, and discover games
-              through the power of social gaming. Your next favorite game is just a click away. 
-              {/* {ApiModels[0].name} */}
-                       </p>
+              through the power of social gaming. Your next favorite game is just a click away. </p>
+              <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+                Game of the day: {apiModels?.[0]?.name}</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 to="/search"
