@@ -30,22 +30,22 @@ export const ResponsiveLandingPage: React.FC = () => {
   }, [isMobile]);
 
 
-const [apiModels, setApiModels] = useState<GameSearch[] | null>(null);
+  const [apiModels, setApiModels] = useState<GameSearch[] | null>(null);
 
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const res = await fetch('/.netlify/functions/igdb-search', { method: 'POST' });
-      const data = await res.json();
-      console.log('IGDB Data:', data);
-      setApiModels(data); // ✅ No extra conversion needed!
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch('/.netlify/functions/igdb-search', { method: 'POST' });
+        const data = await res.json();
+        console.log('IGDB Data:', data);
+        setApiModels(data); // ✅ No extra conversion needed!
+      } catch (err) {
+        console.error(err);
+      }
+    };
 
-  fetchData();
-}, []);
+    fetchData();
+  }, []);
 
   if (isMobile) {
     return (
@@ -65,6 +65,8 @@ useEffect(() => {
             <p className="text-gray-300 mb-8 leading-relaxed">
               Join the ultimate gaming community. Rate, review, and discover games through social gaming.
             </p>
+            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Game of the day: {apiModels?.[0]?.name}</p>
             <div className="space-y-3">
               <Link
                 to="/search"
@@ -180,12 +182,12 @@ useEffect(() => {
                 {' '}Gaming Adventure
               </span>
             </h1>
-             {/* {apiData && JSON.stringify(apiData, null, 2)}   */}
+            {/* {apiData && JSON.stringify(apiData, null, 2)}   */}
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
               Join the ultimate gaming community. Rate, review, and discover games
               through the power of social gaming. Your next favorite game is just a click away. </p>
-              <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-                Game of the day: {apiModels?.[0]?.name}</p>
+            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Game of the day: {apiModels?.[0]?.name}</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 to="/search"
