@@ -1,5 +1,6 @@
 export const mockGames = [ // Keeping this for development/testing but removing placeholder data
   {
+  }
   // Empty array - will be populated with real data from API
 ];
 
