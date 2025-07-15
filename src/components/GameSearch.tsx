@@ -525,7 +525,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
             <ArrowRight className="h-5 w-5 ml-1" />
           </Link>
         </div>
-      </div>
+      )}
 
       {/* View Toggle */}
       {showViewToggle && searchState.results.length > 0 && (
