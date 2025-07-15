@@ -87,9 +87,40 @@ export const ResponsiveNavbar: React.FC = () => {
                   <Link
                     to="/"
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
                   >
                     Home
                   </Link>
+                  <Link
+                    to="/search"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Games
+                  </Link>
+                  <Link
+                    to="/users"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Users
+                  </Link>
+                  <Link
+                    to="/user/1"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setIsLoginModalOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+                  >
+                    Login
+                  </button>
                 </div>
               </div>
             </div>
