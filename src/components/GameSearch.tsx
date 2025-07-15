@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, AlertCircle, Calendar, Star, Gamepad2, Grid, List, Activity, Bug } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Search, Loader2, AlertCircle, Calendar, Star, Gamepad2, Grid, List, Activity, Bug, ArrowRight } from 'lucide-react';
 import { igdbService, Game } from '../services/igdbService';
+import { Link } from 'react-router-dom';
+import { SearchSuggestion } from '../types/search';
 
 interface GameSearchProps {
   onGameSelect?: (game: Game) => void;
@@ -10,6 +12,7 @@ interface GameSearchProps {
   maxResults?: number;
   className?: string;
   showHealthCheck?: boolean;
+  showExploreButton?: boolean;
 }
 
 interface SearchState {
@@ -27,7 +30,8 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   initialViewMode = 'grid',
   maxResults = 20,
   className = '',
-  showHealthCheck = false
+  showHealthCheck = false,
+  showExploreButton = true
 }) => {
   const [searchState, setSearchState] = useState<SearchState>({
     query: '',
@@ -39,8 +43,46 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialViewMode);
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const DEBUG_MODE = import.meta.env.DEV;
+  
+  // Generate search suggestions based on query
+  const generateSuggestions = useCallback((query: string): SearchSuggestion[] => {
+    if (!query.trim()) return [];
+    
+    // Generate game suggestions
+    const gameSuggestions: SearchSuggestion[] = searchState.results.slice(0, 3).map(game => ({
+      id: game.id,
+      title: game.title,
+      imageUrl: game.coverImage,
+      type: 'game'
+    }));
+    
+    // Generate genre suggestions based on query
+    const genreSuggestions: SearchSuggestion[] = ['Action', 'Adventure', 'RPG', 'Strategy', 'Simulation']
+      .filter(genre => genre.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, 2)
+      .map(genre => ({
+        id: `genre-${genre.toLowerCase()}`,
+        title: genre,
+        type: 'genre'
+      }));
+    
+    // Generate platform suggestions based on query
+    const platformSuggestions: SearchSuggestion[] = ['PC', 'PlayStation 5', 'Xbox Series X', 'Nintendo Switch']
+      .filter(platform => platform.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, 2)
+      .map(platform => ({
+        id: `platform-${platform.toLowerCase().replace(/\s+/g, '-')}`,
+        title: platform,
+        type: 'platform'
+      }));
+    
+    return [...gameSuggestions, ...genreSuggestions, ...platformSuggestions];
+  }, [searchState.results]);
+  
   // Debounced search function
   const performSearch = useCallback(async (searchTerm: string) => {
     if (!searchTerm.trim()) {
@@ -72,9 +114,13 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       setSearchState(prev => ({
         ...prev,
         results: games,
-        loading: false,
+        loading: false, 
         error: null
       }));
+      
+      // Update suggestions
+      const newSuggestions = generateSuggestions(searchTerm);
+      setSuggestions(newSuggestions);
       
       console.log('✅ Search completed, found', games.length, 'games');
       if (DEBUG_MODE) {
@@ -95,10 +141,11 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         ...prev,
         results: [],
         loading: false,
-        error: errorMessage
+        error: errorMessage,
+        suggestions: []
       }));
     }
-  }, [maxResults]);
+  }, [maxResults, generateSuggestions]);
 
   // Handle input change with debouncing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,11 +167,47 @@ export const GameSearch: React.FC<GameSearchProps> = ({
 
     // Set new timer for debounced search
     const timer = setTimeout(() => {
+      setShowSuggestions(true);
       performSearch(newQuery);
     }, 300);
 
     setDebounceTimer(timer);
   };
+
+  // Handle suggestion selection
+  const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
+    if (suggestion.type === 'game' && onGameSelect) {
+      // Find the game in results
+      const game = searchState.results.find(g => g.id === suggestion.id);
+      if (game) {
+        onGameSelect(game);
+      }
+    } else {
+      // For genre or platform, update search query
+      setSearchState(prev => ({
+        ...prev,
+        query: suggestion.title
+      }));
+      performSearch(suggestion.title);
+    }
+    setShowSuggestions(false);
+  };
+
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const searchContainer = document.getElementById('game-search-container');
+      if (searchContainer && !searchContainer.contains(target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -309,7 +392,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   );
 
   return (
-    <div className={`w-full ${className}`}>
+    <div id="game-search-container" className={`w-full ${className}`}>
       {/* Debug Panel for Development */}
       {DEBUG_MODE && (
         <div className="mb-4 p-3 bg-gray-800 rounded-lg border border-gray-700">
@@ -366,15 +449,23 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       )}
 
       {/* Search Input */}
-      <div className="relative mb-6">
+      <div className="relative mb-6 z-50">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 transition-colors ${
+            showSuggestions ? 'text-purple-500' : 'text-gray-400'
+          }`} />
           <input
             type="text"
             value={searchState.query}
             onChange={handleInputChange}
+            onFocus={() => setShowSuggestions(true)}
             placeholder={placeholder}
-            className="w-full pl-10 pr-12 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all"
+            className={`w-full pl-10 pr-12 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all ${
+              showSuggestions ? 'border-purple-500 ring-2 ring-purple-500 ring-opacity-50' : ''
+            }`}
+            aria-label="Search for games"
+            aria-expanded={showSuggestions}
+            aria-controls={suggestions.length > 0 ? "search-suggestions" : undefined}
           />
           {DEBUG_MODE && (
             <div className="absolute right-12 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">DEBUG</div>
@@ -384,6 +475,55 @@ export const GameSearch: React.FC<GameSearchProps> = ({
               <Loader2 className="h-5 w-5 text-purple-400 animate-spin" />
             </div>
           )}
+        </div>
+        
+        {/* Search Suggestions */}
+        {showSuggestions && suggestions.length > 0 && (
+          <div 
+            id="search-suggestions"
+            className="absolute z-50 mt-2 w-full bg-gray-800 border border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto"
+            role="listbox"
+          >
+            {suggestions.map((suggestion, index) => (
+              <div
+                key={suggestion.id}
+                role="option"
+                aria-selected="false"
+                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-700 transition-colors"
+                onClick={() => handleSuggestionSelect(suggestion)}
+              >
+                {suggestion.type === 'game' && suggestion.imageUrl ? (
+                  <img 
+                    src={suggestion.imageUrl} 
+                    alt={suggestion.title}
+                    className="w-10 h-10 object-cover rounded"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center text-lg">
+                    {suggestion.type === 'genre' ? '🏷️' : '💻'}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-medium">{suggestion.title}</div>
+                  <div className="text-gray-400 text-sm capitalize">{suggestion.type}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      {/* Explore Games Button */}
+      {showExploreButton && searchState.query.length === 0 && !searchState.hasSearched && (
+        <div className="flex justify-center mb-6">
+          <Link
+            to="/search"
+            className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Gamepad2 className="h-5 w-5" />
+            Explore Games
+            <ArrowRight className="h-5 w-5 ml-1" />
+          </Link>
         </div>
       </div>
 
@@ -475,10 +615,10 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       {/* Initial State */}
       {!searchState.loading && !searchState.hasSearched && !searchState.error && (
         <div className="text-center py-12">
-          <Search className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+          <Gamepad2 className="h-16 w-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-white mb-2">Search for Games</h3>
           <p className="text-gray-400">
-            Enter a game title, genre, or keyword to find games from the IGDB database.
+            Enter a game title, genre, or keyword to discover your next gaming adventure.
           </p>
         </div>
       )}
