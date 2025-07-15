@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Loader2, AlertCircle, Calendar, Star, Gamepad2, Grid, List, Activity, Bug, ArrowRight } from 'lucide-react';
 import { igdbService, Game } from '../services/igdbService';
 import { Link } from 'react-router-dom';
-import { SearchSuggestion } from '../types/search';
+import type { SearchSuggestion } from '../types/search';
 
 interface GameSearchProps {
   onGameSelect?: (game: Game) => void;
@@ -46,7 +46,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const DEBUG_MODE = import.meta.env.DEV;
+  const DEBUG_MODE = import.meta.env.DEV || false;
   
   // Generate search suggestions based on query
   const generateSuggestions = useCallback((query: string): SearchSuggestion[] => {
@@ -239,7 +239,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
     
     try {
       const date = new Date(dateString);
-      return date.getFullYear().toString();
+      return isNaN(date.getFullYear()) ? 'TBA' : date.getFullYear().toString();
     } catch {
       return 'TBA';
     }
@@ -418,9 +418,9 @@ export const GameSearch: React.FC<GameSearchProps> = ({
             <button
               onClick={async () => {
                 try {
-                  console.log('🏥 Starting health check...');
-                  console.log('🏥 Function URL:', '/.netlify/functions/igdb-search');
-                  console.log('🏥 Current location:', window.location.href);
+                  console.log('Starting health check...');
+                  console.log('Function URL:', '/.netlify/functions/igdb-search');
+                  console.log('Current location:', window.location.href);
                   const response = await fetch('/.netlify/functions/igdb-search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -428,12 +428,11 @@ export const GameSearch: React.FC<GameSearchProps> = ({
                   });
                   const data = await response.json();
                   console.log('Health check result:', { status: response.status, data });
-                  console.log('🏥 Response headers:', Object.fromEntries(response.headers.entries()));
-                  console.log('🏥 Response URL:', response.url);
-                  console.log('🏥 Response type:', response.type);
-                  console.log('🏥 Response redirected:', response.redirected);
-                  console.log('🏥 Response ok:', response.ok);
-                  console.log('🏥 Full response object:', response);
+                  console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                  console.log('Response URL:', response.url);
+                  console.log('Response type:', response.type);
+                  console.log('Response redirected:', response.redirected);
+                  console.log('Response ok:', response.ok);
                   alert(`Function ${response.ok ? 'working' : 'has issues'}: ${response.status}`);
                 } catch (error) {
                   console.error('Health check failed:', error);
