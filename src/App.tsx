@@ -13,24 +13,7 @@ import { UserSearchPage } from './pages/UserSearchPage';
 import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ProfilePage } from './pages/ProfilePage';
-import { ResponsiveDummyGamePage } from './pages/ResponsiveDummyGamePage';
-import { ResponsiveDummyUserPage } from './pages/ResponsiveDummyUserPage';
-import { ModernNavbarDemoPage } from './pages/ModernNavbarDemoPage';
-import { GameHeroDemoPage } from './pages/GameHeroDemoPage';
-import { GameCardDemoPage } from './pages/GameCardDemoPage';
-import { StatsDemoPage } from './pages/StatsDemoPage';
-import UserActivityDemo from './pages/UserActivityDemo';
-import { NotificationDemoPage } from './pages/NotificationDemoPage';
 import { IGDBTestPage } from './pages/IGDBTestPage';
-import { ActivityFeedDemo } from './pages/ActivityFeedDemo';
-import { DummyReviewPage } from './pages/DummyReviewPage';
-import OptimizedActivityFeedDemo from './pages/OptimizedActivityFeedDemo';
-import { ActivityFormatterDemo } from './pages/ActivityFormatterDemo';
-import RealTimeActivityDemo from './pages/RealTimeActivityDemo';
-import { ReviewDemoPage } from './pages/ReviewDemoPage';
-import { AdvancedSearchDemo } from './pages/AdvancedSearchDemo';
-import { AuthDemoPage } from './pages/AuthDemoPage';
-import { CommentsDemoPage } from './pages/CommentsDemoPage';
 import { SEOHead } from './components/SEOHead';
 
 function App() {
@@ -52,23 +35,6 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/review/:gameId?" element={<ReviewFormPage />} />
               <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/dummy-game" element={<ResponsiveDummyGamePage />} />
-              <Route path="/dummy-user" element={<ResponsiveDummyUserPage />} />
-              <Route path="/dummy-review" element={<DummyReviewPage />} />
-              <Route path="/modern-navbar" element={<ModernNavbarDemoPage />} />
-              <Route path="/hero-demo" element={<GameHeroDemoPage />} />
-              <Route path="/game-cards" element={<GameCardDemoPage />} />
-              <Route path="/stats-demo" element={<StatsDemoPage />} />
-              <Route path="/user-activity" element={<UserActivityDemo />} />
-              <Route path="/activity-formatters" element={<ActivityFormatterDemo />} />
-              <Route path="/activity-feed" element={<ActivityFeedDemo />} />
-              <Route path="/optimized-activity-feed" element={<OptimizedActivityFeedDemo />} />
-              <Route path="/real-time-activity" element={<RealTimeActivityDemo />} />
-              <Route path="/review-cards" element={<ReviewDemoPage />} />
-              <Route path="/advanced-search" element={<AdvancedSearchDemo />} />
-              <Route path="/auth-demo" element={<AuthDemoPage />} />
-              <Route path="/comments" element={<CommentsDemoPage />} />
-              <Route path="/notifications" element={<NotificationDemoPage />} />
               {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
               </Routes>
             </div>

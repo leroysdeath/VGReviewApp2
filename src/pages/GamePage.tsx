@@ -4,8 +4,8 @@ import { useParams, Link } from 'react-router-dom';
 import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
-import { mockReviews } from '../data/mockData';
 import { igdbService, Game } from '../services/igdbApi';
+import { supabase } from '../services/supabase';
 
 export const GamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +14,7 @@ export const GamePage: React.FC = () => {
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
 
   useEffect(() => {
     const loadGame = async () => {
@@ -26,6 +27,28 @@ export const GamePage: React.FC = () => {
         const gameData = await igdbService.getGameByStringId(id);
         if (gameData) {
           setGame(gameData);
+          
+          // Check if game exists in our database
+          const { data: existingGame } = await supabase
+            .from('game')
+            .select('id')
+            .eq('game_id', id)
+            .single();
+            
+          if (existingGame) {
+            // Fetch reviews for this game
+            const { data: gameReviews, error: reviewsError } = await supabase
+              .from('rating')
+              .select(`
+                *,
+                user:user_id(*)
+              `)
+              .eq('game_id', existingGame.id);
+              
+            if (!reviewsError && gameReviews) {
+              setReviews(gameReviews);
+            }
+          }
         } else {
           setError('Game not found');
         }
@@ -40,12 +63,26 @@ export const GamePage: React.FC = () => {
     loadGame();
   }, [id]);
 
-  const gameReviews = mockReviews.filter(r => r.gameId === id);
-  const topReviews = gameReviews.filter(r => r.rating >= 8).slice(0, 3);
-  const recentReviews = gameReviews.slice(0, 5);
+  // Transform reviews to match ReviewCard component expectations
+  const transformedReviews = reviews.map(review => ({
+    id: review.id.toString(),
+    userId: review.user_id.toString(),
+    gameId: review.game_id.toString(),
+    rating: review.rating,
+    text: review.review || '',
+    date: new Date(review.post_date_time).toISOString().split('T')[0],
+    hasText: !!review.review,
+    likeCount: 0, // To be implemented with real data
+    commentCount: 0, // To be implemented with real data
+    author: review.user?.name || 'Anonymous',
+    authorAvatar: review.user?.picurl || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
+  }));
+  
+  const topReviews = transformedReviews.filter(r => r.rating >= 8).slice(0, 3);
+  const recentReviews = transformedReviews.slice(0, 5);
 
-  const averageRating = gameReviews.length > 0 
-    ? gameReviews.reduce((sum, review) => sum + review.rating, 0) / gameReviews.length 
+  const averageRating = transformedReviews.length > 0 
+    ? transformedReviews.reduce((sum, review) => sum + review.rating, 0) / transformedReviews.length 
     : 0;
 
   const ratingDistribution = [

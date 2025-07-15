@@ -86,69 +86,6 @@ export const ResponsiveNavbar: React.FC = () => {
                 <div className="space-y-2">
                   <Link
                     to="/"
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive('/') ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Home className="h-5 w-5" />
-                    Home
-                  </Link>
-                  <Link
-                    to="/search"
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive('/search') ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Gamepad2 className="h-5 w-5" />
-                    Games
-                  </Link>
-                  <Link
-                    to="/users"
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive('/users') ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Users className="h-5 w-5" />
-                    Users
-                  </Link>
-                  <Link
-                    to="/user/1"
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive('/user/1') ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <User className="h-5 w-5" />
-                    Profile
-                  </Link>
-                  {import.meta.env.DEV && (
-                    <Link
-                      to="/igdb-test"
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                        isActive('/igdb-test') ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                      }`}
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <TestTube className="h-5 w-5" />
-                      IGDB Test
-                    </Link>
-                  )}
-                </div>
-
-                {/* Login Button */}
-                <button
-                  onClick={() => {
-                    setIsLoginModalOpen(true);
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
-                >
-                  <User className="h-5 w-5" />
-                  Login
-                </button>
               </div>
             </div>
           </div>

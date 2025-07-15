@@ -17,96 +17,9 @@ export interface Game {
   videos?: string[];
 }
 
-// Mock data for fallback when API is not available
+// Empty mock data array for fallback when API is not available
 const mockGamesData: Game[] = [
-  {
-    id: '1',
-    title: 'The Witcher 3: Wild Hunt',
-    coverImage: 'https://images.pexels.com/photos/442576/pexels-photo-442576.jpeg?auto=compress&cs=tinysrgb&w=400',
-    releaseDate: '2015-05-19',
-    genre: 'RPG',
-    rating: 9.3,
-    description: 'You are Geralt of Rivia, mercenary monster slayer. Before you lies a war-torn, monster-infested continent you can explore at will.',
-    developer: 'CD Projekt Red',
-    publisher: 'CD Projekt'
-  },
-  {
-    id: '2',
-    title: 'Cyberpunk 2077',
-    coverImage: 'https://images.pexels.com/photos/2047905/pexels-photo-2047905.jpeg?auto=compress&cs=tinysrgb&w=400',
-    releaseDate: '2020-12-10',
-    genre: 'RPG',
-    rating: 7.8,
-    description: 'Cyberpunk 2077 is an open-world, action-adventure story set in Night City.',
-    developer: 'CD Projekt Red',
-    publisher: 'CD Projekt'
-  },
-  {
-    id: '3',
-    title: 'Red Dead Redemption 2',
-    coverImage: 'https://images.pexels.com/photos/3165335/pexels-photo-3165335.jpeg?auto=compress&cs=tinysrgb&w=400',
-    releaseDate: '2018-10-26',
-    genre: 'Action',
-    rating: 9.7,
-    description: 'America, 1899. Arthur Morgan and the Van der Linde gang are outlaws on the run.',
-    developer: 'Rockstar Games',
-    publisher: 'Rockstar Games'
-  },
-  {
-    id: '4',
-    title: 'The Last of Us Part II',
-    coverImage: 'https://images.pexels.com/photos/3945667/pexels-photo-3945667.jpeg?auto=compress&cs=tinysrgb&w=400',
-    releaseDate: '2020-06-19',
-    genre: 'Action',
-    rating: 8.9,
-    description: 'Five years after their dangerous journey across the post-pandemic United States.',
-    developer: 'Naughty Dog',
-    publisher: 'Sony Interactive Entertainment'
-  },
-  {
-    id: '5',
-    title: 'God of War',
-    coverImage: 'https://images.pexels.com/photos/3945670/pexels-photo-3945670.jpeg?auto=compress&cs=tinysrgb&w=400',
-    releaseDate: '2018-04-20',
-    genre: 'Action',
-    rating: 9.5,
-    description: 'His vengeance against the Gods of Olympus years behind him, Kratos now lives as a man.',
-    developer: 'Santa Monica Studio',
-    publisher: 'Sony Interactive Entertainment'
-  },
-  {
-    id: '6',
-    title: 'Horizon Zero Dawn',
-    coverImage: 'https://images.pexels.com/photos/3945672/pexels-photo-3945672.jpeg?auto=compress&cs=tinysrgb&w=400',
-    releaseDate: '2017-02-28',
-    genre: 'Action',
-    rating: 8.7,
-    description: 'Experience Aloy\'s entire legendary quest to unravel the mysteries of a world ruled by deadly Machines.',
-    developer: 'Guerrilla Games',
-    publisher: 'Sony Interactive Entertainment'
-  },
-  {
-    id: '7',
-    title: 'Elden Ring',
-    coverImage: 'https://images.pexels.com/photos/3945654/pexels-photo-3945654.jpeg?auto=compress&cs=tinysrgb&w=400',
-    releaseDate: '2022-02-25',
-    genre: 'RPG',
-    rating: 9.6,
-    description: 'THE NEW FANTASY ACTION RPG. Rise, Tarnished, and be guided by grace.',
-    developer: 'FromSoftware',
-    publisher: 'Bandai Namco Entertainment'
-  },
-  {
-    id: '8',
-    title: 'Ghost of Tsushima',
-    coverImage: 'https://images.pexels.com/photos/3945656/pexels-photo-3945656.jpeg?auto=compress&cs=tinysrgb&w=400',
-    releaseDate: '2020-07-17',
-    genre: 'Action',
-    rating: 8.8,
-    description: 'In the late 13th century, the Mongol empire has laid waste to entire nations.',
-    developer: 'Sucker Punch Productions',
-    publisher: 'Sony Interactive Entertainment'
-  }
+  // Will be populated with real data from API
 ];
 
 class IGDBService {
@@ -141,21 +54,8 @@ class IGDBService {
   private getMockData(endpoint: string, body: string): any {
     // Simple mock data based on endpoint and query
     if (endpoint === 'games') {
-      if (body.includes('search')) {
-        // Extract search term from body
-        const searchMatch = body.match(/search "([^"]+)"/);
-        const searchTerm = searchMatch ? searchMatch[1].toLowerCase() : '';
-        
-        if (searchTerm) {
-          return mockGamesData.filter(game => 
-            game.title.toLowerCase().includes(searchTerm) ||
-            game.genre.toLowerCase().includes(searchTerm)
-          );
-        }
-      }
-      
-      // Return all mock games for other queries
-      return mockGamesData;
+      // Return empty array - API should be used instead
+      return [];
     }
     
     return [];

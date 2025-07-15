@@ -201,8 +201,8 @@ export const UserActivityFeed: React.FC<UserActivityFeedProps> = ({
             {/* Review text preview */}
             {activity.type === 'review' && activity.review?.text && (
               <div className="mt-2 text-gray-300 text-sm bg-gray-800/50 p-3 rounded-lg">
-                {`"${activity.review.text.length > 120 
-                  ? activity.review.text.substring(0, 120) + '...' 
+                {`"${activity.review.text.length > 120
+                  ? activity.review.text.substring(0, 120) + '...'
                   : activity.review.text}"`}
               </div>
             )}
