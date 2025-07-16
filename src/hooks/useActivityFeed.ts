@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef, useMemo } from 'react';
 import { useActivityFeedStore } from '../store/activityFeedStore';
 import { ActivityFeedOptions } from '../types/activity';
-import { useSWRInfinite } from 'swr/infinite';
+import useSWRInfinite from 'swr/infinite';
 import { fetchActivities } from '../services/activityFeedService';
 
 /**
