@@ -54,11 +54,19 @@ exports.handler = async (event, context) => {
     let query;
     
     if (event.httpMethod === 'GET') {
-      query = event.queryStringParameters?.query || event.queryStringParameters?.q;
+      // Handle multiple possible parameter names
+      query = event.queryStringParameters?.query || 
+              event.queryStringParameters?.q || 
+              event.queryStringParameters?.search ||
+              event.queryStringParameters?.term;
     } else if (event.httpMethod === 'POST') {
       const body = JSON.parse(event.body || '{}');
-      query = body.query || body.q;
+      query = body.query || body.q || body.search || body.term;
     }
+
+    // Log for debugging
+    console.log('Query parameters received:', event.queryStringParameters);
+    console.log('Parsed query:', query);
     
     if (!query) {
       return {
