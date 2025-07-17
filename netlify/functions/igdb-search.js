@@ -1,189 +1,152 @@
+// netlify/functions/igdb-search.js
 exports.handler = async (event, context) => {
-  console.log('🎮 IGDB Function called:', event.httpMethod, event.path);
-  
+  // Add CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Content-Type': 'application/json',
   };
 
+  // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+    return {
+      statusCode: 200,
+      headers,
+      body: '',
+    };
   }
 
-  if (event.httpMethod !== 'POST') {
+  // Only allow GET and POST methods
+  if (!['GET', 'POST'].includes(event.httpMethod)) {
     return {
       statusCode: 405,
       headers,
-      body: JSON.stringify({ error: 'Method not allowed' })
+      body: JSON.stringify({ error: 'Method not allowed. Use GET or POST.' }),
     };
   }
 
   try {
-    // Parse request body
-    let requestData;
-    try {
-      requestData = JSON.parse(event.body || '{}');
-      console.log('📥 Request data:', requestData);
-    } catch (parseError) {
-      console.error('❌ JSON parse error:', parseError);
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Invalid JSON in request body' })
-      };
-    }
-
-    const { searchTerm, limit = 10 } = requestData;
-    
-    if (!searchTerm || searchTerm.trim().length === 0) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Search term is required' })
-      };
-    }
-
-    // Check environment variables
+    // Get environment variables
     const clientId = process.env.TWITCH_CLIENT_ID;
     const accessToken = process.env.TWITCH_APP_ACCESS_TOKEN;
     
-    console.log('🔑 Environment check:', {
-      hasClientId: !!clientId,
-      hasAccessToken: !!accessToken,
-      clientIdLength: clientId?.length,
-      tokenLength: accessToken?.length
-    });
-
+    // Validate environment variables
     if (!clientId || !accessToken) {
-      console.error('❌ Missing IGDB credentials');
+      console.error('Missing environment variables:', { 
+        hasClientId: !!clientId, 
+        hasAccessToken: !!accessToken 
+      });
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: 'Server configuration error',
-          details: 'IGDB credentials not configured. Check Netlify environment variables.',
-          missing: {
-            clientId: !clientId,
-            accessToken: !accessToken
+          error: 'Missing API credentials',
+          debug: {
+            hasClientId: !!clientId,
+            hasAccessToken: !!accessToken
           }
-        })
+        }),
       };
     }
 
-if (clientId.includes('your_client_id') || accessToken.includes('your_access_token')) {
-  return {
-    statusCode: 500,
-    headers,
-    body: JSON.stringify({ 
-      error: 'Placeholder credentials detected',
-      details: 'Replace placeholder values with actual Twitch credentials'
-    })
-  };
-}
+    // Get search query from URL params (GET) or request body (POST)
+    let query;
     
-    // Prepare IGDB query
-    const cleanSearchTerm = searchTerm.trim().replace(/"/g, '\\"');
-    const query = `fields name, summary; search "${cleanSearchTerm}"; limit 10;`;    
-    console.log('🔍 IGDB Query:', query);
+    if (event.httpMethod === 'GET') {
+      query = event.queryStringParameters?.query || event.queryStringParameters?.q;
+    } else if (event.httpMethod === 'POST') {
+      const body = JSON.parse(event.body || '{}');
+      query = body.query || body.q;
+    }
+    
+    if (!query) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Search query is required' }),
+      };
+    }
+
+    // Construct IGDB API request
+    const igdbUrl = 'https://api.igdb.com/v4/games';
+    const requestBody = `
+      fields name, cover.url, first_release_date, rating, summary, platforms.name, genres.name;
+      search "${query}";
+      limit 20;
+    `.trim();
+
+    console.log('Making IGDB request:', { query, clientId: clientId.substring(0, 8) + '...' });
 
     // Make request to IGDB API
-    const igdbResponse = await fetch('https://api.igdb.com/v4/games', {
+    const response = await fetch(igdbUrl, {
       method: 'POST',
       headers: {
         'Client-ID': clientId,
         'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json',
+        'Content-Type': 'text/plain',
       },
-      body: query
+      body: requestBody,
     });
 
-    console.log('📡 IGDB Response:', {
-      status: igdbResponse.status,
-      statusText: igdbResponse.statusText,
-      ok: igdbResponse.ok
-    });
+    console.log('IGDB response status:', response.status);
 
-    if (!igdbResponse.ok) {
-      const errorText = await igdbResponse.text();
-      console.error('❌ IGDB API Error:', {
-        status: igdbResponse.status,
-        statusText: igdbResponse.statusText,
-        body: errorText
-      });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('IGDB API error:', response.status, errorText);
       
       // Handle specific error cases
-      if (igdbResponse.status === 401) {
+      if (response.status === 401) {
         return {
           statusCode: 401,
           headers,
           body: JSON.stringify({ 
-            error: 'IGDB authentication failed',
-            details: 'Access token may be expired. Generate a new one.',
-            solution: 'Run: curl -X POST "https://id.twitch.tv/oauth2/token" -d "client_id=YOUR_ID&client_secret=YOUR_SECRET&grant_type=client_credentials"'
-          })
+            error: 'Authentication failed - check your API credentials',
+            details: errorText
+          }),
         };
       }
       
-      if (igdbResponse.status === 429) {
-        return {
-          statusCode: 429,
-          headers,
-          body: JSON.stringify({ 
-            error: 'Rate limit exceeded',
-            details: 'Too many requests to IGDB API'
-          })
-        };
-      }
-
       return {
-        statusCode: igdbResponse.status,
+        statusCode: response.status,
         headers,
         body: JSON.stringify({ 
-          error: `IGDB API error: ${igdbResponse.status}`,
-          details: errorText,
-          statusText: igdbResponse.statusText
-        })
+          error: 'IGDB API error',
+          status: response.status,
+          details: errorText
+        }),
       };
     }
 
-    // Parse response
-    const data = await igdbResponse.json();
-    console.log('✅ IGDB Success:', {
-      resultsCount: data?.length || 0,
-      firstResult: data?.[0]?.name || 'No results'
-    });
+    const data = await response.json();
+    console.log('IGDB data received:', data.length, 'games');
 
-    // Process cover URLs
-    const processedData = data.map(game => ({
+    // Transform the data to ensure cover URLs are complete
+    const transformedData = data.map(game => ({
       ...game,
       cover: game.cover ? {
         ...game.cover,
-        url: game.cover.url ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}` : null
-      } : null,
-      screenshots: game.screenshots?.map(screenshot => ({
-        ...screenshot,
-        url: screenshot.url ? `https:${screenshot.url.replace('t_thumb', 't_screenshot_med')}` : null
-      })) || []
+        url: game.cover.url?.startsWith('//') 
+          ? `https:${game.cover.url}` 
+          : game.cover.url
+      } : null
     }));
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(processedData)
+      body: JSON.stringify(transformedData),
     };
 
   } catch (error) {
-    console.error('💥 Function error:', error);
+    console.error('Function error:', error);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ 
         error: 'Internal server error',
-        message: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      })
+        message: error.message
+      }),
     };
   }
 };
