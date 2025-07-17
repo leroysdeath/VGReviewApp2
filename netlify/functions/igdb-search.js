@@ -1,6 +1,5 @@
-// netlify/functions/igdb-search.js
+// netlify/functions/igdb-search.js - Replace your existing function with this
 exports.handler = async (event, context) => {
-  // Add CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -8,74 +7,89 @@ exports.handler = async (event, context) => {
     'Content-Type': 'application/json',
   };
 
-  // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    };
-  }
-
-  // Only allow GET and POST methods
-  if (!['GET', 'POST'].includes(event.httpMethod)) {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed. Use GET or POST.' }),
-    };
+    return { statusCode: 200, headers, body: '' };
   }
 
   try {
-    // Get environment variables
     const clientId = process.env.TWITCH_CLIENT_ID;
     const accessToken = process.env.TWITCH_APP_ACCESS_TOKEN;
     
-    // Validate environment variables
     if (!clientId || !accessToken) {
-      console.error('Missing environment variables:', { 
-        hasClientId: !!clientId, 
-        hasAccessToken: !!accessToken 
-      });
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
           error: 'Missing API credentials',
-          debug: {
-            hasClientId: !!clientId,
-            hasAccessToken: !!accessToken
-          }
-        }),
+          debug: { hasClientId: !!clientId, hasAccessToken: !!accessToken }
+        })
       };
     }
 
-    // Get search query from URL params (GET) or request body (POST)
-    let query;
+    // COMPREHENSIVE query extraction - handles ANY way the frontend might send it
+    let query = null;
     
-    if (event.httpMethod === 'GET') {
-      // Handle multiple possible parameter names
-      query = event.queryStringParameters?.query || 
-              event.queryStringParameters?.q || 
-              event.queryStringParameters?.search ||
-              event.queryStringParameters?.term;
-    } else if (event.httpMethod === 'POST') {
-      const body = JSON.parse(event.body || '{}');
-      query = body.query || body.q || body.search || body.term;
+    // Method 1: URL query parameters (most common)
+    if (event.queryStringParameters) {
+      const params = event.queryStringParameters;
+      query = params.query || params.q || params.search || params.term || 
+              params.searchTerm || params.keyword || params.name || params.game;
+    }
+    
+    // Method 2: POST body
+    if (!query && event.body) {
+      try {
+        const body = JSON.parse(event.body);
+        query = body.query || body.q || body.search || body.term || 
+                body.searchTerm || body.keyword || body.name || body.game;
+      } catch (e) {
+        // If body isn't JSON, maybe it's just the search term
+        query = event.body.trim();
+      }
+    }
+    
+    // Method 3: From URL path (sometimes used in REST APIs)
+    if (!query) {
+      const pathParts = event.path.split('/');
+      const lastPart = pathParts[pathParts.length - 1];
+      if (lastPart && lastPart !== 'igdb-search' && lastPart.length > 0) {
+        query = decodeURIComponent(lastPart);
+      }
     }
 
-    // Log for debugging
-    console.log('Query parameters received:', event.queryStringParameters);
-    console.log('Parsed query:', query);
-    
-    if (!query) {
+    // Method 4: Check for common variations in headers (rare but possible)
+    if (!query && event.headers) {
+      query = event.headers['x-search-query'] || event.headers['search-term'];
+    }
+
+    // Log everything for debugging
+    console.log('=== IGDB SEARCH DEBUG ===');
+    console.log('HTTP Method:', event.httpMethod);
+    console.log('Path:', event.path);
+    console.log('Query Parameters:', event.queryStringParameters);
+    console.log('Body:', event.body);
+    console.log('Extracted Query:', query);
+    console.log('========================');
+
+    if (!query || query.trim().length === 0) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Search query is required' }),
+        body: JSON.stringify({ 
+          error: 'Search query is required',
+          debug: {
+            receivedParams: event.queryStringParameters,
+            receivedBody: event.body ? 'Present' : 'Missing',
+            extractedQuery: query,
+            message: 'No valid search term found in request'
+          }
+        })
       };
     }
 
+    // Clean up the query
+    query = query.trim();
+    
     // Construct IGDB API request
     const igdbUrl = 'https://api.igdb.com/v4/games';
     const requestBody = `
@@ -84,9 +98,8 @@ exports.handler = async (event, context) => {
       limit 20;
     `.trim();
 
-    console.log('Making IGDB request:', { query, clientId: clientId.substring(0, 8) + '...' });
+    console.log('Making IGDB request for query:', query);
 
-    // Make request to IGDB API
     const response = await fetch(igdbUrl, {
       method: 'POST',
       headers: {
@@ -103,7 +116,6 @@ exports.handler = async (event, context) => {
       const errorText = await response.text();
       console.error('IGDB API error:', response.status, errorText);
       
-      // Handle specific error cases
       if (response.status === 401) {
         return {
           statusCode: 401,
@@ -111,7 +123,7 @@ exports.handler = async (event, context) => {
           body: JSON.stringify({ 
             error: 'Authentication failed - check your API credentials',
             details: errorText
-          }),
+          })
         };
       }
       
@@ -122,7 +134,7 @@ exports.handler = async (event, context) => {
           error: 'IGDB API error',
           status: response.status,
           details: errorText
-        }),
+        })
       };
     }
 
@@ -143,7 +155,12 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(transformedData),
+      body: JSON.stringify({
+        success: true,
+        query: query,
+        count: transformedData.length,
+        games: transformedData
+      })
     };
 
   } catch (error) {
@@ -153,8 +170,9 @@ exports.handler = async (event, context) => {
       headers,
       body: JSON.stringify({ 
         error: 'Internal server error',
-        message: error.message
-      }),
+        message: error.message,
+        stack: error.stack
+      })
     };
   }
 };
