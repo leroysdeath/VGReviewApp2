@@ -13,8 +13,8 @@ serve(async (req) => {
     const response = await fetch(`https://api.igdb.com/v4/${endpoint}`, {
       method: 'POST',
       headers: {
-        'Client-ID': Deno.env.get('IGDB_CLIENT_ID') || '',
-        'Authorization': `Bearer ${Deno.env.get('IGDB_ACCESS_TOKEN')}`,
+        'Client-ID': Deno.env.get('TWITCH_CLIENT_ID') || '',
+        'Authorization': `Bearer ${Deno.env.get('TWITCH_APP_ACCESS_TOKEN')}`,
         'Accept': 'application/json',
         'Content-Type': 'text/plain'
       },
