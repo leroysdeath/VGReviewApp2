@@ -72,10 +72,20 @@ exports.handler = async (event, context) => {
       };
     }
 
+if (clientId.includes('your_client_id') || accessToken.includes('your_access_token')) {
+  return {
+    statusCode: 500,
+    headers,
+    body: JSON.stringify({ 
+      error: 'Placeholder credentials detected',
+      details: 'Replace placeholder values with actual Twitch credentials'
+    })
+  };
+}
+    
     // Prepare IGDB query
     const cleanSearchTerm = searchTerm.trim().replace(/"/g, '\\"');
-    const query = `fields name, summary, cover.url, platforms.name, first_release_date, rating, genres.name, screenshots.url; search "${cleanSearchTerm}"; limit ${Math.min(limit, 50)}; where category = 0;`;
-    
+    const query = `fields name, summary; search "${cleanSearchTerm}"; limit 10;`;    
     console.log('🔍 IGDB Query:', query);
 
     // Make request to IGDB API
@@ -85,7 +95,6 @@ exports.handler = async (event, context) => {
         'Client-ID': clientId,
         'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json',
-        'Content-Type': 'text/plain'
       },
       body: query
     });
