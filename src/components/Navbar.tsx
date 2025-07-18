@@ -1,3 +1,4 @@
+import { HeaderSearchBar } from './HeaderSearchBar';
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, Menu, X, Gamepad2, Smartphone } from 'lucide-react';
@@ -6,19 +7,8 @@ import { LoginModal } from './LoginModal';
 export const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
-  const navigate = useNavigate();
-
   const isActive = (path: string) => location.pathname === path;
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search-results?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery('');
-    }
-  };
 
   return (
     <nav className="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
