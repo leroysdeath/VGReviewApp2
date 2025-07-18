@@ -1,145 +1,234 @@
-import { useState, useEffect, useCallback } from 'react';
-import { igdbService, Game } from '../services/igdbService';
+// hooks/useGameSearch.ts
+import { useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-interface UseGameSearchOptions {
-  debounceMs?: number;
-  maxResults?: number;
-  autoSearch?: boolean;
+// Types for our search functionality
+interface Game {
+  id: number;
+  name: string;
+  cover?: {
+    url: string;
+  };
+  first_release_date?: number;
+  genres?: { name: string }[];
+  platforms?: { name: string }[];
+  rating?: number;
 }
 
-interface GameSearchState {
-  query: string;
-  results: Game[];
+interface SearchResult {
+  games: Game[];
   loading: boolean;
   error: string | null;
-  hasSearched: boolean;
+  hasMore: boolean;
+  totalResults: number;
 }
 
-export const useGameSearch = (options: UseGameSearchOptions = {}) => {
-  const {
-    debounceMs = 300,
-    maxResults = 20,
-    autoSearch = true
-  } = options;
+interface SearchOptions {
+  limit?: number;
+  offset?: number;
+  genres?: string[];
+  platforms?: string[];
+  minRating?: number;
+  sortBy?: 'name' | 'rating' | 'release_date' | 'popularity';
+  sortOrder?: 'asc' | 'desc';
+}
 
-  const [state, setState] = useState<GameSearchState>({
-    query: '',
-    results: [],
+// Custom hook for unified search logic
+export const useGameSearch = () => {
+  const navigate = useNavigate();
+  const [searchState, setSearchState] = useState<SearchResult>({
+    games: [],
     loading: false,
     error: null,
-    hasSearched: false
+    hasMore: true,
+    totalResults: 0
   });
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchOptions, setSearchOptions] = useState<SearchOptions>({
+    limit: 20,
+    offset: 0,
+    sortBy: 'popularity',
+    sortOrder: 'desc'
+  });
+  
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
-
-  // Perform search function
-  const performSearch = useCallback(async (searchTerm: string) => {
-    if (!searchTerm.trim()) {
-      setState(prev => ({
-        ...prev,
-        results: [],
-        loading: false,
-        error: null,
-        hasSearched: false
-      }));
-      return;
+  // Main search function that both components will use
+  const searchGames = useCallback(async (
+    query: string, 
+    options: SearchOptions = {},
+    append: boolean = false
+  ) => {
+    // Cancel any existing search
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
-
-    setState(prev => ({
-      ...prev,
-      loading: true,
-      error: null,
-      hasSearched: true
-    }));
-
+    
+    abortControllerRef.current = new AbortController();
+    
     try {
-      const games = await igdbService.searchGames(searchTerm, maxResults);
-      
-      setState(prev => ({
+      setSearchState(prev => ({
         ...prev,
-        results: games,
-        loading: false,
+        loading: true,
         error: null
       }));
-    } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Failed to search games. Please try again.';
+
+      const searchParams = { ...searchOptions, ...options };
+      const offset = append ? searchState.games.length : 0;
       
-      setState(prev => ({
-        ...prev,
-        results: [],
+      // Call your IGDB API endpoint
+      const response = await fetch('/.netlify/functions/igdb-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: query.trim(),
+          limit: searchParams.limit,
+          offset,
+          filters: {
+            genres: searchParams.genres,
+            platforms: searchParams.platforms,
+            minRating: searchParams.minRating
+          },
+          sort: {
+            field: searchParams.sortBy,
+            direction: searchParams.sortOrder
+          }
+        }),
+        signal: abortControllerRef.current.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`Search failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      setSearchState(prev => ({
+        games: append ? [...prev.games, ...data.games] : data.games,
         loading: false,
-        error: errorMessage
+        error: null,
+        hasMore: data.hasMore || data.games.length === searchParams.limit,
+        totalResults: data.total || data.games.length
       }));
+
+      return data.games;
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        return; // Search was cancelled, don't update state
+      }
+      
+      setSearchState(prev => ({
+        ...prev,
+        loading: false,
+        error: error.message || 'Search failed. Please try again.'
+      }));
+      
+      throw error;
     }
-  }, [maxResults]);
+  }, [searchOptions, searchState.games.length]);
 
-  // Set query with optional auto-search
-  const setQuery = useCallback((newQuery: string) => {
-    setState(prev => ({ ...prev, query: newQuery }));
+  // Quick search for autocomplete/suggestions
+  const quickSearch = useCallback(async (query: string) => {
+    if (query.trim().length < 2) return [];
+    
+    try {
+      const response = await fetch('/.netlify/functions/igdb-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: query.trim(),
+          limit: 5,
+          offset: 0,
+          quick: true // Flag for quick search with minimal data
+        })
+      });
 
-    if (!autoSearch) return;
+      if (!response.ok) return [];
+      const data = await response.json();
+      return data.games || [];
+    } catch (error) {
+      console.error('Quick search failed:', error);
+      return [];
+    }
+  }, []);
 
-    // Clear existing timer
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
+  // Navigate to search results page
+  const navigateToSearch = useCallback((query: string, options: SearchOptions = {}) => {
+    const searchParams = new URLSearchParams();
+    
+    if (query.trim()) {
+      searchParams.set('q', query.trim());
+    }
+    
+    if (options.genres?.length) {
+      searchParams.set('genres', options.genres.join(','));
+    }
+    
+    if (options.platforms?.length) {
+      searchParams.set('platforms', options.platforms.join(','));
+    }
+    
+    if (options.minRating) {
+      searchParams.set('rating', options.minRating.toString());
+    }
+    
+    if (options.sortBy) {
+      searchParams.set('sort', `${options.sortBy}:${options.sortOrder || 'desc'}`);
     }
 
-    // Set new timer for debounced search
-    const timer = setTimeout(() => {
-      performSearch(newQuery);
-    }, debounceMs);
+    navigate(`/search?${searchParams.toString()}`);
+  }, [navigate]);
 
-    setDebounceTimer(timer);
-  }, [debounceTimer, debounceMs, performSearch, autoSearch]);
+  // Load more results (for pagination)
+  const loadMore = useCallback(() => {
+    if (!searchState.loading && searchState.hasMore && searchTerm) {
+      searchGames(searchTerm, { 
+        ...searchOptions, 
+        offset: searchState.games.length 
+      }, true);
+    }
+  }, [searchGames, searchState.loading, searchState.hasMore, searchState.games.length, searchTerm, searchOptions]);
 
-  // Manual search function
-  const search = useCallback((searchTerm?: string) => {
-    const term = searchTerm ?? state.query;
-    performSearch(term);
-  }, [performSearch, state.query]);
-
-  // Clear results
-  const clear = useCallback(() => {
-    setState({
-      query: '',
-      results: [],
+  // Clear search results
+  const clearSearch = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    setSearchState({
+      games: [],
       loading: false,
       error: null,
-      hasSearched: false
+      hasMore: true,
+      totalResults: 0
     });
     
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-      setDebounceTimer(null);
-    }
-  }, [debounceTimer]);
+    setSearchTerm('');
+  }, []);
 
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
-    };
-  }, [debounceTimer]);
+  // Update search options
+  const updateSearchOptions = useCallback((newOptions: Partial<SearchOptions>) => {
+    setSearchOptions(prev => ({ ...prev, ...newOptions }));
+  }, []);
 
   return {
     // State
-    query: state.query,
-    results: state.results,
-    loading: state.loading,
-    error: state.error,
-    hasSearched: state.hasSearched,
+    searchState,
+    searchTerm,
+    searchOptions,
     
     // Actions
-    setQuery,
-    search,
-    clear,
-    
-    // Computed
-    hasResults: state.results.length > 0,
-    isEmpty: !state.hasSearched || (state.hasSearched && state.results.length === 0 && !state.loading),
+    searchGames,
+    quickSearch,
+    navigateToSearch,
+    loadMore,
+    clearSearch,
+    setSearchTerm,
+    updateSearchOptions
   };
 };
