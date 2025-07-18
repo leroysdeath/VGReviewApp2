@@ -1,4 +1,4 @@
-// netlify/functions/igdb-search.js - Replace your existing function with this
+// netlify/functions/igdb-search.js - Complete fixed version
 exports.handler = async (event, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -26,79 +26,94 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // COMPREHENSIVE query extraction - handles ANY way the frontend might send it
-    let query = null;
+    let requestData = {};
     
-    // Method 1: URL query parameters (most common)
-    if (event.queryStringParameters) {
-      const params = event.queryStringParameters;
-      query = params.query || params.q || params.search || params.term || 
-              params.searchTerm || params.keyword || params.name || params.game;
-    }
-    
-    // Method 2: POST body
-    if (!query && event.body) {
+    // Parse request data
+    if (event.body) {
       try {
-        const body = JSON.parse(event.body);
-        query = body.query || body.q || body.search || body.term || 
-                body.searchTerm || body.keyword || body.name || body.game;
+        requestData = JSON.parse(event.body);
       } catch (e) {
-        // If body isn't JSON, maybe it's just the search term
-        query = event.body.trim();
+        console.error('Failed to parse request body:', e);
       }
     }
+
+    // Extract query parameters
+    const queryParams = event.queryStringParameters || {};
     
-    // Method 3: From URL path (sometimes used in REST APIs)
-    if (!query) {
-      const pathParts = event.path.split('/');
-      const lastPart = pathParts[pathParts.length - 1];
-      if (lastPart && lastPart !== 'igdb-search' && lastPart.length > 0) {
-        query = decodeURIComponent(lastPart);
-      }
+    // Determine request type and extract relevant data
+    let query = null;
+    let gameId = null;
+    let requestType = 'search'; // default
+    
+    // Check if this is a game ID lookup request
+    if (requestData.type === 'getById' || requestData.gameId) {
+      requestType = 'getById';
+      gameId = requestData.gameId || queryParams.gameId || queryParams.id;
+    } else {
+      // This is a search request
+      query = requestData.searchTerm || requestData.query || requestData.q || 
+              queryParams.query || queryParams.q || queryParams.search || queryParams.term;
     }
 
-    // Method 4: Check for common variations in headers (rare but possible)
-    if (!query && event.headers) {
-      query = event.headers['x-search-query'] || event.headers['search-term'];
-    }
-
-    // Log everything for debugging
-    console.log('=== IGDB SEARCH DEBUG ===');
+    console.log('=== IGDB REQUEST DEBUG ===');
     console.log('HTTP Method:', event.httpMethod);
-    console.log('Path:', event.path);
-    console.log('Query Parameters:', event.queryStringParameters);
-    console.log('Body:', event.body);
-    console.log('Extracted Query:', query);
-    console.log('========================');
+    console.log('Request Type:', requestType);
+    console.log('Query:', query);
+    console.log('Game ID:', gameId);
+    console.log('Request Data:', requestData);
+    console.log('Query Params:', queryParams);
+    console.log('=========================');
 
-    if (!query || query.trim().length === 0) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ 
-          error: 'Search query is required',
-          debug: {
-            receivedParams: event.queryStringParameters,
-            receivedBody: event.body ? 'Present' : 'Missing',
-            extractedQuery: query,
-            message: 'No valid search term found in request'
-          }
-        })
-      };
-    }
-
-    // Clean up the query
-    query = query.trim();
-    
-    // Construct IGDB API request
     const igdbUrl = 'https://api.igdb.com/v4/games';
-    const requestBody = `
-      fields name, cover.url, first_release_date, rating, summary, platforms.name, genres.name;
-      search "${query}";
-      limit 20;
-    `.trim();
+    let requestBody = '';
+    let limit = requestData.limit || queryParams.limit || 20;
 
-    console.log('Making IGDB request for query:', query);
+    if (requestType === 'getById') {
+      // Handle individual game lookup by ID
+      if (!gameId) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ 
+            error: 'Game ID is required for getById request',
+            debug: { requestData, queryParams }
+          })
+        };
+      }
+
+      requestBody = `
+        fields name, cover.url, first_release_date, rating, summary, platforms.name, genres.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
+        where id = ${gameId};
+      `.trim();
+
+      console.log('Making IGDB request for game ID:', gameId);
+    } else {
+      // Handle search request
+      if (!query || query.trim().length === 0) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ 
+            error: 'Search query is required',
+            debug: {
+              receivedParams: queryParams,
+              receivedBody: event.body ? 'Present' : 'Missing',
+              extractedQuery: query,
+              message: 'No valid search term found in request'
+            }
+          })
+        };
+      }
+
+      query = query.trim();
+      requestBody = `
+        fields name, cover.url, first_release_date, rating, summary, platforms.name, genres.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
+        search "${query}";
+        limit ${limit};
+      `.trim();
+
+      console.log('Making IGDB search request for query:', query);
+    }
 
     const response = await fetch(igdbUrl, {
       method: 'POST',
@@ -141,27 +156,58 @@ exports.handler = async (event, context) => {
     const data = await response.json();
     console.log('IGDB data received:', data.length, 'games');
 
-    // Transform the data to ensure cover URLs are complete
-    const transformedData = data.map(game => ({
-      ...game,
-      cover: game.cover ? {
-        ...game.cover,
-        url: game.cover.url?.startsWith('//') 
-          ? `https:${game.cover.url}` 
-          : game.cover.url
-      } : null
-    }));
+    // Transform the data to ensure cover URLs are complete and add developer/publisher info
+    const transformedData = data.map(game => {
+      // Extract developer and publisher from involved_companies
+      let developer = 'Unknown';
+      let publisher = 'Unknown';
+      
+      if (game.involved_companies && game.involved_companies.length > 0) {
+        const dev = game.involved_companies.find(ic => ic.developer && ic.company);
+        const pub = game.involved_companies.find(ic => ic.publisher && ic.company);
+        
+        if (dev && dev.company && dev.company.name) {
+          developer = dev.company.name;
+        }
+        if (pub && pub.company && pub.company.name) {
+          publisher = pub.company.name;
+        }
+      }
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        query: query,
-        count: transformedData.length,
-        games: transformedData
-      })
-    };
+      return {
+        ...game,
+        developer,
+        publisher,
+        cover: game.cover ? {
+          ...game.cover,
+          url: game.cover.url?.startsWith('//') 
+            ? `https:${game.cover.url}` 
+            : game.cover.url
+        } : null
+      };
+    });
+
+    // Return the appropriate response format
+    if (requestType === 'getById') {
+      // For individual game requests, return the game directly or null
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(transformedData.length > 0 ? transformedData[0] : null)
+      };
+    } else {
+      // For search requests, return the full response with metadata
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          query: query,
+          count: transformedData.length,
+          games: transformedData
+        })
+      };
+    }
 
   } catch (error) {
     console.error('Function error:', error);
