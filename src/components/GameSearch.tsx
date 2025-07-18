@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Loader2, AlertCircle, Calendar, Star, Gamepad2, Grid, List, Activity, Bug, ArrowRight } from 'lucide-react';
-import { igdbService, Game } from '../services/igdbService';
+import { igdbService, Game } from '../services/igdbApi';
 import { Link } from 'react-router-dom';
 import type { SearchSuggestion } from '../types/search';
 
