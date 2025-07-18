@@ -1,4 +1,4 @@
-// In your HomePage.tsx or landing page
+import React from 'react';
 import { ExploreGamesButton } from '../components/ExploreGamesButton';
 
 export const HomePage = () => {
@@ -19,10 +19,11 @@ export const HomePage = () => {
         </div>
 
         <div className="flex justify-center gap-4">
-          {/* This replaces your existing "Explore Games" button */}
+          {/* New unified Explore Games button */}
           <ExploreGamesButton 
             variant="primary" 
             showFilters={true}
+            className="transform hover:scale-105"
           />
           
           <button className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg font-semibold transition-colors">
