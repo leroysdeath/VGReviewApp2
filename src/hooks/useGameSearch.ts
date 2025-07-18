@@ -128,7 +128,7 @@ export const useGameSearch = () => {
       
       throw error;
     }
-  }, [searchOptions, searchState.games.length]);
+  }, [searchOptions]); // FIXED: Removed searchState.games.length dependency
 
   // Quick search for autocomplete/suggestions
   const quickSearch = useCallback(async (query: string) => {
