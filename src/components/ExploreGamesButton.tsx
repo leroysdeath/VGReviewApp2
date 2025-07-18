@@ -34,12 +34,26 @@ export const ExploreGamesButton: React.FC<ExploreGamesButtonProps> = ({
     'Nintendo Switch', 'PlayStation 4', 'Xbox One', 'iOS', 'Android'
   ];
 
+  // Function to focus the header search bar
+  const focusHeaderSearchBar = () => {
+    // Small delay to ensure navigation is complete
+    setTimeout(() => {
+      const searchInput = document.querySelector('input[type="text"][placeholder*="Search"]') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }, 100);
+  };
+
   const handleExploreClick = () => {
     if (showFilters) {
       setIsModalOpen(true);
     } else {
       // Direct navigation to search/browse page
       navigateToSearch('', { sortBy, sortOrder: 'desc' });
+      
+      // Focus the search bar after navigation
+      focusHeaderSearchBar();
     }
   };
 
@@ -63,6 +77,11 @@ export const ExploreGamesButton: React.FC<ExploreGamesButtonProps> = ({
     });
 
     setIsModalOpen(false);
+    
+    // If no search query was entered, focus the header search bar
+    if (!searchQuery.trim()) {
+      focusHeaderSearchBar();
+    }
   };
 
   const toggleGenre = (genre: string) => {
