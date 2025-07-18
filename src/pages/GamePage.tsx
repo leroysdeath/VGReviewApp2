@@ -24,19 +24,26 @@ export const GamePage: React.FC = () => {
       setError(null);
       
       try {
+        console.log('Loading game with ID:', id); // Debug log
         const gameData = await igdbService.getGameByStringId(id);
+        console.log('Game data received:', gameData); // Debug log
+        
         if (gameData) {
           setGame(gameData);
           
           // Check if game exists in our database
-          const { data: existingGame } = await supabase
+          console.log('Checking if game exists in database with ID:', id); // Debug log
+          const { data: existingGame, error: dbError } = await supabase
             .from('game')
             .select('id')
             .eq('game_id', id)
             .single();
             
+          console.log('Database query result:', existingGame, 'Error:', dbError); // Debug log
+            
           if (existingGame) {
             // Fetch reviews for this game
+            console.log('Fetching reviews for game:', existingGame.id); // Debug log
             const { data: gameReviews, error: reviewsError } = await supabase
               .from('rating')
               .select(`
@@ -45,16 +52,21 @@ export const GamePage: React.FC = () => {
               `)
               .eq('game_id', existingGame.id);
               
+            console.log('Reviews fetched:', gameReviews, 'Error:', reviewsError); // Debug log
+              
             if (!reviewsError && gameReviews) {
               setReviews(gameReviews);
             }
+          } else {
+            console.log('Game not found in local database'); // Debug log
           }
         } else {
+          console.log('No game data returned from IGDB'); // Debug log
           setError('Game not found');
         }
       } catch (err) {
+        console.error('Error loading game:', err); // Enhanced debug log
         setError('Failed to load game details');
-        console.error('Error loading game:', err);
       } finally {
         setLoading(false);
       }
@@ -146,6 +158,9 @@ export const GamePage: React.FC = () => {
             <h1 className="text-2xl font-bold text-white mb-4">
               {error || 'Game not found'}
             </h1>
+            <p className="text-gray-400 mb-4">
+              Debug: Tried to load game with ID: {id}
+            </p>
             <Link
               to="/search"
               className="text-purple-400 hover:text-purple-300 transition-colors"
@@ -247,7 +262,7 @@ export const GamePage: React.FC = () => {
             <div className="bg-gray-800 rounded-lg p-6">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
-                <span className="text-sm text-blue-400">{gameReviews.length} fans</span>
+                <span className="text-sm text-blue-400">{reviews.length} fans</span>
               </div>
               <div className="border-b border-gray-700 mb-4"></div>
               <div className="flex items-end justify-between">
