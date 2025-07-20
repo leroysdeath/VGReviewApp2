@@ -6,10 +6,21 @@ import { ReviewCard } from '../components/ReviewCard';
 import { SEOHead } from '../components/SEOHead';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { igdbService, Game } from '../services/igdbApi';
+import { useIGDBGame } from '../hooks/useIGDBCache';
 import { useResponsive } from '../hooks/useResponsive';
+import { supabase } from '../services/supabase';
 
-interface GameDetails extends Game {
+interface GameDetails {
+  id: string;
+  title: string;
+  coverImage: string;
+  releaseDate: string;
+  genre: string;
+  rating: number;
+  description: string;
+  developer: string;
+  publisher: string;
+  platforms: string[];
   screenshots: string[];
   videos: string[];
   systemRequirements: {
@@ -56,10 +67,87 @@ export const ComprehensiveGamePage: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
   
+  // Use caching hook for game data
+  const gameIdNumber = id ? parseInt(id) : null;
+  const { 
+    data: gameData, 
+    loading: gameLoading, 
+    error: gameError, 
+    cached: isGameCached, 
+    refetch: refetchGame,
+    isStale: isGameStale 
+  } = useIGDBGame(gameIdNumber);
+
+  // Transform IGDB data to GameDetails format
+  const transformIGDBToGameDetails = (igdbGame: any): GameDetails => {
+    return {
+      id: igdbGame.id?.toString() || 'unknown',
+      title: igdbGame.name || igdbGame.title || 'Unknown Game',
+      coverImage: igdbGame.cover?.url || igdbGame.coverImage || '/placeholder-game.jpg',
+      releaseDate: igdbGame.first_release_date 
+        ? new Date(igdbGame.first_release_date * 1000).toISOString().split('T')[0]
+        : igdbGame.releaseDate || 'Unknown',
+      genre: Array.isArray(igdbGame.genres) 
+        ? igdbGame.genres.map(g => g.name || g).join(', ')
+        : igdbGame.genre || 'Unknown',
+      rating: igdbGame.rating ? Math.round(igdbGame.rating) / 10 : 7.5,
+      description: igdbGame.summary || igdbGame.description || 'No description available for this game.',
+      developer: igdbGame.involved_companies?.[0]?.company?.name || 
+                 (Array.isArray(igdbGame.developers) ? igdbGame.developers[0] : igdbGame.developer) || 'Unknown Developer',
+      publisher: igdbGame.involved_companies?.find(c => c.publisher)?.company?.name || 
+                 (Array.isArray(igdbGame.publishers) ? igdbGame.publishers[0] : igdbGame.publisher) || 'Unknown Publisher',
+      platforms: igdbGame.platforms?.map(p => p.name || p) || 
+                 (Array.isArray(igdbGame.platforms) ? igdbGame.platforms : ['PC']),
+      screenshots: igdbGame.screenshots?.map(s => s.url || s) || 
+                   Array.from({length: 6}, (_, i) => `https://images.pexels.com/photos/${3945654 + i}/pexels-photo-${3945654 + i}.jpeg?auto=compress&cs=tinysrgb&w=1200`),
+      videos: igdbGame.videos || ['dQw4w9WgXcQ'],
+      // Default system requirements (would come from enhanced API in real implementation)
+      systemRequirements: {
+        minimum: {
+          'OS': 'Windows 10 64-bit',
+          'Processor': 'Intel Core i5-3570K or AMD FX-8310',
+          'Memory': '8 GB RAM',
+          'Graphics': 'NVIDIA GeForce GTX 780 or AMD Radeon RX 470',
+          'DirectX': 'Version 12',
+          'Storage': '50 GB available space'
+        },
+        recommended: {
+          'OS': 'Windows 10/11 64-bit',
+          'Processor': 'Intel Core i7-4790 or AMD Ryzen 3 3200G',
+          'Memory': '16 GB RAM',
+          'Graphics': 'NVIDIA GeForce GTX 1060 6GB or AMD Radeon R9 Fury',
+          'DirectX': 'Version 12',
+          'Storage': '50 GB SSD space'
+        }
+      },
+      features: [
+        'Single-player campaign',
+        'Multiplayer support',
+        'Achievement system',
+        'Cloud saves',
+        'Controller support',
+        'High-resolution textures'
+      ],
+      dlc: [],
+      achievements: [
+        { name: 'First Steps', description: 'Complete the tutorial', rarity: 95 },
+        { name: 'Dedicated Player', description: 'Play for 10 hours', rarity: 45 },
+        { name: 'Master', description: 'Complete all objectives', rarity: 8 }
+      ],
+      metacriticScore: Math.round(igdbGame.rating || 75),
+      steamReviews: 'Very Positive (89% of reviews)',
+      esrbRating: 'T for Teen',
+      languages: ['English', 'Spanish', 'French', 'German', 'Japanese'],
+      fileSize: '45 GB',
+      price: '$39.99'
+    };
+  };
+
+  const game = gameData ? transformIGDBToGameDetails(gameData) : null;
+  const loading = gameLoading;
+  const error = gameError?.message || null;
+
   // State management
-  const [game, setGame] = useState<GameDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'screenshots' | 'details'>('overview');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageIndex, setImageIndex] = useState(0);
@@ -70,91 +158,90 @@ export const ComprehensiveGamePage: React.FC = () => {
   const [reviewsPage, setReviewsPage] = useState(1);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [galleryView, setGalleryView] = useState<'grid' | 'carousel'>('grid');
+  
+  // Reviews state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
 
   // Refs
   const reviewsRef = useRef<HTMLDivElement>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
 
-  // Mock data - in real app, this would come from API
-  const mockGameDetails: GameDetails = {
-    id: 'comprehensive-game',
-    title: 'Cyberpunk 2077: Phantom Liberty',
-    coverImage: 'https://images.pexels.com/photos/2047905/pexels-photo-2047905.jpeg?auto=compress&cs=tinysrgb&w=800',
-    releaseDate: '2023-09-26',
-    genre: 'Action RPG',
-    rating: 8.7,
-    description: 'Cyberpunk 2077: Phantom Liberty is a new spy-thriller expansion for the open-world action-adventure RPG Cyberpunk 2077. Return as cyber-enhanced mercenary V and embark on a high-stakes mission of espionage and intrigue to save the NUS President. In the dangerous district of Dogtown, you must forge alliances within a web of shattered loyalties and sinister political machinations.',
-    developer: 'CD Projekt Red',
-    publisher: 'CD Projekt',
-    platforms: ['PC', 'PlayStation 5', 'Xbox Series X/S'],
-    price: '$29.99',
-    discount: { percentage: 20, originalPrice: '$39.99' },
-    metacriticScore: 89,
-    steamReviews: 'Very Positive (89% of 45,231 reviews)',
-    esrbRating: 'M for Mature 17+',
-    languages: ['English', 'Spanish', 'French', 'German', 'Japanese', 'Korean', 'Chinese', 'Polish', 'Russian'],
-    fileSize: '70 GB',
-    screenshots: [
-      'https://images.pexels.com/photos/3945654/pexels-photo-3945654.jpeg?auto=compress&cs=tinysrgb&w=1200',
-      'https://images.pexels.com/photos/3945656/pexels-photo-3945656.jpeg?auto=compress&cs=tinysrgb&w=1200',
-      'https://images.pexels.com/photos/3945670/pexels-photo-3945670.jpeg?auto=compress&cs=tinysrgb&w=1200',
-      'https://images.pexels.com/photos/3945672/pexels-photo-3945672.jpeg?auto=compress&cs=tinysrgb&w=1200',
-      'https://images.pexels.com/photos/442576/pexels-photo-442576.jpeg?auto=compress&cs=tinysrgb&w=1200',
-      'https://images.pexels.com/photos/2047905/pexels-photo-2047905.jpeg?auto=compress&cs=tinysrgb&w=1200'
-    ],
-    videos: ['dQw4w9WgXcQ', 'jNQXAC9IVRw'],
-    systemRequirements: {
-      minimum: {
-        'OS': 'Windows 10 64-bit',
-        'Processor': 'Intel Core i5-3570K or AMD FX-8310',
-        'Memory': '8 GB RAM',
-        'Graphics': 'NVIDIA GeForce GTX 780 or AMD Radeon RX 470',
-        'DirectX': 'Version 12',
-        'Storage': '70 GB available space'
-      },
-      recommended: {
-        'OS': 'Windows 10/11 64-bit',
-        'Processor': 'Intel Core i7-4790 or AMD Ryzen 3 3200G',
-        'Memory': '12 GB RAM',
-        'Graphics': 'NVIDIA GeForce GTX 1060 6GB or AMD Radeon R9 Fury',
-        'DirectX': 'Version 12',
-        'Storage': '70 GB SSD space'
+  // Load reviews when game data is available
+  useEffect(() => {
+    const loadReviews = async () => {
+      if (!game || !id) return;
+      
+      setLoadingReviews(true);
+      setReviewsError(null);
+      
+      try {
+        console.log('Loading reviews for game ID:', id);
+        
+        // Check if game exists in our database
+        const { data: existingGame, error: dbError } = await supabase
+          .from('game')
+          .select('id')
+          .eq('game_id', id)
+          .single();
+          
+        if (existingGame) {
+          // Fetch reviews for this game
+          const { data: gameReviews, error: reviewsError } = await supabase
+            .from('rating')
+            .select(`
+              *,
+              user:user_id(*)
+            `)
+            .eq('game_id', existingGame.id);
+            
+          if (!reviewsError && gameReviews) {
+            const transformedReviews = gameReviews.map(review => ({
+              id: review.id.toString(),
+              userId: review.user_id.toString(),
+              gameId: review.game_id.toString(),
+              rating: review.rating,
+              text: review.review || '',
+              date: new Date(review.post_date_time).toISOString().split('T')[0],
+              hasText: !!review.review,
+              author: review.user?.name || 'Anonymous',
+              authorAvatar: review.user?.picurl || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
+              helpful: Math.floor(Math.random() * 100),
+              notHelpful: Math.floor(Math.random() * 20),
+              platform: 'PC',
+              playtime: `${Math.floor(Math.random() * 50) + 5} hours`,
+              verified: Math.random() > 0.3
+            }));
+            setReviews(transformedReviews);
+          }
+        } else {
+          // Use mock reviews if no database reviews found
+          setReviews(mockReviews);
+        }
+      } catch (err) {
+        console.error('Error loading reviews:', err);
+        setReviewsError('Failed to load reviews');
+        // Fallback to mock reviews
+        setReviews(mockReviews);
+      } finally {
+        setLoadingReviews(false);
       }
-    },
-    features: [
-      'Single-player campaign',
-      'Open-world exploration',
-      'Character customization',
-      'Branching storylines',
-      'Multiple endings',
-      'Ray tracing support',
-      'DLSS 3.0 support',
-      'HDR support',
-      'Ultrawide monitor support',
-      'Steam Deck verified',
-      'Cloud saves',
-      'Achievements'
-    ],
-    dlc: [
-      { name: 'Phantom Liberty', price: '$29.99', releaseDate: '2023-09-26' }
-    ],
-    achievements: [
-      { name: 'Welcome to Night City', description: 'Complete the prologue', rarity: 95 },
-      { name: 'Street Cred', description: 'Reach Street Cred level 50', rarity: 23 },
-      { name: 'Legend of Night City', description: 'Complete all endings', rarity: 5 }
-    ]
-  };
+    };
 
+    loadReviews();
+  }, [game, id]);
+
+  // Mock reviews fallback
   const mockReviews: Review[] = [
     {
       id: '1',
       userId: '1',
-      gameId: 'comprehensive-game',
+      gameId: game?.id || 'unknown',
       rating: 9.0,
-      text: 'Phantom Liberty is a masterpiece of storytelling and game design. The spy thriller narrative is incredibly engaging, and the new district of Dogtown feels alive and dangerous. The characters are well-developed, especially Solomon Reed and Songbird. The missions are varied and exciting, with meaningful choices that actually impact the story. This expansion shows CD Projekt Red at their absolute best.',
+      text: 'This is an outstanding game with incredible attention to detail. The gameplay mechanics are smooth and engaging, and the story keeps you hooked from start to finish. Highly recommended for anyone who enjoys this genre.',
       date: '2024-01-15',
       hasText: true,
-      author: 'CyberPunkFan2077',
+      author: 'GameEnthusiast2024',
       authorAvatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
       helpful: 234,
       notHelpful: 12,
@@ -165,12 +252,12 @@ export const ComprehensiveGamePage: React.FC = () => {
     {
       id: '2',
       userId: '2',
-      gameId: 'comprehensive-game',
+      gameId: game?.id || 'unknown',
       rating: 8.5,
-      text: 'Great expansion with improved gameplay mechanics and a compelling story. The performance has been significantly improved since launch. Keanu Reeves delivers another stellar performance, and the new characters are memorable. Some minor bugs still exist, but nothing game-breaking.',
+      text: 'Great game with solid mechanics and beautiful visuals. The performance has been excellent and I haven\'t encountered any major bugs. The gameplay is addictive and the progression system is well-balanced.',
       date: '2024-01-12',
       hasText: true,
-      author: 'NightCityRunner',
+      author: 'ProGamer123',
       authorAvatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150',
       helpful: 189,
       notHelpful: 8,
@@ -181,12 +268,12 @@ export const ComprehensiveGamePage: React.FC = () => {
     {
       id: '3',
       userId: '3',
-      gameId: 'comprehensive-game',
+      gameId: game?.id || 'unknown',
       rating: 7.5,
-      text: 'Solid expansion that addresses many of the base game\'s issues. The story is engaging and the new area is well-designed. However, I still encountered some performance issues on my older hardware. Worth playing if you enjoyed the base game.',
+      text: 'Solid game overall with engaging gameplay. There are some minor issues with pacing in certain sections, but nothing that breaks the experience. Worth playing if you enjoy games in this genre.',
       date: '2024-01-10',
       hasText: true,
-      author: 'TechNomad',
+      author: 'CasualGamer',
       authorAvatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150',
       helpful: 156,
       notHelpful: 23,
@@ -196,65 +283,69 @@ export const ComprehensiveGamePage: React.FC = () => {
     }
   ];
 
-  const ratingDistribution: RatingDistribution[] = [
-    { rating: 10, count: 1250, percentage: 28 },
-    { rating: 9, count: 1580, percentage: 35 },
-    { rating: 8, count: 890, percentage: 20 },
-    { rating: 7, count: 445, percentage: 10 },
-    { rating: 6, count: 178, percentage: 4 },
-    { rating: 5, count: 89, percentage: 2 },
-    { rating: 4, count: 45, percentage: 1 },
-    { rating: 3, count: 22, percentage: 0 },
-    { rating: 2, count: 11, percentage: 0 },
-    { rating: 1, count: 5, percentage: 0 }
-  ];
+  // Calculate rating distribution from reviews
+  const ratingDistribution: RatingDistribution[] = React.useMemo(() => {
+    if (reviews.length === 0) {
+      // Default distribution
+      return [
+        { rating: 10, count: 125, percentage: 28 },
+        { rating: 9, count: 158, percentage: 35 },
+        { rating: 8, count: 89, percentage: 20 },
+        { rating: 7, count: 45, percentage: 10 },
+        { rating: 6, count: 18, percentage: 4 },
+        { rating: 5, count: 9, percentage: 2 },
+        { rating: 4, count: 4, percentage: 1 },
+        { rating: 3, count: 2, percentage: 0 },
+        { rating: 2, count: 1, percentage: 0 },
+        { rating: 1, count: 1, percentage: 0 }
+      ];
+    }
+
+    const distribution = Array.from({ length: 10 }, (_, i) => ({
+      rating: 10 - i,
+      count: 0,
+      percentage: 0
+    }));
+
+    reviews.forEach(review => {
+      const rating = Math.floor(review.rating);
+      const index = distribution.findIndex(d => d.rating === rating);
+      if (index !== -1) {
+        distribution[index].count++;
+      }
+    });
+
+    const total = reviews.length;
+    distribution.forEach(item => {
+      item.percentage = total > 0 ? Math.round((item.count / total) * 100) : 0;
+    });
+
+    return distribution;
+  }, [reviews]);
 
   const relatedGames = [
     {
       id: 'related-1',
-      title: 'The Witcher 3: Wild Hunt',
+      title: 'Similar Adventure Game',
       coverImage: 'https://images.pexels.com/photos/442576/pexels-photo-442576.jpeg?auto=compress&cs=tinysrgb&w=400',
       rating: 9.3,
       price: '$39.99'
     },
     {
       id: 'related-2',
-      title: 'Deus Ex: Mankind Divided',
+      title: 'Action RPG Classic',
       coverImage: 'https://images.pexels.com/photos/3945654/pexels-photo-3945654.jpeg?auto=compress&cs=tinysrgb&w=400',
       rating: 8.1,
       price: '$29.99'
     },
     {
       id: 'related-3',
-      title: 'Watch Dogs: Legion',
+      title: 'Indie Masterpiece',
       coverImage: 'https://images.pexels.com/photos/3945656/pexels-photo-3945656.jpeg?auto=compress&cs=tinysrgb&w=400',
       rating: 7.8,
       price: '$19.99'
     }
   ];
-
-  // Load game data
-  useEffect(() => {
-    const loadGame = async () => {
-      if (!id) return;
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // In real app, load from API
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate loading
-        setGame(mockGameDetails);
-      } catch (err) {
-        setError('Failed to load game details');
-        console.error('Error loading game:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadGame();
-  }, [id]);
 
   // Image gallery handlers
   const openLightbox = (image: string, index: number) => {
@@ -323,7 +414,14 @@ export const ComprehensiveGamePage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--game-dark)] flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Loading game details..." />
+        <div className="text-center">
+          <LoadingSpinner size="lg" text="Loading game details..." />
+          {isGameCached && (
+            <div className="mt-4 text-sm text-gray-400">
+              Loading from cache...
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -333,9 +431,20 @@ export const ComprehensiveGamePage: React.FC = () => {
       <div className="min-h-screen bg-[var(--game-dark)] flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white mb-4">{error || 'Game not found'}</h1>
-          <Link to="/search" className="text-[var(--game-purple)] hover:text-purple-300 transition-colors">
-            Browse other games
-          </Link>
+          <p className="text-gray-400 mb-4">
+            Debug: Tried to load game with ID: {id}
+          </p>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={refetchGame}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+            >
+              Try Again
+            </button>
+            <Link to="/search" className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+              Browse other games
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -359,6 +468,34 @@ export const ComprehensiveGamePage: React.FC = () => {
             rating: game.rating
           }}
         />
+
+        {/* Cache Status Indicator */}
+        {(isGameCached || isGameStale) && (
+          <div className="bg-gray-900 border-b border-gray-800 px-4 py-2">
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isGameCached && (
+                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                    📦 Cached Data
+                  </span>
+                )}
+                {isGameStale && (
+                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                    ⚠️ Data may be outdated
+                  </span>
+                )}
+              </div>
+              {isGameStale && (
+                <button
+                  onClick={refetchGame}
+                  className="px-3 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors"
+                >
+                  🔄 Refresh
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Breadcrumb Navigation */}
         <nav className="bg-gray-900 border-b border-gray-800 px-4 py-3" aria-label="Breadcrumb">
@@ -393,6 +530,9 @@ export const ComprehensiveGamePage: React.FC = () => {
               alt={game.title}
               className="w-full h-full object-cover"
               loading="eager"
+              onError={(e) => {
+                e.currentTarget.src = game.coverImage;
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-[var(--game-dark)] via-[var(--game-dark)]/80 to-transparent"></div>
             <div className="absolute inset-0 bg-gradient-to-t from-[var(--game-dark)] via-transparent to-transparent"></div>
@@ -409,6 +549,9 @@ export const ComprehensiveGamePage: React.FC = () => {
                     alt={game.title}
                     className="w-full max-w-sm mx-auto lg:mx-0 rounded-lg shadow-2xl transition-transform duration-300 group-hover:scale-105"
                     loading="eager"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder-game.jpg';
+                    }}
                   />
                   {game.discount && (
                     <div className="absolute top-4 right-4 bg-[var(--game-red)] text-white px-3 py-1 rounded-full text-sm font-bold">
@@ -608,6 +751,9 @@ export const ComprehensiveGamePage: React.FC = () => {
                               alt={`Screenshot ${index + 1}`}
                               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                               loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder-screenshot.jpg';
+                              }}
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
                               <Eye className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -690,77 +836,98 @@ export const ComprehensiveGamePage: React.FC = () => {
 
                     {/* Reviews List */}
                     <div ref={reviewsRef} className="space-y-6">
-                      {mockReviews.map((review) => (
-                        <article key={review.id} className="bg-gray-900 rounded-lg p-6">
-                          <div className="flex items-start gap-4">
-                            <img
-                              src={review.authorAvatar}
-                              alt={review.author}
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-4 mb-3">
-                                <h3 className="font-semibold text-white">{review.author}</h3>
-                                {review.verified && (
-                                  <span className="flex items-center gap-1 text-[var(--game-green)] text-sm">
-                                    <Check className="h-4 w-4" />
-                                    Verified Purchase
+                      {reviewsError ? (
+                        <div className="text-center py-8">
+                          <p className="text-red-400 mb-4">{reviewsError}</p>
+                          <button
+                            onClick={() => window.location.reload()}
+                            className="text-purple-400 hover:text-purple-300"
+                          >
+                            Try again
+                          </button>
+                        </div>
+                      ) : reviews.length > 0 ? (
+                        reviews.map((review) => (
+                          <article key={review.id} className="bg-gray-900 rounded-lg p-6">
+                            <div className="flex items-start gap-4">
+                              <img
+                                src={review.authorAvatar}
+                                alt={review.author}
+                                className="w-12 h-12 rounded-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150';
+                                }}
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-4 mb-3">
+                                  <h3 className="font-semibold text-white">{review.author}</h3>
+                                  {review.verified && (
+                                    <span className="flex items-center gap-1 text-[var(--game-green)] text-sm">
+                                      <Check className="h-4 w-4" />
+                                      Verified Purchase
+                                    </span>
+                                  )}
+                                  <span className="text-gray-400 text-sm">{review.date}</span>
+                                </div>
+                                
+                                <div className="flex items-center gap-4 mb-3">
+                                  <StarRating rating={review.rating} />
+                                  <span className="font-semibold text-[var(--game-orange)]">
+                                    {review.rating.toFixed(1)}
                                   </span>
-                                )}
-                                <span className="text-gray-400 text-sm">{review.date}</span>
-                              </div>
-                              
-                              <div className="flex items-center gap-4 mb-3">
-                                <StarRating rating={review.rating} />
-                                <span className="font-semibold text-[var(--game-orange)]">
-                                  {review.rating.toFixed(1)}
-                                </span>
-                                {review.platform && (
-                                  <span className="text-gray-400 text-sm">
-                                    Played on {review.platform}
-                                  </span>
-                                )}
-                                {review.playtime && (
-                                  <span className="text-gray-400 text-sm">
-                                    {review.playtime} played
-                                  </span>
-                                )}
-                              </div>
-                              
-                              <p className="text-gray-300 leading-relaxed mb-4">
-                                {review.text}
-                              </p>
-                              
-                              <div className="flex items-center gap-4">
-                                <button className="flex items-center gap-2 text-gray-400 hover:text-[var(--game-green)] transition-colors">
-                                  <ThumbsUp className="h-4 w-4" />
-                                  <span>{review.helpful}</span>
-                                </button>
-                                <button className="flex items-center gap-2 text-gray-400 hover:text-[var(--game-red)] transition-colors">
-                                  <ThumbsDown className="h-4 w-4" />
-                                  <span>{review.notHelpful}</span>
-                                </button>
-                                <button className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-                                  <Flag className="h-4 w-4" />
-                                  Report
-                                </button>
+                                  {review.platform && (
+                                    <span className="text-gray-400 text-sm">
+                                      Played on {review.platform}
+                                    </span>
+                                  )}
+                                  {review.playtime && (
+                                    <span className="text-gray-400 text-sm">
+                                      {review.playtime} played
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                <p className="text-gray-300 leading-relaxed mb-4">
+                                  {review.text}
+                                </p>
+                                
+                                <div className="flex items-center gap-4">
+                                  <button className="flex items-center gap-2 text-gray-400 hover:text-[var(--game-green)] transition-colors">
+                                    <ThumbsUp className="h-4 w-4" />
+                                    <span>{review.helpful}</span>
+                                  </button>
+                                  <button className="flex items-center gap-2 text-gray-400 hover:text-[var(--game-red)] transition-colors">
+                                    <ThumbsDown className="h-4 w-4" />
+                                    <span>{review.notHelpful}</span>
+                                  </button>
+                                  <button className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+                                    <Flag className="h-4 w-4" />
+                                    Report
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </article>
-                      ))}
+                          </article>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <p>No reviews yet. Be the first to review this game!</p>
+                        </div>
+                      )}
                     </div>
 
                     {/* Load More Reviews */}
-                    <div className="text-center">
-                      <button
-                        onClick={loadMoreReviews}
-                        disabled={loadingReviews}
-                        className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
-                      >
-                        {loadingReviews ? 'Loading...' : 'Load More Reviews'}
-                      </button>
-                    </div>
+                    {reviews.length > 0 && (
+                      <div className="text-center">
+                        <button
+                          onClick={loadMoreReviews}
+                          disabled={loadingReviews}
+                          className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+                        >
+                          {loadingReviews ? 'Loading...' : 'Load More Reviews'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -806,6 +973,9 @@ export const ComprehensiveGamePage: React.FC = () => {
                               alt={`Screenshot ${index + 1}`}
                               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                               loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder-screenshot.jpg';
+                              }}
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
                               <Eye className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -826,6 +996,9 @@ export const ComprehensiveGamePage: React.FC = () => {
                               alt={`Screenshot ${index + 1}`}
                               className="w-full rounded-lg transition-transform duration-300 group-hover:scale-[1.02]"
                               loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder-screenshot.jpg';
+                              }}
                             />
                           </button>
                         ))}
@@ -999,6 +1172,9 @@ export const ComprehensiveGamePage: React.FC = () => {
                         src={relatedGame.coverImage}
                         alt={relatedGame.title}
                         className="w-16 h-20 object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.src = '/placeholder-game.jpg';
+                        }}
                       />
                       <div className="flex-1">
                         <h4 className="font-semibold text-white group-hover:text-[var(--game-purple)] transition-colors">
@@ -1084,6 +1260,9 @@ export const ComprehensiveGamePage: React.FC = () => {
                 src={selectedImage}
                 alt={`Screenshot ${imageIndex + 1}`}
                 className="max-w-full max-h-full object-contain"
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder-screenshot.jpg';
+                }}
               />
               
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 rounded-full px-4 py-2 text-white text-sm">
