@@ -320,4 +320,161 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               ) : (
                 <Database className={`h-4 w-4 ${getCacheStatusColor()}`} />
               )}
-              {import.meta.env.DEV
+              {import.meta.env.DEV && (
+                <span className={`text-xs ${getCacheStatusColor()}`}>
+                  {cacheStatus === 'cached' ? 'C' : cacheStatus === 'fresh' ? 'F' : cacheStatus === 'error' ? 'E' : 'L'}
+                </span>
+              )}
+            </div>
+          )}
+          
+          {(isLoading || cacheStatus === 'loading') && (
+            <Loader2 className="h-4 w-4 text-purple-500 animate-spin" />
+          )}
+        </div>
+        
+        {query && (
+          <button
+            onClick={handleClearSearch}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-white transition-colors"
+            aria-label="Clear search"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
+      {/* Suggestions Dropdown */}
+      {showSuggestionsList && (
+        <div 
+          ref={suggestionsRef}
+          id="search-suggestions"
+          className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto"
+        >
+          {/* Cache Status Header */}
+          {showCacheStatus && enableCache && displaySuggestions.length > 0 && (
+            <div className="px-4 py-2 border-b border-gray-700 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <Database className={`h-4 w-4 ${getCacheStatusColor()}`} />
+                <span className={getCacheStatusColor()}>
+                  {isFromCache ? 'Showing cached results' : 'Showing fresh results'}
+                </span>
+              </div>
+              {isFromCache && (
+                <button
+                  onClick={() => debouncedSearch(query)}
+                  className="text-xs text-purple-400 hover:text-purple-300"
+                >
+                  Refresh
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Search Suggestions */}
+          {displaySuggestions.length > 0 && (
+            <div className="py-2">
+              <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Suggestions
+              </div>
+              {displaySuggestions.map((suggestion, index) => (
+                <button
+                  key={suggestion.id}
+                  id={`suggestion-${index}`}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className={`
+                    flex items-center w-full text-left px-4 py-3 hover:bg-gray-700 
+                    transition-colors duration-150
+                    ${activeSuggestionIndex === index ? 'bg-gray-700' : ''}
+                  `}
+                >
+                  <span className="text-xl mr-3 flex-shrink-0">
+                    {getSuggestionIcon(suggestion.type)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-white font-medium truncate">
+                      {suggestion.title}
+                    </div>
+                    {suggestion.subtitle && (
+                      <div className="text-sm text-gray-400 truncate">
+                        {suggestion.subtitle}
+                      </div>
+                    )}
+                  </div>
+                  <div className="ml-3 flex-shrink-0">
+                    <span className="px-2 py-1 bg-gray-600 rounded text-xs text-gray-300">
+                      {suggestion.type}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Recent Searches */}
+          {query.trim() === '' && recentSearches.length > 0 && (
+            <div className="py-2 border-t border-gray-700">
+              <div className="px-3 py-2 flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Recent Searches
+                </span>
+                <button
+                  onClick={clearRecentSearches}
+                  className="text-xs text-red-400 hover:text-red-300"
+                >
+                  Clear
+                </button>
+              </div>
+              {recentSearches.map((searchTerm, index) => (
+                <button
+                  key={index}
+                  id={`suggestion-${displaySuggestions.length + index}`}
+                  onClick={() => handleRecentSearchClick(searchTerm)}
+                  className={`
+                    flex items-center w-full text-left px-4 py-3 hover:bg-gray-700 
+                    transition-colors duration-150
+                    ${activeSuggestionIndex === displaySuggestions.length + index ? 'bg-gray-700' : ''}
+                  `}
+                >
+                  <Clock className="h-4 w-4 text-gray-400 mr-3 flex-shrink-0" />
+                  <span className="text-white truncate">{searchTerm}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* No Results */}
+          {displaySuggestions.length === 0 && query.trim() !== '' && cacheStatus !== 'loading' && (
+            <div className="py-6 text-center">
+              <div className="text-gray-400 mb-2">No suggestions found</div>
+              <div className="text-sm text-gray-500">
+                Try searching for games, genres, or platforms
+              </div>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {cacheStatus === 'loading' && query.trim() !== '' && (
+            <div className="py-6 text-center">
+              <Loader2 className="h-6 w-6 text-purple-500 animate-spin mx-auto mb-2" />
+              <div className="text-gray-400">Loading suggestions...</div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {cacheStatus === 'error' && (
+            <div className="py-6 text-center">
+              <div className="text-red-400 mb-2">Error loading suggestions</div>
+              <button
+                onClick={() => debouncedSearch(query)}
+                className="text-sm text-purple-400 hover:text-purple-300"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
