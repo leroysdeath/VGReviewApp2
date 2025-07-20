@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, MessageSquare, Calendar, Gamepad2 } from 'lucide-react';
+import { Star, MessageSquare, Calendar, Gamepad2, Database, Loader2 } from 'lucide-react';
+import { enhancedIGDBService } from '../services/enhancedIGDBService';
+import { browserCache } from '../services/browserCacheService';
 
 // TypeScript interface for game data structure
 export interface GameData {
@@ -24,6 +26,9 @@ interface InteractiveGameCardProps {
   theme?: CardTheme;
   onReviewClick?: (gameId: string) => void;
   className?: string;
+  enablePrefetch?: boolean;
+  showCacheStatus?: boolean;
+  cacheInfo?: boolean;
 }
 
 // Theme configurations
@@ -74,9 +79,54 @@ export const InteractiveGameCard: React.FC<InteractiveGameCardProps> = ({
   game,
   theme = 'purple',
   onReviewClick,
-  className = ''
+  className = '',
+  enablePrefetch = true,
+  showCacheStatus = false,
+  cacheInfo = false
 }) => {
+  const [isPrefetching, setIsPrefetching] = useState(false);
+  const [cacheStatus, setCacheStatus] = useState<'cached' | 'prefetched' | 'none'>('none');
+  const [prefetchError, setPrefetchError] = useState<string | null>(null);
   const themeStyles = themeConfig[theme];
+
+  // Check cache status on mount
+  useEffect(() => {
+    if (showCacheStatus || cacheInfo) {
+      const cacheKey = `game:${game.id}`;
+      const cached = browserCache.get(cacheKey);
+      setCacheStatus(cached ? 'cached' : 'none');
+    }
+  }, [game.id, showCacheStatus, cacheInfo]);
+
+  // Enhanced prefetch on hover
+  const handleMouseEnter = async () => {
+    if (enablePrefetch && game.id) {
+      try {
+        setIsPrefetching(true);
+        setPrefetchError(null);
+        
+        const gameId = typeof game.id === 'string' ? parseInt(game.id) : game.id;
+        if (!isNaN(gameId)) {
+          await enhancedIGDBService.prefetchGame(gameId);
+          setCacheStatus('prefetched');
+          
+          if (import.meta.env.DEV) {
+            console.log(`🚀 Prefetched game data for: ${game.title}`);
+          }
+        }
+      } catch (error) {
+        setPrefetchError('Prefetch failed');
+        console.warn('Prefetch failed:', error);
+      } finally {
+        setIsPrefetching(false);
+      }
+    }
+  };
+
+  // Prefetch on focus for accessibility
+  const handleFocus = () => {
+    handleMouseEnter();
+  };
 
   const formatReviewCount = (count: number): string => {
     if (count >= 1000) {
@@ -113,19 +163,39 @@ export const InteractiveGameCard: React.FC<InteractiveGameCardProps> = ({
     );
   };
 
+  const getCacheStatusColor = () => {
+    switch (cacheStatus) {
+      case 'cached': return 'text-green-400';
+      case 'prefetched': return 'text-blue-400';
+      default: return 'text-gray-400';
+    }
+  };
+
+  const getCacheStatusText = () => {
+    switch (cacheStatus) {
+      case 'cached': return 'Cached';
+      case 'prefetched': return 'Prefetched';
+      default: return 'Not cached';
+    }
+  };
+
   return (
     <div className={`group relative ${className}`}>
       {/* Card Container */}
-      <div className={`
-        relative overflow-hidden rounded-2xl border-2 
-        bg-gray-900/80 backdrop-blur-lg
-        transition-all duration-500 ease-out
-        hover:scale-105 hover:shadow-2xl
-        ${themeStyles.border} ${themeStyles.hoverBorder} ${themeStyles.shadow}
-      `}>
+      <div 
+        className={`
+          relative overflow-hidden rounded-2xl border-2 
+          bg-gray-900/80 backdrop-blur-lg
+          transition-all duration-500 ease-out
+          hover:scale-105 hover:shadow-2xl focus-within:scale-105 focus-within:shadow-2xl
+          ${themeStyles.border} ${themeStyles.hoverBorder} ${themeStyles.shadow}
+        `}
+        onMouseEnter={handleMouseEnter}
+        onFocus={handleFocus}
+      >
         {/* Background Gradient Overlay */}
         <div className={`
-          absolute inset-0 opacity-0 group-hover:opacity-20 
+          absolute inset-0 opacity-0 group-hover:opacity-20 group-focus-within:opacity-20
           bg-gradient-to-br ${themeStyles.gradient}
           transition-opacity duration-500
         `} />
@@ -136,7 +206,8 @@ export const InteractiveGameCard: React.FC<InteractiveGameCardProps> = ({
             <img
               src={game.imageUrl}
               alt={game.title}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 group-focus-within:scale-110"
+              loading="lazy"
             />
           ) : (
             <div className={`
@@ -150,10 +221,10 @@ export const InteractiveGameCard: React.FC<InteractiveGameCardProps> = ({
                 <div className="absolute bottom-6 left-8 w-4 h-4 bg-white/20 rounded animate-pulse" />
               </div>
               
-              <Gamepad2 className="w-16 h-16 text-white/60 group-hover:text-white/80 transition-colors duration-300" />
+              <Gamepad2 className="w-16 h-16 text-white/60 group-hover:text-white/80 group-focus-within:text-white/80 transition-colors duration-300" />
               
               {/* Play overlay on hover */}
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                   <div className="w-0 h-0 border-l-8 border-l-white border-y-6 border-y-transparent ml-1" />
                 </div>
@@ -185,86 +256,117 @@ export const InteractiveGameCard: React.FC<InteractiveGameCardProps> = ({
               </span>
             )}
           </div>
+
+          {/* Cache Status Badge */}
+          {(showCacheStatus || (cacheInfo && import.meta.env.DEV)) && (
+            <div className="absolute top-4 left-4">
+              <div className="flex items-center gap-1 px-2 py-1 bg-black/70 backdrop-blur-sm rounded text-xs">
+                {isPrefetching ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin text-blue-400" />
+                    <span className="text-blue-400">Prefetching...</span>
+                  </>
+                ) : (
+                  <>
+                    <Database className={`w-3 h-3 ${getCacheStatusColor()}`} />
+                    <span className={getCacheStatusColor()}>{getCacheStatusText()}</span>
+                  </>
+                )}
+              </div>
+              {prefetchError && (
+                <div className="mt-1 px-2 py-1 bg-red-900/70 backdrop-blur-sm rounded text-xs text-red-400">
+                  {prefetchError}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Card Content */}
         <div className="relative p-6 space-y-4">
           {/* Title and Genre */}
           <div>
-            <Link to={`/game/${game.id}`}>
+            <Link 
+              to={`/game/${game.id}`}
+              className="focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 rounded"
+            >
               <h3 className={`
                 text-xl font-bold text-white mb-2 line-clamp-2
                 transition-colors duration-300 hover:${themeStyles.accent.replace('text-', 'text-')}
-                group-hover:${themeStyles.accent.replace('text-', 'text-')}
               `}>
                 {game.title}
               </h3>
             </Link>
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <span>{game.genre}</span>
-              <span>•</span>
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                <span>{new Date(game.releaseDate).getFullYear()}</span>
-              </div>
+            <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+              <Calendar className="w-4 h-4" />
+              <span>{game.releaseDate}</span>
+              <span className="text-gray-500">•</span>
+              <span className={themeStyles.accent}>{game.genre}</span>
             </div>
+            <p className="text-gray-300 text-sm line-clamp-2 leading-relaxed">
+              {game.description}
+            </p>
           </div>
 
-          {/* Description */}
-          <p className="text-gray-300 text-sm line-clamp-3 leading-relaxed">
-            {game.description}
-          </p>
-
-          {/* Developer */}
-          <div className="text-xs text-gray-500">
-            by {game.developer}
-          </div>
-
-          {/* Rating and Reviews */}
+          {/* Game Stats */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {renderStars(game.rating)}
               <span className="text-white font-semibold">{game.rating.toFixed(1)}</span>
             </div>
-            <div className="flex items-center gap-1 text-gray-400 text-sm">
+            
+            <div className="flex items-center gap-2 text-gray-400">
               <MessageSquare className="w-4 h-4" />
-              <span>{formatReviewCount(game.reviewCount)} reviews</span>
+              <span className="text-sm">{formatReviewCount(game.reviewCount)}</span>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={() => onReviewClick?.(game.id)}
-              className={`
-                flex-1 px-4 py-3 rounded-xl font-semibold text-white
-                transition-all duration-300 transform
-                hover:scale-105 hover:shadow-lg
-                ${themeStyles.button}
-                flex items-center justify-center gap-2
-              `}
-            >
-              <MessageSquare className="w-4 h-4" />
-              Write Review
-            </button>
-            
-            <Link
-              to={`/game/${game.id}`}
-              className="px-4 py-3 rounded-xl border-2 border-gray-600 text-gray-300 font-semibold
-                       transition-all duration-300 transform hover:scale-105 hover:border-gray-400 hover:text-white
-                       flex items-center justify-center"
-            >
-              View Details
-            </Link>
-          </div>
-        </div>
+          {/* Developer and Action Buttons */}
+          <div className="flex items-center justify-between pt-2 border-t border-gray-700/50">
+            <div className="text-sm">
+              <span className="text-gray-400">By:</span>
+              <span className="ml-2 text-white font-medium">{game.developer}</span>
+            </div>
 
-        {/* Hover Glow Effect */}
-        <div className={`
-          absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100
-          transition-opacity duration-500 pointer-events-none
-          bg-gradient-to-r ${themeStyles.gradient} blur-xl -z-10
-        `} />
+            <div className="flex gap-2">
+              {onReviewClick && (
+                <button
+                  onClick={() => onReviewClick(game.id)}
+                  className={`
+                    px-4 py-2 rounded-lg font-medium text-sm
+                    transition-all duration-300 hover:scale-105
+                    ${themeStyles.button} text-white
+                  `}
+                  aria-label={`Write review for ${game.title}`}
+                >
+                  Review
+                </button>
+              )}
+              
+              <Link
+                to={`/game/${game.id}`}
+                className={`
+                  px-4 py-2 rounded-lg font-medium text-sm
+                  transition-all duration-300 hover:scale-105
+                  bg-gray-700 hover:bg-gray-600 text-white
+                  focus:outline-none focus:ring-2 focus:ring-purple-500
+                `}
+                aria-label={`View details for ${game.title}`}
+              >
+                Details
+              </Link>
+            </div>
+          </div>
+
+          {/* Debug info in development */}
+          {import.meta.env.DEV && cacheInfo && (
+            <div className="text-xs text-gray-500 pt-2 border-t border-gray-800">
+              <div>Game ID: {game.id}</div>
+              <div>Cache Status: {cacheStatus}</div>
+              <div>Prefetch Enabled: {enablePrefetch ? 'Yes' : 'No'}</div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
