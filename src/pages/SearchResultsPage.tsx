@@ -1,8 +1,8 @@
-// pages/SearchResultsPage.tsx
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar } from 'lucide-react';
-import { useGameSearch } from '../hooks/useGameSearch';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, Zap, Database } from 'lucide-react';
+import { useIGDBSearch } from '../hooks/useIGDBCache';
+import { enhancedIGDBService } from '../services/enhancedIGDBService';
 
 interface Game {
   id: number;
@@ -17,56 +17,102 @@ interface Game {
   summary?: string;
 }
 
+interface SearchFilters {
+  genres: string[];
+  platforms: string[];
+  minRating?: number;
+  sortBy: 'popularity' | 'rating' | 'release_date' | 'name';
+  sortOrder: 'asc' | 'desc';
+}
+
 export const SearchResultsPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState<SearchFilters>({
+    genres: [],
+    platforms: [],
+    sortBy: 'popularity',
+    sortOrder: 'desc'
+  });
 
-  const {
-    searchState,
-    searchTerm,
-    setSearchTerm,
-    searchGames,
-    loadMore,
-    updateSearchOptions,
-    searchOptions
-  } = useGameSearch();
+  // Use the caching search hook
+  const { 
+    data: games, 
+    loading, 
+    error, 
+    cached: isSearchCached, 
+    refetch,
+    isStale: isSearchStale,
+    searchTerm: debouncedSearchTerm 
+  } = useIGDBSearch(searchTerm, filters, {
+    enabled: true,
+    ttl: 1800, // 30 minutes cache for search results
+    staleWhileRevalidate: true
+  });
 
-  // Extract parameters from URL
+  // Extract parameters from URL and update state
   useEffect(() => {
     const query = searchParams.get('q') || '';
     const genres = searchParams.get('genres')?.split(',').filter(Boolean) || [];
     const platforms = searchParams.get('platforms')?.split(',').filter(Boolean) || [];
     const rating = searchParams.get('rating');
-    const sort = searchParams.get('sort');
+    const sort = searchParams.get('sort') || 'popularity:desc';
 
     setSearchTerm(query);
 
-    const options = {
-      genres: genres.length > 0 ? genres : undefined,
-      platforms: platforms.length > 0 ? platforms : undefined,
+    const [sortField, sortOrder] = sort.split(':');
+    const newFilters: SearchFilters = {
+      genres,
+      platforms,
       minRating: rating ? parseInt(rating) : undefined,
-      sortBy: 'popularity' as const,
-      sortOrder: 'desc' as const
+      sortBy: (sortField as any) || 'popularity',
+      sortOrder: (sortOrder as any) || 'desc'
     };
 
-    if (sort) {
-      const [field, order] = sort.split(':');
-      options.sortBy = field as any;
-      options.sortOrder = (order || 'desc') as any;
-    }
-
-    updateSearchOptions(options);
-
-    // Perform the search
-    if (query || genres.length > 0 || platforms.length > 0 || rating) {
-      searchGames(query, options);
-    }
+    setFilters(newFilters);
   }, [searchParams]);
 
   const handleGameClick = (game: Game) => {
-    // Navigate to game detail page
-    window.location.href = `/game/${game.id}`;
+    // Prefetch game data for faster loading
+    enhancedIGDBService.prefetchGame(game.id);
+    navigate(`/game/${game.id}`);
+  };
+
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  const updateFilters = (newFilters: Partial<SearchFilters>) => {
+    const updatedFilters = { ...filters, ...newFilters };
+    setFilters(updatedFilters);
+
+    // Update URL parameters
+    const newParams = new URLSearchParams(searchParams);
+    
+    if (updatedFilters.genres.length > 0) {
+      newParams.set('genres', updatedFilters.genres.join(','));
+    } else {
+      newParams.delete('genres');
+    }
+    
+    if (updatedFilters.platforms.length > 0) {
+      newParams.set('platforms', updatedFilters.platforms.join(','));
+    } else {
+      newParams.delete('platforms');
+    }
+    
+    if (updatedFilters.minRating) {
+      newParams.set('rating', updatedFilters.minRating.toString());
+    } else {
+      newParams.delete('rating');
+    }
+    
+    newParams.set('sort', `${updatedFilters.sortBy}:${updatedFilters.sortOrder}`);
+    
+    setSearchParams(newParams);
   };
 
   const formatDate = (timestamp: number) => {
@@ -81,6 +127,7 @@ export const SearchResultsPage: React.FC = () => {
     <div
       onClick={() => handleGameClick(game)}
       className="bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-750 transition-all duration-200 cursor-pointer group hover:scale-105"
+      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)} // Prefetch on hover
     >
       <div className="aspect-[3/4] relative overflow-hidden">
         {game.cover?.url ? (
@@ -89,6 +136,9 @@ export const SearchResultsPage: React.FC = () => {
             alt={game.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
             loading="lazy"
+            onError={(e) => {
+              e.currentTarget.src = '/placeholder-game.jpg';
+            }}
           />
         ) : (
           <div className="w-full h-full bg-gray-700 flex items-center justify-center">
@@ -132,6 +182,7 @@ export const SearchResultsPage: React.FC = () => {
     <div
       onClick={() => handleGameClick(game)}
       className="bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition-colors cursor-pointer group flex gap-4"
+      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)} // Prefetch on hover
     >
       <div className="w-16 h-20 flex-shrink-0 overflow-hidden rounded">
         {game.cover?.url ? (
@@ -140,6 +191,9 @@ export const SearchResultsPage: React.FC = () => {
             alt={game.name}
             className="w-full h-full object-cover"
             loading="lazy"
+            onError={(e) => {
+              e.currentTarget.src = '/placeholder-game.jpg';
+            }}
           />
         ) : (
           <div className="w-full h-full bg-gray-700 flex items-center justify-center">
@@ -188,20 +242,70 @@ export const SearchResultsPage: React.FC = () => {
     </div>
   );
 
+  const totalResults = games?.length || 0;
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-8">
+        
+        {/* Cache Status Bar */}
+        {(isSearchCached || isSearchStale) && (
+          <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {isSearchCached && (
+                  <div className="flex items-center gap-2 text-green-400">
+                    <Database className="h-4 w-4" />
+                    <span className="text-sm">Results from cache</span>
+                  </div>
+                )}
+                {isSearchStale && (
+                  <div className="flex items-center gap-2 text-yellow-400">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">Data may be outdated</span>
+                  </div>
+                )}
+                {debouncedSearchTerm !== searchTerm && (
+                  <div className="flex items-center gap-2 text-blue-400">
+                    <Loader className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Updating search...</span>
+                  </div>
+                )}
+              </div>
+              
+              {isSearchStale && (
+                <button
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-md transition-colors"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  <span className="text-sm">Refresh</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold">
               {searchTerm ? `Search Results for "${searchTerm}"` : 'Browse Games'}
             </h1>
-            {searchState.totalResults > 0 && (
-              <p className="text-gray-400 mt-1">
-                {searchState.totalResults.toLocaleString()} games found
-              </p>
-            )}
+            <div className="flex items-center gap-4 mt-1">
+              {totalResults > 0 && (
+                <p className="text-gray-400">
+                  {totalResults.toLocaleString()} games found
+                </p>
+              )}
+              {isSearchCached && (
+                <div className="flex items-center gap-1 text-green-400 text-sm">
+                  <Zap className="h-3 w-3" />
+                  <span>Instant results</span>
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center gap-3">
@@ -234,70 +338,192 @@ export const SearchResultsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Filters Panel */}
+        {showFilters && (
+          <div className="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
+            <h3 className="text-lg font-semibold mb-4">Filter Results</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              
+              {/* Sort By */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Sort By
+                </label>
+                <select
+                  value={`${filters.sortBy}:${filters.sortOrder}`}
+                  onChange={(e) => {
+                    const [sortBy, sortOrder] = e.target.value.split(':');
+                    updateFilters({ sortBy: sortBy as any, sortOrder: sortOrder as any });
+                  }}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                >
+                  <option value="popularity:desc">Most Popular</option>
+                  <option value="rating:desc">Highest Rated</option>
+                  <option value="release_date:desc">Newest First</option>
+                  <option value="release_date:asc">Oldest First</option>
+                  <option value="name:asc">Name A-Z</option>
+                  <option value="name:desc">Name Z-A</option>
+                </select>
+              </div>
+
+              {/* Minimum Rating */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Minimum Rating
+                </label>
+                <select
+                  value={filters.minRating || ''}
+                  onChange={(e) => {
+                    const value = e.target.value ? parseInt(e.target.value) : undefined;
+                    updateFilters({ minRating: value });
+                  }}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                >
+                  <option value="">Any Rating</option>
+                  <option value="90">90+ Exceptional</option>
+                  <option value="80">80+ Great</option>
+                  <option value="70">70+ Good</option>
+                  <option value="60">60+ Decent</option>
+                </select>
+              </div>
+
+              {/* Quick Genre Filters */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Quick Filters
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {['Action', 'RPG', 'Strategy', 'Indie'].map((genre) => (
+                    <button
+                      key={genre}
+                      onClick={() => {
+                        const newGenres = filters.genres.includes(genre)
+                          ? filters.genres.filter(g => g !== genre)
+                          : [...filters.genres, genre];
+                        updateFilters({ genres: newGenres });
+                      }}
+                      className={`px-3 py-1 rounded-full text-xs transition-colors ${
+                        filters.genres.includes(genre)
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      {genre}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Clear Filters */}
+              <div className="flex items-end">
+                <button
+                  onClick={() => {
+                    updateFilters({
+                      genres: [],
+                      platforms: [],
+                      minRating: undefined,
+                      sortBy: 'popularity',
+                      sortOrder: 'desc'
+                    });
+                  }}
+                  className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Loading State */}
-        {searchState.loading && searchState.games.length === 0 && (
+        {loading && (!games || games.length === 0) && (
           <div className="flex items-center justify-center py-12">
             <Loader className="w-8 h-8 animate-spin text-purple-400" />
-            <span className="ml-3 text-gray-400">Searching for games...</span>
+            <span className="ml-3 text-gray-400">
+              {isSearchCached ? 'Updating results...' : 'Searching for games...'}
+            </span>
           </div>
         )}
 
         {/* Error State */}
-        {searchState.error && (
+        {error && (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
               <p className="text-red-400 font-semibold mb-2">Search Error</p>
-              <p className="text-gray-400">{searchState.error}</p>
+              <p className="text-gray-400 mb-4">{error.message}</p>
+              <button
+                onClick={handleRefresh}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              >
+                Try Again
+              </button>
             </div>
           </div>
         )}
 
         {/* No Results */}
-        {!searchState.loading && !searchState.error && searchState.games.length === 0 && (
+        {!loading && !error && (!games || games.length === 0) && searchTerm && (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🎮</div>
             <h2 className="text-xl font-semibold mb-2">No games found</h2>
-            <p className="text-gray-400">Try adjusting your search terms or filters</p>
+            <p className="text-gray-400 mb-4">
+              Try adjusting your search terms or filters
+            </p>
+            <div className="space-x-2">
+              <button
+                onClick={() => setSearchTerm('')}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+              >
+                Clear Search
+              </button>
+              <button
+                onClick={() => setShowFilters(true)}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              >
+                Adjust Filters
+              </button>
+            </div>
           </div>
         )}
 
         {/* Results */}
-        {searchState.games.length > 0 && (
+        {games && games.length > 0 && (
           <>
             {viewMode === 'grid' ? (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {searchState.games.map((game) => (
+                {games.map((game) => (
                   <GameCard key={game.id} game={game} />
                 ))}
               </div>
             ) : (
               <div className="space-y-4">
-                {searchState.games.map((game) => (
+                {games.map((game) => (
                   <GameListItem key={game.id} game={game} />
                 ))}
               </div>
             )}
 
-            {/* Load More */}
-            {searchState.hasMore && (
-              <div className="text-center mt-8">
-                <button
-                  onClick={loadMore}
-                  disabled={searchState.loading}
-                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
-                >
-                  {searchState.loading ? (
-                    <>
-                      <Loader className="w-4 h-4 animate-spin mr-2 inline" />
-                      Loading...
-                    </>
-                  ) : (
-                    'Load More Games'
-                  )}
-                </button>
+            {/* Search Status Footer */}
+            <div className="mt-8 text-center">
+              <div className="inline-flex items-center gap-4 px-6 py-3 bg-gray-800 rounded-lg">
+                <span className="text-gray-400 text-sm">
+                  Showing {games.length} results
+                </span>
+                {isSearchCached && (
+                  <div className="flex items-center gap-1 text-green-400 text-sm">
+                    <Database className="h-3 w-3" />
+                    <span>Cached</span>
+                  </div>
+                )}
+                {loading && (
+                  <div className="flex items-center gap-1 text-blue-400 text-sm">
+                    <Loader className="h-3 w-3 animate-spin" />
+                    <span>Loading more...</span>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </>
         )}
       </div>
