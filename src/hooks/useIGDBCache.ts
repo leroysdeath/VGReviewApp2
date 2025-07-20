@@ -1,27 +1,29 @@
-// src/services/enhancedIGDBService.ts
+// src/hooks/useIGDBCache.ts
 
+import { useState, useEffect, useCallback } from 'react';
+import { enhancedIGDBService } from '../services/enhancedIGDBService';
 import { createClient } from '@supabase/supabase-js';
-import { browserCache } from './browserCacheService';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL!,
   import.meta.env.VITE_SUPABASE_ANON_KEY!
 );
 
-interface RequestOptions {
-  useCache?: boolean;
-  cacheTTL?: number;
-  browserCacheTTL?: number;
-  forceRefresh?: boolean;
+interface UseIGDBCacheOptions {
+  enabled?: boolean;
+  ttl?: number;
   staleWhileRevalidate?: boolean;
+  onError?: (error: Error) => void;
+  forceRefresh?: boolean;
 }
 
-interface CachedResponse {
-  data: any;
+interface UseIGDBCacheState<T = any> {
+  data: T | null;
+  loading: boolean;
+  error: Error | null;
   cached: boolean;
-  timestamp: Date;
-  expiresAt: Date;
-  cacheKey?: string;
+  timestamp: Date | null;
+  expiresAt: Date | null;
 }
 
 interface CacheStats {
@@ -45,480 +47,736 @@ interface PerformanceMetrics {
   averageResponseTime: number;
 }
 
-class EnhancedIGDBService {
-  private defaultOptions: RequestOptions = {
-    useCache: true,
-    cacheTTL: 3600, // 1 hour database cache
-    browserCacheTTL: 300, // 5 minutes browser cache
-    forceRefresh: false,
-    staleWhileRevalidate: true,
-  };
+// Hook for individual game data
+export function useIGDBGame(
+  gameId: number | null,
+  options: UseIGDBCacheOptions = {}
+) {
+  const [state, setState] = useState<UseIGDBCacheState>({
+    data: null,
+    loading: false,
+    error: null,
+    cached: false,
+    timestamp: null,
+    expiresAt: null,
+  });
 
-  private edgeFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/igdb-cache`;
-
-  /**
-   * Get game with multi-level caching
-   */
-  async getGame(gameId: number, options: RequestOptions = {}): Promise<any> {
-    const opts = { ...this.defaultOptions, ...options };
-    const browserCacheKey = `game:${gameId}`;
-
-    // Level 1: Check browser cache first (fastest)
-    if (opts.useCache && !opts.forceRefresh) {
-      const browserCached = browserCache.get(browserCacheKey);
-      if (browserCached) {
-        console.log('🚀 Cache hit: Browser cache (game)', gameId);
-        
-        // Optionally refresh in background if stale
-        if (opts.staleWhileRevalidate) {
-          this.refreshPopularInBackground(opts);
-        }
-        
-        return browserCached;
-      }
-    }
+  const fetchGame = useCallback(async (id: number) => {
+    setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await this.callEdgeFunction({
-        endpoint: 'popular',
-        forceRefresh: opts.forceRefresh,
-        ttl: opts.cacheTTL || 7200 // 2 hours for popular games
+      const result = await enhancedIGDBService.getGame(id, {
+        cacheTTL: options.ttl || 3600,
+        staleWhileRevalidate: options.staleWhileRevalidate,
+        forceRefresh: options.forceRefresh || false,
       });
 
-      if (response.data) {
-        if (opts.useCache) {
-          browserCache.set(browserCacheKey, response.data, opts.browserCacheTTL);
-        }
-
-        console.log(
-          response.cached 
-            ? '💾 Cache hit: Database cache (popular)' 
-            : '🌐 Fresh fetch: IGDB API (popular)'
-        );
-        
-        return response.data;
-      }
+      setState({
+        data: result,
+        loading: false,
+        error: null,
+        cached: true, // Enhanced service handles cache detection
+        timestamp: new Date(),
+        expiresAt: new Date(Date.now() + (options.ttl || 3600) * 1000),
+      });
     } catch (error) {
-      console.error('Error fetching popular games:', error);
-      
-      const staleCache = browserCache.get(browserCacheKey);
-      if (staleCache) {
-        console.log('⚠️ Returning stale popular cache due to error');
-        return staleCache;
-      }
-      
-      throw error;
+      const err = error as Error;
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: err,
+      }));
+      options.onError?.(err);
     }
+  }, [options.ttl, options.staleWhileRevalidate, options.onError, options.forceRefresh]);
 
-    return [];
-  }
+  const refetch = useCallback(() => {
+    if (gameId) {
+      fetchGame(gameId);
+    }
+  }, [gameId, fetchGame]);
 
-  /**
-   * Prefetch game data for faster navigation
-   */
-  async prefetchGame(gameId: number): Promise<void> {
-    try {
-      // Check if already in browser cache
-      const browserCacheKey = `game:${gameId}`;
-      if (browserCache.get(browserCacheKey)) {
-        return; // Already cached
-      }
-
-      // Prefetch without blocking
-      this.getGame(gameId, { 
-        useCache: true, 
-        cacheTTL: 3600,
-        browserCacheTTL: 600 // 10 minutes for prefetched data
+  const forceRefresh = useCallback(() => {
+    if (gameId) {
+      setState(prev => ({ ...prev, loading: true, error: null }));
+      enhancedIGDBService.getGame(gameId, {
+        cacheTTL: options.ttl || 3600,
+        forceRefresh: true,
+      }).then(result => {
+        setState({
+          data: result,
+          loading: false,
+          error: null,
+          cached: false, // This is fresh data
+          timestamp: new Date(),
+          expiresAt: new Date(Date.now() + (options.ttl || 3600) * 1000),
+        });
       }).catch(error => {
-        console.warn('Prefetch failed for game:', gameId, error);
+        setState(prev => ({
+          ...prev,
+          loading: false,
+          error: error as Error,
+        }));
+        options.onError?.(error);
+      });
+    }
+  }, [gameId, options.ttl, options.onError]);
+
+  useEffect(() => {
+    if (options.enabled !== false && gameId) {
+      fetchGame(gameId);
+    }
+  }, [gameId, fetchGame, options.enabled]);
+
+  return {
+    ...state,
+    refetch,
+    forceRefresh,
+    isStale: state.expiresAt ? new Date() > state.expiresAt : false,
+  };
+}
+
+// Hook for search functionality with debouncing
+export function useIGDBSearch(
+  searchTerm: string,
+  filters: any = {},
+  options: UseIGDBCacheOptions = {}
+) {
+  const [state, setState] = useState<UseIGDBCacheState<any[]>>({
+    data: [],
+    loading: false,
+    error: null,
+    cached: false,
+    timestamp: null,
+    expiresAt: null,
+  });
+
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const performSearch = useCallback(async (term: string, searchFilters: any) => {
+    if (!term.trim()) {
+      setState({
+        data: [],
+        loading: false,
+        error: null,
+        cached: false,
+        timestamp: null,
+        expiresAt: null,
+      });
+      return;
+    }
+
+    setState(prev => ({ ...prev, loading: true, error: null }));
+
+    try {
+      const results = await enhancedIGDBService.searchGames(term, searchFilters, {
+        cacheTTL: options.ttl || 1800, // 30 minutes for search
+        staleWhileRevalidate: options.staleWhileRevalidate,
+        forceRefresh: options.forceRefresh || false,
+      });
+
+      setState({
+        data: results || [],
+        loading: false,
+        error: null,
+        cached: true,
+        timestamp: new Date(),
+        expiresAt: new Date(Date.now() + (options.ttl || 1800) * 1000),
       });
     } catch (error) {
-      console.warn('Prefetch error:', error);
+      const err = error as Error;
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: err,
+        data: [],
+      }));
+      options.onError?.(err);
     }
-  }
+  }, [options.ttl, options.staleWhileRevalidate, options.onError, options.forceRefresh]);
 
-  /**
-   * Get cache statistics
-   */
-  async getCacheStats(): Promise<CacheStats> {
+  const refetch = useCallback(() => {
+    performSearch(debouncedSearchTerm, filters);
+  }, [debouncedSearchTerm, filters, performSearch]);
+
+  const forceRefresh = useCallback(() => {
+    setState(prev => ({ ...prev, loading: true, error: null }));
+    enhancedIGDBService.searchGames(debouncedSearchTerm, filters, {
+      cacheTTL: options.ttl || 1800,
+      forceRefresh: true,
+    }).then(results => {
+      setState({
+        data: results || [],
+        loading: false,
+        error: null,
+        cached: false,
+        timestamp: new Date(),
+        expiresAt: new Date(Date.now() + (options.ttl || 1800) * 1000),
+      });
+    }).catch(error => {
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: error as Error,
+        data: [],
+      }));
+      options.onError?.(error);
+    });
+  }, [debouncedSearchTerm, filters, options.ttl, options.onError]);
+
+  useEffect(() => {
+    if (options.enabled !== false) {
+      performSearch(debouncedSearchTerm, filters);
+    }
+  }, [debouncedSearchTerm, filters, performSearch, options.enabled]);
+
+  return {
+    ...state,
+    refetch,
+    forceRefresh,
+    searchTerm: debouncedSearchTerm,
+    originalSearchTerm: searchTerm,
+    isStale: state.expiresAt ? new Date() > state.expiresAt : false,
+  };
+}
+
+// Hook for popular games
+export function usePopularGames(options: UseIGDBCacheOptions = {}) {
+  const [state, setState] = useState<UseIGDBCacheState<any[]>>({
+    data: [],
+    loading: false,
+    error: null,
+    cached: false,
+    timestamp: null,
+    expiresAt: null,
+  });
+
+  const fetchPopular = useCallback(async () => {
+    setState(prev => ({ ...prev, loading: true, error: null }));
+
     try {
-      const { data, error } = await supabase
-        .rpc('get_cache_stats');
+      const results = await enhancedIGDBService.getPopularGames({
+        cacheTTL: options.ttl || 7200, // 2 hours for popular games
+        staleWhileRevalidate: options.staleWhileRevalidate,
+        forceRefresh: options.forceRefresh || false,
+      });
 
-      if (error) {
-        console.error('Error getting cache stats:', error);
-        return this.getDefaultStats();
-      }
-
-      // Process the returned data
-      const stats = data?.reduce((acc: any, row: any) => {
-        acc[row.table_name] = {
-          entries: row.total_entries,
-          size: row.cache_size_mb,
-          hitRate: row.hit_rate
-        };
-        return acc;
-      }, {}) || {};
-
-      return {
-        igdbCache: stats.igdb_cache?.entries || 0,
-        gamesCache: stats.games_cache?.entries || 0,
-        searchCache: stats.search_cache?.entries || 0,
-        totalSize: Object.values(stats).reduce((sum: number, stat: any) => sum + (stat.size || 0), 0),
-        hitRate: this.calculateOverallHitRate(stats)
-      };
+      setState({
+        data: results || [],
+        loading: false,
+        error: null,
+        cached: true,
+        timestamp: new Date(),
+        expiresAt: new Date(Date.now() + (options.ttl || 7200) * 1000),
+      });
     } catch (error) {
-      console.error('Error fetching cache stats:', error);
-      return this.getDefaultStats();
+      const err = error as Error;
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: err,
+        data: [],
+      }));
+      options.onError?.(err);
     }
-  }
+  }, [options.ttl, options.staleWhileRevalidate, options.onError, options.forceRefresh]);
 
-  /**
-   * Clear all caches
-   */
-  async clearCache(): Promise<void> {
+  const refetch = useCallback(() => {
+    fetchPopular();
+  }, [fetchPopular]);
+
+  const forceRefresh = useCallback(() => {
+    setState(prev => ({ ...prev, loading: true, error: null }));
+    enhancedIGDBService.getPopularGames({
+      cacheTTL: options.ttl || 7200,
+      forceRefresh: true,
+    }).then(results => {
+      setState({
+        data: results || [],
+        loading: false,
+        error: null,
+        cached: false,
+        timestamp: new Date(),
+        expiresAt: new Date(Date.now() + (options.ttl || 7200) * 1000),
+      });
+    }).catch(error => {
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: error as Error,
+        data: [],
+      }));
+      options.onError?.(error);
+    });
+  }, [options.ttl, options.onError]);
+
+  useEffect(() => {
+    if (options.enabled !== false) {
+      fetchPopular();
+    }
+  }, [fetchPopular, options.enabled]);
+
+  return {
+    ...state,
+    refetch,
+    forceRefresh,
+    isStale: state.expiresAt ? new Date() > state.expiresAt : false,
+  };
+}
+
+// Hook for cache management and statistics
+export function useCacheManagement() {
+  const [stats, setStats] = useState<CacheStats>({
+    igdbCache: 0,
+    gamesCache: 0,
+    searchCache: 0,
+    totalSize: 0,
+    hitRate: 0,
+  });
+
+  const [health, setHealth] = useState<HealthStatus>({
+    browserCache: false,
+    databaseCache: false,
+    edgeFunction: false,
+    overall: false,
+  });
+
+  const [performance, setPerformance] = useState<PerformanceMetrics>({
+    browserCacheSize: 0,
+    browserCacheKeys: 0,
+    averageResponseTime: 0,
+  });
+
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+
+  const refreshStats = useCallback(async () => {
     try {
-      // Clear browser cache
-      browserCache.clear();
+      const newStats = await enhancedIGDBService.getCacheStats();
+      setStats(newStats);
+    } catch (error) {
+      console.error('Error refreshing cache stats:', error);
+      // Fallback to default stats
+      setStats({
+        igdbCache: 0,
+        gamesCache: 0,
+        searchCache: 0,
+        totalSize: 0,
+        hitRate: 0,
+      });
+    }
+  }, []);
 
-      // Clear database cache via direct Supabase calls
-      await Promise.all([
-        supabase.from('igdb_cache').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-        supabase.from('games_cache').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
-        supabase.from('search_cache').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-      ]);
+  const checkHealth = useCallback(async () => {
+    try {
+      const healthStatus = await enhancedIGDBService.healthCheck();
+      setHealth(healthStatus);
+    } catch (error) {
+      console.error('Error checking cache health:', error);
+      setHealth({
+        browserCache: false,
+        databaseCache: false,
+        edgeFunction: false,
+        overall: false,
+      });
+    }
+  }, []);
 
-      console.log('🗑️ All caches cleared');
+  const updatePerformance = useCallback(() => {
+    try {
+      const metrics = enhancedIGDBService.getPerformanceMetrics();
+      setPerformance(metrics);
+    } catch (error) {
+      console.error('Error getting performance metrics:', error);
+      setPerformance({
+        browserCacheSize: 0,
+        browserCacheKeys: 0,
+        averageResponseTime: 0,
+      });
+    }
+  }, []);
+
+  const clearCache = useCallback(async () => {
+    try {
+      await enhancedIGDBService.clearCache();
+      await refreshStats();
+      updatePerformance();
     } catch (error) {
       console.error('Error clearing cache:', error);
       throw error;
     }
-  }
+  }, [refreshStats, updatePerformance]);
 
-  /**
-   * Clear expired cache entries
-   */
-  async clearExpiredCache(): Promise<void> {
+  const clearExpiredCache = useCallback(async () => {
+    try {
+      await enhancedIGDBService.clearExpiredCache();
+      await refreshStats();
+    } catch (error) {
+      console.error('Error clearing expired cache:', error);
+      throw error;
+    }
+  }, [refreshStats]);
+
+  const getRecentActivity = useCallback(async () => {
     try {
       const { data, error } = await supabase
-        .rpc('cleanup_expired_cache');
+        .from('recent_cache_activity')
+        .select('*')
+        .order('last_accessed', { ascending: false })
+        .limit(50);
 
       if (error) {
-        console.error('Error clearing expired cache:', error);
-        throw error;
+        console.error('Error fetching recent activity:', error);
+        return;
       }
 
-      console.log('🧹 Expired cache cleared:', data);
+      setRecentActivity(data || []);
     } catch (error) {
-      console.error('Error in clearExpiredCache:', error);
-      throw error;
+      console.error('Error in getRecentActivity:', error);
     }
-  }
+  }, []);
 
-  /**
-   * Health check for the caching system
-   */
-  async healthCheck(): Promise<HealthStatus> {
-    const health: HealthStatus = {
-      browserCache: false,
-      databaseCache: false,
-      edgeFunction: false,
-      overall: false
+  // Auto-refresh stats periodically
+  useEffect(() => {
+    refreshStats();
+    checkHealth();
+    updatePerformance();
+    getRecentActivity();
+
+    // Set up periodic refresh
+    const statsInterval = setInterval(() => {
+      refreshStats();
+      updatePerformance();
+    }, 30000); // Every 30 seconds
+
+    // Health check every 5 minutes
+    const healthInterval = setInterval(checkHealth, 5 * 60 * 1000);
+
+    // Activity refresh every 2 minutes
+    const activityInterval = setInterval(getRecentActivity, 2 * 60 * 1000);
+
+    return () => {
+      clearInterval(statsInterval);
+      clearInterval(healthInterval);
+      clearInterval(activityInterval);
     };
+  }, [refreshStats, checkHealth, updatePerformance, getRecentActivity]);
 
-    try {
-      // Test browser cache
-      const testKey = 'health_check_test';
-      const testData = { test: true, timestamp: Date.now() };
-      browserCache.set(testKey, testData, 1);
-      const retrieved = browserCache.get(testKey);
-      health.browserCache = retrieved && retrieved.test === true;
-      browserCache.delete(testKey);
-
-      // Test database cache by checking if we can query cache stats
-      try {
-        await this.getCacheStats();
-        health.databaseCache = true;
-      } catch (error) {
-        console.warn('Database cache health check failed:', error);
-        health.databaseCache = false;
-      }
-
-      // Test edge function with a minimal request
-      try {
-        const response = await this.callEdgeFunction({
-          endpoint: 'games',
-          searchTerm: 'test',
-          filters: { limit: 1 },
-          ttl: 1
-        });
-        health.edgeFunction = true;
-      } catch (error) {
-        console.warn('Edge function health check failed:', error);
-        health.edgeFunction = false;
-      }
-
-    } catch (error) {
-      console.error('Health check error:', error);
-    }
-
-    health.overall = health.browserCache && health.databaseCache && health.edgeFunction;
-    
-    if (import.meta.env.DEV) {
-      console.log('🏥 Cache health check:', health);
-    }
-
-    return health;
-  }
-
-  /**
-   * Get cache performance metrics
-   */
-  getPerformanceMetrics(): PerformanceMetrics {
-    return {
-      browserCacheSize: browserCache.size(),
-      browserCacheKeys: browserCache.keys ? browserCache.keys().length : 0,
-      averageResponseTime: 0 // Would need to implement timing tracking
-    };
-  }
-
-  // Private helper methods
-
-  private async callEdgeFunction(params: any): Promise<CachedResponse> {
-    const response = await fetch(this.edgeFunctionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-      },
-      body: JSON.stringify(params)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Edge function error: ${response.status} ${errorText}`);
-    }
-
-    const result = await response.json();
-    
-    return {
-      data: result.data,
-      cached: result.cached,
-      timestamp: new Date(result.timestamp),
-      expiresAt: new Date(Date.now() + (params.ttl || 3600) * 1000),
-      cacheKey: result.cacheKey
-    };
-  }
-
-  private async refreshGameInBackground(gameId: number, options: RequestOptions): Promise<void> {
-    setTimeout(() => {
-      this.getGame(gameId, { ...options, forceRefresh: true })
-        .catch(error => console.warn('Background refresh failed:', error));
-    }, 100);
-  }
-
-  private async refreshSearchInBackground(searchTerm: string, filters: any, options: RequestOptions): Promise<void> {
-    setTimeout(() => {
-      this.searchGames(searchTerm, filters, { ...options, forceRefresh: true })
-        .catch(error => console.warn('Background refresh failed:', error));
-    }, 100);
-  }
-
-  private async refreshPopularInBackground(options: RequestOptions): Promise<void> {
-    setTimeout(() => {
-      this.getPopularGames({ ...options, forceRefresh: true })
-        .catch(error => console.warn('Background refresh failed:', error));
-    }, 100);
-  }
-
-  private getDefaultStats(): CacheStats {
-    return {
-      igdbCache: 0,
-      gamesCache: 0,
-      searchCache: 0,
-      totalSize: 0,
-      hitRate: 0
-    };
-  }
-
-  private calculateOverallHitRate(stats: any): number {
-    const hitRates = Object.values(stats)
-      .map((stat: any) => stat.hitRate || 0)
-      .filter(rate => rate > 0);
-    
-    return hitRates.length > 0 
-      ? hitRates.reduce((sum: number, rate: number) => sum + rate, 0) / hitRates.length 
-      : 0;
-  }
-
-  /**
-   * Warm up cache with essential data
-   */
-  async warmUpCache(): Promise<void> {
-    console.log('🔥 Warming up cache...');
-    
-    try {
-      // Prefetch popular games
-      await this.getPopularGames({ forceRefresh: false });
-      
-      console.log('✅ Cache warmed up successfully');
-    } catch (error) {
-      console.error('Error warming up cache:', error);
-    }
-  }
-
-  /**
-   * Get comprehensive cache statistics with browser cache info
-   */
-  async getCacheStatistics(): Promise<any> {
-    try {
-      const [dbStats, browserStats] = await Promise.all([
-        this.getCacheStats(),
-        Promise.resolve(this.getPerformanceMetrics())
-      ]);
-
-      return {
-        database: dbStats,
-        browser: browserStats,
-        total: {
-          items: dbStats.igdbCache + dbStats.gamesCache + dbStats.searchCache + browserStats.browserCacheKeys,
-          size: dbStats.totalSize,
-        }
-      };
-    } catch (error) {
-      console.error('Error getting cache statistics:', error);
-      return null;
-    }
-  }
+  return {
+    stats,
+    health,
+    performance,
+    recentActivity,
+    refreshStats,
+    clearCache,
+    clearExpiredCache,
+    checkHealth,
+    getRecentActivity,
+  };
 }
 
-// Export singleton instance
-export const enhancedIGDBService = new EnhancedIGDBService(); {
-          this.refreshGameInBackground(gameId, opts);
-        }
-        
-        return browserCached;
-      }
+// Hook for cache debugging and development
+export function useCacheDebug() {
+  const [debugInfo, setDebugInfo] = useState<any>({
+    operations: [],
+    overview: null,
+    settings: {
+      logLevel: 'info',
+      enableConsoleLogging: import.meta.env.DEV,
+      maxOperations: 100,
     }
+  });
+  
+  const [isEnabled, setIsEnabled] = useState(import.meta.env.DEV);
 
-    // Level 2: Check database cache via edge function
+  const logCacheOperation = useCallback((operation: string, key: string, data?: any) => {
+    if (!isEnabled) return;
+
+    const timestamp = new Date().toISOString();
+    const entry = {
+      id: Date.now() + Math.random(),
+      timestamp,
+      operation,
+      key,
+      data: data ? JSON.stringify(data).substring(0, 100) + '...' : null,
+      dataSize: data ? JSON.stringify(data).length : 0,
+    };
+
+    setDebugInfo((prev: any) => ({
+      ...prev,
+      operations: [...(prev.operations || []).slice(-(prev.settings?.maxOperations || 100) + 1), entry]
+    }));
+
+    if (debugInfo.settings?.enableConsoleLogging) {
+      console.log(`[Cache Debug] ${operation}:`, key, data);
+    }
+  }, [isEnabled, debugInfo.settings]);
+
+  const getCacheOverview = useCallback(async () => {
+    if (!isEnabled) return;
+
     try {
-      const response = await this.callEdgeFunction({
-        endpoint: 'games',
-        gameId,
-        forceRefresh: opts.forceRefresh,
-        ttl: opts.cacheTTL
-      });
+      const { data, error } = await supabase
+        .from('cache_overview')
+        .select('*');
 
-      if (response.data) {
-        // Store in browser cache for faster subsequent access
-        if (opts.useCache) {
-          browserCache.set(browserCacheKey, response.data, opts.browserCacheTTL);
-        }
-
-        console.log(
-          response.cached 
-            ? '💾 Cache hit: Database cache (game)' 
-            : '🌐 Fresh fetch: IGDB API (game)', 
-          gameId
-        );
-        
-        return response.data;
+      if (error) {
+        console.error('Error fetching cache overview:', error);
+        return;
       }
+
+      setDebugInfo((prev: any) => ({
+        ...prev,
+        overview: data
+      }));
     } catch (error) {
-      console.error('Error fetching game:', error);
-      
-      // Return stale browser cache if available on error
-      const staleCache = browserCache.get(browserCacheKey);
-      if (staleCache) {
-        console.log('⚠️ Returning stale cache due to error');
-        return staleCache;
-      }
-      
-      throw error;
+      console.error('Error in getCacheOverview:', error);
     }
+  }, [isEnabled]);
 
-    return null;
-  }
+  const clearDebugLogs = useCallback(() => {
+    setDebugInfo((prev: any) => ({
+      ...prev,
+      operations: []
+    }));
+  }, []);
 
-  /**
-   * Search games with multi-level caching
-   */
-  async searchGames(
-    searchTerm: string, 
-    filters: any = {}, 
-    options: RequestOptions = {}
-  ): Promise<any[]> {
-    const opts = { ...this.defaultOptions, ...options };
-    const browserCacheKey = `search:${searchTerm}:${JSON.stringify(filters)}`;
+  const updateSettings = useCallback((newSettings: Partial<any>) => {
+    setDebugInfo((prev: any) => ({
+      ...prev,
+      settings: { ...prev.settings, ...newSettings }
+    }));
+  }, []);
 
-    // Level 1: Check browser cache first
-    if (opts.useCache && !opts.forceRefresh) {
-      const browserCached = browserCache.get(browserCacheKey);
-      if (browserCached) {
-        console.log('🚀 Cache hit: Browser cache (search)', searchTerm);
-        
-        // Optionally refresh in background if stale
-        if (opts.staleWhileRevalidate) {
-          this.refreshSearchInBackground(searchTerm, filters, opts);
-        }
-        
-        return browserCached;
-      }
+  const exportDebugData = useCallback(() => {
+    const exportData = {
+      ...debugInfo,
+      exportTimestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      url: window.location.href,
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: 'application/json'
+    });
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cache-debug-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [debugInfo]);
+
+  useEffect(() => {
+    if (isEnabled) {
+      getCacheOverview();
+      // Refresh overview every 5 minutes
+      const interval = setInterval(getCacheOverview, 5 * 60 * 1000);
+      return () => clearInterval(interval);
     }
+  }, [isEnabled, getCacheOverview]);
 
-    // Level 2: Check database cache and fetch if needed
+  return {
+    debugInfo,
+    isEnabled,
+    setIsEnabled,
+    logCacheOperation,
+    getCacheOverview,
+    clearDebugLogs,
+    updateSettings,
+    exportDebugData,
+  };
+}
+
+// Generic hook for IGDB endpoints with enhanced error handling
+export function useIGDBEndpoint<T = any>(
+  endpointConfig: {
+    type: 'search' | 'game' | 'popular' | 'custom';
+    gameId?: number;
+    searchTerm?: string;
+    filters?: any;
+    customParams?: any;
+  },
+  options: UseIGDBCacheOptions = {}
+) {
+  const [state, setState] = useState<UseIGDBCacheState<T>>({
+    data: null,
+    loading: false,
+    error: null,
+    cached: false,
+    timestamp: null,
+    expiresAt: null,
+  });
+
+  const fetchData = useCallback(async () => {
+    setState(prev => ({ ...prev, loading: true, error: null }));
+
     try {
-      const response = await this.callEdgeFunction({
-        endpoint: 'games',
-        searchTerm,
-        filters,
-        forceRefresh: opts.forceRefresh,
-        ttl: opts.cacheTTL || 1800 // 30 minutes for search results
+      let result: any;
+
+      switch (endpointConfig.type) {
+        case 'game':
+          if (!endpointConfig.gameId) {
+            throw new Error('Game ID is required for game endpoint');
+          }
+          result = await enhancedIGDBService.getGame(endpointConfig.gameId, {
+            cacheTTL: options.ttl || 3600,
+            staleWhileRevalidate: options.staleWhileRevalidate,
+            forceRefresh: options.forceRefresh || false,
+          });
+          break;
+
+        case 'search':
+          if (!endpointConfig.searchTerm) {
+            throw new Error('Search term is required for search endpoint');
+          }
+          result = await enhancedIGDBService.searchGames(
+            endpointConfig.searchTerm,
+            endpointConfig.filters || {},
+            {
+              cacheTTL: options.ttl || 1800,
+              staleWhileRevalidate: options.staleWhileRevalidate,
+              forceRefresh: options.forceRefresh || false,
+            }
+          );
+          break;
+
+        case 'popular':
+          result = await enhancedIGDBService.getPopularGames({
+            cacheTTL: options.ttl || 7200,
+            staleWhileRevalidate: options.staleWhileRevalidate,
+            forceRefresh: options.forceRefresh || false,
+          });
+          break;
+
+        case 'custom':
+          // For custom endpoints, you'd need to implement this in enhancedIGDBService
+          throw new Error('Custom endpoints not yet implemented');
+
+        default:
+          throw new Error(`Unknown endpoint type: ${endpointConfig.type}`);
+      }
+
+      setState({
+        data: result,
+        loading: false,
+        error: null,
+        cached: true, // Enhanced service handles cache detection
+        timestamp: new Date(),
+        expiresAt: new Date(Date.now() + (options.ttl || 3600) * 1000),
       });
-
-      if (response.data) {
-        // Store in browser cache
-        if (opts.useCache) {
-          browserCache.set(browserCacheKey, response.data, opts.browserCacheTTL);
-        }
-
-        console.log(
-          response.cached 
-            ? '💾 Cache hit: Database cache (search)' 
-            : '🌐 Fresh fetch: IGDB API (search)', 
-          searchTerm
-        );
-        
-        return response.data;
-      }
     } catch (error) {
-      console.error('Error searching games:', error);
-      
-      // Return stale cache if available
-      const staleCache = browserCache.get(browserCacheKey);
-      if (staleCache) {
-        console.log('⚠️ Returning stale search cache due to error');
-        return staleCache;
-      }
-      
-      throw error;
+      const err = error as Error;
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: err,
+      }));
+      options.onError?.(err);
     }
+  }, [endpointConfig, options.ttl, options.staleWhileRevalidate, options.onError, options.forceRefresh]);
 
-    return [];
-  }
+  const refetch = useCallback(() => fetchData(), [fetchData]);
 
-  /**
-   * Get popular games with caching
-   */
-  async getPopularGames(options: RequestOptions = {}): Promise<any[]> {
-    const opts = { ...this.defaultOptions, ...options };
-    const browserCacheKey = 'popular_games';
+  const forceRefresh = useCallback(() => {
+    setState(prev => ({ ...prev, loading: true, error: null }));
+    
+    // Update options to force refresh
+    const refreshOptions = { ...options, forceRefresh: true };
+    
+    // Re-run fetchData with force refresh
+    fetchData();
+  }, [fetchData]);
 
-    // Check browser cache first
-    if (opts.useCache && !opts.forceRefresh) {
-      const browserCached = browserCache.get(browserCacheKey);
-      if (browserCached) {
-        console.log('🚀 Cache hit: Browser cache (popular)');
-        
-        if (opts.staleWhileRevalidate)
+  useEffect(() => {
+    if (options.enabled !== false) {
+      fetchData();
+    }
+  }, [fetchData, options.enabled]);
+
+  return {
+    ...state,
+    refetch,
+    forceRefresh,
+    isStale: state.expiresAt ? new Date() > state.expiresAt : false,
+  };
+}
+
+// Utility hook for prefetching
+export function usePrefetch() {
+  const prefetchGame = useCallback(async (gameId: number) => {
+    try {
+      await enhancedIGDBService.prefetchGame(gameId);
+    } catch (error) {
+      console.warn('Prefetch failed for game:', gameId, error);
+    }
+  }, []);
+
+  const prefetchSearch = useCallback(async (searchTerm: string, filters: any = {}) => {
+    try {
+      await enhancedIGDBService.searchGames(searchTerm, filters, {
+        cacheTTL: 1800,
+        staleWhileRevalidate: true,
+      });
+    } catch (error) {
+      console.warn('Prefetch failed for search:', searchTerm, error);
+    }
+  }, []);
+
+  const prefetchPopular = useCallback(async () => {
+    try {
+      await enhancedIGDBService.getPopularGames({
+        cacheTTL: 7200,
+        staleWhileRevalidate: true,
+      });
+    } catch (error) {
+      console.warn('Prefetch failed for popular games:', error);
+    }
+  }, []);
+
+  return {
+    prefetchGame,
+    prefetchSearch,
+    prefetchPopular,
+  };
+}
+
+// Hook for cache warming and initialization
+export function useCacheInitialization() {
+  const [isWarming, setIsWarming] = useState(false);
+  const [warmupComplete, setWarmupComplete] = useState(false);
+
+  const warmUpCache = useCallback(async () => {
+    setIsWarming(true);
+    try {
+      await enhancedIGDBService.warmUpCache();
+      setWarmupComplete(true);
+    } catch (error) {
+      console.error('Cache warmup failed:', error);
+    } finally {
+      setIsWarming(false);
+    }
+  }, []);
+
+  const resetWarmup = useCallback(() => {
+    setWarmupComplete(false);
+  }, []);
+
+  return {
+    isWarming,
+    warmupComplete,
+    warmUpCache,
+    resetWarmup,
+  };
+}
