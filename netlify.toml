@@ -1,37 +1,193 @@
 [build]
-  command = "npm ci && npm run build"
-  publish = "dist"
+command = "npm ci && npm run build"
+publish = "dist"
+
 [build.environment]
-  NODE_VERSION = "18"
-  NPM_FLAGS = "--production=false"
+NODE_VERSION = "18"
+NPM_FLAGS = "--production=false"
+
 [functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
+directory = "netlify/functions"
+node_bundler = "esbuild"
+
+# API caching headers for IGDB proxy endpoints
+[[headers]]
+for = "/api/igdb/*"
+[headers.values]
+Cache-Control = "public, max-age=300, s-maxage=600, stale-while-revalidate=3600"
+Vary = "Accept-Encoding, Authorization"
+X-Cache-Status = "MISS"
+
+# Cache for game data endpoints (longer cache since game data is more stable)
+[[headers]]
+for = "/api/games/*"
+[headers.values]
+Cache-Control = "public, max-age=1800, s-maxage=3600, stale-while-revalidate=7200"
+Vary = "Accept-Encoding"
+
+# Cache for search endpoints (shorter cache since search results change frequently)
+[[headers]]
+for = "/api/search/*"
+[headers.values]
+Cache-Control = "public, max-age=300, s-maxage=600, stale-while-revalidate=1800"
+Vary = "Accept-Encoding"
+
+# Cache for popular/trending endpoints
+[[headers]]
+for = "/api/popular/*"
+[headers.values]
+Cache-Control = "public, max-age=900, s-maxage=1800, stale-while-revalidate=3600"
+Vary = "Accept-Encoding"
+
+# Cache for static game assets (covers, screenshots)
+[[headers]]
+for = "/api/images/*"
+[headers.values]
+Cache-Control = "public, max-age=86400, s-maxage=172800, immutable"
+Vary = "Accept-Encoding"
+
+# Existing asset caching (keep your current settings)
+[[headers]]
+for = "/assets/*"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/*.js"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/*.css"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/manifest.json"
+[headers.values]
+Cache-Control = "public, max-age=86400"
+
+# Cache for service worker
+[[headers]]
+for = "/sw.js"
+[headers.values]
+Cache-Control = "public, max-age=0, must-revalidate"
+
+# Cache for PWA icons and assets
+[[headers]]
+for = "/icons/*"
+[headers.values]
+Cache-Control = "public, max-age=604800"
+
+# Enhanced security headers (keep your current settings plus additions)
+[[headers]]
+for = "/*"
+[headers.values]
+X-Frame-Options = "DENY"
+X-XSS-Protection = "1; mode=block"
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "strict-origin-when-cross-origin"
+Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+# Additional security headers for API endpoints
+Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+X-Robots-Tag = "noindex, nofollow"
+
+# CORS headers for API endpoints
+[[headers]]
+for = "/api/*"
+[headers.values]
+Access-Control-Allow-Origin = "*"
+Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+Access-Control-Allow-Headers = "Content-Type, Authorization, X-Requested-With"
+Access-Control-Max-Age = "86400"
+
+# Redirect API calls to your Supabase Edge Functions or Netlify Functions
+# Update these URLs to match your actual Supabase project URL
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+from = "/api/igdb-proxy"
+to = "https://your-supabase-project.supabase.co/functions/v1/igdb-proxy"
+status = 200
+force = true
+headers = {Cache-Control = "public, max-age=300"}
+
+[[redirects]]
+from = "/api/games/:id"
+to = "https://your-supabase-project.supabase.co/functions/v1/games/:id"
+status = 200
+force = true
+headers = {Cache-Control = "public, max-age=1800"}
+
+[[redirects]]
+from = "/api/search"
+to = "https://your-supabase-project.supabase.co/functions/v1/search"
+status = 200
+force = true
+headers = {Cache-Control = "public, max-age=300"}
+
+[[redirects]]
+from = "/api/popular"
+to = "https://your-supabase-project.supabase.co/functions/v1/popular"
+status = 200
+force = true
+headers = {Cache-Control = "public, max-age=900"}
+
+[[redirects]]
+from = "/api/cache-stats"
+to = "https://your-supabase-project.supabase.co/functions/v1/cache-stats"
+status = 200
+force = true
+headers = {Cache-Control = "no-cache"}
+
+# Alternative: If you're using Netlify Functions instead of Supabase Edge Functions
+# [[redirects]]
+# from = "/api/igdb-proxy"
+# to = "/.netlify/functions/igdb-proxy"
+# status = 200
+
+# [[redirects]]
+# from = "/api/games/:id"
+# to = "/.netlify/functions/games"
+# status = 200
+
+# [[redirects]]
+# from = "/api/search"
+# to = "/.netlify/functions/search"
+# status = 200
+
+# Cache preload for critical resources
 [[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+for = "/index.html"
+[headers.values]
+Cache-Control = "public, max-age=0, must-revalidate"
+Link = "</assets/main.css>; rel=preload; as=style, </assets/main.js>; rel=preload; as=script"
+
+# Edge-side includes for dynamic content caching
 [[headers]]
-  for = "/*.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+for = "/games/*"
+[headers.values]
+Cache-Control = "public, max-age=300, s-maxage=600"
+Vary = "Accept-Encoding, Cookie"
+
 [[headers]]
-  for = "/*.css"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-[[headers]]
-  for = "/manifest.json"
-  [headers.values]
-    Cache-Control = "public, max-age=86400"
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+for = "/user/*"
+[headers.values]
+Cache-Control = "private, no-cache, no-store, must-revalidate"
+
+# SPA fallback (keep this last to avoid conflicts)
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+
+# Environment-specific configurations
+[context.production.environment]
+NODE_ENV = "production"
+NETLIFY_CACHE_CONTROL = "public, max-age=300"
+
+[context.deploy-preview.environment]
+NODE_ENV = "development"
+NETLIFY_CACHE_CONTROL = "no-cache"
+
+[context.branch-deploy.environment]
+NODE_ENV = "development"
+NETLIFY_CACHE_CONTROL = "no-cache"
