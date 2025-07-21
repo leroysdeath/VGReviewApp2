@@ -81,22 +81,31 @@ class AuthService {
 
   async updateProfile(updates: { username?: string; avatar?: string }): Promise<{ error: any }> {
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: updates
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { error: 'No user found' };
+
+      // Update auth metadata
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          username: updates.username,
+          avatar_url: updates.avatar,
+          name: updates.username || user.user_metadata?.username
+        }
       });
 
-      if (!error && updates.username) {
-        // Update user profile in our database
-        const user = await this.getCurrentUser();
-        if (user) {
-          await supabase
-            .from('user')
-            .update({ name: updates.username })
-            .eq('provider_id', user.id);
-        }
-      }
+      if (authError) return { error: authError };
 
-      return { error };
+      // Update user profile in database
+      const { error: profileError } = await supabase
+        .from('user')
+        .update({
+          name: updates.username || user.user_metadata?.username,
+          picurl: updates.avatar,
+          updated_at: new Date().toISOString()
+        })
+        .eq('provider_id', user.id);
+
+      return { error: profileError };
     } catch (error) {
       return { error };
     }
@@ -113,24 +122,94 @@ class AuthService {
     }
   }
 
+  async updatePassword(newPassword: string): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  }
+
+  async signInWithProvider(provider: 'google' | 'github' | 'discord'): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  }
+
+  // Listen to auth state changes
+  onAuthStateChange(callback: (event: string, session: Session | null) => void) {
+    return supabase.auth.onAuthStateChange(callback);
+  }
+
+  // Create user profile in database after successful signup
   private async createUserProfile(user: User, username: string): Promise<void> {
     try {
-      await supabase
+      const { error } = await supabase
         .from('user')
         .insert({
           provider: 'supabase',
           provider_id: user.id,
           email: user.email || '',
           name: username,
-          picurl: user.user_metadata?.avatar_url || null
+          picurl: user.user_metadata?.avatar_url,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         });
+
+      if (error) {
+        console.error('Error creating user profile:', error);
+      }
     } catch (error) {
-      console.error('Failed to create user profile:', error);
+      console.error('Error creating user profile:', error);
     }
   }
 
-  onAuthStateChange(callback: (event: string, session: Session | null) => void) {
-    return supabase.auth.onAuthStateChange(callback);
+  // Get user profile from database
+  async getUserProfile(userId: string): Promise<{ data: any; error: any }> {
+    try {
+      const { data, error } = await supabase
+        .from('user')
+        .select('*')
+        .eq('provider_id', userId)
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  }
+
+  // Delete user account
+  async deleteAccount(): Promise<{ error: any }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { error: 'No user found' };
+
+      // Delete user profile from database first
+      await supabase
+        .from('user')
+        .delete()
+        .eq('provider_id', user.id);
+
+      // Note: Supabase doesn't provide a direct way to delete auth users from client
+      // You would need to implement this via an Edge Function or handle it server-side
+      // For now, we'll just sign out the user
+      const { error } = await supabase.auth.signOut();
+      return { error };
+    } catch (error) {
+      return { error };
+    }
   }
 }
 
