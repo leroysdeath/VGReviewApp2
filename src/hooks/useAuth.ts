@@ -74,8 +74,35 @@ export const useAuth = () => {
   const updateProfile = async (updates: { username?: string; avatar?: string }) => {
     const result = await authService.updateProfile(updates);
     if (!result.error && user) {
-      setUser({ ...user, ...updates });
+      setUser({ ...user, name: updates.username || user.name, avatar: updates.avatar || user.avatar });
     }
+    return result;
+  };
+
+  const resetPassword = async (email: string) => {
+    return await authService.resetPassword(email);
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    return await authService.updatePassword(newPassword);
+  };
+
+  const signInWithProvider = async (provider: 'google' | 'github' | 'discord') => {
+    return await authService.signInWithProvider(provider);
+  };
+
+  const getUserProfile = async (userId: string) => {
+    return await authService.getUserProfile(userId);
+  };
+
+  const deleteAccount = async () => {
+    setLoading(true);
+    const result = await authService.deleteAccount();
+    if (!result.error) {
+      setUser(null);
+      setSession(null);
+    }
+    setLoading(false);
     return result;
   };
 
@@ -87,6 +114,11 @@ export const useAuth = () => {
     signIn,
     signOut,
     updateProfile,
+    resetPassword,
+    updatePassword,
+    signInWithProvider,
+    getUserProfile,
+    deleteAccount,
     isAuthenticated: !!user
   };
 };
