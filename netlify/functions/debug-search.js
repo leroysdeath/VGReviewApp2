@@ -1,5 +1,5 @@
-// netlify/functions/debug-search.js - Create this to debug your search issues
-exports.handler = async (event, context) => {
+// netlify/functions/debug-search.js
+export const handler = async (event, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -25,7 +25,7 @@ exports.handler = async (event, context) => {
 
   // Try to extract query from all possible sources
   let possibleQueries = {};
-  
+
   if (event.queryStringParameters) {
     Object.keys(event.queryStringParameters).forEach(key => {
       possibleQueries[key] = event.queryStringParameters[key];
@@ -50,7 +50,7 @@ exports.handler = async (event, context) => {
       message: 'Debug information collected',
       debugInfo,
       possibleQueries,
-      recommendation: Object.keys(possibleQueries).length === 0 
+      recommendation: Object.keys(possibleQueries).length === 0
         ? 'No query parameters found - check your frontend implementation'
         : `Found parameters: ${Object.keys(possibleQueries).join(', ')}`
     }, null, 2)
