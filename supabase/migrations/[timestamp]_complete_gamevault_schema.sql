@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
   language VARCHAR(10) DEFAULT 'en',
   email_notifications BOOLEAN DEFAULT TRUE,
   push_notifications BOOLEAN DEFAULT TRUE,
-  privacy_level VARCHAR(20) DEFAULT 'public', -- public, friends, private
+  privacy_level VARCHAR(20) DEFAULT 'public',
   show_email BOOLEAN DEFAULT FALSE,
   show_real_name BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -60,10 +60,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
   user_agent TEXT,
   is_active BOOLEAN DEFAULT TRUE,
   expires_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  INDEX(user_id, is_active),
-  INDEX(session_token)
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- =====================================================
@@ -79,17 +76,14 @@ CREATE TABLE IF NOT EXISTS platform (
   logo_url TEXT,
   website_url TEXT,
   is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  INDEX(slug),
-  INDEX(is_active)
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Games table with IGDB integration
 CREATE TABLE IF NOT EXISTS game (
   id SERIAL PRIMARY KEY,
-  game_id VARCHAR(255) NOT NULL UNIQUE, -- IGDB ID or custom ID
-  igdb_id INTEGER UNIQUE, -- IGDB specific ID
+  game_id VARCHAR(255) NOT NULL UNIQUE,
+  igdb_id INTEGER UNIQUE,
   name VARCHAR(500) NOT NULL,
   slug VARCHAR(500),
   release_date DATE,
@@ -97,32 +91,23 @@ CREATE TABLE IF NOT EXISTS game (
   summary TEXT,
   pic_url TEXT,
   cover_url TEXT,
-  screenshots TEXT[], -- Array of screenshot URLs
+  screenshots TEXT[],
   developer VARCHAR(255),
   publisher VARCHAR(255),
   igdb_link TEXT,
   genre VARCHAR(255),
-  genres TEXT[], -- Array of genre names
-  platforms TEXT[], -- Array of platform names
-  igdb_rating INTEGER, -- IGDB rating (0-100)
+  genres TEXT[],
+  platforms TEXT[],
+  igdb_rating INTEGER,
   metacritic_score INTEGER,
   esrb_rating VARCHAR(10),
   steam_id INTEGER,
   gog_id VARCHAR(50),
   epic_id VARCHAR(50),
-  is_verified BOOLEAN DEFAULT FALSE, -- Manually verified games
+  is_verified BOOLEAN DEFAULT FALSE,
   view_count INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  -- Indexes for performance
-  INDEX(igdb_id),
-  INDEX(name),
-  INDEX(slug),
-  INDEX(release_date),
-  INDEX(is_verified),
-  INDEX gin(genres), -- GIN index for array search
-  INDEX gin(platforms) -- GIN index for array search
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Platform-Game relationship table
@@ -135,9 +120,7 @@ CREATE TABLE IF NOT EXISTS platform_games (
   price DECIMAL(10,2),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   
-  UNIQUE(game_id, platform_id),
-  INDEX(game_id),
-  INDEX(platform_id)
+  UNIQUE(game_id, platform_id)
 );
 
 -- =====================================================
@@ -154,7 +137,7 @@ CREATE TABLE IF NOT EXISTS rating (
   is_spoiler BOOLEAN DEFAULT FALSE,
   playtime_hours INTEGER,
   platform_id INTEGER REFERENCES platform(id),
-  completion_status VARCHAR(20) DEFAULT 'not_started', -- not_started, playing, completed, abandoned
+  completion_status VARCHAR(20) DEFAULT 'not_started',
   is_recommended BOOLEAN,
   difficulty_rating INTEGER CHECK (difficulty_rating >= 1 AND difficulty_rating <= 5),
   replay_value INTEGER CHECK (replay_value >= 1 AND replay_value <= 5),
@@ -165,13 +148,7 @@ CREATE TABLE IF NOT EXISTS rating (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   
-  -- Constraints
-  UNIQUE(user_id, game_id),
-  INDEX(game_id, is_published),
-  INDEX(user_id),
-  INDEX(rating),
-  INDEX(post_date_time),
-  INDEX(like_count)
+  UNIQUE(user_id, game_id)
 );
 
 -- Comments on reviews
@@ -187,12 +164,7 @@ CREATE TABLE IF NOT EXISTS comment (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   
-  -- Constraints
-  CHECK (char_length(content) >= 1 AND char_length(content) <= 2000),
-  INDEX(rating_id, is_published),
-  INDEX(user_id),
-  INDEX(parent_comment_id),
-  INDEX(created_at)
+  CHECK (char_length(content) >= 1 AND char_length(content) <= 2000)
 );
 
 -- Likes on comments and reviews
@@ -201,16 +173,12 @@ CREATE TABLE IF NOT EXISTS content_like (
   user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
   rating_id INTEGER REFERENCES rating(id) ON DELETE CASCADE,
   comment_id INTEGER REFERENCES comment(id) ON DELETE CASCADE,
-  is_like BOOLEAN NOT NULL DEFAULT TRUE, -- TRUE for like, FALSE for dislike
+  is_like BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   
-  -- Constraints: user can only like/dislike once per content
   UNIQUE(user_id, rating_id),
   UNIQUE(user_id, comment_id),
-  CHECK ((rating_id IS NOT NULL AND comment_id IS NULL) OR (rating_id IS NULL AND comment_id IS NOT NULL)),
-  INDEX(rating_id),
-  INDEX(comment_id),
-  INDEX(user_id)
+  CHECK ((rating_id IS NOT NULL AND comment_id IS NULL) OR (rating_id IS NULL AND comment_id IS NOT NULL))
 );
 
 -- User game lists (wishlist, favorites, etc.)
@@ -218,15 +186,13 @@ CREATE TABLE IF NOT EXISTS user_game_list (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
   game_id INTEGER NOT NULL REFERENCES game(id) ON DELETE CASCADE,
-  list_type VARCHAR(20) NOT NULL, -- wishlist, favorites, playing, completed, abandoned, backlog
+  list_type VARCHAR(20) NOT NULL,
   notes TEXT,
-  priority INTEGER, -- For ordering within lists
+  priority INTEGER,
   is_public BOOLEAN DEFAULT TRUE,
   added_at TIMESTAMPTZ DEFAULT NOW(),
   
-  UNIQUE(user_id, game_id, list_type),
-  INDEX(user_id, list_type),
-  INDEX(game_id)
+  UNIQUE(user_id, game_id, list_type)
 );
 
 -- User follows/friends
@@ -234,13 +200,11 @@ CREATE TABLE IF NOT EXISTS user_follow (
   id SERIAL PRIMARY KEY,
   follower_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
   following_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-  is_mutual BOOLEAN DEFAULT FALSE, -- Updated when both users follow each other
+  is_mutual BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   
   UNIQUE(follower_id, following_id),
-  CHECK(follower_id != following_id),
-  INDEX(follower_id),
-  INDEX(following_id)
+  CHECK(follower_id != following_id)
 );
 
 -- =====================================================
@@ -252,17 +216,13 @@ CREATE TABLE IF NOT EXISTS notification (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
   actor_id INTEGER REFERENCES "user"(id) ON DELETE CASCADE,
-  type VARCHAR(50) NOT NULL, -- like, comment, follow, mention, etc.
+  type VARCHAR(50) NOT NULL,
   title VARCHAR(255) NOT NULL,
   message TEXT,
-  entity_type VARCHAR(50), -- rating, comment, game, user
+  entity_type VARCHAR(50),
   entity_id INTEGER,
   is_read BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  INDEX(user_id, is_read),
-  INDEX(created_at),
-  INDEX(type)
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- System-wide tags for games and content
@@ -271,15 +231,11 @@ CREATE TABLE IF NOT EXISTS tag (
   name VARCHAR(100) NOT NULL UNIQUE,
   slug VARCHAR(100) NOT NULL UNIQUE,
   description TEXT,
-  color VARCHAR(7), -- Hex color code
-  is_official BOOLEAN DEFAULT FALSE, -- Official vs user-created tags
+  color VARCHAR(7),
+  is_official BOOLEAN DEFAULT FALSE,
   usage_count INTEGER DEFAULT 0,
   created_by INTEGER REFERENCES "user"(id),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  INDEX(slug),
-  INDEX(is_official),
-  INDEX(usage_count)
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Game-Tag relationships
@@ -290,10 +246,76 @@ CREATE TABLE IF NOT EXISTS game_tag (
   created_by INTEGER REFERENCES "user"(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   
-  UNIQUE(game_id, tag_id),
-  INDEX(game_id),
-  INDEX(tag_id)
+  UNIQUE(game_id, tag_id)
 );
+
+-- =====================================================
+-- CREATE INDEXES FOR PERFORMANCE
+-- =====================================================
+
+-- User table indexes
+CREATE INDEX IF NOT EXISTS idx_user_provider_id ON "user"(provider_id);
+CREATE INDEX IF NOT EXISTS idx_user_email ON "user"(email);
+CREATE INDEX IF NOT EXISTS idx_user_username ON "user"(username);
+
+-- User sessions indexes
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(session_token);
+
+-- Platform indexes
+CREATE INDEX IF NOT EXISTS idx_platform_slug ON platform(slug);
+CREATE INDEX IF NOT EXISTS idx_platform_active ON platform(is_active);
+
+-- Game indexes
+CREATE INDEX IF NOT EXISTS idx_game_igdb_id ON game(igdb_id);
+CREATE INDEX IF NOT EXISTS idx_game_name ON game(name);
+CREATE INDEX IF NOT EXISTS idx_game_slug ON game(slug);
+CREATE INDEX IF NOT EXISTS idx_game_release_date ON game(release_date);
+CREATE INDEX IF NOT EXISTS idx_game_verified ON game(is_verified);
+
+-- Platform games indexes
+CREATE INDEX IF NOT EXISTS idx_platform_games_game_id ON platform_games(game_id);
+CREATE INDEX IF NOT EXISTS idx_platform_games_platform_id ON platform_games(platform_id);
+
+-- Rating indexes
+CREATE INDEX IF NOT EXISTS idx_rating_game_published ON rating(game_id, is_published);
+CREATE INDEX IF NOT EXISTS idx_rating_user_id ON rating(user_id);
+CREATE INDEX IF NOT EXISTS idx_rating_rating ON rating(rating);
+CREATE INDEX IF NOT EXISTS idx_rating_date ON rating(post_date_time);
+CREATE INDEX IF NOT EXISTS idx_rating_likes ON rating(like_count);
+
+-- Comment indexes
+CREATE INDEX IF NOT EXISTS idx_comment_rating_published ON comment(rating_id, is_published);
+CREATE INDEX IF NOT EXISTS idx_comment_user_id ON comment(user_id);
+CREATE INDEX IF NOT EXISTS idx_comment_parent ON comment(parent_comment_id);
+CREATE INDEX IF NOT EXISTS idx_comment_created ON comment(created_at);
+
+-- Content like indexes
+CREATE INDEX IF NOT EXISTS idx_content_like_rating ON content_like(rating_id);
+CREATE INDEX IF NOT EXISTS idx_content_like_comment ON content_like(comment_id);
+CREATE INDEX IF NOT EXISTS idx_content_like_user ON content_like(user_id);
+
+-- User game list indexes
+CREATE INDEX IF NOT EXISTS idx_user_game_list_user_type ON user_game_list(user_id, list_type);
+CREATE INDEX IF NOT EXISTS idx_user_game_list_game ON user_game_list(game_id);
+
+-- User follow indexes
+CREATE INDEX IF NOT EXISTS idx_user_follow_follower ON user_follow(follower_id);
+CREATE INDEX IF NOT EXISTS idx_user_follow_following ON user_follow(following_id);
+
+-- Notification indexes
+CREATE INDEX IF NOT EXISTS idx_notification_user_read ON notification(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notification_created ON notification(created_at);
+CREATE INDEX IF NOT EXISTS idx_notification_type ON notification(type);
+
+-- Tag indexes
+CREATE INDEX IF NOT EXISTS idx_tag_slug ON tag(slug);
+CREATE INDEX IF NOT EXISTS idx_tag_official ON tag(is_official);
+CREATE INDEX IF NOT EXISTS idx_tag_usage ON tag(usage_count);
+
+-- Game tag indexes
+CREATE INDEX IF NOT EXISTS idx_game_tag_game ON game_tag(game_id);
+CREATE INDEX IF NOT EXISTS idx_game_tag_tag ON game_tag(tag_id);
 
 -- =====================================================
 -- FUNCTIONS AND TRIGGERS
