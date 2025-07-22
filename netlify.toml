@@ -9,43 +9,39 @@ NODE_VERSION = "20"
 directory = "netlify/functions"
 node_bundler = "esbuild"
 
-# API caching headers for IGDB proxy endpoints
+# CORS headers for API endpoints
 [[headers]]
-for = "/api/igdb/*"
+for = "/api/*"
 [headers.values]
-Cache-Control = "public, max-age=300, s-maxage=600, stale-while-revalidate=3600"
-Vary = "Accept-Encoding, Authorization"
-X-Cache-Status = "MISS"
+Access-Control-Allow-Origin = "*"
+Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+Access-Control-Allow-Headers = "Content-Type, Authorization, X-Requested-With"
+Access-Control-Max-Age = "86400"
 
-# Cache for game data endpoints (longer cache since game data is more stable)
+# Cache for search endpoints
 [[headers]]
-for = "/api/games/*"
-[headers.values]
-Cache-Control = "public, max-age=1800, s-maxage=3600, stale-while-revalidate=7200"
-Vary = "Accept-Encoding"
-
-# Cache for search endpoints (shorter cache since search results change frequently)
-[[headers]]
-for = "/api/search/*"
+for = "/.netlify/functions/igdb-search"
 [headers.values]
 Cache-Control = "public, max-age=300, s-maxage=600, stale-while-revalidate=1800"
 Vary = "Accept-Encoding"
 
-# Cache for popular/trending endpoints
+# Cache for debug endpoints
 [[headers]]
-for = "/api/popular/*"
+for = "/.netlify/functions/debug-search"
 [headers.values]
-Cache-Control = "public, max-age=900, s-maxage=1800, stale-while-revalidate=3600"
-Vary = "Accept-Encoding"
+Cache-Control = "no-cache, no-store, must-revalidate"
 
-# Cache for static game assets (covers, screenshots)
+# Enhanced security headers
 [[headers]]
-for = "/api/images/*"
+for = "/*"
 [headers.values]
-Cache-Control = "public, max-age=86400, s-maxage=172800, immutable"
-Vary = "Accept-Encoding"
+X-Frame-Options = "DENY"
+X-XSS-Protection = "1; mode=block"
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "strict-origin-when-cross-origin"
+Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
-# Existing asset caching (keep your current settings)
+# Cache for static assets
 [[headers]]
 for = "/assets/*"
 [headers.values]
@@ -61,118 +57,18 @@ for = "/*.css"
 [headers.values]
 Cache-Control = "public, max-age=31536000, immutable"
 
-[[headers]]
-for = "/manifest.json"
-[headers.values]
-Cache-Control = "public, max-age=86400"
-
-# Cache for service worker
-[[headers]]
-for = "/sw.js"
-[headers.values]
-Cache-Control = "public, max-age=0, must-revalidate"
-
-# Cache for PWA icons and assets
-[[headers]]
-for = "/icons/*"
-[headers.values]
-Cache-Control = "public, max-age=604800"
-
-# Enhanced security headers (keep your current settings plus additions)
-[[headers]]
-for = "/*"
-[headers.values]
-X-Frame-Options = "DENY"
-X-XSS-Protection = "1; mode=block"
-X-Content-Type-Options = "nosniff"
-Referrer-Policy = "strict-origin-when-cross-origin"
-Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-# Additional security headers for API endpoints
-Strict-Transport-Security = "max-age=31536000; includeSubDomains"
-X-Robots-Tag = "noindex, nofollow"
-
-# CORS headers for API endpoints
-[[headers]]
-for = "/api/*"
-[headers.values]
-Access-Control-Allow-Origin = "*"
-Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
-Access-Control-Allow-Headers = "Content-Type, Authorization, X-Requested-With"
-Access-Control-Max-Age = "86400"
-
-# Redirect API calls to your Supabase Edge Functions or Netlify Functions
-# Update these URLs to match your actual Supabase project URL
+# API redirects to Netlify Functions
 [[redirects]]
-from = "/api/igdb-proxy"
-to = "https://your-supabase-project.supabase.co/functions/v1/igdb-proxy"
+from = "/api/igdb-search"
+to = "/.netlify/functions/igdb-search"
 status = 200
-force = true
-headers = {Cache-Control = "public, max-age=300"}
 
 [[redirects]]
-from = "/api/games/:id"
-to = "https://your-supabase-project.supabase.co/functions/v1/games/:id"
+from = "/api/debug-search"
+to = "/.netlify/functions/debug-search"
 status = 200
-force = true
-headers = {Cache-Control = "public, max-age=1800"}
 
-[[redirects]]
-from = "/api/search"
-to = "https://your-supabase-project.supabase.co/functions/v1/search"
-status = 200
-force = true
-headers = {Cache-Control = "public, max-age=300"}
-
-[[redirects]]
-from = "/api/popular"
-to = "https://your-supabase-project.supabase.co/functions/v1/popular"
-status = 200
-force = true
-headers = {Cache-Control = "public, max-age=900"}
-
-[[redirects]]
-from = "/api/cache-stats"
-to = "https://your-supabase-project.supabase.co/functions/v1/cache-stats"
-status = 200
-force = true
-headers = {Cache-Control = "no-cache"}
-
-# Alternative: If you're using Netlify Functions instead of Supabase Edge Functions
-# [[redirects]]
-# from = "/api/igdb-proxy"
-# to = "/.netlify/functions/igdb-proxy"
-# status = 200
-
-# [[redirects]]
-# from = "/api/games/:id"
-# to = "/.netlify/functions/games"
-# status = 200
-
-# [[redirects]]
-# from = "/api/search"
-# to = "/.netlify/functions/search"
-# status = 200
-
-# Cache preload for critical resources
-[[headers]]
-for = "/index.html"
-[headers.values]
-Cache-Control = "public, max-age=0, must-revalidate"
-Link = "</assets/main.css>; rel=preload; as=style, </assets/main.js>; rel=preload; as=script"
-
-# Edge-side includes for dynamic content caching
-[[headers]]
-for = "/games/*"
-[headers.values]
-Cache-Control = "public, max-age=300, s-maxage=600"
-Vary = "Accept-Encoding, Cookie"
-
-[[headers]]
-for = "/user/*"
-[headers.values]
-Cache-Control = "private, no-cache, no-store, must-revalidate"
-
-# SPA fallback (keep this last to avoid conflicts)
+# SPA fallback (keep this last)
 [[redirects]]
 from = "/*"
 to = "/index.html"
@@ -181,12 +77,9 @@ status = 200
 # Environment-specific configurations
 [context.production.environment]
 NODE_ENV = "production"
-NETLIFY_CACHE_CONTROL = "public, max-age=300"
 
 [context.deploy-preview.environment]
 NODE_ENV = "development"
-NETLIFY_CACHE_CONTROL = "no-cache"
 
 [context.branch-deploy.environment]
 NODE_ENV = "development"
-NETLIFY_CACHE_CONTROL = "no-cache"
