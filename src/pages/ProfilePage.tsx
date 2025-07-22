@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabaseClient';
-import { ProfileInfo } from '../components/profile/ProfileInfo';
-import { ProfileDetails } from '../components/profile/ProfileDetails';
-import { ProfileData } from '../components/profile/ProfileData';
+import { ProfileInfo } from '../components/ProfileInfo'; // Updated path
+import { ProfileDetails } from '../components/ProfileDetails'; // Updated path
+import { ProfileData } from '../components/ProfileData'; // Updated path
 
 const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState(null);
