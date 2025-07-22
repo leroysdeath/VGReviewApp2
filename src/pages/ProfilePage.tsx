@@ -144,7 +144,7 @@ const ProfilePage = () => {
           <ProfileInfo 
             user={userProfile} 
             isDummy={false}
-            onEditClick={handleEditClick} {/* Pass to make edit button work */}
+            onEditClick={handleEditClick}
           />
           <ProfileDetails stats={stats} />
         </div>
