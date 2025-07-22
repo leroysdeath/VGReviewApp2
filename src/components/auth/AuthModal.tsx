@@ -1,9 +1,11 @@
+// src/components/auth/AuthModal.tsx - COMPLETE REPLACEMENT
 import React, { useState } from 'react';
 import { X, Eye, EyeOff, Mail, Key, User, AlertCircle, Check, Loader2, Github, Gamepad2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../../hooks/useAuth';
+import { useAuthModal } from '../../context/AuthModalContext';
 
 // Form validation schemas
 const loginSchema = z.object({
@@ -42,20 +44,16 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 type ResetFormValues = z.infer<typeof resetSchema>;
 
 interface AuthModalProps {
-  isOpen: boolean;
-  onClose: () => void;
   onLoginSuccess?: () => void;
   onSignupSuccess?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
-  isOpen,
-  onClose,
   onLoginSuccess,
   onSignupSuccess
 }) => {
-  const { signIn, signUp, signInWithProvider, resetPassword } = useAuth();
-  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login');
+  const { signIn, signUp, resetPassword, signInWithProvider } = useAuth();
+  const { isOpen, mode, closeModal, setMode } = useAuthModal();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -99,12 +97,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     
     try {
       const result = await signIn(data.email, data.password);
-      
       if (result.error) {
         setAuthError(result.error.message || 'Login failed. Please try again.');
       } else {
         onLoginSuccess?.();
-        onClose();
+        closeModal();
       }
     } catch (error) {
       setAuthError('Login failed. Please try again.');
@@ -120,15 +117,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     
     try {
       const result = await signUp(data.email, data.password, data.username);
-      
       if (result.error) {
         setAuthError(result.error.message || 'Signup failed. Please try again.');
       } else {
         onSignupSuccess?.();
-        // Show success message for email confirmation
         setAuthError(null);
         setMode('login');
-        // You might want to show a success message here
       }
     } catch (error) {
       setAuthError('Signup failed. Please try again.');
@@ -144,7 +138,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     
     try {
       const result = await resetPassword(data.email);
-      
       if (result.error) {
         setAuthError(result.error.message || 'Failed to send reset email. Please try again.');
       } else {
@@ -163,13 +156,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setAuthError(null);
     
     try {
-      const result = await signInWithProvider(provider);
-      
-      if (result.error) {
-        setAuthError(result.error.message || `Failed to sign in with ${provider}`);
+      if (signInWithProvider) {
+        const result = await signInWithProvider(provider);
+        if (result.error) {
+          setAuthError(result.error.message || `Failed to sign in with ${provider}`);
+          setIsLoading(false);
+        }
+      } else {
+        console.log(`Sign in with ${provider} - not implemented yet`);
         setIsLoading(false);
       }
-      // Don't set loading to false here as the redirect will handle it
     } catch (error) {
       setAuthError(`Failed to sign in with ${provider}`);
       setIsLoading(false);
@@ -211,13 +207,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div 
+      <div
         className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-gray-800 rounded-xl shadow-2xl border border-gray-700"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
-          onClick={onClose}
+          onClick={closeModal}
           className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-700 transition-colors z-10"
           aria-label="Close"
           disabled={isLoading}
@@ -297,7 +293,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </svg>
                   <span>Google</span>
                 </button>
-                
+
                 <button
                   onClick={() => handleSocialLogin('github')}
                   disabled={isLoading}
@@ -383,6 +379,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <span className="ml-2 text-sm text-gray-300">Remember me</span>
                 </label>
                 <button
+                  type="button"
                   onClick={() => switchMode('reset')}
                   className="text-sm text-purple-400 hover:text-purple-300"
                   disabled={isLoading}
@@ -476,7 +473,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {signupForm.formState.errors.password && (
                   <p className="mt-1 text-sm text-red-400">{signupForm.formState.errors.password.message}</p>
                 )}
-                
+
                 {/* Password Strength Indicator */}
                 {signupForm.watch('password') && (
                   <div className="mt-2">
@@ -621,7 +618,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </button>
               </p>
             )}
-            
             {mode === 'signup' && (
               <p className="text-gray-400">
                 Already have an account?{' '}
@@ -634,7 +630,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </button>
               </p>
             )}
-            
             {mode === 'reset' && (
               <p className="text-gray-400">
                 Remember your password?{' '}
