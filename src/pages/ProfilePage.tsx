@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabaseClient';
-import { ProfileInfo } from '../components/ProfileInfo'; // Updated path
-import { ProfileDetails } from '../components/ProfileDetails'; // Updated path
-import { ProfileData } from '../components/ProfileData'; // Updated path
+import { ProfileInfo } from '../components/ProfileInfo';
+import { ProfileDetails } from '../components/ProfileDetails';
+import { ProfileData } from '../components/ProfileData';
 
 const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState(null);
@@ -141,8 +141,8 @@ const ProfilePage = () => {
       <div className="max-w-6xl mx-auto">
         {/* Profile Header */}
         <div className="flex flex-col md:flex-row justify-between gap-6 mb-8">
-          <ProfileInfo 
-            user={userProfile} 
+          <ProfileInfo
+            user={userProfile}
             isDummy={false}
             onEditClick={handleEditClick}
           />
@@ -151,26 +151,26 @@ const ProfilePage = () => {
 
         {/* Tabs Navigation */}
         <div className="flex gap-4 mb-6 border-b border-gray-700">
-          <button 
-            onClick={() => setActiveTab('top5')} 
+          <button
+            onClick={() => setActiveTab('top5')}
             className={`pb-2 ${activeTab === 'top5' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
             Top 5
           </button>
-          <button 
-            onClick={() => setActiveTab('reviews')} 
+          <button
+            onClick={() => setActiveTab('reviews')}
             className={`pb-2 ${activeTab === 'reviews' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
             Reviews
           </button>
-          <button 
-            onClick={() => setActiveTab('activity')} 
+          <button
+            onClick={() => setActiveTab('activity')}
             className={`pb-2 ${activeTab === 'activity' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
             Activity
           </button>
-          <button 
-            onClick={() => setActiveTab('lists')} 
+          <button
+            onClick={() => setActiveTab('lists')}
             className={`pb-2 ${activeTab === 'lists' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
             Lists
@@ -178,7 +178,7 @@ const ProfilePage = () => {
         </div>
 
         {/* Profile Data */}
-        <ProfileData 
+        <ProfileData
           activeTab={activeTab}
           allGames={allGames}
           sortedReviews={sortedReviews}
