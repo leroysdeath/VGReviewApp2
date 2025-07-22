@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube, MessageSquare, Bell, LogOut, Settings } from 'lucide-react';
-import { AuthModal } from './auth/AuthModal';
 import { useAuth } from '../hooks/useAuth';
+import { useAuthModal } from '../context/AuthModalContext'; // NEW IMPORT
 import { useResponsive } from '../hooks/useResponsive';
 import { NotificationBadge } from './NotificationBadge';
 import { NotificationCenter } from './NotificationCenter';
 
 export const ResponsiveNavbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,6 +16,7 @@ export const ResponsiveNavbar: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
   const { user, isAuthenticated, signOut, loading } = useAuth();
+  const { openModal } = useAuthModal(); // USE GLOBAL AUTH MODAL
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -36,8 +36,8 @@ export const ResponsiveNavbar: React.FC = () => {
     navigate('/');
   };
 
-  const handleAuthSuccess = () => {
-    setIsAuthModalOpen(false);
+  const handleAuthClick = () => {
+    openModal(); // SIMPLIFIED - NO LOCAL STATE NEEDED
     setIsMenuOpen(false);
   };
 
@@ -114,10 +114,7 @@ export const ResponsiveNavbar: React.FC = () => {
                 ) : (
                   <div className="border-b border-gray-700 pb-4">
                     <button
-                      onClick={() => {
-                        setIsAuthModalOpen(true);
-                        setIsMenuOpen(false);
-                      }}
+                      onClick={handleAuthClick}
                       className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium"
                     >
                       Sign In / Sign Up
@@ -238,13 +235,6 @@ export const ResponsiveNavbar: React.FC = () => {
             </div>
           </div>
         )}
-
-        <AuthModal 
-          isOpen={isAuthModalOpen} 
-          onClose={() => setIsAuthModalOpen(false)}
-          onLoginSuccess={handleAuthSuccess}
-          onSignupSuccess={handleAuthSuccess}
-        />
 
         <NotificationCenter
           userId={user?.id || ""}
@@ -384,7 +374,7 @@ export const ResponsiveNavbar: React.FC = () => {
                 </div>
               ) : (
                 <button
-                  onClick={() => setIsAuthModalOpen(true)}
+                  onClick={handleAuthClick}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
                   disabled={loading}
                 >
@@ -469,10 +459,7 @@ export const ResponsiveNavbar: React.FC = () => {
               </>
             ) : (
               <button
-                onClick={() => {
-                  setIsAuthModalOpen(true);
-                  setIsMenuOpen(false);
-                }}
+                onClick={handleAuthClick}
                 className="block w-full text-left px-3 py-2 rounded-md text-base font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors"
               >
                 Sign In / Sign Up
@@ -481,13 +468,6 @@ export const ResponsiveNavbar: React.FC = () => {
           </div>
         </div>
       )}
-
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)}
-        onLoginSuccess={handleAuthSuccess}
-        onSignupSuccess={handleAuthSuccess}
-      />
       
       {/* Notification Center */}
       <NotificationCenter
