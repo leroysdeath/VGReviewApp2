@@ -144,4 +144,51 @@ const ProfilePage = () => {
           <ProfileInfo 
             user={userProfile} 
             isDummy={false}
-            onEditClick={handleEditClick} // Pass to make
+            onEditClick={handleEditClick} // Pass to make edit button work
+          />
+          <ProfileDetails stats={stats} />
+        </div>
+
+        {/* Tabs Navigation */}
+        <div className="flex gap-4 mb-6 border-b border-gray-700">
+          <button 
+            onClick={() => setActiveTab('top5')} 
+            className={`pb-2 ${activeTab === 'top5' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
+          >
+            Top 5
+          </button>
+          <button 
+            onClick={() => setActiveTab('reviews')} 
+            className={`pb-2 ${activeTab === 'reviews' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
+          >
+            Reviews
+          </button>
+          <button 
+            onClick={() => setActiveTab('activity')} 
+            className={`pb-2 ${activeTab === 'activity' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
+          >
+            Activity
+          </button>
+          <button 
+            onClick={() => setActiveTab('lists')} 
+            className={`pb-2 ${activeTab === 'lists' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
+          >
+            Lists
+          </button>
+        </div>
+
+        {/* Profile Data */}
+        <ProfileData 
+          activeTab={activeTab}
+          allGames={allGames}
+          sortedReviews={sortedReviews}
+          reviewFilter={reviewFilter}
+          onReviewFilterChange={setReviewFilter}
+          isDummy={false}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default ProfilePage;
