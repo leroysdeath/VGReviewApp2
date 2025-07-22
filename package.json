@@ -8,10 +8,10 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npx tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "type-check": "tsc --noEmit",
+    "type-check": "npx tsc --noEmit",
     "build:analyze": "vite build --mode analyze",
     "clean": "rm -rf dist node_modules/.vite"
   },
