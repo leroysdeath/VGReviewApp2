@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, Zap, Database } from 'lucide-react';
+import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, Zap, Database, Heart, Plus } from 'lucide-react';
 import { useIGDBSearch } from '../hooks/useIGDBCache';
 import { enhancedIGDBService } from '../services/enhancedIGDBService';
+import { AuthModal } from '../components/auth/AuthModal';
+import { useAuth } from '../hooks/useAuth';
 
 interface Game {
   id: number;
@@ -28,9 +30,12 @@ interface SearchFilters {
 export const SearchResultsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ action: string; gameId: number } | null>(null);
   const [filters, setFilters] = useState<SearchFilters>({
     genres: [],
     platforms: [],
@@ -39,14 +44,14 @@ export const SearchResultsPage: React.FC = () => {
   });
 
   // Use the caching search hook
-  const { 
-    data: games, 
-    loading, 
-    error, 
-    cached: isSearchCached, 
+  const {
+    data: games,
+    loading,
+    error,
+    cached: isSearchCached,
     refetch,
     isStale: isSearchStale,
-    searchTerm: debouncedSearchTerm 
+    searchTerm: debouncedSearchTerm
   } = useIGDBSearch(searchTerm, filters, {
     enabled: true,
     ttl: 1800, // 30 minutes cache for search results
@@ -85,33 +90,71 @@ export const SearchResultsPage: React.FC = () => {
     refetch();
   };
 
+  // Handle auth-required actions
+  const handleAuthRequiredAction = (action: string, gameId: number, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent card click
+    
+    if (!isAuthenticated) {
+      setPendingAction({ action, gameId });
+      setShowAuthModal(true);
+      return;
+    }
+    
+    executeAction(action, gameId);
+  };
+
+  const executeAction = (action: string, gameId: number) => {
+    switch (action) {
+      case 'add_to_wishlist':
+        console.log('Adding to wishlist:', gameId);
+        // Implement wishlist logic here
+        break;
+      case 'quick_rate':
+        console.log('Quick rating for:', gameId);
+        // Implement quick rating logic here
+        break;
+      case 'add_to_favorites':
+        console.log('Adding to favorites:', gameId);
+        // Implement favorites logic here
+        break;
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
+    if (pendingAction) {
+      executeAction(pendingAction.action, pendingAction.gameId);
+      setPendingAction(null);
+    }
+  };
+
   const updateFilters = (newFilters: Partial<SearchFilters>) => {
     const updatedFilters = { ...filters, ...newFilters };
     setFilters(updatedFilters);
 
     // Update URL parameters
     const newParams = new URLSearchParams(searchParams);
-    
+
     if (updatedFilters.genres.length > 0) {
       newParams.set('genres', updatedFilters.genres.join(','));
     } else {
       newParams.delete('genres');
     }
-    
+
     if (updatedFilters.platforms.length > 0) {
       newParams.set('platforms', updatedFilters.platforms.join(','));
     } else {
       newParams.delete('platforms');
     }
-    
+
     if (updatedFilters.minRating) {
       newParams.set('rating', updatedFilters.minRating.toString());
     } else {
       newParams.delete('rating');
     }
-    
+
     newParams.set('sort', `${updatedFilters.sortBy}:${updatedFilters.sortOrder}`);
-    
+
     setSearchParams(newParams);
   };
 
@@ -126,7 +169,7 @@ export const SearchResultsPage: React.FC = () => {
   const GameCard: React.FC<{ game: Game }> = ({ game }) => (
     <div
       onClick={() => handleGameClick(game)}
-      className="bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-750 transition-all duration-200 cursor-pointer group hover:scale-105"
+      className="bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-750 transition-all duration-200 cursor-pointer group hover:scale-105 relative"
       onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)} // Prefetch on hover
     >
       <div className="aspect-[3/4] relative overflow-hidden">
@@ -151,6 +194,31 @@ export const SearchResultsPage: React.FC = () => {
             {Math.round(game.rating / 10)}
           </div>
         )}
+        
+        {/* Quick Action Buttons (shown on hover) */}
+        <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 space-y-1">
+          <button
+            onClick={(e) => handleAuthRequiredAction('add_to_wishlist', game.id, e)}
+            className="block w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center text-xs shadow-lg transition-colors"
+            title={isAuthenticated ? "Add to Wishlist" : "Sign in to add to wishlist"}
+          >
+            <Plus className="w-3 h-3" />
+          </button>
+          <button
+            onClick={(e) => handleAuthRequiredAction('quick_rate', game.id, e)}
+            className="block w-8 h-8 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full flex items-center justify-center text-xs shadow-lg transition-colors"
+            title={isAuthenticated ? "Quick Rate" : "Sign in to rate"}
+          >
+            <Star className="w-3 h-3" />
+          </button>
+          <button
+            onClick={(e) => handleAuthRequiredAction('add_to_favorites', game.id, e)}
+            className="block w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-xs shadow-lg transition-colors"
+            title={isAuthenticated ? "Add to Favorites" : "Sign in to add to favorites"}
+          >
+            <Heart className="w-3 h-3" />
+          </button>
+        </div>
       </div>
       <div className="p-4">
         <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors line-clamp-2">
@@ -181,7 +249,7 @@ export const SearchResultsPage: React.FC = () => {
   const GameListItem: React.FC<{ game: Game }> = ({ game }) => (
     <div
       onClick={() => handleGameClick(game)}
-      className="bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition-colors cursor-pointer group flex gap-4"
+      className="bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition-colors cursor-pointer group flex gap-4 relative"
       onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)} // Prefetch on hover
     >
       <div className="w-16 h-20 flex-shrink-0 overflow-hidden rounded">
@@ -239,6 +307,24 @@ export const SearchResultsPage: React.FC = () => {
           </div>
         </div>
       )}
+      
+      {/* Quick Actions for List View */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
+        <button
+          onClick={(e) => handleAuthRequiredAction('add_to_wishlist', game.id, e)}
+          className="w-6 h-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center text-xs shadow-lg transition-colors"
+          title={isAuthenticated ? "Add to Wishlist" : "Sign in to add to wishlist"}
+        >
+          <Plus className="w-2 h-2" />
+        </button>
+        <button
+          onClick={(e) => handleAuthRequiredAction('add_to_favorites', game.id, e)}
+          className="w-6 h-6 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-xs shadow-lg transition-colors"
+          title={isAuthenticated ? "Add to Favorites" : "Sign in to add to favorites"}
+        >
+          <Heart className="w-2 h-2" />
+        </button>
+      </div>
     </div>
   );
 
@@ -247,7 +333,7 @@ export const SearchResultsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-8">
-        
+
         {/* Cache Status Bar */}
         {(isSearchCached || isSearchStale) && (
           <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
@@ -272,7 +358,7 @@ export const SearchResultsPage: React.FC = () => {
                   </div>
                 )}
               </div>
-              
+
               {isSearchStale && (
                 <button
                   onClick={handleRefresh}
@@ -307,7 +393,7 @@ export const SearchResultsPage: React.FC = () => {
               )}
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -316,7 +402,7 @@ export const SearchResultsPage: React.FC = () => {
               <Filter className="w-4 h-4 mr-2" />
               Filters
             </button>
-            
+
             <div className="flex bg-gray-800 rounded-lg overflow-hidden">
               <button
                 onClick={() => setViewMode('grid')}
@@ -343,7 +429,7 @@ export const SearchResultsPage: React.FC = () => {
           <div className="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
             <h3 className="text-lg font-semibold mb-4">Filter Results</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              
+
               {/* Sort By */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -526,6 +612,17 @@ export const SearchResultsPage: React.FC = () => {
             </div>
           </>
         )}
+
+        {/* Auth Modal */}
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => {
+            setShowAuthModal(false);
+            setPendingAction(null);
+          }}
+          onLoginSuccess={handleAuthSuccess}
+          onSignupSuccess={handleAuthSuccess}
+        />
       </div>
     </div>
   );
