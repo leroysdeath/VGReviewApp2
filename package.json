@@ -2,6 +2,7 @@
   "name": "vgreviewapp2-production",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=8.0.0"
@@ -39,7 +40,7 @@
     "react-dom": "^18.3.1",
     "react-helmet-async": "^2.0.5",
     "react-hook-form": "^7.60.0",
-    "react-router-dom": "^7.6.3",
+    "react-router-dom": "^6.26.2",
     "react-select": "^5.10.1",
     "react-slider": "^2.0.6",
     "react-swipeable": "^7.0.1",
