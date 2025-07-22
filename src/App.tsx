@@ -5,8 +5,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ResponsiveNavbar } from './components/ResponsiveNavbar';
 import { ResponsiveLandingPage } from './components/ResponsiveLandingPage';
 import { ReviewProvider } from './context/ReviewContext';
-import { AuthModalProvider } from './context/AuthModalContext'; // Add this import
-import { AuthModal } from './components/auth/AuthModal'; // Add this import
+import { AuthModalProvider } from './context/AuthModalContext';
+import { AuthModal } from './components/auth/AuthModal';
 import { GamePage } from './pages/GamePage';
 import { GameSearchPage } from './pages/GameSearchPage';
 import { SearchResultsPage } from './pages/SearchResultsPage';
@@ -15,6 +15,7 @@ import { UserSearchPage } from './pages/UserSearchPage';
 import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { SettingsPage } from './pages/SettingsPage'; // Add this
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
@@ -33,7 +34,7 @@ function App() {
   return (
     <HelmetProvider>
       <ErrorBoundary>
-        <AuthModalProvider> {/* Wrap with AuthModalProvider */}
+        <AuthModalProvider>
           <ReviewProvider currentUserId={user?.id ? parseInt(user.id) : 1}>
             <Router>
               <div className="min-h-screen bg-gray-900">
@@ -42,21 +43,16 @@ function App() {
                 <Routes>
                   <Route path="/" element={<ResponsiveLandingPage />} />
                   <Route path="/game/:id" element={<GamePage />} />
-
-                  {/* UPDATED: Both search routes now point to SearchResultsPage */}
                   <Route path="/search" element={<SearchResultsPage />} />
                   <Route path="/search-results" element={<SearchResultsPage />} />
-
-                  {/* Keep your other existing routes */}
                   <Route path="/user/:id" element={<UserPage />} />
                   <Route path="/users" element={<UserSearchPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/review/:gameId?" element={<ReviewFormPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/settings" element={<SettingsPage />} /> {/* Add this */}
                   {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
                 </Routes>
-                
-                {/* Add the AuthModal component */}
                 <AuthModal />
               </div>
             </Router>
