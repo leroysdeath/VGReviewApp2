@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabaseClient';
-import { ProfileInfo } from '../components/ProfileInfo';
-import { ProfileDetails } from '../components/ProfileDetails';
-import { ProfileData } from '../components/ProfileData';
+import { ProfileInfo } from '../components/profile/ProfileInfo';
+import { ProfileDetails } from '../components/profile/ProfileDetails';
+import { ProfileData } from '../components/profile/ProfileData';
 
 const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState(null);
@@ -144,7 +144,7 @@ const ProfilePage = () => {
           <ProfileInfo 
             user={userProfile} 
             isDummy={false}
-            onEditClick={handleEditClick} // Pass to make edit button work
+            onEditClick={handleEditClick} {/* Pass to make edit button work */}
           />
           <ProfileDetails stats={stats} />
         </div>
@@ -177,4 +177,18 @@ const ProfilePage = () => {
           </button>
         </div>
 
-        {/
+        {/* Profile Data */}
+        <ProfileData 
+          activeTab={activeTab}
+          allGames={allGames}
+          sortedReviews={sortedReviews}
+          reviewFilter={reviewFilter}
+          onReviewFilterChange={setReviewFilter}
+          isDummy={false}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default ProfilePage;
