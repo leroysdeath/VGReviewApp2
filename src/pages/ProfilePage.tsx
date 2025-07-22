@@ -1,74 +1,127 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { supabase } from '../utils/supabaseClient'; // Assuming this is your Supabase client init file
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../utils/supabaseClient';
+import { ProfileInfo } from '../components/profile/ProfileInfo';
+import { ProfileDetails } from '../components/profile/ProfileDetails';
+import { ProfileData } from '../components/profile/ProfileData';
 
-const Profile = () => {
+const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState(null);
-  const [stats, setStats] = useState({ completed: 0, playing: 0, wishlist: 0, avgRating: 0 });
-  const [recentReviews, setRecentReviews] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
-  const [topGames, setTopGames] = useState([]);
+  const [allGames, setAllGames] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [stats, setStats] = useState({ films: 0, thisYear: 0, lists: 0, following: 0, followers: 0 });
+  const [activeTab, setActiveTab] = useState('top5');
+  const [reviewFilter, setReviewFilter] = useState('recent');
+  const [sortedReviews, setSortedReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProfileData();
   }, []);
+
+  useEffect(() => {
+    // Sort reviews based on filter
+    let sorted = [...reviews];
+    switch (reviewFilter) {
+      case 'highest':
+        sorted.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'lowest':
+        sorted.sort((a, b) => a.rating - b.rating);
+        break;
+      case 'oldest':
+        sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        break;
+      case 'recent':
+      default:
+        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+    }
+    setSortedReviews(sorted.map(review => ({
+      id: review.id,
+      userId: review.user_id,
+      gameId: review.game_id,
+      rating: review.rating,
+      text: review.text,
+      date: new Date(review.created_at).toLocaleDateString(),
+      hasText: !!review.text,
+      author: userProfile?.username || '',
+      authorAvatar: userProfile?.avatar_url || '/default-avatar.png'
+    })));
+  }, [reviews, reviewFilter, userProfile]);
 
   async function fetchProfileData() {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/login'); // Redirect if not logged in
+        navigate('/login');
         return;
       }
 
-      // Fetch profile basics from 'profiles' table
+      // Fetch profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('username, display_name, bio, avatar_url, joined_at')
+        .select('username, display_name, bio, avatar_url, joined_at, location, website')
         .eq('id', user.id)
         .single();
 
-      if (profileError && profileError.code !== 'PGRST116') throw profileError; // Ignore if no row exists
-      setUserProfile(profileData || { username: user.user_metadata?.username || '', display_name: '', bio: '', joined_at: new Date() });
+      if (profileError && profileError.code !== 'PGRST116') throw profileError;
+      const profile = profileData || {
+        username: user.email?.split('@')[0] || 'User',
+        display_name: '',
+        bio: '',
+        avatar_url: '/default-avatar.png',
+        joined_at: new Date().toISOString(),
+        location: '',
+        website: ''
+      };
+      setUserProfile({
+        id: user.id,
+        username: profile.display_name || profile.username,
+        avatar: profile.avatar_url,
+        bio: profile.bio || 'No bio yet.',
+        joinDate: new Date(profile.joined_at).toLocaleString('default', { month: 'long', year: 'numeric' }),
+        location: profile.location,
+        website: profile.website
+      });
 
-      // Fetch stats (adjust table names if different)
-      const { count: completedCount } = await supabase.from('completed_games').select('id', { count: 'exact' }).eq('user_id', user.id);
-      const { count: playingCount } = await supabase.from('playing_games').select('id', { count: 'exact' }).eq('user_id', user.id);
-      const { count: wishlistCount } = await supabase.from('wishlists').select('id', { count: 'exact' }).eq('user_id', user.id);
-      const { data: ratingsData } = await supabase.from('reviews').select('rating').eq('user_id', user.id);
-      const avgRating = ratingsData.length ? (ratingsData.reduce((sum, r) => sum + r.rating, 0) / ratingsData.length).toFixed(1) : 0;
-
-      setStats({ completed: completedCount || 0, playing: playingCount || 0, wishlist: wishlistCount || 0, avgRating });
-
-      // Fetch recent reviews (last 5, adjust as needed)
+      // Fetch reviews (adjust columns if needed)
       const { data: reviewsData } = await supabase
         .from('reviews')
-        .select('game_name, rating, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      setRecentReviews(reviewsData || []);
+        .select('id, user_id, game_id, game_name, cover_image, rating, text, created_at')
+        .eq('user_id', user.id);
+      setReviews(reviewsData || []);
 
-      // Fetch recent activity (from a logs table, adjust schema)
-      const { data: activityData } = await supabase
-        .from('activity_logs')
-        .select('action, game_name, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      setRecentActivity(activityData || []);
+      // Compute allGames
+      const games = reviewsData?.map(review => ({
+        id: review.game_id,
+        title: review.game_name,
+        coverImage: review.cover_image || '/default-cover.png',
+        releaseDate: '', // Add IGDB fetch if needed
+        genre: '', // Add IGDB fetch if needed
+        rating: review.rating,
+        description: '',
+        developer: '',
+        publisher: ''
+      })) || [];
+      setAllGames(games);
 
-      // Fetch top 5 games (e.g., highest rated by user)
-      const { data: topGamesData } = await supabase
-        .from('reviews')
-        .select('game_name, rating')
-        .eq('user_id', user.id)
-        .order('rating', { ascending: false })
-        .limit(5);
-      setTopGames(topGamesData || []);
+      // Fetch/compute stats
+      const currentYear = new Date().getFullYear();
+      const thisYearReviews = reviewsData?.filter(r => new Date(r.created_at).getFullYear() === currentYear).length || 0;
+      const { count: listsCount } = await supabase.from('lists').select('id', { count: 'exact' }).eq('user_id', user.id);
+      const { count: followingCount } = await supabase.from('followers').select('id', { count: 'exact' }).eq('follower_id', user.id);
+      const { count: followersCount } = await supabase.from('followers').select('id', { count: 'exact' }).eq('followed_id', user.id);
+
+      setStats({
+        films: reviewsData?.length || 0, // Games reviewed/played
+        thisYear: thisYearReviews,
+        lists: listsCount || 0,
+        following: followingCount || 0,
+        followers: followersCount || 0
+      });
 
     } catch (error) {
       console.error('Error fetching profile data:', error);
@@ -77,60 +130,18 @@ const Profile = () => {
     }
   }
 
-  if (loading) return <div>Loading...</div>;
+  const handleEditClick = () => {
+    navigate('/settings');
+  };
+
+  if (loading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
 
   return (
-    <div className="bg-gray-900 text-white p-6 rounded-lg">
-      <div className="flex items-center">
-        <img src={userProfile?.avatar_url || '/default-avatar.png'} alt="Avatar" className="w-20 h-20 rounded-full" />
-        <div className="ml-4">
-          <h1 className="text-2xl font-bold">{userProfile?.display_name || 'No Display Name Set'}</h1>
-          <p>{userProfile?.bio || 'No bio yet.'}</p>
-          <p>Joined {new Date(userProfile?.joined_at).toLocaleDateString()}</p>
-          {/* Followers, games, reviews would require additional queries if stored separately */}
-        </div>
-        <button className="ml-auto bg-purple-600 px-4 py-2 rounded">Edit Profile</button> {/* Link to /settings */}
-      </div>
-
-      <div className="mt-8">
-        <h2>My Top 5 Games</h2>
-        <ul>
-          {topGames.map((game, index) => (
-            <li key={index}>{index + 1}. {game.game_name} ({game.rating}/10)</li>
-          ))}
-          {topGames.length === 0 && <p>No top games yet.</p>}
-        </ul>
-      </div>
-
-      <div className="mt-8">
-        <h2>Quick Stats</h2>
-        <p>Games Completed: {stats.completed}</p>
-        <p>Currently Playing: {stats.playing}</p>
-        <p>Wishlist: {stats.wishlist}</p>
-        <p>Avg. Rating: {stats.avgRating}/10</p>
-      </div>
-
-      <div className="mt-8">
-        <h2>Recent Reviews</h2>
-        <ul>
-          {recentReviews.map((review, index) => (
-            <li key={index}>{review.game_name} - {review.rating}/10</li>
-          ))}
-          {recentReviews.length === 0 && <p>No recent reviews.</p>}
-        </ul>
-      </div>
-
-      <div className="mt-8">
-        <h2>Recent Activity</h2>
-        <ul>
-          {recentActivity.map((activity, index) => (
-            <li key={index}>{activity.action} {activity.game_name}</li>
-          ))}
-          {recentActivity.length === 0 && <p>No recent activity.</p>}
-        </ul>
-      </div>
-    </div>
-  );
-};
-
-export default Profile;
+    <div className="bg-gray-900 text-white p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Profile Header */}
+        <div className="flex flex-col md:flex-row justify-between gap-6 mb-8">
+          <ProfileInfo 
+            user={userProfile} 
+            isDummy={false}
+            onEditClick={handleEditClick} // Pass to make
