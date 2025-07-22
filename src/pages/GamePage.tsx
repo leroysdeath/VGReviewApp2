@@ -3,21 +3,24 @@ import { useParams, Link } from 'react-router-dom';
 import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
+import { AuthModal } from '../components/auth/AuthModal';
 import { useIGDBGame } from '../hooks/useIGDBCache';
+import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 
 export const GamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const gameIdNumber = id ? parseInt(id) : null;
-  
+  const { isAuthenticated, user } = useAuth();
+
   // Use the new caching hook for game data
-  const { 
-    data: game, 
-    loading: gameLoading, 
-    error: gameError, 
-    cached: isGameCached, 
+  const {
+    data: game,
+    loading: gameLoading,
+    error: gameError,
+    cached: isGameCached,
     refetch: refetchGame,
-    isStale: isGameStale 
+    isStale: isGameStale
   } = useIGDBGame(gameIdNumber);
 
   const [isInWishlist, setIsInWishlist] = useState(false);
@@ -25,27 +28,29 @@ export const GamePage: React.FC = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   // Load reviews when game data is available
   useEffect(() => {
     const loadReviews = async () => {
       if (!game || !id) return;
-      
+
       setReviewsLoading(true);
       setReviewsError(null);
-      
+
       try {
         console.log('Loading reviews for game ID:', id);
-        
+
         // Check if game exists in our database
         const { data: existingGame, error: dbError } = await supabase
           .from('game')
           .select('id')
           .eq('game_id', id)
           .single();
-          
+
         console.log('Database query result:', existingGame, 'Error:', dbError);
-          
+
         if (existingGame) {
           // Fetch reviews for this game
           console.log('Fetching reviews for game:', existingGame.id);
@@ -56,9 +61,9 @@ export const GamePage: React.FC = () => {
               user:user_id(*)
             `)
             .eq('game_id', existingGame.id);
-            
+
           console.log('Reviews fetched:', gameReviews, 'Error:', reviewsError);
-            
+
           if (!reviewsError && gameReviews) {
             setReviews(gameReviews);
           } else if (reviewsError) {
@@ -79,11 +84,44 @@ export const GamePage: React.FC = () => {
     loadReviews();
   }, [game, id]);
 
+  // Handle auth-required actions
+  const handleAuthRequiredAction = (action: string) => {
+    if (!isAuthenticated) {
+      setPendingAction(action);
+      setShowAuthModal(true);
+      return;
+    }
+    executeAction(action);
+  };
+
+  const executeAction = (action: string) => {
+    switch (action) {
+      case 'mark_started':
+        setIsInWishlist(!isInWishlist);
+        break;
+      case 'mark_completed':
+        setIsCompleted(!isCompleted);
+        break;
+      case 'write_review':
+        // Navigate to review page - handled by Link component
+        break;
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
+    if (pendingAction) {
+      executeAction(pendingAction);
+      setPendingAction(null);
+    }
+  };
+
   // Transform reviews to match ReviewCard component expectations
   const transformedReviews = reviews.map(review => ({
     id: review.id.toString(),
     userId: review.user_id.toString(),
     gameId: review.game_id.toString(),
+    gameTitle: game?.name || game?.title || 'Unknown Game',
     rating: review.rating,
     text: review.review || '',
     date: new Date(review.post_date_time).toISOString().split('T')[0],
@@ -93,12 +131,12 @@ export const GamePage: React.FC = () => {
     author: review.user?.name || 'Anonymous',
     authorAvatar: review.user?.picurl || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
   }));
-  
+
   const topReviews = transformedReviews.filter(r => r.rating >= 8).slice(0, 3);
   const recentReviews = transformedReviews.slice(0, 5);
 
-  const averageRating = transformedReviews.length > 0 
-    ? transformedReviews.reduce((sum, review) => sum + review.rating, 0) / transformedReviews.length 
+  const averageRating = transformedReviews.length > 0
+    ? transformedReviews.reduce((sum, review) => sum + review.rating, 0) / transformedReviews.length
     : 0;
 
   const ratingDistribution = [
@@ -149,7 +187,7 @@ export const GamePage: React.FC = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Loading indicator with cache status */}
           <div className="text-center py-4">
             <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500 mr-2"></div>
@@ -194,7 +232,7 @@ export const GamePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Cache Status Indicator */}
         {(isGameCached || isGameStale) && (
           <div className="mb-4 flex items-center justify-between bg-gray-800 rounded-lg p-3">
@@ -245,7 +283,7 @@ export const GamePage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {game.first_release_date 
+                        {game.first_release_date
                           ? new Date(game.first_release_date * 1000).getFullYear()
                           : game.releaseDate || 'Unknown'
                         }
@@ -253,7 +291,7 @@ export const GamePage: React.FC = () => {
                     </div>
                     {game.genres && (
                       <div><strong>Genre:</strong> {
-                        Array.isArray(game.genres) 
+                        Array.isArray(game.genres)
                           ? game.genres.map(g => g.name || g).join(', ')
                           : game.genre || 'Unknown'
                       }</div>
@@ -274,15 +312,15 @@ export const GamePage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              
+
               {/* User Actions - Checkboxes and Write Review */}
               <div className="flex items-center gap-4 p-6 border-t border-gray-700">
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setIsInWishlist(!isInWishlist)}
+                    onClick={() => handleAuthRequiredAction('mark_started')}
                     className={`relative w-6 h-6 border-2 border-gray-400 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
-                      isInWishlist 
-                        ? 'bg-gray-800 border-gray-300' 
+                      isInWishlist
+                        ? 'bg-gray-800 border-gray-300'
                         : 'bg-gray-800 hover:bg-gray-700'
                     }`}
                   >
@@ -292,13 +330,13 @@ export const GamePage: React.FC = () => {
                   </button>
                   <span className="text-gray-300 text-sm">Started Game</span>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setIsCompleted(!isCompleted)}
+                    onClick={() => handleAuthRequiredAction('mark_completed')}
                     className={`relative w-6 h-6 border-2 border-gray-400 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
-                      isCompleted 
-                        ? 'bg-gray-800 border-gray-300' 
+                      isCompleted
+                        ? 'bg-gray-800 border-gray-300'
                         : 'bg-gray-800 hover:bg-gray-700'
                     }`}
                   >
@@ -308,20 +346,39 @@ export const GamePage: React.FC = () => {
                   </button>
                   <span className="text-gray-300 text-sm">Finished Game</span>
                 </div>
-                
+
                 <div className="flex items-center gap-3 ml-4">
-                  <Link
-                    to={`/review/${game.id}`}
-                    className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center hover:bg-purple-700 transition-colors"
-                  >
-                    <ScrollText className="h-4 w-4 text-white" />
-                  </Link>
-                  <Link
-                    to={`/review/${game.id}`}
-                    className="text-gray-300 text-sm hover:text-purple-400 transition-colors"
-                  >
-                    Write a Review
-                  </Link>
+                  {isAuthenticated ? (
+                    <>
+                      <Link
+                        to={`/review/${game.id}`}
+                        className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center hover:bg-purple-700 transition-colors"
+                      >
+                        <ScrollText className="h-4 w-4 text-white" />
+                      </Link>
+                      <Link
+                        to={`/review/${game.id}`}
+                        className="text-gray-300 text-sm hover:text-purple-400 transition-colors"
+                      >
+                        Write a Review
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleAuthRequiredAction('write_review')}
+                        className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center hover:bg-purple-700 transition-colors"
+                      >
+                        <ScrollText className="h-4 w-4 text-white" />
+                      </button>
+                      <button
+                        onClick={() => handleAuthRequiredAction('write_review')}
+                        className="text-gray-300 text-sm hover:text-purple-400 transition-colors"
+                      >
+                        Write a Review
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -337,7 +394,7 @@ export const GamePage: React.FC = () => {
                 </span>
               </div>
               <div className="border-b border-gray-700 mb-4"></div>
-              
+
               {reviewsError ? (
                 <div className="text-center py-4">
                   <p className="text-red-400 text-sm mb-2">{reviewsError}</p>
@@ -354,10 +411,10 @@ export const GamePage: React.FC = () => {
                     <span className="text-green-500 text-sm">1</span>
                     <div className="flex items-end gap-[2px]">
                       {ratingDistribution.map((item) => (
-                        <div 
-                          key={item.rating} 
+                        <div
+                          key={item.rating}
                           className="w-6 bg-gray-700 rounded-sm"
-                          style={{ 
+                          style={{
                             height: `${Math.max(4, (item.count / maxCount) * 40)}px`,
                             backgroundColor: item.rating >= 8 ? '#4ade80' : '#374151'
                           }}
@@ -386,15 +443,15 @@ export const GamePage: React.FC = () => {
               </div>
             )}
           </div>
-          
-          {/* Reviews content would go here */}
+
+          {/* Reviews content */}
           {transformedReviews.length > 0 ? (
             <div className="space-y-4">
               {topReviews.map(review => (
                 <div key={review.id} className="bg-gray-800 rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-2">
-                    <img 
-                      src={review.authorAvatar} 
+                    <img
+                      src={review.authorAvatar}
                       alt={review.author}
                       className="w-8 h-8 rounded-full"
                     />
@@ -413,10 +470,29 @@ export const GamePage: React.FC = () => {
           ) : !reviewsLoading && (
             <div className="text-center py-8 text-gray-500">
               <p>No reviews yet. Be the first to review this game!</p>
+              {!isAuthenticated && (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="mt-3 text-purple-400 hover:text-purple-300 transition-colors"
+                >
+                  Sign in to write a review
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => {
+          setShowAuthModal(false);
+          setPendingAction(null);
+        }}
+        onLoginSuccess={handleAuthSuccess}
+        onSignupSuccess={handleAuthSuccess}
+      />
     </div>
   );
 };
