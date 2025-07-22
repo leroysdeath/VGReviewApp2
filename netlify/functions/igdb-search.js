@@ -1,4 +1,44 @@
-// netlify/functions/igdb-search.js - Complete fixed version
+// netlify/functions/igdb-search.js
+const https = require('https');
+const { URL, URLSearchParams } = require('url');
+
+// Simple fetch implementation for Node.js
+function fetch(url, options = {}) {
+  return new Promise((resolve, reject) => {
+    const urlObj = new URL(url);
+    const requestOptions = {
+      hostname: urlObj.hostname,
+      port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+      path: urlObj.pathname + urlObj.search,
+      method: options.method || 'GET',
+      headers: options.headers || {}
+    };
+
+    const req = https.request(requestOptions, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        const response = {
+          ok: res.statusCode >= 200 && res.statusCode < 300,
+          status: res.statusCode,
+          statusText: res.statusMessage,
+          text: () => Promise.resolve(data),
+          json: () => Promise.resolve(JSON.parse(data))
+        };
+        resolve(response);
+      });
+    });
+
+    req.on('error', reject);
+    
+    if (options.body) {
+      req.write(options.body);
+    }
+    
+    req.end();
+  });
+}
+
 exports.handler = async (event, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -14,12 +54,12 @@ exports.handler = async (event, context) => {
   try {
     const clientId = process.env.TWITCH_CLIENT_ID;
     const accessToken = process.env.TWITCH_APP_ACCESS_TOKEN;
-    
+
     if (!clientId || !accessToken) {
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           error: 'Missing API credentials',
           debug: { hasClientId: !!clientId, hasAccessToken: !!accessToken }
         })
@@ -27,7 +67,7 @@ exports.handler = async (event, context) => {
     }
 
     let requestData = {};
-    
+
     // Parse request data
     if (event.body) {
       try {
@@ -39,19 +79,19 @@ exports.handler = async (event, context) => {
 
     // Extract query parameters
     const queryParams = event.queryStringParameters || {};
-    
+
     // Determine request type and extract relevant data
     let query = null;
     let gameId = null;
     let requestType = 'search'; // default
-    
+
     // Check if this is a game ID lookup request
     if (requestData.type === 'getById' || requestData.gameId) {
       requestType = 'getById';
       gameId = requestData.gameId || queryParams.gameId || queryParams.id;
     } else {
       // This is a search request
-      query = requestData.searchTerm || requestData.query || requestData.q || 
+      query = requestData.searchTerm || requestData.query || requestData.q ||
               queryParams.query || queryParams.q || queryParams.search || queryParams.term;
     }
 
@@ -74,7 +114,7 @@ exports.handler = async (event, context) => {
         return {
           statusCode: 400,
           headers,
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             error: 'Game ID is required for getById request',
             debug: { requestData, queryParams }
           })
@@ -82,8 +122,8 @@ exports.handler = async (event, context) => {
       }
 
       requestBody = `
-        fields name, cover.url, first_release_date, rating, summary, platforms.name, genres.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
-        where id = ${gameId};
+fields name, cover.url, first_release_date, rating, summary, platforms.name, genres.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
+where id = ${gameId};
       `.trim();
 
       console.log('Making IGDB request for game ID:', gameId);
@@ -93,7 +133,7 @@ exports.handler = async (event, context) => {
         return {
           statusCode: 400,
           headers,
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             error: 'Search query is required',
             debug: {
               receivedParams: queryParams,
@@ -107,9 +147,9 @@ exports.handler = async (event, context) => {
 
       query = query.trim();
       requestBody = `
-        fields name, cover.url, first_release_date, rating, summary, platforms.name, genres.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
-        search "${query}";
-        limit ${limit};
+fields name, cover.url, first_release_date, rating, summary, platforms.name, genres.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
+search "${query}";
+limit ${limit};
       `.trim();
 
       console.log('Making IGDB search request for query:', query);
@@ -130,22 +170,22 @@ exports.handler = async (event, context) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('IGDB API error:', response.status, errorText);
-      
+
       if (response.status === 401) {
         return {
           statusCode: 401,
           headers,
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             error: 'Authentication failed - check your API credentials',
             details: errorText
           })
         };
       }
-      
+
       return {
         statusCode: response.status,
         headers,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           error: 'IGDB API error',
           status: response.status,
           details: errorText
@@ -161,11 +201,11 @@ exports.handler = async (event, context) => {
       // Extract developer and publisher from involved_companies
       let developer = 'Unknown';
       let publisher = 'Unknown';
-      
+
       if (game.involved_companies && game.involved_companies.length > 0) {
         const dev = game.involved_companies.find(ic => ic.developer && ic.company);
         const pub = game.involved_companies.find(ic => ic.publisher && ic.company);
-        
+
         if (dev && dev.company && dev.company.name) {
           developer = dev.company.name;
         }
@@ -180,8 +220,8 @@ exports.handler = async (event, context) => {
         publisher,
         cover: game.cover ? {
           ...game.cover,
-          url: game.cover.url?.startsWith('//') 
-            ? `https:${game.cover.url}` 
+          url: game.cover.url?.startsWith('//')
+            ? `https:${game.cover.url}`
             : game.cover.url
         } : null
       };
@@ -214,7 +254,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         error: 'Internal server error',
         message: error.message,
         stack: error.stack
