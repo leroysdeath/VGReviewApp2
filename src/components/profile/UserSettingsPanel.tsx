@@ -588,29 +588,12 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
                 <div>
                   <h4 className="font-medium text-white">Email Notifications</h4>
-                  <p className="text-sm text-gray-400">Receive email updates about your account</p>
+                  <p className="text-sm text-gray-400">Receive updates via email</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input 
                     type="checkbox" 
-                    {...register('notifications.reviews')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {/* Mentions */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Mentions</h4>
-                  <p className="text-sm text-gray-400">Get notified when someone mentions you</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    {...register('notifications.mentions')}
+                    {...register('notifications.email')}
                     className="sr-only peer" 
                     disabled={isLoading}
                   />
@@ -811,12 +794,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       </div>
     </div>
   );
-};
-                    {...register('notifications.email')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+};gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>
 
@@ -845,4 +823,26 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input 
-                    type="checkbox"
+                    type="checkbox" 
+                    {...register('notifications.reviews')}
+                    className="sr-only peer" 
+                    disabled={isLoading}
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+
+              {/* Mentions */}
+              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-white">Mentions</h4>
+                  <p className="text-sm text-gray-400">Get notified when someone mentions you</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    {...register('notifications.mentions')}
+                    className="sr-only peer" 
+                    disabled={isLoading}
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-
