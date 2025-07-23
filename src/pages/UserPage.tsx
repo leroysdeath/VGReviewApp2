@@ -11,13 +11,15 @@ interface User {
   bio?: string;
   picurl?: string;
   created_at: string;
+  location?: string;
+  website?: string;
 }
 
 interface UserReview {
   id: string;
   rating: number;
   review?: string;
-  created_at: string;
+  post_date_time: string;
   game_id: string;
   user_id: string;
   game?: any;
@@ -41,6 +43,19 @@ export const UserPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Safe avatar URL function
+  const getSafeAvatarUrl = (avatarUrl?: string | null): string => {
+    if (!avatarUrl || avatarUrl.trim() === '') {
+      return 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150';
+    }
+    return avatarUrl;
+  };
+
+  // Safe string access function
+  const getSafeString = (value?: string | null, fallback: string = ''): string => {
+    return value && typeof value === 'string' ? value : fallback;
+  };
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (!id) {
@@ -53,19 +68,15 @@ export const UserPage: React.FC = () => {
         setLoading(true);
         setError(null);
         
-        // Fetch user data with error handling
+        // Fetch user data with comprehensive error handling
         const { data: userData, error: userError } = await supabase
           .from('user')
           .select('*')
           .eq('id', id)
           .single();
           
-        if (userError) {
+        if (userError || !userData) {
           console.error('User fetch error:', userError);
-          throw new Error('User not found');
-        }
-
-        if (!userData) {
           throw new Error('User not found');
         }
         
@@ -87,7 +98,9 @@ export const UserPage: React.FC = () => {
         }
         
         // Get game IDs from reviews safely
-        const gameIds = (reviewsData || []).map(review => review.game_id).filter(Boolean);
+        const gameIds = (reviewsData || [])
+          .map(review => review?.game_id)
+          .filter(Boolean);
         
         if (gameIds.length > 0) {
           // Fetch games data
@@ -128,50 +141,70 @@ export const UserPage: React.FC = () => {
     return <Navigate to="/users" replace />;
   }
   
-  // Transform user data to match expected format with safe avatar handling
+  // Transform user data to match expected format with comprehensive null safety
   const transformedUser = {
-    id: user.id,
-    username: user.name || 'Unknown User',
-    avatar: user.picurl || null, // Explicitly handle null/undefined
-    bio: user.bio || 'Gaming enthusiast',
-    joinDate: user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown',
-    stats: {
-      gamesPlayed: games.length,
-      reviews: userReviews.length,
-      averageRating: userReviews.length > 0 
-        ? userReviews.reduce((acc, review) => acc + (review.rating || 0), 0) / userReviews.length 
-        : 0,
-      followers: 0, // Add actual followers count if available
-      following: 0  // Add actual following count if available
-    }
+    id: user.id || '',
+    username: getSafeString(user.name, 'Unknown User'),
+    avatar: getSafeAvatarUrl(user.picurl),
+    bio: getSafeString(user.bio, 'Gaming enthusiast'),
+    joinDate: user.created_at 
+      ? new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+      : 'Unknown',
+    location: getSafeString(user.location),
+    website: getSafeString(user.website)
+  };
+  
+  // Calculate user stats safely
+  const stats = {
+    films: userReviews.length,
+    thisYear: userReviews.filter(r => {
+      try {
+        return r.post_date_time && new Date(r.post_date_time).getFullYear() === new Date().getFullYear();
+      } catch {
+        return false;
+      }
+    }).length,
+    lists: 0, // To be implemented with real data
+    following: 0, // To be implemented with real data
+    followers: 0 // To be implemented with real data
   };
 
-  // Safe avatar URL function
-  const getAvatarUrl = (avatarUrl?: string | null) => {
-    if (!avatarUrl) {
-      return 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150';
+  // Sort reviews safely
+  const sortedReviews = [...userReviews].sort((a, b) => {
+    try {
+      switch (reviewFilter) {
+        case 'highest':
+          return (b.rating || 0) - (a.rating || 0);
+        case 'lowest':
+          return (a.rating || 0) - (b.rating || 0);
+        case 'oldest':
+          if (!a.post_date_time || !b.post_date_time) return 0;
+          return new Date(a.post_date_time).getTime() - new Date(b.post_date_time).getTime();
+        default:
+          if (!a.post_date_time || !b.post_date_time) return 0;
+          return new Date(b.post_date_time).getTime() - new Date(a.post_date_time).getTime();
+      }
+    } catch (error) {
+      console.error('Error sorting reviews:', error);
+      return 0;
     }
-    return avatarUrl;
-  };
-
-  // Update transformed user with safe avatar
-  const safeTransformedUser = {
-    ...transformedUser,
-    avatar: getAvatarUrl(transformedUser.avatar)
-  };
+  });
 
   return (
-    <UserPageLayout user={safeTransformedUser}>
+    <UserPageLayout
+      user={transformedUser}
+      stats={stats}
+      activeTab={activeTab}
+      onTabChange={(tab) => setActiveTab(tab as any)}
+      isDummy={false}
+    >
       <UserPageContent
-        user={safeTransformedUser}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        sortedReviews={sortedReviews}
+        allGames={games}
         reviewFilter={reviewFilter}
-        setReviewFilter={setReviewFilter}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        games={games}
-        reviews={userReviews}
+        onReviewFilterChange={setReviewFilter}
+        isDummy={false}
       />
     </UserPageLayout>
   );
