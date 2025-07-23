@@ -37,7 +37,12 @@ interface ProfileDataWithPreviewProps {
   onViewModeChange?: (mode: string) => void;
   userFavoriteGames?: Game[];
   userRecentGames?: Game[];
-  stats?: any;
+  stats?: {
+    gamesReviewed?: number;
+    totalGames?: number;
+    averageRating?: number;
+    [key: string]: any;
+  };
 }
 
 export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
@@ -52,7 +57,7 @@ export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
   onViewModeChange,
   userFavoriteGames,
   userRecentGames,
-  stats
+  stats = {}
 }) => {
   return (
     <div className={forceMobileView ? 'mobile-preview-context' : ''}>
@@ -63,6 +68,7 @@ export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
         reviewFilter={reviewFilter}
         onReviewFilterChange={onReviewFilterChange}
         isDummy={isDummy}
+        stats={stats}
       />
     </div>
   );
