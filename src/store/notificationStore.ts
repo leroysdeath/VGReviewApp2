@@ -1,163 +1,96 @@
+// src/store/notificationStore.ts
 import { create } from 'zustand';
-import { immer } from 'zustand/middleware/immer';
-import { 
-  Notification, 
-  NotificationStore 
-} from '../types/notification';
-import { 
-  fetchNotifications, 
-  markNotificationAsRead, 
-  markAllNotificationsAsRead 
-} from '../services/notificationService';
 
-export const useNotificationStore = create<NotificationStore>()(
-  immer((set, get) => ({
-    // State
-    notifications: [],
-    unreadCount: 0,
-    totalCount: 0,
-    isLoading: false,
-    error: null,
-    hasMore: true,
-    nextCursor: undefined,
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+}
+
+interface NotificationStore {
+  notifications: Notification[];
+  unreadCount: number;
+  isLoading: boolean;
+  error: string | null;
+  hasMore: boolean;
+  fetchNotifications: (userId: string) => Promise<void>;
+  fetchMoreNotifications: () => Promise<void>;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  clearError: () => void;
+}
+
+export const useNotificationStore = create<NotificationStore>((set, get) => ({
+  notifications: [],
+  unreadCount: 0,
+  isLoading: false,
+  error: null,
+  hasMore: true,
+
+  fetchNotifications: async (userId: string) => {
+    set({ isLoading: true, error: null });
     
-    // Actions
-    fetchNotifications: async (userId: string, limit = 20) => {
-      set(state => {
-        state.isLoading = true;
-        state.error = null;
-      });
-      
-      try {
-        const response = await fetchNotifications(userId, undefined, limit);
-        
-        set(state => {
-          state.notifications = response.notifications;
-          state.unreadCount = response.unreadCount;
-          state.totalCount = response.totalCount;
-          state.hasMore = !!response.nextCursor;
-          state.nextCursor = response.nextCursor;
-          state.isLoading = false;
-        });
-      } catch (error) {
-        set(state => {
-          state.error = error instanceof Error ? error.message : 'Failed to fetch notifications';
-          state.isLoading = false;
-        });
-      }
-    },
-    
-    fetchMoreNotifications: async () => {
-      const { isLoading, hasMore, nextCursor } = get();
-      
-      if (isLoading || !hasMore || !nextCursor) return;
-      
-      set(state => {
-        state.isLoading = true;
-        state.error = null;
-      });
-      
-      try {
-        // We need to get userId from the existing notifications
-        const userId = get().notifications[0]?.userId;
-        if (!userId) throw new Error('User ID not found');
-        
-        const response = await fetchNotifications(userId, nextCursor);
-        
-        set(state => {
-          state.notifications = [...state.notifications, ...response.notifications];
-          state.unreadCount = response.unreadCount;
-          state.totalCount = response.totalCount;
-          state.hasMore = !!response.nextCursor;
-          state.nextCursor = response.nextCursor;
-          state.isLoading = false;
-        });
-      } catch (error) {
-        set(state => {
-          state.error = error instanceof Error ? error.message : 'Failed to fetch more notifications';
-          state.isLoading = false;
-        });
-      }
-    },
-    
-    markAsRead: async (notificationId: string) => {
-      try {
-        // Optimistic update
-        set(state => {
-          const notification = state.notifications.find(n => n.id === notificationId);
-          if (notification && !notification.isRead) {
-            notification.isRead = true;
-            state.unreadCount = Math.max(0, state.unreadCount - 1);
-          }
-        });
-        
-        // Make API call
-        await markNotificationAsRead(notificationId);
-      } catch (error) {
-        // Revert optimistic update on failure
-        set(state => {
-          const notification = state.notifications.find(n => n.id === notificationId);
-          if (notification && notification.isRead) {
-            notification.isRead = false;
-            state.unreadCount += 1;
-          }
-          state.error = error instanceof Error ? error.message : 'Failed to mark notification as read';
-        });
-      }
-    },
-    
-    markAllAsRead: async () => {
-      // Get user ID from the first notification
-      const userId = get().notifications[0]?.userId;
-      if (!userId) return;
-      
-      // Count currently unread notifications
-      const unreadCount = get().unreadCount;
-      if (unreadCount === 0) return;
-      
-      try {
-        // Optimistic update
-        set(state => {
-          state.notifications.forEach(notification => {
-            notification.isRead = true;
-          });
-          state.unreadCount = 0;
-        });
-        
-        // Make API call
-        await markAllNotificationsAsRead(userId);
-      } catch (error) {
-        // Revert optimistic update on failure
-        set(state => {
-          // Refetch to get accurate state
-          state.error = error instanceof Error ? error.message : 'Failed to mark all notifications as read';
-          // We'll need to refetch to restore the correct state
-          state.isLoading = true;
-        });
-        
-        // Refetch to restore correct state
-        try {
-          const response = await fetchNotifications(userId);
-          set(state => {
-            state.notifications = response.notifications;
-            state.unreadCount = response.unreadCount;
-            state.isLoading = false;
-          });
-        } catch (refetchError) {
-          set(state => {
-            state.error = refetchError instanceof Error 
-              ? refetchError.message 
-              : 'Failed to restore notification state';
-            state.isLoading = false;
-          });
+    try {
+      // Mock notifications
+      const mockNotifications: Notification[] = [
+        {
+          id: '1',
+          title: 'New Review',
+          message: 'John Doe reviewed Cyberpunk 2077',
+          timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+          isRead: false
+        },
+        {
+          id: '2',
+          title: 'New Follower',
+          message: 'Jane Smith is now following you',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+          isRead: false
         }
-      }
-    },
-    
-    clearError: () => {
-      set(state => {
-        state.error = null;
+      ];
+
+      set({
+        notifications: mockNotifications,
+        unreadCount: mockNotifications.filter(n => !n.isRead).length,
+        isLoading: false,
+        hasMore: false
+      });
+    } catch (error) {
+      set({
+        error: 'Failed to fetch notifications',
+        isLoading: false
       });
     }
-  }))
-);
+  },
+
+  fetchMoreNotifications: async () => {
+    // Mock implementation
+    set({ isLoading: false });
+  },
+
+  markAsRead: async (id: string) => {
+    const notifications = get().notifications.map(n =>
+      n.id === id ? { ...n, isRead: true } : n
+    );
+    
+    set({
+      notifications,
+      unreadCount: notifications.filter(n => !n.isRead).length
+    });
+  },
+
+  markAllAsRead: async () => {
+    const notifications = get().notifications.map(n => ({ ...n, isRead: true }));
+    
+    set({
+      notifications,
+      unreadCount: 0
+    });
+  },
+
+  clearError: () => {
+    set({ error: null });
+  }
+}));
