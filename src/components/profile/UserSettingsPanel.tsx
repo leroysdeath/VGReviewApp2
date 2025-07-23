@@ -76,7 +76,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData.avatar || null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData?.avatar || null);
 
   // Form setup
   const { 
@@ -88,13 +88,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      username: initialData.username,
-      displayName: initialData.displayName || '',
-      email: initialData.email,
-      bio: initialData.bio || '',
-      location: initialData.location || '',
-      website: initialData.website || '',
-      notifications: initialData.notifications || {
+      username: initialData?.username || '',
+      displayName: initialData?.displayName || '',
+      email: initialData?.email || '',
+      bio: initialData?.bio || '',
+      location: initialData?.location || '',
+      website: initialData?.website || '',
+      notifications: initialData?.notifications || {
         email: true,
         push: true,
         reviews: true,
@@ -129,13 +129,30 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     }
   });
 
-  // Handle avatar change
+  // Handle avatar change - FIXED
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target?.files?.[0];
     if (file) {
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setSaveError('Image size must be less than 2MB');
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setSaveError('Please select a valid image file');
+        return;
+      }
+
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatarPreview(e.target?.result as string);
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setAvatarPreview(event.target.result as string);
+        }
+      };
+      reader.onerror = () => {
+        setSaveError('Error reading file. Please try again.');
       };
       reader.readAsDataURL(file);
     }
@@ -271,7 +288,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   />
                 ) : (
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                    {initialData.username.charAt(0).toUpperCase()}
+                    {initialData?.username?.charAt(0)?.toUpperCase() || 'U'}
                   </div>
                 )}
                 <div>
@@ -307,31 +324,29 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                     errors.username ? 'border-red-500' : 'border-gray-600'
                   }`}
-                  placeholder="GamerTag"
-                  disabled={isLoading}
+                  placeholder="Enter your username"
                 />
               </div>
               {errors.username && (
-                <p className="mt-1 text-sm text-red-400">{errors.username.message}</p>
+                <p className="text-red-400 text-sm mt-1">{errors.username.message}</p>
               )}
             </div>
 
             {/* Display Name */}
             <div>
               <label htmlFor="displayName" className="block text-sm font-medium text-gray-300 mb-1">
-                Display Name (optional)
+                Display Name
               </label>
-              <input
-                id="displayName"
-                type="text"
-                {...register('displayName')}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                placeholder="Your public display name"
-                disabled={isLoading}
-              />
-              {errors.displayName && (
-                <p className="mt-1 text-sm text-red-400">{errors.displayName.message}</p>
-              )}
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                <input
+                  id="displayName"
+                  type="text"
+                  {...register('displayName')}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                  placeholder="Enter your display name"
+                />
+              </div>
             </div>
 
             {/* Email */}
@@ -348,44 +363,40 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                     errors.email ? 'border-red-500' : 'border-gray-600'
                   }`}
-                  placeholder="your.email@example.com"
-                  disabled={isLoading}
+                  placeholder="Enter your email"
                 />
               </div>
               {errors.email && (
-                <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
+                <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>
               )}
             </div>
 
             {/* Bio */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label htmlFor="bio" className="block text-sm font-medium text-gray-300">
-                  Bio (optional)
-                </label>
-                <span className="text-xs text-gray-400">
-                  {watch('bio')?.length || 0}/160
-                </span>
-              </div>
+              <label htmlFor="bio" className="block text-sm font-medium text-gray-300 mb-1">
+                Bio
+              </label>
               <textarea
                 id="bio"
                 {...register('bio')}
                 rows={3}
-                className={`w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                className={`w-full px-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-none ${
                   errors.bio ? 'border-red-500' : 'border-gray-600'
                 }`}
-                placeholder="Tell us about yourself"
-                disabled={isLoading}
+                placeholder="Tell us about yourself..."
               />
               {errors.bio && (
-                <p className="mt-1 text-sm text-red-400">{errors.bio.message}</p>
+                <p className="text-red-400 text-sm mt-1">{errors.bio.message}</p>
               )}
+              <p className="text-gray-400 text-xs mt-1">
+                {watch('bio')?.length || 0}/160 characters
+              </p>
             </div>
 
             {/* Location */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-300 mb-1">
-                Location (optional)
+                Location
               </label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
@@ -393,57 +404,52 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   id="location"
                   type="text"
                   {...register('location')}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                  placeholder="City, Country"
-                  disabled={isLoading}
+                  className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                    errors.location ? 'border-red-500' : 'border-gray-600'
+                  }`}
+                  placeholder="Enter your location"
                 />
               </div>
               {errors.location && (
-                <p className="mt-1 text-sm text-red-400">{errors.location.message}</p>
+                <p className="text-red-400 text-sm mt-1">{errors.location.message}</p>
               )}
             </div>
 
             {/* Website */}
             <div>
               <label htmlFor="website" className="block text-sm font-medium text-gray-300 mb-1">
-                Website (optional)
+                Website
               </label>
               <div className="relative">
                 <LinkIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                 <input
                   id="website"
-                  type="text"
+                  type="url"
                   {...register('website')}
                   className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                     errors.website ? 'border-red-500' : 'border-gray-600'
                   }`}
                   placeholder="https://yourwebsite.com"
-                  disabled={isLoading}
                 />
               </div>
               {errors.website && (
-                <p className="mt-1 text-sm text-red-400">{errors.website.message}</p>
+                <p className="text-red-400 text-sm mt-1">{errors.website.message}</p>
               )}
             </div>
 
-            {/* Submit button */}
-            <div className="flex justify-end">
+            {/* Save Button */}
+            <div className="flex justify-end pt-4">
               <button
                 type="submit"
                 disabled={isLoading || !isDirty}
-                className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
+                className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
               >
                 {isLoading ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Saving...
-                  </>
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <>
-                    <Save className="h-5 w-5" />
-                    Save Changes
-                  </>
+                  <Save className="h-4 w-4" />
                 )}
+                {isLoading ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </form>
@@ -451,478 +457,310 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
         {/* Account Settings */}
         {activeTab === 'account' && (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {/* Password Change */}
-            <div className="bg-gray-750 rounded-lg p-6 border border-gray-700">
-              <h3 className="text-lg font-medium text-white mb-4">Change Password</h3>
-              <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-4">
-                {/* Current Password */}
+            <div className="bg-gray-700 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
                 <div>
-                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                  <h3 className="text-lg font-medium text-white">Change Password</h3>
+                  <p className="text-sm text-gray-400">Update your password to keep your account secure</p>
+                </div>
+                <Key className="h-5 w-5 text-gray-400" />
+              </div>
+              
+              <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Current Password
                   </label>
                   <div className="relative">
-                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                     <input
-                      id="currentPassword"
                       type={showPassword ? 'text' : 'password'}
                       {...passwordForm.register('currentPassword')}
-                      className={`w-full pl-10 pr-10 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                        passwordForm.formState.errors.currentPassword ? 'border-red-500' : 'border-gray-600'
-                      }`}
-                      placeholder="••••••••"
-                      disabled={isLoading}
+                      className="w-full px-4 py-3 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                      placeholder="Enter current password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
                     >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                   {passwordForm.formState.errors.currentPassword && (
-                    <p className="mt-1 text-sm text-red-400">{passwordForm.formState.errors.currentPassword.message}</p>
+                    <p className="text-red-400 text-sm mt-1">
+                      {passwordForm.formState.errors.currentPassword.message}
+                    </p>
                   )}
                 </div>
 
-                {/* New Password */}
                 <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     New Password
                   </label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                    <input
-                      id="newPassword"
-                      type={showPassword ? 'text' : 'password'}
-                      {...passwordForm.register('newPassword')}
-                      className={`w-full pl-10 pr-10 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                        passwordForm.formState.errors.newPassword ? 'border-red-500' : 'border-gray-600'
-                      }`}
-                      placeholder="••••••••"
-                      disabled={isLoading}
-                    />
-                  </div>
+                  <input
+                    type="password"
+                    {...passwordForm.register('newPassword')}
+                    className="w-full px-4 py-3 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                    placeholder="Enter new password"
+                  />
                   {passwordForm.formState.errors.newPassword && (
-                    <p className="mt-1 text-sm text-red-400">{passwordForm.formState.errors.newPassword.message}</p>
+                    <p className="text-red-400 text-sm mt-1">
+                      {passwordForm.formState.errors.newPassword.message}
+                    </p>
                   )}
                 </div>
 
-                {/* Confirm New Password */}
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Confirm New Password
                   </label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                    <input
-                      id="confirmPassword"
-                      type={showPassword ? 'text' : 'password'}
-                      {...passwordForm.register('confirmPassword')}
-                      className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                        passwordForm.formState.errors.confirmPassword ? 'border-red-500' : 'border-gray-600'
-                      }`}
-                      placeholder="••••••••"
-                      disabled={isLoading}
-                    />
-                  </div>
+                  <input
+                    type="password"
+                    {...passwordForm.register('confirmPassword')}
+                    className="w-full px-4 py-3 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                    placeholder="Confirm new password"
+                  />
                   {passwordForm.formState.errors.confirmPassword && (
-                    <p className="mt-1 text-sm text-red-400">{passwordForm.formState.errors.confirmPassword.message}</p>
+                    <p className="text-red-400 text-sm mt-1">
+                      {passwordForm.formState.errors.confirmPassword.message}
+                    </p>
                   )}
                 </div>
 
-                {/* Submit button */}
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      'Update Password'
-                    )}
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Key className="h-4 w-4" />
+                  )}
+                  {isLoading ? 'Updating...' : 'Update Password'}
+                </button>
               </form>
             </div>
 
-            {/* Connected Accounts */}
-            <div className="bg-gray-750 rounded-lg p-6 border border-gray-700">
-              <h3 className="text-lg font-medium text-white mb-4">Connected Accounts</h3>
-              
-              <div className="space-y-4">
-                {/* Google */}
-                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                      <svg className="h-5 w-5 text-gray-900" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">Google</div>
-                      <div className="text-sm text-gray-400">Not connected</div>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
-                    Connect
-                  </button>
-                </div>
-
-                {/* Discord */}
-                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#5865F2] rounded-full flex items-center justify-center">
-                      <svg className="h-5 w-5 text-white" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">Discord</div>
-                      <div className="text-sm text-gray-400">Not connected</div>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
-                    Connect
-                  </button>
-                </div>
-
-                {/* Steam */}
-                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#171a21] rounded-full flex items-center justify-center">
-                      <svg className="h-5 w-5 text-white" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.253 0-2.265-1.014-2.265-2.265z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">Steam</div>
-                      <div className="text-sm text-green-400">Connected</div>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                    Disconnect
-                  </button>
-                </div>
-              </div>
-            </div>
-
             {/* Danger Zone */}
-            <div className="bg-red-900/20 rounded-lg p-6 border border-red-800/50">
-              <h3 className="text-lg font-medium text-white mb-4">Danger Zone</h3>
-              <p className="text-gray-300 mb-4">
-                Once you delete your account, there is no going back. Please be certain.
-              </p>
-              <button
-                type="button"
-                onClick={onDeleteAccount}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete Account
-              </button>
-            </div>
+            {onDeleteAccount && (
+              <div className="bg-red-900/20 border border-red-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-red-400">Danger Zone</h3>
+                    <p className="text-sm text-gray-400">Permanently delete your account and all data</p>
+                  </div>
+                  <AlertCircle className="h-5 w-5 text-red-400" />
+                </div>
+                
+                <button
+                  onClick={onDeleteAccount}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors inline-flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Account
+                </button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Notification Settings */}
+        {/* Notifications Settings */}
         {activeTab === 'notifications' && (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <h3 className="text-lg font-medium text-white mb-4">Notification Preferences</h3>
-            
-            <div className="space-y-4">
-              {/* Email Notifications */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Email Notifications</h4>
-                  <p className="text-sm text-gray-400">Receive email updates about your account</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Bell className="h-5 w-5 text-purple-400" />
+              <div>
+                <h3 className="text-lg font-medium text-white">Notification Preferences</h3>
+                <p className="text-sm text-gray-400">Choose what notifications you want to receive</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium text-white">Email Notifications</label>
+                    <p className="text-xs text-gray-400">Receive notifications via email</p>
+                  </div>
+                  <input
+                    type="checkbox"
                     {...register('notifications.email')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
+                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
                   />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {/* Push Notifications */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Push Notifications</h4>
-                  <p className="text-sm text-gray-400">Receive notifications on your device</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+
+                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium text-white">Push Notifications</label>
+                    <p className="text-xs text-gray-400">Receive push notifications in your browser</p>
+                  </div>
+                  <input
+                    type="checkbox"
                     {...register('notifications.push')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
+                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
                   />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {/* Review Notifications */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Review Notifications</h4>
-                  <p className="text-sm text-gray-400">Get notified when someone comments on your reviews</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+
+                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium text-white">Review Notifications</label>
+                    <p className="text-xs text-gray-400">Get notified when someone reviews your content</p>
+                  </div>
+                  <input
+                    type="checkbox"
                     {...register('notifications.reviews')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
+                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
                   />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {/* Mentions */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Mentions</h4>
-                  <p className="text-sm text-gray-400">Get notified when someone mentions you</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+
+                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium text-white">Mention Notifications</label>
+                    <p className="text-xs text-gray-400">Get notified when someone mentions you</p>
+                  </div>
+                  <input
+                    type="checkbox"
                     {...register('notifications.mentions')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
+                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-2 focus:ring-purple-500"
                   />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {/* New Followers */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">New Followers</h4>
-                  <p className="text-sm text-gray-400">Get notified when someone follows you</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+
+                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium text-white">Follower Notifications</label>
+                    <p className="text-xs text-gray-400">Get notified when someone follows you</p>
+                  </div>
+                  <input
+                    type="checkbox"
                     {...register('notifications.followers')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
+                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
                   />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {/* Achievements */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Achievements</h4>
-                  <p className="text-sm text-gray-400">Get notified when you earn achievements</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    {...register('notifications.achievements')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-            </div>
 
-            {/* Submit button */}
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={isLoading || !isDirty}
-                className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-5 w-5" />
-                    Save Changes
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium text-white">Achievement Notifications</label>
+                    <p className="text-xs text-gray-400">Get notified when you unlock achievements</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    {...register('notifications.achievements')}
+                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <button
+                  type="submit"
+                  disabled={isLoading || !isDirty}
+                  className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {isLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
         )}
 
         {/* Privacy & Security Settings */}
         {activeTab === 'privacy' && (
           <div className="space-y-6">
-            <h3 className="text-lg font-medium text-white mb-4">Privacy & Security</h3>
-            
-            {/* Privacy Settings */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Profile Visibility</h4>
-                  <p className="text-sm text-gray-400">Control who can see your profile</p>
-                </div>
-                <select
-                  className="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  defaultValue="public"
-                >
-                  <option value="public">Public</option>
-                  <option value="followers">Followers Only</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Activity Visibility</h4>
-                  <p className="text-sm text-gray-400">Control who can see your gaming activity</p>
-                </div>
-                <select
-                  className="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  defaultValue="public"
-                >
-                  <option value="public">Public</option>
-                  <option value="followers">Followers Only</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Show Online Status</h4>
-                  <p className="text-sm text-gray-400">Let others see when you're online</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    defaultChecked={true}
-                    className="sr-only peer" 
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
+            <div className="flex items-center gap-3 mb-6">
+              <Shield className="h-5 w-5 text-purple-400" />
+              <div>
+                <h3 className="text-lg font-medium text-white">Privacy & Security</h3>
+                <p className="text-sm text-gray-400">Control your privacy and security settings</p>
               </div>
             </div>
 
-            {/* Security Settings */}
-            <div className="mt-8">
-              <h3 className="text-lg font-medium text-white mb-4">Security</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Shield className="h-6 w-6 text-green-400" />
-                    <div>
-                      <h4 className="font-medium text-white">Two-Factor Authentication</h4>
-                      <p className="text-sm text-gray-400">Add an extra layer of security to your account</p>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+            <div className="space-y-4">
+              <div className="bg-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-white">Public Profile</label>
+                  <input
+                    type="checkbox"
+                    defaultChecked={true}
+                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
+                  />
+                </div>
+                <p className="text-xs text-gray-400">Allow others to view your profile and activity</p>
+              </div>
+
+              <div className="bg-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-white">Show Online Status</label>
+                  <input
+                    type="checkbox"
+                    defaultChecked={true}
+                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
+                  />
+                </div>
+                <p className="text-xs text-gray-400">Let others see when you're online</p>
+              </div>
+
+              <div className="bg-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-white">Activity Visibility</label>
+                  <select className="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 px-3 py-1">
+                    <option value="public">Public</option>
+                    <option value="friends">Friends Only</option>
+                    <option value="private">Private</option>
+                  </select>
+                </div>
+                <p className="text-xs text-gray-400">Control who can see your gaming activity</p>
+              </div>
+
+              <div className="bg-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-white">Friend Requests</label>
+                  <select className="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 px-3 py-1">
+                    <option value="everyone">Everyone</option>
+                    <option value="friends-of-friends">Friends of Friends</option>
+                    <option value="nobody">Nobody</option>
+                  </select>
+                </div>
+                <p className="text-xs text-gray-400">Choose who can send you friend requests</p>
+              </div>
+
+              <div className="bg-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-white">Direct Messages</label>
+                  <select className="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 px-3 py-1">
+                    <option value="everyone">Everyone</option>
+                    <option value="friends">Friends Only</option>
+                    <option value="nobody">Nobody</option>
+                  </select>
+                </div>
+                <p className="text-xs text-gray-400">Control who can send you direct messages</p>
+              </div>
+
+              <div className="bg-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-white">Two-Factor Authentication</label>
+                  <button className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
                     Enable
                   </button>
                 </div>
+                <p className="text-xs text-gray-400">Add an extra layer of security to your account</p>
+              </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Bell className="h-6 w-6 text-yellow-400" />
-                    <div>
-                      <h4 className="font-medium text-white">Login Alerts</h4>
-                      <p className="text-sm text-gray-400">Get notified of new logins to your account</p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={true}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Key className="h-6 w-6 text-blue-400" />
-                    <div>
-                      <h4 className="font-medium text-white">Active Sessions</h4>
-                      <p className="text-sm text-gray-400">Manage devices where you're logged in</p>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
-                    Manage
+              <div className="bg-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-white">Data Export</label>
+                  <button className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                    Request
                   </button>
                 </div>
-              </div>
-            </div>
-
-            {/* Data & Privacy */}
-            <div className="mt-8">
-              <h3 className="text-lg font-medium text-white mb-4">Data & Privacy</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-white">Data Collection</h4>
-                    <p className="text-sm text-gray-400">Allow us to collect usage data to improve your experience</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={true}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-white">Personalized Recommendations</h4>
-                    <p className="text-sm text-gray-400">Allow us to suggest games based on your activity</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={true}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-white">Marketing Emails</h4>
-                    <p className="text-sm text-gray-400">Receive emails about new features and promotions</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={false}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <button className="text-purple-400 hover:text-purple-300 transition-colors text-sm">
-                  Download my data
-                </button>
+                <p className="text-xs text-gray-400">Download a copy of your data</p>
               </div>
             </div>
           </div>
@@ -931,3 +769,5 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     </div>
   );
 };
+
+export default UserSettingsPanel;
