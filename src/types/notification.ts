@@ -1,4 +1,4 @@
-// Notification types
+// src/types/notification.ts
 export interface Notification {
   id: string;
   type: 'review_mention' | 'comment_reply' | 'user_followed' | 'game_release' | 'price_drop' | 'system_announcement';
