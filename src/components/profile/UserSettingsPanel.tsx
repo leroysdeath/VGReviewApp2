@@ -152,9 +152,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     try {
       await onSave(data);
       setSaveSuccess(true);
-      reset(data); // Reset form with new values
+      reset(data);
       
-      // Clear success message after 3 seconds
       setTimeout(() => {
         setSaveSuccess(false);
       }, 3000);
@@ -171,16 +170,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     setSaveError(null);
     
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       console.log('Password change data:', data);
       
-      // Reset form
       passwordForm.reset();
       setShowPassword(false);
       setSaveSuccess(true);
       
-      // Clear success message after 3 seconds
       setTimeout(() => {
         setSaveSuccess(false);
       }, 3000);
@@ -306,8 +302,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   type="text"
                   {...register('username')}
                   className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                    errors.username ?
-                      'border-red-500' : 'border-gray-600'
+                    errors.username ? 'border-red-500' : 'border-gray-600'
                   }`}
                   placeholder="GamerTag"
                   disabled={isLoading}
@@ -348,8 +343,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   type="email"
                   {...register('email')}
                   className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                    errors.email ?
-                      'border-red-500' : 'border-gray-600'
+                    errors.email ? 'border-red-500' : 'border-gray-600'
                   }`}
                   placeholder="your.email@example.com"
                   disabled={isLoading}
@@ -375,8 +369,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                 {...register('bio')}
                 rows={3}
                 className={`w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                  errors.bio ?
-                    'border-red-500' : 'border-gray-600'
+                  errors.bio ? 'border-red-500' : 'border-gray-600'
                 }`}
                 placeholder="Tell us about yourself"
                 disabled={isLoading}
@@ -593,23 +586,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input 
                     type="checkbox" 
-                    {...register('notifications.email')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {/* New Followers */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">New Followers</h4>
-                  <p className="text-sm text-gray-400">Get notified when someone follows you</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
                     {...register('notifications.followers')}
                     className="sr-only peer" 
                     disabled={isLoading}
@@ -794,7 +770,12 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       </div>
     </div>
   );
-};gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+}; 
+                    {...register('notifications.email')}
+                    className="sr-only peer" 
+                    disabled={isLoading}
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>
 
@@ -845,4 +826,16 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                     className="sr-only peer" 
                     disabled={isLoading}
                   />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+
+              {/* New Followers */}
+              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-white">New Followers</h4>
+                  <p className="text-sm text-gray-400">Get notified when someone follows you</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox"
