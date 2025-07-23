@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -57,7 +57,7 @@ interface UserSettingsPanelProps {
       followers: boolean;
       achievements: boolean;
     };
-  };
+  } | null;
   onSave: (data: ProfileFormValues) => Promise<void>;
   onPasswordChange?: () => void;
   onDeleteAccount?: () => void;
@@ -71,6 +71,20 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   onDeleteAccount,
   className = ''
 }) => {
+  // Early return with loading state if initialData is null
+  if (!initialData) {
+    return (
+      <div className={`bg-gray-800 rounded-xl border border-gray-700 overflow-hidden ${className}`}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-500 mx-auto mb-4" />
+            <p className="text-gray-400">Loading user settings...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'notifications' | 'privacy'>('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -78,7 +92,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData?.avatar || null);
 
-  // Form setup
+  // Form setup with null checks
   const { 
     register, 
     handleSubmit, 
@@ -105,6 +119,29 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     }
   });
 
+  // Update form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      reset({
+        username: initialData.username || '',
+        displayName: initialData.displayName || '',
+        email: initialData.email || '',
+        bio: initialData.bio || '',
+        location: initialData.location || '',
+        website: initialData.website || '',
+        notifications: initialData.notifications || {
+          email: true,
+          push: true,
+          reviews: true,
+          mentions: true,
+          followers: true,
+          achievements: true
+        }
+      });
+      setAvatarPreview(initialData.avatar || null);
+    }
+  }, [initialData, reset]);
+
   // Password change form
   const passwordForm = useForm({
     resolver: zodResolver(
@@ -129,30 +166,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     }
   });
 
-  // Handle avatar change - FIXED
+  // Handle avatar change
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target?.files?.[0];
+    const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        setSaveError('Image size must be less than 2MB');
-        return;
-      }
-
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setSaveError('Please select a valid image file');
-        return;
-      }
-
       const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setAvatarPreview(event.target.result as string);
-        }
-      };
-      reader.onerror = () => {
-        setSaveError('Error reading file. Please try again.');
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -204,6 +224,12 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Safe username extraction for avatar fallback
+  const getUsernameInitial = () => {
+    if (!initialData?.username) return '?';
+    return initialData.username.charAt(0).toUpperCase();
   };
 
   return (
@@ -288,7 +314,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   />
                 ) : (
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                    {initialData?.username?.charAt(0)?.toUpperCase() || 'U'}
+                    {getUsernameInitial()}
                   </div>
                 )}
                 <div>
@@ -324,29 +350,31 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                     errors.username ? 'border-red-500' : 'border-gray-600'
                   }`}
-                  placeholder="Enter your username"
+                  placeholder="GamerTag"
+                  disabled={isLoading}
                 />
               </div>
               {errors.username && (
-                <p className="text-red-400 text-sm mt-1">{errors.username.message}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.username.message}</p>
               )}
             </div>
 
             {/* Display Name */}
             <div>
               <label htmlFor="displayName" className="block text-sm font-medium text-gray-300 mb-1">
-                Display Name
+                Display Name (optional)
               </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                <input
-                  id="displayName"
-                  type="text"
-                  {...register('displayName')}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                  placeholder="Enter your display name"
-                />
-              </div>
+              <input
+                id="displayName"
+                type="text"
+                {...register('displayName')}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                placeholder="Your public display name"
+                disabled={isLoading}
+              />
+              {errors.displayName && (
+                <p className="mt-1 text-sm text-red-400">{errors.displayName.message}</p>
+              )}
             </div>
 
             {/* Email */}
@@ -363,40 +391,39 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                     errors.email ? 'border-red-500' : 'border-gray-600'
                   }`}
-                  placeholder="Enter your email"
+                  placeholder="your.email@example.com"
+                  disabled={isLoading}
                 />
               </div>
               {errors.email && (
-                <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
               )}
             </div>
 
             {/* Bio */}
             <div>
               <label htmlFor="bio" className="block text-sm font-medium text-gray-300 mb-1">
-                Bio
+                Bio (optional)
               </label>
               <textarea
                 id="bio"
-                {...register('bio')}
                 rows={3}
+                {...register('bio')}
                 className={`w-full px-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-none ${
                   errors.bio ? 'border-red-500' : 'border-gray-600'
                 }`}
-                placeholder="Tell us about yourself..."
+                placeholder="Tell us about yourself"
+                disabled={isLoading}
               />
               {errors.bio && (
-                <p className="text-red-400 text-sm mt-1">{errors.bio.message}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.bio.message}</p>
               )}
-              <p className="text-gray-400 text-xs mt-1">
-                {watch('bio')?.length || 0}/160 characters
-              </p>
             </div>
 
             {/* Location */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-300 mb-1">
-                Location
+                Location (optional)
               </label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
@@ -404,52 +431,57 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   id="location"
                   type="text"
                   {...register('location')}
-                  className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                    errors.location ? 'border-red-500' : 'border-gray-600'
-                  }`}
-                  placeholder="Enter your location"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                  placeholder="City, Country"
+                  disabled={isLoading}
                 />
               </div>
               {errors.location && (
-                <p className="text-red-400 text-sm mt-1">{errors.location.message}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.location.message}</p>
               )}
             </div>
 
             {/* Website */}
             <div>
               <label htmlFor="website" className="block text-sm font-medium text-gray-300 mb-1">
-                Website
+                Website (optional)
               </label>
               <div className="relative">
                 <LinkIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                 <input
                   id="website"
-                  type="url"
+                  type="text"
                   {...register('website')}
                   className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                     errors.website ? 'border-red-500' : 'border-gray-600'
                   }`}
                   placeholder="https://yourwebsite.com"
+                  disabled={isLoading}
                 />
               </div>
               {errors.website && (
-                <p className="text-red-400 text-sm mt-1">{errors.website.message}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.website.message}</p>
               )}
             </div>
 
-            {/* Save Button */}
-            <div className="flex justify-end pt-4">
+            {/* Submit button */}
+            <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={isLoading || !isDirty}
-                className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Saving...
+                  </>
                 ) : (
-                  <Save className="h-4 w-4" />
+                  <>
+                    <Save className="h-5 w-5" />
+                    Save Changes
+                  </>
                 )}
-                {isLoading ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </form>
@@ -458,309 +490,317 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         {/* Account Settings */}
         {activeTab === 'account' && (
           <div className="space-y-6">
+            <h3 className="text-lg font-medium text-white mb-4">Account Settings</h3>
+            
             {/* Password Change */}
-            <div className="bg-gray-700 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-medium text-white">Change Password</h3>
-                  <p className="text-sm text-gray-400">Update your password to keep your account secure</p>
-                </div>
-                <Key className="h-5 w-5 text-gray-400" />
-              </div>
+            <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-4">
+              <h4 className="font-medium text-white">Change Password</h4>
               
-              <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Current Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      {...passwordForm.register('currentPassword')}
-                      className="w-full px-4 py-3 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                      placeholder="Enter current password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {passwordForm.formState.errors.currentPassword && (
-                    <p className="text-red-400 text-sm mt-1">
-                      {passwordForm.formState.errors.currentPassword.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    New Password
-                  </label>
+              <div>
+                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                  Current Password
+                </label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                   <input
-                    type="password"
+                    id="currentPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    {...passwordForm.register('currentPassword')}
+                    className={`w-full pl-10 pr-12 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                      passwordForm.formState.errors.currentPassword ? 'border-red-500' : 'border-gray-600'
+                    }`}
+                    placeholder="Enter current password"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                {passwordForm.formState.errors.currentPassword && (
+                  <p className="mt-1 text-sm text-red-400">{passwordForm.formState.errors.currentPassword.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                  New Password
+                </label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                  <input
+                    id="newPassword"
+                    type={showPassword ? 'text' : 'password'}
                     {...passwordForm.register('newPassword')}
-                    className="w-full px-4 py-3 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                    className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                      passwordForm.formState.errors.newPassword ? 'border-red-500' : 'border-gray-600'
+                    }`}
                     placeholder="Enter new password"
+                    disabled={isLoading}
                   />
-                  {passwordForm.formState.errors.newPassword && (
-                    <p className="text-red-400 text-sm mt-1">
-                      {passwordForm.formState.errors.newPassword.message}
-                    </p>
-                  )}
                 </div>
+                {passwordForm.formState.errors.newPassword && (
+                  <p className="mt-1 text-sm text-red-400">{passwordForm.formState.errors.newPassword.message}</p>
+                )}
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Confirm New Password
-                  </label>
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                  Confirm New Password
+                </label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                   <input
-                    type="password"
+                    id="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
                     {...passwordForm.register('confirmPassword')}
-                    className="w-full px-4 py-3 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                    className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                      passwordForm.formState.errors.confirmPassword ? 'border-red-500' : 'border-gray-600'
+                    }`}
                     placeholder="Confirm new password"
+                    disabled={isLoading}
                   />
-                  {passwordForm.formState.errors.confirmPassword && (
-                    <p className="text-red-400 text-sm mt-1">
-                      {passwordForm.formState.errors.confirmPassword.message}
-                    </p>
-                  )}
                 </div>
+                {passwordForm.formState.errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-400">{passwordForm.formState.errors.confirmPassword.message}</p>
+                )}
+              </div>
 
+              <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                  disabled={isLoading || !passwordForm.formState.isDirty}
+                  className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
                 >
                   {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Updating...
+                    </>
                   ) : (
-                    <Key className="h-4 w-4" />
+                    <>
+                      <Key className="h-5 w-5" />
+                      Update Password
+                    </>
                   )}
-                  {isLoading ? 'Updating...' : 'Update Password'}
-                </button>
-              </form>
-            </div>
-
-            {/* Danger Zone */}
-            {onDeleteAccount && (
-              <div className="bg-red-900/20 border border-red-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-medium text-red-400">Danger Zone</h3>
-                    <p className="text-sm text-gray-400">Permanently delete your account and all data</p>
-                  </div>
-                  <AlertCircle className="h-5 w-5 text-red-400" />
-                </div>
-                
-                <button
-                  onClick={onDeleteAccount}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors inline-flex items-center gap-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete Account
                 </button>
               </div>
-            )}
+            </form>
+
+            {/* Danger Zone */}
+            <div className="mt-8 p-4 bg-red-900/20 border border-red-800 rounded-lg">
+              <h4 className="font-medium text-red-400 mb-2">Danger Zone</h4>
+              <p className="text-sm text-gray-400 mb-4">
+                These actions are permanent and cannot be undone.
+              </p>
+              <button
+                onClick={onDeleteAccount}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Account
+              </button>
+            </div>
           </div>
         )}
 
         {/* Notifications Settings */}
         {activeTab === 'notifications' && (
           <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-              <Bell className="h-5 w-5 text-purple-400" />
-              <div>
-                <h3 className="text-lg font-medium text-white">Notification Preferences</h3>
-                <p className="text-sm text-gray-400">Choose what notifications you want to receive</p>
+            <h3 className="text-lg font-medium text-white mb-4">Notification Preferences</h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-white">Review Notifications</h4>
+                  <p className="text-sm text-gray-400">Get notified when someone reviews your games</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    {...register('notifications.reviews')}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-white">Mentions</h4>
+                  <p className="text-sm text-gray-400">Get notified when someone mentions you</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    {...register('notifications.mentions')}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-white">New Followers</h4>
+                  <p className="text-sm text-gray-400">Get notified when someone follows you</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    {...register('notifications.followers')}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-white">Achievements</h4>
+                  <p className="text-sm text-gray-400">Get notified about new achievements</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    {...register('notifications.achievements')}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div>
-                    <label className="text-sm font-medium text-white">Email Notifications</label>
-                    <p className="text-xs text-gray-400">Receive notifications via email</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    {...register('notifications.email')}
-                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div>
-                    <label className="text-sm font-medium text-white">Push Notifications</label>
-                    <p className="text-xs text-gray-400">Receive push notifications in your browser</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    {...register('notifications.push')}
-                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div>
-                    <label className="text-sm font-medium text-white">Review Notifications</label>
-                    <p className="text-xs text-gray-400">Get notified when someone reviews your content</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    {...register('notifications.reviews')}
-                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div>
-                    <label className="text-sm font-medium text-white">Mention Notifications</label>
-                    <p className="text-xs text-gray-400">Get notified when someone mentions you</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    {...register('notifications.mentions')}
-                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div>
-                    <label className="text-sm font-medium text-white">Follower Notifications</label>
-                    <p className="text-xs text-gray-400">Get notified when someone follows you</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    {...register('notifications.followers')}
-                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div>
-                    <label className="text-sm font-medium text-white">Achievement Notifications</label>
-                    <p className="text-xs text-gray-400">Get notified when you unlock achievements</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    {...register('notifications.achievements')}
-                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-4">
-                <button
-                  type="submit"
-                  disabled={isLoading || !isDirty}
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  {isLoading ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
+            {/* Save notifications button */}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleSubmit(onSubmit)}
+                disabled={isLoading || !isDirty}
+                className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Bell className="h-5 w-5" />
+                    Save Preferences
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
 
         {/* Privacy & Security Settings */}
         {activeTab === 'privacy' && (
           <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-              <Shield className="h-5 w-5 text-purple-400" />
-              <div>
-                <h3 className="text-lg font-medium text-white">Privacy & Security</h3>
-                <p className="text-sm text-gray-400">Control your privacy and security settings</p>
+            <h3 className="text-lg font-medium text-white mb-4">Privacy & Security</h3>
+            
+            {/* Privacy Settings */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-white">Profile Visibility</h4>
+                  <p className="text-sm text-gray-400">Control who can see your profile</p>
+                </div>
+                <select
+                  className="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  defaultValue="public"
+                >
+                  <option value="public">Public</option>
+                  <option value="followers">Followers Only</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-white">Activity Visibility</h4>
+                  <p className="text-sm text-gray-400">Control who can see your gaming activity</p>
+                </div>
+                <select
+                  className="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  defaultValue="public"
+                >
+                  <option value="public">Public</option>
+                  <option value="followers">Followers Only</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-white">Two-Factor Authentication</h4>
+                  <p className="text-sm text-gray-400">Add an extra layer of security to your account</p>
+                </div>
+                <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
+                  <Shield className="h-4 w-4 inline mr-2" />
+                  Enable
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-white">Login Sessions</h4>
+                  <p className="text-sm text-gray-400">Manage your active login sessions</p>
+                </div>
+                <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
+                  Manage
+                </button>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-white">Public Profile</label>
-                  <input
-                    type="checkbox"
-                    defaultChecked={true}
-                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
-                  />
+            {/* Data & Privacy */}
+            <div className="mt-8">
+              <h3 className="text-lg font-medium text-white mb-4">Data & Privacy</h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-white">Data Collection</h4>
+                    <p className="text-sm text-gray-400">Allow us to collect usage data to improve your experience</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      defaultChecked={true}
+                      className="sr-only peer" 
+                    />
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
                 </div>
-                <p className="text-xs text-gray-400">Allow others to view your profile and activity</p>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-white">Show Online Status</label>
-                  <input
-                    type="checkbox"
-                    defaultChecked={true}
-                    className="w-4 h-4 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500 focus:ring-2"
-                  />
+                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-white">Personalized Recommendations</h4>
+                    <p className="text-sm text-gray-400">Allow us to suggest games based on your activity</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      defaultChecked={true}
+                      className="sr-only peer" 
+                    />
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
                 </div>
-                <p className="text-xs text-gray-400">Let others see when you're online</p>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-white">Activity Visibility</label>
-                  <select className="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 px-3 py-1">
-                    <option value="public">Public</option>
-                    <option value="friends">Friends Only</option>
-                    <option value="private">Private</option>
-                  </select>
-                </div>
-                <p className="text-xs text-gray-400">Control who can see your gaming activity</p>
-              </div>
-
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-white">Friend Requests</label>
-                  <select className="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 px-3 py-1">
-                    <option value="everyone">Everyone</option>
-                    <option value="friends-of-friends">Friends of Friends</option>
-                    <option value="nobody">Nobody</option>
-                  </select>
-                </div>
-                <p className="text-xs text-gray-400">Choose who can send you friend requests</p>
-              </div>
-
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-white">Direct Messages</label>
-                  <select className="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 px-3 py-1">
-                    <option value="everyone">Everyone</option>
-                    <option value="friends">Friends Only</option>
-                    <option value="nobody">Nobody</option>
-                  </select>
-                </div>
-                <p className="text-xs text-gray-400">Control who can send you direct messages</p>
-              </div>
-
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-white">Two-Factor Authentication</label>
-                  <button className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
-                    Enable
+                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-white">Data Export</h4>
+                    <p className="text-sm text-gray-400">Download a copy of your data</p>
+                  </div>
+                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
+                    Export
                   </button>
                 </div>
-                <p className="text-xs text-gray-400">Add an extra layer of security to your account</p>
-              </div>
-
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-white">Data Export</label>
-                  <button className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
-                    Request
-                  </button>
-                </div>
-                <p className="text-xs text-gray-400">Download a copy of your data</p>
               </div>
             </div>
           </div>
@@ -769,5 +809,33 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     </div>
   );
 };
+                <div>
+                  <h4 className="font-medium text-white">Email Notifications</h4>
+                  <p className="text-sm text-gray-400">Receive updates via email</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    {...register('notifications.email')}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
 
-export default UserSettingsPanel;
+              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-white">Push Notifications</h4>
+                  <p className="text-sm text-gray-400">Get instant updates on your device</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    {...register('notifications.push')}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
