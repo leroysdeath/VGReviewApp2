@@ -5,7 +5,7 @@ import { Search, Menu, X, Gamepad2, Bell, User } from 'lucide-react';
 import { HeaderSearchBar } from './HeaderSearchBar';
 import { LoginModal } from './LoginModal';
 import { AuthModal } from './auth/AuthModal';
-import { NotificationCenter } from './notifications/NotificationCenter';
+import { NotificationCenter } from './NotificationCenter';
 import { useAuthModal } from '../context/AuthModalContext'; // Import the hook
 
 export const ResponsiveNavbar: React.FC = () => {
