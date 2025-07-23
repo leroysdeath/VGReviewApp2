@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,34 +7,36 @@ import {
   Mail, 
   MapPin, 
   Link as LinkIcon, 
+  Camera, 
   Save, 
   Loader2, 
-  AlertCircle,
-  Check,
-  Image,
-  Key,
-  Eye,
-  EyeOff,
-  Bell,
-  Shield,
-  Trash2
+  Key, 
+  Eye, 
+  EyeOff, 
+  Check, 
+  AlertCircle, 
+  Trash2,
+  Shield
 } from 'lucide-react';
 
-// Form validation schema
+// Validation schema
 const profileSchema = z.object({
-  username: z.string().min(3, 'Username must be at least 3 characters'),
-  displayName: z.string().optional(),
-  email: z.string().email('Please enter a valid email address'),
-  bio: z.string().max(160, 'Bio must be 160 characters or less').optional(),
-  location: z.string().max(50, 'Location must be 50 characters or less').optional(),
-  website: z.string().url('Please enter a valid URL').or(z.string().length(0)).optional(),
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username must be less than 30 characters')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+  displayName: z.string().max(50, 'Display name must be less than 50 characters').optional(),
+  email: z.string().email('Invalid email address'),
+  bio: z.string().max(160, 'Bio must be less than 160 characters').optional(),
+  location: z.string().max(100, 'Location must be less than 100 characters').optional(),
+  website: z.string().url('Invalid URL').optional().or(z.literal('')),
   notifications: z.object({
-    email: z.boolean().optional(),
-    push: z.boolean().optional(),
-    reviews: z.boolean().optional(),
-    mentions: z.boolean().optional(),
-    followers: z.boolean().optional(),
-    achievements: z.boolean().optional()
+    email: z.boolean(),
+    push: z.boolean(),
+    reviews: z.boolean(),
+    mentions: z.boolean(),
+    followers: z.boolean(),
+    achievements: z.boolean()
   }).optional()
 });
 
@@ -57,7 +59,7 @@ interface UserSettingsPanelProps {
       followers: boolean;
       achievements: boolean;
     };
-  } | null;
+  };
   onSave: (data: ProfileFormValues) => Promise<void>;
   onPasswordChange?: () => void;
   onDeleteAccount?: () => void;
@@ -71,28 +73,14 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   onDeleteAccount,
   className = ''
 }) => {
-  // Early return with loading state if initialData is null
-  if (!initialData) {
-    return (
-      <div className={`bg-gray-800 rounded-xl border border-gray-700 overflow-hidden ${className}`}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-500 mx-auto mb-4" />
-            <p className="text-gray-400">Loading user settings...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'notifications' | 'privacy'>('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData?.avatar || null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData.avatar || null);
 
-  // Form setup with null checks
+  // Form setup
   const { 
     register, 
     handleSubmit, 
@@ -102,13 +90,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      username: initialData?.username || '',
-      displayName: initialData?.displayName || '',
-      email: initialData?.email || '',
-      bio: initialData?.bio || '',
-      location: initialData?.location || '',
-      website: initialData?.website || '',
-      notifications: initialData?.notifications || {
+      username: initialData.username,
+      displayName: initialData.displayName || '',
+      email: initialData.email,
+      bio: initialData.bio || '',
+      location: initialData.location || '',
+      website: initialData.website || '',
+      notifications: initialData.notifications || {
         email: true,
         push: true,
         reviews: true,
@@ -118,29 +106,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       }
     }
   });
-
-  // Update form when initialData changes
-  useEffect(() => {
-    if (initialData) {
-      reset({
-        username: initialData.username || '',
-        displayName: initialData.displayName || '',
-        email: initialData.email || '',
-        bio: initialData.bio || '',
-        location: initialData.location || '',
-        website: initialData.website || '',
-        notifications: initialData.notifications || {
-          email: true,
-          push: true,
-          reviews: true,
-          mentions: true,
-          followers: true,
-          achievements: true
-        }
-      });
-      setAvatarPreview(initialData.avatar || null);
-    }
-  }, [initialData, reset]);
 
   // Password change form
   const passwordForm = useForm({
@@ -226,12 +191,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     }
   };
 
-  // Safe username extraction for avatar fallback
-  const getUsernameInitial = () => {
-    if (!initialData?.username) return '?';
-    return initialData.username.charAt(0).toUpperCase();
-  };
-
   return (
     <div className={`bg-gray-800 rounded-xl border border-gray-700 overflow-hidden ${className}`}>
       {/* Tabs */}
@@ -313,25 +272,24 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                     className="w-20 h-20 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                    {getUsernameInitial()}
+                  <div className="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center">
+                    <User className="h-8 w-8 text-gray-400" />
                   </div>
                 )}
                 <div>
-                  <label className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors cursor-pointer inline-flex items-center gap-2">
-                    <Image className="h-4 w-4" />
-                    <span>Change Picture</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleAvatarChange}
-                      disabled={isLoading}
-                    />
+                  <label htmlFor="avatar" className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg cursor-pointer hover:bg-purple-700 transition-colors">
+                    <Camera className="h-4 w-4" />
+                    Change Photo
                   </label>
-                  <p className="text-xs text-gray-400 mt-2">
-                    JPG, PNG or GIF. Max size 2MB.
-                  </p>
+                  <input
+                    id="avatar"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    disabled={isLoading}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">JPG, PNG or GIF (max 2MB)</p>
                 </div>
               </div>
             </div>
@@ -348,7 +306,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   type="text"
                   {...register('username')}
                   className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                    errors.username ? 'border-red-500' : 'border-gray-600'
+                    errors.username ?
+                      'border-red-500' : 'border-gray-600'
                   }`}
                   placeholder="GamerTag"
                   disabled={isLoading}
@@ -389,7 +348,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   type="email"
                   {...register('email')}
                   className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                    errors.email ? 'border-red-500' : 'border-gray-600'
+                    errors.email ?
+                      'border-red-500' : 'border-gray-600'
                   }`}
                   placeholder="your.email@example.com"
                   disabled={isLoading}
@@ -402,15 +362,21 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
             {/* Bio */}
             <div>
-              <label htmlFor="bio" className="block text-sm font-medium text-gray-300 mb-1">
-                Bio (optional)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="bio" className="block text-sm font-medium text-gray-300">
+                  Bio (optional)
+                </label>
+                <span className="text-xs text-gray-400">
+                  {watch('bio')?.length || 0}/160
+                </span>
+              </div>
               <textarea
                 id="bio"
-                rows={3}
                 {...register('bio')}
-                className={`w-full px-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-none ${
-                  errors.bio ? 'border-red-500' : 'border-gray-600'
+                rows={3}
+                className={`w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                  errors.bio ?
+                    'border-red-500' : 'border-gray-600'
                 }`}
                 placeholder="Tell us about yourself"
                 disabled={isLoading}
@@ -489,116 +455,121 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
         {/* Account Settings */}
         {activeTab === 'account' && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium text-white mb-4">Account Settings</h3>
-            
+          <div className="space-y-8">
             {/* Password Change */}
-            <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-4">
-              <h4 className="font-medium text-white">Change Password</h4>
-              
-              <div>
-                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-300 mb-1">
-                  Current Password
-                </label>
-                <div className="relative">
-                  <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                  <input
-                    id="currentPassword"
-                    type={showPassword ? 'text' : 'password'}
-                    {...passwordForm.register('currentPassword')}
-                    className={`w-full pl-10 pr-12 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                      passwordForm.formState.errors.currentPassword ? 'border-red-500' : 'border-gray-600'
-                    }`}
-                    placeholder="Enter current password"
-                    disabled={isLoading}
-                  />
+            <div className="bg-gray-750 rounded-lg p-6 border border-gray-700">
+              <h3 className="text-lg font-medium text-white mb-4">Change Password</h3>
+              <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-4">
+                {/* Current Password */}
+                <div>
+                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                    Current Password
+                  </label>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                    <input
+                      id="currentPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      {...passwordForm.register('currentPassword')}
+                      className={`w-full pl-10 pr-10 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                        passwordForm.formState.errors.currentPassword ? 'border-red-500' : 'border-gray-600'
+                      }`}
+                      placeholder="••••••••"
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                  {passwordForm.formState.errors.currentPassword && (
+                    <p className="mt-1 text-sm text-red-400">{passwordForm.formState.errors.currentPassword.message}</p>
+                  )}
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                    <input
+                      id="newPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      {...passwordForm.register('newPassword')}
+                      className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                        passwordForm.formState.errors.newPassword ? 'border-red-500' : 'border-gray-600'
+                      }`}
+                      placeholder="••••••••"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  {passwordForm.formState.errors.newPassword && (
+                    <p className="mt-1 text-sm text-red-400">{passwordForm.formState.errors.newPassword.message}</p>
+                  )}
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                    <input
+                      id="confirmPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      {...passwordForm.register('confirmPassword')}
+                      className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                        passwordForm.formState.errors.confirmPassword ? 'border-red-500' : 'border-gray-600'
+                      }`}
+                      placeholder="••••••••"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  {passwordForm.formState.errors.confirmPassword && (
+                    <p className="mt-1 text-sm text-red-400">{passwordForm.formState.errors.confirmPassword.message}</p>
+                  )}
+                </div>
+
+                <div className="flex justify-end">
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <Key className="h-5 w-5" />
+                        Update Password
+                      </>
+                    )}
                   </button>
                 </div>
-                {passwordForm.formState.errors.currentPassword && (
-                  <p className="mt-1 text-sm text-red-400">{passwordForm.formState.errors.currentPassword.message}</p>
-                )}
-              </div>
+              </form>
+            </div>
 
-              <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-300 mb-1">
-                  New Password
-                </label>
-                <div className="relative">
-                  <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                  <input
-                    id="newPassword"
-                    type={showPassword ? 'text' : 'password'}
-                    {...passwordForm.register('newPassword')}
-                    className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                      passwordForm.formState.errors.newPassword ? 'border-red-500' : 'border-gray-600'
-                    }`}
-                    placeholder="Enter new password"
-                    disabled={isLoading}
-                  />
-                </div>
-                {passwordForm.formState.errors.newPassword && (
-                  <p className="mt-1 text-sm text-red-400">{passwordForm.formState.errors.newPassword.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
-                  Confirm New Password
-                </label>
-                <div className="relative">
-                  <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                  <input
-                    id="confirmPassword"
-                    type={showPassword ? 'text' : 'password'}
-                    {...passwordForm.register('confirmPassword')}
-                    className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                      passwordForm.formState.errors.confirmPassword ? 'border-red-500' : 'border-gray-600'
-                    }`}
-                    placeholder="Confirm new password"
-                    disabled={isLoading}
-                  />
-                </div>
-                {passwordForm.formState.errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-400">{passwordForm.formState.errors.confirmPassword.message}</p>
-                )}
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={isLoading || !passwordForm.formState.isDirty}
-                  className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <Key className="h-5 w-5" />
-                      Update Password
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-
-            {/* Danger Zone */}
-            <div className="mt-8 p-4 bg-red-900/20 border border-red-800 rounded-lg">
-              <h4 className="font-medium text-red-400 mb-2">Danger Zone</h4>
-              <p className="text-sm text-gray-400 mb-4">
-                These actions are permanent and cannot be undone.
+            {/* Delete Account */}
+            <div className="bg-red-900/20 border border-red-800 rounded-lg p-6">
+              <h3 className="text-lg font-medium text-white mb-2">Delete Account</h3>
+              <p className="text-gray-400 text-sm mb-4">
+                This action cannot be undone. This will permanently delete your account and remove all associated data.
+                Please be certain.
               </p>
               <button
+                type="button"
                 onClick={onDeleteAccount}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 <Trash2 className="h-4 w-4" />
                 Delete Account
@@ -607,27 +578,30 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
           </div>
         )}
 
-        {/* Notifications Settings */}
+        {/* Notification Settings */}
         {activeTab === 'notifications' && (
-          <div className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <h3 className="text-lg font-medium text-white mb-4">Notification Preferences</h3>
             
             <div className="space-y-4">
+              {/* Email Notifications */}
               <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
                 <div>
-                  <h4 className="font-medium text-white">Review Notifications</h4>
-                  <p className="text-sm text-gray-400">Get notified when someone reviews your games</p>
+                  <h4 className="font-medium text-white">Email Notifications</h4>
+                  <p className="text-sm text-gray-400">Receive email updates about your account</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input 
                     type="checkbox" 
                     {...register('notifications.reviews')}
                     className="sr-only peer" 
+                    disabled={isLoading}
                   />
                   <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>
 
+              {/* Mentions */}
               <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
                 <div>
                   <h4 className="font-medium text-white">Mentions</h4>
@@ -638,11 +612,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                     type="checkbox" 
                     {...register('notifications.mentions')}
                     className="sr-only peer" 
+                    disabled={isLoading}
                   />
                   <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>
 
+              {/* New Followers */}
               <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
                 <div>
                   <h4 className="font-medium text-white">New Followers</h4>
@@ -653,32 +629,34 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                     type="checkbox" 
                     {...register('notifications.followers')}
                     className="sr-only peer" 
+                    disabled={isLoading}
                   />
                   <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>
 
+              {/* Achievements */}
               <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
                 <div>
                   <h4 className="font-medium text-white">Achievements</h4>
-                  <p className="text-sm text-gray-400">Get notified about new achievements</p>
+                  <p className="text-sm text-gray-400">Get notified when you earn achievements</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input 
                     type="checkbox" 
                     {...register('notifications.achievements')}
                     className="sr-only peer" 
+                    disabled={isLoading}
                   />
                   <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>
             </div>
 
-            {/* Save notifications button */}
+            {/* Submit button */}
             <div className="flex justify-end">
               <button
-                type="button"
-                onClick={handleSubmit(onSubmit)}
+                type="submit"
                 disabled={isLoading || !isDirty}
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
               >
@@ -689,13 +667,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   </>
                 ) : (
                   <>
-                    <Bell className="h-5 w-5" />
-                    Save Preferences
+                    <Save className="h-5 w-5" />
+                    Save Changes
                   </>
                 )}
               </button>
             </div>
-          </div>
+          </form>
         )}
 
         {/* Privacy & Security Settings */}
@@ -737,23 +715,37 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
               <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
                 <div>
-                  <h4 className="font-medium text-white">Two-Factor Authentication</h4>
-                  <p className="text-sm text-gray-400">Add an extra layer of security to your account</p>
+                  <h4 className="font-medium text-white">Show Online Status</h4>
+                  <p className="text-sm text-gray-400">Let others see when you're online</p>
                 </div>
-                <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
-                  <Shield className="h-4 w-4 inline mr-2" />
-                  Enable
-                </button>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    defaultChecked={true}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
               </div>
+            </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Login Sessions</h4>
-                  <p className="text-sm text-gray-400">Manage your active login sessions</p>
+            {/* Security Settings */}
+            <div className="mt-8">
+              <h3 className="text-lg font-medium text-white mb-4">Security</h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Shield className="h-6 w-6 text-green-400" />
+                    <div>
+                      <h4 className="font-medium text-white">Two-Factor Authentication</h4>
+                      <p className="text-sm text-gray-400">Add an extra layer of security to your account</p>
+                    </div>
+                  </div>
+                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
+                    Manage
+                  </button>
                 </div>
-                <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
-                  Manage
-                </button>
               </div>
             </div>
 
@@ -794,13 +786,24 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
                 <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
                   <div>
-                    <h4 className="font-medium text-white">Data Export</h4>
-                    <p className="text-sm text-gray-400">Download a copy of your data</p>
+                    <h4 className="font-medium text-white">Marketing Emails</h4>
+                    <p className="text-sm text-gray-400">Receive emails about new features and promotions</p>
                   </div>
-                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
-                    Export
-                  </button>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      defaultChecked={false}
+                      className="sr-only peer" 
+                    />
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
                 </div>
+              </div>
+
+              <div className="mt-6">
+                <button className="text-purple-400 hover:text-purple-300 transition-colors text-sm">
+                  Download my data
+                </button>
               </div>
             </div>
           </div>
@@ -809,33 +812,37 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     </div>
   );
 };
-                <div>
-                  <h4 className="font-medium text-white">Email Notifications</h4>
-                  <p className="text-sm text-gray-400">Receive updates via email</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
                     {...register('notifications.email')}
                     className="sr-only peer" 
+                    disabled={isLoading}
                   />
                   <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>
 
+              {/* Push Notifications */}
               <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
                 <div>
                   <h4 className="font-medium text-white">Push Notifications</h4>
-                  <p className="text-sm text-gray-400">Get instant updates on your device</p>
+                  <p className="text-sm text-gray-400">Receive notifications on your device</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input 
                     type="checkbox" 
                     {...register('notifications.push')}
                     className="sr-only peer" 
+                    disabled={isLoading}
                   />
                   <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>
 
+              {/* Review Notifications */}
               <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-white">Review Notifications</h4>
+                  <p className="text-sm text-gray-400">Get notified when someone comments on your reviews</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox"
