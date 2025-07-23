@@ -1,194 +1,339 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '../utils/supabaseClient';
-import { ProfileInfo } from '../components/ProfileInfo';
-import { ProfileDetails } from '../components/ProfileDetails';
-import { ProfileData } from '../components/ProfileData';
+import React, { useState, useEffect } from 'react';
+import { Link, Navigate } from 'react-router-dom';
+import { 
+  User, 
+  Calendar, 
+  MapPin, 
+  Mail, 
+  Settings, 
+  Trophy, 
+  Star, 
+  Gamepad2,
+  Clock,
+  TrendingUp,
+  Activity,
+  Edit,
+  Loader2
+} from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
-const ProfilePage = () => {
-  const [userProfile, setUserProfile] = useState(null);
-  const [allGames, setAllGames] = useState([]);
-  const [reviews, setReviews] = useState([]);
-  const [stats, setStats] = useState({ films: 0, thisYear: 0, lists: 0, following: 0, followers: 0 });
-  const [activeTab, setActiveTab] = useState('top5');
-  const [reviewFilter, setReviewFilter] = useState('recent');
-  const [sortedReviews, setSortedReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+interface Game {
+  id: string;
+  title: string;
+  coverImage: string;
+  releaseDate: string;
+  genre: string;
+  userRating?: number;
+}
 
-  useEffect(() => {
-    fetchProfileData();
-  }, []);
+interface ActivityItem {
+  id: string;
+  type: 'review' | 'rating' | 'completed' | 'wishlist' | 'started';
+  game: string;
+  timestamp: string;
+  rating?: number;
+  reviewSnippet?: string;
+}
 
-  useEffect(() => {
-    // Sort reviews based on filter
-    let sorted = [...reviews];
-    switch (reviewFilter) {
-      case 'highest':
-        sorted.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'lowest':
-        sorted.sort((a, b) => a.rating - b.rating);
-        break;
-      case 'oldest':
-        sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        break;
-      case 'recent':
-      default:
-        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        break;
-    }
-    setSortedReviews(sorted.map(review => ({
-      id: review.id,
-      userId: review.user_id,
-      gameId: review.game_id,
-      rating: review.rating,
-      text: review.text,
-      date: new Date(review.created_at).toLocaleDateString(),
-      hasText: !!review.text,
-      author: userProfile?.username || '',
-      authorAvatar: userProfile?.avatar_url || '/default-avatar.png'
-    })));
-  }, [reviews, reviewFilter, userProfile]);
+export const ProfilePage: React.FC = () => {
+  const { user, loading, isAuthenticated } = useAuth();
+  const [activeTab, setActiveTab] = useState<'overview' | 'games' | 'reviews' | 'stats'>('overview');
 
-  async function fetchProfileData() {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/login');
-        return;
-      }
+  // Mock data - replace with actual API calls
+  const [recentGames] = useState<Game[]>([
+    { id: '1', title: 'Baldur\'s Gate 3', coverImage: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=300', releaseDate: '2023', genre: 'RPG', userRating: 10 },
+    { id: '2', title: 'The Witcher 3', coverImage: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300', releaseDate: '2015', genre: 'RPG', userRating: 9.5 },
+    { id: '3', title: 'Elden Ring', coverImage: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=300', releaseDate: '2022', genre: 'Action RPG', userRating: 9 },
+  ]);
 
-      // Fetch profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('username, display_name, bio, avatar_url, joined_at, location, website')
-        .eq('id', user.id)
-        .single();
+  const [recentActivity] = useState<ActivityItem[]>([
+    { id: '1', type: 'review', game: 'Baldur\'s Gate 3', timestamp: '2 hours ago', rating: 10, reviewSnippet: 'An absolute masterpiece of storytelling and gameplay...' },
+    { id: '2', type: 'completed', game: 'The Witcher 3', timestamp: '1 day ago' },
+    { id: '3', type: 'rating', game: 'Elden Ring', timestamp: '3 days ago', rating: 9 },
+    { id: '4', type: 'started', game: 'Cyberpunk 2077', timestamp: '1 week ago' },
+  ]);
 
-      if (profileError && profileError.code !== 'PGRST116') throw profileError;
-      const profile = profileData || {
-        username: user.email?.split('@')[0] || 'User',
-        display_name: '',
-        bio: '',
-        avatar_url: '/default-avatar.png',
-        joined_at: new Date().toISOString(),
-        location: '',
-        website: ''
-      };
-      setUserProfile({
-        id: user.id,
-        username: profile.display_name || profile.username,
-        avatar: profile.avatar_url,
-        bio: profile.bio || 'No bio yet.',
-        joinDate: new Date(profile.joined_at).toLocaleString('default', { month: 'long', year: 'numeric' }),
-        location: profile.location,
-        website: profile.website
-      });
-
-      // Fetch reviews (adjust columns if needed)
-      const { data: reviewsData } = await supabase
-        .from('reviews')
-        .select('id, user_id, game_id, game_name, cover_image, rating, text, created_at')
-        .eq('user_id', user.id);
-      setReviews(reviewsData || []);
-
-      // Compute allGames
-      const games = reviewsData?.map(review => ({
-        id: review.game_id,
-        title: review.game_name,
-        coverImage: review.cover_image || '/default-cover.png',
-        releaseDate: '', // Add IGDB fetch if needed
-        genre: '', // Add IGDB fetch if needed
-        rating: review.rating,
-        description: '',
-        developer: '',
-        publisher: ''
-      })) || [];
-      setAllGames(games);
-
-      // Fetch/compute stats
-      const currentYear = new Date().getFullYear();
-      const thisYearReviews = reviewsData?.filter(r => new Date(r.created_at).getFullYear() === currentYear).length || 0;
-      const { count: listsCount } = await supabase.from('lists').select('id', { count: 'exact' }).eq('user_id', user.id);
-      const { count: followingCount } = await supabase.from('followers').select('id', { count: 'exact' }).eq('follower_id', user.id);
-      const { count: followersCount } = await supabase.from('followers').select('id', { count: 'exact' }).eq('followed_id', user.id);
-
-      setStats({
-        films: reviewsData?.length || 0, // Games reviewed/played
-        thisYear: thisYearReviews,
-        lists: listsCount || 0,
-        following: followingCount || 0,
-        followers: followersCount || 0
-      });
-
-    } catch (error) {
-      console.error('Error fetching profile data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const handleEditClick = () => {
-    navigate('/settings');
+  const stats = {
+    gamesPlayed: 127,
+    gamesCompleted: 89,
+    averageRating: 7.8,
+    totalPlaytime: '1,234 hours',
+    reviewsWritten: 45,
+    achievementsUnlocked: 1337
   };
 
-  if (loading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 text-purple-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-400">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Safe user data with defaults
+  const safeUser = {
+    id: user.id || '',
+    username: user.name || user.email?.split('@')[0] || 'User',
+    email: user.email || '',
+    avatar: user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+    bio: 'Gaming enthusiast | Achievement hunter | RPG lover',
+    joinDate: new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }),
+    location: 'United States',
+    website: 'https://gamevault.com/user/' + user.id
+  };
+
+  const getActivityDescription = (activity: ActivityItem) => {
+    switch (activity.type) {
+      case 'review':
+        return `Reviewed ${activity.game} - ${activity.rating}/10`;
+      case 'rating':
+        return `Rated ${activity.game} - ${activity.rating}/10`;
+      case 'completed':
+        return `Completed ${activity.game}`;
+      case 'wishlist':
+        return `Added ${activity.game} to wishlist`;
+      case 'started':
+        return `Started playing ${activity.game}`;
+      default:
+        return activity.game;
+    }
+  };
 
   return (
-    <div className="bg-gray-900 text-white p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-900 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Header */}
-        <div className="flex flex-col md:flex-row justify-between gap-6 mb-8">
-          <ProfileInfo
-            user={userProfile}
-            isDummy={false}
-            onEditClick={handleEditClick}
-          />
-          <ProfileDetails stats={stats} />
+        <div className="bg-gray-800 rounded-lg p-8 mb-8">
+          <div className="flex flex-col md:flex-row items-start gap-6">
+            <div className="relative">
+              <img
+                src={safeUser.avatar}
+                alt={safeUser.username}
+                className="w-32 h-32 rounded-full object-cover border-4 border-purple-500"
+              />
+              <button className="absolute bottom-2 right-2 p-2 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors">
+                <Edit className="h-4 w-4 text-white" />
+              </button>
+            </div>
+            
+            <div className="flex-1">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-white mb-2">{safeUser.username}</h1>
+                  <p className="text-gray-400 mb-4">{safeUser.bio}</p>
+                </div>
+                <Link
+                  to="/settings"
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  <Settings className="h-5 w-5" />
+                  <span>Settings</span>
+                </Link>
+              </div>
+              
+              <div className="flex flex-wrap gap-4 text-sm text-gray-400">
+                <div className="flex items-center gap-1">
+                  <Mail className="h-4 w-4" />
+                  <span>{safeUser.email}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>Joined {safeUser.joinDate}</span>
+                </div>
+                {safeUser.location && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    <span>{safeUser.location}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Tabs Navigation */}
-        <div className="flex gap-4 mb-6 border-b border-gray-700">
-          <button
-            onClick={() => setActiveTab('top5')}
-            className={`pb-2 ${activeTab === 'top5' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
-          >
-            Top 5
-          </button>
-          <button
-            onClick={() => setActiveTab('reviews')}
-            className={`pb-2 ${activeTab === 'reviews' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
-          >
-            Reviews
-          </button>
-          <button
-            onClick={() => setActiveTab('activity')}
-            className={`pb-2 ${activeTab === 'activity' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
-          >
-            Activity
-          </button>
-          <button
-            onClick={() => setActiveTab('lists')}
-            className={`pb-2 ${activeTab === 'lists' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
-          >
-            Lists
-          </button>
+        {/* Navigation Tabs */}
+        <div className="bg-gray-800 rounded-lg mb-8">
+          <nav className="flex border-b border-gray-700">
+            {(['overview', 'games', 'reviews', 'stats'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 px-6 py-4 text-sm font-medium capitalize transition-colors ${
+                  activeTab === tab
+                    ? 'text-purple-400 border-b-2 border-purple-400'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </nav>
         </div>
 
-        {/* Profile Data */}
-        <ProfileData
-          activeTab={activeTab}
-          allGames={allGames}
-          sortedReviews={sortedReviews}
-          reviewFilter={reviewFilter}
-          onReviewFilterChange={setReviewFilter}
-          isDummy={false}
-        />
+        {/* Tab Content */}
+        <div className="space-y-8">
+          {activeTab === 'overview' && (
+            <>
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gray-800 rounded-lg p-6 text-center">
+                  <Gamepad2 className="h-8 w-8 text-purple-400 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-white">{stats.gamesPlayed}</div>
+                  <div className="text-sm text-gray-400">Games Played</div>
+                </div>
+                <div className="bg-gray-800 rounded-lg p-6 text-center">
+                  <Trophy className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-white">{stats.gamesCompleted}</div>
+                  <div className="text-sm text-gray-400">Completed</div>
+                </div>
+                <div className="bg-gray-800 rounded-lg p-6 text-center">
+                  <Star className="h-8 w-8 text-blue-400 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-white">{stats.averageRating}</div>
+                  <div className="text-sm text-gray-400">Avg Rating</div>
+                </div>
+                <div className="bg-gray-800 rounded-lg p-6 text-center">
+                  <Clock className="h-8 w-8 text-green-400 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-white">{stats.totalPlaytime}</div>
+                  <div className="text-sm text-gray-400">Play Time</div>
+                </div>
+              </div>
+
+              {/* Recent Games */}
+              <div className="bg-gray-800 rounded-lg p-6">
+                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <Gamepad2 className="h-6 w-6 text-purple-400" />
+                  Recent Games
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {recentGames.map((game) => (
+                    <Link
+                      key={game.id}
+                      to={`/game/${game.id}`}
+                      className="group"
+                    >
+                      <div className="aspect-[3/4] rounded-lg overflow-hidden mb-2">
+                        <img
+                          src={game.coverImage}
+                          alt={game.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      </div>
+                      <h3 className="text-sm text-white group-hover:text-purple-400 transition-colors truncate">
+                        {game.title}
+                      </h3>
+                      {game.userRating && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                          <span className="text-xs text-gray-400">{game.userRating}</span>
+                        </div>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="bg-gray-800 rounded-lg p-6">
+                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <Activity className="h-6 w-6 text-purple-400" />
+                  Recent Activity
+                </h2>
+                <div className="space-y-4">
+                  {recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-4 pb-4 border-b border-gray-700 last:border-0">
+                      <div className="flex-shrink-0 w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+                        {activity.type === 'review' && <Star className="h-5 w-5 text-yellow-400" />}
+                        {activity.type === 'rating' && <Star className="h-5 w-5 text-blue-400" />}
+                        {activity.type === 'completed' && <Trophy className="h-5 w-5 text-green-400" />}
+                        {activity.type === 'wishlist' && <TrendingUp className="h-5 w-5 text-purple-400" />}
+                        {activity.type === 'started' && <Gamepad2 className="h-5 w-5 text-gray-400" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-white">{getActivityDescription(activity)}</p>
+                        {activity.reviewSnippet && (
+                          <p className="text-gray-400 text-sm mt-1">{activity.reviewSnippet}</p>
+                        )}
+                        <p className="text-gray-500 text-xs mt-1">{activity.timestamp}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'games' && (
+            <div className="bg-gray-800 rounded-lg p-6">
+              <h2 className="text-xl font-bold text-white mb-4">Games Library</h2>
+              <p className="text-gray-400">Your complete games collection will be displayed here.</p>
+            </div>
+          )}
+
+          {activeTab === 'reviews' && (
+            <div className="bg-gray-800 rounded-lg p-6">
+              <h2 className="text-xl font-bold text-white mb-4">Reviews</h2>
+              <p className="text-gray-400">Your game reviews will be displayed here.</p>
+            </div>
+          )}
+
+          {activeTab === 'stats' && (
+            <div className="bg-gray-800 rounded-lg p-6">
+              <h2 className="text-xl font-bold text-white mb-4">Statistics</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-3">Gaming Overview</h3>
+                  <dl className="space-y-2">
+                    <div className="flex justify-between">
+                      <dt className="text-gray-400">Total Games</dt>
+                      <dd className="text-white font-medium">{stats.gamesPlayed}</dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-gray-400">Completed</dt>
+                      <dd className="text-white font-medium">{stats.gamesCompleted}</dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-gray-400">Completion Rate</dt>
+                      <dd className="text-white font-medium">
+                        {Math.round((stats.gamesCompleted / stats.gamesPlayed) * 100)}%
+                      </dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-gray-400">Reviews Written</dt>
+                      <dd className="text-white font-medium">{stats.reviewsWritten}</dd>
+                    </div>
+                  </dl>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-3">Achievements</h3>
+                  <dl className="space-y-2">
+                    <div className="flex justify-between">
+                      <dt className="text-gray-400">Total Unlocked</dt>
+                      <dd className="text-white font-medium">{stats.achievementsUnlocked}</dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-gray-400">Average Rating</dt>
+                      <dd className="text-white font-medium">{stats.averageRating}/10</dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-gray-400">Total Playtime</dt>
+                      <dd className="text-white font-medium">{stats.totalPlaytime}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
-
-export default ProfilePage;
