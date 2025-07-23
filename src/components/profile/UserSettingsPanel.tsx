@@ -1,28 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { supabase } from '../../lib/supabaseClient'; // Adjust path if needed, based on repo structure
-import { Button } from '../ui/button'; // Assuming Shadcn/UI or similar; adjust if using custom components
+import { createClient } from '@supabase/supabase-js'; // Direct import from the package
+import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Switch } from '../ui/switch'; // For visible toggle; fallback to custom if not present
-import { Loader2, Save } from 'lucide-react'; // Lucide icons as per README
-import { useUser } from '../../hooks/useUser'; // Assuming a custom hook for current user; implement if missing
+import { Loader2, Save } from 'lucide-react';
 
-// Define schema for validation (using Zod, common with React Hook Form)
-const settingsSchema = z.object({
-  username: z.string().min(3, 'Username must be at least 3 characters').max(20),
-  bio: z.string().max(160, 'Bio must be under 160 characters').optional(),
-  notifications: z.object({
-    email: z.boolean(),
-  }),
-});
+// Initialize Supabase client using env variables (no external file needed)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-type SettingsForm = z.infer<typeof settingsSchema>;
+interface SettingsForm {
+  username: string;
+  bio?: string;
+  notifications: {
+    email: boolean;
+  };
+}
 
 export default function UserSettingsPanel() {
-  const { user } = useUser(); // Fetch current user from context or Supabase session
+  const [user, setUser] = useState<any>(null); // Store current user
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -33,35 +31,66 @@ export default function UserSettingsPanel() {
     formState: { errors },
     reset,
   } = useForm<SettingsForm>({
-    resolver: zodResolver(settingsSchema),
     defaultValues: {
-      username: user?.username || '',
-      bio: user?.bio || '',
+      username: '',
+      bio: '',
       notifications: {
-        email: user?.notifications?.email || false,
+        email: false,
       },
     },
   });
+
+  // Fetch current user on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        // Fetch profile data from 'profiles' table
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        setUser(profile || session.user);
+        reset({
+          username: profile?.username || session.user.user_metadata?.username || '',
+          bio: profile?.bio || '',
+          notifications: {
+            email: profile?.notifications?.email || false,
+          },
+        });
+      }
+    };
+
+    fetchUser();
+  }, [reset]);
 
   const onSubmit = async (data: SettingsForm) => {
     setIsLoading(true);
     setSuccessMessage(null);
     setErrorMessage(null);
 
+    if (!user) {
+      setErrorMessage('No user logged in.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const { error } = await supabase
-        .from('profiles') // Assuming a 'profiles' table; adjust based on your Supabase schema (from migrations in README)
+        .from('profiles')
         .update({
           username: data.username,
           bio: data.bio,
-          notifications: data.notifications, // Stored as JSON in Supabase
+          notifications: data.notifications,
         })
-        .eq('id', user?.id);
+        .eq('id', user.id);
 
       if (error) throw error;
 
       setSuccessMessage('Settings updated successfully!');
-      reset(data); // Update form with new values
+      reset(data);
     } catch (error) {
       console.error('Error updating settings:', error);
       setErrorMessage('Failed to update settings. Please try again.');
