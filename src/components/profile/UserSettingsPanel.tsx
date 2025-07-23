@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { createClient } from '@supabase/supabase-js'; // Direct import from the package
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
+import { createClient } from '@supabase/supabase-js';
 import { Loader2, Save } from 'lucide-react';
 
-// Initialize Supabase client using env variables (no external file needed)
+// Initialize Supabase client using env variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -20,7 +17,7 @@ interface SettingsForm {
 }
 
 export default function UserSettingsPanel() {
-  const [user, setUser] = useState<any>(null); // Store current user
+  const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,7 +42,6 @@ export default function UserSettingsPanel() {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        // Fetch profile data from 'profiles' table
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -106,29 +102,33 @@ export default function UserSettingsPanel() {
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 flex items-center">
-        <Save className="mr-2" /> User Settings
+        <Save className="mr-2 h-5 w-5" /> User Settings
       </h2>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div>
-          <Label htmlFor="username">Username</Label>
-          <Input
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+            Username
+          </label>
+          <input
             id="username"
             {...register('username')}
             disabled={isLoading}
-            className={errors.username ? 'border-red-500' : ''}
+            className={`block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 ${errors.username ? 'ring-red-500 focus:ring-red-500' : ''}`}
           />
-          {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>}
+          {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>}
         </div>
 
         <div>
-          <Label htmlFor="bio">Bio</Label>
-          <Input
+          <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
+            Bio
+          </label>
+          <input
             id="bio"
             {...register('bio')}
             disabled={isLoading}
-            className={errors.bio ? 'border-red-500' : ''}
+            className={`block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 ${errors.bio ? 'ring-red-500 focus:ring-red-500' : ''}`}
           />
-          {errors.bio && <p className="text-red-500 text-sm mt-1">{errors.bio.message}</p>}
+          {errors.bio && <p className="mt-1 text-sm text-red-600">{errors.bio.message}</p>}
         </div>
 
         <div className="flex items-center space-x-4">
@@ -141,21 +141,25 @@ export default function UserSettingsPanel() {
               disabled={isLoading}
             />
             <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            <Label htmlFor="notifications.email" className="font-medium">
+            <label htmlFor="notifications.email" className="font-medium text-gray-700">
               Receive Email Notifications
-            </Label>
+            </label>
           </div>
-          {errors.notifications?.email && <p className="text-red-500 text-sm">{errors.notifications.email.message}</p>}
+          {errors.notifications?.email && <p className="text-sm text-red-600">{errors.notifications.email.message}</p>}
         </div>
 
-        <Button type="submit" disabled={isLoading} className="w-full">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           {isLoading ? 'Saving...' : 'Save Settings'}
-        </Button>
+        </button>
       </form>
 
-      {successMessage && <p className="mt-4 text-green-500 text-center">{successMessage}</p>}
-      {errorMessage && <p className="mt-4 text-red-500 text-center">{errorMessage}</p>}
+      {successMessage && <p className="mt-4 text-green-600 text-center">{successMessage}</p>}
+      {errorMessage && <p className="mt-4 text-red-600 text-center">{errorMessage}</p>}
     </div>
   );
 }
