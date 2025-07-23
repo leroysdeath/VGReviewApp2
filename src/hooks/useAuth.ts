@@ -1,4 +1,4 @@
-// Authentication hook
+// Authentication hook - Fixed version
 import { useState, useEffect } from 'react';
 import { authService, AuthUser } from '../services/authService';
 import type { Session } from '@supabase/supabase-js';
@@ -8,22 +8,36 @@ export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const createUserFromSession = (session: Session | null): AuthUser | null => {
+    if (!session?.user) return null;
+    
+    // Safely access user metadata with null checks
+    const userMetadata = session.user.user_metadata || {};
+    
+    return {
+      id: session.user.id,
+      email: session.user.email || '',
+      name: userMetadata.name || userMetadata.username || session.user.email?.split('@')[0] || 'User',
+      avatar: userMetadata.avatar_url || null, // Explicitly set to null if undefined
+      created_at: session.user.created_at
+    };
+  };
+
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const session = await authService.getCurrentSession();
-      setSession(session);
-      if (session?.user) {
-        // Convert Supabase user to our AuthUser format
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
-          avatar: session.user.user_metadata?.avatar_url,
-          created_at: session.user.created_at
-        });
+      try {
+        const session = await authService.getCurrentSession();
+        setSession(session);
+        const userData = createUserFromSession(session);
+        setUser(userData);
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+        setUser(null);
+        setSession(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     getInitialSession();
@@ -31,17 +45,8 @@ export const useAuth = () => {
     // Listen for auth changes
     const { data: { subscription } } = authService.onAuthStateChange((event, session) => {
       setSession(session);
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
-          avatar: session.user.user_metadata?.avatar_url,
-          created_at: session.user.created_at
-        });
-      } else {
-        setUser(null);
-      }
+      const userData = createUserFromSession(session);
+      setUser(userData);
       setLoading(false);
     });
 
@@ -50,60 +55,57 @@ export const useAuth = () => {
 
   const signUp = async (email: string, password: string, username: string) => {
     setLoading(true);
-    const result = await authService.signUp(email, password, username);
-    setLoading(false);
-    return result;
+    try {
+      const result = await authService.signUp(email, password, username);
+      return result;
+    } catch (error) {
+      console.error('Sign up error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
-    const result = await authService.signIn(email, password);
-    setLoading(false);
-    return result;
+    try {
+      const result = await authService.signIn(email, password);
+      return result;
+    } catch (error) {
+      console.error('Sign in error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signOut = async () => {
     setLoading(true);
-    const result = await authService.signOut();
-    setUser(null);
-    setSession(null);
-    setLoading(false);
-    return result;
+    try {
+      const result = await authService.signOut();
+      setUser(null);
+      setSession(null);
+      return result;
+    } catch (error) {
+      console.error('Sign out error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateProfile = async (updates: { username?: string; avatar?: string }) => {
-    const result = await authService.updateProfile(updates);
-    if (!result.error && user) {
-      setUser({ ...user, name: updates.username || user.name, avatar: updates.avatar || user.avatar });
+    try {
+      const result = await authService.updateProfile(updates);
+      if (!result.error && user) {
+        // Safely update user with new data
+        setUser(prevUser => prevUser ? { ...prevUser, ...updates } : null);
+      }
+      return result;
+    } catch (error) {
+      console.error('Update profile error:', error);
+      throw error;
     }
-    return result;
-  };
-
-  const resetPassword = async (email: string) => {
-    return await authService.resetPassword(email);
-  };
-
-  const updatePassword = async (newPassword: string) => {
-    return await authService.updatePassword(newPassword);
-  };
-
-  const signInWithProvider = async (provider: 'google' | 'github' | 'discord') => {
-    return await authService.signInWithProvider(provider);
-  };
-
-  const getUserProfile = async (userId: string) => {
-    return await authService.getUserProfile(userId);
-  };
-
-  const deleteAccount = async () => {
-    setLoading(true);
-    const result = await authService.deleteAccount();
-    if (!result.error) {
-      setUser(null);
-      setSession(null);
-    }
-    setLoading(false);
-    return result;
   };
 
   return {
@@ -114,11 +116,6 @@ export const useAuth = () => {
     signIn,
     signOut,
     updateProfile,
-    resetPassword,
-    updatePassword,
-    signInWithProvider,
-    getUserProfile,
-    deleteAccount,
     isAuthenticated: !!user
   };
 };
