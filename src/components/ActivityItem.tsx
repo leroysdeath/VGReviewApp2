@@ -1,272 +1,157 @@
 import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
+  Trophy, 
   Star, 
-  Heart, 
-  MessageSquare, 
-  ThumbsUp, 
-  Reply, 
-  Calendar 
+  MessageCircle, 
+  Plus, 
+  Heart,
+  Clock
 } from 'lucide-react';
-import { 
-  ActivityType, 
-  formatRelativeTime, 
-  getActivityColor, 
-  truncateText 
-} from '../utils/activityFormatters';
 
 interface ActivityItemProps {
-  id: string;
-  type: ActivityType;
-  timestamp: Date | string;
+  type: 'rating' | 'review' | 'completed' | 'wishlist' | 'like';
   actor: {
     id: string;
     username: string;
-    avatar?: string;
-  };
-  target?: {
-    id: string;
-    type: 'game' | 'review' | 'comment';
-    name?: string;
+    avatar?: string | null;
   };
   game?: {
     id: string;
     name: string;
-    coverImage?: string;
-  };
+    coverImage?: string | null;
+  } | null;
   content?: string;
-  currentUserId?: string;
-  className?: string;
+  rating?: number;
+  timestamp: string;
+  isCurrentUser?: boolean;
   onClick?: () => void;
 }
 
 const ActivityItem: React.FC<ActivityItemProps> = ({
-  id,
   type,
-  timestamp,
   actor,
-  target,
   game,
   content,
-  currentUserId,
-  className = '',
+  rating,
+  timestamp,
+  isCurrentUser = false,
   onClick
 }) => {
-  // Get icon based on activity type
-  const getActivityIcon = () => {
-    switch (type) {
-      case 'review':
-        return <Star className="h-5 w-5 text-yellow-400" />;
-      case 'review_like':
-        return <Heart className="h-5 w-5 text-red-400" />;
-      case 'comment':
-        return <MessageSquare className="h-5 w-5 text-blue-400" />;
-      case 'comment_like':
-        return <ThumbsUp className="h-5 w-5 text-green-400" />;
-      case 'comment_reply':
-        return <Reply className="h-5 w-5 text-purple-400" />;
-      default:
-        return <Calendar className="h-5 w-5 text-gray-400" />;
-    }
+  // Safe avatar access with null checks
+  const getActorAvatar = () => {
+    if (!actor) return null;
+    return actor.avatar || null;
   };
 
-  // Check if current user is the actor
-  const isCurrentUser = currentUserId && actor.id === currentUserId;
-
-  // Format activity description
-  const getActivityDescription = () => {
-    switch (type) {
-      case 'review':
-        if (!game) return 'posted a review';
-        
-        return (
-          <>
-            {isCurrentUser ? 'You' : (
-              <Link 
-                to={`/user/${actor.id}`}
-                className="font-medium text-white hover:text-blue-400 transition-colors"
-              >
-                {actor.username}
-              </Link>
-            )}
-            {' posted a review for '}
-            <Link 
-              to={`/game/${game.id}`}
-              className="font-medium text-white hover:text-blue-400 transition-colors"
-            >
-              {game.name}
-            </Link>
-          </>
-        );
-        
-      case 'review_like':
-        if (!target || !game) return 'liked a review';
-        
-        return (
-          <>
-            {isCurrentUser ? 'You' : (
-              <Link 
-                to={`/user/${actor.id}`}
-                className="font-medium text-white hover:text-blue-400 transition-colors"
-              >
-                {actor.username}
-              </Link>
-            )}
-            {' liked '}
-            {target.type === 'review' && target.name ? (
-              <>
-                <Link 
-                  to={`/review/${target.id}`}
-                  className="font-medium text-white hover:text-blue-400 transition-colors"
-                >
-                  {target.name}'s review
-                </Link>
-              </>
-            ) : (
-              'a review'
-            )}
-            {' of '}
-            <Link 
-              to={`/game/${game.id}`}
-              className="font-medium text-white hover:text-blue-400 transition-colors"
-            >
-              {game.name}
-            </Link>
-          </>
-        );
-        
-      case 'comment':
-        if (!target || !game) return 'commented on a review';
-        
-        return (
-          <>
-            {isCurrentUser ? 'You' : (
-              <Link 
-                to={`/user/${actor.id}`}
-                className="font-medium text-white hover:text-blue-400 transition-colors"
-              >
-                {actor.username}
-              </Link>
-            )}
-            {' commented on '}
-            {target.type === 'review' && target.name ? (
-              <>
-                <Link 
-                  to={`/review/${target.id}`}
-                  className="font-medium text-white hover:text-blue-400 transition-colors"
-                >
-                  {target.name}'s review
-                </Link>
-              </>
-            ) : (
-              'a review'
-            )}
-            {' of '}
-            <Link 
-              to={`/game/${game.id}`}
-              className="font-medium text-white hover:text-blue-400 transition-colors"
-            >
-              {game.name}
-            </Link>
-          </>
-        );
-        
-      case 'comment_like':
-        if (!target || !game) return 'liked a comment';
-        
-        return (
-          <>
-            {isCurrentUser ? 'You' : (
-              <Link 
-                to={`/user/${actor.id}`}
-                className="font-medium text-white hover:text-blue-400 transition-colors"
-              >
-                {actor.username}
-              </Link>
-            )}
-            {' liked '}
-            {target.type === 'comment' && target.name ? (
-              <>
-                <Link 
-                  to={`/user/${target.id}`}
-                  className="font-medium text-white hover:text-blue-400 transition-colors"
-                >
-                  {target.name}'s comment
-                </Link>
-              </>
-            ) : (
-              'a comment'
-            )}
-            {' on '}
-            <Link 
-              to={`/game/${game.id}`}
-              className="font-medium text-white hover:text-blue-400 transition-colors"
-            >
-              {game.name}
-            </Link>
-          </>
-        );
-        
-      case 'comment_reply':
-        if (!target || !game) return 'replied to a comment';
-        
-        return (
-          <>
-            {isCurrentUser ? 'You' : (
-              <Link 
-                to={`/user/${actor.id}`}
-                className="font-medium text-white hover:text-blue-400 transition-colors"
-              >
-                {actor.username}
-              </Link>
-            )}
-            {' replied to '}
-            {target.type === 'comment' && target.name ? (
-              <>
-                <Link 
-                  to={`/user/${target.id}`}
-                  className="font-medium text-white hover:text-blue-400 transition-colors"
-                >
-                  {target.name}'s comment
-                </Link>
-              </>
-            ) : (
-              'a comment'
-            )}
-            {' on '}
-            <Link 
-              to={`/game/${game.id}`}
-              className="font-medium text-white hover:text-blue-400 transition-colors"
-            >
-              {game.name}
-            </Link>
-          </>
-        );
-        
-      default:
-        return (
-          <>
-            <Link 
-              to={`/user/${actor.id}`}
-              className="font-medium text-white hover:text-blue-400 transition-colors"
-            >
-              {actor.username}
-            </Link>
-            {' performed an activity'}
-          </>
-        );
-    }
-  };
-
-  // Generate user initial from username
-  const getUserInitial = (username: string): string => {
+  // Get user initial safely
+  const getUserInitial = (username?: string) => {
+    if (!username) return '?';
     return username.charAt(0).toUpperCase();
   };
 
+  // Format relative time
+  const formatRelativeTime = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+      
+      if (diffInHours < 1) return 'Just now';
+      if (diffInHours < 24) return `${Math.floor(diffInHours)}h ago`;
+      if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
+      return `${Math.floor(diffInHours / 168)}w ago`;
+    } catch (error) {
+      return 'Recently';
+    }
+  };
+
+  // Get activity icon
+  const getActivityIcon = () => {
+    switch (type) {
+      case 'rating':
+        return <Star className="w-5 h-5 text-yellow-400" />;
+      case 'review':
+        return <MessageCircle className="w-5 h-5 text-blue-400" />;
+      case 'completed':
+        return <Trophy className="w-5 h-5 text-green-400" />;
+      case 'wishlist':
+        return <Plus className="w-5 h-5 text-purple-400" />;
+      case 'like':
+        return <Heart className="w-5 h-5 text-red-400" />;
+      default:
+        return <Clock className="w-5 h-5 text-gray-400" />;
+    }
+  };
+
+  // Get activity description
+  const getActivityDescription = () => {
+    const username = actor?.username || 'Unknown user';
+    const gameName = game?.name || 'a game';
+    
+    switch (type) {
+      case 'rating':
+        return (
+          <span>
+            <span className="font-medium text-white">{username}</span>
+            {' rated '}
+            <span className="font-medium text-white">{gameName}</span>
+            {rating && (
+              <span className="ml-2 text-yellow-400">
+                {'★'.repeat(Math.floor(rating))}
+              </span>
+            )}
+          </span>
+        );
+      case 'review':
+        return (
+          <span>
+            <span className="font-medium text-white">{username}</span>
+            {' reviewed '}
+            <span className="font-medium text-white">{gameName}</span>
+          </span>
+        );
+      case 'completed':
+        return (
+          <span>
+            <span className="font-medium text-white">{username}</span>
+            {' completed '}
+            <span className="font-medium text-white">{gameName}</span>
+          </span>
+        );
+      case 'wishlist':
+        return (
+          <span>
+            <span className="font-medium text-white">{username}</span>
+            {' added '}
+            <span className="font-medium text-white">{gameName}</span>
+            {' to wishlist'}
+          </span>
+        );
+      case 'like':
+        return (
+          <span>
+            <span className="font-medium text-white">{username}</span>
+            {' liked '}
+            <span className="font-medium text-white">{gameName}</span>
+          </span>
+        );
+      default:
+        return (
+          <span>
+            <span className="font-medium text-white">{username}</span>
+            {' had some activity with '}
+            <span className="font-medium text-white">{gameName}</span>
+          </span>
+        );
+    }
+  };
+
   return (
-    <div 
-      className={`bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition-colors ${className}`}
-      onClick={onClick}
+    <div
+      className={`p-4 bg-gray-800 rounded-lg border border-gray-700 transition-colors ${
+        onClick ? 'hover:bg-gray-750 cursor-pointer' : ''
+      }`}
       tabIndex={onClick ? 0 : undefined}
       role={onClick ? 'button' : undefined}
       onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
@@ -306,20 +191,37 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
                   alt={game.name}
                   className="h-16 rounded object-cover"
                   loading="lazy"
+                  onError={(e) => {
+                    // Handle broken images
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
                 />
               </Link>
             </div>
           )}
           
-          {/* User Avatar */}
-          {!isCurrentUser && (
+          {/* User Avatar - Only show if not current user */}
+          {!isCurrentUser && actor && (
             <div className="mt-2 flex items-center gap-2">
-              {actor.avatar ? (
+              {getActorAvatar() ? (
                 <img
-                  src={actor.avatar}
+                  src={getActorAvatar()!}
                   alt={actor.username}
                   className="w-6 h-6 rounded-full object-cover"
                   loading="lazy"
+                  onError={(e) => {
+                    // Fallback to initials if avatar fails to load
+                    const target = e.target as HTMLImageElement;
+                    const parent = target.parentElement;
+                    if (parent) {
+                      target.style.display = 'none';
+                      const fallback = document.createElement('div');
+                      fallback.className = 'w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs';
+                      fallback.textContent = getUserInitial(actor.username);
+                      parent.appendChild(fallback);
+                    }
+                  }}
                 />
               ) : (
                 <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs">
