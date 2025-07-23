@@ -47,32 +47,6 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
 }) => {
   const { isMobile } = useResponsive();
 
-  // Safe access functions with null checks
-  const getSafeAvatar = (): string => {
-    if (!user?.avatar || typeof user.avatar !== 'string' || user.avatar.trim() === '') {
-      return 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150';
-    }
-    return user.avatar;
-  };
-
-  const getSafeUsername = (): string => {
-    return user?.username && typeof user.username === 'string' ? user.username : 'Unknown User';
-  };
-
-  const getSafeBio = (): string => {
-    return user?.bio && typeof user.bio === 'string' ? user.bio : 'Gaming enthusiast';
-  };
-
-  const getSafeWebsite = (): string | null => {
-    return user?.website && typeof user.website === 'string' ? user.website : null;
-  };
-
-  // Handle image load errors
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const target = e.currentTarget;
-    target.src = 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150';
-  };
-
   if (isMobile) {
     return (
       <div className="min-h-screen bg-gray-900">
@@ -90,20 +64,18 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             {/* Profile Image and Basic Info */}
             <div className="flex items-start gap-4 mb-6">
               <img
-                src={getSafeAvatar()}
-                alt={getSafeUsername()}
+                src={user.avatar}
+                alt={user.username}
                 className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
-                onError={handleImageError}
-                loading="lazy"
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <h1 className="text-2xl font-bold text-white">{getSafeUsername()}</h1>
+                  <h1 className="text-2xl font-bold text-white">{user.username}</h1>
                   <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
                     PATRON
                   </span>
                 </div>
-                <p className="text-blue-400 text-sm mb-3">{getSafeBio()}</p>
+                <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
               </div>
               <button className="text-gray-400 hover:text-white p-2">
                 <Settings className="h-5 w-5" />
@@ -115,9 +87,9 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
               <div className="flex items-center gap-1">
                 <span>🎮 platform 9¾</span>
                 <span className="mx-2">🔗</span>
-                {getSafeWebsite() ? (
+                {user.website ? (
                   <a 
-                    href={getSafeWebsite()!} 
+                    href={user.website} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="hover:text-blue-400 transition-colors flex items-center gap-1"
@@ -129,49 +101,27 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                   <span>{isDummy ? 'dummytestuser.card.co' : 'gamevault.card.co'}</span>
                 )}
               </div>
-              <div className="flex items-center gap-1">
-                <span>📍 Online Gaming Community</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>📅 Member since {user?.joinDate || 'Unknown'}</span>
-              </div>
-            </div>
-
-            {/* Stats Section */}
-            <div className="flex justify-between items-center py-4 border-t border-gray-700">
-              <div className="text-center">
-                <div className="text-xl font-bold text-white">{stats?.films || 0}</div>
-                <div className="text-xs text-gray-400">Games</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-bold text-white">{stats?.thisYear || 0}</div>
-                <div className="text-xs text-gray-400">This Year</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-bold text-white">{stats?.lists || 0}</div>
-                <div className="text-xs text-gray-400">Lists</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-bold text-white">{stats?.following || 0}</div>
-                <div className="text-xs text-gray-400">Following</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl font-bold text-white">{stats?.followers || 0}</div>
-                <div className="text-xs text-gray-400">Followers</div>
-              </div>
+              
+              {user.location && (
+                <div>📍 {user.location}</div>
+              )}
+              
+              {user.joinDate && (
+                <div>📅 Joined {user.joinDate}</div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Mobile Navigation Tabs */}
-        <div className="bg-gray-800 border-b border-gray-700 sticky top-0 z-10">
-          <div className="overflow-x-auto">
-            <nav className="flex">
+        {/* Navigation Tabs */}
+        <div className="bg-gray-800 border-b border-gray-700 sticky top-0 z-30">
+          <div className="px-4">
+            <div className="flex">
               {TABS.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => onTabChange(tab.key)}
-                  className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  className={`flex-1 py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                     activeTab === tab.key
                       ? 'border-green-500 text-green-400'
                       : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
@@ -180,64 +130,102 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                   {tab.label}
                 </button>
               ))}
-            </nav>
+            </div>
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="p-4">
+        {/* Profile Data Section - Middle */}
+        <div className="px-4 py-6">
           {children}
+        </div>
+
+        {/* Profile Details Section - Bottom */}
+        <div className="bg-gray-800 border-t border-gray-700 mt-8">
+          <div className="px-4 py-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Profile Stats</h3>
+            
+            {/* Main Stats Grid */}
+            <div className="grid grid-cols-5 gap-3 text-center mb-6">
+              <div>
+                <div className="text-lg font-bold text-white">{stats.films.toLocaleString()}</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">GAMES</div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-white">{stats.thisYear}</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-white">{stats.lists}</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-white">{stats.following}</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWING</div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-white">{stats.followers.toLocaleString()}</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
+              </div>
+            </div>
+
+            {/* Additional Stats */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-700 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-green-400">87%</div>
+                <div className="text-xs text-gray-400">Completion Rate</div>
+              </div>
+              <div className="bg-gray-700 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-purple-400">8.2</div>
+                <div className="text-xs text-gray-400">Avg Rating</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Desktop Layout
+  // Desktop version (existing design)
   return (
     <div className="min-h-screen bg-gray-900">
       {/* Dummy Test Banner - only show for dummy page */}
       {isDummy && (
         <div className="bg-blue-600 text-white p-4 text-center">
-          <h2 className="text-lg font-semibold">👤 Dummy Test User Profile - Desktop</h2>
-          <p className="text-sm opacity-90">Letterboxd-inspired design</p>
+          <h2 className="text-lg font-semibold">👤 Dummy Test User Profile - Letterboxd Style</h2>
+          <p className="text-sm opacity-90">This is a comprehensive test profile showcasing the new Letterboxd-inspired design</p>
         </div>
       )}
 
-      {/* Profile Header */}
-      <div className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-start justify-between gap-6">
-            {/* Profile Info Section */}
-            <div className="flex items-start gap-6">
-              <div className="relative flex-shrink-0">
-                <img
-                  src={getSafeAvatar()}
-                  alt={getSafeUsername()}
-                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
-                  onError={handleImageError}
-                  loading="lazy"
-                />
+      {/* Hero/Cover Section */}
+      <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 h-64">
+        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-end pb-8">
+          <div className="flex items-end gap-6">
+            <div className="relative">
+              <img
+                src={user.avatar}
+                alt={user.username}
+                className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-xl"
+              />
+              <div className="absolute -bottom-2 -right-2 bg-green-500 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center">
+                <span className="text-white text-xs font-bold">✓</span>
               </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-2xl font-bold text-white">{getSafeUsername()}</h1>
-                  <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
-                    PATRON
-                  </span>
-                  <button className="text-gray-400 hover:text-white">
-                    <Settings className="h-4 w-4" />
-                  </button>
-                </div>
-                
-                <p className="text-blue-400 text-sm mb-3">{getSafeBio()}</p>
-                
-                <div className="flex items-center gap-1 text-gray-400 text-sm mb-4">
-                  <span>🎮 platform 9¾</span>
-                  <span className="mx-2">🔗</span>
-                  {getSafeWebsite() ? (
+            </div>
+            <div className="text-white pb-4">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-4xl font-bold">{user.username}</h1>
+                <span className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-full">
+                  PATRON
+                </span>
+              </div>
+              <p className="text-blue-300 text-lg mb-2">{user.bio}</p>
+              <div className="flex items-center gap-4 text-sm text-gray-300">
+                <span>🎮 platform 9¾</span>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  🔗 {user.website ? (
                     <a 
-                      href={getSafeWebsite()!} 
+                      href={user.website} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="hover:text-blue-400 transition-colors flex items-center gap-1"
@@ -250,57 +238,67 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                   )}
                 </div>
                 
-                <div className="text-gray-400 text-sm">
-                  <span>📍 Online Gaming Community • 📅 Member since {user?.joinDate || 'Unknown'}</span>
-                </div>
+                {user.location && (
+                  <div className="text-gray-400 text-sm">
+                    📍 {user.location}
+                  </div>
+                )}
+                
+                {user.joinDate && (
+                  <div className="text-gray-400 text-sm mt-1">
+                    📅 Joined {user.joinDate}
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Stats Section */}
-            <div className="flex items-center gap-8">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-white">{stats?.films || 0}</div>
-                <div className="text-sm text-gray-400">Games</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-white">{stats?.thisYear || 0}</div>
-                <div className="text-sm text-gray-400">This Year</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-white">{stats?.lists || 0}</div>
-                <div className="text-sm text-gray-400">Lists</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-white">{stats?.following || 0}</div>
-                <div className="text-sm text-gray-400">Following</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-white">{stats?.followers || 0}</div>
-                <div className="text-sm text-gray-400">Followers</div>
+            
+            {/* Profile Details Section */}
+            <div className="flex-shrink-0 flex flex-col gap-4">
+              <div className="flex items-center gap-6">
+                <div className="text-center">
+                  <div className="text-xl font-bold text-white">{stats.films.toLocaleString()}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">GAMES</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-white">{stats.thisYear}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-white">{stats.lists}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-white">{stats.following}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWING</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-white">{stats.followers.toLocaleString()}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Desktop Navigation Tabs */}
-        <div className="border-t border-gray-700">
-          <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => onTabChange(tab.key)}
-                  className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === tab.key
-                      ? 'border-green-500 text-green-400'
-                      : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </div>
+      {/* Navigation Tabs */}
+      <div className="bg-gray-800 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex space-x-8">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => onTabChange(tab.key)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.key
+                    ? 'border-green-500 text-green-400'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
         </div>
       </div>
 
