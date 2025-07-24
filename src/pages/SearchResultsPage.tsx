@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, Zap, Database, Heart, Plus } from 'lucide-react';
 import { useIGDBSearch } from '../hooks/useIGDBCache';
 import { enhancedIGDBService } from '../services/enhancedIGDBService';
-import { AuthModal } from '../components/auth/AuthModal';
+import AuthModal from '../components/auth/AuthModal';
 import { useAuth } from '../hooks/useAuth';
 
 interface Game {
