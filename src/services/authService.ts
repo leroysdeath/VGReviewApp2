@@ -1,4 +1,4 @@
-// Supabase Authentication Service
+// src/services/authService.ts
 import { supabase } from './supabase';
 import type { User, Session } from '@supabase/supabase-js';
 
@@ -59,6 +59,28 @@ class AuthService {
     }
   }
 
+  async resetPassword(email: string): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  }
+
+  async updatePassword(newPassword: string): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  }
+
   async getCurrentUser(): Promise<User | null> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -79,34 +101,30 @@ class AuthService {
     }
   }
 
+  onAuthStateChange(callback: (event: string, session: Session | null) => void) {
+    return supabase.auth.onAuthStateChange(callback);
+  }
+
   async updateProfile(updates: { username?: string; avatar?: string }): Promise<{ error: any }> {
     try {
       const { error } = await supabase.auth.updateUser({
         data: updates
       });
 
-      if (!error && updates.username) {
-        // Update user profile in our database
-        const user = await this.getCurrentUser();
+      if (!error) {
+        // Also update in our user table if it exists
+        const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await supabase
             .from('user')
-            .update({ name: updates.username })
+            .update({
+              name: updates.username || updates.avatar,
+              picurl: updates.avatar
+            })
             .eq('provider_id', user.id);
         }
       }
 
-      return { error };
-    } catch (error) {
-      return { error };
-    }
-  }
-
-  async resetPassword(email: string): Promise<{ error: any }> {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
-      });
       return { error };
     } catch (error) {
       return { error };
@@ -122,15 +140,11 @@ class AuthService {
           provider_id: user.id,
           email: user.email || '',
           name: username,
-          picurl: user.user_metadata?.avatar_url || null
+          picurl: user.user_metadata?.avatar_url
         });
     } catch (error) {
-      console.error('Failed to create user profile:', error);
+      console.error('Error creating user profile:', error);
     }
-  }
-
-  onAuthStateChange(callback: (event: string, session: Session | null) => void) {
-    return supabase.auth.onAuthStateChange(callback);
   }
 }
 
