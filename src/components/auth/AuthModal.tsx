@@ -1,8 +1,10 @@
+// src/components/auth/AuthModal.tsx
 import React, { useState } from 'react';
 import { X, Eye, EyeOff, Mail, Key, User, AlertCircle, Check, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useAuthContext } from '../../context/AuthProvider';
 
 // Form validation schemas
 const loginSchema = z.object({
@@ -52,9 +54,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [resetEmailSent, setResetEmailSent] = useState(false);
+
+  const { signIn, signUp } = useAuthContext();
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -92,16 +97,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setAuthError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { user, error } = await signIn(data.email, data.password);
       
-      console.log('Login data:', data);
-      
-      // Success
-      onLoginSuccess?.();
-      onClose();
-    } catch (error) {
-      setAuthError('Invalid email or password. Please try again.');
+      if (error) {
+        setAuthError(error.message || 'Login failed. Please check your credentials.');
+        return;
+      }
+
+      if (user) {
+        onLoginSuccess?.();
+        onClose();
+        // Reset form
+        loginForm.reset();
+      }
+    } catch (error: any) {
+      setAuthError(error.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -113,16 +123,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setAuthError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const { user, error } = await signUp(data.email, data.password, data.username);
       
-      console.log('Signup data:', data);
-      
-      // Success
-      onSignupSuccess?.();
-      onClose();
-    } catch (error) {
-      setAuthError('Failed to create account. Please try again.');
+      if (error) {
+        setAuthError(error.message || 'Signup failed. Please try again.');
+        return;
+      }
+
+      if (user) {
+        onSignupSuccess?.();
+        onClose();
+        // Reset form
+        signupForm.reset();
+      }
+    } catch (error: any) {
+      setAuthError(error.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -134,15 +149,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setAuthError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Import authService for password reset
+      const { authService } = await import('../../services/authService');
+      const { error } = await authService.resetPassword(data.email);
       
-      console.log('Reset password for:', data.email);
+      if (error) {
+        setAuthError(error.message || 'Failed to send reset email. Please try again.');
+        return;
+      }
       
-      // Show success message
       setResetEmailSent(true);
-    } catch (error) {
-      setAuthError('Failed to send reset email. Please try again.');
+    } catch (error: any) {
+      setAuthError(error.message || 'Failed to send reset email. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -169,10 +187,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     };
   };
 
-  // Social login handlers
-  const handleSocialLogin = (provider: string) => {
-    console.log(`Login with ${provider}`);
-    // Implement social login logic here
+  // Reset modal state when switching modes
+  const switchMode = (newMode: 'login' | 'signup' | 'reset') => {
+    setMode(newMode);
+    setAuthError(null);
+    setResetEmailSent(false);
+    loginForm.reset();
+    signupForm.reset();
+    resetForm.reset();
   };
 
   if (!isOpen) return null;
@@ -186,7 +208,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-700 transition-colors"
+          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-700 transition-colors z-10"
           aria-label="Close"
         >
           <X className="h-5 w-5" />
@@ -202,37 +224,47 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </h2>
             <p className="text-gray-400 mt-2">
               {mode === 'login' && "Welcome back! Sign in to your account"}
-              {mode === 'signup' && "Join the gaming community today"}
+              {mode === 'signup' && "Join the gaming community"}
               {mode === 'reset' && "Enter your email to reset your password"}
             </p>
           </div>
 
-          {/* Error message */}
+          {/* Error Message */}
           {authError && (
-            <div className="mb-6 p-3 bg-red-900/50 border border-red-700 rounded-lg flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-red-300 text-sm">{authError}</p>
+            <div className="mb-4 p-3 bg-red-600/20 border border-red-600/30 rounded-lg flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
+              <span className="text-red-300 text-sm">{authError}</span>
+            </div>
+          )}
+
+          {/* Success Message for Password Reset */}
+          {resetEmailSent && (
+            <div className="mb-4 p-3 bg-green-600/20 border border-green-600/30 rounded-lg flex items-center gap-2">
+              <Check className="h-5 w-5 text-green-400 flex-shrink-0" />
+              <span className="text-green-300 text-sm">
+                Password reset email sent! Check your inbox.
+              </span>
             </div>
           )}
 
           {/* Login Form */}
           {mode === 'login' && (
             <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-              {/* Email */}
+              {/* Email Field */}
               <div>
-                <label htmlFor="login-email" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
                   Email Address
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                   <input
-                    id="login-email"
+                    id="email"
                     type="email"
                     {...loginForm.register('email')}
                     className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                       loginForm.formState.errors.email ? 'border-red-500' : 'border-gray-600'
                     }`}
-                    placeholder="your.email@example.com"
+                    placeholder="Enter your email"
                     disabled={isLoading}
                   />
                 </div>
@@ -241,37 +273,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 )}
               </div>
 
-              {/* Password */}
+              {/* Password Field */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label htmlFor="login-password" className="block text-sm font-medium text-gray-300">
-                    Password
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setMode('reset')}
-                    className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+                  Password
+                </label>
                 <div className="relative">
                   <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                   <input
-                    id="login-password"
+                    id="password"
                     type={showPassword ? 'text' : 'password'}
                     {...loginForm.register('password')}
-                    className={`w-full pl-10 pr-10 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                    className={`w-full pl-10 pr-12 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                       loginForm.formState.errors.password ? 'border-red-500' : 'border-gray-600'
                     }`}
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
                     disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                    disabled={isLoading}
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
@@ -281,25 +304,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 )}
               </div>
 
-              {/* Remember me */}
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  type="checkbox"
-                  {...loginForm.register('rememberMe')}
-                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-700"
-                  disabled={isLoading}
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-300">
-                  Remember me
+              {/* Remember Me and Forgot Password */}
+              <div className="flex items-center justify-between">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    {...loginForm.register('rememberMe')}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-700"
+                    disabled={isLoading}
+                  />
+                  <span className="ml-2 text-sm text-gray-300">Remember me</span>
                 </label>
+                <button
+                  type="button"
+                  onClick={() => switchMode('reset')}
+                  className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                  disabled={isLoading}
+                >
+                  Forgot password?
+                </button>
               </div>
 
               {/* Submit button */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? (
                   <>
@@ -312,11 +342,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </button>
 
               {/* Switch to signup */}
-              <div className="text-center text-sm text-gray-400">
-                Don't have an account?{' '}
+              <div className="text-center">
+                <span className="text-gray-400">Don't have an account? </span>
                 <button
                   type="button"
-                  onClick={() => setMode('signup')}
+                  onClick={() => switchMode('signup')}
                   className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
                   disabled={isLoading}
                 >
@@ -329,21 +359,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {/* Signup Form */}
           {mode === 'signup' && (
             <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
-              {/* Username */}
+              {/* Username Field */}
               <div>
-                <label htmlFor="signup-username" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-1">
                   Username
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                   <input
-                    id="signup-username"
+                    id="username"
                     type="text"
                     {...signupForm.register('username')}
                     className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                       signupForm.formState.errors.username ? 'border-red-500' : 'border-gray-600'
                     }`}
-                    placeholder="GamerTag"
+                    placeholder="Choose a username"
                     disabled={isLoading}
                   />
                 </div>
@@ -352,7 +382,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 )}
               </div>
 
-              {/* Email */}
+              {/* Email Field */}
               <div>
                 <label htmlFor="signup-email" className="block text-sm font-medium text-gray-300 mb-1">
                   Email Address
@@ -366,7 +396,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                       signupForm.formState.errors.email ? 'border-red-500' : 'border-gray-600'
                     }`}
-                    placeholder="your.email@example.com"
+                    placeholder="Enter your email"
                     disabled={isLoading}
                   />
                 </div>
@@ -375,7 +405,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 )}
               </div>
 
-              {/* Password */}
+              {/* Password Field */}
               <div>
                 <label htmlFor="signup-password" className="block text-sm font-medium text-gray-300 mb-1">
                   Password
@@ -386,17 +416,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     id="signup-password"
                     type={showPassword ? 'text' : 'password'}
                     {...signupForm.register('password')}
-                    className={`w-full pl-10 pr-10 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                    className={`w-full pl-10 pr-12 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                       signupForm.formState.errors.password ? 'border-red-500' : 'border-gray-600'
                     }`}
-                    placeholder="••••••••"
+                    placeholder="Create a password"
                     disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                    disabled={isLoading}
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
@@ -409,7 +439,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {signupForm.watch('password') && (
                   <div className="mt-2">
                     <div className="flex items-center gap-2 mb-1">
-                      <div className="flex-1 bg-gray-700 rounded-full h-2">
+                      <div className="flex-1 bg-gray-600 rounded-full h-2">
                         <div 
                           className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrength(signupForm.watch('password')).color}`}
                           style={{ width: `${(getPasswordStrength(signupForm.watch('password')).strength / 5) * 100}%` }}
@@ -423,50 +453,56 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 )}
               </div>
 
-              {/* Confirm Password */}
+              {/* Confirm Password Field */}
               <div>
-                <label htmlFor="signup-confirm-password" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300 mb-1">
                   Confirm Password
                 </label>
                 <div className="relative">
                   <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                   <input
-                    id="signup-confirm-password"
-                    type={showPassword ? 'text' : 'password'}
+                    id="confirm-password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     {...signupForm.register('confirmPassword')}
-                    className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                    className={`w-full pl-10 pr-12 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                       signupForm.formState.errors.confirmPassword ? 'border-red-500' : 'border-gray-600'
                     }`}
-                    placeholder="••••••••"
+                    placeholder="Confirm your password"
                     disabled={isLoading}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                    disabled={isLoading}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
                 {signupForm.formState.errors.confirmPassword && (
                   <p className="mt-1 text-sm text-red-400">{signupForm.formState.errors.confirmPassword.message}</p>
                 )}
               </div>
 
-              {/* Terms and conditions */}
+              {/* Terms checkbox */}
               <div>
-                <label className="flex items-start gap-3">
-                  <div className="flex items-center h-5 mt-0.5">
-                    <input
-                      type="checkbox"
-                      {...signupForm.register('agreeToTerms')}
-                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-700"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="text-sm text-gray-300">
+                <label className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    {...signupForm.register('agreeToTerms')}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-700 mt-0.5"
+                    disabled={isLoading}
+                  />
+                  <span className="text-sm text-gray-300">
                     I agree to the{' '}
-                    <a href="#" className="text-purple-400 hover:text-purple-300 transition-colors">
+                    <a href="/terms" className="text-purple-400 hover:text-purple-300 transition-colors">
                       Terms of Service
                     </a>{' '}
                     and{' '}
-                    <a href="#" className="text-purple-400 hover:text-purple-300 transition-colors">
+                    <a href="/privacy" className="text-purple-400 hover:text-purple-300 transition-colors">
                       Privacy Policy
                     </a>
-                  </div>
+                  </span>
                 </label>
                 {signupForm.formState.errors.agreeToTerms && (
                   <p className="mt-1 text-sm text-red-400">{signupForm.formState.errors.agreeToTerms.message}</p>
@@ -477,7 +513,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? (
                   <>
@@ -490,11 +526,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </button>
 
               {/* Switch to login */}
-              <div className="text-center text-sm text-gray-400">
-                Already have an account?{' '}
+              <div className="text-center">
+                <span className="text-gray-400">Already have an account? </span>
                 <button
                   type="button"
-                  onClick={() => setMode('login')}
+                  onClick={() => switchMode('login')}
                   className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
                   disabled={isLoading}
                 >
@@ -504,10 +540,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </form>
           )}
 
-          {/* Reset Password Form */}
-          {mode === 'reset' && !resetEmailSent && (
+          {/* Password Reset Form */}
+          {mode === 'reset' && (
             <form onSubmit={resetForm.handleSubmit(handleReset)} className="space-y-4">
-              {/* Email */}
+              {/* Email Field */}
               <div>
                 <label htmlFor="reset-email" className="block text-sm font-medium text-gray-300 mb-1">
                   Email Address
@@ -521,7 +557,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                       resetForm.formState.errors.email ? 'border-red-500' : 'border-gray-600'
                     }`}
-                    placeholder="your.email@example.com"
+                    placeholder="Enter your email"
                     disabled={isLoading}
                   />
                 </div>
@@ -534,7 +570,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? (
                   <>
@@ -547,47 +583,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </button>
 
               {/* Back to login */}
-              <div className="text-center text-sm text-gray-400">
-                Remember your password?{' '}
+              <div className="text-center">
                 <button
                   type="button"
-                  onClick={() => setMode('login')}
+                  onClick={() => switchMode('login')}
                   className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
                   disabled={isLoading}
                 >
-                  Sign in
+                  ← Back to Sign In
                 </button>
               </div>
             </form>
-          )}
-
-          {/* Reset Email Sent Confirmation */}
-          {mode === 'reset' && resetEmailSent && (
-            <div className="text-center space-y-4">
-              <div className="flex justify-center">
-                <div className="w-16 h-16 bg-green-900/50 rounded-full flex items-center justify-center">
-                  <Check className="h-8 w-8 text-green-400" />
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium text-white mb-2">Check your email</h3>
-                <p className="text-gray-400 text-sm mb-4">
-                  We've sent a password reset link to your email address. Check your inbox and follow the instructions to reset your password.
-                </p>
-              </div>
-
-              <button
-                onClick={() => {
-                  setMode('login');
-                  setResetEmailSent(false);
-                  resetForm.reset();
-                }}
-                className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
-              >
-                Back to Sign In
-              </button>
-            </div>
           )}
         </div>
       </div>
