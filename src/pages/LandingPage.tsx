@@ -19,16 +19,12 @@ export const HomePage = () => {
         </div>
 
         <div className="flex justify-center gap-4">
-          {/* New unified Explore Games button */}
+          {/* Keep only the Explore Games button */}
           <ExploreGamesButton 
             variant="primary" 
             showFilters={true}
             className="transform hover:scale-105"
           />
-          
-          <button className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg font-semibold transition-colors">
-            Join Community →
-          </button>
         </div>
       </div>
     </div>
