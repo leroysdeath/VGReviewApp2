@@ -1,25 +1,22 @@
-// src/App.tsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ResponsiveNavbar } from './components/ResponsiveNavbar';
 import { ResponsiveLandingPage } from './components/ResponsiveLandingPage';
 import { ReviewProvider } from './context/ReviewContext';
-import { GamePage } from './pages/GamePage';
+import { ComprehensiveGamePage } from './pages/ComprehensiveGamePage';
 import { GameSearchPage } from './pages/GameSearchPage';
 import { SearchResultsPage } from './pages/SearchResultsPage';
 import { UserPage } from './pages/UserPage';
 import { UserSearchPage } from './pages/UserSearchPage';
+import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { SEOHead } from './components/SEOHead';
-import { useAuth } from './hooks/useAuth';
 
 function App() {
-  const { isAuthenticated } = useAuth();
-
   return (
     <HelmetProvider>
       <ErrorBoundary>
@@ -30,7 +27,7 @@ function App() {
               <ResponsiveNavbar />
               <Routes>
                 <Route path="/" element={<ResponsiveLandingPage />} />
-                <Route path="/game/:id" element={<GamePage />} />
+                <Route path="/game/:id" element={<ComprehensiveGamePage />} />
                 
                 {/* UPDATED: Both search routes now point to SearchResultsPage */}
                 <Route path="/search" element={<SearchResultsPage />} />
@@ -39,19 +36,9 @@ function App() {
                 {/* Keep your other existing routes */}
                 <Route path="/user/:id" element={<UserPage />} />
                 <Route path="/users" element={<UserSearchPage />} />
-                
-                {/* Protected routes with auth check */}
-                <Route path="/review/:gameId?" element={
-                  isAuthenticated ? <ReviewFormPage /> : <Navigate to="/" state={{ requireAuth: true }} />
-                } />
-                <Route path="/profile" element={
-                  isAuthenticated ? <ProfilePage /> : <Navigate to="/" state={{ requireAuth: true }} />
-                } />
-                
-                {/* Redirect old login route to home with auth modal trigger */}
-                <Route path="/login" element={<Navigate to="/" state={{ showAuth: true }} />} />
-                <Route path="/forgot-password" element={<Navigate to="/" state={{ showAuth: true, authMode: 'reset' }} />} />
-                
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/review/:gameId?" element={<ReviewFormPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
                 {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
               </Routes>
             </div>
