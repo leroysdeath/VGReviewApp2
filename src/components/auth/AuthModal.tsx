@@ -10,7 +10,7 @@ interface AuthModalProps {
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
-  onClose,a// src/components/auth/AuthModal.tsx
+  onClose,
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
