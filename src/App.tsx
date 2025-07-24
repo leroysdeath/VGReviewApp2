@@ -32,15 +32,15 @@ function App() {
                 <Route path="/" element={<ResponsiveLandingPage />} />
                 <Route path="/game/:id" element={<GamePage />} />
                 
-                {/* Search routes */}
+                {/* UPDATED: Both search routes now point to SearchResultsPage */}
                 <Route path="/search" element={<SearchResultsPage />} />
                 <Route path="/search-results" element={<SearchResultsPage />} />
                 
-                {/* User routes */}
+                {/* Keep your other existing routes */}
                 <Route path="/user/:id" element={<UserPage />} />
                 <Route path="/users" element={<UserSearchPage />} />
                 
-                {/* Protected routes */}
+                {/* Protected routes with auth check */}
                 <Route path="/review/:gameId?" element={
                   isAuthenticated ? <ReviewFormPage /> : <Navigate to="/" state={{ requireAuth: true }} />
                 } />
@@ -50,8 +50,8 @@ function App() {
                 
                 {/* Redirect old login route to home with auth modal trigger */}
                 <Route path="/login" element={<Navigate to="/" state={{ showAuth: true }} />} />
+                <Route path="/forgot-password" element={<Navigate to="/" state={{ showAuth: true, authMode: 'reset' }} />} />
                 
-                {/* Development routes */}
                 {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
               </Routes>
             </div>
