@@ -1,7 +1,7 @@
 // components/ExploreGamesButton.tsx
 import React, { useState } from 'react';
 import { Search, Filter, TrendingUp, Star, Calendar, Gamepad2, X } from 'lucide-react';
-import { useGameSearch } from '../hooks/useGameSearch';
+import { useNavigate } from 'react-router-dom';
 
 interface ExploreGamesButtonProps {
   className?: string;
@@ -21,7 +21,7 @@ export const ExploreGamesButton: React.FC<ExploreGamesButtonProps> = ({
   const [minRating, setMinRating] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<'popularity' | 'rating' | 'release_date' | 'name'>('popularity');
 
-  const { navigateToSearch, updateSearchOptions } = useGameSearch();
+  const navigate = useNavigate();
 
   // Popular genres and platforms for quick selection
   const popularGenres = [
@@ -33,6 +33,33 @@ export const ExploreGamesButton: React.FC<ExploreGamesButtonProps> = ({
     'PC (Microsoft Windows)', 'PlayStation 5', 'Xbox Series X|S', 
     'Nintendo Switch', 'PlayStation 4', 'Xbox One', 'iOS', 'Android'
   ];
+
+  // Navigate to search page with options
+  const navigateToSearch = (query: string, options: any = {}) => {
+    const searchParams = new URLSearchParams();
+    
+    if (query.trim()) {
+      searchParams.set('q', query.trim());
+    }
+    
+    if (options.genres?.length) {
+      searchParams.set('genres', options.genres.join(','));
+    }
+    
+    if (options.platforms?.length) {
+      searchParams.set('platforms', options.platforms.join(','));
+    }
+    
+    if (options.minRating) {
+      searchParams.set('rating', options.minRating.toString());
+    }
+    
+    if (options.sortBy) {
+      searchParams.set('sort', `${options.sortBy}:${options.sortOrder || 'desc'}`);
+    }
+
+    navigate(`/search?${searchParams.toString()}`);
+  };
 
   // Function to focus the header search bar
   const focusHeaderSearchBar = () => {
@@ -58,15 +85,6 @@ export const ExploreGamesButton: React.FC<ExploreGamesButtonProps> = ({
   };
 
   const handleSearch = () => {
-    // Update search options
-    updateSearchOptions({
-      genres: selectedGenres.length > 0 ? selectedGenres : undefined,
-      platforms: selectedPlatforms.length > 0 ? selectedPlatforms : undefined,
-      minRating: minRating || undefined,
-      sortBy,
-      sortOrder: 'desc'
-    });
-
     // Navigate to search results
     navigateToSearch(searchQuery, {
       genres: selectedGenres.length > 0 ? selectedGenres : undefined,
@@ -108,58 +126,58 @@ export const ExploreGamesButton: React.FC<ExploreGamesButtonProps> = ({
     setSortBy('popularity');
   };
 
-  const buttonClasses = variant === 'primary'
-    ? "bg-purple-600 hover:bg-purple-700 text-white"
-    : "bg-gray-700 hover:bg-gray-600 text-gray-200";
+  const buttonClasses = `
+    inline-flex items-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 ${className}
+    ${variant === 'primary' 
+      ? 'bg-purple-600 hover:bg-purple-700 text-white focus:ring-purple-500' 
+      : 'bg-gray-700 hover:bg-gray-600 text-gray-200 focus:ring-gray-500'
+    }
+  `;
+
+  const sortOptions = [
+    { value: 'popularity', label: 'Popularity', icon: TrendingUp },
+    { value: 'rating', label: 'Rating', icon: Star },
+    { value: 'release_date', label: 'Release Date', icon: Calendar },
+    { value: 'name', label: 'Name', icon: Gamepad2 }
+  ];
 
   return (
     <>
-      <button
-        onClick={handleExploreClick}
-        className={`
-          inline-flex items-center px-6 py-3 rounded-lg font-semibold 
-          transition-all duration-200 transform hover:scale-105 
-          focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900
-          ${buttonClasses} ${className}
-        `}
-      >
-        <Search className="w-5 h-5 mr-2" />
+      <button onClick={handleExploreClick} className={buttonClasses}>
+        <Search className="w-5 h-5" />
         Explore Games
       </button>
 
-      {/* Modal */}
+      {/* Advanced Search Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
-              <h2 className="text-2xl font-bold text-white flex items-center">
-                <Gamepad2 className="w-6 h-6 mr-2 text-purple-400" />
-                Explore Games
-              </h2>
+              <h3 className="text-xl font-semibold text-white">Find Your Perfect Game</h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-white p-2"
+                className="p-2 text-gray-400 hover:text-white rounded-lg transition-colors"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Content */}
             <div className="p-6 space-y-6">
-              {/* Search Input */}
+              {/* Search Query */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Search for specific games (optional)
+                  Search for specific games
                 </label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Enter game name..."
-                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -170,24 +188,19 @@ export const ExploreGamesButton: React.FC<ExploreGamesButtonProps> = ({
                   Sort by
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {[
-                    { value: 'popularity', label: 'Popularity', icon: TrendingUp },
-                    { value: 'rating', label: 'Rating', icon: Star },
-                    { value: 'release_date', label: 'Release Date', icon: Calendar },
-                    { value: 'name', label: 'Name', icon: Filter }
-                  ].map(({ value, label, icon: Icon }) => (
+                  {sortOptions.map(({ value, label, icon: Icon }) => (
                     <button
                       key={value}
                       onClick={() => setSortBy(value as any)}
                       className={`
-                        flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                        flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors
                         ${sortBy === value 
                           ? 'bg-purple-600 text-white' 
                           : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                         }
                       `}
                     >
-                      <Icon className="w-4 h-4 mr-1" />
+                      <Icon className="w-4 h-4" />
                       {label}
                     </button>
                   ))}
