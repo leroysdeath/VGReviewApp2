@@ -10,11 +10,11 @@ import { GameSearchPage } from './pages/GameSearchPage';
 import { SearchResultsPage } from './pages/SearchResultsPage';
 import { UserPage } from './pages/UserPage';
 import { UserSearchPage } from './pages/UserSearchPage';
-import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { SEOHead } from './components/SEOHead';
+import { AuthModal } from './components/auth/AuthModal';
 
 function App() {
   return (
@@ -36,7 +36,6 @@ function App() {
                 {/* Keep your other existing routes */}
                 <Route path="/user/:id" element={<UserPage />} />
                 <Route path="/users" element={<UserSearchPage />} />
-                <Route path="/login" element={<LoginPage />} />
                 <Route path="/review/:gameId?" element={<ReviewFormPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
