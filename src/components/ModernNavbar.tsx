@@ -6,7 +6,9 @@ import {
   Menu, 
   X, 
   Gamepad2, 
+  Compass,
   MessageSquare,
+  Users,
   BookOpen,
   Bell,
   Settings
@@ -17,6 +19,7 @@ interface ModernNavbarProps {
   isAuthenticated?: boolean;
   user?: {
     name: string;
+    email?: string;
     avatar?: string;
   };
 }
@@ -43,9 +46,10 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
     }
   };
 
-  // Removed "Discover" (Browse Games) and "Community" from navigation links
   const navigationLinks = [
+    { path: '/search', label: 'Discover', icon: Compass },
     { path: '/reviews', label: 'Reviews', icon: MessageSquare },
+    { path: '/users', label: 'Community', icon: Users },
     { path: '/lists', label: 'Lists', icon: BookOpen },
   ];
 
@@ -127,71 +131,80 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                       <img
                         src={user.avatar}
                         alt={user.name}
-                        className="w-8 h-8 rounded-full object-cover border-2 border-gray-600"
+                        className="w-8 h-8 rounded-full border-2 border-purple-500"
                       />
                     ) : (
-                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                        <User className="h-5 w-5 text-white" />
+                      <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                        <User className="h-4 w-4 text-white" />
                       </div>
                     )}
-                    <span className="text-sm text-gray-300 hidden lg:block">{user?.name}</span>
+                    <span className="text-white font-medium">{user?.name || 'User'}</span>
                   </button>
 
                   {/* User Dropdown */}
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-xl shadow-lg z-50">
-                      <div className="py-2">
-                        <div className="px-4 py-2 border-b border-gray-700">
-                          <p className="text-sm font-medium text-white">{user?.name}</p>
-                          <p className="text-xs text-gray-400">Gamer Level 42</p>
+                    <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1 z-50">
+                      {/* User Info Header - Email is now hidden */}
+                      <div className="px-4 py-3 border-b border-gray-700">
+                        <div className="flex items-center space-x-3">
+                          {user?.avatar ? (
+                            <img
+                              src={user.avatar}
+                              alt={user.name}
+                              className="w-10 h-10 rounded-full border-2 border-purple-500"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                              <User className="h-5 w-5 text-white" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-medium truncate">{user?.name || 'User'}</p>
+                            {/* Email is intentionally hidden as requested */}
+                          </div>
                         </div>
+                      </div>
+
+                      {/* Menu Items */}
+                      <div className="py-1">
                         <Link
                           to="/profile"
-                          className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+                          className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                           onClick={() => setIsUserMenuOpen(false)}
                         >
-                          <User className="h-4 w-4" />
-                          <span>View Profile</span>
+                          <User className="h-4 w-4 mr-3" />
+                          My Profile
                         </Link>
                         <Link
                           to="/settings"
-                          className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+                          className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                           onClick={() => setIsUserMenuOpen(false)}
                         >
-                          <Settings className="h-4 w-4" />
-                          <span>Settings</span>
+                          <Settings className="h-4 w-4 mr-3" />
+                          Settings
                         </Link>
-                        <div className="border-t border-gray-700 mt-2 pt-2">
-                          <button
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              // Add logout logic here
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-700 transition-colors"
-                          >
-                            Sign Out
-                          </button>
-                        </div>
+                        <hr className="my-1 border-gray-700" />
+                        <button
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                          onClick={() => {
+                            setIsUserMenuOpen(false);
+                            // Handle logout
+                          }}
+                        >
+                          Sign Out
+                        </button>
                       </div>
                     </div>
                   )}
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={onLoginClick}
-                  className="px-4 py-2 text-gray-300 hover:text-white transition-colors duration-200 font-medium"
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={onLoginClick}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 font-medium"
-                >
-                  Sign Up
-                </button>
-              </div>
+              <button
+                onClick={onLoginClick}
+                className="px-6 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-200 transform hover:scale-105"
+              >
+                Sign In
+              </button>
             )}
           </div>
 
@@ -246,16 +259,16 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                         <img
                           src={user.avatar}
                           alt={user.name}
-                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-600"
+                          className="w-10 h-10 rounded-full border-2 border-purple-500"
                         />
                       ) : (
-                        <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                          <User className="h-6 w-6 text-white" />
+                        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                          <User className="h-5 w-5 text-white" />
                         </div>
                       )}
                       <div>
-                        <p className="text-sm font-medium text-white">{user?.name}</p>
-                        <p className="text-xs text-gray-400">Gamer Level 42</p>
+                        <div className="text-white font-medium">{user?.name || 'User'}</div>
+                        {/* Email is intentionally hidden in mobile view as well */}
                       </div>
                     </div>
                     <Link
@@ -264,7 +277,7 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <User className="h-5 w-5" />
-                      <span>View Profile</span>
+                      <span>My Profile</span>
                     </Link>
                     <Link
                       to="/settings"
@@ -275,36 +288,25 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                       <span>Settings</span>
                     </Link>
                     <button
+                      className="flex items-center space-x-3 w-full px-3 py-3 text-gray-300 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors"
                       onClick={() => {
                         setIsMenuOpen(false);
-                        // Add logout logic here
+                        // Handle logout
                       }}
-                      className="w-full text-left flex items-center space-x-3 px-3 py-3 text-red-400 hover:text-red-300 hover:bg-gray-800/50 rounded-lg transition-colors"
                     >
                       <span>Sign Out</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        onLoginClick?.();
-                      }}
-                      className="w-full text-left px-3 py-3 text-gray-300 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors"
-                    >
-                      Sign In
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        onLoginClick?.();
-                      }}
-                      className="w-full text-left px-3 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                    >
-                      Sign Up
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {
+                      onLoginClick?.();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+                  >
+                    Sign In
+                  </button>
                 )}
               </div>
             </div>
