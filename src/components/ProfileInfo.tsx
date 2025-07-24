@@ -20,14 +20,14 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false,
     <div className="flex items-start gap-6">
       <div className="relative flex-shrink-0">
         <img
-          src={user.avatar}
-          alt={user.username}
+          src={user?.avatar || '/default-avatar.png'}
+          alt={user?.username || 'User'}
           className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
         />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-2xl font-bold text-white">{user.username}</h1>
+          <h1 className="text-2xl font-bold text-white">{user?.username || 'Loading...'}</h1>
           <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
             PATRON
           </span>
@@ -35,7 +35,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false,
             <Settings className="h-4 w-4" />
           </button>
         </div>
-        <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
+        <p className="text-blue-400 text-sm mb-3">{user?.bio || ''}</p>
         <div className="flex items-center gap-1 text-gray-400 text-sm mb-4">
           <span>🎮 platform 9¾</span>
           <span className="mx-2">🔗</span>
