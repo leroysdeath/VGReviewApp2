@@ -12,36 +12,36 @@ export const GameHeroSection: React.FC = () => {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-game-dark">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gray-900">
       {/* Animated Background */}
       <div className="absolute inset-0">
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-game-dark via-purple-900/20 to-blue-900/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20" />
         
         {/* Floating Elements */}
         <div className="absolute inset-0">
           {/* Large floating orbs */}
-          <div className="floating-orb absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-game-purple/30 to-game-blue/30 rounded-full blur-xl animate-float-slow" />
-          <div className="floating-orb absolute top-40 right-20 w-24 h-24 bg-gradient-to-r from-game-blue/40 to-purple-500/40 rounded-full blur-lg animate-float-medium" />
-          <div className="floating-orb absolute bottom-32 left-1/4 w-20 h-20 bg-gradient-to-r from-purple-400/30 to-game-purple/30 rounded-full blur-lg animate-float-fast" />
-          <div className="floating-orb absolute bottom-20 right-1/3 w-28 h-28 bg-gradient-to-r from-game-blue/25 to-blue-400/25 rounded-full blur-xl animate-float-slow" />
+          <div className="floating-orb absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-purple-600/30 to-blue-600/30 rounded-full blur-xl animate-pulse"></div>
+          <div className="floating-orb absolute top-40 right-20 w-24 h-24 bg-gradient-to-r from-blue-600/40 to-purple-500/40 rounded-full blur-lg animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="floating-orb absolute bottom-32 left-1/4 w-20 h-20 bg-gradient-to-r from-purple-400/30 to-purple-600/30 rounded-full blur-lg animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="floating-orb absolute bottom-20 right-1/3 w-28 h-28 bg-gradient-to-r from-blue-600/25 to-blue-400/25 rounded-full blur-xl animate-pulse" style={{ animationDelay: '3s' }}></div>
           
           {/* Gaming icons floating */}
-          <div className="absolute top-1/4 left-1/6 animate-float-icon">
-            <Gamepad2 className="w-8 h-8 text-game-purple/40" />
+          <div className="absolute top-1/4 left-1/6 animate-bounce" style={{ animationDelay: '0.5s', animationDuration: '3s' }}>
+            <Gamepad2 className="w-8 h-8 text-purple-600/40" />
           </div>
-          <div className="absolute top-1/3 right-1/5 animate-float-icon-delayed">
-            <Star className="w-6 h-6 text-game-blue/40" />
+          <div className="absolute top-1/3 right-1/5 animate-bounce" style={{ animationDelay: '1.5s', animationDuration: '3s' }}>
+            <Star className="w-6 h-6 text-blue-600/40" />
           </div>
-          <div className="absolute bottom-1/3 left-1/5 animate-float-icon-slow">
+          <div className="absolute bottom-1/3 left-1/5 animate-bounce" style={{ animationDelay: '2.5s', animationDuration: '3s' }}>
             <Zap className="w-7 h-7 text-purple-400/40" />
           </div>
         </div>
 
         {/* Mesh gradient background */}
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-game-purple/10 to-transparent animate-pulse" />
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-game-blue/10 to-transparent animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-purple-600/10 to-transparent animate-pulse" />
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-blue-600/10 to-transparent animate-pulse" style={{ animationDelay: '1s' }} />
         </div>
       </div>
 
@@ -49,90 +49,80 @@ export const GameHeroSection: React.FC = () => {
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Main Heading */}
         <div className={`transition-all duration-1000 ease-out ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          isVisible 
+            ? 'opacity-100 translate-y-0' 
+            : 'opacity-0 translate-y-8'
         }`}>
-          <h1 className="font-space-grotesk text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6">
-            <span className="block text-white animate-fade-in">Discover Your</span>
-            <span className="block bg-gradient-to-r from-white via-game-purple to-game-blue bg-clip-text text-transparent animate-gradient-text">
-              Next Gaming
-            </span>
-            <span className="block bg-gradient-to-r from-game-blue via-purple-400 to-game-purple bg-clip-text text-transparent animate-gradient-text-delayed">
-              Adventure
+          <div className="mb-8">
+            <Gamepad2 className="h-20 w-20 text-purple-400 mx-auto mb-6 animate-pulse" />
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6">
+            <span className="text-white">Level Up Your</span>
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-blue-400 to-purple-600 animate-pulse">
+              Gaming Experience
             </span>
           </h1>
-        </div>
-
-        {/* Subtitle */}
-        <div className={`transition-all duration-1000 ease-out delay-300 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
-          <p className="font-space-grotesk text-lg sm:text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed mb-12">
-            Join the ultimate gaming community where passionate players discover, rate, and review games. 
-            Your next favorite gaming experience is just one click away.
+          
+          <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
+            Discover, rate, and review the best games. Connect with fellow gamers and 
+            find your next gaming obsession in our vibrant community.
           </p>
-        </div>
 
-        {/* Call-to-Action Buttons */}
-        <div className={`transition-all duration-1000 ease-out delay-500 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            {/* Primary Button */}
+          {/* CTA Buttons */}
+          <div className={`flex flex-col sm:flex-row gap-6 justify-center transition-all duration-1000 ease-out ${
+            isVisible 
+              ? 'opacity-100 translate-y-0' 
+              : 'opacity-0 translate-y-8'
+          }`} style={{ transitionDelay: '0.3s' }}>
             <Link
               to="/search"
-              className="group relative px-8 py-4 bg-gradient-to-r from-game-purple to-game-blue rounded-xl font-space-grotesk font-semibold text-white text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-game-purple/50 glow-button"
+              className="group inline-flex items-center px-10 py-5 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg font-bold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25"
             >
-              <span className="relative z-10 flex items-center gap-3">
-                <Gamepad2 className="w-6 h-6" />
-                Start Exploring
-                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-              </span>
-              
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-game-purple to-game-blue rounded-xl blur-lg opacity-0 group-hover:opacity-75 transition-opacity duration-300 -z-10" />
+              <Play className="mr-3 h-6 w-6 group-hover:animate-pulse" />
+              Start Gaming
+              <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-
-            {/* Secondary Button */}
-            <button className="group px-8 py-4 border-2 border-gray-600 rounded-xl font-space-grotesk font-semibold text-gray-300 text-lg transition-all duration-300 hover:scale-105 hover:border-game-purple hover:text-white hover:bg-game-purple/10 backdrop-blur-sm">
-              <span className="flex items-center gap-3">
-                <Play className="w-5 h-5 transition-transform group-hover:scale-110" />
-                Watch Demo
-              </span>
-            </button>
+            
+            <Link
+              to="/reviews"
+              className="group inline-flex items-center px-10 py-5 bg-gray-800/80 backdrop-blur-sm text-gray-200 text-lg font-bold rounded-xl border-2 border-gray-700 hover:border-purple-500 hover:bg-gray-700/80 transition-all duration-300 transform hover:scale-105"
+            >
+              <Star className="mr-3 h-6 w-6 group-hover:text-yellow-400 transition-colors" />
+              Browse Reviews
+            </Link>
           </div>
         </div>
 
-        {/* Stats or Features */}
-        <div className={`transition-all duration-1000 ease-out delay-700 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
-          <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-3xl mx-auto">
-            <div className="text-center group">
-              <div className="text-3xl font-bold text-white mb-2 font-space-grotesk group-hover:text-game-purple transition-colors">
-                50K+
-              </div>
-              <div className="text-gray-400 font-space-grotesk">Games Reviewed</div>
+        {/* Feature highlights */}
+        <div className={`mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 transition-all duration-1000 ease-out ${
+          isVisible 
+            ? 'opacity-100 translate-y-0' 
+            : 'opacity-0 translate-y-8'
+        }`} style={{ transitionDelay: '0.6s' }}>
+          <div className="text-center p-6 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 hover:border-purple-500/50 transition-all duration-300">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <Gamepad2 className="h-8 w-8 text-white" />
             </div>
-            <div className="text-center group">
-              <div className="text-3xl font-bold text-white mb-2 font-space-grotesk group-hover:text-game-blue transition-colors">
-                25K+
-              </div>
-              <div className="text-gray-400 font-space-grotesk">Active Gamers</div>
-            </div>
-            <div className="text-center group">
-              <div className="text-3xl font-bold text-white mb-2 font-space-grotesk group-hover:text-purple-400 transition-colors">
-                1M+
-              </div>
-              <div className="text-gray-400 font-space-grotesk">Reviews Written</div>
-            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Discover Games</h3>
+            <p className="text-gray-400">Explore thousands of games across all genres and platforms</p>
           </div>
-        </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-gray-600 rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-gradient-to-b from-game-purple to-game-blue rounded-full mt-2 animate-pulse" />
+          
+          <div className="text-center p-6 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 hover:border-purple-500/50 transition-all duration-300">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <Star className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Rate & Review</h3>
+            <p className="text-gray-400">Share your thoughts and help others find their next favorite game</p>
+          </div>
+          
+          <div className="text-center p-6 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 hover:border-purple-500/50 transition-all duration-300">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <Zap className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Connect</h3>
+            <p className="text-gray-400">Join a community of passionate gamers from around the world</p>
+          </div>
         </div>
       </div>
     </section>
