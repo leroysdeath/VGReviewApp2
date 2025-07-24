@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube, MessageSquare, Bell, Settings } from 'lucide-react';
-import { LoginModal } from './LoginModal';
+import { AuthModal } from './auth/AuthModal';
 import { useResponsive } from '../hooks/useResponsive';
-import { NotificationBadge } from './NotificationBadge';
-import { NotificationCenter } from './NotificationCenter';
 
-// Mock user data - you would replace this with actual user data
+// Mock user data - replace this with actual user data from your auth system
 const mockUser = {
   name: 'leroysdeath',
   email: 'joshuateusink@yahoo.com', // This will be hidden
@@ -15,9 +13,8 @@ const mockUser = {
 
 export const ResponsiveNavbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false); // Add this state
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
@@ -204,14 +201,9 @@ export const ResponsiveNavbar: React.FC = () => {
           </div>
         )}
 
-        <NotificationCenter 
-          isOpen={isNotificationCenterOpen} 
-          onClose={() => setIsNotificationCenterOpen(false)} 
-        />
-
-        <LoginModal 
-          isOpen={isLoginModalOpen} 
-          onClose={() => setIsLoginModalOpen(false)} 
+        <AuthModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)} 
         />
       </>
     );
@@ -288,7 +280,11 @@ export const ResponsiveNavbar: React.FC = () => {
             {/* Desktop User Menu */}
             <div className="hidden md:block">
               <div className="ml-4 flex items-center gap-2 md:ml-6">
-                <NotificationBadge onClick={() => setIsNotificationCenterOpen(true)} />
+                {/* Notification Bell - simplified since we don't have NotificationBadge */}
+                <button className="p-2 text-gray-400 hover:text-white transition-colors duration-200 relative">
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-purple-500 rounded-full"></span>
+                </button>
                 
                 {isAuthenticated ? (
                   <div className="relative">
@@ -368,7 +364,7 @@ export const ResponsiveNavbar: React.FC = () => {
                   </div>
                 ) : (
                   <button
-                    onClick={() => setIsLoginModalOpen(true)}
+                    onClick={() => setIsAuthModalOpen(true)}
                     className="p-2 text-gray-400 hover:text-white transition-colors"
                   >
                     <User className="h-6 w-6" />
@@ -380,14 +376,9 @@ export const ResponsiveNavbar: React.FC = () => {
         </div>
       </nav>
 
-      <NotificationCenter 
-        isOpen={isNotificationCenterOpen} 
-        onClose={() => setIsNotificationCenterOpen(false)} 
-      />
-
-      <LoginModal 
-        isOpen={isLoginModalOpen} 
-        onClose={() => setIsLoginModalOpen(false)} 
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
       />
     </>
   );
