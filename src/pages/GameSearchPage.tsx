@@ -73,280 +73,178 @@ export const GameSearchPage: React.FC = () => {
     // Prefetch game data for faster loading
     if (game.id) {
       enhancedIGDBService.prefetchGame(typeof game.id === 'string' ? parseInt(game.id) : game.id);
+      
+      // Save search term if we have one
+      const currentSearch = searchParams.get('q');
+      if (currentSearch) {
+        saveRecentSearch(currentSearch);
+      }
+      
+      // Navigate to game page
+      navigate(`/game/${game.id}`);
     }
-    navigate(`/game/${game.id}`);
   };
 
-  const handleSearch = (searchTerm: string) => {
-    if (searchTerm.trim()) {
-      // Update URL with search term
-      setSearchParams({ q: searchTerm });
-      // Save to recent searches
-      saveRecentSearch(searchTerm.trim());
+  const handleSearchChange = (term: string) => {
+    if (term) {
+      setSearchParams({ q: term });
     } else {
-      // Clear search param if empty
       setSearchParams({});
     }
   };
 
-  const handlePopularGameClick = (game: Game) => {
-    handleGameSelect(game);
-  };
-
-  const handleRecentSearchClick = (term: string) => {
-    setSearchParams({ q: term });
-  };
-
-  const clearRecentSearches = () => {
-    setRecentSearches([]);
-    localStorage.removeItem('recent_searches');
-  };
-
   return (
     <div className="min-h-screen bg-gray-900 py-8">
-      <div className={`mx-auto px-4 sm:px-6 lg:px-8 ${isMobile ? '' : 'max-w-7xl'}`}>
-        
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className={`font-bold text-white ${isMobile ? 'text-2xl' : 'text-3xl'}`}>
-              Discover Games
-            </h1>
-            
-            {/* Cache Stats Toggle (Dev Mode) */}
-            {import.meta.env.DEV && (
-              <button
-                onClick={() => setShowCacheStats(!showCacheStats)}
-                className="flex items-center gap-2 px-3 py-1 bg-gray-800 text-gray-300 rounded-md text-sm hover:bg-gray-700 transition-colors"
-              >
-                <TrendingUp className="h-4 w-4" />
-                Cache Stats
-              </button>
-            )}
-          </div>
-
-          {/* Cache Statistics (Dev Mode) */}
-          {import.meta.env.DEV && showCacheStats && (
-            <div className="bg-gray-800 rounded-lg p-4 mb-6">
-              <h3 className="text-white font-semibold mb-3">Cache Performance</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-400">Total Cache:</span>
-                  <span className="text-green-400 ml-2 font-bold">{stats.totalSize}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400">Games:</span>
-                  <span className="text-blue-400 ml-2 font-bold">{stats.gamesCache}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400">Searches:</span>
-                  <span className="text-purple-400 ml-2 font-bold">{stats.searchCache}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400">IGDB Cache:</span>
-                  <span className="text-orange-400 ml-2 font-bold">{stats.igdbCache}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Search Description */}
-          <p className="text-gray-400 text-lg">
-            Search through thousands of games with intelligent caching for lightning-fast results
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-white mb-4">
+            Discover Amazing Games
+          </h1>
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            Search through thousands of games and find your next gaming adventure
           </p>
         </div>
 
+        {/* Cache Stats (Dev Only) */}
+        {import.meta.env.DEV && (
+          <div className="mb-6">
+            <button
+              onClick={() => setShowCacheStats(!showCacheStats)}
+              className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              {showCacheStats ? 'Hide' : 'Show'} Cache Stats
+            </button>
+            
+            {showCacheStats && (
+              <div className="mt-2 p-3 bg-gray-800 rounded-lg text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                  <div>
+                    <div className="text-purple-400 font-medium">{stats.hits}</div>
+                    <div className="text-gray-400">Cache Hits</div>
+                  </div>
+                  <div>
+                    <div className="text-blue-400 font-medium">{stats.misses}</div>
+                    <div className="text-gray-400">Cache Misses</div>
+                  </div>
+                  <div>
+                    <div className="text-green-400 font-medium">{stats.entries}</div>
+                    <div className="text-gray-400">Cached Entries</div>
+                  </div>
+                  <div>
+                    <div className="text-yellow-400 font-medium">
+                      {stats.hits + stats.misses > 0 ? Math.round((stats.hits / (stats.hits + stats.misses)) * 100) : 0}%
+                    </div>
+                    <div className="text-gray-400">Hit Rate</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Main Search Component */}
-        <div className="mb-8">
+        <div className="mb-12">
           <GameSearch
             onGameSelect={handleGameSelect}
-            onSearch={handleSearch}
             placeholder="Search for games..."
-            showViewToggle={!isMobile}
-            initialViewMode="grid"
-            maxResults={20}
+            showViewToggle={true}
             showHealthCheck={import.meta.env.DEV}
-            initialSearchTerm={initialSearchTerm}
-            enableCaching={true}
+            showExploreButton={true}
+            className="w-full"
           />
         </div>
 
-        {/* Content Sections */}
-        <div className="grid lg:grid-cols-3 gap-8">
-          
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
+        {/* Popular Games Section */}
+        {popularGames.length > 0 && (
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-6">
+              <TrendingUp className="h-6 w-6 text-purple-400" />
+              <h2 className="text-2xl font-bold text-white">Popular Games</h2>
+            </div>
             
-            {/* Popular Games Section */}
-            {!initialSearchTerm && (
-              <section>
-                <div className="flex items-center gap-2 mb-6">
-                  <TrendingUp className="h-6 w-6 text-orange-500" />
-                  <h2 className="text-2xl font-bold text-white">Trending Games</h2>
-                  {loadingPopular && (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-500"></div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {popularGames.map((game) => (
+                <div
+                  key={game.id}
+                  onClick={() => handleGameSelect(game)}
+                  className="bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors cursor-pointer group"
+                >
+                  {game.cover && (
+                    <img
+                      src={game.cover.url ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}` : '/placeholder-game.jpg'}
+                      alt={game.name}
+                      className="w-full aspect-[3/4] object-cover rounded-lg mb-3 group-hover:scale-105 transition-transform"
+                    />
+                  )}
+                  <h3 className="text-white font-medium text-sm group-hover:text-purple-400 transition-colors">
+                    {game.name}
+                  </h3>
+                  {game.rating && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                      <span className="text-xs text-gray-400">
+                        {Math.round(game.rating)}/100
+                      </span>
+                    </div>
                   )}
                 </div>
-                
-                {loadingPopular ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="bg-gray-800 rounded-lg p-4 animate-pulse">
-                        <div className="w-full h-48 bg-gray-700 rounded mb-3"></div>
-                        <div className="h-4 bg-gray-700 rounded mb-2"></div>
-                        <div className="h-3 bg-gray-700 rounded w-2/3"></div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {popularGames.map((game) => (
-                      <button
-                        key={game.id}
-                        onClick={() => handlePopularGameClick(game)}
-                        className="bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors text-left group"
-                      >
-                        <img
-                          src={game.cover?.url || game.coverImage || '/placeholder-game.jpg'}
-                          alt={game.name || game.title}
-                          className="w-full h-48 object-cover rounded mb-3 group-hover:scale-105 transition-transform"
-                          onError={(e) => {
-                            e.currentTarget.src = '/placeholder-game.jpg';
-                          }}
-                        />
-                        <h3 className="text-white font-semibold mb-1 group-hover:text-purple-400 transition-colors">
-                          {game.name || game.title}
-                        </h3>
-                        {game.rating && (
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            <span className="text-gray-400 text-sm">
-                              {typeof game.rating === 'number' ? (game.rating / 10).toFixed(1) : game.rating}
-                            </span>
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {!loadingPopular && popularGames.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>Unable to load trending games. Please try again later.</p>
-                    <button
-                      onClick={loadPopularGames}
-                      className="mt-2 text-purple-400 hover:text-purple-300 text-sm"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                )}
-              </section>
-            )}
-
-            {/* Search Tips */}
-            {!initialSearchTerm && (
-              <section className="bg-gray-800 rounded-lg p-6">
-                <h3 className="text-xl font-bold text-white mb-4">Search Tips</h3>
-                <div className="space-y-2 text-gray-300">
-                  <p>• Try searching by game title, genre, or developer</p>
-                  <p>• Use filters to narrow down your results</p>
-                  <p>• Browse popular games for inspiration</p>
-                  <p>• Results are cached for faster subsequent searches</p>
-                </div>
-              </section>
-            )}
+              ))}
+            </div>
           </div>
+        )}
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+        {/* Recent Searches */}
+        {recentSearches.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <Clock className="h-5 w-5 text-gray-400" />
+              <h3 className="text-lg font-semibold text-white">Recent Searches</h3>
+            </div>
             
-            {/* Recent Searches */}
-            {recentSearches.length > 0 && (
-              <div className="bg-gray-800 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-gray-400" />
-                    <h3 className="text-lg font-semibold text-white">Recent Searches</h3>
-                  </div>
-                  <button
-                    onClick={clearRecentSearches}
-                    className="text-gray-400 hover:text-white text-sm"
-                  >
-                    Clear
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {recentSearches.map((term, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleRecentSearchClick(term)}
-                      className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors"
-                    >
-                      {term}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Search Filters Info */}
-            <div className="bg-gray-800 rounded-lg p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Filter className="h-5 w-5 text-gray-400" />
-                <h3 className="text-lg font-semibold text-white">Search Features</h3>
-              </div>
-              <div className="space-y-3 text-sm text-gray-300">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Intelligent caching</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>Real-time search</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span>Advanced filtering</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <span>IGDB integration</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-gray-800 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
-              <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              {recentSearches.map((search, index) => (
                 <button
-                  onClick={() => handleRecentSearchClick('action')}
-                  className="w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                  key={index}
+                  onClick={() => handleSearchChange(search)}
+                  className="px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-sm hover:bg-gray-700 hover:text-white transition-colors"
                 >
-                  Browse Action Games
+                  {search}
                 </button>
-                <button
-                  onClick={() => handleRecentSearchClick('rpg')}
-                  className="w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors"
-                >
-                  Explore RPGs
-                </button>
-                <button
-                  onClick={() => handleRecentSearchClick('indie')}
-                  className="w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors"
-                >
-                  Discover Indie Games
-                </button>
-                <button
-                  onClick={() => handleRecentSearchClick('2024')}
-                  className="w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors"
-                >
-                  New Releases 2024
-                </button>
-              </div>
+              ))}
+              <button
+                onClick={() => {
+                  setRecentSearches([]);
+                  localStorage.removeItem('recent_searches');
+                }}
+                className="px-3 py-1 text-gray-500 hover:text-gray-400 text-sm transition-colors"
+              >
+                Clear all
+              </button>
             </div>
           </div>
+        )}
+
+        {/* Quick Categories */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { name: 'Action', icon: '⚔️', query: 'action' },
+            { name: 'RPG', icon: '🎭', query: 'role-playing' },
+            { name: 'Adventure', icon: '🗺️', query: 'adventure' },
+            { name: 'Strategy', icon: '♟️', query: 'strategy' },
+          ].map((category) => (
+            <button
+              key={category.name}
+              onClick={() => handleSearchChange(category.query)}
+              className="p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors group text-left"
+            >
+              <div className="text-2xl mb-2">{category.icon}</div>
+              <h3 className="text-white font-medium group-hover:text-purple-400 transition-colors">
+                {category.name}
+              </h3>
+              <p className="text-gray-400 text-sm">Explore {category.name.toLowerCase()} games</p>
+            </button>
+          ))}
         </div>
       </div>
     </div>
