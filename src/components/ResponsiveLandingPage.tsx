@@ -1,14 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, TrendingUp, Users, Search, ArrowRight, Gamepad2 } from 'lucide-react';
+import { Star, TrendingUp, Users, ArrowRight, Gamepad2 } from 'lucide-react';
 import { GameCard } from './GameCard';
 import { ReviewCard } from './ReviewCard';
 import { mockReviews } from '../data/mockData';
-import { igdbService, Game } from '../services/igdbApi';
 import { useResponsive } from '../hooks/useResponsive';
 
+// Mock IGDB service for fallback
+const mockIGDBService = {
+  getPopularGames: async (limit: number = 6) => {
+    // Return mock data structure
+    return Array.from({ length: limit }, (_, i) => ({
+      id: i + 1,
+      name: `Game ${i + 1}`,
+      cover: { url: '/placeholder-game.jpg' },
+      first_release_date: Date.now() / 1000,
+      genres: [{ name: 'Action' }],
+      platforms: [{ name: 'PC' }],
+      rating: 8.0 + Math.random() * 2
+    }));
+  }
+};
+
 export const ResponsiveLandingPage: React.FC = () => {
-  const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
+  const [featuredGames, setFeaturedGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { isMobile } = useResponsive();
   const recentReviews = mockReviews.slice(0, isMobile ? 3 : 4);
@@ -16,10 +31,20 @@ export const ResponsiveLandingPage: React.FC = () => {
   useEffect(() => {
     const loadFeaturedGames = async () => {
       try {
-        const games = await igdbService.getPopularGames(isMobile ? 4 : 6);
+        // Try to use real IGDB service, fallback to mock
+        let games;
+        try {
+          const { igdbService } = await import('../services/igdbApi');
+          games = await igdbService.getPopularGames(isMobile ? 4 : 6);
+        } catch (error) {
+          console.warn('IGDB service not available, using mock data');
+          games = await mockIGDBService.getPopularGames(isMobile ? 4 : 6);
+        }
         setFeaturedGames(games);
       } catch (error) {
         console.error('Failed to load featured games:', error);
+        // Use mock data as final fallback
+        setFeaturedGames(await mockIGDBService.getPopularGames(isMobile ? 4 : 6));
       } finally {
         setLoading(false);
       }
