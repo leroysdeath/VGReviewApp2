@@ -103,72 +103,47 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
               </div>
               
               {user.location && (
-                <div>📍 {user.location}</div>
+                <div className="text-gray-400 text-sm">
+                  📍 {user.location}
+                </div>
               )}
               
               {user.joinDate && (
-                <div>📅 Joined {user.joinDate}</div>
+                <div className="text-gray-400 text-sm mt-1">
+                  📅 Joined {user.joinDate}
+                </div>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Navigation Tabs */}
-        <div className="bg-gray-800 border-b border-gray-700 sticky top-0 z-30">
-          <div className="px-4">
-            <div className="flex">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => onTabChange(tab.key)}
-                  className={`flex-1 py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === tab.key
-                      ? 'border-green-500 text-green-400'
-                      : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Profile Data Section - Middle */}
-        <div className="px-4 py-6">
-          {children}
-        </div>
-
-        {/* Profile Details Section - Bottom */}
-        <div className="bg-gray-800 border-t border-gray-700 mt-8">
-          <div className="px-4 py-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Profile Stats</h3>
-            
-            {/* Main Stats Grid */}
-            <div className="grid grid-cols-5 gap-3 text-center mb-6">
-              <div>
+            {/* Stats Grid - Mobile */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="text-center">
                 <div className="text-lg font-bold text-white">{stats.films.toLocaleString()}</div>
                 <div className="text-xs text-gray-400 uppercase tracking-wide">GAMES</div>
               </div>
-              <div>
+              <div className="text-center">
                 <div className="text-lg font-bold text-white">{stats.thisYear}</div>
                 <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
               </div>
-              <div>
+              <div className="text-center">
                 <div className="text-lg font-bold text-white">{stats.lists}</div>
                 <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
               </div>
-              <div>
+            </div>
+
+            {/* Following/Followers - Mobile */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="text-center">
                 <div className="text-lg font-bold text-white">{stats.following}</div>
                 <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWING</div>
               </div>
-              <div>
+              <div className="text-center">
                 <div className="text-lg font-bold text-white">{stats.followers.toLocaleString()}</div>
                 <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
               </div>
             </div>
 
-            {/* Additional Stats */}
+            {/* Additional Stats - Mobile */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-700 rounded-lg p-3 text-center">
                 <div className="text-lg font-bold text-green-400">87%</div>
@@ -181,49 +156,78 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             </div>
           </div>
         </div>
+
+        {/* Navigation Tabs - Mobile */}
+        <div className="bg-gray-800 border-b border-gray-700 overflow-x-auto">
+          <nav className="flex space-x-8 px-4">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => onTabChange(tab.key)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                  activeTab === tab.key
+                    ? 'border-green-500 text-green-400'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Content Area - Mobile */}
+        <div className="px-4 py-6">
+          {children}
+        </div>
       </div>
     );
   }
 
-  // Desktop version (existing design)
+  // Desktop version
   return (
     <div className="min-h-screen bg-gray-900">
       {/* Dummy Test Banner - only show for dummy page */}
       {isDummy && (
         <div className="bg-blue-600 text-white p-4 text-center">
-          <h2 className="text-lg font-semibold">👤 Dummy Test User Profile - Letterboxd Style</h2>
-          <p className="text-sm opacity-90">This is a comprehensive test profile showcasing the new Letterboxd-inspired design</p>
+          <h2 className="text-lg font-semibold">👤 Dummy Test User Profile - Desktop</h2>
+          <p className="text-sm opacity-90">Desktop-optimized user profile layout with Letterboxd-style design</p>
         </div>
       )}
 
-      {/* Hero/Cover Section */}
-      <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 h-64">
-        <div className="absolute inset-0 bg-black/30"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-end pb-8">
-          <div className="flex items-end gap-6">
-            <div className="relative">
+      {/* Profile Header */}
+      <div className="bg-gray-800 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-start gap-8">
+            {/* Avatar */}
+            <div className="flex-shrink-0">
               <img
                 src={user.avatar}
                 alt={user.username}
-                className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-xl"
+                className="w-32 h-32 rounded-full object-cover border-4 border-gray-600"
               />
-              <div className="absolute -bottom-2 -right-2 bg-green-500 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center">
-                <span className="text-white text-xs font-bold">✓</span>
-              </div>
             </div>
-            <div className="text-white pb-4">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-4xl font-bold">{user.username}</h1>
-                <span className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-full">
+
+            {/* User Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-4 mb-4">
+                <h1 className="text-4xl font-bold text-white">{user.username}</h1>
+                <span className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded">
                   PATRON
                 </span>
+                <button className="text-gray-400 hover:text-white p-2 ml-auto">
+                  <Settings className="h-6 w-6" />
+                </button>
               </div>
-              <p className="text-blue-300 text-lg mb-2">{user.bio}</p>
-              <div className="flex items-center gap-4 text-sm text-gray-300">
-                <span>🎮 platform 9¾</span>
-                <span>•</span>
-                <div className="flex items-center gap-1">
-                  🔗 {user.website ? (
+              
+              <p className="text-xl text-blue-400 mb-4">{user.bio}</p>
+              
+              {/* Additional Info */}
+              <div className="space-y-2 text-gray-400">
+                <div className="flex items-center gap-2">
+                  <span>🎮 platform 9¾</span>
+                  <span>•</span>
+                  {user.website ? (
                     <a 
                       href={user.website} 
                       target="_blank" 
@@ -231,7 +235,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                       className="hover:text-blue-400 transition-colors flex items-center gap-1"
                     >
                       {isDummy ? 'dummytestuser.card.co' : 'gamevault.card.co'}
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLink className="h-4 w-4" />
                     </a>
                   ) : (
                     <span>{isDummy ? 'dummytestuser.card.co' : 'gamevault.card.co'}</span>
@@ -239,41 +243,53 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                 </div>
                 
                 {user.location && (
-                  <div className="text-gray-400 text-sm">
-                    📍 {user.location}
+                  <div className="flex items-center gap-2">
+                    <span>📍 {user.location}</span>
                   </div>
                 )}
                 
                 {user.joinDate && (
-                  <div className="text-gray-400 text-sm mt-1">
-                    📅 Joined {user.joinDate}
+                  <div className="flex items-center gap-2">
+                    <span>📅 Joined {user.joinDate}</span>
                   </div>
                 )}
               </div>
             </div>
-            
-            {/* Profile Details Section */}
-            <div className="flex-shrink-0 flex flex-col gap-4">
-              <div className="flex items-center gap-6">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-white">{stats.films.toLocaleString()}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">GAMES</div>
+
+            {/* Stats */}
+            <div className="flex-shrink-0">
+              <div className="grid grid-cols-5 gap-8 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-white">{stats.films.toLocaleString()}</div>
+                  <div className="text-sm text-gray-400 uppercase tracking-wide">GAMES</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-white">{stats.thisYear}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
+                <div>
+                  <div className="text-2xl font-bold text-white">{stats.thisYear}</div>
+                  <div className="text-sm text-gray-400 uppercase tracking-wide">THIS YEAR</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-white">{stats.lists}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
+                <div>
+                  <div className="text-2xl font-bold text-white">{stats.lists}</div>
+                  <div className="text-sm text-gray-400 uppercase tracking-wide">LISTS</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-white">{stats.following}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWING</div>
+                <div>
+                  <div className="text-2xl font-bold text-white">{stats.following}</div>
+                  <div className="text-sm text-gray-400 uppercase tracking-wide">FOLLOWING</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-white">{stats.followers.toLocaleString()}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
+                <div>
+                  <div className="text-2xl font-bold text-white">{stats.followers.toLocaleString()}</div>
+                  <div className="text-sm text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
+                </div>
+              </div>
+              
+              {/* Additional Stats */}
+              <div className="grid grid-cols-2 gap-4 mt-6">
+                <div className="bg-gray-700 rounded-lg p-4 text-center">
+                  <div className="text-xl font-bold text-green-400">87%</div>
+                  <div className="text-sm text-gray-400">Completion Rate</div>
+                </div>
+                <div className="bg-gray-700 rounded-lg p-4 text-center">
+                  <div className="text-xl font-bold text-purple-400">8.2</div>
+                  <div className="text-sm text-gray-400">Avg Rating</div>
                 </div>
               </div>
             </div>
