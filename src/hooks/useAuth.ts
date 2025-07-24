@@ -103,6 +103,26 @@ export const useAuth = () => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const result = await authService.resetPassword(email);
+      return result;
+    } catch (error) {
+      console.error('ResetPassword error:', error);
+      return { error };
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const result = await authService.updatePassword(newPassword);
+      return result;
+    } catch (error) {
+      console.error('UpdatePassword error:', error);
+      return { error };
+    }
+  };
+
   const updateProfile = async (updates: { username?: string; avatar?: string }) => {
     try {
       const result = await authService.updateProfile(updates);
@@ -116,6 +136,8 @@ export const useAuth = () => {
     }
   };
 
+  const logout = signOut; // Alias for backwards compatibility
+
   return {
     user,
     session,
@@ -123,6 +145,9 @@ export const useAuth = () => {
     signUp,
     signIn,
     signOut,
+    logout,
+    resetPassword,
+    updatePassword,
     updateProfile,
     isAuthenticated: !!user
   };
