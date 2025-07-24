@@ -32,8 +32,19 @@ export const ResponsiveNavbar: React.FC = () => {
             </Link>
           </div>
 
-          {/* Desktop Navigation - Removed Browse Games and Community buttons */}
+          {/* Desktop Navigation - Simplified without Browse Games and Community */}
           <div className="hidden md:flex items-center space-x-8">
+            <Link
+              to="/"
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/') 
+                  ? 'text-purple-400 bg-purple-900/20' 
+                  : 'text-gray-300 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              Home
+            </Link>
+
             {/* Search Bar */}
             <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -84,6 +95,7 @@ export const ResponsiveNavbar: React.FC = () => {
               />
             </form>
             
+            {/* Mobile Navigation - Simplified without Browse Games and Community */}
             <Link
               to="/"
               className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
@@ -92,7 +104,7 @@ export const ResponsiveNavbar: React.FC = () => {
               Home
             </Link>
             <Link
-              to="/user/1"
+              to="/profile"
               className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
