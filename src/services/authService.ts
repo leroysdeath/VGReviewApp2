@@ -1,5 +1,5 @@
 // src/services/authService.ts
-import { supabase } from './supabase';
+import { supabase } from '../utils/supabaseClient';
 import type { User, Session } from '@supabase/supabase-js';
 
 export interface AuthUser {
@@ -107,22 +107,55 @@ class AuthService {
 
   async updateProfile(updates: { username?: string; avatar?: string }): Promise<{ error: any }> {
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: updates
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { error: { message: 'User not authenticated' } };
+
+      // Update auth metadata
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          username: updates.username,
+          avatar_url: updates.avatar
+        }
       });
 
+      if (authError) return { error: authError };
+
+      // Update user profile in database
+      const { error: dbError } = await supabase
+        .from('user')
+        .update({
+          username: updates.username,
+          picurl: updates.avatar,
+          updated_at: new Date().toISOString()
+        })
+        .eq('provider_id', user.id);
+
+      return { error: dbError };
+    } catch (error) {
+      return { error };
+    }
+  }
+
+  async createUserProfile(user: User, username: string): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase
+        .from('user')
+        .insert({
+          provider_id: user.id,
+          email: user.email || '',
+          name: username,
+          username: username,
+          picurl: user.user_metadata?.avatar_url,
+          email_verified: user.email_confirmed_at ? true : false
+        });
+
+      // Also create user preferences
       if (!error) {
-        // Also update in our user table if it exists
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase
-            .from('user')
-            .update({
-              name: updates.username || updates.avatar,
-              picurl: updates.avatar
-            })
-            .eq('provider_id', user.id);
-        }
+        await supabase
+          .from('user_preferences')
+          .insert({
+            user_id: user.id
+          });
       }
 
       return { error };
@@ -131,19 +164,17 @@ class AuthService {
     }
   }
 
-  private async createUserProfile(user: User, username: string): Promise<void> {
+  async getUserProfile(userId: string) {
     try {
-      await supabase
+      const { data, error } = await supabase
         .from('user')
-        .insert({
-          provider: 'supabase',
-          provider_id: user.id,
-          email: user.email || '',
-          name: username,
-          picurl: user.user_metadata?.avatar_url
-        });
+        .select('*')
+        .eq('provider_id', userId)
+        .single();
+
+      return { data, error };
     } catch (error) {
-      console.error('Error creating user profile:', error);
+      return { data: null, error };
     }
   }
 }
