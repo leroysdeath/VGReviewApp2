@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, Menu, X, Gamepad2 } from 'lucide-react';
-import { LoginModal } from './LoginModal';
+import { AuthModal } from './auth/AuthModal';
 
 export const ResponsiveNavbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -123,7 +123,7 @@ export const ResponsiveNavbar: React.FC = () => {
         </div>
       )}
 
-      <LoginModal 
+      <AuthModal 
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
       />
