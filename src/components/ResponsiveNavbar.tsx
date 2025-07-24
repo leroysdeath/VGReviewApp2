@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Search, User, LogOut } from 'lucide-react';
-import { AuthModal } from './auth/AuthModal';
+import AuthModal from './auth/AuthModal';
 import { useAuth } from '../hooks/useAuth';
 
 export const ResponsiveNavbar: React.FC = () => {
