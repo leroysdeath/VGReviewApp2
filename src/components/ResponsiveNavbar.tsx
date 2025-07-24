@@ -17,7 +17,7 @@ export const ResponsiveNavbar: React.FC = () => {
   useEffect(() => {
     if (location.state?.showAuth || location.state?.requireAuth) {
       setShowAuthModal(true);
-      setAuthMode('login');
+      setAuthMode(location.state?.authMode || 'login');
       // Clear the state to prevent modal from reopening on refresh
       window.history.replaceState({}, document.title);
     }
@@ -158,7 +158,7 @@ export const ResponsiveNavbar: React.FC = () => {
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        mode={authMode}
+        initialMode={authMode}
       />
     </>
   );
