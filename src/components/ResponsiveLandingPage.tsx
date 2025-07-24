@@ -1,18 +1,66 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Star, TrendingUp, Users, ArrowRight, Gamepad2 } from 'lucide-react';
-import { GameCard } from './GameCard';
-import { ReviewCard } from './ReviewCard';
-import { mockReviews } from '../data/mockData';
-import { useResponsive } from '../hooks/useResponsive';
+import { Star, TrendingUp, Users, Gamepad2 } from 'lucide-react';
+
+// Mock interfaces
+interface Game {
+  id: number;
+  name: string;
+  cover?: { url: string };
+  first_release_date?: number;
+  genres?: { name: string }[];
+  platforms?: { name: string }[];
+  rating?: number;
+}
+
+interface Review {
+  id: string;
+  userId: string;
+  gameId: string;
+  gameTitle: string;
+  rating: number;
+  text: string;
+  date: string;
+  hasText: boolean;
+  author: string;
+  authorAvatar: string;
+  likeCount?: number;
+  commentCount?: number;
+}
+
+// Simple GameCard component for fallback
+const GameCard: React.FC<{ game: Game; compact?: boolean }> = ({ game, compact = false }) => (
+  <div className={`bg-gray-800 rounded-lg p-4 ${compact ? 'h-48' : 'h-64'}`}>
+    <div className="w-full h-32 bg-gray-700 rounded mb-3 flex items-center justify-center">
+      <Gamepad2 className="h-8 w-8 text-gray-500" />
+    </div>
+    <h3 className="text-white font-medium text-sm truncate">{game.name}</h3>
+    <p className="text-gray-400 text-xs">Action Game</p>
+  </div>
+);
+
+// Simple ReviewCard component for fallback
+const ReviewCard: React.FC<{ review: Review; compact?: boolean }> = ({ review, compact = false }) => (
+  <div className={`bg-gray-800 rounded-lg p-4 ${compact ? 'h-32' : 'h-40'}`}>
+    <div className="flex items-center gap-2 mb-2">
+      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm">
+        {review.author.charAt(0)}
+      </div>
+      <span className="text-white text-sm">{review.author}</span>
+    </div>
+    <p className="text-gray-300 text-sm line-clamp-2">{review.text}</p>
+    <div className="flex items-center gap-1 mt-2">
+      <Star className="h-4 w-4 text-yellow-400 fill-current" />
+      <span className="text-yellow-400 text-sm">{review.rating}/10</span>
+    </div>
+  </div>
+);
 
 // Mock IGDB service for fallback
 const mockIGDBService = {
   getPopularGames: async (limit: number = 6) => {
-    // Return mock data structure
     return Array.from({ length: limit }, (_, i) => ({
       id: i + 1,
-      name: `Game ${i + 1}`,
+      name: `Popular Game ${i + 1}`,
       cover: { url: '/placeholder-game.jpg' },
       first_release_date: Date.now() / 1000,
       genres: [{ name: 'Action' }],
@@ -22,8 +70,57 @@ const mockIGDBService = {
   }
 };
 
+// Mock reviews data
+const mockReviews: Review[] = [
+  {
+    id: '1',
+    userId: '1',
+    gameId: '1',
+    gameTitle: 'Sample Game',
+    rating: 9,
+    text: 'Great game with excellent gameplay and story!',
+    date: '2024-01-15',
+    hasText: true,
+    author: 'GamerPro',
+    authorAvatar: '/avatar1.jpg',
+    likeCount: 15,
+    commentCount: 3
+  },
+  {
+    id: '2',
+    userId: '2',
+    gameId: '2',
+    gameTitle: 'Another Game',
+    rating: 8,
+    text: 'Solid gameplay but could use better graphics.',
+    date: '2024-01-14',
+    hasText: true,
+    author: 'GameFan',
+    authorAvatar: '/avatar2.jpg',
+    likeCount: 8,
+    commentCount: 1
+  }
+];
+
+// Simple hook replacement
+const useResponsive = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  return { isMobile };
+};
+
 export const ResponsiveLandingPage: React.FC = () => {
-  const [featuredGames, setFeaturedGames] = useState<any[]>([]);
+  const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const { isMobile } = useResponsive();
   const recentReviews = mockReviews.slice(0, isMobile ? 3 : 4);
@@ -31,19 +128,10 @@ export const ResponsiveLandingPage: React.FC = () => {
   useEffect(() => {
     const loadFeaturedGames = async () => {
       try {
-        // Try to use real IGDB service, fallback to mock
-        let games;
-        try {
-          const { igdbService } = await import('../services/igdbApi');
-          games = await igdbService.getPopularGames(isMobile ? 4 : 6);
-        } catch (error) {
-          console.warn('IGDB service not available, using mock data');
-          games = await mockIGDBService.getPopularGames(isMobile ? 4 : 6);
-        }
+        const games = await mockIGDBService.getPopularGames(isMobile ? 4 : 6);
         setFeaturedGames(games);
       } catch (error) {
         console.error('Failed to load featured games:', error);
-        // Use mock data as final fallback
         setFeaturedGames(await mockIGDBService.getPopularGames(isMobile ? 4 : 6));
       } finally {
         setLoading(false);
@@ -71,7 +159,6 @@ export const ResponsiveLandingPage: React.FC = () => {
             <p className="text-gray-300 mb-8 leading-relaxed">
               Rate, review, and discover games through social gaming.
             </p>
-            {/* Removed the Browse Games and Community buttons */}
           </div>
         </div>
 
@@ -104,7 +191,6 @@ export const ResponsiveLandingPage: React.FC = () => {
         <div className="px-4 py-12 bg-gray-900">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-white">Featured Games</h2>
-            {/* Removed the View All link that pointed to /search */}
           </div>
           {loading ? (
             <div className="grid grid-cols-2 gap-4">
@@ -157,7 +243,6 @@ export const ResponsiveLandingPage: React.FC = () => {
             Join the ultimate gaming community where passionate players discover, rate, and review games. 
             Your next favorite gaming experience is just one click away.
           </p>
-          {/* Removed the Browse Games and Community buttons */}
         </div>
       </div>
 
@@ -193,7 +278,6 @@ export const ResponsiveLandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-white">Featured Games</h2>
-            {/* Removed the View All link that pointed to /search */}
           </div>
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
