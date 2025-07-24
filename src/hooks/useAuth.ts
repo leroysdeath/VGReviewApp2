@@ -1,8 +1,15 @@
 // src/hooks/useAuth.ts
 import { useState, useEffect } from 'react';
-import { authService, AuthUser } from '../services/authService';
-import { avatarService } from '../services/avatarService';
-import type { Session } from '@supabase/supabase-js';
+import { authService } from '../services/authService';
+import type { User, Session } from '@supabase/supabase-js';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  created_at: string;
+}
 
 export const useAuth = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -12,21 +19,40 @@ export const useAuth = () => {
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const session = await authService.getCurrentSession();
-      setSession(session);
-      if (session?.user) {
-        await updateUserFromSession(session);
+      try {
+        const session = await authService.getCurrentSession();
+        setSession(session);
+        if (session?.user) {
+          // Convert Supabase user to our AuthUser format
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
+            avatar: session.user.user_metadata?.avatar_url,
+            created_at: session.user.created_at
+          });
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     getInitialSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = authService.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event, session);
       setSession(session);
       if (session?.user) {
-        await updateUserFromSession(session);
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
+          avatar: session.user.user_metadata?.avatar_url,
+          created_at: session.user.created_at
+        });
       } else {
         setUser(null);
       }
@@ -36,80 +62,58 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Update user from session data
-  const updateUserFromSession = async (session: Session) => {
-    try {
-      // Get additional user data from database
-      const { user: dbUser } = await authService.getUserProfile(session.user.id);
-      
-      const userData: AuthUser = {
-        id: session.user.id,
-        email: session.user.email || '',
-        name: session.user.user_metadata?.name || 
-              session.user.user_metadata?.username || 
-              dbUser?.name || 
-              'User',
-        avatar: session.user.user_metadata?.avatar_url || 
-                dbUser?.picurl || 
-                avatarService.generateInitialsAvatar(session.user.user_metadata?.name || 'User'),
-        created_at: session.user.created_at
-      };
-
-      setUser(userData);
-    } catch (error) {
-      console.error('Error updating user from session:', error);
-      // Fallback to basic user data
-      setUser({
-        id: session.user.id,
-        email: session.user.email || '',
-        name: session.user.user_metadata?.name || 'User',
-        avatar: avatarService.generateInitialsAvatar(session.user.user_metadata?.name || 'User'),
-        created_at: session.user.created_at
-      });
-    }
-  };
-
   const signUp = async (email: string, password: string, username: string) => {
     setLoading(true);
-    const result = await authService.signUp(email, password, username);
-    setLoading(false);
-    return result;
+    try {
+      const result = await authService.signUp(email, password, username);
+      return result;
+    } catch (error) {
+      console.error('SignUp error:', error);
+      return { user: null, error };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
-    const result = await authService.signIn(email, password);
-    setLoading(false);
-    return result;
+    try {
+      const result = await authService.signIn(email, password);
+      return result;
+    } catch (error) {
+      console.error('SignIn error:', error);
+      return { user: null, error };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signOut = async () => {
     setLoading(true);
-    const result = await authService.signOut();
-    setUser(null);
-    setSession(null);
-    setLoading(false);
-    return result;
+    try {
+      const result = await authService.signOut();
+      setUser(null);
+      setSession(null);
+      return result;
+    } catch (error) {
+      console.error('SignOut error:', error);
+      return { error };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateProfile = async (updates: { username?: string; avatar?: string }) => {
-    const result = await authService.updateProfile(updates);
-    
-    if (!result.error && user) {
-      // Update local user state immediately for better UX
-      setUser(prev => prev ? {
-        ...prev,
-        name: updates.username || prev.name,
-        avatar: updates.avatar || prev.avatar
-      } : null);
-      
-      // Refresh user data from server
-      if (session) {
-        await updateUserFromSession(session);
+    try {
+      const result = await authService.updateProfile(updates);
+      if (!result.error && user) {
+        setUser({ ...user, ...updates, name: updates.username || user.name });
       }
+      return result;
+    } catch (error) {
+      console.error('UpdateProfile error:', error);
+      return { error };
     }
-    
-    return result;
   };
 
   return {
