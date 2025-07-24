@@ -1,22 +1,25 @@
+// src/App.tsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ResponsiveNavbar } from './components/ResponsiveNavbar';
 import { ResponsiveLandingPage } from './components/ResponsiveLandingPage';
 import { ReviewProvider } from './context/ReviewContext';
-import { ComprehensiveGamePage } from './pages/ComprehensiveGamePage';  // Changed from GamePage
+import { GamePage } from './pages/GamePage';
 import { GameSearchPage } from './pages/GameSearchPage';
 import { SearchResultsPage } from './pages/SearchResultsPage';
 import { UserPage } from './pages/UserPage';
 import { UserSearchPage } from './pages/UserSearchPage';
-import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { SEOHead } from './components/SEOHead';
+import { useAuth } from './hooks/useAuth';
 
 function App() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <HelmetProvider>
       <ErrorBoundary>
@@ -27,18 +30,28 @@ function App() {
               <ResponsiveNavbar />
               <Routes>
                 <Route path="/" element={<ResponsiveLandingPage />} />
-                <Route path="/game/:id" element={<ComprehensiveGamePage />} />  {/* Changed to ComprehensiveGamePage */}
+                <Route path="/game/:id" element={<GamePage />} />
                 
-                {/* UPDATED: Both search routes now point to SearchResultsPage */}
+                {/* Search routes */}
                 <Route path="/search" element={<SearchResultsPage />} />
                 <Route path="/search-results" element={<SearchResultsPage />} />
                 
-                {/* Keep your other existing routes */}
+                {/* User routes */}
                 <Route path="/user/:id" element={<UserPage />} />
                 <Route path="/users" element={<UserSearchPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/review/:gameId?" element={<ReviewFormPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
+                
+                {/* Protected routes */}
+                <Route path="/review/:gameId?" element={
+                  isAuthenticated ? <ReviewFormPage /> : <Navigate to="/" state={{ requireAuth: true }} />
+                } />
+                <Route path="/profile" element={
+                  isAuthenticated ? <ProfilePage /> : <Navigate to="/" state={{ requireAuth: true }} />
+                } />
+                
+                {/* Redirect old login route to home with auth modal trigger */}
+                <Route path="/login" element={<Navigate to="/" state={{ showAuth: true }} />} />
+                
+                {/* Development routes */}
                 {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
               </Routes>
             </div>
