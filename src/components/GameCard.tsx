@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ResponsiveGameCard } from './ResponsiveGameCard';
-import { AuthModal } from './auth/AuthModal';
+import AuthModal from './auth/AuthModal';
 import { enhancedIGDBService } from '../services/enhancedIGDBService';
 import { useAuth } from '../hooks/useAuth';
 
