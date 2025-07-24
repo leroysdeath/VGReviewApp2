@@ -1,24 +1,23 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { 
   User, 
   Mail, 
-  Globe, 
   MapPin, 
-  FileText,
-  Image,
-  Shield,
-  Key,
-  Bell,
-  Eye,
-  EyeOff,
-  Save,
-  Trash2,
+  Link as LinkIcon, 
+  Save, 
+  Loader2, 
   AlertCircle,
   Check,
-  Loader2
+  Image,
+  Key,
+  Eye,
+  EyeOff,
+  Bell,
+  Shield,
+  Trash2
 } from 'lucide-react';
 
 // Form validation schema
@@ -26,17 +25,17 @@ const profileSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   displayName: z.string().optional(),
   email: z.string().email('Please enter a valid email address'),
-  bio: z.string().max(500, 'Bio must be less than 500 characters').optional(),
-  location: z.string().max(100, 'Location must be less than 100 characters').optional(),
-  website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+  bio: z.string().max(160, 'Bio must be 160 characters or less').optional(),
+  location: z.string().max(50, 'Location must be 50 characters or less').optional(),
+  website: z.string().url('Please enter a valid URL').or(z.string().length(0)).optional(),
   notifications: z.object({
-    email: z.boolean(),
-    push: z.boolean(),
-    reviews: z.boolean(),
-    mentions: z.boolean(),
-    followers: z.boolean(),
-    achievements: z.boolean()
-  })
+    email: z.boolean().optional(),
+    push: z.boolean().optional(),
+    reviews: z.boolean().optional(),
+    mentions: z.boolean().optional(),
+    followers: z.boolean().optional(),
+    achievements: z.boolean().optional()
+  }).optional()
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -79,7 +78,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData.avatar || null);
 
-  // Form setup with safe initial values
+  // Form setup
   const { 
     register, 
     handleSubmit, 
@@ -89,9 +88,9 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      username: initialData.username || '',
+      username: initialData.username,
       displayName: initialData.displayName || '',
-      email: initialData.email || '',
+      email: initialData.email,
       bio: initialData.bio || '',
       location: initialData.location || '',
       website: initialData.website || '',
@@ -130,25 +129,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     }
   });
 
-  // Handle avatar change
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setSaveError('Image must be less than 2MB');
-        return;
-      }
-      
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   // Handle form submission
-  const onSubmitProfile = async (data: ProfileFormValues) => {
+  const onSubmit = async (data: ProfileFormValues) => {
     setIsLoading(true);
     setSaveError(null);
     setSaveSuccess(false);
@@ -156,59 +138,57 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     try {
       await onSave(data);
       setSaveSuccess(true);
-      reset(data); // Reset form with new values to clear dirty state
-      
-      // Clear success message after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Failed to save profile');
+      setSaveError(error instanceof Error ? error.message : 'Failed to save settings');
     } finally {
       setIsLoading(false);
     }
   };
 
   // Handle password change
-  const onSubmitPassword = async (data: any) => {
-    setIsLoading(true);
-    setSaveError(null);
-
-    try {
-      // Call password change handler
-      if (onPasswordChange) {
-        onPasswordChange();
-      }
-      passwordForm.reset();
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Failed to change password');
-    } finally {
-      setIsLoading(false);
+  const handlePasswordChange = async (data: any) => {
+    if (onPasswordChange) {
+      onPasswordChange();
     }
   };
 
-  // Get safe username initial
-  const getUserInitial = () => {
-    const username = initialData.username || initialData.email?.split('@')[0] || 'U';
-    return username.charAt(0).toUpperCase();
+  // Handle avatar change
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
+
+  const tabs = [
+    { key: 'profile', label: 'Profile', icon: User },
+    { key: 'account', label: 'Account', icon: Key },
+    { key: 'notifications', label: 'Notifications', icon: Bell },
+    { key: 'privacy', label: 'Privacy', icon: Shield }
+  ];
 
   return (
     <div className={`bg-gray-800 rounded-lg ${className}`}>
       {/* Tab Navigation */}
       <div className="border-b border-gray-700">
-        <nav className="flex">
-          {(['profile', 'account', 'notifications', 'privacy'] as const).map((tab) => (
+        <nav className="flex space-x-8 px-6">
+          {tabs.map(({ key, label, icon: Icon }) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 px-6 py-4 text-sm font-medium capitalize transition-colors ${
-                activeTab === tab
-                  ? 'text-purple-400 border-b-2 border-purple-400'
-                  : 'text-gray-400 hover:text-white'
+              key={key}
+              onClick={() => setActiveTab(key as any)}
+              className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === key
+                  ? 'border-purple-500 text-purple-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-300'
               }`}
             >
-              {tab}
+              <Icon className="h-5 w-5" />
+              {label}
             </button>
           ))}
         </nav>
@@ -218,54 +198,49 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       <div className="p-6">
         {/* Success/Error Messages */}
         {saveSuccess && (
-          <div className="mb-6 p-4 bg-green-900/20 border border-green-600 rounded-lg flex items-center gap-2">
+          <div className="mb-6 p-4 bg-green-900/50 border border-green-700 rounded-lg flex items-center gap-2">
             <Check className="h-5 w-5 text-green-400" />
-            <span className="text-green-400">Settings saved successfully!</span>
-          </div>
-        )}
-        
-        {saveError && (
-          <div className="mb-6 p-4 bg-red-900/20 border border-red-600 rounded-lg flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-400" />
-            <span className="text-red-400">{saveError}</span>
+            <span className="text-green-300">Settings saved successfully!</span>
           </div>
         )}
 
-        {/* Profile Tab */}
+        {saveError && (
+          <div className="mb-6 p-4 bg-red-900/50 border border-red-700 rounded-lg flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <span className="text-red-300">{saveError}</span>
+          </div>
+        )}
+
+        {/* Profile Settings */}
         {activeTab === 'profile' && (
-          <form onSubmit={handleSubmit(onSubmitProfile)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Avatar Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-4">
-                Profile Picture
-              </label>
-              <div className="flex items-center gap-6">
-                {avatarPreview ? (
+              <label className="block text-sm font-medium text-gray-300 mb-4">Profile Picture</label>
+              <div className="flex items-center gap-4">
+                <div className="relative">
                   <img
-                    src={avatarPreview}
-                    alt="Avatar preview"
-                    className="w-20 h-20 rounded-full object-cover"
+                    src={avatarPreview || '/default-avatar.png'}
+                    alt="Profile"
+                    className="w-20 h-20 rounded-full object-cover border-4 border-gray-600"
                   />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                    {getUserInitial()}
-                  </div>
-                )}
-                <div>
-                  <label className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors cursor-pointer inline-flex items-center gap-2">
-                    <Image className="h-4 w-4" />
-                    <span>Change Picture</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleAvatarChange}
-                      disabled={isLoading}
-                    />
+                  <label
+                    htmlFor="avatar-upload"
+                    className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    <Image className="h-6 w-6 text-white" />
                   </label>
-                  <p className="text-xs text-gray-400 mt-2">
-                    JPG, PNG or GIF. Max size 2MB.
-                  </p>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                </div>
+                <div className="text-sm text-gray-400">
+                  <p>Upload a new profile picture</p>
+                  <p>JPG, PNG or GIF. Max size 5MB.</p>
                 </div>
               </div>
             </div>
@@ -284,7 +259,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                     errors.username ? 'border-red-500' : 'border-gray-600'
                   }`}
-                  placeholder="GamerTag"
+                  placeholder="Your username"
                   disabled={isLoading}
                 />
               </div>
@@ -303,12 +278,9 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                 type="text"
                 {...register('displayName')}
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                placeholder="Your public display name"
+                placeholder="Your display name"
                 disabled={isLoading}
               />
-              {errors.displayName && (
-                <p className="mt-1 text-sm text-red-400">{errors.displayName.message}</p>
-              )}
             </div>
 
             {/* Email */}
@@ -337,33 +309,27 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             {/* Bio */}
             <div>
               <label htmlFor="bio" className="block text-sm font-medium text-gray-300 mb-1">
-                Bio
+                Bio (optional)
               </label>
-              <div className="relative">
-                <FileText className="absolute left-3 top-3 h-5 w-5 text-gray-500" />
-                <textarea
-                  id="bio"
-                  {...register('bio')}
-                  rows={4}
-                  className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-none ${
-                    errors.bio ? 'border-red-500' : 'border-gray-600'
-                  }`}
-                  placeholder="Tell us about yourself..."
-                  disabled={isLoading}
-                />
-              </div>
+              <textarea
+                id="bio"
+                rows={4}
+                {...register('bio')}
+                className={`w-full px-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-none ${
+                  errors.bio ? 'border-red-500' : 'border-gray-600'
+                }`}
+                placeholder="Tell us about yourself"
+                disabled={isLoading}
+              />
               {errors.bio && (
                 <p className="mt-1 text-sm text-red-400">{errors.bio.message}</p>
               )}
-              <p className="mt-1 text-xs text-gray-400">
-                {watch('bio')?.length || 0}/500 characters
-              </p>
             </div>
 
             {/* Location */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-300 mb-1">
-                Location
+                Location (optional)
               </label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
@@ -371,9 +337,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   id="location"
                   type="text"
                   {...register('location')}
-                  className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                    errors.location ? 'border-red-500' : 'border-gray-600'
-                  }`}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
                   placeholder="City, Country"
                   disabled={isLoading}
                 />
@@ -386,13 +350,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             {/* Website */}
             <div>
               <label htmlFor="website" className="block text-sm font-medium text-gray-300 mb-1">
-                Website
+                Website (optional)
               </label>
               <div className="relative">
-                <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                <LinkIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                 <input
                   id="website"
-                  type="url"
+                  type="text"
                   {...register('website')}
                   className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                     errors.website ? 'border-red-500' : 'border-gray-600'
@@ -406,246 +370,145 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               )}
             </div>
 
-            {/* Submit Button */}
+            {/* Submit button */}
             <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={isLoading || !isDirty}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                  isDirty && !isLoading
-                    ? 'bg-purple-600 text-white hover:bg-purple-700'
-                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                }`}
+                className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Saving...
+                  </>
                 ) : (
-                  <Save className="h-5 w-5" />
+                  <>
+                    <Save className="h-5 w-5" />
+                    Save Changes
+                  </>
                 )}
-                <span>{isLoading ? 'Saving...' : 'Save Changes'}</span>
               </button>
             </div>
           </form>
         )}
 
-        {/* Account Tab */}
+        {/* Account Settings */}
         {activeTab === 'account' && (
           <div className="space-y-8">
-            {/* Change Password */}
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4">Change Password</h3>
-              <form onSubmit={passwordForm.handleSubmit(onSubmitPassword)} className="space-y-4">
-                <div>
-                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-300 mb-1">
-                    Current Password
-                  </label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                    <input
-                      id="currentPassword"
-                      type={showPassword ? 'text' : 'password'}
-                      {...passwordForm.register('currentPassword')}
-                      className="w-full pl-10 pr-12 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                      placeholder="Enter current password"
-                      disabled={isLoading}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
-                  {passwordForm.formState.errors.currentPassword && (
-                    <p className="mt-1 text-sm text-red-400">
-                      {passwordForm.formState.errors.currentPassword.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-300 mb-1">
-                    New Password
-                  </label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                    <input
-                      id="newPassword"
-                      type="password"
-                      {...passwordForm.register('newPassword')}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                      placeholder="Enter new password"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  {passwordForm.formState.errors.newPassword && (
-                    <p className="mt-1 text-sm text-red-400">
-                      {passwordForm.formState.errors.newPassword.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
-                    Confirm New Password
-                  </label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      {...passwordForm.register('confirmPassword')}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                      placeholder="Confirm new password"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  {passwordForm.formState.errors.confirmPassword && (
-                    <p className="mt-1 text-sm text-red-400">
-                      {passwordForm.formState.errors.confirmPassword.message}
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Key className="h-5 w-5" />
-                  )}
-                  <span>{isLoading ? 'Changing...' : 'Change Password'}</span>
-                </button>
-              </form>
+            <div className="bg-gray-750 rounded-lg p-6 border border-gray-700">
+              <h3 className="text-lg font-medium text-white mb-4">Password & Security</h3>
+              <p className="text-gray-400 mb-4">
+                Manage your password and account security settings.
+              </p>
+              <button
+                onClick={onPasswordChange}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Change Password
+              </button>
             </div>
 
-            {/* Danger Zone */}
-            <div className="border-t border-gray-700 pt-8">
-              <h3 className="text-lg font-semibold text-red-400 mb-4">Danger Zone</h3>
-              <div className="bg-red-900/20 border border-red-600 rounded-lg p-4">
-                <h4 className="text-white font-medium mb-2">Delete Account</h4>
-                <p className="text-gray-300 text-sm mb-4">
+            {onDeleteAccount && (
+              <div className="bg-red-900/20 rounded-lg p-6 border border-red-700">
+                <h3 className="text-lg font-medium text-red-400 mb-2">Danger Zone</h3>
+                <p className="text-gray-400 mb-4">
                   Once you delete your account, there is no going back. Please be certain.
                 </p>
                 <button
                   onClick={onDeleteAccount}
-                  disabled={isLoading}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span>Delete Account</span>
+                  Delete Account
                 </button>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Notifications */}
+        {activeTab === 'notifications' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium text-white mb-4">Notification Preferences</h3>
+              <p className="text-gray-400 mb-6">
+                Choose what notifications you'd like to receive.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {[
+                { key: 'email', label: 'Email notifications', description: 'Receive notifications via email' },
+                { key: 'push', label: 'Push notifications', description: 'Receive push notifications in your browser' },
+                { key: 'reviews', label: 'New reviews', description: 'When someone reviews a game you\'re interested in' },
+                { key: 'mentions', label: 'Mentions', description: 'When someone mentions you in a comment or review' },
+                { key: 'followers', label: 'New followers', description: 'When someone starts following you' },
+                { key: 'achievements', label: 'Achievements', description: 'When you earn new achievements' }
+              ].map(({ key, label, description }) => (
+                <div key={key} className="flex items-center justify-between py-3">
+                  <div>
+                    <h4 className="text-white font-medium">{label}</h4>
+                    <p className="text-gray-400 text-sm">{description}</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      {...register(`notifications.${key}` as any)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-6">
+              <button
+                onClick={handleSubmit(onSubmit)}
+                disabled={isLoading || !isDirty}
+                className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 transition-colors"
+              >
+                <Save className="h-5 w-5" />
+                Save Preferences
+              </button>
             </div>
           </div>
         )}
 
-        {/* Notifications Tab */}
-        {activeTab === 'notifications' && (
-          <form onSubmit={handleSubmit(onSubmitProfile)} className="space-y-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Notification Preferences</h3>
-            
-            <div className="space-y-4">
-              {[
-                { key: 'email', label: 'Email Notifications', description: 'Receive updates via email' },
-                { key: 'push', label: 'Push Notifications', description: 'Receive browser push notifications' },
-                { key: 'reviews', label: 'Review Notifications', description: 'When someone reviews your favorite games' },
-                { key: 'mentions', label: 'Mention Notifications', description: 'When someone mentions you' },
-                { key: 'followers', label: 'Follower Notifications', description: 'When someone follows you' },
-                { key: 'achievements', label: 'Achievement Notifications', description: 'When you unlock achievements' }
-              ].map((notification) => (
-                <label key={notification.key} className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    {...register(`notifications.${notification.key as keyof ProfileFormValues['notifications']}`)}
-                    className="mt-1 w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-2 focus:ring-purple-500"
-                    disabled={isLoading}
-                  />
-                  <div className="flex-1">
-                    <div className="text-white font-medium">{notification.label}</div>
-                    <div className="text-gray-400 text-sm">{notification.description}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={isLoading || !isDirty}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                  isDirty && !isLoading
-                    ? 'bg-purple-600 text-white hover:bg-purple-700'
-                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                {isLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Bell className="h-5 w-5" />
-                )}
-                <span>{isLoading ? 'Saving...' : 'Save Preferences'}</span>
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Privacy Tab */}
+        {/* Privacy */}
         {activeTab === 'privacy' && (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Privacy Settings</h3>
-            
-            <div className="space-y-4">
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="text-white font-medium">Profile Visibility</h4>
-                    <p className="text-gray-400 text-sm">Control who can see your profile</p>
-                  </div>
-                  <select className="bg-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <option>Public</option>
-                    <option>Friends Only</option>
-                    <option>Private</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="text-white font-medium">Game Library</h4>
-                    <p className="text-gray-400 text-sm">Control who can see your games</p>
-                  </div>
-                  <select className="bg-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <option>Public</option>
-                    <option>Friends Only</option>
-                    <option>Private</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="bg-gray-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="text-white font-medium">Activity Feed</h4>
-                    <p className="text-gray-400 text-sm">Control who can see your activity</p>
-                  </div>
-                  <select className="bg-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <option>Public</option>
-                    <option>Friends Only</option>
-                    <option>Private</option>
-                  </select>
-                </div>
-              </div>
+            <div>
+              <h3 className="text-lg font-medium text-white mb-4">Privacy Settings</h3>
+              <p className="text-gray-400 mb-6">
+                Control who can see your information and activities.
+              </p>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-gray-400 mt-6">
-              <Shield className="h-4 w-4" />
-              <span>Your privacy settings are automatically saved</span>
+            <div className="space-y-4">
+              <div className="p-4 border border-gray-700 rounded-lg">
+                <h4 className="text-white font-medium mb-2">Profile Visibility</h4>
+                <p className="text-gray-400 text-sm mb-3">
+                  Choose who can see your profile and gaming activity.
+                </p>
+                <select className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                  <option value="public">Public - Anyone can see</option>
+                  <option value="friends">Friends only</option>
+                  <option value="private">Private - Only me</option>
+                </select>
+              </div>
+
+              <div className="p-4 border border-gray-700 rounded-lg">
+                <h4 className="text-white font-medium mb-2">Game Activity</h4>
+                <p className="text-gray-400 text-sm mb-3">
+                  Show your game reviews and ratings to others.
+                </p>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" defaultChecked className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
             </div>
           </div>
         )}
