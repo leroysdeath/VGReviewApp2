@@ -5,10 +5,18 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  throw new Error(
+    'Missing Supabase environment variables. Please check your .env file and ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.'
+  );
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+});
 
 // Helper functions for common database operations
 export const supabaseHelpers = {
@@ -29,6 +37,17 @@ export const supabaseHelpers = {
       .from('user')
       .select('*')
       .eq('email', email)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async getUserByProviderId(providerId: string) {
+    const { data, error } = await supabase
+      .from('user')
+      .select('*')
+      .eq('provider_id', providerId)
       .single();
     
     if (error) throw error;
@@ -182,12 +201,12 @@ export const supabaseHelpers = {
     
     if (error) throw error;
 
-    const totalGames = ratings.length;
-    const completedGames = ratings.filter(r => r.finished).length;
+    const totalGames = ratings?.length || 0;
+    const completedGames = ratings?.filter(r => r.finished).length || 0;
     const averageRating = totalGames > 0 
-      ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalGames 
+      ? ratings!.reduce((sum, r) => sum + r.rating, 0) / totalGames 
       : 0;
-    const totalReviews = ratings.filter(r => r.review && r.review.trim().length > 0).length;
+    const totalReviews = ratings?.filter(r => r.review && r.review.trim().length > 0).length || 0;
 
     return {
       totalGames,
@@ -205,9 +224,9 @@ export const supabaseHelpers = {
     
     if (error) throw error;
 
-    const totalRatings = ratings.length;
+    const totalRatings = ratings?.length || 0;
     const averageRating = totalRatings > 0 
-      ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings 
+      ? ratings!.reduce((sum, r) => sum + r.rating, 0) / totalRatings 
       : 0;
 
     // Generate rating distribution
@@ -216,7 +235,7 @@ export const supabaseHelpers = {
       count: 0
     }));
 
-    ratings.forEach(rating => {
+    ratings?.forEach(rating => {
       const ratingIndex = Math.floor(rating.rating) - 1;
       if (ratingIndex >= 0 && ratingIndex < 10) {
         distribution[ratingIndex].count++;
