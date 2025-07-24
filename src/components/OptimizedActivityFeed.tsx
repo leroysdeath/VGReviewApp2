@@ -92,16 +92,16 @@ const EmptyState: React.FC<{ message: string }> = ({ message }) => {
 // Error state component
 const ErrorState: React.FC<{ error: string; onRetry?: () => void }> = ({ error, onRetry }) => {
   return (
-    <div className="bg-red-900/30 border border-red-800/50 rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <AlertCircle className="h-5 w-5 text-red-400" />
-        <p className="text-red-300">{error}</p>
-      </div>
+    <div className="bg-gray-800 rounded-lg p-6 text-center">
+      <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+      <h3 className="text-lg font-medium text-white mb-2">Error Loading Activities</h3>
+      <p className="text-gray-400 mb-4">{error}</p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="mt-2 px-4 py-2 bg-red-800/50 text-white rounded-lg hover:bg-red-700/50 transition-colors text-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors mx-auto"
         >
+          <RefreshCw className="h-4 w-4" />
           Try Again
         </button>
       )}
@@ -114,249 +114,255 @@ export const OptimizedActivityFeed: React.FC<OptimizedActivityFeedProps> = ({
   userId,
   pageSize = 20,
   className = '',
-  emptyStateMessage = 'No activities to display',
+  emptyStateMessage = 'No activities to show',
   currentUserId
 }) => {
-  const listRef = useRef<List>(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
-  const [itemHeights, setItemHeights] = useState<Record<string, number>>({});
-  const [measurementCache, setMeasurementCache] = useState<Record<string, number>>({});
-  
-  // SWR configuration for infinite loading with cursor-based pagination
-  const getKey = useCallback((pageIndex: number, previousPageData: any) => {
-    // First page, no cursor
-    if (pageIndex === 0) return { userId, limit: pageSize };
-    
-    // Reached the end
-    if (previousPageData && !previousPageData.nextCursor) return null;
-    
-    // Next page with cursor
-    return { 
-      userId, 
-      cursor: previousPageData.nextCursor,
-      limit: pageSize 
-    };
-  }, [userId, pageSize]);
-  
-  // Use SWR for data fetching with caching
-  const { 
-    data: paginatedData,
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<ActivityType | 'all'>('all');
+  const listRef = useRef<any>(null);
+  const [virtualized, setVirtualized] = useState(true);
+
+  // SWR infinite hook for pagination
+  const {
+    data,
     error,
-    size,
-    setSize,
+    isLoading,
     isValidating,
-    mutate
+    mutate,
+    size,
+    setSize
   } = useSWRInfinite(
-    getKey,
+    (index) => ({
+      userId,
+      cursor: data?.[index - 1]?.nextCursor,
+      limit: pageSize
+    }),
     fetchActivities,
     {
-      revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
-      persistSize: true,
-      dedupingInterval: 5000, // 5 seconds
-      focusThrottleInterval: 10000, // 10 seconds
-      loadingTimeout: 5000, // 5 seconds
-      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
-        // Only retry up to 3 times
-        if (retryCount >= 3) return;
-        
-        // Retry after 5 seconds
-        setTimeout(() => revalidate({ retryCount }), 5000);
-      }
+      dedupingInterval: 60000, // 1 minute
     }
   );
-  
-  // Combine all pages of activities
+
+  // Flatten activities from all pages
   const activities = useMemo(() => {
-    if (!paginatedData) return [];
-    return paginatedData.flatMap(page => page.activities || []);
-  }, [paginatedData]);
-  
-  // Calculate if there are more activities to load
-  const hasMore = useMemo(() => {
-    if (!paginatedData || paginatedData.length === 0) return true;
-    return !!paginatedData[paginatedData.length - 1]?.nextCursor;
-  }, [paginatedData]);
-  
-  // Calculate total count
-  const totalCount = useMemo(() => {
-    if (!paginatedData || paginatedData.length === 0) return 0;
-    return paginatedData[0]?.totalCount || 0;
-  }, [paginatedData]);
-  
-  // Function to load more activities
+    if (!data) return [];
+    return data.flatMap(page => page.activities);
+  }, [data]);
+
+  // Filter activities based on search and filter
+  const filteredActivities = useMemo(() => {
+    return activities.filter(activity => {
+      const matchesSearch = !searchQuery || 
+        activity.user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        activity.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        activity.game?.name.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesFilter = filter === 'all' || activity.type === filter;
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [activities, searchQuery, filter]);
+
+  // Debounced search
+  const debouncedSearch = useCallback(
+    debounce((query: string) => {
+      setSearchQuery(query);
+    }, 300),
+    []
+  );
+
+  // Check if we can load more
+  const canLoadMore = data && data[data.length - 1]?.nextCursor;
+  const isLoadingMore = isLoading && size > 0;
+
+  // Load more activities
   const loadMore = useCallback(() => {
-    if (!isValidating && hasMore) {
+    if (canLoadMore && !isLoadingMore) {
       setSize(size + 1);
     }
-  }, [isValidating, hasMore, setSize, size]);
-  
-  // Debounced load more function
-  const debouncedLoadMore = useMemo(() => debounce(loadMore, 150), [loadMore]);
-  
-  // Function to retry failed fetch
+  }, [canLoadMore, isLoadingMore, setSize, size]);
+
+  // Retry function
   const retry = useCallback(() => {
-    return mutate();
+    mutate();
   }, [mutate]);
-  
-  // Handle scroll events
-  const handleScroll = useCallback(({ scrollOffset }: { scrollOffset: number }) => {
-    setScrollPosition(scrollOffset);
-    
-    // Check if we need to load more items
-    if (hasMore && !isValidating) {
-      const listElement = listRef.current;
-      if (listElement) {
-        const { outerRef } = listElement;
-        const containerElement = outerRef.current as HTMLDivElement;
-        if (containerElement) {
-          const { scrollHeight, scrollTop, clientHeight } = containerElement;
-          const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
-          
-          if (scrollPercentage > 0.8) {
-            debouncedLoadMore();
-          }
-        }
-      }
-    }
-  }, [hasMore, isValidating, debouncedLoadMore]);
-  
-  // Calculate dynamic item height
+
+  // Item height calculation for virtualization
   const getItemHeight = useCallback((index: number) => {
-    // Use cached height if available
-    const activityId = activities[index]?.id;
-    if (activityId && itemHeights[activityId]) {
-      return itemHeights[activityId];
-    }
-    
-    // Default heights based on content
-    const activity = activities[index];
-    if (!activity) return 100; // Loading/error indicator
-    
-    let height = 100; // Base height
+    // Estimate height based on activity type and content
+    const activity = filteredActivities[index];
+    if (!activity) return 120;
+
+    let baseHeight = 80; // Base height for avatar and basic info
     
     // Add height for content
-    if (activity.content) height += 60;
-    
-    // Add height for game image
-    if (activity.game?.coverImage) height += 80;
-    
-    // Add height for user avatar
-    if (!currentUserId || activity.user.id !== currentUserId) height += 30;
-    
-    return height;
-  }, [activities, itemHeights, currentUserId]);
-  
-  // Measure and cache item heights
-  const measureItem = useCallback((activityId: string, height: number) => {
-    if (measurementCache[activityId] !== height) {
-      setMeasurementCache(prev => ({
-        ...prev,
-        [activityId]: height
-      }));
-      
-      setItemHeights(prev => ({
-        ...prev,
-        [activityId]: height
-      }));
-      
-      // Reset list to recalculate sizes
-      if (listRef.current) {
-        listRef.current.resetAfterIndex(0);
-      }
+    if (activity.content) {
+      baseHeight += Math.min(60, activity.content.length * 0.5);
     }
-  }, [measurementCache]);
-  
+    
+    // Add height for game info
+    if (activity.game) {
+      baseHeight += 40;
+    }
+
+    return Math.max(baseHeight, 120);
+  }, [filteredActivities]);
+
   // Render activity item
-  const renderActivityItem = useCallback((activity: Activity, index: number) => {
+  const renderActivityItem = useCallback(({ index, style }: any) => {
+    const activity = filteredActivities[index];
+    if (!activity) return null;
+
+    // Check if we should load more when approaching the end
+    if (index === filteredActivities.length - 5 && canLoadMore) {
+      loadMore();
+    }
+
     return (
-      <div 
-        ref={(el) => {
-          if (el) {
-            const height = el.getBoundingClientRect().height;
-            measureItem(activity.id, height);
-          }
-        }}
-      >
+      <div style={style}>
         <ActivityItem
-          id={activity.id}
-          type={activity.type}
-          timestamp={activity.timestamp}
-          actor={activity.user}
-          target={activity.targetUser ? {
-            id: activity.targetUser.id,
-            type: 'comment',
-            name: activity.targetUser.name
-          } : undefined}
-          game={activity.game}
-          content={activity.content}
+          activity={activity}
           currentUserId={currentUserId}
+          className="mx-4 mb-4"
         />
       </div>
     );
-  }, [measureItem, currentUserId]);
-  
+  }, [filteredActivities, canLoadMore, loadMore, currentUserId]);
+
+  // Handle scroll to load more (for non-virtualized mode)
+  const handleScroll = useCallback(
+    debounce((event: React.UIEvent<HTMLDivElement>) => {
+      if (virtualized) return;
+      
+      const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 500;
+      
+      if (isNearBottom && canLoadMore && !isLoadingMore) {
+        loadMore();
+      }
+    }, 100),
+    [virtualized, canLoadMore, isLoadingMore, loadMore]
+  );
+
   // Loading state
-  if (isValidating && !activities.length) {
-    return <ActivitySkeleton count={3} />;
+  if (isLoading && !data) {
+    return (
+      <div className={className}>
+        <ActivitySkeleton count={5} />
+      </div>
+    );
   }
-  
-  // Error state (only if no activities loaded yet)
-  if (error && !activities.length) {
-    return <ErrorState error={error.message || 'Failed to load activities'} onRetry={retry} />;
+
+  // Error state
+  if (error && !data) {
+    return (
+      <div className={className}>
+        <ErrorState error={error.message || 'Failed to load activities'} onRetry={retry} />
+      </div>
+    );
   }
-  
-  // Empty state
-  if (!isValidating && !error && activities.length === 0) {
-    return <EmptyState message={emptyStateMessage} />;
-  }
-  
+
   return (
-    <div className={`h-[600px] ${className}`}>
-      <AutoSizer>
-        {({ height, width }) => (
-          <List
-            ref={listRef}
-            height={height}
-            width={width}
-            itemCount={activities.length}
-            itemSize={getItemHeight}
-            onScroll={handleScroll}
-            overscanCount={3} // Number of items to render above/below the visible area
-            initialScrollOffset={scrollPosition}
+    <div className={`flex flex-col h-full ${className}`}>
+      {/* Header with search and filters */}
+      <div className="flex-shrink-0 p-4 border-b border-gray-700 bg-gray-800">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search activities..."
+              onChange={(e) => debouncedSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Filter */}
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as ActivityType | 'all')}
+            className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
-            {({ index, style }) => (
-              <div style={style}>
-                {renderActivityItem(activities[index], index)}
-              </div>
+            <option value="all">All Activities</option>
+            <option value="review">Reviews</option>
+            <option value="rating">Ratings</option>
+            <option value="follow">Follows</option>
+            <option value="comment">Comments</option>
+          </select>
+
+          {/* Virtualization toggle */}
+          <button
+            onClick={() => setVirtualized(!virtualized)}
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              virtualized
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+            title={`${virtualized ? 'Disable' : 'Enable'} virtualization`}
+          >
+            Virtual: {virtualized ? 'ON' : 'OFF'}
+          </button>
+        </div>
+
+        {/* Activity count */}
+        <div className="mt-2 text-sm text-gray-400">
+          {filteredActivities.length} activities
+          {searchQuery && ` matching "${searchQuery}"`}
+        </div>
+      </div>
+
+      {/* Activity feed */}
+      <div className="flex-1 overflow-hidden" onScroll={handleScroll}>
+        {filteredActivities.length === 0 ? (
+          <EmptyState message={emptyStateMessage} />
+        ) : virtualized ? (
+          // Virtualized list for better performance with large datasets
+          <AutoSizer>
+            {({ height, width }) => (
+              <List
+                ref={listRef}
+                height={height}
+                width={width}
+                itemCount={filteredActivities.length}
+                itemSize={getItemHeight}
+                overscanCount={5}
+                itemData={filteredActivities}
+              >
+                {renderActivityItem}
+              </List>
             )}
-          </List>
+          </AutoSizer>
+        ) : (
+          // Simple scrollable list
+          <div className="p-4 space-y-4 overflow-y-auto h-full">
+            {filteredActivities.map((activity, index) => (
+              <ActivityItem
+                key={activity.id}
+                activity={activity}
+                currentUserId={currentUserId}
+              />
+            ))}
+          </div>
         )}
-      </AutoSizer>
-      
-      {/* Loading indicator */}
-      {isValidating && activities.length > 0 && (
-        <div className="flex justify-center items-center py-4" aria-live="polite" role="status">
-          <RefreshCw className="h-5 w-5 text-blue-400 animate-spin mr-2" />
-          <span className="text-gray-400">Loading more activities...</span>
+      </div>
+
+      {/* Loading indicator for infinite scroll */}
+      {isLoadingMore && (
+        <div className="flex-shrink-0 p-4 text-center">
+          <div className="inline-flex items-center gap-2 text-gray-400">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            Loading more activities...
+          </div>
         </div>
       )}
-      
-      {/* Error indicator (when we have some activities) */}
-      {error && activities.length > 0 && (
-        <div className="mt-4">
-          <ErrorState 
-            error={error.message || 'Failed to load more activities'} 
-            onRetry={retry} 
-          />
-        </div>
-      )}
-      
-      {/* End of feed indicator */}
-      {!hasMore && !isValidating && activities.length > 0 && (
-        <div className="text-center py-4 text-gray-500" aria-live="polite">
-          You've reached the end of the feed
+
+      {/* Validation indicator */}
+      {isValidating && !isLoadingMore && (
+        <div className="absolute top-4 right-4 text-purple-400">
+          <RefreshCw className="h-4 w-4 animate-spin" />
         </div>
       )}
     </div>
