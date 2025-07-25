@@ -18,6 +18,7 @@ interface UserInfo {
   joinDate?: string;
   location?: string;
   website?: string;
+  platform?: string;
 }
 
 interface ResponsiveUserPageLayoutProps {
@@ -82,12 +83,40 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
               </button>
             </div>
             
-            {/* Additional Profile Info */}
-            <div className="space-y-2 text-sm text-gray-400 mb-4">
-              <div className="flex items-center gap-1">
-                <span>🎮 platform 9¾</span>
-                <span className="mx-2">🔗</span>
-                {user.website ? (
+           {/* Additional Profile Info */}
+            {(user.platform || user.website || user.location || user.joinDate) && (
+              <div className="space-y-2 text-sm text-gray-400 mb-4">
+                {(user.platform || user.website) && (
+                  <div className="flex items-center gap-1">
+                    {user.platform && (
+                      <>
+                        <span>🎮 {user.platform}</span>
+                        {user.website && <span className="mx-2">🔗</span>}
+                      </>
+                    )}
+                    {user.website && (
+                      <a 
+                        href={user.website} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="hover:text-blue-400 transition-colors flex items-center gap-1"
+                      >
+                        {user.website}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                )}
+                
+                {user.location && (
+                  <div>📍 {user.location}</div>
+                )}
+                
+                {user.joinDate && (
+                  <div>📅 Joined {user.joinDate}</div>
+                )}
+              </div>
+             )}
                   <a 
                     href={user.website} 
                     target="_blank" 
@@ -221,23 +250,29 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                   </button>
                 </div>
                 
-                <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
+               <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
                 
-                <div className="flex items-center gap-1 text-gray-400 text-sm mb-4">
-                  <span>🎮 platform 9¾</span>
-                  <span className="mx-2">🔗</span>
-                  {user.website ? (
-                    <a 
-                      href={user.website} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="hover:text-blue-400 transition-colors flex items-center gap-1"
-                    >
-                      {isDummy ? 'dummytestuser.card.co' : 'gamevault.card.co'}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  ) : (
-                    <span>{isDummy ? 'dummytestuser.card.co' : 'gamevault.card.co'}</span>
+                {(user.platform || user.website) && (
+                  <div className="flex items-center gap-1 text-gray-400 text-sm mb-4">
+                    {user.platform && (
+                      <>
+                        <span>🎮 {user.platform}</span>
+                        {user.website && <span className="mx-2">🔗</span>}
+                      </>
+                    )}
+                    {user.website && (
+                      <a 
+                        href={user.website} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="hover:text-blue-400 transition-colors flex items-center gap-1"
+                      >
+                        {user.website}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                )}
                   )}
                 </div>
                 
