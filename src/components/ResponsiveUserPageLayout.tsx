@@ -124,21 +124,24 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                     rel="noopener noreferrer"
                     className="hover:text-blue-400 transition-colors flex items-center gap-1"
                   >
-                    {isDummy ? 'dummytestuser.card.co' : 'gamevault.card.co'}
+                    {user.website}
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
-                )}
               </div>
-              
-              {user.location && (
-                <div>📍 {user.location}</div>
-              )}
-              
-              {user.joinDate && (
-                <div>📅 Joined {user.joinDate}</div>
-              )}
-            </div>
+            )}
+            
+            {user.location && (
+              <div className="text-gray-400 text-sm">
+                📍 {user.location}
+              </div>
+            )}
+            
+            {user.joinDate && (
+              <div className="text-gray-400 text-sm mt-1">
+                📅 Joined {user.joinDate}
+              </div>
+            )}
           </div>
         </div>
 
