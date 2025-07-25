@@ -10,6 +10,7 @@ import {
   Save, 
   Loader2, 
   AlertCircle,
+  Gamepad2
   Check,
   Image,
   Key,
