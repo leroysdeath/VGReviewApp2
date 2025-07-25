@@ -29,6 +29,7 @@ const profileSchema = z.object({
   bio: z.string().max(160, 'Bio must be 160 characters or less').optional(),
   location: z.string().max(50, 'Location must be 50 characters or less').optional(),
   website: z.string().url('Please enter a valid URL').or(z.string().length(0)).optional(),
+  platform: z.string().optional(),
   notifications: z.object({
     email: z.boolean().optional(),
     push: z.boolean().optional(),
@@ -49,6 +50,7 @@ interface UserSettingsPanelProps {
     bio?: string;
     location?: string;
     website?: string;
+    platform?: string; 
     avatar?: string;
     notifications?: {
       email: boolean;
@@ -95,6 +97,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       bio: initialData.bio || '',
       location: initialData.location || '',
       website: initialData.website || '',
+      platform: initialData.platform || '', 
       notifications: initialData.notifications || {
         email: true,
         push: true,
