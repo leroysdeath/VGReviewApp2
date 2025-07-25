@@ -88,6 +88,7 @@ const profile = profileData || {
         joinDate: new Date(profile.created_at).toLocaleString('default', { month: 'long', year: 'numeric' }),
         location: profile.location || '',
         website: profile.website || ''
+        platform: profile.platform || ''
       });
 
       // Fetch reviews (adjust columns if needed)
