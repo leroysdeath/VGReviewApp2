@@ -83,7 +83,7 @@ const profile = profileData || {
         id: user.id,
         username: profile.name || profile.username,
         avatar: profile.picurl || null,
-        bio: profile.bio || 'No bio yet.',
+        bio: profile.bio || '',
         joinDate: new Date(profile.created_at).toLocaleString('default', { month: 'long', year: 'numeric' }),
         location: profile.location || '',
         website: profile.website || ''
