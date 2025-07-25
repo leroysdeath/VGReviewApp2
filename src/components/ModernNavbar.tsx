@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Search, 
@@ -34,6 +34,28 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
   const [searchFocused, setSearchFocused] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const userButtonRef = useRef<HTMLButtonElement>(null);
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target as Node) &&
+        userButtonRef.current &&
+        !userButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isUserMenuOpen]);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -121,10 +143,11 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                 </button>
 
                 {/* User Menu */}
-                <div className="relative ml-3">
+                 <div className="relative">
                   <button
+                    ref={userButtonRef}
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-800/50 transition-colors duration-200"
+                    className="flex items-center space-x-3 px-2 py-2 text-gray-300 hover:text-white rounded-lg hover:bg-gray-800/50 transition-all duration-200"
                   >
                     {user?.avatar ? (
                       <img
@@ -142,7 +165,9 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
 
                   {/* User Dropdown */}
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1 z-50">
+                    <div 
+                      ref={dropdownRef}
+                      className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1 z-50">
                       <Link
                         to="/profile"
                         className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
