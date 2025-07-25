@@ -78,6 +78,7 @@ const profile = profileData || {
   created_at: new Date().toISOString(),
   location: '',
   website: ''
+  platform: ''
 };  
       setUserProfile({
         id: user.id,
