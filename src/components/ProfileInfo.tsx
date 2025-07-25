@@ -57,7 +57,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false,
         </div>
         <p className="text-blue-400 text-sm mb-3">{user.bio || ''}</p>
         <div className="flex items-center gap-1 text-gray-400 text-sm mb-4">
-          <span>🎮 platform 9¾</span>
+          <span>🎮</span>
           <span className="mx-2">🔗</span>
           {user.website ? (
             <a 
@@ -70,7 +70,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false,
               <ExternalLink className="h-3 w-3" />
             </a>
           ) : (
-            <span>No website set</span>
+            <span></span>
           )}
         </div>
         {user.location && (
