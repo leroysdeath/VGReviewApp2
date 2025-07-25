@@ -273,7 +273,6 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                     )}
                   </div>
                 )}
-                  )}
                 </div>
                 
                 {user.location && (
