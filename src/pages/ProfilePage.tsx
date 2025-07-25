@@ -82,7 +82,7 @@ const profile = profileData || {
       setUserProfile({
         id: user.id,
         username: profile.name || profile.username,
-        avatar: profile.picurl || '/default-avatar.png',
+        avatar: profile.picurl || null,
         bio: profile.bio || 'No bio yet.',
         joinDate: new Date(profile.created_at).toLocaleString('default', { month: 'long', year: 'numeric' }),
         location: profile.location || '',
