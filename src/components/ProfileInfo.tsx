@@ -33,11 +33,17 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false,
   return (
     <div className="flex items-start gap-6">
       <div className="relative flex-shrink-0">
-        <img
-          src={user.avatar || '/default-avatar.png'}
-          alt={user.username || 'User'}
-          className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
-        />
+        {user.avatar ? (
+          <img
+            src={user.avatar}
+            alt={user.username || 'User'}
+            className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
+          />
+        ) : (
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white text-2xl font-bold border-2 border-gray-600">
+            {(user.username || 'U').charAt(0).toUpperCase()}
+          </div>
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-3 mb-2">
