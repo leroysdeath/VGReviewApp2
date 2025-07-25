@@ -10,6 +10,7 @@ interface ProfileInfoProps {
     joinDate?: string;
     location?: string;
     website?: string;
+    platform?: string;
   } | null;
   isDummy?: boolean;
   onEditClick?: () => void;
@@ -56,23 +57,27 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false,
           </button>
         </div>
         <p className="text-blue-400 text-sm mb-3">{user.bio || ''}</p>
-        <div className="flex items-center gap-1 text-gray-400 text-sm mb-4">
-          <span>🎮</span>
-          <span className="mx-2">🔗</span>
-          {user.website ? (
-            <a 
-              href={user.website} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hover:text-blue-400 transition-colors flex items-center gap-1"
-            >
-              {user.website}
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          ) : (
-            <span></span>
-          )}
-        </div>
+        {(user.platform || user.website) && (
+          <div className="flex items-center gap-1 text-gray-400 text-sm mb-4">
+            {user.platform && (
+              <>
+                <span>🎮 {user.platform}</span>
+                {user.website && <span className="mx-2">🔗</span>}
+              </>
+            )}
+            {user.website && (
+              <a 
+                href={user.website} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-blue-400 transition-colors flex items-center gap-1"
+              >
+                {user.website}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+        )}
         {user.location && (
           <div className="text-gray-400 text-sm">
             📍 {user.location}
