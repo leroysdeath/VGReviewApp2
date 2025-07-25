@@ -117,6 +117,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                 )}
               </div>
              )}
+                 {user.website && (
                   <a 
                     href={user.website} 
                     target="_blank" 
@@ -126,8 +127,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                     {isDummy ? 'dummytestuser.card.co' : 'gamevault.card.co'}
                     <ExternalLink className="h-3 w-3" />
                   </a>
-                ) : (
-                  <span>{isDummy ? 'dummytestuser.card.co' : 'gamevault.card.co'}</span>
+                )}
                 )}
               </div>
               
