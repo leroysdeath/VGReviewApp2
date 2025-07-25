@@ -60,31 +60,33 @@ const ProfilePage = () => {
         return;
       }
 
-      // Fetch profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('username, display_name, bio, avatar_url, joined_at, location, website')
-        .eq('id', user.id)
-        .single();
+      // Fetch profile from user table
+const { data: profileData, error: profileError } = await supabase
+  .from('user')
+  .select('*')
+  .eq('provider_id', user.id)
+  .single();
 
-      if (profileError && profileError.code !== 'PGRST116') throw profileError;
-      const profile = profileData || {
-        username: user.email?.split('@')[0] || 'User',
-        display_name: '',
-        bio: '',
-        avatar_url: '/default-avatar.png',
-        joined_at: new Date().toISOString(),
-        location: '',
-        website: ''
-      };
+if (profileError && profileError.code !== 'PGRST116') throw profileError;
+
+// If no profile exists yet, use auth metadata
+const profile = profileData || {
+  name: user.user_metadata?.username || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+  username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
+  bio: '',
+  picurl: user.user_metadata?.avatar_url || null,
+  created_at: new Date().toISOString(),
+  location: '',
+  website: ''
+};  
       setUserProfile({
         id: user.id,
-        username: profile.display_name || profile.username,
-        avatar: profile.avatar_url,
+        username: profile.name || profile.username,
+        avatar: profile.picurl || '/default-avatar.png',
         bio: profile.bio || 'No bio yet.',
-        joinDate: new Date(profile.joined_at).toLocaleString('default', { month: 'long', year: 'numeric' }),
-        location: profile.location,
-        website: profile.website
+        joinDate: new Date(profile.created_at).toLocaleString('default', { month: 'long', year: 'numeric' }),
+        location: profile.location || '',
+        website: profile.website || ''
       });
 
       // Fetch reviews (adjust columns if needed)
