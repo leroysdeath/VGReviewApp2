@@ -1,191 +1,307 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../utils/supabaseClient';
-import { ProfileInfo } from '../components/ProfileInfo';
-import { ProfileDetails } from '../components/ProfileDetails';
-import { ProfileData } from '../components/ProfileData';
+import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
+import { SettingsModal } from '../components/SettingsModal';
 
-const ProfilePage = () => {
-  const [userProfile, setUserProfile] = useState(null);
-  const [allGames, setAllGames] = useState([]);
-  const [reviews, setReviews] = useState([]);
-  const [stats, setStats] = useState({ films: 0, thisYear: 0, lists: 0, following: 0, followers: 0 });
-  const [activeTab, setActiveTab] = useState('top5');
-  const [reviewFilter, setReviewFilter] = useState('recent');
-  const [sortedReviews, setSortedReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
+interface Profile {
+  username: string;
+  display_name: string;
+  bio: string;
+  location: string;
+  website: string;
+  avatar_url: string;
+}
+
+const ProfilePage: React.FC = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  // Settings form state
+  const [displayName, setDisplayName] = useState('');
+  const [bio, setBio] = useState('');
+  const [location, setLocation] = useState('');
+  const [website, setWebsite] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [settingsLoading, setSettingsLoading] = useState(false);
 
   useEffect(() => {
-    fetchProfileData();
-  }, []);
-
-  useEffect(() => {
-    // Sort reviews based on filter
-    let sorted = [...reviews];
-    switch (reviewFilter) {
-      case 'highest':
-        sorted.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'lowest':
-        sorted.sort((a, b) => a.rating - b.rating);
-        break;
-      case 'oldest':
-        sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        break;
-      case 'recent':
-      default:
-        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        break;
+    if (!user) {
+      navigate('/login');
+      return;
     }
-    setSortedReviews(sorted.map(review => ({
-      id: review.id,
-      userId: review.user_id,
-      gameId: review.game_id,
-      rating: review.rating,
-      text: review.text,
-      date: new Date(review.created_at).toLocaleDateString(),
-      hasText: !!review.text,
-      author: userProfile?.username || '',
-      authorAvatar: userProfile?.avatar_url || '/default-avatar.png'
-    })));
-  }, [reviews, reviewFilter, userProfile]);
+    fetchProfile();
+  }, [user, navigate]);
 
-  async function fetchProfileData() {
+  async function fetchProfile() {
     try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-
-      // Fetch profile
-      const { data: profileData, error: profileError } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('username, display_name, bio, avatar_url, joined_at, location, website')
-        .eq('id', user.id)
+        .select('*')
+        .eq('id', user?.id)
         .single();
 
-      if (profileError && profileError.code !== 'PGRST116') throw profileError;
-      const profile = profileData || {
-        username: user.email?.split('@')[0] || 'User',
-        display_name: '',
-        bio: '',
-        avatar_url: '/default-avatar.png',
-        joined_at: new Date().toISOString(),
-        location: '',
-        website: ''
-      };
-      setUserProfile({
-        id: user.id,
-        username: profile.display_name || profile.username,
-        avatar: profile.avatar_url,
-        bio: profile.bio || 'No bio yet.',
-        joinDate: new Date(profile.joined_at).toLocaleString('default', { month: 'long', year: 'numeric' }),
-        location: profile.location,
-        website: profile.website
-      });
+      if (error) throw error;
 
-      // Fetch reviews (adjust columns if needed)
-      const { data: reviewsData } = await supabase
-        .from('reviews')
-        .select('id, user_id, game_id, game_name, cover_image, rating, text, created_at')
-        .eq('user_id', user.id);
-      setReviews(reviewsData || []);
-
-      // Compute allGames
-      const games = reviewsData?.map(review => ({
-        id: review.game_id,
-        title: review.game_name,
-        coverImage: review.cover_image || '/default-cover.png',
-        releaseDate: '', // Add IGDB fetch if needed
-        genre: '', // Add IGDB fetch if needed
-        rating: review.rating,
-        description: '',
-        developer: '',
-        publisher: ''
-      })) || [];
-      setAllGames(games);
-
-      // Fetch/compute stats
-      const currentYear = new Date().getFullYear();
-      const thisYearReviews = reviewsData?.filter(r => new Date(r.created_at).getFullYear() === currentYear).length || 0;
-      const { count: listsCount } = await supabase.from('lists').select('id', { count: 'exact' }).eq('user_id', user.id);
-      const { count: followingCount } = await supabase.from('followers').select('id', { count: 'exact' }).eq('follower_id', user.id);
-      const { count: followersCount } = await supabase.from('followers').select('id', { count: 'exact' }).eq('followed_id', user.id);
-
-      setStats({
-        films: reviewsData?.length || 0, // Games reviewed/played
-        thisYear: thisYearReviews,
-        lists: listsCount || 0,
-        following: followingCount || 0,
-        followers: followersCount || 0
-      });
-
+      if (data) {
+        setProfile(data);
+        // Initialize settings form with profile data
+        setDisplayName(data.display_name || '');
+        setBio(data.bio || '');
+        setLocation(data.location || '');
+        setWebsite(data.website || '');
+        setAvatarUrl(data.avatar_url || '');
+      }
     } catch (error) {
-      console.error('Error fetching profile data:', error);
+      console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
     }
   }
 
-  const handleEditClick = () => {
-    navigate('/settings');
+  async function updateProfile() {
+    try {
+      setSettingsLoading(true);
+      const { error } = await supabase.from('profiles').upsert({
+        id: user?.id,
+        display_name: displayName,
+        bio,
+        location,
+        website,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString(),
+      });
+
+      if (error) throw error;
+
+      // Update local profile state
+      setProfile(prev => prev ? {
+        ...prev,
+        display_name: displayName,
+        bio,
+        location,
+        website,
+        avatar_url: avatarUrl
+      } : null);
+
+      alert('Profile updated successfully!');
+      setIsSettingsOpen(false); // Close modal on success
+    } catch (error: any) {
+      alert('Error updating profile: ' + error.message);
+    } finally {
+      setSettingsLoading(false);
+    }
+  }
+
+  async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
+    try {
+      setSettingsLoading(true);
+      if (!event.target.files || event.target.files.length === 0) return;
+
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
+      if (uploadError) throw uploadError;
+
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      setAvatarUrl(publicUrl);
+    } catch (error: any) {
+      alert('Error uploading avatar: ' + error.message);
+    } finally {
+      setSettingsLoading(false);
+    }
+  }
+
+  if (loading) {
+    return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
+  }
+
+  if (!profile) {
+    return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Profile not found</div>;
+  }
+
+  // Generate user initial from username
+  const getUserInitial = (username: string): string => {
+    return username.charAt(0).toUpperCase();
   };
 
-  if (loading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
-
   return (
-    <div className="bg-gray-900 text-white p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-900 py-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Header */}
-        <div className="flex flex-col md:flex-row justify-between gap-6 mb-8">
-          <ProfileInfo
-            user={userProfile}
-            isDummy={false}
-            onEditClick={handleEditClick}
-          />
-          <ProfileDetails stats={stats} />
+        <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden mb-8">
+          <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900 relative" />
+          
+          <div className="px-6 pb-6">
+            <div className="flex justify-between items-end -mt-12 mb-4">
+              {/* Avatar */}
+              <div className="relative">
+                {profile.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.username}
+                    className="w-24 h-24 rounded-full border-4 border-gray-800 object-cover"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full border-4 border-gray-800 bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white text-3xl font-bold">
+                    {getUserInitial(profile.username)}
+                  </div>
+                )}
+              </div>
+
+              {/* Settings Button (replaced Link with button) */}
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Settings</span>
+              </button>
+            </div>
+
+            {/* User Info */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white mb-1">
+                {profile.display_name || profile.username}
+              </h2>
+              <p className="text-gray-400 text-sm mb-3">@{profile.username}</p>
+              
+              {profile.bio && (
+                <p className="text-gray-300 mb-4">{profile.bio}</p>
+              )}
+              
+              <div className="flex flex-wrap gap-y-2 gap-x-4 text-sm text-gray-400">
+                {profile.location && (
+                  <div className="flex items-center gap-1">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>{profile.location}</span>
+                  </div>
+                )}
+                
+                {profile.website && (
+                  <div className="flex items-center gap-1">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    <a 
+                      href={profile.website} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-purple-400 hover:text-purple-300 transition-colors"
+                    >
+                      {profile.website.replace(/^https?:\/\/(www\.)?/, '')}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Tabs Navigation */}
-        <div className="flex gap-4 mb-6 border-b border-gray-700">
-          <button
-            onClick={() => setActiveTab('top5')}
-            className={`pb-2 ${activeTab === 'top5' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
-          >
-            Top 5
-          </button>
-          <button
-            onClick={() => setActiveTab('reviews')}
-            className={`pb-2 ${activeTab === 'reviews' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
-          >
-            Reviews
-          </button>
-          <button
-            onClick={() => setActiveTab('activity')}
-            className={`pb-2 ${activeTab === 'activity' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
-          >
-            Activity
-          </button>
-          <button
-            onClick={() => setActiveTab('lists')}
-            className={`pb-2 ${activeTab === 'lists' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
-          >
-            Lists
-          </button>
-        </div>
+        {/* Settings Modal */}
+        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}>
+          <div className="p-6">
+            <div className="space-y-4">
+              {/* Display Name */}
+              <div>
+                <label htmlFor="displayName" className="block text-sm font-medium text-gray-300 mb-2">
+                  Display Name
+                </label>
+                <input
+                  id="displayName"
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
 
-        {/* Profile Data */}
-        <ProfileData
-          activeTab={activeTab}
-          allGames={allGames}
-          sortedReviews={sortedReviews}
-          reviewFilter={reviewFilter}
-          onReviewFilterChange={setReviewFilter}
-          isDummy={false}
-        />
+              {/* Bio */}
+              <div>
+                <label htmlFor="bio" className="block text-sm font-medium text-gray-300 mb-2">
+                  Bio
+                </label>
+                <textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent h-32 resize-none"
+                />
+              </div>
+
+              {/* Location */}
+              <div>
+                <label htmlFor="location" className="block text-sm font-medium text-gray-300 mb-2">
+                  Location
+                </label>
+                <input
+                  id="location"
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Website */}
+              <div>
+                <label htmlFor="website" className="block text-sm font-medium text-gray-300 mb-2">
+                  Website
+                </label>
+                <input
+                  id="website"
+                  type="text"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Avatar */}
+              <div>
+                <label htmlFor="avatar" className="block text-sm font-medium text-gray-300 mb-2">
+                  Avatar
+                </label>
+                <input 
+                  id="avatar" 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={uploadAvatar}
+                  className="w-full text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                />
+                {avatarUrl && (
+                  <img 
+                    src={avatarUrl} 
+                    alt="Avatar Preview" 
+                    className="mt-2 w-20 h-20 rounded-full object-cover"
+                  />
+                )}
+              </div>
+
+              {/* Update Button */}
+              <button
+                onClick={updateProfile}
+                disabled={settingsLoading}
+                className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {settingsLoading ? 'Updating...' : 'Update Profile'}
+              </button>
+            </div>
+          </div>
+        </SettingsModal>
       </div>
     </div>
   );
