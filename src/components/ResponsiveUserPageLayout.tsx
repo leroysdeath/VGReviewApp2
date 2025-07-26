@@ -72,9 +72,6 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <h1 className="text-2xl font-bold text-white">{user.username}</h1>
-                  <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
-                    PATRON
-                  </span>
                 </div>
                 <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
                 
@@ -221,9 +218,6 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="text-2xl font-bold text-white">{user.username}</h1>
-                  <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
-                    PATRON
-                  </span>
                 </div>
                 
                 <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
