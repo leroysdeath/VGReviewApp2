@@ -63,6 +63,13 @@ class BrowserCacheService {
   }
 
   /**
+   * Alias for remove method to match usage in codebase
+   */
+  delete(key: string): void {
+    this.remove(key);
+  }
+
+  /**
    * Clear all cache
    */
   clear(): void {
@@ -79,6 +86,20 @@ class BrowserCacheService {
         this.memoryCache.delete(key);
       }
     }
+  }
+
+  /**
+   * Get the size of the cache
+   */
+  get size(): number {
+    return this.memoryCache.size;
+  }
+
+  /**
+   * Get all cache keys
+   */
+  get keys(): string[] {
+    return Array.from(this.memoryCache.keys());
   }
 
   /**
