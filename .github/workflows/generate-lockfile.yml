@@ -8,6 +8,9 @@ on:
     paths:
       - 'package.json'
 
+permissions:
+  contents: write
+
 jobs:
   generate-lockfile:
     runs-on: ubuntu-latest
@@ -16,7 +19,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -35,15 +39,22 @@ jobs:
         run: |
           if [ -f "package-lock.json" ]; then
             echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ package-lock.json created successfully"
           else
             echo "exists=false" >> $GITHUB_OUTPUT
+            echo "❌ package-lock.json was not created"
+            exit 1
           fi
           
       - name: Commit and push if changed
         if: steps.check_file.outputs.exists == 'true'
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           git add package-lock.json
-          git diff --staged --quiet || git commit -m "chore: add package-lock.json"
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: add package-lock.json [skip ci]"
+            git push
+          fi
