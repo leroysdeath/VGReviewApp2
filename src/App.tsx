@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ResponsiveNavbar } from './components/ResponsiveNavbar';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { ResponsiveLandingPage } from './components/ResponsiveLandingPage';
 import { ReviewProvider } from './context/ReviewContext';
 import { AuthModalProvider } from './context/AuthModalContext';
@@ -48,7 +49,11 @@ function App() {
                   <Route path="/users" element={<UserSearchPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/review/:gameId?" element={<ReviewFormPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
+                 <Route path="/profile" element={
+                   <ProtectedRoute>
+                   <ProfilePage />
+                   </ProtectedRoute>
+                 } />
                   {/* Settings route removed - now handled via modal */}
                   {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
                 </Routes>
