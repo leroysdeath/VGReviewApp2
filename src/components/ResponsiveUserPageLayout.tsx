@@ -127,10 +127,11 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                     {user.website}
                     <ExternalLink className="h-3 w-3" />
                   </a>
-                )}
+               )}
+                </div>
               </div>
-            )}
-            
+            </div>
+
             {user.location && (
               <div className="text-gray-400 text-sm">
                 📍 {user.location}
@@ -144,6 +145,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             )}
           </div>
         </div>
+      </div>
 
         {/* Navigation Tabs */}
         <div className="bg-gray-800 border-b border-gray-700 sticky top-0 z-30">
