@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase.ts';
 import { SettingsModal } from '../components/SettingsModal';
 
 interface Profile {
