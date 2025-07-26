@@ -13,11 +13,12 @@ interface Profile {
   avatar_url: string;
 }
 
-const ProfilePage: React.FC = () => {
-  const { user } = useAuth();
+export const ProfilePage: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // REMOVED the useEffect that was redirecting to login
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   // Settings form state
