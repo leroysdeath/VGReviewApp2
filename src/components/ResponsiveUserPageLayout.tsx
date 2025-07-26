@@ -77,6 +77,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                   </span>
                 </div>
                 <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
+                </div>
               </div>
               <button className="text-gray-400 hover:text-white p-2">
                 <Settings className="h-5 w-5" />
