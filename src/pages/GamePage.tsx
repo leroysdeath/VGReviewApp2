@@ -4,6 +4,7 @@ import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText } f
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { AuthModal } from '../components/auth/AuthModal';
+import { useAuthModal } from '../context/AuthModalContext';
 import { useIGDBGame } from '../hooks/useIGDBCache';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
@@ -12,6 +13,7 @@ export const GamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const gameIdNumber = id ? parseInt(id) : null;
   const { isAuthenticated, user } = useAuth();
+  const { openModal } = useAuthModal();
 
   // Use the new caching hook for game data
   const {
@@ -28,7 +30,6 @@ export const GamePage: React.FC = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   // Load reviews when game data is available
@@ -88,7 +89,7 @@ export const GamePage: React.FC = () => {
   const handleAuthRequiredAction = (action: string) => {
     if (!isAuthenticated) {
       setPendingAction(action);
-      setShowAuthModal(true);
+      openModal('login');
       return;
     }
     executeAction(action);
@@ -109,7 +110,6 @@ export const GamePage: React.FC = () => {
   };
 
   const handleAuthSuccess = () => {
-    setShowAuthModal(false);
     if (pendingAction) {
       executeAction(pendingAction);
       setPendingAction(null);
@@ -472,7 +472,7 @@ export const GamePage: React.FC = () => {
               <p>No reviews yet. Be the first to review this game!</p>
               {!isAuthenticated && (
                 <button
-                  onClick={() => setShowAuthModal(true)}
+                  onClick={() => openModal('login')}
                   className="mt-3 text-purple-400 hover:text-purple-300 transition-colors"
                 >
                   Sign in to write a review
@@ -485,11 +485,6 @@ export const GamePage: React.FC = () => {
 
       {/* Auth Modal */}
       <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => {
-          setShowAuthModal(false);
-          setPendingAction(null);
-        }}
         onLoginSuccess={handleAuthSuccess}
         onSignupSuccess={handleAuthSuccess}
       />
