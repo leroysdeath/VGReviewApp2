@@ -4,6 +4,7 @@ import { Star, TrendingUp, Users, Search, ArrowRight, Gamepad2 } from 'lucide-re
 import { GameCard } from './GameCard';
 import { ReviewCard } from './ReviewCard';
 import { AuthModal } from './auth/AuthModal';
+import { useAuthModal } from '../context/AuthModalContext';
 import { mockReviews } from '../data/mockData';
 import { igdbService, Game } from '../services/igdbApi';
 import { useResponsive } from '../hooks/useResponsive';
@@ -12,10 +13,10 @@ import { useAuth } from '../hooks/useAuth';
 export const ResponsiveLandingPage: React.FC = () => {
   const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const { isMobile } = useResponsive();
   const { isAuthenticated } = useAuth();
+  const { openModal } = useAuthModal();
   const recentReviews = mockReviews.slice(0, isMobile ? 3 : 4);
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export const ResponsiveLandingPage: React.FC = () => {
   const handleAuthRequiredAction = (action: string) => {
     if (!isAuthenticated) {
       setPendingAction(action);
-      setShowAuthModal(true);
+      openModal('login');
       return;
     }
     executeAction(action);
@@ -57,7 +58,6 @@ export const ResponsiveLandingPage: React.FC = () => {
   };
 
   const handleAuthSuccess = () => {
-    setShowAuthModal(false);
     if (pendingAction) {
       executeAction(pendingAction);
       setPendingAction(null);
@@ -198,11 +198,6 @@ export const ResponsiveLandingPage: React.FC = () => {
 
         {/* Auth Modal */}
         <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => {
-            setShowAuthModal(false);
-            setPendingAction(null);
-          }}
           onLoginSuccess={handleAuthSuccess}
           onSignupSuccess={handleAuthSuccess}
         />
@@ -346,11 +341,6 @@ export const ResponsiveLandingPage: React.FC = () => {
 
       {/* Auth Modal */}
       <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => {
-          setShowAuthModal(false);
-          setPendingAction(null);
-        }}
         onLoginSuccess={handleAuthSuccess}
         onSignupSuccess={handleAuthSuccess}
       />
