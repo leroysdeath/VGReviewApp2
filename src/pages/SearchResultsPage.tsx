@@ -514,3 +514,43 @@ export const SearchResultsPage: React.FC = () => {
                   }}
                   className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
                 >
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Results */}
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader className="w-8 h-8 animate-spin text-purple-500" />
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <p className="text-gray-300 text-lg">Failed to load games. Please try again.</p>
+          </div>
+        ) : games && games.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-400 text-lg">No games found matching your criteria.</p>
+          </div>
+        ) : (
+          <div className={viewMode === 'grid' 
+            ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6'
+            : 'space-y-4'
+          }>
+            {games?.map((game) => (
+              viewMode === 'grid' 
+                ? <GameCard key={game.id} game={game} />
+                : <GameListItem key={game.id} game={game} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Auth Modal */}
+      <AuthModal onSuccess={handleAuthSuccess} />
+    </div>
+  );
+};
