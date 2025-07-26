@@ -1,189 +1,153 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useRef } from 'react';
+import { formatDistanceToNow } from 'date-fns';
 import { 
-  MessageSquare, 
-  User, 
-  Bell, 
-  Tag, 
-  Calendar, 
-  DollarSign,
-  Check,
-  Circle
+  Heart, 
+  MessageCircle, 
+  UserPlus, 
+  Trophy, 
+  Star, 
+  Gamepad2,
+  AlertCircle,
+  Check
 } from 'lucide-react';
 import { Notification } from '../types/notification';
-import { useNotificationStore } from '../store/notificationStore';
 
 interface NotificationItemProps {
   notification: Notification;
-  onClick?: () => void;
-  className?: string;
+  onMarkAsRead: (id: string) => void;
+  onDelete: (id: string) => void;
+  onAction?: (notification: Notification) => void;
 }
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
-  onClick,
-  className = ''
+  onMarkAsRead,
+  onDelete,
+  onAction
 }) => {
-  const { markAsRead } = useNotificationStore();
-  const itemRef = useRef<HTMLDivElement | null>(null);
-  
-  // Format relative time
-  const formatRelativeTime = (timestamp: string): string => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffSec = Math.floor(diffMs / 1000);
-    
-    if (diffSec < 60) return 'just now';
-    
-    const diffMin = Math.floor(diffSec / 60);
-    if (diffMin < 60) return `${diffMin}m ago`;
-    
-    const diffHour = Math.floor(diffMin / 60);
-    if (diffHour < 24) return `${diffHour}h ago`;
-    
-    const diffDay = Math.floor(diffHour / 24);
-    if (diffDay < 7) return `${diffDay}d ago`;
-    
-    const diffWeek = Math.floor(diffDay / 7);
-    if (diffWeek < 4) return `${diffWeek}w ago`;
-    
-    const diffMonth = Math.floor(diffDay / 30);
-    if (diffMonth < 12) return `${diffMonth}mo ago`;
-    
-    const diffYear = Math.floor(diffDay / 365);
-    return `${diffYear}y ago`;
-  };
-  
-  // Get notification icon based on type
-  const getNotificationIcon = () => {
-    switch (notification.type) {
-      case 'review_mention':
-        return <Tag className="h-5 w-5 text-purple-400" />;
-      case 'comment_reply':
-        return <MessageSquare className="h-5 w-5 text-blue-400" />;
-      case 'user_followed':
-        return <User className="h-5 w-5 text-green-400" />;
-      case 'game_release':
-        return <Calendar className="h-5 w-5 text-orange-400" />;
-      case 'price_drop':
-        return <DollarSign className="h-5 w-5 text-green-400" />;
-      case 'system_announcement':
-        return <Bell className="h-5 w-5 text-red-400" />;
-      default:
-        return <Bell className="h-5 w-5 text-gray-400" />;
-    }
-  };
-  
-  // Handle click on notification
-  const handleClick = () => {
-    if (!notification.isRead) {
-      // Provide haptic feedback if available
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-      markAsRead(notification.id);
-    }
-    
-    if (onClick) {
-      onClick();
-    }
-  };
-  
-  // Handle mark as read button click
-  const handleMarkAsRead = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
+  const swipeRef = useRef<HTMLDivElement>(null);
+  const startXRef = useRef(0);
+  const currentXRef = useRef(0);
+  const [swiping, setSwiping] = React.useState(false);
 
-    // Provide haptic feedback if available
-    if (navigator.vibrate) {
-      navigator.vibrate(50);
-    }
-    
-    if (!notification.isRead) {
-      markAsRead(notification.id);
+  // Get icon based on notification type
+  const getIcon = () => {
+    switch (notification.type) {
+      case 'like':
+        return <Heart className="h-5 w-5 text-red-500" />;
+      case 'comment':
+        return <MessageCircle className="h-5 w-5 text-blue-500" />;
+      case 'follow':
+        return <UserPlus className="h-5 w-5 text-green-500" />;
+      case 'achievement':
+        return <Trophy className="h-5 w-5 text-yellow-500" />;
+      case 'review':
+        return <Star className="h-5 w-5 text-purple-500" />;
+      case 'game_update':
+        return <Gamepad2 className="h-5 w-5 text-indigo-500" />;
+      default:
+        return <AlertCircle className="h-5 w-5 text-gray-500" />;
     }
   };
-  
-  const NotificationContent = () => (
-    <div className="flex gap-3 w-full" ref={itemRef}>
-      {/* Notification Icon */}
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-        notification.isRead ? 'bg-gray-700' : 'bg-gray-700/50'
-      }`}>
-        {getNotificationIcon()}
-      </div>
-      
-      {/* Notification Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1">
-          <h3 className={`font-medium ${notification.isRead ? 'text-gray-300' : 'text-white'}`}>
-            {notification.title}
-          </h3>
-          <span className="text-gray-500 text-xs">
-            {formatRelativeTime(notification.timestamp)}
-          </span>
-        </div>
-        
-        <p className={`text-sm ${notification.isRead ? 'text-gray-400' : 'text-gray-300'}`}>
-          {notification.message}
-        </p>
-        
-        {/* Read status indicator and mark as read button */}
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-1">
-            {notification.isRead ? (
-              <Check className="h-3 w-3 text-gray-500" />
-            ) : (
-              <Circle className="h-3 w-3 text-blue-400 fill-blue-400" />
-            )}
-            <span className="text-xs text-gray-500">
-              {notification.isRead ? 'Read' : 'Unread'}
-            </span>
+
+  // Handle touch events for swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startXRef.current = e.touches[0].clientX;
+    setSwiping(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!swiping || !swipeRef.current) return;
+    
+    currentXRef.current = e.touches[0].clientX;
+    const diff = startXRef.current - currentXRef.current;
+    
+    if (diff > 0) {
+      swipeRef.current.style.transform = `translateX(-${Math.min(diff, 80)}px)`;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!swipeRef.current) return;
+    
+    const diff = startXRef.current - currentXRef.current;
+    
+    if (diff > 50) {
+      // Show delete action
+      swipeRef.current.style.transform = 'translateX(-80px)';
+    } else {
+      // Reset position
+      swipeRef.current.style.transform = 'translateX(0)';
+    }
+    
+    setSwiping(false);
+  };
+
+  return (
+    <div className="relative overflow-hidden">
+      {/* Delete button (revealed on swipe) */}
+      <button
+        onClick={() => onDelete(notification.id)}
+        className="absolute right-0 top-0 bottom-0 w-20 bg-red-600 text-white flex items-center justify-center"
+      >
+        Delete
+      </button>
+
+      {/* Notification content */}
+      <div
+        ref={swipeRef}
+        className={`
+          relative bg-gray-800 p-4 transition-all duration-200 cursor-pointer
+          ${!notification.isRead ? 'bg-gray-800/80 border-l-4 border-purple-600' : ''}
+        `}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={() => {
+          if (!notification.isRead) {
+            onMarkAsRead(notification.id);
+          }
+          if (onAction) {
+            onAction(notification);
+          }
+        }}
+      >
+        <div className="flex items-start gap-3">
+          {/* Icon */}
+          <div className="flex-shrink-0 mt-1">
+            {getIcon()}
           </div>
-          
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-gray-300">
+              <span className="font-medium text-white">{notification.title}</span>
+              {notification.message && (
+                <span className="ml-1">{notification.message}</span>
+              )}
+            </p>
+
+            {/* Metadata */}
+            <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
+              <span>
+                {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+              </span>
+              {notification.actionUrl && (
+                <span className="text-purple-400 hover:text-purple-300">
+                  View
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Read indicator */}
           {!notification.isRead && (
-            <button
-              onClick={handleMarkAsRead}
-              className="text-xs text-blue-400 hover:text-blue-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label="Mark notification as read"
-            >
-              Mark as read
-            </button>
+            <div className="flex-shrink-0">
+              <div className="h-2 w-2 bg-purple-600 rounded-full animate-pulse" />
+            </div>
           )}
         </div>
       </div>
-    </div>
-  );
-  
-  return notification.link ? (
-    <Link
-      to={notification.link}
-      className={`block p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-        notification.isRead ? 'bg-gray-800' : 'bg-gray-800/70 border-l-2 border-blue-500'
-      } hover:bg-gray-750 transition-colors ${className}`}
-      onClick={handleClick}
-      aria-label={`${notification.title}. ${notification.isRead ? 'Read' : 'Unread'}`}
-    >
-      <NotificationContent />
-    </Link>
-  ) : (
-    <div
-      className={`p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-        notification.isRead ? 'bg-gray-800' : 'bg-gray-800/70 border-l-2 border-blue-500'
-      } hover:bg-gray-750 transition-colors cursor-pointer ${className}`}
-      onClick={handleClick}
-      tabIndex={0}
-      role="button"
-      aria-label={`${notification.title}. ${notification.isRead ? 'Read' : 'Unread'}`}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick();
-        }
-      }}
-    >
-      <NotificationContent />
     </div>
   );
 };
