@@ -77,21 +77,14 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                   </span>
                 </div>
                 <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
-              </div>
-              <button className="text-gray-400 hover:text-white p-2">
-                <Settings className="h-5 w-5" />
-              </button>
-            </div>
-            
-           {/* Additional Profile Info */}
-            {(user.platform || user.website || user.location || user.joinDate) && (
-              <div className="space-y-2 text-sm text-gray-400 mb-4">
+                
+                {/* Additional Profile Info */}
                 {(user.platform || user.website) && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 text-gray-400 text-sm mb-2">
                     {user.platform && (
                       <>
                         <span>🎮 {user.platform}</span>
-                        {user.website && <span className="mx-2">🔗</span>}
+                        {user.website && <span className="mx-2">•</span>}
                       </>
                     )}
                     {user.website && (
@@ -109,43 +102,24 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                 )}
                 
                 {user.location && (
-                  <div>📍 {user.location}</div>
+                  <div className="text-gray-400 text-sm">
+                    📍 {user.location}
+                  </div>
                 )}
                 
                 {user.joinDate && (
-                  <div>📅 Joined {user.joinDate}</div>
+                  <div className="text-gray-400 text-sm mt-1">
+                    📅 Joined {user.joinDate}
+                  </div>
                 )}
               </div>
-             )}
-                 {user.website && (
-                  <a 
-                    href={user.website} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="hover:text-blue-400 transition-colors flex items-center gap-1"
-                  >
-                    {user.website}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-               )}
-                </div>
-              </div>
+              
+              <button className="text-gray-400 hover:text-white p-2">
+                <Settings className="h-5 w-5" />
+              </button>
             </div>
-
-            {user.location && (
-              <div className="text-gray-400 text-sm">
-                📍 {user.location}
-              </div>
-            )}
-            
-            {user.joinDate && (
-              <div className="text-gray-400 text-sm mt-1">
-                📅 Joined {user.joinDate}
-              </div>
-            )}
           </div>
         </div>
-      </div>
 
         {/* Navigation Tabs */}
         <div className="bg-gray-800 border-b border-gray-700 sticky top-0 z-30">
@@ -250,52 +224,53 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                   <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
                     PATRON
                   </span>
-                  <button className="text-gray-400 hover:text-white">
-                    <Settings className="h-4 w-4" />
-                  </button>
                 </div>
                 
-               <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
+                <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
                 
-                {(user.platform || user.website) && (
-                  <div className="flex items-center gap-1 text-gray-400 text-sm mb-4">
-                    {user.platform && (
-                      <>
-                        <span>🎮 {user.platform}</span>
-                        {user.website && <span className="mx-2">🔗</span>}
-                      </>
+                {/* Additional Profile Info */}
+                {(user.platform || user.website || user.location || user.joinDate) && (
+                  <div className="space-y-2 text-sm text-gray-400 mb-4">
+                    {(user.platform || user.website) && (
+                      <div className="flex items-center gap-1">
+                        {user.platform && (
+                          <>
+                            <span>🎮 {user.platform}</span>
+                            {user.website && <span className="mx-2">•</span>}
+                          </>
+                        )}
+                        {user.website && (
+                          <a 
+                            href={user.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="hover:text-blue-400 transition-colors flex items-center gap-1"
+                          >
+                            {user.website}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
                     )}
-                    {user.website && (
-                      <a 
-                        href={user.website} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="hover:text-blue-400 transition-colors flex items-center gap-1"
-                      >
-                        {user.website}
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
+                    
+                    {user.location && (
+                      <div>📍 {user.location}</div>
                     )}
-                  </div>
-                )}
-                </div>
-                
-                {user.location && (
-                  <div className="text-gray-400 text-sm">
-                    📍 {user.location}
-                  </div>
-                )}
-                
-                {user.joinDate && (
-                  <div className="text-gray-400 text-sm mt-1">
-                    📅 Joined {user.joinDate}
+                    
+                    {user.joinDate && (
+                      <div>📅 Joined {user.joinDate}</div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
             
-            {/* Profile Details Section */}
+            {/* Profile Stats Section */}
             <div className="flex-shrink-0 flex flex-col gap-4">
+              <button className="text-gray-400 hover:text-white p-2">
+                <Settings className="h-5 w-5" />
+              </button>
+              
               <div className="flex items-center gap-6">
                 <div className="text-center">
                   <div className="text-xl font-bold text-white">{stats.films.toLocaleString()}</div>
