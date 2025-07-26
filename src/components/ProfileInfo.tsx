@@ -28,9 +28,6 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false,
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-3 mb-2">
           <h1 className="text-2xl font-bold text-white">{user.username}</h1>
-          <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
-            PATRON
-          </span>
           <button onClick={onEditClick} className="text-gray-400 hover:text-white">
             <Settings className="h-4 w-4" />
           </button>
