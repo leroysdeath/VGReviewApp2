@@ -4,6 +4,7 @@ import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, Zap
 import { useIGDBSearch } from '../hooks/useIGDBCache';
 import { enhancedIGDBService } from '../services/enhancedIGDBService';
 import { AuthModal } from '../components/auth/AuthModal';
+import { useAuthModal } from '../context/AuthModalContext';
 import { useAuth } from '../hooks/useAuth';
 
 interface Game {
@@ -31,10 +32,10 @@ export const SearchResultsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { openModal } = useAuthModal();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ action: string; gameId: number } | null>(null);
   const [filters, setFilters] = useState<SearchFilters>({
     genres: [],
@@ -96,7 +97,7 @@ export const SearchResultsPage: React.FC = () => {
     
     if (!isAuthenticated) {
       setPendingAction({ action, gameId });
-      setShowAuthModal(true);
+      openModal('login');
       return;
     }
     
@@ -121,7 +122,6 @@ export const SearchResultsPage: React.FC = () => {
   };
 
   const handleAuthSuccess = () => {
-    setShowAuthModal(false);
     if (pendingAction) {
       executeAction(pendingAction.action, pendingAction.gameId);
       setPendingAction(null);
@@ -514,116 +514,3 @@ export const SearchResultsPage: React.FC = () => {
                   }}
                   className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
                 >
-                  Clear Filters
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {loading && (!games || games.length === 0) && (
-          <div className="flex items-center justify-center py-12">
-            <Loader className="w-8 h-8 animate-spin text-purple-400" />
-            <span className="ml-3 text-gray-400">
-              {isSearchCached ? 'Updating results...' : 'Searching for games...'}
-            </span>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-              <p className="text-red-400 font-semibold mb-2">Search Error</p>
-              <p className="text-gray-400 mb-4">{error.message}</p>
-              <button
-                onClick={handleRefresh}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* No Results */}
-        {!loading && !error && (!games || games.length === 0) && searchTerm && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🎮</div>
-            <h2 className="text-xl font-semibold mb-2">No games found</h2>
-            <p className="text-gray-400 mb-4">
-              Try adjusting your search terms or filters
-            </p>
-            <div className="space-x-2">
-              <button
-                onClick={() => setSearchTerm('')}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-              >
-                Clear Search
-              </button>
-              <button
-                onClick={() => setShowFilters(true)}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-              >
-                Adjust Filters
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Results */}
-        {games && games.length > 0 && (
-          <>
-            {viewMode === 'grid' ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {games.map((game) => (
-                  <GameCard key={game.id} game={game} />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {games.map((game) => (
-                  <GameListItem key={game.id} game={game} />
-                ))}
-              </div>
-            )}
-
-            {/* Search Status Footer */}
-            <div className="mt-8 text-center">
-              <div className="inline-flex items-center gap-4 px-6 py-3 bg-gray-800 rounded-lg">
-                <span className="text-gray-400 text-sm">
-                  Showing {games.length} results
-                </span>
-                {isSearchCached && (
-                  <div className="flex items-center gap-1 text-green-400 text-sm">
-                    <Database className="h-3 w-3" />
-                    <span>Cached</span>
-                  </div>
-                )}
-                {loading && (
-                  <div className="flex items-center gap-1 text-blue-400 text-sm">
-                    <Loader className="h-3 w-3 animate-spin" />
-                    <span>Loading more...</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Auth Modal */}
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => {
-            setShowAuthModal(false);
-            setPendingAction(null);
-          }}
-          onLoginSuccess={handleAuthSuccess}
-          onSignupSuccess={handleAuthSuccess}
-        />
-      </div>
-    </div>
-  );
-};
