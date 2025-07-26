@@ -77,7 +77,7 @@ const profile = profileData || {
   picurl: user.user_metadata?.avatar_url || null,
   created_at: new Date().toISOString(),
   location: '',
-  website: ''
+  website: '',
   platform: ''
 };  
       setUserProfile({
@@ -87,7 +87,7 @@ const profile = profileData || {
         bio: profile.bio || '',
         joinDate: new Date(profile.created_at).toLocaleString('default', { month: 'long', year: 'numeric' }),
         location: profile.location || '',
-        website: profile.website || ''
+        website: profile.website || '',
         platform: profile.platform || ''
       });
 
