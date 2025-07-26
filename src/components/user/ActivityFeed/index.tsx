@@ -1,485 +1,318 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Avatar, 
-  Card, 
-  CardContent, 
-  Link, 
-  Button,
+import React from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Avatar,
+  IconButton,
+  Chip,
+  Skeleton,
   Alert,
-  AlertTitle,
-  CircularProgress
+  Button,
+  Tabs,
+  Tab,
+  Paper,
+  LinearProgress,
+  Tooltip,
+  Divider
 } from '@mui/material';
-import { 
-  Star as StarIcon, 
-  Comment as CommentIcon, 
-  Favorite as FavoriteIcon, 
-  Person as PersonIcon,
+import {
+  Star as StarIcon,
+  ChatBubbleOutline as CommentIcon,
+  ThumbUp as LikeIcon,
+  PersonAdd as FollowIcon,
   EmojiEvents as AchievementIcon,
   SportsEsports as GameIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  MoreVert as MoreVertIcon
 } from '@mui/icons-material';
-import { Link as RouterLink } from 'react-router-dom';
-import { ActivityFeedProps, ActivityItem, ActivityType } from './types';
-import ActivityFeedSkeleton from './ActivityFeedSkeleton';
+import { formatDistanceToNow } from 'date-fns';
+import { ActivityItem, ActivityType, ActivityFeedProps, TabPanelProps } from './types';
 import { useActivityFeed } from '../../../hooks/useActivityFeed';
-import { InfiniteScroll } from '../../InfiniteScroll';
 
-// Helper function to format relative time
-const formatRelativeTime = (date: Date): string => {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  
-  if (diffSec < 60) return 'just now';
-  
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  
-  const diffHour = Math.floor(diffMin / 60);
-  if (diffHour < 24) return `${diffHour}h ago`;
-  
-  const diffDay = Math.floor(diffHour / 24);
-  if (diffDay < 7) return `${diffDay}d ago`;
-  
-  const diffWeek = Math.floor(diffDay / 7);
-  if (diffWeek < 4) return `${diffWeek}w ago`;
-  
-  const diffMonth = Math.floor(diffDay / 30);
-  if (diffMonth < 12) return `${diffMonth}mo ago`;
-  
-  const diffYear = Math.floor(diffDay / 365);
-  return `${diffYear}y ago`;
+// Tab panel component
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`activity-tabpanel-${index}`}
+      aria-labelledby={`activity-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+// Get icon for activity type
+const getActivityIcon = (type: ActivityType) => {
+  switch (type) {
+    case 'review':
+    case 'rating':
+      return <StarIcon />;
+    case 'comment':
+      return <CommentIcon />;
+    case 'like':
+      return <LikeIcon />;
+    case 'follow':
+      return <FollowIcon />;
+    case 'achievement':
+      return <AchievementIcon />;
+    case 'game_completed':
+    case 'game_started':
+      return <GameIcon />;
+    default:
+      return <GameIcon />;
+  }
 };
 
-// Sample placeholder activities
-const placeholderActivities: ActivityItem[] = [
-  {
-    id: '1',
-    type: 'review',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    user: {
-      id: '101',
-      name: 'GamerPro',
-      avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=150'
-    },
-    game: {
-      id: '201',
-      title: 'Elden Ring',
-      coverImage: 'https://images.pexels.com/photos/3945654/pexels-photo-3945654.jpeg?auto=compress&cs=tinysrgb&w=400'
-    },
-    content: 'This game is absolutely incredible. The open world design is breathtaking.',
-    rating: 4.5
-  },
-  {
-    id: '2',
-    type: 'like',
-    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
-    user: {
-      id: '102',
-      name: 'RPGFanatic',
-      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
-    },
-    targetUser: {
-      id: '103',
-      name: 'GameCritic'
-    },
-    game: {
-      id: '202',
-      title: 'The Witcher 3: Wild Hunt'
-    }
-  },
-  {
-    id: '3',
-    type: 'comment',
-    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-    user: {
-      id: '104',
-      name: 'CasualGamer',
-      avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150'
-    },
-    game: {
-      id: '203',
-      title: 'Cyberpunk 2077'
-    },
-    content: 'I agree with most of your points, but I think the game still has some performance issues.'
-  },
-  {
-    id: '4',
-    type: 'game_completed',
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-    user: {
-      id: '105',
-      name: 'HardcoreGamer',
-      avatar: 'https://images.pexels.com/photos/1310522/pexels-photo-1310522.jpeg?auto=compress&cs=tinysrgb&w=150'
-    },
-    game: {
-      id: '204',
-      title: 'God of War Ragnarök',
-      coverImage: 'https://images.pexels.com/photos/3945670/pexels-photo-3945670.jpeg?auto=compress&cs=tinysrgb&w=400'
-    }
-  },
-  {
-    id: '5',
-    type: 'achievement',
-    timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
-    user: {
-      id: '106',
-      name: 'TrophyHunter',
-      avatar: 'https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg?auto=compress&cs=tinysrgb&w=150'
-    },
-    content: 'Earned the "Completionist" achievement'
+// Get color for activity type
+const getActivityColor = (type: ActivityType): 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'error' => {
+  switch (type) {
+    case 'review':
+    case 'rating':
+      return 'warning';
+    case 'comment':
+      return 'primary';
+    case 'like':
+      return 'error';
+    case 'follow':
+      return 'success';
+    case 'achievement':
+      return 'warning';
+    case 'game_completed':
+      return 'success';
+    case 'game_started':
+      return 'info';
+    default:
+      return 'primary';
   }
-];
+};
 
-const ActivityFeed: React.FC<ActivityFeedProps> = ({
-  userId,
-  isActive,
-  activities: initialActivities,
-  isLoading: initialLoading,
-  error: initialError,
-  onRetry: initialRetry
-}) => {
-  // Use the custom hook for data fetching
-  const {
-    activities = initialActivities || placeholderActivities,
-    isLoading = initialLoading || false,
-    error = initialError,
-    hasMore,
-    loadMore,
-    retry = initialRetry,
-    refresh
-  } = useActivityFeed({
-    userId,
-    isActive,
-    initialPageSize: 10
-  });
-  
-  // Don't render anything if tab is not active
-  if (!isActive) return null;
-  
-  // Get activity icon based on type
-  const getActivityIcon = (type: ActivityType) => {
-    switch (type) {
-      case 'review':
-        return <StarIcon sx={{ color: '#FFD700' }} />;
-      case 'comment':
-        return <CommentIcon sx={{ color: '#7289DA' }} />;
-      case 'like':
-        return <FavoriteIcon sx={{ color: '#FF6B6B' }} />;
-      case 'follow':
-        return <PersonIcon sx={{ color: '#4CAF50' }} />;
-      case 'achievement':
-        return <AchievementIcon sx={{ color: '#FFA726' }} />;
-      case 'game_completed':
-      case 'game_started':
-        return <GameIcon sx={{ color: '#29B6F6' }} />;
-      default:
-        return <StarIcon />;
-    }
-  };
-  
-  // Get activity description based on type
-  const getActivityDescription = (activity: ActivityItem) => {
-    switch (activity.type) {
-      case 'review':
-        return (
-          <Typography variant="body2" color="text.primary">
-            reviewed{' '}
-            <Link component={RouterLink} to={`/game/${activity.game?.id}`} color="primary">
-              {activity.game?.title}
-            </Link>
+// Activity card component
+const ActivityCard: React.FC<{ activity: ActivityItem }> = ({ activity }) => {
+  return (
+    <Card sx={{ mb: 2, bgcolor: 'background.paper' }}>
+      <CardContent>
+        <Box display="flex" alignItems="flex-start" gap={2}>
+          <Avatar
+            src={activity.user.avatar}
+            alt={activity.user.name}
+            sx={{ width: 48, height: 48 }}
+          />
+          
+          <Box flex={1}>
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="center" gap={1}>
+                <Typography variant="subtitle2" component="span">
+                  {activity.user.name}
+                </Typography>
+                <Chip
+                  icon={getActivityIcon(activity.type)}
+                  label={activity.type.replace('_', ' ')}
+                  size="small"
+                  color={getActivityColor(activity.type)}
+                  variant="outlined"
+                />
+              </Box>
+              
+              <Box display="flex" alignItems="center" gap={1}>
+                <Typography variant="caption" color="text.secondary">
+                  {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
+                </Typography>
+                <IconButton size="small">
+                  <MoreVertIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </Box>
+            
+            {activity.content && (
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                {activity.content}
+              </Typography>
+            )}
+            
             {activity.rating && (
-              <Box component="span" sx={{ ml: 1 }}>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <StarIcon 
-                    key={i} 
-                    sx={{ 
-                      fontSize: 16, 
-                      color: i < Math.floor(activity.rating) ? '#FFD700' : '#555',
-                      verticalAlign: 'text-bottom'
-                    }} 
+              <Box display="flex" alignItems="center" gap={0.5} sx={{ mt: 1 }}>
+                {[...Array(5)].map((_, i) => (
+                  <StarIcon
+                    key={i}
+                    fontSize="small"
+                    sx={{
+                      color: i < activity.rating! ? 'warning.main' : 'action.disabled'
+                    }}
                   />
                 ))}
+                <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                  {activity.rating}/5
+                </Typography>
               </Box>
             )}
-          </Typography>
-        );
-      case 'like':
-        return (
-          <Typography variant="body2" color="text.primary">
-            liked{' '}
-            {activity.targetUser && (
-              <>
-                <Link component={RouterLink} to={`/user/${activity.targetUser.id}`} color="primary">
-                  {activity.targetUser.name}
-                </Link>
-                's review of{' '}
-              </>
+            
+            {activity.game && (
+              <Paper variant="outlined" sx={{ mt: 1, p: 1 }}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  {activity.game.coverImage && (
+                    <img
+                      src={activity.game.coverImage}
+                      alt={activity.game.title}
+                      style={{ width: 40, height: 60, objectFit: 'cover', borderRadius: 4 }}
+                    />
+                  )}
+                  <Typography variant="body2" fontWeight="medium">
+                    {activity.game.title}
+                  </Typography>
+                </Box>
+              </Paper>
             )}
-            <Link component={RouterLink} to={`/game/${activity.game?.id}`} color="primary">
-              {activity.game?.title}
-            </Link>
-          </Typography>
-        );
-      case 'comment':
-        return (
-          <Typography variant="body2" color="text.primary">
-            commented on a review of{' '}
-            <Link component={RouterLink} to={`/game/${activity.game?.id}`} color="primary">
-              {activity.game?.title}
-            </Link>
-          </Typography>
-        );
-      case 'follow':
-        return (
-          <Typography variant="body2" color="text.primary">
-            followed{' '}
-            <Link component={RouterLink} to={`/user/${activity.targetUser?.id}`} color="primary">
-              {activity.targetUser?.name}
-            </Link>
-          </Typography>
-        );
-      case 'achievement':
-        return (
-          <Typography variant="body2" color="text.primary">
-            {activity.content}
-          </Typography>
-        );
-      case 'game_completed':
-        return (
-          <Typography variant="body2" color="text.primary">
-            completed{' '}
-            <Link component={RouterLink} to={`/game/${activity.game?.id}`} color="primary">
-              {activity.game?.title}
-            </Link>
-          </Typography>
-        );
-      case 'game_started':
-        return (
-          <Typography variant="body2" color="text.primary">
-            started playing{' '}
-            <Link component={RouterLink} to={`/game/${activity.game?.id}`} color="primary">
-              {activity.game?.title}
-            </Link>
-          </Typography>
-        );
-      default:
-        return <Typography variant="body2" color="text.primary">performed an activity</Typography>;
-    }
-  };
-  
-  // Loading state
-  if (isLoading && activities.length === 0) {
-    return <ActivityFeedSkeleton />;
-  }
-  
-  // Error state
-  if (error && activities.length === 0) {
-    return (
-      <Alert 
-        severity="error" 
-        sx={{ mb: 2 }}
-        action={
-          retry && (
-            <Button 
-              color="inherit" 
-              size="small" 
-              onClick={retry}
-              startIcon={<RefreshIcon />}
-            >
-              Retry
-            </Button>
-          )
-        }
-      >
-        <AlertTitle>Error</AlertTitle>
-        {error}
-      </Alert>
-    );
-  }
-  
-  // Empty state
-  if (!activities.length) {
-    return (
-      <Box 
-        sx={{ 
-          textAlign: 'center', 
-          py: 4, 
-          bgcolor: 'background.paper', 
-          borderRadius: 1 
-        }}
-      >
-        <GameIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-        <Typography variant="h6" color="text.primary">No Activity Yet</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Activity will appear here once you start interacting with games and other users.
-        </Typography>
-      </Box>
-    );
-  }
-  
-  return (
-    <InfiniteScroll
-      hasMore={hasMore}
-      loading={isLoading}
-      onLoadMore={loadMore}
-      className="w-full"
-    >
-      <Stack spacing={2} sx={{ width: '100%' }}>
-        {activities.map((activity) => (
-          <Card 
-            key={activity.id} 
-            sx={{ 
-              bgcolor: '#1E1E1E',
-              '&:hover': {
-                bgcolor: '#2A2A2A',
-                transition: 'background-color 0.3s'
-              }
-            }}
-          >
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                {/* Activity icon */}
-                <Box 
-                  sx={{ 
-                    width: 40, 
-                    height: 40, 
-                    borderRadius: '50%', 
-                    bgcolor: '#121212', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}
-                >
-                  {getActivityIcon(activity.type)}
-                </Box>
-                
-                {/* Activity content */}
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Link 
-                        component={RouterLink} 
-                        to={`/user/${activity.user.id}`}
-                        sx={{ 
-                          fontWeight: 'bold', 
-                          color: '#FFFFFF',
-                          textDecoration: 'none',
-                          '&:hover': { color: '#7289DA' }
-                        }}
-                      >
-                        {activity.user.name}
-                      </Link>
-                      <Typography variant="body2" color="#818384">
-                        {formatRelativeTime(activity.timestamp)}
-                      </Typography>
-                    </Box>
-                    
-                    {activity.game?.coverImage && (
-                      <Link component={RouterLink} to={`/game/${activity.game.id}`}>
-                        <Box 
-                          component="img" 
-                          src={activity.game.coverImage}
-                          alt={activity.game.title}
-                          sx={{ 
-                            width: 32, 
-                            height: 32, 
-                            borderRadius: 1,
-                            objectFit: 'cover'
-                          }}
-                        />
-                      </Link>
-                    )}
-                  </Box>
-                  
-                  {/* Activity description */}
-                  {getActivityDescription(activity)}
-                  
-                  {/* Activity content preview */}
-                  {activity.content && (
-                    <Box 
-                      sx={{ 
-                        mt: 1, 
-                        p: 1.5, 
-                        bgcolor: '#121212', 
-                        borderRadius: 1,
-                        maxHeight: '4.5em',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: 'vertical'
-                      }}
-                    >
-                      <Typography variant="body2" color="#B3B3B3">
-                        {activity.content}
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {/* Game image for certain activities */}
-                  {(activity.type === 'review' || activity.type === 'game_completed') && 
-                   activity.game?.coverImage && (
-                    <Box sx={{ mt: 1 }}>
-                      <Link component={RouterLink} to={`/game/${activity.game.id}`}>
-                        <Box 
-                          component="img" 
-                          src={activity.game.coverImage}
-                          alt={activity.game.title}
-                          sx={{ 
-                            height: 60, 
-                            borderRadius: 1,
-                            objectFit: 'cover'
-                          }}
-                        />
-                      </Link>
-                    </Box>
-                  )}
-                  
-                  {/* User avatar */}
-                  {activity.user.avatar && (
-                    <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Avatar 
-                        src={activity.user.avatar} 
-                        alt={activity.user.name}
-                        sx={{ width: 24, height: 24 }}
-                      />
-                      <Typography variant="caption" color="#818384">
-                        {activity.user.name}
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        ))}
-        
-        {/* Error state within the feed */}
-        {error && activities.length > 0 && (
-          <Alert 
-            severity="error" 
-            sx={{ mb: 2 }}
-            action={
-              <Button 
-                color="inherit" 
-                size="small" 
-                onClick={retry}
-                startIcon={<RefreshIcon />}
-              >
-                Retry
-              </Button>
-            }
-          >
-            {error}
-          </Alert>
-        )}
-      </Stack>
-    </InfiniteScroll>
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 
-export default ActivityFeed;
+// Loading skeleton
+const ActivitySkeleton = () => (
+  <Card sx={{ mb: 2 }}>
+    <CardContent>
+      <Box display="flex" alignItems="flex-start" gap={2}>
+        <Skeleton variant="circular" width={48} height={48} />
+        <Box flex={1}>
+          <Skeleton variant="text" width="30%" />
+          <Skeleton variant="text" width="100%" />
+          <Skeleton variant="text" width="80%" />
+        </Box>
+      </Box>
+    </CardContent>
+  </Card>
+);
+
+export const ActivityFeed: React.FC<ActivityFeedProps> = ({
+  userId,
+  isActive
+}) => {
+  const [tabValue, setTabValue] = React.useState(0);
+  const {
+    activities,
+    isLoading,
+    error,
+    hasMore,
+    loadMore,
+    mutate
+  } = useActivityFeed(userId, {
+    limit: 20,
+    enabled: isActive
+  });
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  const handleRefresh = () => {
+    mutate();
+  };
+
+  // Filter activities based on tab
+  const filteredActivities = React.useMemo(() => {
+    if (tabValue === 0) return activities; // All
+    
+    const typeMap: Record<number, ActivityType[]> = {
+      1: ['review', 'rating'],
+      2: ['comment'],
+      3: ['follow'],
+      4: ['game_completed', 'game_started'],
+      5: ['achievement']
+    };
+    
+    const types = typeMap[tabValue];
+    return types ? activities.filter(a => types.includes(a.type)) : activities;
+  }, [activities, tabValue]);
+
+  if (error) {
+    return (
+      <Alert
+        severity="error"
+        action={
+          <Button color="inherit" size="small" onClick={handleRefresh}>
+            Retry
+          </Button>
+        }
+        sx={{ mb: 2 }}
+      >
+        Failed to load activities: {error}
+      </Alert>
+    );
+  }
+
+  return (
+    <Box>
+      <Paper sx={{ mb: 2 }}>
+        <Box display="flex" alignItems="center" justifyContent="space-between" p={2}>
+          <Typography variant="h6">Activity Feed</Typography>
+          <Tooltip title="Refresh">
+            <IconButton onClick={handleRefresh} disabled={isLoading}>
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+        
+        <Divider />
+        
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          aria-label="activity feed tabs"
+        >
+          <Tab label="All" />
+          <Tab label="Reviews" />
+          <Tab label="Comments" />
+          <Tab label="Follows" />
+          <Tab label="Games" />
+          <Tab label="Achievements" />
+        </Tabs>
+        
+        {isLoading && <LinearProgress />}
+      </Paper>
+
+      <TabPanel value={tabValue} index={tabValue}>
+        {isLoading && filteredActivities.length === 0 ? (
+          <Box className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <ActivitySkeleton key={i} />
+            ))}
+          </Box>
+        ) : filteredActivities.length === 0 ? (
+          <Alert severity="info">
+            No activities to show yet. Follow users and interact with games to see activities here!
+          </Alert>
+        ) : (
+          <Box className="space-y-4">
+            {filteredActivities.map((activity) => (
+              <ActivityCard key={activity.id} activity={activity} />
+            ))}
+            
+            {hasMore && (
+              <Box display="flex" justifyContent="center" mt={2}>
+                <Button
+                  variant="outlined"
+                  onClick={loadMore}
+                  disabled={isLoading}
+                  startIcon={isLoading ? <LinearProgress /> : null}
+                >
+                  {isLoading ? 'Loading...' : 'Load More'}
+                </Button>
+              </Box>
+            )}
+          </Box>
+        )}
+      </TabPanel>
+    </Box>
+  );
+};
