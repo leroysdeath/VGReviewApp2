@@ -20,6 +20,8 @@ export const ProfilePage: React.FC = () => {
   // REMOVED the useEffect that was redirecting to login
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
   
   // Settings form state
   const [displayName, setDisplayName] = useState('');
