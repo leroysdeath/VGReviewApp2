@@ -17,8 +17,6 @@ export const ProfilePage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // REMOVED the useEffect that was redirecting to login
-
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -32,12 +30,13 @@ export const ProfilePage: React.FC = () => {
   const [settingsLoading, setSettingsLoading] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
+    // Remove the redirect - let ProtectedRoute handle authentication
+    if (user) {
+      fetchProfile();
+    } else {
+      setLoading(false);
     }
-    fetchProfile();
-  }, [user, navigate]);
+  }, [user]);
 
   async function fetchProfile() {
     try {
@@ -109,11 +108,17 @@ export const ProfilePage: React.FC = () => {
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
       if (uploadError) throw uploadError;
 
       // Get public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+      
       setAvatarUrl(publicUrl);
     } catch (error: any) {
       alert('Error uploading avatar: ' + error.message);
@@ -123,100 +128,90 @@ export const ProfilePage: React.FC = () => {
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white">Loading profile...</div>
+      </div>
+    );
   }
 
-  if (!profile) {
-    return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Profile not found</div>;
+  // If no user, ProtectedRoute will handle showing the auth modal
+  if (!user) {
+    return null;
   }
-
-  // Generate user initial from username
-  const getUserInitial = (username: string): string => {
-    return username.charAt(0).toUpperCase();
-  };
 
   return (
-    <div className="min-h-screen bg-gray-900 py-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Profile Header */}
-        <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden mb-8">
-          <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900 relative">
-            {/* Gear Button - positioned top-right */}
+    <div className="min-h-screen bg-gray-900 text-white">
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-6">Profile</h1>
+        
+        <div className="bg-gray-800 rounded-lg p-6 mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              {profile?.avatar_url ? (
+                <img 
+                  src={profile.avatar_url} 
+                  alt="Avatar" 
+                  className="w-20 h-20 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center">
+                  <span className="text-2xl text-gray-400">👤</span>
+                </div>
+              )}
+              <div>
+                <h2 className="text-2xl font-semibold">
+                  {profile?.display_name || profile?.username || user?.email}
+                </h2>
+                <p className="text-gray-400">@{profile?.username || 'user'}</p>
+              </div>
+            </div>
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="absolute top-4 right-4 p-2 bg-black/30 text-white rounded-full hover:bg-black/50 transition-colors backdrop-blur-sm"
-              aria-label="Edit profile settings"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+              Edit Profile
             </button>
           </div>
-          
-          <div className="px-6 pb-6">
-            <div className="flex justify-between items-end -mt-12 mb-4">
-              {/* Avatar */}
-              <div className="relative">
-                {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.username}
-                    className="w-24 h-24 rounded-full border-4 border-gray-800 object-cover"
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-full border-4 border-gray-800 bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white text-3xl font-bold">
-                    {getUserInitial(profile.username)}
-                  </div>
-                )}
-              </div>
-            </div>
 
-            {/* User Info */}
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-1">
-                {profile.display_name || profile.username}
-              </h2>
-              <p className="text-gray-400 text-sm mb-3">@{profile.username}</p>
-              
-              {profile.bio && (
-                <p className="text-gray-300 mb-4">{profile.bio}</p>
-              )}
-              
-              <div className="flex flex-wrap gap-y-2 gap-x-4 text-sm text-gray-400">
-                {profile.location && (
-                  <div className="flex items-center gap-1">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>{profile.location}</span>
-                  </div>
-                )}
-                
-                {profile.website && (
-                  <div className="flex items-center gap-1">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    <a 
-                      href={profile.website} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-purple-400 hover:text-purple-300 transition-colors"
-                    >
-                      {profile.website.replace(/^https?:\/\/(www\.)?/, '')}
-                    </a>
-                  </div>
-                )}
-              </div>
+          {profile?.bio && (
+            <div className="mb-4">
+              <h3 className="text-lg font-medium mb-2">Bio</h3>
+              <p className="text-gray-300">{profile.bio}</p>
             </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {profile?.location && (
+              <div>
+                <span className="text-gray-400">Location:</span>
+                <span className="ml-2">{profile.location}</span>
+              </div>
+            )}
+            {profile?.website && (
+              <div>
+                <span className="text-gray-400">Website:</span>
+                <a 
+                  href={profile.website} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="ml-2 text-purple-400 hover:underline"
+                >
+                  {profile.website}
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Settings Modal */}
-        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}>
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+        >
           <div className="p-6">
+            <h2 className="text-2xl font-bold mb-6">Edit Profile</h2>
+            
             <div className="space-y-4">
               {/* Display Name */}
               <div>
@@ -228,7 +223,7 @@ export const ProfilePage: React.FC = () => {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
 
@@ -241,7 +236,8 @@ export const ProfilePage: React.FC = () => {
                   id="bio"
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent h-32 resize-none"
+                  rows={4}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
 
@@ -255,7 +251,7 @@ export const ProfilePage: React.FC = () => {
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
 
@@ -266,10 +262,11 @@ export const ProfilePage: React.FC = () => {
                 </label>
                 <input
                   id="website"
-                  type="text"
+                  type="url"
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="https://example.com"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
 
