@@ -1,4 +1,4 @@
-// Authentication hook
+// Authentication hook with enhanced profile data fetching
 import { useState, useEffect } from 'react';
 import { authService, AuthUser } from '../services/authService';
 import type { Session } from '@supabase/supabase-js';
@@ -9,36 +9,66 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session and fetch complete user profile
     const getInitialSession = async () => {
-      const session = await authService.getCurrentSession();
-      setSession(session);
-      if (session?.user) {
-        // Convert Supabase user to our AuthUser format
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
-          avatar: session.user.user_metadata?.avatar_url,
-          created_at: session.user.created_at
-        });
+      try {
+        const session = await authService.getCurrentSession();
+        setSession(session);
+        
+        if (session?.user) {
+          // First set basic user data
+          const basicUser: AuthUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
+            avatar: session.user.user_metadata?.avatar_url,
+            created_at: session.user.created_at
+          };
+          setUser(basicUser);
+
+          // Then fetch complete profile data from database
+          const { data: profile } = await authService.getUserProfile(session.user.id);
+          if (profile) {
+            setUser({
+              ...basicUser,
+              name: profile.name || basicUser.name,
+              avatar: profile.picurl || basicUser.avatar,
+              // Add any additional profile fields
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user session:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     getInitialSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = authService.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
       setSession(session);
+      
       if (session?.user) {
-        setUser({
+        const basicUser: AuthUser = {
           id: session.user.id,
           email: session.user.email || '',
           name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
           avatar: session.user.user_metadata?.avatar_url,
           created_at: session.user.created_at
-        });
+        };
+        setUser(basicUser);
+
+        // Fetch complete profile data
+        const { data: profile } = await authService.getUserProfile(session.user.id);
+        if (profile) {
+          setUser({
+            ...basicUser,
+            name: profile.name || basicUser.name,
+            avatar: profile.picurl || basicUser.avatar,
+          });
+        }
       } else {
         setUser(null);
       }
@@ -58,6 +88,21 @@ export const useAuth = () => {
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     const result = await authService.signIn(email, password);
+    
+    // After successful sign in, fetch the complete profile
+    if (!result.error && result.user) {
+      const { data: profile } = await authService.getUserProfile(result.user.id);
+      if (profile) {
+        setUser({
+          id: result.user.id,
+          email: result.user.email || '',
+          name: profile.name || result.user.user_metadata?.username || 'User',
+          avatar: profile.picurl || result.user.user_metadata?.avatar_url,
+          created_at: result.user.created_at
+        });
+      }
+    }
+    
     setLoading(false);
     return result;
   };
@@ -74,7 +119,11 @@ export const useAuth = () => {
   const updateProfile = async (updates: { username?: string; avatar?: string }) => {
     const result = await authService.updateProfile(updates);
     if (!result.error && user) {
-      setUser({ ...user, name: updates.username || user.name, avatar: updates.avatar || user.avatar });
+      setUser({ 
+        ...user, 
+        name: updates.username || user.name, 
+        avatar: updates.avatar || user.avatar 
+      });
     }
     return result;
   };
