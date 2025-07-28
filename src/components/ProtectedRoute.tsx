@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { AuthModal } from './auth/AuthModal';
 import { useAuthModal } from '../context/AuthModalContext';
 
 interface ProtectedRouteProps {
@@ -38,19 +37,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!user && requireAuth) {
-    // Show the modal instead of redirecting
+    // Don't navigate away - just show a placeholder while the modal is open
+    // The modal will handle the authentication flow
     return (
-      <>
-        <Navigate to="/" state={{ from: location }} replace />
-        <AuthModal 
-          onLoginSuccess={() => {
-            // The modal will close automatically and the user will be redirected
-          }}
-          onSignupSuccess={() => {
-            // The modal will close automatically
-          }}
-        />
-      </>
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-center">
+          <p className="text-gray-400">Please sign in to continue</p>
+        </div>
+      </div>
     );
   }
 
