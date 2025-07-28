@@ -201,6 +201,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                 <div className="text-lg font-bold text-purple-400">8.2</div>
                 <div className="text-xs text-gray-400">Avg Rating</div>
               </div>
+            </div>
           </div>
         </div>
 
