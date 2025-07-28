@@ -43,7 +43,8 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 interface UserSettingsPanelProps {
-  initialData: {
+  userId?: string;  // Add this for compatibility
+  initialData?: {   // Make this optional
     username: string;
     displayName?: string;
     email: string;
@@ -65,14 +66,26 @@ interface UserSettingsPanelProps {
   onPasswordChange?: () => void;
   onDeleteAccount?: () => void;
   className?: string;
+  onSuccess?: () => void;  // Add this line
 }
 
 export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
-  initialData,
+  userId,
+  initialData = {    // Provide default values
+    username: '',
+    displayName: '',
+    email: '',
+    bio: '',
+    location: '',
+    website: '',
+    platform: '',
+    avatar: ''
+  },
   onSave,
   onPasswordChange,
   onDeleteAccount,
-  className = ''
+  className = '',
+  onSuccess
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'notifications' | 'privacy'>('profile');
   const [isLoading, setIsLoading] = useState(false);
@@ -152,14 +165,23 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     setSaveSuccess(false);
     
     try {
-      await onSave(data);
+      const onSubmit = async (data: ProfileFormValues) => {
+    setIsLoading(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+
+    try {
+      if (onSave) {
+        await onSave(data);
+      }
       setSaveSuccess(true);
-      reset(data); // Reset form with new values
-      
-      // Clear success message after 3 seconds
       setTimeout(() => {
         setSaveSuccess(false);
-      }, 3000);
+        onSuccess?.(); // Close modal on successful save
+      }, 1500);
+
+      // Reset form with new values
+      reset(data);
     } catch (error) {
       setSaveError('Failed to save changes. Please try again.');
     } finally {
