@@ -163,12 +163,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     setIsLoading(true);
     setSaveError(null);
     setSaveSuccess(false);
-    
-    try {
-      const onSubmit = async (data: ProfileFormValues) => {
-    setIsLoading(true);
-    setSaveError(null);
-    setSaveSuccess(false);
 
     try {
       if (onSave) {
