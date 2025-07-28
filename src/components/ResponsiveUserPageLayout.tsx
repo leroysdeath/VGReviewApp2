@@ -1,6 +1,8 @@
-import React, { ReactNode } from 'react';
+iimport React, { ReactNode, useState } from 'react';
 import { Settings, ExternalLink } from 'lucide-react';
 import { useResponsive } from '../hooks/useResponsive';
+import { useAuth } from '../hooks/useAuth';
+import { UserSettingsModal } from './profile/UserSettingsModal';
 
 interface UserStats {
   films: number;
@@ -47,6 +49,17 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
   isDummy = false
 }) => {
   const { isMobile } = useResponsive();
+  const { user: authUser, isAuthenticated } = useAuth();
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  
+  // Check if current user is viewing their own profile
+  const isOwnProfile = isAuthenticated && authUser?.id === user.id;
+
+  const handleSettingsClick = () => {
+    if (isOwnProfile) {
+      setIsSettingsModalOpen(true);
+    }
+  };
 
   if (isMobile) {
     return (
@@ -111,9 +124,14 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                 )}
               </div>
               
-              <button className="text-gray-400 hover:text-white p-2">
-                <Settings className="h-5 w-5" />
-              </button>
+              {isOwnProfile && (
+                <button 
+                  onClick={handleSettingsClick}
+                  className="text-gray-400 hover:text-white p-2"
+                >
+                  <Settings className="h-5 w-5" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -183,9 +201,15 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                 <div className="text-lg font-bold text-purple-400">8.2</div>
                 <div className="text-xs text-gray-400">Avg Rating</div>
               </div>
-            </div>
           </div>
         </div>
+
+        {/* Settings Modal */}
+        <UserSettingsModal 
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          userId={user.id}
+        />
       </div>
     );
   }
@@ -317,6 +341,13 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </div>
+
+      {/* Settings Modal */}
+      <UserSettingsModal 
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        userId={user.id}
+      />
     </div>
   );
 };
