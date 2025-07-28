@@ -190,7 +190,7 @@ export const ResponsiveNavbar: React.FC = () => {
                         <p className="text-xs text-gray-500 uppercase tracking-wide px-3 py-1">Development</p>
                       </div>
                       <Link
-                        to="/game/dummy-game"
+                        to="/game/1022"
                         className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                         onClick={() => setIsMenuOpen(false)}
                       >
@@ -261,7 +261,7 @@ export const ResponsiveNavbar: React.FC = () => {
               {import.meta.env.DEV && (
                 <>
                   <Link
-                    to="/game/dummy-game"
+                    to="/game/1022"
                     className="p-2 bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
                     title="Dummy Test Game"
                   >

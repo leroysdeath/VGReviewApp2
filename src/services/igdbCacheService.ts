@@ -1,5 +1,5 @@
 // src/services/igdbCacheService.ts
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../services/supabase';
 import crypto from 'crypto';
 
 export interface CacheConfig {

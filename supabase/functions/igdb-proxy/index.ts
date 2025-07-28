@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 import { corsHeaders } from '../_shared/cors.ts'
 
+
 serve(async (req) => {
   console.log('🎮 IGDB Proxy called:', req.method, req.url);
   

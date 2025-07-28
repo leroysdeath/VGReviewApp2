@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../utils/supabaseClient';
-
+import { supabase } from '../services/supabase';
 const SettingsPage = () => {
   const [loading, setLoading] = useState(false);
   const [displayName, setDisplayName] = useState('');

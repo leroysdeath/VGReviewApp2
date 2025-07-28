@@ -2,12 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { enhancedIGDBService } from '../services/enhancedIGDBService';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL!,
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
-);
+import { supabase } from '../services/supabase';
 
 interface UseIGDBCacheOptions {
   enabled?: boolean;
@@ -15,6 +10,7 @@ interface UseIGDBCacheOptions {
   staleWhileRevalidate?: boolean;
   onError?: (error: Error) => void;
   forceRefresh?: boolean;
+  useDirectIGDB?: boolean; // Add option to use direct IGDB calls
 }
 
 interface UseIGDBCacheState<T = any> {
@@ -25,6 +21,50 @@ interface UseIGDBCacheState<T = any> {
   timestamp: Date | null;
   expiresAt: Date | null;
 }
+
+// Temporary direct IGDB service for testing
+const directIGDBService = {
+  async getGame(gameId: number) {
+    console.log('🧪 Direct IGDB call for game:', gameId);
+    console.log('🧪 Environment check:', {
+      clientId: import.meta.env.VITE_IGDB_CLIENT_ID,
+      hasToken: !!import.meta.env.VITE_IGDB_ACCESS_TOKEN,
+      tokenLength: import.meta.env.VITE_IGDB_ACCESS_TOKEN?.length
+    });
+
+    if (!import.meta.env.VITE_IGDB_CLIENT_ID || !import.meta.env.VITE_IGDB_ACCESS_TOKEN) {
+      throw new Error('IGDB credentials not configured');
+    }
+
+    const response = await fetch('https://api.igdb.com/v4/games', {
+      method: 'POST',
+      headers: {
+        'Client-ID': import.meta.env.VITE_IGDB_CLIENT_ID,
+        'Authorization': `Bearer ${import.meta.env.VITE_IGDB_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: `fields name,summary,cover.url,first_release_date,genres.name,platforms.name,rating; where id = ${gameId};`
+    });
+
+    console.log('🧪 IGDB Response status:', response.status);
+    console.log('🧪 IGDB Response headers:', Object.fromEntries(response.headers.entries()));
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🧪 IGDB Error response:', errorText);
+      throw new Error(`IGDB API error: ${response.status} - ${errorText}`);
+    }
+
+    const games = await response.json();
+    console.log('🧪 Direct IGDB response:', games);
+    
+    if (!games || games.length === 0) {
+      throw new Error(`Game with ID ${gameId} not found`);
+    }
+
+    return games[0];
+  }
+};
 
 interface CacheStats {
   igdbCache: number;
@@ -52,6 +92,8 @@ export function useIGDBGame(
   gameId: number | null,
   options: UseIGDBCacheOptions = {}
 ) {
+  console.log('🔵 useIGDBGame hook initialized with gameId:', gameId, 'Options:', options);
+  
   const [state, setState] = useState<UseIGDBCacheState>({
     data: null,
     loading: false,
@@ -62,24 +104,41 @@ export function useIGDBGame(
   });
 
   const fetchGame = useCallback(async (id: number) => {
+    console.log('🔵 fetchGame called with ID:', id);
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const result = await enhancedIGDBService.getGame(id, {
-        cacheTTL: options.ttl || 3600,
-        staleWhileRevalidate: options.staleWhileRevalidate,
-        forceRefresh: options.forceRefresh || false,
-      });
-
+      let result;
+      
+      // Use direct IGDB call if specified in options or if enhanced service fails
+      if (options.useDirectIGDB) {
+        console.log('🔵 Using direct IGDB service...');
+        result = await directIGDBService.getGame(id);
+      } else {
+        console.log('🔵 Using enhanced IGDB service...');
+        try {
+          result = await enhancedIGDBService.getGame(id, {
+            cacheTTL: options.ttl || 3600,
+            staleWhileRevalidate: options.staleWhileRevalidate,
+            forceRefresh: options.forceRefresh || false,
+          });
+        } catch (enhancedError) {
+          console.warn('🔵 Enhanced service failed, falling back to direct IGDB:', enhancedError);
+          result = await directIGDBService.getGame(id);
+        }
+      }
+      
+      console.log('🔵 Fetched game data:', result);
       setState({
         data: result,
         loading: false,
         error: null,
-        cached: true, // Enhanced service handles cache detection
+        cached: !options.useDirectIGDB, // Direct calls are not cached
         timestamp: new Date(),
         expiresAt: new Date(Date.now() + (options.ttl || 3600) * 1000),
       });
     } catch (error) {
+      console.error('🔴 Error fetching game:', error);
       const err = error as Error;
       setState(prev => ({
         ...prev,
@@ -88,41 +147,65 @@ export function useIGDBGame(
       }));
       options.onError?.(err);
     }
-  }, [options.ttl, options.staleWhileRevalidate, options.onError, options.forceRefresh]);
+  }, [options.ttl, options.staleWhileRevalidate, options.onError, options.forceRefresh, options.useDirectIGDB]);
 
   const refetch = useCallback(() => {
     if (gameId) {
+      console.log('🔵 Refetching game:', gameId);
       fetchGame(gameId);
     }
   }, [gameId, fetchGame]);
 
   const forceRefresh = useCallback(() => {
     if (gameId) {
+      console.log('🔵 Force refreshing game:', gameId);
       setState(prev => ({ ...prev, loading: true, error: null }));
-      enhancedIGDBService.getGame(gameId, {
-        cacheTTL: options.ttl || 3600,
-        forceRefresh: true,
-      }).then(result => {
-        setState({
-          data: result,
-          loading: false,
-          error: null,
-          cached: false, // This is fresh data
-          timestamp: new Date(),
-          expiresAt: new Date(Date.now() + (options.ttl || 3600) * 1000),
+      
+      if (options.useDirectIGDB) {
+        directIGDBService.getGame(gameId).then(result => {
+          setState({
+            data: result,
+            loading: false,
+            error: null,
+            cached: false,
+            timestamp: new Date(),
+            expiresAt: new Date(Date.now() + (options.ttl || 3600) * 1000),
+          });
+        }).catch(error => {
+          setState(prev => ({
+            ...prev,
+            loading: false,
+            error: error as Error,
+          }));
+          options.onError?.(error);
         });
-      }).catch(error => {
-        setState(prev => ({
-          ...prev,
-          loading: false,
-          error: error as Error,
-        }));
-        options.onError?.(error);
-      });
+      } else {
+        enhancedIGDBService.getGame(gameId, {
+          cacheTTL: options.ttl || 3600,
+          forceRefresh: true,
+        }).then(result => {
+          setState({
+            data: result,
+            loading: false,
+            error: null,
+            cached: false,
+            timestamp: new Date(),
+            expiresAt: new Date(Date.now() + (options.ttl || 3600) * 1000),
+          });
+        }).catch(error => {
+          setState(prev => ({
+            ...prev,
+            loading: false,
+            error: error as Error,
+          }));
+          options.onError?.(error);
+        });
+      }
     }
-  }, [gameId, options.ttl, options.onError]);
+  }, [gameId, options.ttl, options.onError, options.useDirectIGDB]);
 
   useEffect(() => {
+    console.log('🔵 useEffect triggered - enabled:', options.enabled, 'gameId:', gameId);
     if (options.enabled !== false && gameId) {
       fetchGame(gameId);
     }
@@ -248,6 +331,8 @@ export function useIGDBSearch(
     isStale: state.expiresAt ? new Date() > state.expiresAt : false,
   };
 }
+
+// ... (rest of the hooks remain the same)
 
 // Hook for popular games
 export function usePopularGames(options: UseIGDBCacheOptions = {}) {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; // Use navigate instead of useRouter for React Router
-import { supabase } from '../utils/supabaseClient'; // Adjust path if needed (e.g., '../supabaseClient')
+import { supabase } from '../services/supabase';
 
 const Settings = () => {
   const [loading, setLoading] = useState(false);

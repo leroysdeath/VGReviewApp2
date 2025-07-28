@@ -21,7 +21,7 @@ export const Navbar: React.FC = () => {
                 <span className="text-xl font-bold text-white">GameVault</span>
               </Link>
               <Link
-                to="/dummy-game"
+                to="/1022"
                 className="p-2 bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
                 title="Dummy Test Game"
               >
@@ -42,7 +42,7 @@ export const Navbar: React.FC = () => {
                 <MessageSquare className="h-5 w-5 text-white" />
               </Link>
               <Link
-                to="/dummy-game"
+                to="/1022"
                 className="p-2 bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
                 title="Dummy Test Game"
               >
@@ -70,7 +70,7 @@ export const Navbar: React.FC = () => {
                 <Smartphone className="h-5 w-5 text-white" />
               </Link>
               <Link
-                to="/mobile-dummy-game"
+                to="/1022"
                 className="p-2 bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
                 title="Mobile Dummy Game Page"
               >

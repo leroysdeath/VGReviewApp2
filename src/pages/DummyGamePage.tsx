@@ -10,6 +10,7 @@ export const DummyGamePage: React.FC = () => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [coverImage, setCoverImage] = useState('https://images.pexels.com/photos/3945667/pexels-photo-3945667.jpeg?auto=compress&cs=tinysrgb&w=400');
   const [loading, setLoading] = useState(true);
+  console.log('DummyGamePage loaded');
 
   useEffect(() => {
     const fetchBOTWCover = async () => {
@@ -25,6 +26,7 @@ export const DummyGamePage: React.FC = () => {
       try {
         // Search for Breath of the Wild specifically
         const games = await igdbService.searchGames('The Legend of Zelda Breath of the Wild', 1);
+        console.log('Fetched BOTW games:', games);
         if (games.length > 0 && games[0].coverImage) {
           setCoverImage(games[0].coverImage);
         }
@@ -40,7 +42,7 @@ export const DummyGamePage: React.FC = () => {
   }, []);
   // Comprehensive dummy game data
   const dummyGame = {
-    id: 'dummy-test-game',
+    id: '1022',
     title: 'The Legend of Zelda: Breath of the Wild',
     coverImage: coverImage,
     releaseDate: '2017-03-03',
@@ -101,7 +103,7 @@ export const DummyGamePage: React.FC = () => {
     {
       id: 'review-1',
       userId: '1',
-      gameId: 'dummy-test-game',
+      gameId: '1022',
       rating: 9.5,
       text: 'Absolutely phenomenal! The open world is breathtaking and the freedom of exploration is unmatched. The physics engine creates endless possibilities for creative problem-solving. This is easily one of the best adventure games ever made. Every mountain you see can be climbed, every area explored.',
       date: '2024-01-20',
@@ -112,7 +114,7 @@ export const DummyGamePage: React.FC = () => {
     {
       id: 'review-2',
       userId: '2',
-      gameId: 'dummy-test-game',
+      gameId: '1022',
       rating: 8.5,
       text: 'Great game with stunning visuals and innovative gameplay mechanics. The cooking and weapon systems add depth to the survival elements. Some weapon durability issues, but nothing game-breaking. Definitely worth the price. The shrines provide excellent puzzle variety.',
       date: '2024-01-18',
@@ -123,7 +125,7 @@ export const DummyGamePage: React.FC = () => {
     {
       id: 'review-3',
       userId: '3',
-      gameId: 'dummy-test-game',
+      gameId: '1022',
       rating: 9.0,
       text: 'The attention to detail is remarkable. Every corner of Hyrule tells a story, and the environmental storytelling is masterful. The soundtrack is also absolutely beautiful. I found myself just standing on mountaintops to take in the scenery and listen to the ambient sounds.',
       date: '2024-01-15',
@@ -134,7 +136,7 @@ export const DummyGamePage: React.FC = () => {
     {
       id: 'review-4',
       userId: '4',
-      gameId: 'dummy-test-game',
+      gameId: '1022',
       rating: 8.0,
       text: 'Solid adventure game with great production values. The combat system takes some getting used to, but once you master it, it\'s very satisfying. Lots of content to keep you busy for months. The shrine quests are surprisingly creative and well-designed.',
       date: '2024-01-12',
@@ -145,7 +147,7 @@ export const DummyGamePage: React.FC = () => {
     {
       id: 'review-5',
       userId: '5',
-      gameId: 'dummy-test-game',
+      gameId: '1022',
       rating: 9.5,
       text: 'This game exceeded all my expectations. The world is vast and beautiful, and the sense of discovery is unmatched. A true masterpiece that sets a new standard for open-world adventure games. Link\'s journey feels truly epic.',
       date: '2024-01-10',
@@ -156,7 +158,7 @@ export const DummyGamePage: React.FC = () => {
     {
       id: 'review-6',
       userId: '6',
-      gameId: 'dummy-test-game',
+      gameId: '1022',
       rating: 7.5,
       text: 'Beautiful game with an engaging world, but the weapon durability system can be frustrating at times. The graphics are stunning and the exploration is addictive. Worth playing if you enjoy open-world adventures with a focus on discovery.',
       date: '2024-01-08',

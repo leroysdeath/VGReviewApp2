@@ -1,12 +1,6 @@
 // src/services/enhancedIGDBService.ts
-
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../services/supabase';
 import { browserCache } from './browserCacheService';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL!,
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
-);
 
 interface RequestOptions {
   useCache?: boolean;
