@@ -1,4 +1,4 @@
-iimport React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { Settings, ExternalLink } from 'lucide-react';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
