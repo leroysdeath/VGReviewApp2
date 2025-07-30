@@ -143,6 +143,12 @@ const profile = profileData || {
     setShowSettingsModal(true);
   };
 
+  const handleSettingsSuccess = () => {
+    setShowSettingsModal(false);
+    // Refresh profile data to get updated username
+    fetchProfileData();
+  };
+
   if (loading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
 
   return (
@@ -201,6 +207,7 @@ const profile = profileData || {
       <UserSettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
+        onSuccess={handleSettingsSuccess}
         userId={currentUserId}
       />
     </div>

@@ -1,335 +1,272 @@
-# VGReviewApp2 - Production Ready Gaming Platform
+# GameVault - Advanced Gaming Community Platform
 
-A modern, production-ready gaming community platform built with React, TypeScript, Supabase, and IGDB API integration. 
+A modern, feature-rich gaming community platform built with React, TypeScript, Supabase, and IGDB API integration. GameVault provides gamers with a comprehensive platform to discover, rate, review, and discuss their favorite games in an engaging social environment.
 
-## 🚀 Features
+## 🚀 Current Features
 
-### Core Features
-- **IGDB API Integration**: Real game data from the Internet Game Database
-- **User Authentication**: Secure authentication with Supabase Auth
-- **Game Discovery**: Search, browse, and discover games
-- **Rating System**: 1-10 scale ratings with half-point precision
-- **Reviews & Comments**: Detailed reviews and community discussions
-- **Responsive Design**: Mobile-first design that works on all devices
-- **Real-time Updates**: Live data synchronization with Supabase
+### 🎮 Core Gaming Features
+- **IGDB API Integration**: Real-time game data from the Internet Game Database
+- **Advanced Game Search**: Multi-filter search with platform, genre, rating, and release date filters
+- **Game Discovery**: Browse popular, trending, and recommended games
+- **Detailed Game Pages**: Rich game information with screenshots, descriptions, and metadata
+- **Rating System**: 1-10 scale ratings with half-point precision and visual star ratings
+- **Review System**: Comprehensive reviews with like/dislike functionality
+- **Game Collections**: Personal game lists (wishlist, favorites, completed, etc.)
 
-### Production Features
-- **SEO Optimized**: Meta tags, OpenGraph, structured data
-- **Image Optimization**: Automatic image optimization and lazy loading
+### 👤 User Management & Authentication
+- **Supabase Authentication**: Secure user registration and login
+- **Advanced User Profiles**: Customizable profiles with avatars, bios, and social links
+- **Username System**: Unique usernames with validation and change tracking (3 changes per day)
+- **Email Management**: Email verification and change functionality with validation
+- **User Settings Modal**: Comprehensive profile editing with unsaved changes protection
+- **User Activity Feeds**: Real-time activity tracking and display
+- **Follow System**: User following/followers with social interactions
+
+### 🎨 Modern UI/UX
+- **Responsive Design**: Mobile-first design optimized for all devices
+- **Modern Navigation**: Multiple navbar variants with user-friendly interfaces
+- **Dark Theme**: Sleek dark theme with purple/blue accent colors
+- **Interactive Components**: Hover effects, animations, and smooth transitions
+- **Modal System**: Advanced modal management with backdrop handling
+- **Real-time Updates**: Live data synchronization and notifications
+- **Optimized Images**: Lazy loading and image optimization
+
+### 🔧 Advanced Technical Features
+- **Performance Optimized**: Code splitting, virtual scrolling, and optimized rendering
+- **Caching System**: Multi-layer caching for IGDB data and user content
 - **Error Boundaries**: Graceful error handling and recovery
-- **Performance**: Code splitting, caching, and optimization
+- **SEO Optimized**: Meta tags, OpenGraph, and structured data
 - **PWA Ready**: Progressive Web App capabilities
-- **Analytics Ready**: Google Analytics and error tracking integration
+- **Real-time Features**: Live activity feeds and notifications
+- **Database Migrations**: Complete database schema with proper relationships
+
+### 📊 Social & Community Features
+- **Activity Feeds**: Real-time user activity tracking
+- **Notification System**: Comprehensive notification management
+- **Comment System**: Threaded comments on reviews
+- **Like System**: Like/dislike functionality for reviews and comments
+- **User Stats**: Gaming statistics and achievements
+- **Search Users**: Find and connect with other gamers
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React 18, TypeScript, Tailwind CSS
-- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
-- **API**: IGDB (Internet Game Database) via Netlify Functions
-- **Deployment**: Netlify
-- **Icons**: Lucide React
-- **Routing**: React Router v6
+### Frontend
+- **React 18** with TypeScript
+- **Tailwind CSS** for styling
+- **React Router v6** for navigation
+- **React Hook Form** with Zod validation
+- **Lucide React** for icons
+- **Material-UI** components
+- **Zustand** for state management
 
-## 📦 Installation
+### Backend & Database
+- **Supabase** (PostgreSQL, Auth, Real-time, Edge Functions)
+- **Row Level Security (RLS)** for data protection
+- **Complex database schema** with proper relationships
+- **Database migrations** with version control
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd vgreviewapp2
+### External APIs
+- **IGDB API** via Netlify Functions for game data
+- **Twitch API** for IGDB authentication
+
+### Development & Deployment
+- **Vite** for build tooling
+- **TypeScript** for type safety
+- **ESLint** for code quality
+- **Netlify** for deployment and serverless functions
+
+## 📦 Installation & Setup
+
+### Prerequisites
+- Node.js >= 20.0.0
+- npm >= 8.0.0
+- Supabase account
+- Twitch Developer account (for IGDB API)
+
+### 1. Clone and Install
+```bash
+git clone <repository-url>
+cd VGReviewApp2-UserLoginSys-1A
+npm install
+```
+
+### 2. Environment Configuration
+
+Create a `.env` file in the root directory:
+
+```env
+# Supabase Configuration
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# IGDB/Twitch API Configuration
+TWITCH_CLIENT_ID=your_twitch_client_id
+TWITCH_APP_ACCESS_TOKEN=your_twitch_access_token
+
+# Application Configuration
+VITE_APP_ENV=development
+VITE_APP_URL=http://localhost:5173
+```
+
+### 3. Database Setup
+
+1. Create a new Supabase project
+2. Run the database migrations in order:
+   ```sql
+   -- Run in Supabase SQL Editor
+   -- Execute: supabase/migrations/[timestamp]_complete_gamevault_schema.sql
+   -- Execute: supabase/migrations/20250130000000_username_change_tracking.sql
    ```
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+### 4. IGDB API Setup
 
-3. **Environment Setup**
-   ```bash
-   cp .env.example .env
-   ```
-
-4. **Configure environment variables** ⚠️ **IMPORTANT**
-   
-   Open the `.env` file and replace all placeholder values with your actual API keys and URLs:
-   
-   ```env
-   # Supabase Configuration
-   VITE_SUPABASE_URL=https://your-project.supabase.co
-   VITE_SUPABASE_ANON_KEY=your_actual_supabase_anon_key
-
-   # IGDB API Configuration
-
-
-   # Production Environment
-   VITE_APP_ENV=production
-   VITE_APP_URL=https://your-domain.com
-   ```
-   
-   **⚠️ Security Note**: Never commit the `.env` file to version control. It's already included in `.gitignore`.
-
-## 🔐 Environment Variables Setup
-
-### Required Variables
-
-The application requires the following environment variables to function properly:
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `VITE_SUPABASE_URL` | Your Supabase project URL | `https://abc123.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anonymous key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
-| `VITE_IGDB_CLIENT_ID` | Your IGDB API client ID | `your_client_id` |
-| `VITE_IGDB_ACCESS_TOKEN` | Your IGDB API access token | `your_access_token` |
-
-### Optional Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_APP_ENV` | Application environment | `development` |
-| `VITE_APP_URL` | Application URL | `http://localhost:5173` |
-| `VITE_GOOGLE_ANALYTICS_ID` | Google Analytics tracking ID | - |
-| `VITE_SENTRY_DSN` | Sentry error tracking DSN | - |
-
-### Setup Instructions
-
-1. **Copy the example file**:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. **Get your Supabase credentials**:
-   - Go to [Supabase Dashboard](https://supabase.com/dashboard)
-   - Select your project
-   - Go to Settings → API
-   - Copy the Project URL and anon public key
-
-3. **Get your IGDB credentials**:
-   - Go to [IGDB API](https://api.igdb.com/)
-   - Create an account and register your application
-   - Get your Client ID and Access Token
-
-4. **Update your `.env` file** with the actual values
-
-5. **Restart your development server** after updating environment variables
-
-### Environment Validation
-
-The application includes automatic environment variable validation that will:
-- Check for missing required variables
-- Detect placeholder values that haven't been replaced
-- Validate URL formats
-- Show helpful error messages in development
-
-If you see an environment configuration error, make sure all required variables are set with valid values.
-
-### Security Best Practices
-
-- ✅ **DO**: Use environment variables for all secrets and configuration
-- ✅ **DO**: Keep `.env` files out of version control
-- ✅ **DO**: Use different values for development and production
-- ✅ **DO**: Regularly rotate API keys and tokens
-- ❌ **DON'T**: Hardcode secrets in source files
-- ❌ **DON'T**: Commit `.env` files to Git
-- ❌ **DON'T**: Share environment files via insecure channels
-
-## 🗄️ Database Setup
-
-1. **Create Supabase Project**
-   - Go to [Supabase](https://supabase.com)
-   - Create a new project
-   - Copy your project URL and anon key
-
-2. **Run Migrations**
-   ```bash
-   # In Supabase SQL Editor, run:
-   # supabase/migrations/20250710062526_crimson_dust.sql
-   ```
-
-## 🎮 IGDB API Setup
-
-1. **Create IGDB Account**
-   - Go to [Twitch Developer Console](https://dev.twitch.tv/console/apps)
-   - Create a new application
-   - Copy the Client ID
-
-2. **Get Access Token**
+1. Go to [Twitch Developer Console](https://dev.twitch.tv/console/apps)
+2. Create a new application
+3. Copy the Client ID
+4. Generate an access token:
    ```bash
    curl -X POST "https://id.twitch.tv/oauth2/token" \
      -H "Content-Type: application/x-www-form-urlencoded" \
      -d "client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET&grant_type=client_credentials"
    ```
 
-3. **Configure Environment Variables**
-   - Add TWITCH_CLIENT_ID and TWITCH_APP_ACCESS_TOKEN to your .env file
-
-## 🚀 Deployment
-
-
-1. **Connect Repository**
-   - Connect your GitHub repository to Netlify
-   - Netlify will automatically detect the build settings from `netlify.toml`
-
-2. **Environment Variables**
-   - Go to Site settings > Environment variables in Netlify dashboard
-   - Add the following variables:
-   ```
-   TWITCH_CLIENT_ID=your_twitch_client_id
-   TWITCH_APP_ACCESS_TOKEN=your_twitch_app_access_token
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
-
-3. **IGDB API Setup**
-   - Create app at [Twitch Developer Console](https://dev.twitch.tv/console/apps)
-   - Get Client ID and generate App Access Token:
-   ```bash
-   curl -X POST 'https://id.twitch.tv/oauth2/token' \
-     -H 'Content-Type: application/x-www-form-urlencoded' \
-     -d 'client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET&grant_type=client_credentials'
-   ```
-
-4. **Deploy**
-   - Push to your main branch
-   - Netlify will automatically build and deploy
-   - Functions will be available at `/.netlify/functions/igdb-search`
+## 🚀 Development
 
 ### Local Development
-
-1. **Install Netlify CLI**
-   ```bash
-   npm install -g netlify-cli
-   ```
-
-2. **Run Local Development Server**
-   ```bash
-   netlify dev
-   ```
-   This will start the app at `http://localhost:8888` with functions working properly.
-
-3. **Alternative Development (without functions)**
-   ```bash
-   npm run dev
-   ```
-   This will use mock data for IGDB integration.
-
-## 🧪 Testing IGDB Integration
-
-1. **Access Test Page** (Development only)
-   - Navigate to `/igdb-test` in development mode
-   - Use the debug tools to test API calls
-   - Check function health and environment variables
-
-2. **Manual Testing**
-   - Test search functionality on the main search page
-   - Check browser console for detailed logs
-   - Verify function responses in Network tab
-
-## 🔧 API Integration
-
-The application supports multiple IGDB API integration methods:
-
-### 1. Netlify Functions (Recommended for Netlify deployments)
-- **Endpoint**: `/.netlify/functions/igdb-search`
-- **Benefits**: Better performance, automatic scaling, built-in caching
-- **Setup**: Automatically configured when deploying to Netlify
-
-### 2. Supabase Edge Functions
-- **Endpoint**: `${SUPABASE_URL}/functions/v1/igdb-proxy`
-- **Benefits**: Integrated with Supabase ecosystem
-- **Setup**: Requires Supabase project with edge functions enabled
-
-### 3. Mock Data Fallback
-- **Usage**: When API services are unavailable
-- **Benefits**: Ensures app functionality during development
-- **Data**: Curated set of popular games for testing
-
-The application automatically detects and uses the best available option.
-
-## 📱 PWA Features
-
-The app includes Progressive Web App features:
-- Offline functionality
-- Install prompts
-- App-like experience
-- Push notifications (ready)
-
-## 🔧 Development
-
 ```bash
-# Start development server with functions
-netlify dev
-
-# Start development server (mock data)
+# Start development server
 npm run dev
 
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
+# Start with Netlify functions (recommended)
+netlify dev
 
 # Type checking
 npm run type-check
 
 # Linting
 npm run lint
+
+# Build for production
+npm run build
 ```
 
-## 📊 Performance
+### Testing Features
+- Navigate to `/igdb-test` in development for API testing
+- Use the various demo pages to test components
+- Check browser console for detailed logging
 
-- **Lighthouse Score**: 95+ across all metrics
-- **Core Web Vitals**: Optimized for LCP, FID, CLS
-- **Bundle Size**: Optimized with code splitting
-- **Caching**: Aggressive caching strategies
+## 🗄️ Database Schema
+
+The application uses a comprehensive PostgreSQL schema with:
+
+### Core Tables
+- **users**: Extended user profiles with provider integration
+- **games**: IGDB-integrated game database
+- **ratings**: User ratings and reviews (1-10 scale)
+- **comments**: Threaded comment system
+- **notifications**: Real-time notification system
+- **user_follows**: Social following system
+- **username_changes**: Username change tracking with daily limits
+
+### Advanced Features
+- **Row Level Security (RLS)** on all tables
+- **Database triggers** for automatic updates
+- **Proper indexes** for performance
+- **Foreign key constraints** for data integrity
+
+## 🔧 Key Components
+
+### User Interface
+- **UserSettingsModal**: Advanced profile editing with validation
+- **ResponsiveNavbar**: Multi-device navigation system
+- **GameCard**: Interactive game display components
+- **ActivityFeed**: Real-time user activity display
+- **SearchBar**: Advanced search with filtering
+
+### Services
+- **emailService**: Email validation and verification
+- **usernameService**: Username management with rate limiting
+- **igdbService**: Game data integration with caching
+- **authService**: Authentication management
+- **notificationService**: Real-time notifications
+
+## 🚀 Deployment
+
+### Netlify Deployment
+1. Connect your repository to Netlify
+2. Configure environment variables in Netlify dashboard
+3. Deploy - the build settings are configured in `netlify.toml`
+
+### Environment Variables for Production
+```env
+TWITCH_CLIENT_ID=your_production_client_id
+TWITCH_APP_ACCESS_TOKEN=your_production_access_token
+VITE_SUPABASE_URL=your_production_supabase_url
+VITE_SUPABASE_ANON_KEY=your_production_supabase_key
+VITE_APP_ENV=production
+VITE_APP_URL=https://your-domain.com
+```
+
+## 📱 Features in Detail
+
+### Advanced User Profiles
+- Modal-based profile editing with unsaved changes protection
+- Username validation with uniqueness checking and daily limits
+- Email verification and change system with database validation
+- Real-time form validation with visual feedback
+- Avatar upload and management
+
+### Game Discovery & Management
+- Advanced search with multiple filters
+- Real-time game data from IGDB
+- Caching system for improved performance
+- Game collections and personal lists
+- Rating and review system with social features
+
+### Social Features
+- User following system
+- Real-time activity feeds
+- Notification system
+- Comment threads on reviews
+- Like/dislike functionality
 
 ## 🔒 Security
 
-- Row Level Security (RLS) enabled
-- CORS properly configured
-- Input validation and sanitization
-- Secure authentication flow
-- Environment variable protection
+- **Row Level Security (RLS)** implemented on all database tables
+- **Input validation** with Zod schemas
+- **CORS properly configured** for API access
+- **Environment variable protection**
+- **Secure authentication flow** with Supabase Auth
+- **Rate limiting** on sensitive operations (username changes)
 
-## 🧪 Testing
+## 📊 Performance
 
-```bash
-# Run tests (when implemented)
-npm run test
-
-# E2E tests (when implemented)
-npm run test:e2e
-```
-
-## 📈 Analytics & Monitoring
-
-Ready for integration with:
-- Google Analytics 4
-- Sentry error tracking
-- Performance monitoring
-- User behavior analytics
+- **Optimized bundle size** with code splitting
+- **Virtual scrolling** for large lists
+- **Image optimization** and lazy loading
+- **Database query optimization** with proper indexes
+- **Caching strategies** for external API calls
+- **Real-time subscriptions** for live data
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🆘 Support
 
-For support and questions:
+For questions and support:
 - Check the documentation
 - Open an issue on GitHub
-- Contact the development team
-
-## 🔄 Updates
-
-The app includes automatic update checking and can notify users of new versions.
+- Review the code comments for implementation details
 
 ---
 
-Built with ❤️ for the gaming community
+**GameVault** - Built with ❤️ for the gaming community

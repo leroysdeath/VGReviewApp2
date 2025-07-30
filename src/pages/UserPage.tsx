@@ -3,11 +3,12 @@ import { useParams, Navigate } from 'react-router-dom';
 import { UserPageLayout } from '../components/UserPageLayout';
 import { UserPageContent } from '../components/UserPageContent';
 import { supabase } from '../services/supabase';
+import { usernameService } from '../services/usernameService';
 import { useEffect } from 'react';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export const UserPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { username } = useParams<{ username: string }>();
   const [activeTab, setActiveTab] = useState<'top5' | 'last5' | 'reviews' | 'activity' | 'lists'>('top5');
   const [reviewFilter, setReviewFilter] = useState('recent');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -19,19 +20,17 @@ export const UserPage: React.FC = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!id) return;
+      if (!username) return;
       
       try {
         setLoading(true);
         
-        // Fetch user data
-        const { data: userData, error: userError } = await supabase
-          .from('user')
-          .select('*')
-          .eq('id', id)
-          .single();
-          
-        if (userError) throw userError;
+        // Fetch user data by username
+        const userData = await usernameService.getUserByUsername(username);
+        if (!userData) {
+          setError('User not found');
+          return;
+        }
         
         // Fetch user reviews
         const { data: reviewsData, error: reviewsError } = await supabase
@@ -40,7 +39,7 @@ export const UserPage: React.FC = () => {
             *,
             game:game_id(*)
           `)
-          .eq('user_id', id);
+          .eq('user_id', userData.id);
           
         if (reviewsError) throw reviewsError;
         
@@ -67,7 +66,7 @@ export const UserPage: React.FC = () => {
     };
     
     fetchUserData();
-  }, [id]);
+  }, [username]);
 
   if (loading) {
     return <LoadingSpinner size="lg" text="Loading user profile..." />;

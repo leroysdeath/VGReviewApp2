@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { usernameService } from '../../services/usernameService';
+import { emailService } from '../../services/emailService';
 import { 
   User, 
   Mail, 
@@ -16,16 +18,14 @@ import {
   Key,
   Eye,
   EyeOff,
-  Bell,
+  Trash2,
   Shield,
-  Trash2
+  ShieldCheck
 } from 'lucide-react';
 
 // Form validation schema
 const profileSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
-  displayName: z.string().optional(),
-  email: z.string().email('Please enter a valid email address'),
   bio: z.string().max(160, 'Bio must be 160 characters or less').optional(),
   location: z.string().max(50, 'Location must be 50 characters or less').optional(),
   website: z.string().url('Please enter a valid URL').or(z.string().length(0)).optional(),
@@ -40,13 +40,18 @@ const profileSchema = z.object({
   }).optional()
 });
 
+// Email change validation schema
+const emailSchema = z.object({
+  email: z.string().email('Please enter a valid email address')
+});
+
 type ProfileFormValues = z.infer<typeof profileSchema>;
+type EmailFormValues = z.infer<typeof emailSchema>;
 
 interface UserSettingsPanelProps {
   userId?: string;  // Add this for compatibility
   initialData?: {   // Make this optional
     username: string;
-    displayName?: string;
     email: string;
     bio?: string;
     location?: string;
@@ -74,7 +79,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   userId,
   initialData = {    // Provide default values
     username: '',
-    displayName: '',
     email: '',
     bio: '',
     location: '',
@@ -89,12 +93,42 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   onSuccess,
   onFormChange
 }) => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'notifications' | 'privacy'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'notifications'>('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData.avatar || null);
+  const [usernameValidation, setUsernameValidation] = useState<{
+    isValid: boolean;
+    error?: string;
+    isChecking: boolean;
+    changesRemaining: number;
+  }>({
+    isValid: true,
+    isChecking: false,
+    changesRemaining: 3
+  });
+
+  const [emailValidation, setEmailValidation] = useState<{
+    isValid: boolean;
+    error?: string;
+    isChecking: boolean;
+    needsVerification?: boolean;
+  }>({
+    isValid: true,
+    isChecking: false
+  });
+
+  const [emailVerificationStatus, setEmailVerificationStatus] = useState<{
+    isVerified: boolean;
+    isChecking: boolean;
+    email: string;
+  }>({
+    isVerified: true,
+    isChecking: false,
+    email: initialData.email
+  });
 
   // Form setup
   const { 
@@ -107,8 +141,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       username: initialData.username,
-      displayName: initialData.displayName || '',
-      email: initialData.email,
       bio: initialData.bio || '',
       location: initialData.location || '',
       website: initialData.website || '',
@@ -124,10 +156,113 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     }
   });
 
+  // Email form setup
+  const emailForm = useForm<EmailFormValues>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: {
+      email: initialData.email
+    }
+  });
+
   // Notify parent of form dirty state changes
   useEffect(() => {
     onFormChange?.(isDirty);
   }, [isDirty, onFormChange]);
+
+  // Load initial username changes remaining
+  useEffect(() => {
+    if (userId) {
+      loadUsernameChangesRemaining();
+      loadEmailVerificationStatus();
+    }
+  }, [userId]);
+
+  const loadUsernameChangesRemaining = async () => {
+    if (!userId) return;
+    try {
+      const remaining = await usernameService.getRemainingChanges(parseInt(userId));
+      setUsernameValidation(prev => ({ ...prev, changesRemaining: remaining }));
+    } catch (error) {
+      console.error('Error loading username changes remaining:', error);
+    }
+  };
+
+  const loadEmailVerificationStatus = async () => {
+    if (!userId) return;
+    try {
+      setEmailVerificationStatus(prev => ({ ...prev, isChecking: true }));
+      const status = await emailService.getEmailVerificationStatus(parseInt(userId));
+      setEmailVerificationStatus({
+        isVerified: status.isVerified,
+        isChecking: false,
+        email: status.email
+      });
+    } catch (error) {
+      console.error('Error loading email verification status:', error);
+      setEmailVerificationStatus(prev => ({ ...prev, isChecking: false }));
+    }
+  };
+
+  // Debounced username validation
+  useEffect(() => {
+    const currentUsername = watch('username');
+    if (!currentUsername || currentUsername === initialData.username || !userId) {
+      setUsernameValidation(prev => ({ ...prev, isValid: true, error: undefined }));
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setUsernameValidation(prev => ({ ...prev, isChecking: true }));
+      try {
+        const validation = await usernameService.validateUsername(currentUsername, parseInt(userId));
+        setUsernameValidation({
+          isValid: validation.isValid,
+          error: validation.error,
+          isChecking: false,
+          changesRemaining: validation.changesRemaining
+        });
+      } catch (error) {
+        setUsernameValidation({
+          isValid: false,
+          error: 'Error validating username',
+          isChecking: false,
+          changesRemaining: 0
+        });
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [watch('username'), initialData.username, userId]);
+
+  // Debounced email validation
+  useEffect(() => {
+    const currentEmail = emailForm.watch('email');
+    if (!currentEmail || currentEmail === initialData.email || !userId) {
+      setEmailValidation(prev => ({ ...prev, isValid: true, error: undefined }));
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setEmailValidation(prev => ({ ...prev, isChecking: true }));
+      try {
+        const validation = await emailService.validateEmail(currentEmail, parseInt(userId));
+        setEmailValidation({
+          isValid: validation.isValid,
+          error: validation.error,
+          isChecking: false,
+          needsVerification: validation.needsVerification
+        });
+      } catch (error) {
+        setEmailValidation({
+          isValid: false,
+          error: 'Error validating email',
+          isChecking: false
+        });
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [emailForm.watch('email'), initialData.email, userId]);
 
   // Password change form
   const passwordForm = useForm({
@@ -172,9 +307,36 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     setSaveSuccess(false);
 
     try {
+      // Check if username is changing
+      const isUsernameChanging = data.username !== initialData.username;
+      
+      if (isUsernameChanging && userId) {
+        // Validate username change
+        if (!usernameValidation.isValid) {
+          setSaveError(usernameValidation.error || 'Username is not valid');
+          return;
+        }
+
+        // Handle username change through the service
+        const result = await usernameService.changeUsername(
+          parseInt(userId),
+          initialData.username,
+          data.username
+        );
+
+        if (!result.success) {
+          setSaveError(result.error || 'Failed to change username');
+          return;
+        }
+
+        // Refresh changes remaining count
+        await loadUsernameChangesRemaining();
+      }
+
       if (onSave) {
         await onSave(data);
       }
+      
       setSaveSuccess(true);
       setTimeout(() => {
         setSaveSuccess(false);
@@ -184,6 +346,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       // Reset form with new values
       reset(data);
     } catch (error) {
+      console.error('Save error:', error);
       setSaveError('Failed to save changes. Please try again.');
     } finally {
       setIsLoading(false);
@@ -251,16 +414,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
           >
             Notifications
           </button>
-          <button
-            onClick={() => setActiveTab('privacy')}
-            className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'privacy'
-                ? 'border-purple-500 text-purple-400'
-                : 'border-transparent text-gray-400 hover:text-white'
-            }`}
-          >
-            Privacy & Security
-          </button>
         </div>
       </div>
 
@@ -322,67 +475,54 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
             {/* Username */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-1">
-                Username
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-300">
+                  Username
+                </label>
+                <span className="text-xs text-gray-400">
+                  {usernameValidation.changesRemaining} changes remaining today
+                </span>
+              </div>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                 <input
                   id="username"
                   type="text"
                   {...register('username')}
-                  className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                    errors.username ? 'border-red-500' : 'border-gray-600'
+                  className={`w-full pl-10 pr-10 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                    errors.username || (!usernameValidation.isValid && !usernameValidation.isChecking) 
+                      ? 'border-red-500' 
+                      : usernameValidation.isValid && watch('username') !== initialData.username
+                      ? 'border-green-500'
+                      : 'border-gray-600'
                   }`}
                   placeholder="GamerTag"
                   disabled={isLoading}
                 />
+                {/* Validation status indicator */}
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  {usernameValidation.isChecking ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                  ) : watch('username') && watch('username') !== initialData.username ? (
+                    usernameValidation.isValid ? (
+                      <Check className="h-5 w-5 text-green-400" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-red-400" />
+                    )
+                  ) : null}
+                </div>
               </div>
               {errors.username && (
                 <p className="mt-1 text-sm text-red-400">{errors.username.message}</p>
               )}
-            </div>
-
-            {/* Display Name */}
-            <div>
-              <label htmlFor="displayName" className="block text-sm font-medium text-gray-300 mb-1">
-                Display Name (optional)
-              </label>
-              <input
-                id="displayName"
-                type="text"
-                {...register('displayName')}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                placeholder="Your public display name"
-                disabled={isLoading}
-              />
-              {errors.displayName && (
-                <p className="mt-1 text-sm text-red-400">{errors.displayName.message}</p>
+              {!errors.username && usernameValidation.error && (
+                <p className="mt-1 text-sm text-red-400">{usernameValidation.error}</p>
+              )}
+              {!errors.username && !usernameValidation.error && watch('username') && watch('username') !== initialData.username && usernameValidation.isValid && (
+                <p className="mt-1 text-sm text-green-400">Username is available!</p>
               )}
             </div>
 
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                <input
-                  id="email"
-                  type="email"
-                  {...register('email')}
-                  className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                    errors.email ? 'border-red-500' : 'border-gray-600'
-                  }`}
-                  placeholder="your.email@example.com"
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
-              )}
-            </div>
 
             {/* Bio */}
             <div>
@@ -457,7 +597,12 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={isLoading || !isDirty}
+                disabled={
+                  isLoading || 
+                  !isDirty || 
+                  usernameValidation.isChecking ||
+                  (watch('username') !== initialData.username && !usernameValidation.isValid)
+                }
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? (
@@ -479,6 +624,168 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         {/* Account Settings */}
         {activeTab === 'account' && (
           <div className="space-y-8">
+            {/* Email Change */}
+            <div className="bg-gray-750 rounded-lg p-6 border border-gray-700">
+              <h3 className="text-lg font-medium text-white mb-4">Email Address</h3>
+              <form onSubmit={emailForm.handleSubmit(async (data) => {
+                setIsLoading(true);
+                setSaveError(null);
+                try {
+                  if (!userId) {
+                    setSaveError('User ID not found');
+                    return;
+                  }
+
+                  // Check validation before submitting
+                  if (!emailValidation.isValid && !emailValidation.isChecking) {
+                    setSaveError(emailValidation.error || 'Email validation failed');
+                    return;
+                  }
+
+                  const result = await emailService.changeEmail(parseInt(userId), data.email);
+                  
+                  if (!result.success) {
+                    setSaveError(result.error || 'Failed to update email address');
+                    return;
+                  }
+
+                  if (result.needsVerification) {
+                    setSaveError(null);
+                    // Update email form with the new email
+                    emailForm.reset({ email: data.email });
+                    // Refresh verification status
+                    await loadEmailVerificationStatus();
+                    setSaveSuccess(true);
+                    // Show verification message for longer
+                    setTimeout(() => {
+                      setSaveSuccess(false);
+                    }, 5000);
+                  } else {
+                    setSaveSuccess(true);
+                    setTimeout(() => setSaveSuccess(false), 3000);
+                  }
+                } catch (error) {
+                  console.error('Email change error:', error);
+                  setSaveError('Failed to update email address');
+                } finally {
+                  setIsLoading(false);
+                }
+              })} className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="account-email" className="block text-sm font-medium text-gray-300">
+                      Email Address
+                    </label>
+                    <div className="flex items-center gap-2">
+                      {emailVerificationStatus.isChecking ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      ) : emailVerificationStatus.isVerified ? (
+                        <div className="flex items-center gap-1 text-green-400">
+                          <ShieldCheck className="h-4 w-4" />
+                          <span className="text-xs">Verified</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-yellow-400">
+                          <Shield className="h-4 w-4" />
+                          <span className="text-xs">Unverified</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                    <input
+                      id="account-email"
+                      type="email"
+                      {...emailForm.register('email')}
+                      className={`w-full pl-10 pr-10 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                        emailForm.formState.errors.email || (!emailValidation.isValid && !emailValidation.isChecking) 
+                          ? 'border-red-500' 
+                          : emailValidation.isValid && emailForm.watch('email') !== initialData.email
+                          ? 'border-green-500'
+                          : 'border-gray-600'
+                      }`}
+                      placeholder="your.email@example.com"
+                      disabled={isLoading}
+                    />
+                    {/* Validation status indicator */}
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      {emailValidation.isChecking ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                      ) : emailForm.watch('email') && emailForm.watch('email') !== initialData.email ? (
+                        emailValidation.isValid ? (
+                          <Check className="h-5 w-5 text-green-400" />
+                        ) : (
+                          <AlertCircle className="h-5 w-5 text-red-400" />
+                        )
+                      ) : null}
+                    </div>
+                  </div>
+                  {emailForm.formState.errors.email && (
+                    <p className="mt-1 text-sm text-red-400">{emailForm.formState.errors.email.message}</p>
+                  )}
+                  {!emailForm.formState.errors.email && emailValidation.error && (
+                    <p className="mt-1 text-sm text-red-400">{emailValidation.error}</p>
+                  )}
+                  {!emailForm.formState.errors.email && !emailValidation.error && emailForm.watch('email') && emailForm.watch('email') !== initialData.email && emailValidation.isValid && (
+                    <p className="mt-1 text-sm text-green-400">Email address is available!</p>
+                  )}
+                  <p className="mt-1 text-xs text-gray-400">
+                    We'll send a verification email to any new address before making the change.
+                  </p>
+                  
+                  {/* Resend verification button for unverified emails */}
+                  {!emailVerificationStatus.isVerified && emailForm.watch('email') === initialData.email && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          setIsLoading(true);
+                          const result = await emailService.resendEmailVerification();
+                          if (result.success) {
+                            setSaveSuccess(true);
+                            setTimeout(() => setSaveSuccess(false), 3000);
+                          } else {
+                            setSaveError(result.error || 'Failed to resend verification email');
+                          }
+                        } catch (error) {
+                          setSaveError('Failed to resend verification email');
+                        } finally {
+                          setIsLoading(false);
+                        }
+                      }}
+                      disabled={isLoading}
+                      className="mt-2 text-xs text-purple-400 hover:text-purple-300 underline disabled:opacity-50"
+                    >
+                      Resend verification email
+                    </button>
+                  )}
+                </div>
+                
+                {/* Submit button */}
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={
+                      isLoading || 
+                      !emailForm.formState.isDirty || 
+                      emailValidation.isChecking ||
+                      (emailForm.watch('email') !== initialData.email && !emailValidation.isValid)
+                    }
+                    className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      'Update Email'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
             {/* Password Change */}
             <div className="bg-gray-750 rounded-lg p-6 border border-gray-700">
               <h3 className="text-lg font-medium text-white mb-4">Change Password</h3>
@@ -789,170 +1096,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               </button>
             </div>
           </form>
-        )}
-
-        {/* Privacy & Security Settings */}
-        {activeTab === 'privacy' && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium text-white mb-4">Privacy & Security</h3>
-            
-            {/* Privacy Settings */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Profile Visibility</h4>
-                  <p className="text-sm text-gray-400">Control who can see your profile</p>
-                </div>
-                <select
-                  className="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  defaultValue="public"
-                >
-                  <option value="public">Public</option>
-                  <option value="followers">Followers Only</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Activity Visibility</h4>
-                  <p className="text-sm text-gray-400">Control who can see your gaming activity</p>
-                </div>
-                <select
-                  className="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  defaultValue="public"
-                >
-                  <option value="public">Public</option>
-                  <option value="followers">Followers Only</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Show Online Status</h4>
-                  <p className="text-sm text-gray-400">Let others see when you're online</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    defaultChecked={true}
-                    className="sr-only peer" 
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-            </div>
-
-            {/* Security Settings */}
-            <div className="mt-8">
-              <h3 className="text-lg font-medium text-white mb-4">Security</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Shield className="h-6 w-6 text-green-400" />
-                    <div>
-                      <h4 className="font-medium text-white">Two-Factor Authentication</h4>
-                      <p className="text-sm text-gray-400">Add an extra layer of security to your account</p>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                    Enable
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Bell className="h-6 w-6 text-yellow-400" />
-                    <div>
-                      <h4 className="font-medium text-white">Login Alerts</h4>
-                      <p className="text-sm text-gray-400">Get notified of new logins to your account</p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={true}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Key className="h-6 w-6 text-blue-400" />
-                    <div>
-                      <h4 className="font-medium text-white">Active Sessions</h4>
-                      <p className="text-sm text-gray-400">Manage devices where you're logged in</p>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
-                    Manage
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Data & Privacy */}
-            <div className="mt-8">
-              <h3 className="text-lg font-medium text-white mb-4">Data & Privacy</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-white">Data Collection</h4>
-                    <p className="text-sm text-gray-400">Allow us to collect usage data to improve your experience</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={true}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-white">Personalized Recommendations</h4>
-                    <p className="text-sm text-gray-400">Allow us to suggest games based on your activity</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={true}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-white">Marketing Emails</h4>
-                    <p className="text-sm text-gray-400">Receive emails about new features and promotions</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={false}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <button className="text-purple-400 hover:text-purple-300 transition-colors text-sm">
-                  Download my data
-                </button>
-              </div>
-            </div>
-          </div>
         )}
       </div>
     </div>

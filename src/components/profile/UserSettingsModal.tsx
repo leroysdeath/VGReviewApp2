@@ -5,12 +5,14 @@ import { UserSettingsPanel } from './UserSettingsPanel';
 interface UserSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   userId: string;
 }
 
 export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ 
   isOpen, 
   onClose,
+  onSuccess,
   userId 
 }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -74,7 +76,11 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   // Handle successful save
   const handleSuccess = () => {
     setHasUnsavedChanges(false);
-    onClose();
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      onClose();
+    }
   };
 
   // Handle confirm close without saving

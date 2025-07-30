@@ -44,7 +44,7 @@ function App() {
                   <Route path="/game/:id" element={<GamePage />} />
                   <Route path="/search" element={<SearchResultsPage />} />
                   <Route path="/search-results" element={<SearchResultsPage />} />
-                  <Route path="/user/:id" element={<UserPage />} />
+                  <Route path="/user/:username" element={<UserPage />} />
                   <Route path="/users" element={<UserSearchPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/review/:gameId?" element={<ReviewFormPage />} />
