@@ -1,6 +1,6 @@
 # GameVault - Advanced Gaming Community Platform
 
-A modern, feature-rich gaming community platform built with React, TypeScript, Supabase, and IGDB API integration. GameVault provides gamers with a comprehensive platform to discover, rate, review, and discuss their favorite games in an engaging social environment. a
+A modern, feature-rich gaming community platform built with React, TypeScript, Supabase, and IGDB API integration. GameVault provides gamers with a comprehensive platform to discover, rate, review, and discuss their favorite games in an engaging social environment.
 
 ## 🚀 Current Features
 
