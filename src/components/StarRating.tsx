@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Star } from 'lucide-react';
 
 interface StarRatingProps {
@@ -15,7 +15,7 @@ export const StarRating: React.FC<StarRatingProps> = ({
   size = 'md'
 }) => {
   const maxRating = 10;
-  const stars = [];
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
 
   const sizeClasses = {
     sm: 'h-4 w-4',
@@ -24,68 +24,88 @@ export const StarRating: React.FC<StarRatingProps> = ({
   };
 
   const starSize = sizeClasses[size];
+  const displayRating = hoverRating !== null ? hoverRating : rating;
 
-  for (let i = 1; i <= maxRating; i++) {
-    const isFilled = i <= rating;
-    const isHalf = i - 0.5 <= rating && rating < i;
+  const renderStar = (starIndex: number) => {
+    const starValue = starIndex + 1;
+    const halfStarValue = starIndex + 0.5;
+    
+    // Determine star appearance based on current rating
+    const isFullStar = displayRating >= starValue;
+    const isHalfStar = displayRating >= halfStarValue && displayRating < starValue;
+    const isEmpty = displayRating < halfStarValue;
 
-    stars.push(
-      <button
-        key={i}
-        type="button"
-        onClick={() => interactive && onRatingChange && onRatingChange(i)}
-        onMouseEnter={() => interactive && onRatingChange && onRatingChange(i)}
-        className={`${interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform`}
-        disabled={!interactive}
-      >
-        <Star
-          className={`${starSize} ${
-            isFilled
-              ? 'text-yellow-400 fill-current'
-              : isHalf
-              ? 'text-yellow-400 fill-current opacity-50'
-              : 'text-gray-600'
-          }`}
-        />
-      </button>
-    );
-  }
-
-  // For half-star ratings, we need to handle them differently
-  if (interactive) {
-    return (
-      <div className="flex items-center gap-1">
-        {Array.from({ length: maxRating }, (_, i) => {
-          const starValue = i + 1;
-          const halfStarValue = i + 0.5;
-          
-          return (
-            <div key={i} className="relative">
-              <button
-                type="button"
-                onClick={() => onRatingChange && onRatingChange(halfStarValue)}
-                className="absolute left-0 top-0 w-1/2 h-full z-10 cursor-pointer"
-              />
-              <button
-                type="button"
-                onClick={() => onRatingChange && onRatingChange(starValue)}
-                className="absolute right-0 top-0 w-1/2 h-full z-10 cursor-pointer"
-              />
+    if (!interactive) {
+      // Non-interactive version - simpler rendering
+      return (
+        <div key={starIndex} className="relative">
+          <Star
+            className={`${starSize} ${
+              isFullStar
+                ? 'text-yellow-400 fill-current'
+                : isHalfStar
+                ? 'text-yellow-400'
+                : 'text-gray-600'
+            } transition-colors`}
+          />
+          {isHalfStar && (
+            <div className="absolute inset-0 overflow-hidden w-1/2">
               <Star
-                className={`${starSize} ${
-                  rating >= starValue
-                    ? 'text-yellow-400 fill-current'
-                    : rating >= halfStarValue
-                    ? 'text-yellow-400 fill-current opacity-50'
-                    : 'text-gray-600'
-                } transition-colors`}
+                className={`${starSize} text-yellow-400 fill-current`}
               />
             </div>
-          );
-        })}
+          )}
+        </div>
+      );
+    }
+
+    // Interactive version with hover and click handlers
+    return (
+      <div key={starIndex} className="relative">
+        {/* Half star button (left side) */}
+        <button
+          type="button"
+          className="absolute left-0 top-0 w-1/2 h-full z-10 cursor-pointer"
+          onClick={() => onRatingChange && onRatingChange(halfStarValue)}
+          onMouseEnter={() => setHoverRating(halfStarValue)}
+          onMouseLeave={() => setHoverRating(null)}
+          aria-label={`Rate ${halfStarValue} out of ${maxRating}`}
+        />
+        
+        {/* Full star button (right side) */}
+        <button
+          type="button"
+          className="absolute right-0 top-0 w-1/2 h-full z-10 cursor-pointer"
+          onClick={() => onRatingChange && onRatingChange(starValue)}
+          onMouseEnter={() => setHoverRating(starValue)}
+          onMouseLeave={() => setHoverRating(null)}
+          aria-label={`Rate ${starValue} out of ${maxRating}`}
+        />
+        
+        {/* Base star (empty) */}
+        <Star
+          className={`${starSize} text-gray-600 transition-colors`}
+        />
+        
+        {/* Filled portion */}
+        {(isFullStar || isHalfStar) && (
+          <div 
+            className={`absolute inset-0 overflow-hidden ${
+              isFullStar ? 'w-full' : 'w-1/2'
+            }`}
+          >
+            <Star
+              className={`${starSize} text-yellow-400 fill-current transition-colors`}
+            />
+          </div>
+        )}
       </div>
     );
-  }
+  };
 
-  return <div className="flex items-center gap-1">{stars}</div>;
+  return (
+    <div className="flex items-center gap-1">
+      {Array.from({ length: maxRating }, (_, i) => renderStar(i))}
+    </div>
+  );
 };
