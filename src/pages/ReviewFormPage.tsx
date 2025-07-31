@@ -166,10 +166,20 @@ export const ReviewFormPage: React.FC = () => {
                   interactive 
                   size="lg" 
                 />
-                <span className="text-2xl font-bold text-white">
-                  {rating > 0 ? rating.toFixed(1) : '--'}
-                </span>
+                <div className="flex flex-col items-center">
+                  <span className="text-2xl font-bold text-white">
+                    {rating > 0 ? rating.toFixed(1) : '--'}
+                  </span>
+                  <span className="text-sm text-gray-400">
+                    {rating > 0 ? 'out of 10' : 'Click to rate'}
+                  </span>
+                </div>
               </div>
+              {rating > 0 && (
+                <p className="mt-2 text-sm text-gray-400">
+                  Click the left half of a star for .5 ratings, right half for whole numbers
+                </p>
+              )}
             </div>
 
             {/* Review Text */}
