@@ -13,6 +13,7 @@ interface GameSearchProps {
   className?: string;
   showHealthCheck?: boolean;
   showExploreButton?: boolean;
+  initialQuery?: string;
 }
 
 interface SearchState {
@@ -31,10 +32,11 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   maxResults = 20,
   className = '',
   showHealthCheck = false,
-  showExploreButton = true
+  showExploreButton = true,
+  initialQuery = ''
 }) => {
   const [searchState, setSearchState] = useState<SearchState>({
-    query: '',
+    query: initialQuery,
     results: [],
     loading: false,
     error: null,
@@ -47,6 +49,13 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const DEBUG_MODE = import.meta.env.DEV || false;
+
+  // Trigger initial search when component mounts with initialQuery
+  useEffect(() => {
+    if (initialQuery && initialQuery.trim()) {
+      performSearch(initialQuery);
+    }
+  }, []); // Only run on mount
   
   // Generate search suggestions based on query
   const generateSuggestions = useCallback((query: string): SearchSuggestion[] => {
