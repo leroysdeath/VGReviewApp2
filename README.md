@@ -1,6 +1,6 @@
 # VGReviewApp2 - Production Ready Gaming Platform
 
-A modern, production-ready gaming community platform built with React, TypeScript, Supabase, and IGDB API integration.  ab
+A modern, production-ready gaming community platform built with React, TypeScript, Supabase, and IGDB API integration.  a
 
 ## 🚀 Features
 
