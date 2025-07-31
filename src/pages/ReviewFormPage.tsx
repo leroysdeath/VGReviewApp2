@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Star, Save, Eye, EyeOff } from 'lucide-react';
+import { Search, Star, Save, Eye, EyeOff, X } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { useGames } from '../hooks/useGames';
 import { igdbService, Game } from '../services/igdbApi';
+import { GameSearch } from '../components/GameSearch';
 
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -19,6 +20,7 @@ export const ReviewFormPage: React.FC = () => {
   const [isPrivate, setIsPrivate] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const { games, searchGames } = useGames();
 
@@ -56,6 +58,14 @@ export const ReviewFormPage: React.FC = () => {
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game);
     setGameSearch('');
+    setShowSearchModal(false);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && gameSearch.trim()) {
+      e.preventDefault();
+      setShowSearchModal(true);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -110,54 +120,37 @@ export const ReviewFormPage: React.FC = () => {
                     type="text"
                     value={gameSearch}
                     onChange={(e) => setGameSearch(e.target.value)}
+                    onKeyDown={handleSearchKeyDown}
                     className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                    placeholder="Search for a game..."
+                    placeholder="Search for a game and press Enter..."
                   />
                 </div>
-                {gameSearch && (
-                  <div className="mt-2 bg-gray-700 border border-gray-600 rounded-lg max-h-48 overflow-y-auto">
-                    {filteredGames.map((game) => (
-                      <button
-                        key={game.id}
-                        type="button"
-                        onClick={() => handleGameSelect(game)}
-                        className="w-full flex items-center gap-3 p-3 hover:bg-gray-600 transition-colors text-left"
-                      >
-                        <img
-                          src={game.coverImage}
-                          alt={game.title}
-                          className="w-12 h-12 object-cover rounded"
-                        />
-                        <div>
-                          <div className="text-white font-medium">{game.title}</div>
-                          <div className="text-gray-400 text-sm">{game.releaseDate}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
 
             {/* Selected Game Display */}
             {selectedGame && (
-              <div className="flex items-center gap-4 p-4 bg-gray-700 rounded-lg">
-                <img
-                  src={selectedGame.coverImage}
-                  alt={selectedGame.title}
-                  className="w-16 h-16 object-cover rounded"
-                />
-                <div className="flex-1">
-                  <h3 className="text-white font-semibold">{selectedGame.title}</h3>
-                  <p className="text-gray-400 text-sm">{selectedGame.releaseDate}</p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-white">{selectedGame.title}</h3>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGame(null)}
+                    className="text-sm text-gray-400 hover:text-white transition-colors"
+                  >
+                    Change Game
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedGame(null)}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  Change
-                </button>
+                <div className="flex justify-center">
+                  <img
+                    src={selectedGame.coverImage}
+                    alt={selectedGame.title}
+                    className="w-48 h-64 object-cover rounded-lg shadow-lg"
+                  />
+                </div>
+                {selectedGame.releaseDate && (
+                  <p className="text-center text-gray-400 text-sm">Released: {selectedGame.releaseDate}</p>
+                )}
               </div>
             )}
 
@@ -323,6 +316,44 @@ export const ReviewFormPage: React.FC = () => {
           </form>
         </div>
       </div>
+
+      {/* Game Search Modal */}
+      {showSearchModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowSearchModal(false)}
+        >
+          <div
+            className="relative w-full max-w-6xl max-h-[90vh] overflow-hidden bg-gray-800 rounded-xl shadow-2xl border border-gray-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-white">Select a Game</h2>
+                <button
+                  onClick={() => setShowSearchModal(false)}
+                  className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-700 transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body with GameSearch */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+              <GameSearch
+                onGameSelect={handleGameSelect}
+                placeholder="Search for games..."
+                showViewToggle={true}
+                initialViewMode="grid"
+                showExploreButton={false}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
