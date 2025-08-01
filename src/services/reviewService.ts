@@ -6,27 +6,47 @@ import { supabase } from './supabase';
  */
 export const getCurrentUserId = async (): Promise<number | null> => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    console.log('🔍 Getting current user ID...');
     
-    if (!user) {
-      console.log('No authenticated user found');
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('👤 Auth user result:', { user: user ? { id: user.id, email: user.email } : null, authError });
+    
+    if (authError) {
+      console.error('❌ Auth error:', authError);
       return null;
     }
+    
+    if (!user) {
+      console.log('❌ No authenticated user found');
+      return null;
+    }
+
+    console.log('🔍 Looking up database user for provider_id:', user.id);
 
     const { data: dbUser, error } = await supabase
       .from('user')
-      .select('id')
+      .select('id, provider_id, name, email')
       .eq('provider_id', user.id)
       .single();
 
+    console.log('💾 Database user lookup result:', { dbUser, error });
+
     if (error) {
-      console.error('Error fetching database user ID:', error);
+      console.error('❌ Error fetching database user ID:', error);
+      
+      if (error.code === 'PGRST116') {
+        console.log('⚠️ User not found in database - may need to be created');
+      }
+      
       return null;
     }
 
-    return dbUser?.id || null;
+    const userId = dbUser?.id || null;
+    console.log('✅ Found database user ID:', userId);
+    
+    return userId;
   } catch (error) {
-    console.error('Error in getCurrentUserId:', error);
+    console.error('💥 Unexpected error in getCurrentUserId:', error);
     return null;
   }
 };
@@ -42,42 +62,64 @@ export const ensureGameExists = async (
   releaseDate?: string
 ): Promise<ServiceResponse<{ gameId: number }>> => {
   try {
+    console.log('🎮 Ensuring game exists:', { gameId, gameName, coverImage, genre, releaseDate });
+    
     // Check if game already exists
     const { data: existingGame, error: checkError } = await supabase
       .from('game')
-      .select('id')
+      .select('id, game_id, name')
       .eq('game_id', gameId)
       .single();
 
+    console.log('🔍 Game existence check:', { existingGame, checkError });
+
     if (checkError && checkError.code !== 'PGRST116') {
-      throw checkError;
+      console.error('❌ Error checking game existence:', checkError);
+      return { success: false, error: `Game existence check failed: ${checkError.message}` };
     }
 
     if (existingGame) {
+      console.log('✅ Game already exists in database:', existingGame);
       return { success: true, data: { gameId: existingGame.id } };
     }
+
+    // Prepare game data for insertion
+    const gameData = {
+      game_id: gameId,
+      name: gameName,
+      pic_url: coverImage || null,
+      genre: genre || null,
+      release_date: releaseDate || null
+    };
+
+    console.log('📝 Inserting new game:', gameData);
 
     // Insert new game
     const { data: newGame, error: insertError } = await supabase
       .from('game')
-      .insert({
-        game_id: gameId,
-        name: gameName,
-        pic_url: coverImage,
-        genre: genre,
-        release_date: releaseDate
-      })
-      .select('id')
+      .insert(gameData)
+      .select('id, game_id, name')
       .single();
 
-    if (insertError) throw insertError;
+    console.log('💾 Game insert result:', { newGame, insertError });
 
+    if (insertError) {
+      console.error('❌ Game insert error:', insertError);
+      return { success: false, error: `Failed to insert game: ${insertError.message} (Code: ${insertError.code})` };
+    }
+
+    console.log('✅ Successfully created game in database:', newGame);
     return { success: true, data: { gameId: newGame.id } };
   } catch (error) {
-    console.error('Error ensuring game exists:', error);
+    console.error('💥 Unexpected error ensuring game exists:', error);
+    
+    if (error instanceof Error) {
+      console.error('Error details:', { name: error.name, message: error.message, stack: error.stack });
+    }
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to ensure game exists'
+      error: error instanceof Error ? `Unexpected error: ${error.message}` : 'Failed to ensure game exists due to unexpected error'
     };
   }
 };
@@ -92,7 +134,10 @@ export const createReview = async (
   isRecommended?: boolean
 ): Promise<ServiceResponse<Review>> => {
   try {
+    console.log('🔍 Creating review with params:', { gameId, rating, reviewText, isRecommended });
+    
     const userId = await getCurrentUserId();
+    console.log('👤 Current user ID:', userId);
     
     if (!userId) {
       return { success: false, error: 'User not authenticated or not found in database' };
@@ -101,40 +146,59 @@ export const createReview = async (
     // Check if game exists in database
     const { data: gameRecord, error: gameError } = await supabase
       .from('game')
-      .select('id')
+      .select('id, game_id, name')
       .eq('game_id', gameId)
       .single();
 
+    console.log('🎮 Game lookup result:', { gameRecord, gameError });
+
     if (gameError && gameError.code !== 'PGRST116') {
-      throw gameError;
+      console.error('❌ Game lookup error:', gameError);
+      return { success: false, error: `Game lookup failed: ${gameError.message}` };
     }
 
     if (!gameRecord) {
+      console.error('❌ Game not found in database for gameId:', gameId);
       return { success: false, error: 'Game must be added to database before reviewing. Please ensure game exists first.' };
     }
 
+    console.log('✅ Found game in database:', gameRecord);
+
     // Check if user has already reviewed this game
-    const { data: existingReview } = await supabase
+    const { data: existingReview, error: existingError } = await supabase
       .from('rating')
       .select('id')
       .eq('user_id', userId)
       .eq('game_id', gameRecord.id)
       .single();
 
+    console.log('🔍 Existing review check:', { existingReview, existingError });
+
+    if (existingError && existingError.code !== 'PGRST116') {
+      console.error('❌ Error checking existing review:', existingError);
+      return { success: false, error: `Error checking existing review: ${existingError.message}` };
+    }
+
     if (existingReview) {
+      console.log('⚠️ User has already reviewed this game');
       return { success: false, error: 'You have already reviewed this game' };
     }
 
+    // Prepare review data
+    const reviewData = {
+      user_id: userId,
+      game_id: gameRecord.id, // Use database game ID
+      rating: rating,
+      review: reviewText || null,
+      post_date_time: new Date().toISOString(),
+      finished: isRecommended || false
+    };
+
+    console.log('📝 Inserting review data:', reviewData);
+
     const { data, error } = await supabase
-      .from('rating') // Table: rating (not reviews)
-      .insert({
-        user_id: userId, // Database ID, not auth ID
-        game_id: gameRecord.id, // Use database game ID
-        rating: rating,
-        review: reviewText, // Column is 'review' not 'text'
-        post_date_time: new Date().toISOString(),
-        finished: isRecommended || false
-      })
+      .from('rating')
+      .insert(reviewData)
       .select(`
         *,
         user:user_id(*),
@@ -142,7 +206,12 @@ export const createReview = async (
       `)
       .single();
 
-    if (error) throw error;
+    console.log('💾 Insert result:', { data, error });
+
+    if (error) {
+      console.error('❌ Review insert error:', error);
+      return { success: false, error: `Failed to insert review: ${error.message} (Code: ${error.code})` };
+    }
 
     // Transform to our interface
     const review: Review = {
@@ -169,10 +238,18 @@ export const createReview = async (
 
     return { success: true, data: review };
   } catch (error) {
-    console.error('Error creating review:', error);
+    console.error('💥 Unexpected error creating review:', error);
+    
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to create review'
+      error: error instanceof Error ? `Unexpected error: ${error.message}` : 'Failed to create review due to unexpected error'
     };
   }
 };
