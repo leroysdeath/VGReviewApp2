@@ -61,7 +61,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   const generateSuggestions = useCallback((query: string): SearchSuggestion[] => {
     if (!query.trim()) return [];
     
-    // Generate game suggestions
+    // Generate game suggestions only if we have results
     const gameSuggestions: SearchSuggestion[] = searchState.results.slice(0, 3).map(game => ({
       id: game.id,
       title: game.title,
@@ -69,27 +69,33 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       type: 'game'
     }));
     
-    // Generate genre suggestions based on query
-    const genreSuggestions: SearchSuggestion[] = ['Action', 'Adventure', 'RPG', 'Strategy', 'Simulation']
-      .filter(genre => genre.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, 2)
-      .map(genre => ({
-        id: `genre-${genre.toLowerCase()}`,
-        title: genre,
-        type: 'genre'
-      }));
+    // Only generate genre/platform suggestions if query is at least 2 characters
+    // This prevents false matches on single letters
+    if (query.length >= 2) {
+      // Generate genre suggestions based on query - using startsWith instead of includes
+      const genreSuggestions: SearchSuggestion[] = ['Action', 'Adventure', 'RPG', 'Strategy', 'Simulation']
+        .filter(genre => genre.toLowerCase().startsWith(query.toLowerCase()))
+        .slice(0, 2)
+        .map(genre => ({
+          id: `genre-${genre.toLowerCase()}`,
+          title: genre,
+          type: 'genre'
+        }));
+      
+      // Generate platform suggestions based on query
+      const platformSuggestions: SearchSuggestion[] = ['PC', 'PlayStation 5', 'Xbox Series X', 'Nintendo Switch']
+        .filter(platform => platform.toLowerCase().startsWith(query.toLowerCase()))
+        .slice(0, 2)
+        .map(platform => ({
+          id: `platform-${platform.toLowerCase().replace(/\s+/g, '-')}`,
+          title: platform,
+          type: 'platform'
+        }));
+      
+      return [...gameSuggestions, ...genreSuggestions, ...platformSuggestions];
+    }
     
-    // Generate platform suggestions based on query
-    const platformSuggestions: SearchSuggestion[] = ['PC', 'PlayStation 5', 'Xbox Series X', 'Nintendo Switch']
-      .filter(platform => platform.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, 2)
-      .map(platform => ({
-        id: `platform-${platform.toLowerCase().replace(/\s+/g, '-')}`,
-        title: platform,
-        type: 'platform'
-      }));
-    
-    return [...gameSuggestions, ...genreSuggestions, ...platformSuggestions];
+    return gameSuggestions;
   }, [searchState.results]);
   
   // Debounced search function
@@ -127,9 +133,11 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         error: null
       }));
       
-      // Update suggestions
-      const newSuggestions = generateSuggestions(searchTerm);
-      setSuggestions(newSuggestions);
+      // Update suggestions after results are set
+      setTimeout(() => {
+        const newSuggestions = generateSuggestions(searchTerm);
+        setSuggestions(newSuggestions);
+      }, 0);
       
       console.log('✅ Search completed, found', games.length, 'games');
       if (DEBUG_MODE) {
@@ -486,7 +494,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         </div>
         
         {/* Search Suggestions */}
-        {showSuggestions && suggestions.length > 0 && (
+        {showSuggestions && suggestions.length > 0 && !searchState.loading && (
           <div 
             id="search-suggestions"
             className="absolute z-50 mt-2 w-full bg-gray-800 border border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto"
