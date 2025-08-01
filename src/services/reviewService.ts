@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 
 /**
  * Get database user ID from auth user
- * Always map autah.uid → user.provider_id → user.id for all database operations
+ * Always map auth.uid → user.provider_id → user.id for all database operations
  */
 export const getCurrentUserId = async (): Promise<number | null> => {
   try {
