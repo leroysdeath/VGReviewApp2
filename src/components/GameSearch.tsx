@@ -49,13 +49,6 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const DEBUG_MODE = import.meta.env.DEV || false;
-
-  // Trigger initial search when component mounts with initialQuery
-  useEffect(() => {
-    if (initialQuery && initialQuery.trim()) {
-      performSearch(initialQuery);
-    }
-  }, [initialQuery, performSearch]); // Run when initialQuery or performSearch changes
   
   // Generate search suggestions based on query
   const generateSuggestions = useCallback((query: string): SearchSuggestion[] => {
@@ -163,6 +156,68 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       }));
     }
   }, [maxResults, generateSuggestions]);
+
+  // Trigger initial search when component mounts with initialQuery
+  useEffect(() => {
+    if (initialQuery && initialQuery.trim()) {
+      // Call performSearch directly without including it in dependencies
+      // This avoids circular dependency issues
+      const searchInitialQuery = async () => {
+        if (!initialQuery.trim()) {
+          setSearchState(prev => ({
+            ...prev,
+            results: [],
+            loading: false,
+            error: null,
+            hasSearched: false
+          }));
+          return;
+        }
+
+        setSearchState(prev => ({
+          ...prev,
+          loading: true,
+          error: null,
+          hasSearched: true
+        }));
+
+        try {
+          console.log('🔍 Performing initial search for:', initialQuery);
+          const games = await igdbService.searchGames(initialQuery, maxResults);
+          
+          setSearchState(prev => ({
+            ...prev,
+            results: games,
+            loading: false, 
+            error: null
+          }));
+          
+          // Update suggestions after results are set
+          setTimeout(() => {
+            const newSuggestions = generateSuggestions(initialQuery);
+            setSuggestions(newSuggestions);
+          }, 0);
+          
+          console.log('✅ Initial search completed, found', games.length, 'games');
+        } catch (error) {
+          console.error('❌ Initial search failed:', error);
+          
+          const errorMessage = error instanceof Error 
+            ? error.message 
+            : 'Failed to search games. Please try again.';
+          
+          setSearchState(prev => ({
+            ...prev,
+            results: [],
+            loading: false,
+            error: errorMessage
+          }));
+        }
+      };
+
+      searchInitialQuery();
+    }
+  }, [initialQuery, maxResults, generateSuggestions]); // Safe dependencies without performSearch
 
   // Handle input change with debouncing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
