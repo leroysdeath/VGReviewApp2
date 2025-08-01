@@ -176,6 +176,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
 
         setSearchState(prev => ({
           ...prev,
+          query: initialQuery,
           loading: true,
           error: null,
           hasSearched: true
@@ -187,6 +188,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
           
           setSearchState(prev => ({
             ...prev,
+            query: initialQuery,
             results: games,
             loading: false, 
             error: null
@@ -208,6 +210,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
           
           setSearchState(prev => ({
             ...prev,
+            query: initialQuery,
             results: [],
             loading: false,
             error: errorMessage
