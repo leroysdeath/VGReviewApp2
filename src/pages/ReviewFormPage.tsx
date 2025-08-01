@@ -5,7 +5,7 @@ import { Search, Star, Save, Eye, EyeOff, X } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { igdbService, Game } from '../services/igdbApi';
 import { GameSearch } from '../components/GameSearch';
-import { createReview } from '../services/reviewService';
+import { createReview, ensureGameExists } from '../services/reviewService';
 
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -53,6 +53,22 @@ export const ReviewFormPage: React.FC = () => {
     if (!selectedGame || rating === 0) return;
 
     try {
+      // First, ensure the game exists in the database
+      const ensureGameResult = await ensureGameExists(
+        parseInt(selectedGame.id),
+        selectedGame.title,
+        selectedGame.coverImage,
+        selectedGame.genre,
+        selectedGame.releaseDate
+      );
+
+      if (!ensureGameResult.success) {
+        console.error('Failed to ensure game exists:', ensureGameResult.error);
+        alert(`Failed to add game to database: ${ensureGameResult.error}`);
+        return;
+      }
+
+      // Then create the review
       const result = await createReview(
         parseInt(selectedGame.id), // Convert string ID to number
         rating,
