@@ -55,7 +55,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
     if (initialQuery && initialQuery.trim()) {
       performSearch(initialQuery);
     }
-  }, [initialQuery]); // Run when initialQuery changes
+  }, [initialQuery, performSearch]); // Run when initialQuery or performSearch changes
   
   // Generate search suggestions based on query
   const generateSuggestions = useCallback((query: string): SearchSuggestion[] => {
