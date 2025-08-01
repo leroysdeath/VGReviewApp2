@@ -5,6 +5,7 @@ import { Search, Star, Save, Eye, EyeOff, X } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { igdbService, Game } from '../services/igdbApi';
 import { GameSearch } from '../components/GameSearch';
+import { createReview } from '../services/reviewService';
 
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -47,20 +48,29 @@ export const ReviewFormPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedGame || rating === 0) return;
 
-    const reviewData = {
-      gameId: selectedGame.id,
-      rating,
-      reviewText,
-      isRecommended,
-      date: new Date().toISOString().split('T')[0]
-    };
+    try {
+      const result = await createReview(
+        parseInt(selectedGame.id), // Convert string ID to number
+        rating,
+        reviewText,
+        isRecommended
+      );
 
-    console.log('Review submitted:', reviewData);
-    navigate(`/game/${selectedGame.id}`);
+      if (result.success) {
+        console.log('Review created successfully:', result.data);
+        navigate(`/game/${selectedGame.id}`);
+      } else {
+        console.error('Failed to create review:', result.error);
+        alert(`Failed to submit review: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert('Failed to submit review. Please try again.');
+    }
   };
 
   return (
