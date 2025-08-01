@@ -459,7 +459,7 @@ export const GamePage: React.FC = () => {
                     {progressLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
                     ) : isStarted ? (
-                      <Check className="h-7 w-7 text-green-600 stroke-[3] absolute -top-0.5 -left-0.5" />
+                      <Check className="h-6 w-6 text-green-600 stroke-[2]" />
                     ) : null}
                   </button>
                   <span className={`text-sm ${isStarted ? 'text-green-400' : 'text-gray-300'}`}>
@@ -482,7 +482,7 @@ export const GamePage: React.FC = () => {
                     {progressLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
                     ) : isCompleted ? (
-                      <Check className="h-7 w-7 text-green-600 stroke-[3] absolute -top-0.5 -left-0.5" />
+                      <Check className="h-6 w-6 text-green-600 stroke-[2]" />
                     ) : null}
                   </button>
                   <span className={`text-sm ${isCompleted ? 'text-green-400' : 'text-gray-300'}`}>
