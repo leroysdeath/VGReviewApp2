@@ -6,6 +6,7 @@ import { StarRating } from '../components/StarRating';
 import { igdbService, Game } from '../services/igdbApi';
 import { GameSearch } from '../components/GameSearch';
 import { createReview, ensureGameExists } from '../services/reviewService';
+import { markGameStarted, markGameCompleted } from '../services/gameProgressService';
 
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -15,6 +16,7 @@ export const ReviewFormPage: React.FC = () => {
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [isRecommended, setIsRecommended] = useState<boolean | null>(null);
+  const [didFinishGame, setDidFinishGame] = useState<boolean | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export const ReviewFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedGame || rating === 0) return;
+    if (!selectedGame || rating === 0 || didFinishGame === null) return;
 
     try {
       // First, ensure the game exists in the database
@@ -78,6 +80,21 @@ export const ReviewFormPage: React.FC = () => {
 
       if (result.success) {
         console.log('Review created successfully:', result.data);
+        
+        // Update game progress based on user selection
+        try {
+          if (didFinishGame) {
+            await markGameCompleted(parseInt(selectedGame.id));
+            console.log('✅ Game marked as completed');
+          } else {
+            await markGameStarted(parseInt(selectedGame.id));
+            console.log('✅ Game marked as started');
+          }
+        } catch (progressError) {
+          console.error('❌ Error updating game progress:', progressError);
+          // Don't prevent navigation if progress update fails
+        }
+        
         navigate(`/game/${selectedGame.id}`);
       } else {
         console.error('Failed to create review:', result.error);
@@ -203,6 +220,37 @@ export const ReviewFormPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Did you finish the game? */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-4">
+                Did you finish the game?
+              </label>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setDidFinishGame(true)}
+                  className={`flex-1 py-4 px-6 rounded-lg font-medium text-lg transition-all duration-200 ${
+                    didFinishGame === true
+                      ? 'bg-green-600 text-white shadow-lg transform scale-105'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  <span className={didFinishGame === true ? 'text-white' : 'text-green-500'}>YES</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDidFinishGame(false)}
+                  className={`flex-1 py-4 px-6 rounded-lg font-medium text-lg transition-all duration-200 ${
+                    didFinishGame === false
+                      ? 'bg-red-600 text-white shadow-lg transform scale-105'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  <span className={didFinishGame === false ? 'text-white' : 'text-red-500'}>NO</span>
+                </button>
+              </div>
+            </div>
+
             {/* Review Text */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -225,7 +273,7 @@ export const ReviewFormPage: React.FC = () => {
             <div className="flex gap-4 pt-6">
               <button
                 type="submit"
-                disabled={!selectedGame || rating === 0}
+                disabled={!selectedGame || rating === 0 || didFinishGame === null}
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Save className="h-4 w-4" />
