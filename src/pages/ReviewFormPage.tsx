@@ -249,7 +249,7 @@ export const ReviewFormPage: React.FC = () => {
                 showViewToggle={true}
                 initialViewMode="grid"
                 showExploreButton={false}
-                initialQuery=""
+                initialQuery={gameSearch}
                 key={gameSearch}
               />
             </div>
