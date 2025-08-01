@@ -7,6 +7,8 @@ import { AuthModal } from '../components/auth/AuthModal';
 import { igdbService, Game } from '../services/igdbApi';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
+import { getGameProgress, markGameStarted, markGameCompleted } from '../services/gameProgressService';
+import { ensureGameExists } from '../services/reviewService';
 
 export const GamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,8 +40,9 @@ export const GamePage: React.FC = () => {
     }
   };
 
-  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isStarted, setIsStarted] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [progressLoading, setProgressLoading] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
@@ -75,6 +78,38 @@ export const GamePage: React.FC = () => {
 
     loadGame();
   }, [id]);
+
+  // Load game progress when user is authenticated and game is loaded
+  useEffect(() => {
+    const loadGameProgress = async () => {
+      if (!game || !id || !isAuthenticated) return;
+
+      setProgressLoading(true);
+      try {
+        console.log('Loading game progress for game ID:', id);
+        const result = await getGameProgress(parseInt(id));
+        
+        if (result.success && result.data) {
+          setIsStarted(result.data.started);
+          setIsCompleted(result.data.completed);
+          console.log('✅ Game progress loaded:', result.data);
+        } else {
+          // No progress found, set to false
+          setIsStarted(false);
+          setIsCompleted(false);
+          console.log('ℹ️ No game progress found');
+        }
+      } catch (error) {
+        console.error('❌ Error loading game progress:', error);
+        setIsStarted(false);
+        setIsCompleted(false);
+      } finally {
+        setProgressLoading(false);
+      }
+    };
+
+    loadGameProgress();
+  }, [game, id, isAuthenticated]);
 
   // Load reviews when game data is available
   useEffect(() => {
@@ -139,17 +174,96 @@ export const GamePage: React.FC = () => {
     executeAction(action);
   };
 
-  const executeAction = (action: string) => {
+  const executeAction = async (action: string) => {
+    if (!game || !id) return;
+
     switch (action) {
       case 'mark_started':
-        setIsInWishlist(!isInWishlist);
+        await handleMarkStarted();
         break;
       case 'mark_completed':
-        setIsCompleted(!isCompleted);
+        await handleMarkCompleted();
         break;
       case 'write_review':
         // Navigate to review page - handled by Link component
         break;
+    }
+  };
+
+  const handleMarkStarted = async () => {
+    if (!game || !id || isStarted) return; // Don't allow if already started
+
+    setProgressLoading(true);
+    try {
+      // First ensure the game exists in the database
+      const ensureResult = await ensureGameExists(
+        parseInt(id),
+        game.title,
+        game.coverImage,
+        game.genre,
+        game.releaseDate
+      );
+
+      if (!ensureResult.success) {
+        console.error('Failed to ensure game exists:', ensureResult.error);
+        alert(`Failed to add game to database: ${ensureResult.error}`);
+        return;
+      }
+
+      // Mark game as started
+      const result = await markGameStarted(parseInt(id));
+      
+      if (result.success) {
+        setIsStarted(true);
+        console.log('✅ Game marked as started');
+      } else {
+        console.error('Failed to mark game as started:', result.error);
+        alert(`Failed to mark game as started: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error marking game as started:', error);
+      alert('Failed to mark game as started. Please try again.');
+    } finally {
+      setProgressLoading(false);
+    }
+  };
+
+  const handleMarkCompleted = async () => {
+    if (!game || !id || isCompleted) return; // Don't allow if already completed
+
+    setProgressLoading(true);
+    try {
+      // First ensure the game exists in the database
+      const ensureResult = await ensureGameExists(
+        parseInt(id),
+        game.title,
+        game.coverImage,
+        game.genre,
+        game.releaseDate
+      );
+
+      if (!ensureResult.success) {
+        console.error('Failed to ensure game exists:', ensureResult.error);
+        alert(`Failed to add game to database: ${ensureResult.error}`);
+        return;
+      }
+
+      // Mark game as completed (this will also mark as started)
+      const result = await markGameCompleted(parseInt(id));
+      
+      if (result.success) {
+        setIsStarted(true); // Auto-mark as started when completed
+        setIsCompleted(true);
+        console.log('✅ Game marked as completed');
+      } else {
+        console.error('Failed to mark game as completed:', result.error);
+        alert(`Failed to mark game as completed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error marking game as completed:', error);
+      alert('Failed to mark game as completed. Please try again.');
+    } finally {
+      setProgressLoading(false);
     }
   };
 
@@ -333,33 +447,47 @@ export const GamePage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleAuthRequiredAction('mark_started')}
-                    className={`relative w-6 h-6 border-2 border-gray-400 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
-                      isInWishlist
-                        ? 'bg-gray-800 border-gray-300'
-                        : 'bg-gray-800 hover:bg-gray-700'
+                    disabled={isStarted || progressLoading}
+                    className={`relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
+                      isStarted
+                        ? 'bg-green-100 border-green-500 cursor-not-allowed'
+                        : progressLoading
+                        ? 'bg-gray-700 border-gray-500 cursor-not-allowed opacity-50'
+                        : 'border-gray-400 bg-gray-800 hover:bg-gray-700 cursor-pointer'
                     }`}
                   >
-                    {isInWishlist && (
-                      <Check className="h-7 w-7 text-green-500 stroke-[3] absolute -top-0.5 -left-0.5" />
-                    )}
+                    {progressLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                    ) : isStarted ? (
+                      <Check className="h-7 w-7 text-green-600 stroke-[3] absolute -top-0.5 -left-0.5" />
+                    ) : null}
                   </button>
-                  <span className="text-gray-300 text-sm">Started Game</span>
+                  <span className={`text-sm ${isStarted ? 'text-green-400' : 'text-gray-300'}`}>
+                    {isStarted ? 'Started ✓' : 'Started Game'}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleAuthRequiredAction('mark_completed')}
-                    className={`relative w-6 h-6 border-2 border-gray-400 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
+                    disabled={isCompleted || progressLoading}
+                    className={`relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
                       isCompleted
-                        ? 'bg-gray-800 border-gray-300'
-                        : 'bg-gray-800 hover:bg-gray-700'
+                        ? 'bg-green-100 border-green-500 cursor-not-allowed'
+                        : progressLoading
+                        ? 'bg-gray-700 border-gray-500 cursor-not-allowed opacity-50'
+                        : 'border-gray-400 bg-gray-800 hover:bg-gray-700 cursor-pointer'
                     }`}
                   >
-                    {isCompleted && (
-                      <Check className="h-7 w-7 text-green-500 stroke-[3] absolute -top-0.5 -left-0.5" />
-                    )}
+                    {progressLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                    ) : isCompleted ? (
+                      <Check className="h-7 w-7 text-green-600 stroke-[3] absolute -top-0.5 -left-0.5" />
+                    ) : null}
                   </button>
-                  <span className="text-gray-300 text-sm">Finished Game</span>
+                  <span className={`text-sm ${isCompleted ? 'text-green-400' : 'text-gray-300'}`}>
+                    {isCompleted ? 'Finished ✓' : 'Finished Game'}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-3 ml-4">
