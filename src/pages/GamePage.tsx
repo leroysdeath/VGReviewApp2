@@ -7,7 +7,7 @@ import { AuthModal } from '../components/auth/AuthModal';
 import { useIGDBGame } from '../hooks/useIGDBCache';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
-aimport React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
