@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 
 /**
  * Get database user ID from auth user
- * Always map auth.uid → user.provider_id → user.id for all database operations
+ * Always map autah.uid → user.provider_id → user.id for all database operations
  */
 export const getCurrentUserId = async (): Promise<number | null> => {
   try {
@@ -32,6 +32,57 @@ export const getCurrentUserId = async (): Promise<number | null> => {
 };
 
 /**
+ * Ensure game exists in database before creating review
+ */
+export const ensureGameExists = async (
+  gameId: number,
+  gameName: string,
+  coverImage?: string,
+  genre?: string,
+  releaseDate?: string
+): Promise<ServiceResponse<{ gameId: number }>> => {
+  try {
+    // Check if game already exists
+    const { data: existingGame, error: checkError } = await supabase
+      .from('game')
+      .select('id')
+      .eq('game_id', gameId)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw checkError;
+    }
+
+    if (existingGame) {
+      return { success: true, data: { gameId: existingGame.id } };
+    }
+
+    // Insert new game
+    const { data: newGame, error: insertError } = await supabase
+      .from('game')
+      .insert({
+        game_id: gameId,
+        name: gameName,
+        pic_url: coverImage,
+        genre: genre,
+        release_date: releaseDate
+      })
+      .select('id')
+      .single();
+
+    if (insertError) throw insertError;
+
+    return { success: true, data: { gameId: newGame.id } };
+  } catch (error) {
+    console.error('Error ensuring game exists:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to ensure game exists'
+    };
+  }
+};
+
+/**
  * Create a new review using proper user ID handling
  */
 export const createReview = async (
@@ -47,12 +98,27 @@ export const createReview = async (
       return { success: false, error: 'User not authenticated or not found in database' };
     }
 
+    // Check if game exists in database
+    const { data: gameRecord, error: gameError } = await supabase
+      .from('game')
+      .select('id')
+      .eq('game_id', gameId)
+      .single();
+
+    if (gameError && gameError.code !== 'PGRST116') {
+      throw gameError;
+    }
+
+    if (!gameRecord) {
+      return { success: false, error: 'Game must be added to database before reviewing. Please ensure game exists first.' };
+    }
+
     // Check if user has already reviewed this game
     const { data: existingReview } = await supabase
       .from('rating')
       .select('id')
       .eq('user_id', userId)
-      .eq('game_id', gameId)
+      .eq('game_id', gameRecord.id)
       .single();
 
     if (existingReview) {
@@ -63,7 +129,7 @@ export const createReview = async (
       .from('rating') // Table: rating (not reviews)
       .insert({
         user_id: userId, // Database ID, not auth ID
-        game_id: gameId,
+        game_id: gameRecord.id, // Use database game ID
         rating: rating,
         review: reviewText, // Column is 'review' not 'text'
         post_date_time: new Date().toISOString(),
@@ -258,9 +324,9 @@ export const getReview = async (
 
     // Get like count
     const { count: likeCount } = await supabase
-      .from('review_like')
+      .from('content_like')
       .select('*', { count: 'exact', head: true })
-      .eq('review_id', reviewId);
+      .eq('rating_id', reviewId);
 
     // Get comment count
     const { count: commentCount } = await supabase
@@ -318,10 +384,10 @@ export const hasUserLikedReview = async (
     }
 
     const { data, error } = await supabase
-      .from('review_like')
+      .from('content_like')
       .select('id')
       .eq('user_id', userId)
-      .eq('review_id', reviewId)
+      .eq('rating_id', reviewId)
       .single();
 
     if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
@@ -356,10 +422,10 @@ export const likeReview = async (
 
     // Check if like already exists
     const { data: existingLike, error: checkError } = await supabase
-      .from('review_like')
+      .from('content_like')
       .select('id')
       .eq('user_id', userId)
-      .eq('review_id', reviewId)
+      .eq('rating_id', reviewId)
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
@@ -370,9 +436,9 @@ export const likeReview = async (
     if (existingLike) {
       // Get current like count
       const { count: likeCount } = await supabase
-        .from('review_like')
+        .from('content_like')
         .select('*', { count: 'exact', head: true })
-        .eq('review_id', reviewId);
+        .eq('rating_id', reviewId);
 
       return {
         success: true,
@@ -383,19 +449,19 @@ export const likeReview = async (
 
     // Insert new like
     const { error: insertError } = await supabase
-      .from('review_like')
+      .from('content_like')
       .insert({
         user_id: userId,
-        review_id: reviewId
+        rating_id: reviewId
       });
 
     if (insertError) throw insertError;
 
     // Get updated like count
     const { count: likeCount } = await supabase
-      .from('review_like')
+      .from('content_like')
       .select('*', { count: 'exact', head: true })
-      .eq('review_id', reviewId);
+      .eq('rating_id', reviewId);
 
     return {
       success: true,
@@ -428,18 +494,18 @@ export const unlikeReview = async (
 
     // Delete the like
     const { error: deleteError } = await supabase
-      .from('review_like')
+      .from('content_like')
       .delete()
       .eq('user_id', userId)
-      .eq('review_id', reviewId);
+      .eq('rating_id', reviewId);
 
     if (deleteError) throw deleteError;
 
     // Get updated like count
     const { count: likeCount } = await supabase
-      .from('review_like')
+      .from('content_like')
       .select('*', { count: 'exact', head: true })
-      .eq('review_id', reviewId);
+      .eq('rating_id', reviewId);
 
     return {
       success: true,
