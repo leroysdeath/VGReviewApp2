@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Search, Star, Save, Eye, EyeOff, X } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
-import { useGames } from '../hooks/useGames';
 import { igdbService, Game } from '../services/igdbApi';
 import { GameSearch } from '../components/GameSearch';
 
@@ -16,8 +15,6 @@ export const ReviewFormPage: React.FC = () => {
   const [reviewText, setReviewText] = useState('');
   const [isRecommended, setIsRecommended] = useState<boolean | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
-
-  const { games, searchGames } = useGames();
 
   useEffect(() => {
     // Load game if gameId is provided
@@ -36,19 +33,6 @@ export const ReviewFormPage: React.FC = () => {
     }
   }, [gameId]);
 
-  useEffect(() => {
-    // Search games when user types
-    if (gameSearch.trim()) {
-      const timeoutId = setTimeout(() => {
-        searchGames(gameSearch);
-      }, 300);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [gameSearch, searchGames]);
-
-  const filteredGames = games.filter(game =>
-    game.title.toLowerCase().includes(gameSearch.toLowerCase())
-  );
 
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game);
@@ -266,6 +250,7 @@ export const ReviewFormPage: React.FC = () => {
                 initialViewMode="grid"
                 showExploreButton={false}
                 initialQuery={gameSearch}
+                key={gameSearch}
               />
             </div>
           </div>
