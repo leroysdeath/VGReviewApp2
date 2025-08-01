@@ -34,23 +34,24 @@ const ProfilePage = () => {
         sorted.sort((a, b) => a.rating - b.rating);
         break;
       case 'oldest':
-        sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        sorted.sort((a, b) => new Date(a.post_date_time).getTime() - new Date(b.post_date_time).getTime());
         break;
       case 'recent':
       default:
-        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        sorted.sort((a, b) => new Date(b.post_date_time).getTime() - new Date(a.post_date_time).getTime());
         break;
     }
     setSortedReviews(sorted.map(review => ({
       id: review.id,
       userId: review.user_id,
       gameId: review.game_id,
+      gameTitle: review.game?.name || 'Unknown Game',
       rating: review.rating,
-      text: review.text,
-      date: new Date(review.created_at).toLocaleDateString(),
-      hasText: !!review.text,
+      text: review.review, // Column is 'review' not 'text'
+      date: new Date(review.post_date_time).toLocaleDateString(),
+      hasText: !!review.review,
       author: userProfile?.username || '',
-      authorAvatar: userProfile?.avatar_url || '/default-avatar.png'
+      authorAvatar: userProfile?.avatar || '/default-avatar.png'
     })));
   }, [reviews, reviewFilter, userProfile]);
 
@@ -65,26 +66,27 @@ const ProfilePage = () => {
       
       setCurrentUserId(user.id);
 
-      // Fetch profile from user table
-const { data: profileData, error: profileError } = await supabase
-  .from('user')
-  .select('*')
-  .eq('provider_id', user.id)
-  .single();
+      // Fetch profile from user table using provider_id (auth.uid)
+      const { data: profileData, error: profileError } = await supabase
+        .from('user')
+        .select('*')
+        .eq('provider_id', user.id)
+        .single();
 
-if (profileError && profileError.code !== 'PGRST116') throw profileError;
+      if (profileError && profileError.code !== 'PGRST116') throw profileError;
 
-// If no profile exists yet, use auth metadata
-const profile = profileData || {
-  name: user.user_metadata?.username || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-  username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
-  bio: '',
-  picurl: user.user_metadata?.avatar_url || null,
-  created_at: new Date().toISOString(),
-  location: '',
-  website: '',
-  platform: ''
-};  
+      // If no profile exists yet, use auth metadata
+      const profile = profileData || {
+        name: user.user_metadata?.username || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+        username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
+        bio: '',
+        picurl: user.user_metadata?.avatar_url || null,
+        created_at: new Date().toISOString(),
+        location: '',
+        website: '',
+        platform: ''
+      };  
+      
       setUserProfile({
         id: user.id,
         username: profile.name || profile.username,
@@ -96,20 +98,25 @@ const profile = profileData || {
         platform: profile.platform || ''
       });
 
-      // Fetch reviews (adjust columns if needed)
+      // Use database user.id (not auth.uid) for reviews
       const { data: reviewsData } = await supabase
-        .from('reviews')
-        .select('id, user_id, game_id, game_name, cover_image, rating, text, created_at')
-        .eq('user_id', user.id);
+        .from('rating') // NOT 'reviews'
+        .select(`
+          *,
+          game:game_id (id, name, pic_url, genre, release_date)
+        `)
+        .eq('user_id', profileData?.id) // Use database user ID
+        .order('post_date_time', { ascending: false });
+      
       setReviews(reviewsData || []);
 
       // Compute allGames
       const games = reviewsData?.map(review => ({
         id: review.game_id,
-        title: review.game_name,
-        coverImage: review.cover_image || '/default-cover.png',
-        releaseDate: '', // Add IGDB fetch if needed
-        genre: '', // Add IGDB fetch if needed
+        title: review.game?.name || 'Unknown Game',
+        coverImage: review.game?.pic_url || '/default-cover.png',
+        releaseDate: review.game?.release_date || '',
+        genre: review.game?.genre || '',
         rating: review.rating,
         description: '',
         developer: '',
@@ -119,7 +126,7 @@ const profile = profileData || {
 
       // Fetch/compute stats
       const currentYear = new Date().getFullYear();
-      const thisYearReviews = reviewsData?.filter(r => new Date(r.created_at).getFullYear() === currentYear).length || 0;
+      const thisYearReviews = reviewsData?.filter(r => new Date(r.post_date_time).getFullYear() === currentYear).length || 0;
       const { count: listsCount } = await supabase.from('lists').select('id', { count: 'exact' }).eq('user_id', user.id);
       const { count: followingCount } = await supabase.from('followers').select('id', { count: 'exact' }).eq('follower_id', user.id);
       const { count: followersCount } = await supabase.from('followers').select('id', { count: 'exact' }).eq('followed_id', user.id);
