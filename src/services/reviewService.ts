@@ -1,6 +1,117 @@
 import { supabase } from './supabase';
 
 /**
+ * Get database user ID from auth user
+ * Always map auth.uid → user.provider_id → user.id for all database operations
+ */
+export const getCurrentUserId = async (): Promise<number | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log('No authenticated user found');
+      return null;
+    }
+
+    const { data: dbUser, error } = await supabase
+      .from('user')
+      .select('id')
+      .eq('provider_id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching database user ID:', error);
+      return null;
+    }
+
+    return dbUser?.id || null;
+  } catch (error) {
+    console.error('Error in getCurrentUserId:', error);
+    return null;
+  }
+};
+
+/**
+ * Create a new review using proper user ID handling
+ */
+export const createReview = async (
+  gameId: number, 
+  rating: number, 
+  reviewText?: string, 
+  isRecommended?: boolean
+): Promise<ServiceResponse<Review>> => {
+  try {
+    const userId = await getCurrentUserId();
+    
+    if (!userId) {
+      return { success: false, error: 'User not authenticated or not found in database' };
+    }
+
+    // Check if user has already reviewed this game
+    const { data: existingReview } = await supabase
+      .from('rating')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('game_id', gameId)
+      .single();
+
+    if (existingReview) {
+      return { success: false, error: 'You have already reviewed this game' };
+    }
+
+    const { data, error } = await supabase
+      .from('rating') // Table: rating (not reviews)
+      .insert({
+        user_id: userId, // Database ID, not auth ID
+        game_id: gameId,
+        rating: rating,
+        review: reviewText, // Column is 'review' not 'text'
+        post_date_time: new Date().toISOString(),
+        finished: isRecommended || false
+      })
+      .select(`
+        *,
+        user:user_id(*),
+        game:game_id(*)
+      `)
+      .single();
+
+    if (error) throw error;
+
+    // Transform to our interface
+    const review: Review = {
+      id: data.id,
+      userId: data.user_id,
+      gameId: data.game_id,
+      rating: data.rating,
+      review: data.review,
+      postDateTime: data.post_date_time,
+      finished: data.finished,
+      likeCount: 0,
+      commentCount: 0,
+      user: data.user ? {
+        id: data.user.id,
+        name: data.user.name,
+        picurl: data.user.picurl
+      } : undefined,
+      game: data.game ? {
+        id: data.game.id,
+        name: data.game.name,
+        pic_url: data.game.pic_url
+      } : undefined
+    };
+
+    return { success: true, data: review };
+  } catch (error) {
+    console.error('Error creating review:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create review'
+    };
+  }
+};
+
+/**
  * Interface for review data
  */
 export interface Review {
@@ -63,6 +174,61 @@ interface ServiceResponse<T> {
   error?: string;
   count?: number;
 }
+
+/**
+ * Get reviews for current user
+ */
+export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
+  try {
+    const userId = await getCurrentUserId();
+    
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    const { data, error, count } = await supabase
+      .from('rating')
+      .select(`
+        *,
+        user:user_id(*),
+        game:game_id(*)
+      `, { count: 'exact' })
+      .eq('user_id', userId)
+      .order('post_date_time', { ascending: false });
+
+    if (error) throw error;
+
+    const reviews: Review[] = data?.map(item => ({
+      id: item.id,
+      userId: item.user_id,
+      gameId: item.game_id,
+      rating: item.rating,
+      review: item.review,
+      postDateTime: item.post_date_time,
+      finished: item.finished,
+      likeCount: 0, // Will be populated by separate query if needed
+      commentCount: 0, // Will be populated by separate query if needed
+      user: item.user ? {
+        id: item.user.id,
+        name: item.user.name,
+        picurl: item.user.picurl
+      } : undefined,
+      game: item.game ? {
+        id: item.game.id,
+        name: item.game.name,
+        pic_url: item.game.pic_url
+      } : undefined
+    })) || [];
+
+    return { success: true, data: reviews, count };
+  } catch (error) {
+    console.error('Error fetching user reviews:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch user reviews'
+    };
+  }
+};
 
 /**
  * Get review by ID with likes and comments count
