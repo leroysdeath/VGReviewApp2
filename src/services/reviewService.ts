@@ -319,6 +319,178 @@ interface ServiceResponse<T> {
 }
 
 /**
+ * Get user's review for a specific game
+ */
+export const getUserReviewForGame = async (gameId: number): Promise<ServiceResponse<Review | null>> => {
+  try {
+    console.log('🔍 Getting user review for game:', gameId);
+    
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // Look up the game in our database
+    const { data: gameRecord, error: gameError } = await supabase
+      .from('game')
+      .select('id')
+      .eq('game_id', gameId)
+      .single();
+
+    if (gameError && gameError.code !== 'PGRST116') {
+      console.error('❌ Error looking up game:', gameError);
+      return { success: false, error: `Game lookup failed: ${gameError.message}` };
+    }
+
+    if (!gameRecord) {
+      console.log('ℹ️ Game not found in database, no review exists');
+      return { success: true, data: null };
+    }
+
+    // Get the user's review for this game
+    const { data, error } = await supabase
+      .from('rating')
+      .select(`
+        *,
+        user:user_id(*),
+        game:game_id(*)
+      `)
+      .eq('user_id', userId)
+      .eq('game_id', gameRecord.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('❌ Error fetching user review:', error);
+      return { success: false, error: `Failed to fetch review: ${error.message}` };
+    }
+
+    if (!data) {
+      console.log('ℹ️ No review found for user and game');
+      return { success: true, data: null };
+    }
+
+    // Transform to our interface
+    const review: Review = {
+      id: data.id,
+      userId: data.user_id,
+      gameId: data.game_id,
+      rating: data.rating,
+      review: data.review,
+      postDateTime: data.post_date_time,
+      isRecommended: data.is_recommended,
+      likeCount: 0,
+      commentCount: 0,
+      user: data.user ? {
+        id: data.user.id,
+        name: data.user.name,
+        picurl: data.user.picurl
+      } : undefined,
+      game: data.game ? {
+        id: data.game.id,
+        name: data.game.name,
+        pic_url: data.game.pic_url
+      } : undefined
+    };
+
+    console.log('✅ Found user review:', review);
+    return { success: true, data: review };
+  } catch (error) {
+    console.error('💥 Unexpected error getting user review:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get user review'
+    };
+  }
+};
+
+/**
+ * Update an existing review
+ */
+export const updateReview = async (
+  reviewId: number,
+  gameId: number,
+  rating: number,
+  reviewText?: string,
+  isRecommended?: boolean
+): Promise<ServiceResponse<Review>> => {
+  try {
+    console.log('🔄 Updating review:', { reviewId, gameId, rating, reviewText, isRecommended });
+    
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // Verify the review belongs to the current user
+    const { data: existingReview, error: verifyError } = await supabase
+      .from('rating')
+      .select('id, user_id')
+      .eq('id', reviewId)
+      .eq('user_id', userId)
+      .single();
+
+    if (verifyError || !existingReview) {
+      console.error('❌ Review not found or access denied:', verifyError);
+      return { success: false, error: 'Review not found or you do not have permission to edit it' };
+    }
+
+    // Update the review
+    const { data, error } = await supabase
+      .from('rating')
+      .update({
+        rating: rating,
+        review: reviewText || null,
+        is_recommended: isRecommended,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', reviewId)
+      .select(`
+        *,
+        user:user_id(*),
+        game:game_id(*)
+      `)
+      .single();
+
+    if (error) {
+      console.error('❌ Review update error:', error);
+      return { success: false, error: `Failed to update review: ${error.message} (Code: ${error.code})` };
+    }
+
+    // Transform to our interface
+    const review: Review = {
+      id: data.id,
+      userId: data.user_id,
+      gameId: data.game_id,
+      rating: data.rating,
+      review: data.review,
+      postDateTime: data.post_date_time,
+      isRecommended: data.is_recommended,
+      likeCount: 0,
+      commentCount: 0,
+      user: data.user ? {
+        id: data.user.id,
+        name: data.user.name,
+        picurl: data.user.picurl
+      } : undefined,
+      game: data.game ? {
+        id: data.game.id,
+        name: data.game.name,
+        pic_url: data.game.pic_url
+      } : undefined
+    };
+
+    console.log('✅ Review updated successfully:', review);
+    return { success: true, data: review };
+  } catch (error) {
+    console.error('💥 Unexpected error updating review:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? `Unexpected error: ${error.message}` : 'Failed to update review due to unexpected error'
+    };
+  }
+};
+
+/**
  * Get reviews for current user
  */
 export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
