@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Search, Star, Save, Eye, EyeOff, X } from 'lucide-react';
-import { StarRating } from '../components/StarRating';
 import { igdbService, Game } from '../services/igdbApi';
 import { GameSearch } from '../components/GameSearch';
 import { createReview, ensureGameExists } from '../services/reviewService';
@@ -13,7 +12,7 @@ export const ReviewFormPage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [gameSearch, setGameSearch] = useState('');
-  const [rating, setRating] = useState(0);
+  const [rating, setRating] = useState(5); // Default to 5
   const [reviewText, setReviewText] = useState('');
   const [isRecommended, setIsRecommended] = useState<boolean | null>(null);
   const [didFinishGame, setDidFinishGame] = useState<boolean | null>(null);
@@ -71,7 +70,7 @@ export const ReviewFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedGame || rating === 0 || (!gameAlreadyCompleted && didFinishGame === null)) return;
+    if (!selectedGame || rating < 0.5 || (!gameAlreadyCompleted && didFinishGame === null)) return;
 
     try {
       // First, ensure the game exists in the database
@@ -184,30 +183,95 @@ export const ReviewFormPage: React.FC = () => {
 
             {/* Rating */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-6">
                 Your Rating *
               </label>
-              <div className="flex items-center gap-4">
-                <StarRating 
-                  rating={rating} 
-                  onRatingChange={setRating}
-                  interactive 
-                  size="lg" 
-                />
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl font-bold text-white">
-                    {rating > 0 ? rating.toFixed(1) : '--'}
-                  </span>
+              <div className="relative">
+                {/* Value Input Box Above Slider */}
+                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-10">
+                  <input
+                    type="number"
+                    value={rating.toFixed(1)}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (!isNaN(value)) {
+                        // Clamp to range and round to nearest 0.5
+                        const clampedValue = Math.max(0.5, Math.min(10, value));
+                        const snappedValue = Math.round(clampedValue * 2) / 2;
+                        setRating(snappedValue);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      // Ensure proper formatting on blur
+                      if (e.target.value === '') {
+                        setRating(5);
+                      }
+                    }}
+                    className="w-16 px-2 py-1 text-center text-lg font-bold bg-gray-700 text-white border border-gray-600 rounded focus:outline-none focus:border-purple-500"
+                    min="0.5"
+                    max="10"
+                    step="0.5"
+                    inputMode="decimal"
+                  />
+                </div>
+
+                {/* Slider Container */}
+                <div className="relative pt-2">
+                  {/* Custom Slider Track */}
+                  <div className="relative h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="absolute h-full bg-purple-500 transition-all duration-150"
+                      style={{ width: `${((rating - 0.5) / 9.5) * 100}%` }}
+                    />
+                  </div>
+
+                  {/* Range Input */}
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="10"
+                    step="0.5"
+                    value={rating}
+                    onChange={(e) => setRating(parseFloat(e.target.value))}
+                    className="slider-input absolute inset-0 w-full h-2 cursor-pointer"
+                    style={{ 
+                      zIndex: 2,
+                      WebkitAppearance: 'none',
+                      appearance: 'none',
+                      background: 'transparent',
+                      outline: 'none'
+                    }}
+                  />
+
+                  {/* Tick Marks */}
+                  <div className="absolute inset-x-0 -bottom-6">
+                    {[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10].map((tick) => {
+                      const position = ((tick - 0.5) / 9.5) * 100;
+                      return (
+                        <div 
+                          key={tick} 
+                          className="absolute"
+                          style={{ left: `${position}%` }}
+                        >
+                          <div className="absolute -top-3 w-0.5 h-2 bg-gray-600 transform -translate-x-1/2" />
+                          {tick % 1 === 0 && (
+                            <span className="absolute top-1 transform -translate-x-1/2 text-xs text-gray-500">
+                              {tick}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Helper Text */}
+                <div className="mt-8 text-center">
                   <span className="text-sm text-gray-400">
-                    {rating > 0 ? 'out of 10' : 'Click to rate'}
+                    {rating === 0.5 ? 'Minimum rating' : rating === 10 ? 'Perfect score!' : `${rating.toFixed(1)} out of 10`}
                   </span>
                 </div>
               </div>
-              {rating > 0 && (
-                <p className="mt-2 text-sm text-gray-400">
-                  Click the left half of a star for .5 ratings, right half for whole numbers
-                </p>
-              )}
             </div>
 
             {/* Recommendation */}
@@ -296,7 +360,7 @@ export const ReviewFormPage: React.FC = () => {
             <div className="flex gap-4 pt-6">
               <button
                 type="submit"
-                disabled={!selectedGame || rating === 0 || (!gameAlreadyCompleted && didFinishGame === null)}
+                disabled={!selectedGame || rating < 0.5 || (!gameAlreadyCompleted && didFinishGame === null)}
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Save className="h-4 w-4" />
