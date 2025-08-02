@@ -191,7 +191,7 @@ export const createReview = async (
       rating: rating,
       review: reviewText || null,
       post_date_time: new Date().toISOString(),
-      finished: isRecommended || false
+      is_recommended: isRecommended
     };
 
     console.log('📝 Inserting review data:', reviewData);
@@ -221,7 +221,7 @@ export const createReview = async (
       rating: data.rating,
       review: data.review,
       postDateTime: data.post_date_time,
-      finished: data.finished,
+      isRecommended: data.is_recommended,
       likeCount: 0,
       commentCount: 0,
       user: data.user ? {
@@ -264,7 +264,7 @@ export interface Review {
   rating: number;
   review: string | null;
   postDateTime: string;
-  finished: boolean;
+  isRecommended: boolean | null;
   likeCount?: number;
   commentCount?: number;
   isLiked?: boolean;
@@ -348,7 +348,7 @@ export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
       rating: item.rating,
       review: item.review,
       postDateTime: item.post_date_time,
-      finished: item.finished,
+      isRecommended: item.is_recommended,
       likeCount: 0, // Will be populated by separate query if needed
       commentCount: 0, // Will be populated by separate query if needed
       user: item.user ? {
@@ -419,7 +419,7 @@ export const getReview = async (
       rating: data.rating,
       review: data.review,
       postDateTime: data.post_date_time,
-      finished: data.finished,
+      isRecommended: data.is_recommended,
       likeCount: likeCount || 0,
       commentCount: commentCount || 0,
       user: data.user ? {
