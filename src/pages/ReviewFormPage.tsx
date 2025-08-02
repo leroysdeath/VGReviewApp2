@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Search, Star, Save, Eye, EyeOff, X } from 'lucide-react';
 import { igdbService, Game } from '../services/igdbApi';
 import { GameSearch } from '../components/GameSearch';
-import { createReview, ensureGameExists } from '../services/reviewService';
+import { createReview, ensureGameExists, getUserReviewForGame, updateReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
 
 export const ReviewFormPage: React.FC = () => {
@@ -18,6 +18,17 @@ export const ReviewFormPage: React.FC = () => {
   const [didFinishGame, setDidFinishGame] = useState<boolean | null>(null);
   const [gameAlreadyCompleted, setGameAlreadyCompleted] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [existingReviewId, setExistingReviewId] = useState<number | null>(null);
+  const [initialFormValues, setInitialFormValues] = useState<{
+    rating: number;
+    reviewText: string;
+    isRecommended: boolean | null;
+    didFinishGame: boolean | null;
+  } | null>(null);
+  const [hasFormChanges, setHasFormChanges] = useState(false);
 
   useEffect(() => {
     // Load game if gameId is provided
@@ -54,6 +65,72 @@ export const ReviewFormPage: React.FC = () => {
     checkGameProgress();
   }, [selectedGame]);
 
+  // Load existing review data if user is editing
+  useEffect(() => {
+    const loadExistingReview = async () => {
+      if (!selectedGame || !gameId) return;
+
+      try {
+        console.log('Checking for existing review for game:', gameId);
+        const result = await getUserReviewForGame(parseInt(gameId));
+
+        if (result.success && result.data) {
+          console.log('Found existing review, entering edit mode:', result.data);
+          
+          // Set edit mode and form values
+          setIsEditMode(true);
+          setExistingReviewId(result.data.id);
+          setRating(result.data.rating);
+          setReviewText(result.data.review || '');
+          setIsRecommended(result.data.isRecommended);
+          
+          // Store initial values for change detection
+          const initialValues = {
+            rating: result.data.rating,
+            reviewText: result.data.review || '',
+            isRecommended: result.data.isRecommended,
+            didFinishGame: null // Will be set based on game progress
+          };
+          setInitialFormValues(initialValues);
+          
+          console.log('Initial form values set:', initialValues);
+        } else {
+          console.log('No existing review found, staying in create mode');
+          setIsEditMode(false);
+          setExistingReviewId(null);
+          setInitialFormValues(null);
+        }
+      } catch (error) {
+        console.error('Error loading existing review:', error);
+        setIsEditMode(false);
+      }
+    };
+
+    loadExistingReview();
+  }, [selectedGame, gameId]);
+
+  // Track form changes for edit mode
+  useEffect(() => {
+    if (!isEditMode || !initialFormValues) {
+      setHasFormChanges(false);
+      return;
+    }
+
+    const currentValues = {
+      rating,
+      reviewText,
+      isRecommended,
+      didFinishGame
+    };
+
+    const hasChanges = 
+      currentValues.rating !== initialFormValues.rating ||
+      currentValues.reviewText !== initialFormValues.reviewText ||
+      currentValues.isRecommended !== initialFormValues.isRecommended ||
+      currentValues.didFinishGame !== initialFormValues.didFinishGame;
+
+    setHasFormChanges(hasChanges);
+  }, [rating, reviewText, isRecommended, didFinishGame, isEditMode, initialFormValues]);
 
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game);
@@ -73,52 +150,93 @@ export const ReviewFormPage: React.FC = () => {
     if (!selectedGame || rating < 0.5 || (!gameAlreadyCompleted && didFinishGame === null)) return;
 
     try {
-      // First, ensure the game exists in the database
-      const ensureGameResult = await ensureGameExists(
-        parseInt(selectedGame.id),
-        selectedGame.title,
-        selectedGame.coverImage,
-        selectedGame.genre,
-        selectedGame.releaseDate
-      );
-
-      if (!ensureGameResult.success) {
-        console.error('Failed to ensure game exists:', ensureGameResult.error);
-        alert(`Failed to add game to database: ${ensureGameResult.error}`);
-        return;
-      }
-
-      // Then create the review
-      const result = await createReview(
-        parseInt(selectedGame.id), // Convert string ID to number
-        rating,
-        reviewText,
-        isRecommended
-      );
-
-      if (result.success) {
-        console.log('Review created successfully:', result.data);
+      if (isEditMode && existingReviewId) {
+        // Update existing review
+        console.log('Updating existing review:', existingReviewId);
         
-        // Update game progress based on user selection (only if game not already completed)
-        try {
-          if (!gameAlreadyCompleted) {
-            if (didFinishGame) {
-              await markGameCompleted(parseInt(selectedGame.id));
-              console.log('✅ Game marked as completed');
-            } else {
-              await markGameStarted(parseInt(selectedGame.id));
-              console.log('✅ Game marked as started');
+        const result = await updateReview(
+          existingReviewId,
+          parseInt(selectedGame.id),
+          rating,
+          reviewText,
+          isRecommended
+        );
+
+        if (result.success) {
+          console.log('Review updated successfully:', result.data);
+          
+          // Update game progress based on user selection (only if game not already completed)
+          try {
+            if (!gameAlreadyCompleted) {
+              if (didFinishGame) {
+                await markGameCompleted(parseInt(selectedGame.id));
+                console.log('✅ Game marked as completed');
+              } else {
+                await markGameStarted(parseInt(selectedGame.id));
+                console.log('✅ Game marked as started');
+              }
             }
+          } catch (progressError) {
+            console.error('❌ Error updating game progress:', progressError);
+            // Don't prevent navigation if progress update fails
           }
-        } catch (progressError) {
-          console.error('❌ Error updating game progress:', progressError);
-          // Don't prevent navigation if progress update fails
+          
+          navigate(`/game/${selectedGame.id}`);
+        } else {
+          console.error('Failed to update review:', result.error);
+          alert(`Failed to update review: ${result.error}`);
         }
-        
-        navigate(`/game/${selectedGame.id}`);
       } else {
-        console.error('Failed to create review:', result.error);
-        alert(`Failed to submit review: ${result.error}`);
+        // Create new review
+        console.log('Creating new review');
+        
+        // First, ensure the game exists in the database
+        const ensureGameResult = await ensureGameExists(
+          parseInt(selectedGame.id),
+          selectedGame.title,
+          selectedGame.coverImage,
+          selectedGame.genre,
+          selectedGame.releaseDate
+        );
+
+        if (!ensureGameResult.success) {
+          console.error('Failed to ensure game exists:', ensureGameResult.error);
+          alert(`Failed to add game to database: ${ensureGameResult.error}`);
+          return;
+        }
+
+        // Then create the review
+        const result = await createReview(
+          parseInt(selectedGame.id), // Convert string ID to number
+          rating,
+          reviewText,
+          isRecommended
+        );
+
+        if (result.success) {
+          console.log('Review created successfully:', result.data);
+          
+          // Update game progress based on user selection (only if game not already completed)
+          try {
+            if (!gameAlreadyCompleted) {
+              if (didFinishGame) {
+                await markGameCompleted(parseInt(selectedGame.id));
+                console.log('✅ Game marked as completed');
+              } else {
+                await markGameStarted(parseInt(selectedGame.id));
+                console.log('✅ Game marked as started');
+              }
+            }
+          } catch (progressError) {
+            console.error('❌ Error updating game progress:', progressError);
+            // Don't prevent navigation if progress update fails
+          }
+          
+          navigate(`/game/${selectedGame.id}`);
+        } else {
+          console.error('Failed to create review:', result.error);
+          alert(`Failed to submit review: ${result.error}`);
+        }
       }
     } catch (error) {
       console.error('Error submitting review:', error);
@@ -131,7 +249,10 @@ export const ReviewFormPage: React.FC = () => {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-gray-800 rounded-lg p-8">
           <h1 className="text-3xl font-bold text-white mb-8">
-            {selectedGame ? `Review: ${selectedGame.title}` : 'Write a Review'}
+            {selectedGame 
+              ? (isEditMode ? `Edit Your Review: ${selectedGame.title}` : `Review: ${selectedGame.title}`)
+              : (isEditMode ? 'Edit Your Review' : 'Write a Review')
+            }
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -360,11 +481,16 @@ export const ReviewFormPage: React.FC = () => {
             <div className="flex gap-4 pt-6">
               <button
                 type="submit"
-                disabled={!selectedGame || rating < 0.5 || (!gameAlreadyCompleted && didFinishGame === null)}
+                disabled={
+                  !selectedGame || 
+                  rating < 0.5 || 
+                  (!gameAlreadyCompleted && didFinishGame === null) ||
+                  (isEditMode && !hasFormChanges)
+                }
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Save className="h-4 w-4" />
-                Publish Review
+                {isEditMode ? 'Update Review' : 'Publish Review'}
               </button>
               <button
                 type="button"
