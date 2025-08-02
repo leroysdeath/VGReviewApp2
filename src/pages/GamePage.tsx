@@ -525,35 +525,32 @@ export const GamePage: React.FC = () => {
 
                 <div className="flex items-center gap-3 ml-4">
                   {isAuthenticated ? (
-                    <>
+                    <div className="flex items-center gap-3">
                       <Link
                         to={`/review/${game.id}`}
-                        className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center hover:bg-purple-700 transition-colors"
+                        className="relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible bg-purple-600 border-purple-500 hover:bg-purple-700 cursor-pointer"
                       >
                         <ScrollText className="h-4 w-4 text-white" />
                       </Link>
                       <Link
                         to={`/review/${game.id}`}
-                        className="text-gray-300 text-sm hover:text-purple-400 transition-colors"
+                        className={`text-sm ${userHasReviewed ? 'text-purple-400' : 'text-gray-300'} hover:text-purple-400 transition-colors`}
                       >
                         {userReviewLoading ? 'Loading...' : userHasReviewed ? 'Edit Review' : 'Write a Review'}
                       </Link>
-                    </>
+                    </div>
                   ) : (
-                    <>
+                    <div className="flex items-center gap-3">
                       <button
                         onClick={() => handleAuthRequiredAction('write_review')}
-                        className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center hover:bg-purple-700 transition-colors"
+                        className="relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible bg-purple-600 border-purple-500 hover:bg-purple-700 cursor-pointer"
                       >
                         <ScrollText className="h-4 w-4 text-white" />
                       </button>
-                      <button
-                        onClick={() => handleAuthRequiredAction('write_review')}
-                        className="text-gray-300 text-sm hover:text-purple-400 transition-colors"
-                      >
+                      <span className="text-sm text-gray-300">
                         Write a Review
-                      </button>
-                    </>
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
