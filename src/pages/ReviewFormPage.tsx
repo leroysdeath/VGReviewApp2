@@ -23,6 +23,7 @@ export const ReviewFormPage: React.FC = () => {
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
   const [existingReviewId, setExistingReviewId] = useState<number | null>(null);
+  const [gameProgressLoaded, setGameProgressLoaded] = useState(false);
   const [initialFormValues, setInitialFormValues] = useState<{
     rating: number;
     reviewText: string;
@@ -51,25 +52,42 @@ export const ReviewFormPage: React.FC = () => {
   // Check if game is already completed when selectedGame changes
   useEffect(() => {
     const checkGameProgress = async () => {
-      if (!selectedGame) return;
+      if (!selectedGame) {
+        setGameProgressLoaded(false);
+        return;
+      }
       
       try {
+        console.log('Checking game progress for game:', selectedGame.id);
         const result = await getGameProgress(parseInt(selectedGame.id));
-        if (result.success && result.data) {
-          const isCompleted = result.data.completed;
-          setGameAlreadyCompleted(isCompleted);
-          
-          // If game is marked as completed on game page, this takes highest priority
-          if (isCompleted) {
-            setDidFinishGame(true);
-            setIsGameCompletionLocked(true);
-            console.log('Game is marked as completed on game page - locking completion status');
+        
+        if (result.success) {
+          if (result.data) {
+            const isCompleted = result.data.completed;
+            setGameAlreadyCompleted(isCompleted);
+            
+            // Game progress status ALWAYS takes priority (whether completed or not)
+            setDidFinishGame(isCompleted);
+            
+            if (isCompleted) {
+              setIsGameCompletionLocked(true);
+              console.log('Game is marked as completed on game page - locking completion status');
+            } else {
+              setIsGameCompletionLocked(false);
+              console.log('Game is NOT marked as completed on game page - setting didFinishGame to false');
+            }
           } else {
+            // No game progress data found - game has not been started or completed
+            setGameAlreadyCompleted(false);
+            setDidFinishGame(null); // Use null to indicate no game progress data
             setIsGameCompletionLocked(false);
+            console.log('No game progress data found - didFinishGame set to null');
           }
+          setGameProgressLoaded(true);
         }
       } catch (error) {
         console.error('Error checking game progress:', error);
+        setGameProgressLoaded(true); // Still mark as loaded to prevent blocking
       }
     };
 
@@ -79,7 +97,7 @@ export const ReviewFormPage: React.FC = () => {
   // Load existing review data if user is editing
   useEffect(() => {
     const loadExistingReview = async () => {
-      if (!selectedGame || !gameId) return;
+      if (!selectedGame || !gameId || !gameProgressLoaded) return;
 
       try {
         console.log('Checking for existing review for game:', gameId);
@@ -95,12 +113,17 @@ export const ReviewFormPage: React.FC = () => {
           setReviewText(result.data.review || '');
           setIsRecommended(result.data.isRecommended);
           
-          // Only set didFinishGame from review data if not locked by game completion status
-          // Priority: Game page completion status > Review data > Default state
-          if (!isGameCompletionLocked) {
-            // For now, we'll derive this from the review's recommendation
-            // This could be enhanced if we add a specific field for game completion in reviews
-            setDidFinishGame(result.data.isRecommended);
+          // CRITICAL FIX: didFinishGame is already set by game progress check
+          // We DO NOT override it here - game progress is the source of truth
+          // Only use review data as fallback if didFinishGame is still null (no game progress data)
+          let finalDidFinishGame = didFinishGame;
+          if (didFinishGame === null) {
+            // No game progress data exists, use review data as fallback
+            finalDidFinishGame = result.data.isRecommended;
+            setDidFinishGame(finalDidFinishGame);
+            console.log('No game progress data - using review recommendation as fallback:', finalDidFinishGame);
+          } else {
+            console.log('Game progress data takes priority - didFinishGame remains:', didFinishGame);
           }
           
           // Store initial values for change detection
@@ -108,11 +131,11 @@ export const ReviewFormPage: React.FC = () => {
             rating: result.data.rating,
             reviewText: result.data.review || '',
             isRecommended: result.data.isRecommended,
-            didFinishGame: isGameCompletionLocked ? true : result.data.isRecommended
+            didFinishGame: finalDidFinishGame
           };
           setInitialFormValues(initialValues);
           
-          console.log('Initial form values set:', initialValues);
+          console.log('Initial form values set with priority logic:', initialValues);
         } else {
           console.log('No existing review found, staying in create mode');
           setIsEditMode(false);
@@ -126,7 +149,7 @@ export const ReviewFormPage: React.FC = () => {
     };
 
     loadExistingReview();
-  }, [selectedGame, gameId, isGameCompletionLocked]);
+  }, [selectedGame, gameId, gameProgressLoaded, didFinishGame]);
 
   // Track form changes for edit mode
   useEffect(() => {
@@ -451,8 +474,8 @@ export const ReviewFormPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Did you finish the game? - Show based on completion status */}
-            {!gameAlreadyCompleted && (
+            {/* Did you finish the game? - Show when not completed OR when editing to show locked state */}
+            {(!gameAlreadyCompleted || isEditMode) && (
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-4">
                   Did you finish the game?
