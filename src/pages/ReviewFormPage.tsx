@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Star, Save, Eye, EyeOff, X } from 'lucide-react';
+import { Search, Star, Save, Eye, EyeOff, X, Lock } from 'lucide-react';
 import { igdbService, Game } from '../services/igdbApi';
 import { GameSearch } from '../components/GameSearch';
 import { createReview, ensureGameExists, getUserReviewForGame, updateReview } from '../services/reviewService';
@@ -17,6 +17,7 @@ export const ReviewFormPage: React.FC = () => {
   const [isRecommended, setIsRecommended] = useState<boolean | null>(null);
   const [didFinishGame, setDidFinishGame] = useState<boolean | null>(null);
   const [gameAlreadyCompleted, setGameAlreadyCompleted] = useState(false);
+  const [isGameCompletionLocked, setIsGameCompletionLocked] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   
   // Edit mode state
@@ -55,7 +56,17 @@ export const ReviewFormPage: React.FC = () => {
       try {
         const result = await getGameProgress(parseInt(selectedGame.id));
         if (result.success && result.data) {
-          setGameAlreadyCompleted(result.data.completed);
+          const isCompleted = result.data.completed;
+          setGameAlreadyCompleted(isCompleted);
+          
+          // If game is marked as completed on game page, this takes highest priority
+          if (isCompleted) {
+            setDidFinishGame(true);
+            setIsGameCompletionLocked(true);
+            console.log('Game is marked as completed on game page - locking completion status');
+          } else {
+            setIsGameCompletionLocked(false);
+          }
         }
       } catch (error) {
         console.error('Error checking game progress:', error);
@@ -84,12 +95,20 @@ export const ReviewFormPage: React.FC = () => {
           setReviewText(result.data.review || '');
           setIsRecommended(result.data.isRecommended);
           
+          // Only set didFinishGame from review data if not locked by game completion status
+          // Priority: Game page completion status > Review data > Default state
+          if (!isGameCompletionLocked) {
+            // For now, we'll derive this from the review's recommendation
+            // This could be enhanced if we add a specific field for game completion in reviews
+            setDidFinishGame(result.data.isRecommended);
+          }
+          
           // Store initial values for change detection
           const initialValues = {
             rating: result.data.rating,
             reviewText: result.data.review || '',
             isRecommended: result.data.isRecommended,
-            didFinishGame: null // Will be set based on game progress
+            didFinishGame: isGameCompletionLocked ? true : result.data.isRecommended
           };
           setInitialFormValues(initialValues);
           
@@ -107,7 +126,7 @@ export const ReviewFormPage: React.FC = () => {
     };
 
     loadExistingReview();
-  }, [selectedGame, gameId]);
+  }, [selectedGame, gameId, isGameCompletionLocked]);
 
   // Track form changes for edit mode
   useEffect(() => {
@@ -127,10 +146,16 @@ export const ReviewFormPage: React.FC = () => {
       currentValues.rating !== initialFormValues.rating ||
       currentValues.reviewText !== initialFormValues.reviewText ||
       currentValues.isRecommended !== initialFormValues.isRecommended ||
-      currentValues.didFinishGame !== initialFormValues.didFinishGame;
+      (!isGameCompletionLocked && currentValues.didFinishGame !== initialFormValues.didFinishGame);
 
     setHasFormChanges(hasChanges);
-  }, [rating, reviewText, isRecommended, didFinishGame, isEditMode, initialFormValues]);
+    console.log('Form change detection:', {
+      currentValues,
+      initialFormValues,
+      isGameCompletionLocked,
+      hasChanges
+    });
+  }, [rating, reviewText, isRecommended, didFinishGame, isEditMode, initialFormValues, isGameCompletionLocked]);
 
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game);
@@ -426,36 +451,62 @@ export const ReviewFormPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Did you finish the game? - Only show if game not already completed */}
+            {/* Did you finish the game? - Show based on completion status */}
             {!gameAlreadyCompleted && (
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-4">
                   Did you finish the game?
+                  {isGameCompletionLocked && (
+                    <span className="ml-2 inline-flex items-center text-xs text-yellow-400">
+                      <Lock className="h-3 w-3 mr-1" />
+                      Locked (marked as finished on game page)
+                    </span>
+                  )}
                 </label>
                 <div className="flex gap-4">
                   <button
                     type="button"
-                    onClick={() => setDidFinishGame(true)}
+                    onClick={() => !isGameCompletionLocked && setDidFinishGame(true)}
+                    disabled={isGameCompletionLocked}
                     className={`flex-1 py-4 px-6 rounded-lg font-medium text-lg transition-all duration-200 ${
                       didFinishGame === true
                         ? 'bg-green-600 text-white shadow-lg transform scale-105'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        : isGameCompletionLocked
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600 cursor-pointer'
                     }`}
                   >
-                    <span className={didFinishGame === true ? 'text-white' : 'text-green-500'}>YES</span>
+                    <div className="flex items-center justify-center gap-2">
+                      <span className={didFinishGame === true ? 'text-white' : isGameCompletionLocked ? 'text-gray-400' : 'text-green-500'}>
+                        YES
+                      </span>
+                      {isGameCompletionLocked && didFinishGame === true && (
+                        <Lock className="h-4 w-4" />
+                      )}
+                    </div>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDidFinishGame(false)}
+                    onClick={() => !isGameCompletionLocked && setDidFinishGame(false)}
+                    disabled={isGameCompletionLocked}
                     className={`flex-1 py-4 px-6 rounded-lg font-medium text-lg transition-all duration-200 ${
                       didFinishGame === false
                         ? 'bg-red-600 text-white shadow-lg transform scale-105'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        : isGameCompletionLocked
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600 cursor-pointer'
                     }`}
                   >
-                    <span className={didFinishGame === false ? 'text-white' : 'text-red-500'}>NO</span>
+                    <span className={didFinishGame === false ? 'text-white' : isGameCompletionLocked ? 'text-gray-400' : 'text-red-500'}>
+                      NO
+                    </span>
                   </button>
                 </div>
+                {isGameCompletionLocked && (
+                  <p className="mt-2 text-sm text-gray-500 italic">
+                    This setting is locked because you marked this game as finished on the game page.
+                  </p>
+                )}
               </div>
             )}
 
@@ -488,10 +539,20 @@ export const ReviewFormPage: React.FC = () => {
                   (isEditMode && !hasFormChanges)
                 }
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title={
+                  isEditMode && !hasFormChanges 
+                    ? "Make changes to enable updating your review"
+                    : ""
+                }
               >
                 <Save className="h-4 w-4" />
                 {isEditMode ? 'Update Review' : 'Publish Review'}
               </button>
+              {isEditMode && !hasFormChanges && (
+                <p className="text-sm text-gray-500 mt-2">
+                  Make changes to any field to enable the Update Review button
+                </p>
+              )}
               <button
                 type="button"
                 onClick={() => navigate(-1)}
