@@ -105,37 +105,43 @@ export const UserSearchPage: React.FC = () => {
         console.error('❌ Error loading review data:', reviewError);
       }
 
-      // Create lookup maps for counts
-      const followerCounts = new Map<number, number>();
-      const followingCounts = new Map<number, number>();
-      const reviewCounts = new Map<number, number>();
-      const averageRatings = new Map<number, number>();
+      // Create lookup maps for counts (use string keys to match transformed user IDs)
+      const followerCounts = new Map<string, number>();
+      const followingCounts = new Map<string, number>();
+      const reviewCounts = new Map<string, number>();
+      const averageRatings = new Map<string, number>();
 
       // Count followers for each user
       if (followerData) {
+        console.log(`📊 Processing ${followerData.length} follower relationships`);
         followerData.forEach(follow => {
-          const count = followerCounts.get(follow.following_id) || 0;
-          followerCounts.set(follow.following_id, count + 1);
+          const userId = follow.following_id.toString();
+          const count = followerCounts.get(userId) || 0;
+          followerCounts.set(userId, count + 1);
         });
       }
 
       // Count following for each user
       if (followingData) {
+        console.log(`📊 Processing ${followingData.length} following relationships`);
         followingData.forEach(follow => {
-          const count = followingCounts.get(follow.follower_id) || 0;
-          followingCounts.set(follow.follower_id, count + 1);
+          const userId = follow.follower_id.toString();
+          const count = followingCounts.get(userId) || 0;
+          followingCounts.set(userId, count + 1);
         });
       }
 
       // Count reviews and calculate averages for each user
       if (reviewData) {
-        const userReviews = new Map<number, number[]>();
+        console.log(`📊 Processing ${reviewData.length} reviews`);
+        const userReviews = new Map<string, number[]>();
         
         reviewData.forEach(review => {
-          if (!userReviews.has(review.user_id)) {
-            userReviews.set(review.user_id, []);
+          const userId = review.user_id.toString();
+          if (!userReviews.has(userId)) {
+            userReviews.set(userId, []);
           }
-          userReviews.get(review.user_id)!.push(review.rating);
+          userReviews.get(userId)!.push(review.rating);
         });
 
         userReviews.forEach((ratings, userId) => {
@@ -150,22 +156,34 @@ export const UserSearchPage: React.FC = () => {
       console.log('✅ All user data queries completed');
 
       // Transform Supabase users to match our interface with real data
-      const transformedUsers = realUsers.map((user) => ({
-        id: user.id.toString(),
-        username: user.name || 'Anonymous',
-        bio: user.bio || '',
-        avatar: user.picurl || '',
-        reviewCount: reviewCounts.get(user.id) || 0,
-        followers: followerCounts.get(user.id) || 0,
-        following: followingCounts.get(user.id) || 0,
-        averageRating: averageRatings.get(user.id) || undefined,
-        joinDate: user.created_at,
-        verified: false // Could be added to user table later
-      }));
+      const transformedUsers = realUsers.map((user) => {
+        const userIdStr = user.id.toString();
+        const followerCount = followerCounts.get(userIdStr) || 0;
+        const followingCount = followingCounts.get(userIdStr) || 0;
+        
+        console.log(`User ${user.name} (ID: ${userIdStr}): ${followerCount} followers, ${followingCount} following`);
+        
+        return {
+          id: userIdStr,
+          username: user.name || 'Anonymous',
+          bio: user.bio || '',
+          avatar: user.picurl || '',
+          reviewCount: reviewCounts.get(userIdStr) || 0,
+          followers: followerCount,
+          following: followingCount,
+          averageRating: averageRatings.get(userIdStr) || undefined,
+          joinDate: user.created_at,
+          verified: false // Could be added to user table later
+        };
+      });
 
       console.log('📈 User stats summary:', {
         totalUsers: transformedUsers.length,
         usersWithReviews: transformedUsers.filter(u => u.reviewCount > 0).length,
+        usersWithFollowers: transformedUsers.filter(u => u.followers > 0).length,
+        usersFollowingOthers: transformedUsers.filter(u => u.following > 0).length,
+        totalFollowerRelationships: followerData?.length || 0,
+        totalFollowingRelationships: followingData?.length || 0,
         totalReviews: transformedUsers.reduce((sum, u) => sum + u.reviewCount, 0),
         totalFollows: transformedUsers.reduce((sum, u) => sum + u.followers, 0),
         avgFollowers: transformedUsers.length > 0 ? 
