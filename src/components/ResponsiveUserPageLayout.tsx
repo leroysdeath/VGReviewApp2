@@ -77,11 +77,23 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
           <div className="px-4 py-6">
             {/* Profile Image and Basic Info */}
             <div className="flex items-start gap-4 mb-6">
-              <img
-                src={user.avatar}
-                alt={user.username}
-                className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
-              />
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.username}
+                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div 
+                className={`w-20 h-20 rounded-full border-2 border-gray-600 bg-purple-600 flex items-center justify-center text-white font-bold text-2xl ${user.avatar ? 'hidden' : 'flex'}`}
+                style={{ display: user.avatar ? 'none' : 'flex' }}
+              >
+                {user.username ? user.username.charAt(0).toUpperCase() : '?'}
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <h1 className="text-2xl font-bold text-white">{user.username}</h1>
@@ -233,11 +245,23 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             {/* Profile Info Section */}
             <div className="flex items-start gap-6">
               <div className="relative flex-shrink-0">
-                <img
-                  src={user.avatar}
-                  alt={user.username}
-                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
-                />
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.username}
+                    className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className={`w-20 h-20 rounded-full border-2 border-gray-600 bg-purple-600 flex items-center justify-center text-white font-bold text-2xl ${user.avatar ? 'hidden' : 'flex'}`}
+                  style={{ display: user.avatar ? 'none' : 'flex' }}
+                >
+                  {user.username ? user.username.charAt(0).toUpperCase() : '?'}
+                </div>
               </div>
               
               <div className="flex-1 min-w-0">
