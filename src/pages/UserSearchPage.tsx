@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, Users, UserPlus, UserCheck, TrendingUp, Clock, Filter, Star, MessageCircle } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { mockUsers } from '../data/mockData';
 import { useResponsive } from '../hooks/useResponsive';
 import { supabase } from '../services/supabase';
 
@@ -22,7 +21,7 @@ export const UserSearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
   const [followingUsers, setFollowingUsers] = useState<string[]>([]);
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'relevance' | 'followers' | 'reviews' | 'recent'>('relevance');
@@ -65,18 +64,17 @@ export const UserSearchPage: React.FC = () => {
         const transformedUsers = realUsers.map(user => ({
           id: user.id.toString(),
           username: user.name || 'Anonymous',
-          bio: user.bio || 'No bio available',
-          avatar: user.picurl || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
-          reviewCount: Math.floor(Math.random() * 50) + 1, // Would come from ratings count
-          followers: Math.floor(Math.random() * 1000) + 10,
-          following: Math.floor(Math.random() * 200) + 5,
-          averageRating: (Math.random() * 3 + 7).toFixed(1), // 7-10 range
+          bio: user.bio || '',
+          avatar: user.picurl || '',
+          reviewCount: 0, // TODO: Get actual count from ratings table
+          followers: 0, // TODO: Get actual count from user_follows table
+          following: 0, // TODO: Get actual count from user_follows table
+          averageRating: undefined,
           joinDate: user.created_at,
-          verified: Math.random() > 0.7
+          verified: false
         }));
 
-        // Combine with mock users for demo purposes
-        setUsers([...transformedUsers, ...mockUsers]);
+        setUsers(transformedUsers);
       } else {
         console.log('Using mock users only');
       }
@@ -141,7 +139,7 @@ export const UserSearchPage: React.FC = () => {
   const filteredUsers = useMemo(() => {
     let filtered = users.filter(user =>
       user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.bio.toLowerCase().includes(searchTerm.toLowerCase())
+      (user.bio && user.bio.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     // Sort users based on selected criteria
@@ -256,14 +254,17 @@ export const UserSearchPage: React.FC = () => {
                     <div key={user.id} className={`bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors ${isMobile ? 'p-4' : 'p-6'}`}>
                       <div className={`flex items-center gap-4 ${isMobile ? 'mb-3' : 'mb-4'}`}>
                         <div className="relative">
-                          <img
-                            src={user.avatar}
-                            alt={user.username}
-                            className={`rounded-full object-cover ${isMobile ? 'w-12 h-12' : 'w-16 h-16'}`}
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150';
-                            }}
-                          />
+                          {user.avatar ? (
+                            <img
+                              src={user.avatar}
+                              alt={user.username}
+                              className={`rounded-full object-cover ${isMobile ? 'w-12 h-12' : 'w-16 h-16'}`}
+                            />
+                          ) : (
+                            <div className={`rounded-full bg-purple-600 flex items-center justify-center text-white font-bold ${isMobile ? 'w-12 h-12 text-lg' : 'w-16 h-16 text-xl'}`}>
+                              {user.username.charAt(0).toUpperCase()}
+                            </div>
+                          )}
                           {user.verified && (
                             <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
                               <UserCheck className="h-3 w-3 text-white" />
@@ -290,9 +291,11 @@ export const UserSearchPage: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      <p className={`text-gray-300 mb-4 line-clamp-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                        {user.bio}
-                      </p>
+                      {user.bio && (
+                        <p className={`text-gray-300 mb-4 line-clamp-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                          {user.bio}
+                        </p>
+                      )}
                       <div className={`flex items-center justify-between ${isMobile ? 'flex-col gap-3' : ''}`}>
                         <div className={`flex items-center gap-4 text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                           <div className="flex items-center gap-1">
@@ -357,14 +360,17 @@ export const UserSearchPage: React.FC = () => {
                   <div className={`flex items-center justify-between ${isMobile ? 'flex-col gap-3' : ''}`}>
                     <div className={`flex items-center gap-4 ${isMobile ? 'w-full' : ''}`}>
                       <div className="relative">
-                        <img
-                          src={user.avatar}
-                          alt={user.username}
-                          className={`rounded-full object-cover ${isMobile ? 'w-10 h-10' : 'w-12 h-12'}`}
-                          onError={(e) => {
-                            e.currentTarget.src = 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150';
-                          }}
-                        />
+                        {user.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user.username}
+                            className={`rounded-full object-cover ${isMobile ? 'w-10 h-10' : 'w-12 h-12'}`}
+                          />
+                        ) : (
+                          <div className={`rounded-full bg-purple-600 flex items-center justify-center text-white font-bold ${isMobile ? 'w-10 h-10 text-sm' : 'w-12 h-12 text-base'}`}>
+                            {user.username.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         {user.verified && (
                           <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
                             <UserCheck className="h-2 w-2 text-white" />
@@ -378,9 +384,11 @@ export const UserSearchPage: React.FC = () => {
                         >
                           {user.username}
                         </Link>
-                        <p className={`text-gray-400 ${isMobile ? 'text-xs truncate' : 'text-sm'}`}>
-                          {user.bio}
-                        </p>
+                        {user.bio && (
+                          <p className={`text-gray-400 ${isMobile ? 'text-xs truncate' : 'text-sm'}`}>
+                            {user.bio}
+                          </p>
+                        )}
                         {user.averageRating && (
                           <div className="flex items-center gap-1 mt-1">
                             <Star className="h-3 w-3 text-yellow-500 fill-current" />
@@ -431,17 +439,25 @@ export const UserSearchPage: React.FC = () => {
             </div>
 
             {/* No Results */}
-            {filteredUsers.length === 0 && searchTerm && !loadingUsers && (
+            {filteredUsers.length === 0 && !loadingUsers && (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">👥</div>
-                <h2 className="text-xl font-semibold mb-2">No users found</h2>
-                <p className="text-gray-400 mb-4">Try adjusting your search terms</p>
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                >
-                  Clear Search
-                </button>
+                <h2 className="text-xl font-semibold text-white mb-2">
+                  {searchTerm ? 'No users found' : 'No users yet'}
+                </h2>
+                <p className="text-gray-400 mb-4">
+                  {searchTerm 
+                    ? 'Try adjusting your search terms'
+                    : 'Be the first to join the community!'}
+                </p>
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                  >
+                    Clear Search
+                  </button>
+                )}
               </div>
             )}
           </div>
