@@ -9,6 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 import { getGameProgress, markGameStarted, markGameCompleted } from '../services/gameProgressService';
 import { ensureGameExists, getUserReviewForGame } from '../services/reviewService';
+import { generateRatingDistribution } from '../utils/dataTransformers';
 
 export const GamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -331,16 +332,13 @@ export const GamePage: React.FC = () => {
     ? transformedReviews.reduce((sum, review) => sum + review.rating, 0) / transformedReviews.length
     : 0;
 
-  const ratingDistribution = [
-    { rating: 10, count: 15 },
-    { rating: 9, count: 25 },
-    { rating: 8, count: 30 },
-    { rating: 7, count: 20 },
-    { rating: 6, count: 8 },
-    { rating: 5, count: 2 },
-  ];
+  // Calculate rating distribution from actual reviews data
+  // Only calculate when reviews are loaded to avoid empty state during loading
+  const ratingDistribution = reviewsLoading ? 
+    Array.from({ length: 10 }, (_, i) => ({ rating: 10 - i, count: 0 })) : // Show empty bars while loading
+    generateRatingDistribution(reviews);
 
-  const maxCount = Math.max(...ratingDistribution.map(d => d.count));
+  const maxCount = Math.max(...ratingDistribution.map(d => d.count), 1); // Ensure minimum of 1 to avoid division by 0
 
   if (gameLoading) {
     return (
