@@ -321,7 +321,7 @@ export const GamePage: React.FC = () => {
     likeCount: 0, // To be implemented with real data
     commentCount: 0, // To be implemented with real data
     author: review.user?.name || 'Anonymous',
-    authorAvatar: review.user?.picurl || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
+    authorAvatar: review.user?.picurl || '/default-avatar.png'
   }));
 
   const topReviews = transformedReviews.filter(r => r.rating >= 8).slice(0, 3);
