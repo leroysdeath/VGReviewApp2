@@ -181,7 +181,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({
             <div className="text-xs text-gray-400 uppercase tracking-wide">Reviews</div>
           </div>
           <div className="bg-gray-700/50 rounded-lg p-3 text-center">
-            <div className="text-xl font-bold text-white">{profile.stats.averageRating.toFixed(1)}</div>
+            <div className="text-xl font-bold text-white">{(profile.stats.averageRating || 0).toFixed(1)}</div>
             <div className="text-xs text-gray-400 uppercase tracking-wide">Avg Rating</div>
           </div>
         </div>
