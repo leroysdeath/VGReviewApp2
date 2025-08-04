@@ -76,89 +76,89 @@ export const UserSearchPage: React.FC = () => {
 
       console.log(`📊 Processing ${realUsers.length} users...`);
 
-      // Get review counts for all users in parallel (count all reviews, not just ones with text)
-      const reviewCountPromises = realUsers.map(async (user) => {
-        const { count, error } = await supabase
-          .from('rating')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-        
-        if (error) {
-          console.error(`❌ Error counting reviews for user ${user.id}:`, error);
-          return 0;
-        }
-        return count || 0;
-      });
+      // Create a map of user IDs for quick lookup
+      const userIds = realUsers.map(user => user.id);
 
-      // Get follower counts for all users in parallel
-      const followerCountPromises = realUsers.map(async (user) => {
-        const { count, error } = await supabase
-          .from('user_follow')
-          .select('*', { count: 'exact', head: true })
-          .eq('following_id', user.id);
-        
-        if (error) {
-          console.error(`❌ Error counting followers for user ${user.id}:`, error);
-          return 0;
-        }
-        return count || 0;
-      });
+      // Get all follower counts in batch queries
+      const { data: followerData, error: followerError } = await supabase
+        .from('user_follow')
+        .select('following_id')
+        .in('following_id', userIds);
 
-      // Get following counts for all users in parallel
-      const followingCountPromises = realUsers.map(async (user) => {
-        const { count, error } = await supabase
-          .from('user_follow')
-          .select('*', { count: 'exact', head: true })
-          .eq('follower_id', user.id);
-        
-        if (error) {
-          console.error(`❌ Error counting following for user ${user.id}:`, error);
-          return 0;
-        }
-        return count || 0;
-      });
+      const { data: followingData, error: followingError } = await supabase
+        .from('user_follow')
+        .select('follower_id')
+        .in('follower_id', userIds);
 
-      // Get average ratings for all users in parallel
-      const averageRatingPromises = realUsers.map(async (user) => {
-        const { data, error } = await supabase
-          .from('rating')
-          .select('rating')
-          .eq('user_id', user.id)
-          .not('rating', 'is', null);
-        
-        if (error) {
-          console.error(`❌ Error calculating average rating for user ${user.id}:`, error);
-          return undefined;
-        }
-        
-        if (!data || data.length === 0) {
-          return undefined;
-        }
-        
-        const average = data.reduce((sum, review) => sum + review.rating, 0) / data.length;
-        return parseFloat(average.toFixed(1));
-      });
+      const { data: reviewData, error: reviewError } = await supabase
+        .from('rating')
+        .select('user_id, rating')
+        .in('user_id', userIds);
 
-      // Wait for all queries to complete
-      const [reviewCounts, followerCounts, followingCounts, averageRatings] = await Promise.all([
-        Promise.all(reviewCountPromises),
-        Promise.all(followerCountPromises),
-        Promise.all(followingCountPromises),
-        Promise.all(averageRatingPromises)
-      ]);
+      if (followerError) {
+        console.error('❌ Error loading follower data:', followerError);
+      }
+      if (followingError) {
+        console.error('❌ Error loading following data:', followingError);
+      }
+      if (reviewError) {
+        console.error('❌ Error loading review data:', reviewError);
+      }
+
+      // Create lookup maps for counts
+      const followerCounts = new Map<number, number>();
+      const followingCounts = new Map<number, number>();
+      const reviewCounts = new Map<number, number>();
+      const averageRatings = new Map<number, number>();
+
+      // Count followers for each user
+      if (followerData) {
+        followerData.forEach(follow => {
+          const count = followerCounts.get(follow.following_id) || 0;
+          followerCounts.set(follow.following_id, count + 1);
+        });
+      }
+
+      // Count following for each user
+      if (followingData) {
+        followingData.forEach(follow => {
+          const count = followingCounts.get(follow.follower_id) || 0;
+          followingCounts.set(follow.follower_id, count + 1);
+        });
+      }
+
+      // Count reviews and calculate averages for each user
+      if (reviewData) {
+        const userReviews = new Map<number, number[]>();
+        
+        reviewData.forEach(review => {
+          if (!userReviews.has(review.user_id)) {
+            userReviews.set(review.user_id, []);
+          }
+          userReviews.get(review.user_id)!.push(review.rating);
+        });
+
+        userReviews.forEach((ratings, userId) => {
+          reviewCounts.set(userId, ratings.length);
+          if (ratings.length > 0) {
+            const average = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+            averageRatings.set(userId, parseFloat(average.toFixed(1)));
+          }
+        });
+      }
 
       console.log('✅ All user data queries completed');
 
       // Transform Supabase users to match our interface with real data
-      const transformedUsers = realUsers.map((user, index) => ({
+      const transformedUsers = realUsers.map((user) => ({
         id: user.id.toString(),
         username: user.name || 'Anonymous',
         bio: user.bio || '',
         avatar: user.picurl || '',
-        reviewCount: reviewCounts[index],
-        followers: followerCounts[index],
-        following: followingCounts[index],
-        averageRating: averageRatings[index],
+        reviewCount: reviewCounts.get(user.id) || 0,
+        followers: followerCounts.get(user.id) || 0,
+        following: followingCounts.get(user.id) || 0,
+        averageRating: averageRatings.get(user.id) || undefined,
         joinDate: user.created_at,
         verified: false // Could be added to user table later
       }));
@@ -167,7 +167,10 @@ export const UserSearchPage: React.FC = () => {
         totalUsers: transformedUsers.length,
         usersWithReviews: transformedUsers.filter(u => u.reviewCount > 0).length,
         totalReviews: transformedUsers.reduce((sum, u) => sum + u.reviewCount, 0),
-        totalFollows: transformedUsers.reduce((sum, u) => sum + u.followers, 0)
+        totalFollows: transformedUsers.reduce((sum, u) => sum + u.followers, 0),
+        avgFollowers: transformedUsers.length > 0 ? 
+          (transformedUsers.reduce((sum, u) => sum + u.followers, 0) / transformedUsers.length).toFixed(1) : 0,
+        followersDetail: transformedUsers.map(u => ({ id: u.id, name: u.username, followers: u.followers }))
       });
 
       setUsers(transformedUsers);
