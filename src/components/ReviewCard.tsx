@@ -194,7 +194,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                 ${themeStyles.accent} group-hover:text-white
                 ${compact ? 'text-sm' : 'text-base'}
               `}>
-                {review.rating.toFixed(1)}/10
+                {(review.rating || 0).toFixed(1)}/10
               </span>
             </div>
             
