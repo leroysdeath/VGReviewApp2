@@ -161,6 +161,7 @@ const ProfilePage = () => {
             user={userProfile}
             isDummy={false}
             onEditClick={handleEditClick}
+            isCurrentUser={true}
           />
           <ProfileDetails stats={stats} />
         </div>
