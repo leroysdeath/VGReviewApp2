@@ -53,7 +53,7 @@ export const UserRatingCard: React.FC<UserRatingCardProps> = ({
               )}
               <div className="flex items-center gap-4 mb-2">
                 <StarRating rating={rating.rating} />
-                <span className="text-white font-medium">{rating.rating.toFixed(1)}</span>
+                <span className="text-white font-medium">{(rating.rating || 0).toFixed(1)}</span>
                 <div className="flex items-center gap-1 text-gray-400 text-sm">
                   <Calendar className="h-4 w-4" />
                   <span>{formatDate(rating.post_date_time)}</span>
