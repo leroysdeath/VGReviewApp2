@@ -624,10 +624,22 @@ export const GamePage: React.FC = () => {
                 <div key={review.id} className="bg-gray-800 rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-2">
                     <img
-                      src={review.authorAvatar}
+                      src={review.authorAvatar || '/default-avatar.png'}
                       alt={review.author}
-                      className="w-8 h-8 rounded-full"
+                      className="w-8 h-8 rounded-full object-cover"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const fallback = target.nextElementSibling;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
                     />
+                    <div 
+                      className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm"
+                      style={{ display: 'none' }}
+                    >
+                      {review.author ? review.author.charAt(0).toUpperCase() : '?'}
+                    </div>
                     <span className="text-white font-medium">{review.author}</span>
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 text-yellow-500 fill-current" />
