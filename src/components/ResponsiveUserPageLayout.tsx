@@ -1,8 +1,9 @@
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState, useEffect } from 'react';
 import { Settings, ExternalLink } from 'lucide-react';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
 import { UserSettingsModal } from './profile/UserSettingsModal';
+import { supabase } from '../services/supabase';
 
 interface UserStats {
   films: number;
@@ -53,7 +54,29 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   
   // Check if current user is viewing their own profile
-  const isOwnProfile = isAuthenticated && authUser?.id === user.id;
+  // Note: authUser.id is the Supabase auth UUID, user.id is the database integer ID
+  // We need to compare against provider_id field or use a different approach
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  
+  useEffect(() => {
+    const checkIsOwnProfile = async () => {
+      if (!isAuthenticated || !authUser?.id) {
+        setIsOwnProfile(false);
+        return;
+      }
+      
+      // Fetch the database user record for the current auth user
+      const { data: currentUserData } = await supabase
+        .from('user')
+        .select('id')
+        .eq('provider_id', authUser.id)
+        .single();
+        
+      setIsOwnProfile(currentUserData?.id === parseInt(user.id));
+    };
+    
+    checkIsOwnProfile();
+  }, [isAuthenticated, authUser?.id, user.id]);
 
   const handleSettingsClick = () => {
     if (isOwnProfile) {
@@ -310,9 +333,14 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             
             {/* Profile Stats Section */}
             <div className="flex-shrink-0 flex flex-col gap-4">
-              <button className="text-gray-400 hover:text-white p-2">
-                <Settings className="h-5 w-5" />
-              </button>
+              {isOwnProfile && (
+                <button 
+                  onClick={handleSettingsClick}
+                  className="text-gray-400 hover:text-white p-2"
+                >
+                  <Settings className="h-5 w-5" />
+                </button>
+              )}
               
               <div className="flex items-center gap-6">
                 <div className="text-center">
