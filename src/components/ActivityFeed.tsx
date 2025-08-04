@@ -254,7 +254,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
               {activity.review && (
                 <div className="flex items-center gap-1">
                   {renderStarRating(activity.review.rating)}
-                  <span className="text-white font-medium">{activity.review.rating.toFixed(1)}</span>
+                  <span className="text-white font-medium">{(activity.review.rating || 0).toFixed(1)}</span>
                 </div>
               )}
             </div>
