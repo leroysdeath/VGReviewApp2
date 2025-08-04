@@ -34,19 +34,27 @@ export const UserPage: React.FC = () => {
           
         if (userError) throw userError;
         
-        // Fetch user reviews
+        // Fetch user reviews (only those with valid ratings)
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('rating')
           .select(`
             *,
             game:game_id(*)
           `)
-          .eq('user_id', id);
+          .eq('user_id', id)
+          .not('rating', 'is', null);
           
         if (reviewsError) throw reviewsError;
         
-        // Get game IDs from reviews
-        const gameIds = reviewsData?.map(review => review.game_id) || [];
+        // Filter out any reviews with invalid ratings as an extra safety measure
+        const validReviewsData = reviewsData?.filter(review => 
+          review.rating != null && 
+          !isNaN(review.rating) && 
+          typeof review.rating === 'number'
+        ) || [];
+        
+        // Get game IDs from valid reviews
+        const gameIds = validReviewsData.map(review => review.game_id);
         
         // Fetch games data (only if there are game IDs)
         let gamesData = [];
@@ -83,7 +91,8 @@ export const UserPage: React.FC = () => {
         console.log('📊 User stats:', {
           userId: id,
           username: userData.name,
-          reviews: reviewsData?.length || 0,
+          totalReviews: reviewsData?.length || 0,
+          validReviews: validReviewsData.length,
           followers: followerCount || 0,
           following: followingCount || 0
         });
@@ -93,7 +102,7 @@ export const UserPage: React.FC = () => {
         userData._followingCount = followingCount || 0;
         
         setUser(userData);
-        setUserReviews(reviewsData || []);
+        setUserReviews(validReviewsData);
         setGames(gamesData);
       } catch (err) {
         console.error('💥 Error fetching user data:', err);
@@ -137,9 +146,15 @@ export const UserPage: React.FC = () => {
   const sortedReviews = [...userReviews].sort((a, b) => {
     switch (reviewFilter) {
       case 'highest':
-        return b.rating - a.rating;
+        // Safety check for ratings before comparison
+        const aRating = typeof a.rating === 'number' ? a.rating : 0;
+        const bRating = typeof b.rating === 'number' ? b.rating : 0;
+        return bRating - aRating;
       case 'lowest':
-        return a.rating - b.rating;
+        // Safety check for ratings before comparison
+        const aRatingLow = typeof a.rating === 'number' ? a.rating : 0;
+        const bRatingLow = typeof b.rating === 'number' ? b.rating : 0;
+        return aRatingLow - bRatingLow;
       case 'oldest':
         return new Date(a.post_date_time).getTime() - new Date(b.post_date_time).getTime();
       default:
