@@ -14,9 +14,10 @@ interface ProfileInfoProps {
   } | null;
   isDummy?: boolean;
   onEditClick?: () => void;
+  isCurrentUser?: boolean;
 }
 
-export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false, onEditClick }) => {
+export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false, onEditClick, isCurrentUser = false }) => {
   // Handle null user case
   if (!user) {
     return (
@@ -52,9 +53,11 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false,
           <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
             PATRON
           </span>
-          <button onClick={onEditClick} className="text-gray-400 hover:text-white">
-            <Settings className="h-4 w-4" />
-          </button>
+          {isCurrentUser && (
+            <button onClick={onEditClick} className="text-gray-400 hover:text-white">
+              <Settings className="h-4 w-4" />
+            </button>
+          )}
         </div>
         <p className="text-blue-400 text-sm mb-3">{user.bio || ''}</p>
         {(user.platform || user.website) && (
