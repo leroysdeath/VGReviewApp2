@@ -48,6 +48,9 @@ export const UserSearchPage: React.FC = () => {
   const loadUsers = async () => {
     setLoadingUsers(true);
     try {
+      console.log('🔍 Loading users with real database counts...');
+      
+      // Get basic user data
       const { data: realUsers, error } = await supabase
         .from('user')
         .select(`
@@ -59,27 +62,118 @@ export const UserSearchPage: React.FC = () => {
         `)
         .limit(50);
 
-      if (!error && realUsers) {
-        // Transform Supabase users to match our interface
-        const transformedUsers = realUsers.map(user => ({
-          id: user.id.toString(),
-          username: user.name || 'Anonymous',
-          bio: user.bio || '',
-          avatar: user.picurl || '',
-          reviewCount: 0, // TODO: Get actual count from ratings table
-          followers: 0, // TODO: Get actual count from user_follows table
-          following: 0, // TODO: Get actual count from user_follows table
-          averageRating: undefined,
-          joinDate: user.created_at,
-          verified: false
-        }));
-
-        setUsers(transformedUsers);
-      } else {
-        console.log('Using mock users only');
+      if (error) {
+        console.error('❌ Error loading users:', error);
+        setUsers([]);
+        return;
       }
+
+      if (!realUsers || realUsers.length === 0) {
+        console.log('ℹ️ No users found in database');
+        setUsers([]);
+        return;
+      }
+
+      console.log(`📊 Processing ${realUsers.length} users...`);
+
+      // Get review counts for all users in parallel (count all reviews, not just ones with text)
+      const reviewCountPromises = realUsers.map(async (user) => {
+        const { count, error } = await supabase
+          .from('rating')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        
+        if (error) {
+          console.error(`❌ Error counting reviews for user ${user.id}:`, error);
+          return 0;
+        }
+        return count || 0;
+      });
+
+      // Get follower counts for all users in parallel
+      const followerCountPromises = realUsers.map(async (user) => {
+        const { count, error } = await supabase
+          .from('user_follow')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_id', user.id);
+        
+        if (error) {
+          console.error(`❌ Error counting followers for user ${user.id}:`, error);
+          return 0;
+        }
+        return count || 0;
+      });
+
+      // Get following counts for all users in parallel
+      const followingCountPromises = realUsers.map(async (user) => {
+        const { count, error } = await supabase
+          .from('user_follow')
+          .select('*', { count: 'exact', head: true })
+          .eq('follower_id', user.id);
+        
+        if (error) {
+          console.error(`❌ Error counting following for user ${user.id}:`, error);
+          return 0;
+        }
+        return count || 0;
+      });
+
+      // Get average ratings for all users in parallel
+      const averageRatingPromises = realUsers.map(async (user) => {
+        const { data, error } = await supabase
+          .from('rating')
+          .select('rating')
+          .eq('user_id', user.id)
+          .not('rating', 'is', null);
+        
+        if (error) {
+          console.error(`❌ Error calculating average rating for user ${user.id}:`, error);
+          return undefined;
+        }
+        
+        if (!data || data.length === 0) {
+          return undefined;
+        }
+        
+        const average = data.reduce((sum, review) => sum + review.rating, 0) / data.length;
+        return parseFloat(average.toFixed(1));
+      });
+
+      // Wait for all queries to complete
+      const [reviewCounts, followerCounts, followingCounts, averageRatings] = await Promise.all([
+        Promise.all(reviewCountPromises),
+        Promise.all(followerCountPromises),
+        Promise.all(followingCountPromises),
+        Promise.all(averageRatingPromises)
+      ]);
+
+      console.log('✅ All user data queries completed');
+
+      // Transform Supabase users to match our interface with real data
+      const transformedUsers = realUsers.map((user, index) => ({
+        id: user.id.toString(),
+        username: user.name || 'Anonymous',
+        bio: user.bio || '',
+        avatar: user.picurl || '',
+        reviewCount: reviewCounts[index],
+        followers: followerCounts[index],
+        following: followingCounts[index],
+        averageRating: averageRatings[index],
+        joinDate: user.created_at,
+        verified: false // Could be added to user table later
+      }));
+
+      console.log('📈 User stats summary:', {
+        totalUsers: transformedUsers.length,
+        usersWithReviews: transformedUsers.filter(u => u.reviewCount > 0).length,
+        totalReviews: transformedUsers.reduce((sum, u) => sum + u.reviewCount, 0),
+        totalFollows: transformedUsers.reduce((sum, u) => sum + u.followers, 0)
+      });
+
+      setUsers(transformedUsers);
     } catch (error) {
-      console.error('Error loading users:', error);
+      console.error('💥 Unexpected error loading users:', error);
+      setUsers([]);
     } finally {
       setLoadingUsers(false);
     }
@@ -506,6 +600,12 @@ export const UserSearchPage: React.FC = () => {
                   <span className="text-gray-400">Active Reviewers</span>
                   <span className="text-white font-semibold">
                     {users.filter(u => u.reviewCount > 0).length.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Total Reviews</span>
+                  <span className="text-purple-400 font-semibold">
+                    {users.reduce((sum, u) => sum + u.reviewCount, 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
