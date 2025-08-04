@@ -120,6 +120,14 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <h1 className="text-2xl font-bold text-white">{user.username}</h1>
+                  {isOwnProfile && (
+                    <button 
+                      onClick={handleSettingsClick}
+                      className="text-gray-400 hover:text-white p-1"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
                 <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
                 
@@ -158,15 +166,6 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                   </div>
                 )}
               </div>
-              
-              {isOwnProfile && (
-                <button 
-                  onClick={handleSettingsClick}
-                  className="text-gray-400 hover:text-white p-2"
-                >
-                  <Settings className="h-5 w-5" />
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -290,6 +289,14 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="text-2xl font-bold text-white">{user.username}</h1>
+                  {isOwnProfile && (
+                    <button 
+                      onClick={handleSettingsClick}
+                      className="text-gray-400 hover:text-white p-1"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
                 
                 <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
@@ -332,16 +339,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             </div>
             
             {/* Profile Stats Section */}
-            <div className="flex-shrink-0 flex flex-col gap-4">
-              {isOwnProfile && (
-                <button 
-                  onClick={handleSettingsClick}
-                  className="text-gray-400 hover:text-white p-2"
-                >
-                  <Settings className="h-5 w-5" />
-                </button>
-              )}
-              
+            <div className="flex-shrink-0">
               <div className="flex items-center gap-6">
                 <div className="text-center">
                   <div className="text-xl font-bold text-white">{stats.films.toLocaleString()}</div>
