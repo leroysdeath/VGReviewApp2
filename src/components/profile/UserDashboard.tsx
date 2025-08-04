@@ -204,7 +204,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                       </div>
                       <div>
                         <div className="text-sm text-gray-400">Average Rating</div>
-                        <div className="text-xl font-bold text-white">{stats.averageRating.toFixed(1)}</div>
+                        <div className="text-xl font-bold text-white">{(stats.averageRating || 0).toFixed(1)}</div>
                       </div>
                     </div>
                     <div className="text-sm text-gray-400">
