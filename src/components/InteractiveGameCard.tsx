@@ -236,7 +236,7 @@ export const InteractiveGameCard: React.FC<InteractiveGameCardProps> = ({
           <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1">
             <div className="flex items-center gap-2">
               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-white font-semibold text-sm">{game.rating.toFixed(1)}</span>
+              <span className="text-white font-semibold text-sm">{(game.rating || 0).toFixed(1)}</span>
             </div>
           </div>
 
@@ -312,7 +312,7 @@ export const InteractiveGameCard: React.FC<InteractiveGameCardProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {renderStars(game.rating)}
-              <span className="text-white font-semibold">{game.rating.toFixed(1)}</span>
+              <span className="text-white font-semibold">{(game.rating || 0).toFixed(1)}</span>
             </div>
             
             <div className="flex items-center gap-2 text-gray-400">
