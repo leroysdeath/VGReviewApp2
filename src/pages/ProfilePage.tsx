@@ -178,8 +178,8 @@ const ProfilePage = () => {
       const currentYear = new Date().getFullYear();
       const thisYearReviews = reviewsData?.filter(r => new Date(r.post_date_time).getFullYear() === currentYear).length || 0;
       const { count: listsCount } = await supabase.from('lists').select('id', { count: 'exact' }).eq('user_id', user.id);
-      const { count: followingCount } = await supabase.from('followers').select('id', { count: 'exact' }).eq('follower_id', user.id);
-      const { count: followersCount } = await supabase.from('followers').select('id', { count: 'exact' }).eq('followed_id', user.id);
+      const { count: followingCount } = await supabase.from('user_follow').select('id', { count: 'exact' }).eq('follower_id', user.id);
+      const { count: followersCount } = await supabase.from('user_follow').select('id', { count: 'exact' }).eq('following_id', user.id);
 
       setStats({
         films: reviewsData?.length || 0, // Games reviewed/played
