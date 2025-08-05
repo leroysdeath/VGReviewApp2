@@ -314,6 +314,7 @@ export const GamePage: React.FC = () => {
     id: review.id.toString(),
     userId: review.user_id.toString(),
     gameId: review.game_id.toString(),
+    igdbGameId: id, // Use the IGDB game_id from the URL parameter
     gameTitle: game?.title || 'Unknown Game',
     rating: review.rating,
     text: review.review || '',
