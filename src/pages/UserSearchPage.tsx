@@ -3,6 +3,7 @@ import { Search, Users, UserPlus, UserCheck, TrendingUp, Clock, Filter, Star, Me
 import { Link, useSearchParams } from 'react-router-dom';
 import { useResponsive } from '../hooks/useResponsive';
 import { supabase } from '../services/supabase';
+import { useFollow } from '../hooks/useFollow';
 
 interface User {
   id: string;
@@ -27,13 +28,32 @@ export const UserSearchPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'relevance' | 'followers' | 'reviews' | 'recent'>('relevance');
   const [showFilters, setShowFilters] = useState(false);
   const { isMobile } = useResponsive();
+  const { toggleFollow: dbToggleFollow, getFollowingList, loading: followLoading, canFollow } = useFollow();
 
   // Load real users from Supabase
   useEffect(() => {
     loadUsers();
     loadRecentSearches();
-    loadFollowingList();
+    loadFollowingListFromDB();
   }, []);
+
+  // Load following list from database
+  const loadFollowingListFromDB = async () => {
+    if (canFollow) {
+      try {
+        const following = await getFollowingList();
+        setFollowingUsers(following);
+        // Also cache in localStorage for faster UI updates
+        localStorage.setItem('following_users', JSON.stringify(following));
+      } catch (error) {
+        console.error('Error loading following list:', error);
+        // Fallback to localStorage if database fails
+        loadFollowingList();
+      }
+    } else {
+      loadFollowingList(); // Use localStorage fallback
+    }
+  };
 
   // Update URL when search term changes
   useEffect(() => {
@@ -236,19 +256,43 @@ export const UserSearchPage: React.FC = () => {
   };
 
   const toggleFollow = useCallback(async (userId: string) => {
-    setFollowingUsers(prev => {
-      const newFollowing = prev.includes(userId)
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId];
-      
-      // Save to localStorage (in real app, would save to backend)
-      localStorage.setItem('following_users', JSON.stringify(newFollowing));
-      return newFollowing;
-    });
+    if (!canFollow) {
+      // Show error or prompt to login
+      console.warn('User must be authenticated to follow/unfollow');
+      return;
+    }
 
-    // In a real app, you would also make an API call here
-    // await supabase.from('user_follows').insert/delete...
-  }, []);
+    try {
+      // Optimistically update UI
+      const isCurrentlyFollowing = followingUsers.includes(userId);
+      const optimisticFollowing = isCurrentlyFollowing
+        ? followingUsers.filter(id => id !== userId)
+        : [...followingUsers, userId];
+      
+      setFollowingUsers(optimisticFollowing);
+
+      // Perform database operation
+      const result = await dbToggleFollow(userId);
+      
+      if (result.success) {
+        console.log(`Successfully ${result.isFollowing ? 'followed' : 'unfollowed'} user ${userId}`);
+        
+        // Reload user counts to show updated follower numbers
+        await loadUsers();
+        
+        // Update localStorage cache
+        localStorage.setItem('following_users', JSON.stringify(optimisticFollowing));
+      } else {
+        // Revert optimistic update on failure
+        setFollowingUsers(followingUsers);
+        console.error('Follow operation failed:', result.error);
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setFollowingUsers(followingUsers);
+      console.error('Error in toggleFollow:', error);
+    }
+  }, [canFollow, followingUsers, dbToggleFollow, loadUsers]);
 
   // Memoized filtered and sorted users
   const filteredUsers = useMemo(() => {
@@ -420,15 +464,23 @@ export const UserSearchPage: React.FC = () => {
                         </div>
                         <button
                           onClick={() => toggleFollow(user.id)}
+                          disabled={followLoading || !canFollow}
                           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                             isMobile ? 'text-xs' : 'text-sm'
                           } ${
-                            followingUsers.includes(user.id)
+                            followLoading || !canFollow
+                              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                              : followingUsers.includes(user.id)
                               ? 'bg-green-600 text-white hover:bg-green-700'
                               : 'bg-purple-600 text-white hover:bg-purple-700'
                           }`}
                         >
-                          {followingUsers.includes(user.id) ? (
+                          {followLoading ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Loading...
+                            </>
+                          ) : followingUsers.includes(user.id) ? (
                             <>
                               <UserCheck className="h-4 w-4" />
                               Following
@@ -436,7 +488,7 @@ export const UserSearchPage: React.FC = () => {
                           ) : (
                             <>
                               <UserPlus className="h-4 w-4" />
-                              Follow
+                              {canFollow ? 'Follow' : 'Login to Follow'}
                             </>
                           )}
                         </button>
@@ -527,15 +579,23 @@ export const UserSearchPage: React.FC = () => {
                       )}
                       <button
                         onClick={() => toggleFollow(user.id)}
+                        disabled={followLoading || !canFollow}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                           isMobile ? 'text-xs' : 'text-sm'
                         } ${
-                          followingUsers.includes(user.id)
+                          followLoading || !canFollow
+                            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            : followingUsers.includes(user.id)
                             ? 'bg-green-600 text-white hover:bg-green-700'
                             : 'bg-purple-600 text-white hover:bg-purple-700'
                         }`}
                       >
-                        {followingUsers.includes(user.id) ? (
+                        {followLoading ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Loading...
+                          </>
+                        ) : followingUsers.includes(user.id) ? (
                           <>
                             <UserCheck className="h-4 w-4" />
                             Following
@@ -543,7 +603,7 @@ export const UserSearchPage: React.FC = () => {
                         ) : (
                           <>
                             <UserPlus className="h-4 w-4" />
-                            Follow
+                            {canFollow ? 'Follow' : 'Login to Follow'}
                           </>
                         )}
                       </button>
