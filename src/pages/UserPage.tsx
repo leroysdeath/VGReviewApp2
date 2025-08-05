@@ -61,11 +61,15 @@ export const UserPage: React.FC = () => {
         if (gameIds.length > 0) {
           const { data: fetchedGames, error: gamesError } = await supabase
             .from('game')
-            .select('*')
+            .select('id, igdb_id, name, pic_url, genre, release_date, dev, publisher, description')
             .in('id', gameIds);
             
           if (gamesError) throw gamesError;
-          gamesData = fetchedGames || [];
+          // Transform games to use IGDB ID for linking
+          gamesData = (fetchedGames || []).map(game => ({
+            ...game,
+            id: game.igdb_id || game.id.toString() // Use IGDB ID for linking
+          }));
         }
         
         // Fetch follower count (users who follow this user)
