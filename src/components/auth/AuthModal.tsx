@@ -1,6 +1,6 @@
 // src/components/auth/AuthModal.tsx - COMPLETE REPLACEMENT
 import React, { useState } from 'react';
-import { X, Eye, EyeOff, Mail, Key, User, AlertCircle, Check, Loader2, Github, Gamepad2 } from 'lucide-react';
+import { X, Eye, EyeOff, Mail, Key, User, AlertCircle, Check, Loader2, Gamepad2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,7 +52,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLoginSuccess,
   onSignupSuccess
 }) => {
-  const { signIn, signUp, resetPassword, signInWithProvider } = useAuth();
+  const { signIn, signUp, resetPassword } = useAuth();
   const { isOpen, mode, closeModal, setMode } = useAuthModal();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -103,7 +103,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onLoginSuccess?.();
         closeModal();
       }
-    } catch (error) {
+    } catch {
       setAuthError('Login failed. Please try again.');
     } finally {
       setIsLoading(false);
@@ -124,7 +124,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setAuthError(null);
         setMode('login');
       }
-    } catch (error) {
+    } catch {
       setAuthError('Signup failed. Please try again.');
     } finally {
       setIsLoading(false);
@@ -143,34 +143,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       } else {
         setResetEmailSent(true);
       }
-    } catch (error) {
+    } catch {
       setAuthError('Failed to send reset email. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle social login
-  const handleSocialLogin = async (provider: 'google' | 'github' | 'discord') => {
-    setIsLoading(true);
-    setAuthError(null);
-    
-    try {
-      if (signInWithProvider) {
-        const result = await signInWithProvider(provider);
-        if (result.error) {
-          setAuthError(result.error.message || `Failed to sign in with ${provider}`);
-          setIsLoading(false);
-        }
-      } else {
-        console.log(`Sign in with ${provider} - not implemented yet`);
-        setIsLoading(false);
-      }
-    } catch (error) {
-      setAuthError(`Failed to sign in with ${provider}`);
-      setIsLoading(false);
-    }
-  };
 
   // Password strength indicator
   const getPasswordStrength = (password: string): { strength: number; label: string; color: string } => {
@@ -276,47 +255,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
-          {/* Social Login Buttons */}
-          {(mode === 'login' || mode === 'signup') && (
-            <div className="space-y-3 mb-6">
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => handleSocialLogin('google')}
-                  disabled={isLoading}
-                  className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-600 rounded-lg shadow-sm bg-gray-700 text-sm font-medium text-white hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  <span>Google</span>
-                </button>
-
-                <button
-                  onClick={() => handleSocialLogin('github')}
-                  disabled={isLoading}
-                  className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-600 rounded-lg shadow-sm bg-gray-700 text-sm font-medium text-white hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Github className="h-5 w-5 mr-2" />
-                  <span>GitHub</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Divider */}
-          {(mode === 'login' || mode === 'signup') && (
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-700"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-800 text-gray-400">or</span>
-              </div>
-            </div>
-          )}
 
           {/* Login Form */}
           {mode === 'login' && (
