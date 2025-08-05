@@ -1,4 +1,4 @@
- import React, { ReactNode, useState, useEffect } from 'react';
+import React, { ReactNode, useState, useEffect } from 'react';
 import { Settings, ExternalLink, UserPlus, UserCheck } from 'lucide-react';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
@@ -6,6 +6,7 @@ import { UserSettingsModal } from './profile/UserSettingsModal';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
 import { FollowersFollowingModal } from './FollowersFollowingModal';
+import { GamesModal } from './GamesModal';
 
 interface UserStats {
   films: number;
@@ -58,6 +59,8 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
   const [isUserFollowing, setIsUserFollowing] = useState(false);
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
   const [modalInitialTab, setModalInitialTab] = useState<'followers' | 'following'>('followers');
+  const [isGamesModalOpen, setIsGamesModalOpen] = useState(false);
+  const [gamesModalInitialTab, setGamesModalInitialTab] = useState<'all' | 'started' | 'finished'>('all');
   
   // Check if current user is viewing their own profile
   // Note: authUser.id is the Supabase auth UUID, user.id is the database integer ID
@@ -114,6 +117,11 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
   const handleFollowingClick = () => {
     setModalInitialTab('following');
     setIsFollowersModalOpen(true);
+  };
+
+  const handleGamesClick = () => {
+    setGamesModalInitialTab('all');
+    setIsGamesModalOpen(true);
   };
 
   if (isMobile) {
@@ -262,10 +270,13 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             
             {/* Main Stats Grid */}
             <div className="grid grid-cols-5 gap-3 text-center mb-6">
-              <div>
+              <button
+                onClick={handleGamesClick}
+                className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+              >
                 <div className="text-lg font-bold text-white">{stats.films.toLocaleString()}</div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">GAMES</div>
-              </div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">GAMES</div>
+              </button>
               <div>
                 <div className="text-lg font-bold text-white">{stats.thisYear}</div>
                 <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
@@ -440,10 +451,13 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             {/* Profile Stats Section */}
             <div className="flex-shrink-0">
               <div className="flex items-center gap-6">
-                <div className="text-center">
+                <button
+                  onClick={handleGamesClick}
+                  className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+                >
                   <div className="text-xl font-bold text-white">{stats.films.toLocaleString()}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">GAMES</div>
-                </div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">GAMES</div>
+                </button>
                 <div className="text-center">
                   <div className="text-xl font-bold text-white">{stats.thisYear}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
@@ -516,6 +530,15 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
         userId={user.id}
         userName={user.username}
         initialTab={modalInitialTab}
+      />
+
+      {/* Games Modal */}
+      <GamesModal
+        isOpen={isGamesModalOpen}
+        onClose={() => setIsGamesModalOpen(false)}
+        userId={user.id}
+        userName={user.username}
+        initialTab={gamesModalInitialTab}
       />
     </div>
   );
