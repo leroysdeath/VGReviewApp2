@@ -8,9 +8,15 @@ interface ProfileDetailsProps {
     following: number;
     followers: number;
   };
+  onFollowersClick?: () => void;
+  onFollowingClick?: () => void;
 }
 
-export const ProfileDetails: React.FC<ProfileDetailsProps> = ({ stats }) => {
+export const ProfileDetails: React.FC<ProfileDetailsProps> = ({ 
+  stats, 
+  onFollowersClick, 
+  onFollowingClick 
+}) => {
   return (
     <div className="flex-shrink-0 flex flex-col gap-4">
       {/* Main Stats */}
@@ -27,14 +33,26 @@ export const ProfileDetails: React.FC<ProfileDetailsProps> = ({ stats }) => {
           <div className="text-xl font-bold text-white">{stats.lists}</div>
           <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
         </div>
-        <div className="text-center">
+        <button
+          onClick={onFollowingClick}
+          className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+          disabled={!onFollowingClick}
+        >
           <div className="text-xl font-bold text-white">{stats.following}</div>
-          <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWING</div>
-        </div>
-        <div className="text-center">
+          <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">
+            FOLLOWING
+          </div>
+        </button>
+        <button
+          onClick={onFollowersClick}
+          className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+          disabled={!onFollowersClick}
+        >
           <div className="text-xl font-bold text-white">{stats.followers.toLocaleString()}</div>
-          <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
-        </div>
+          <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">
+            FOLLOWERS
+          </div>
+        </button>
       </div>
     </div>
   );
