@@ -126,7 +126,7 @@ const ProfilePage = () => {
       // Compute allGames with proper cover image handling
       // First, set games with current data to show UI immediately
       const initialGames = (reviewsData || []).map(review => ({
-        id: review.game_id,
+        id: review.game?.igdb_id || review.game_id.toString(), // Use IGDB ID for linking
         title: review.game?.name || 'Unknown Game',
         coverImage: review.game?.pic_url || '/default-cover.png',
         releaseDate: review.game?.release_date || '',
@@ -166,7 +166,7 @@ const ProfilePage = () => {
                   // Update the local state with the new cover image
                   setAllGames(prevGames => 
                     prevGames.map(game => 
-                      game.id === review.game_id 
+                      game.id === (review.game?.igdb_id || review.game_id.toString())
                         ? { ...game, coverImage: igdbGame.coverImage }
                         : game
                     )
