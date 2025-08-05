@@ -4,7 +4,7 @@ import { Game as DatabaseGame, Rating as DatabaseRating, User as DatabaseUser } 
 // Transform database game to legacy game format for existing components
 export const transformDatabaseGameToLegacy = (dbGame: DatabaseGame) => {
   return {
-    id: dbGame.id.toString(),
+    id: dbGame.game_id || dbGame.id.toString(), // Use IGDB ID for linking
     title: dbGame.name,
     coverImage: dbGame.pic_url || '/placeholder-game.jpg',
     releaseDate: dbGame.release_date ? dbGame.release_date.toISOString().split('T')[0] : '',
