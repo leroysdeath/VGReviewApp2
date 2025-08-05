@@ -31,7 +31,7 @@ export const UserRatingCard: React.FC<UserRatingCardProps> = ({
     <div className="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors">
       <div className="flex items-start gap-4">
         {showGameInfo && game && (
-          <Link to={`/game/${game.id}`} className="flex-shrink-0">
+          <Link to={`/game/${game.game_id}`} className="flex-shrink-0">
             <img
               src={game.pic_url || '/placeholder-game.jpg'}
               alt={game.name}
@@ -45,7 +45,7 @@ export const UserRatingCard: React.FC<UserRatingCardProps> = ({
             <div>
               {showGameInfo && game && (
                 <Link 
-                  to={`/game/${game.id}`}
+                  to={`/game/${game.game_id}`}
                   className="text-lg font-semibold text-white hover:text-purple-400 transition-colors mb-1 block"
                 >
                   {game.name}
