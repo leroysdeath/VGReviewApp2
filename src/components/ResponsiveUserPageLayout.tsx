@@ -1,10 +1,11 @@
-import React, { ReactNode, useState, useEffect } from 'react';
+ import React, { ReactNode, useState, useEffect } from 'react';
 import { Settings, ExternalLink, UserPlus, UserCheck } from 'lucide-react';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
 import { UserSettingsModal } from './profile/UserSettingsModal';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
+import { FollowersFollowingModal } from './FollowersFollowingModal';
 
 interface UserStats {
   films: number;
@@ -55,6 +56,8 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const { toggleFollow, isFollowing, loading: followLoading, canFollow } = useFollow();
   const [isUserFollowing, setIsUserFollowing] = useState(false);
+  const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
+  const [modalInitialTab, setModalInitialTab] = useState<'followers' | 'following'>('followers');
   
   // Check if current user is viewing their own profile
   // Note: authUser.id is the Supabase auth UUID, user.id is the database integer ID
@@ -101,6 +104,16 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
     if (result.success) {
       setIsUserFollowing(result.isFollowing || false);
     }
+  };
+
+  const handleFollowersClick = () => {
+    setModalInitialTab('followers');
+    setIsFollowersModalOpen(true);
+  };
+
+  const handleFollowingClick = () => {
+    setModalInitialTab('following');
+    setIsFollowersModalOpen(true);
   };
 
   if (isMobile) {
@@ -261,14 +274,24 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                 <div className="text-lg font-bold text-white">{stats.lists}</div>
                 <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
               </div>
-              <div>
+              <button
+                onClick={handleFollowingClick}
+                className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+              >
                 <div className="text-lg font-bold text-white">{stats.following}</div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWING</div>
-              </div>
-              <div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">
+                  FOLLOWING
+                </div>
+              </button>
+              <button
+                onClick={handleFollowersClick}
+                className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+              >
                 <div className="text-lg font-bold text-white">{stats.followers.toLocaleString()}</div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
-              </div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">
+                  FOLLOWERS
+                </div>
+              </button>
             </div>
 
             {/* Additional Stats */}
@@ -429,14 +452,24 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                   <div className="text-xl font-bold text-white">{stats.lists}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
                 </div>
-                <div className="text-center">
+                <button
+                  onClick={handleFollowingClick}
+                  className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+                >
                   <div className="text-xl font-bold text-white">{stats.following}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWING</div>
-                </div>
-                <div className="text-center">
+                  <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">
+                    FOLLOWING
+                  </div>
+                </button>
+                <button
+                  onClick={handleFollowersClick}
+                  className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+                >
                   <div className="text-xl font-bold text-white">{stats.followers.toLocaleString()}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
-                </div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">
+                    FOLLOWERS
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -474,6 +507,15 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         userId={user.id}
+      />
+
+      {/* Followers/Following Modal */}
+      <FollowersFollowingModal
+        isOpen={isFollowersModalOpen}
+        onClose={() => setIsFollowersModalOpen(false)}
+        userId={user.id}
+        userName={user.username}
+        initialTab={modalInitialTab}
       />
     </div>
   );
