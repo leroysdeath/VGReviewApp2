@@ -10,6 +10,7 @@ export interface ReviewData {
   id: string;
   userId: string;
   gameId: string;
+  igdbGameId?: string; // IGDB game ID for proper routing
   gameTitle: string;
   rating: number;
   text: string;
@@ -117,7 +118,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 
   return (
     <Link 
-      to={`/review/${review.userId}/${review.gameId}`}
+      to={`/review/${review.userId}/${review.igdbGameId || review.gameId}`}
       className={`
         group relative overflow-hidden rounded-xl border-2 block
         bg-gray-900/80 backdrop-blur-lg
