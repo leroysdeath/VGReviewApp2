@@ -619,7 +619,11 @@ export const GamePage: React.FC = () => {
           {transformedReviews.length > 0 ? (
             <div className="space-y-4">
               {topReviews.map(review => (
-                <div key={review.id} className="bg-gray-800 rounded-lg p-4">
+                <Link 
+                  key={review.id} 
+                  to={`/review/${review.userId}/${review.gameId}`}
+                  className="bg-gray-800 rounded-lg p-4 block hover:bg-gray-700 transition-colors"
+                >
                   <div className="flex items-center gap-3 mb-2">
                     <img
                       src={review.authorAvatar || '/default-avatar.png'}
@@ -647,7 +651,7 @@ export const GamePage: React.FC = () => {
                   {review.text && (
                     <p className="text-gray-300 text-sm">{review.text}</p>
                   )}
-                </div>
+                </Link>
               ))}
             </div>
           ) : !reviewsLoading && (
