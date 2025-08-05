@@ -61,6 +61,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           completed_date,
           game:game_id (
             id,
+            game_id,
             name,
             pic_url,
             genre,
@@ -76,7 +77,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
       const gamesData = (data || [])
         .filter(item => item.game)
         .map(item => ({
-          id: item.game.id.toString(),
+          id: item.game.game_id.toString(), // Use IGDB ID for linking
           title: item.game.name || 'Unknown Game',
           coverImage: item.game.pic_url || '/default-cover.png',
           genre: item.game.genre || '',
@@ -111,6 +112,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           completed_date,
           game:game_id (
             id,
+            game_id,
             name,
             pic_url,
             genre,
@@ -127,7 +129,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
       const gamesData = (data || [])
         .filter(item => item.game)
         .map(item => ({
-          id: item.game.id.toString(),
+          id: item.game.game_id.toString(), // Use IGDB ID for linking
           title: item.game.name || 'Unknown Game',
           coverImage: item.game.pic_url || '/default-cover.png',
           genre: item.game.genre || '',
@@ -161,6 +163,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           started_date,
           game:game_id (
             id,
+            game_id,
             name,
             pic_url,
             genre,
