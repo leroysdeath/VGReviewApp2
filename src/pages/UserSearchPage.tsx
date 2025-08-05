@@ -99,27 +99,19 @@ export const UserSearchPage: React.FC = () => {
       // Create a map of user IDs for quick lookup
       const userIds = realUsers.map(user => user.id);
 
-      // Get all follower counts in batch queries
-      const { data: followerData, error: followerError } = await supabase
+      // Get all follow relationships in a single query (more efficient)
+      const { data: followData, error: followError } = await supabase
         .from('user_follow')
-        .select('following_id')
-        .in('following_id', userIds);
-
-      const { data: followingData, error: followingError } = await supabase
-        .from('user_follow')
-        .select('follower_id')
-        .in('follower_id', userIds);
+        .select('follower_id, following_id')
+        .or(`follower_id.in.(${userIds.join(',')}),following_id.in.(${userIds.join(',')})`);
 
       const { data: reviewData, error: reviewError } = await supabase
         .from('rating')
         .select('user_id, rating')
         .in('user_id', userIds);
 
-      if (followerError) {
-        console.error('❌ Error loading follower data:', followerError);
-      }
-      if (followingError) {
-        console.error('❌ Error loading following data:', followingError);
+      if (followError) {
+        console.error('❌ Error loading follow data:', followError);
       }
       if (reviewError) {
         console.error('❌ Error loading review data:', reviewError);
@@ -131,23 +123,23 @@ export const UserSearchPage: React.FC = () => {
       const reviewCounts = new Map<string, number>();
       const averageRatings = new Map<string, number>();
 
-      // Count followers for each user
-      if (followerData) {
-        console.log(`📊 Processing ${followerData.length} follower relationships`);
-        followerData.forEach(follow => {
-          const userId = follow.following_id.toString();
-          const count = followerCounts.get(userId) || 0;
-          followerCounts.set(userId, count + 1);
-        });
-      }
-
-      // Count following for each user
-      if (followingData) {
-        console.log(`📊 Processing ${followingData.length} following relationships`);
-        followingData.forEach(follow => {
-          const userId = follow.follower_id.toString();
-          const count = followingCounts.get(userId) || 0;
-          followingCounts.set(userId, count + 1);
+      // Count followers and following from single follow data source
+      if (followData) {
+        console.log(`📊 Processing ${followData.length} follow relationships`);
+        followData.forEach(follow => {
+          // Count followers: someone follows this user (following_id)
+          const followedUserId = follow.following_id.toString();
+          if (userIds.includes(follow.following_id)) {
+            const followerCount = followerCounts.get(followedUserId) || 0;
+            followerCounts.set(followedUserId, followerCount + 1);
+          }
+          
+          // Count following: this user follows someone (follower_id)
+          const followerUserId = follow.follower_id.toString();
+          if (userIds.includes(follow.follower_id)) {
+            const followingCount = followingCounts.get(followerUserId) || 0;
+            followingCounts.set(followerUserId, followingCount + 1);
+          }
         });
       }
 
@@ -202,8 +194,7 @@ export const UserSearchPage: React.FC = () => {
         usersWithReviews: transformedUsers.filter(u => u.reviewCount > 0).length,
         usersWithFollowers: transformedUsers.filter(u => u.followers > 0).length,
         usersFollowingOthers: transformedUsers.filter(u => u.following > 0).length,
-        totalFollowerRelationships: followerData?.length || 0,
-        totalFollowingRelationships: followingData?.length || 0,
+        totalFollowRelationships: followData?.length || 0,
         totalReviews: transformedUsers.reduce((sum, u) => sum + u.reviewCount, 0),
         totalFollows: transformedUsers.reduce((sum, u) => sum + u.followers, 0),
         avgFollowers: transformedUsers.length > 0 ? 
@@ -276,6 +267,9 @@ export const UserSearchPage: React.FC = () => {
       
       if (result.success) {
         console.log(`Successfully ${result.isFollowing ? 'followed' : 'unfollowed'} user ${userId}`);
+        
+        // Add delay to ensure database changes have propagated
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         // Reload user counts to show updated follower numbers
         await loadUsers();
