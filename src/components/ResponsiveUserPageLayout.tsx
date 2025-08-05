@@ -1,9 +1,10 @@
 import React, { ReactNode, useState, useEffect } from 'react';
-import { Settings, ExternalLink } from 'lucide-react';
+import { Settings, ExternalLink, UserPlus, UserCheck } from 'lucide-react';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
 import { UserSettingsModal } from './profile/UserSettingsModal';
 import { supabase } from '../services/supabase';
+import { useFollow } from '../hooks/useFollow';
 
 interface UserStats {
   films: number;
@@ -52,6 +53,8 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
   const { isMobile } = useResponsive();
   const { user: authUser, isAuthenticated } = useAuth();
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const { toggleFollow, isFollowing, loading: followLoading, canFollow } = useFollow();
+  const [isUserFollowing, setIsUserFollowing] = useState(false);
   
   // Check if current user is viewing their own profile
   // Note: authUser.id is the Supabase auth UUID, user.id is the database integer ID
@@ -72,15 +75,31 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
         .eq('provider_id', authUser.id)
         .single();
         
-      setIsOwnProfile(currentUserData?.id === parseInt(user.id));
+      const isOwn = currentUserData?.id === parseInt(user.id);
+      setIsOwnProfile(isOwn);
+      
+      // Check if following this user (only if not own profile)
+      if (!isOwn && canFollow) {
+        const followingStatus = await isFollowing(user.id);
+        setIsUserFollowing(followingStatus);
+      }
     };
     
     checkIsOwnProfile();
-  }, [isAuthenticated, authUser?.id, user.id]);
+  }, [isAuthenticated, authUser?.id, user.id, canFollow, isFollowing]);
 
   const handleSettingsClick = () => {
     if (isOwnProfile) {
       setIsSettingsModalOpen(true);
+    }
+  };
+
+  const handleFollowClick = async () => {
+    if (!canFollow) return;
+    
+    const result = await toggleFollow(user.id);
+    if (result.success) {
+      setIsUserFollowing(result.isFollowing || false);
     }
   };
 
@@ -126,6 +145,33 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                       className="text-gray-400 hover:text-white p-1"
                     >
                       <Settings className="h-4 w-4" />
+                    </button>
+                  )}
+                  {!isOwnProfile && isAuthenticated && (
+                    <button
+                      onClick={handleFollowClick}
+                      disabled={followLoading}
+                      className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                        followLoading
+                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                          : isUserFollowing
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-purple-600 text-white hover:bg-purple-700'
+                      }`}
+                    >
+                      {followLoading ? (
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : isUserFollowing ? (
+                        <>
+                          <UserCheck className="h-3 w-3" />
+                          Following
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-3 w-3" />
+                          Follow
+                        </>
+                      )}
                     </button>
                   )}
                 </div>
@@ -295,6 +341,36 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                       className="text-gray-400 hover:text-white p-1"
                     >
                       <Settings className="h-4 w-4" />
+                    </button>
+                  )}
+                  {!isOwnProfile && isAuthenticated && (
+                    <button
+                      onClick={handleFollowClick}
+                      disabled={followLoading}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        followLoading
+                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                          : isUserFollowing
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-purple-600 text-white hover:bg-purple-700'
+                      }`}
+                    >
+                      {followLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Loading...
+                        </>
+                      ) : isUserFollowing ? (
+                        <>
+                          <UserCheck className="h-4 w-4" />
+                          Following
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-4 w-4" />
+                          Follow
+                        </>
+                      )}
                     </button>
                   )}
                 </div>
