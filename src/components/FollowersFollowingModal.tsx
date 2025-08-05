@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
 import { useAuth } from '../hooks/useAuth';
+import { useCurrentUserId } from '../hooks/useCurrentUserId';
 
 interface User {
   id: string;
@@ -36,6 +37,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   
   const { toggleFollow, loading: followLoading } = useFollow();
   const { isAuthenticated } = useAuth();
+  const { userId: currentDbUserId } = useCurrentUserId();
 
   // Update active tab when initialTab changes
   useEffect(() => {
@@ -116,15 +118,15 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
     }
   };
 
-  // Load user's following list to show follow status
+  // Load current authenticated user's following list to show follow status
   const loadUserFollowingList = async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !currentDbUserId) return;
     
     try {
       const { data, error } = await supabase
         .from('user_follow')
         .select('following_id')
-        .eq('follower_id', parseInt(userId));
+        .eq('follower_id', currentDbUserId);
 
       if (error) throw error;
 
@@ -145,7 +147,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
       }
       loadUserFollowingList();
     }
-  }, [isOpen, activeTab, userId]);
+  }, [isOpen, activeTab, userId, currentDbUserId]);
 
   // Handle follow/unfollow
   const handleToggleFollow = async (targetUserId: string) => {
@@ -255,7 +257,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
                     </div>
                   </Link>
                   
-                  {isAuthenticated && user.id !== userId && (
+                  {isAuthenticated && user.id !== userId && user.id !== currentDbUserId?.toString() && (
                     <button
                       onClick={() => handleToggleFollow(user.id)}
                       disabled={followLoading}
