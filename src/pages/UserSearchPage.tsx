@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useResponsive } from '../hooks/useResponsive';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
+import { useCurrentUserId } from '../hooks/useCurrentUserId';
 
 interface User {
   id: string;
@@ -29,13 +30,14 @@ export const UserSearchPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const { isMobile } = useResponsive();
   const { toggleFollow: dbToggleFollow, getFollowingList, loading: followLoading, canFollow } = useFollow();
+  const { userId: currentDbUserId } = useCurrentUserId();
 
   // Load real users from Supabase
   useEffect(() => {
     loadUsers();
     loadRecentSearches();
     loadFollowingListFromDB();
-  }, []);
+  }, [loadUsers]); // Reload when loadUsers function changes (depends on currentDbUserId)
 
   // Load following list from database
   const loadFollowingListFromDB = async () => {
@@ -65,13 +67,13 @@ export const UserSearchPage: React.FC = () => {
     }
   }, [searchTerm, setSearchParams]);
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoadingUsers(true);
     try {
       console.log('🔍 Loading users with real database counts...');
       
-      // Get basic user data
-      const { data: realUsers, error } = await supabase
+      // Get basic user data (exclude current user if authenticated)
+      let query = supabase
         .from('user')
         .select(`
           id,
@@ -79,8 +81,15 @@ export const UserSearchPage: React.FC = () => {
           bio,
           picurl,
           created_at
-        `)
-        .limit(50);
+        `);
+      
+      // Filter out current user if we have their database ID
+      if (currentDbUserId) {
+        query = query.neq('id', currentDbUserId);
+        console.log(`🚫 Excluding current user (ID: ${currentDbUserId}) from search results`);
+      }
+      
+      const { data: realUsers, error } = await query.limit(50);
 
       if (error) {
         console.error('❌ Error loading users:', error);
@@ -209,7 +218,7 @@ export const UserSearchPage: React.FC = () => {
     } finally {
       setLoadingUsers(false);
     }
-  };
+  }, [currentDbUserId]);
 
   const loadRecentSearches = () => {
     try {
@@ -269,7 +278,7 @@ export const UserSearchPage: React.FC = () => {
         console.log(`Successfully ${result.isFollowing ? 'followed' : 'unfollowed'} user ${userId}`);
         
         // Add delay to ensure database changes have propagated
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 30));
         
         // Reload user counts to show updated follower numbers
         await loadUsers();
@@ -290,10 +299,16 @@ export const UserSearchPage: React.FC = () => {
 
   // Memoized filtered and sorted users
   const filteredUsers = useMemo(() => {
-    let filtered = users.filter(user =>
-      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.bio && user.bio.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    let filtered = users.filter(user => {
+      // Exclude current user (extra safety check)
+      if (currentDbUserId && user.id === currentDbUserId.toString()) {
+        return false;
+      }
+      
+      // Apply search filter
+      return user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.bio && user.bio.toLowerCase().includes(searchTerm.toLowerCase()));
+    });
 
     // Sort users based on selected criteria
     switch (sortBy) {
@@ -318,14 +333,15 @@ export const UserSearchPage: React.FC = () => {
     }
 
     return filtered;
-  }, [users, searchTerm, sortBy]);
+  }, [users, searchTerm, sortBy, currentDbUserId]);
 
   // Popular reviewers (top users by review count)
   const popularReviewers = useMemo(() => {
     return [...users]
+      .filter(user => !currentDbUserId || user.id !== currentDbUserId.toString())
       .sort((a, b) => b.reviewCount - a.reviewCount)
       .slice(0, 3);
-  }, [users]);
+  }, [users, currentDbUserId]);
 
   const clearRecentSearches = () => {
     setRecentSearches([]);
