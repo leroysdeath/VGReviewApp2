@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Search, Users, UserPlus, UserCheck, TrendingUp, Clock, Filter, Star, MessageCircle } from 'lucide-react';
+import { Search, Users, UserPlus, UserCheck, TrendingUp, Clock, Filter, Star } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useResponsive } from '../hooks/useResponsive';
 import { supabase } from '../services/supabase';
@@ -28,6 +28,7 @@ export const UserSearchPage: React.FC = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'relevance' | 'followers' | 'reviews' | 'recent'>('relevance');
   const [showFilters, setShowFilters] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { isMobile } = useResponsive();
   const { toggleFollow: dbToggleFollow, getFollowingList, loading: followLoading, canFollow } = useFollow();
   const { userId: currentDbUserId } = useCurrentUserId();
@@ -37,10 +38,10 @@ export const UserSearchPage: React.FC = () => {
     loadUsers();
     loadRecentSearches();
     loadFollowingListFromDB();
-  }, [loadUsers]); // Reload when loadUsers function changes (depends on currentDbUserId)
+  }, [loadUsers, loadFollowingListFromDB]); // Reload when loadUsers function changes (depends on currentDbUserId)
 
   // Load following list from database
-  const loadFollowingListFromDB = async () => {
+  const loadFollowingListFromDB = useCallback(async () => {
     if (canFollow) {
       try {
         const following = await getFollowingList();
@@ -55,7 +56,7 @@ export const UserSearchPage: React.FC = () => {
     } else {
       loadFollowingList(); // Use localStorage fallback
     }
-  };
+  }, [canFollow, getFollowingList]);
 
   // Update URL when search term changes
   useEffect(() => {
@@ -65,10 +66,11 @@ export const UserSearchPage: React.FC = () => {
     } else {
       setSearchParams({});
     }
-  }, [searchTerm, setSearchParams]);
+  }, [searchTerm, setSearchParams, saveRecentSearch]);
 
   const loadUsers = useCallback(async () => {
     setLoadingUsers(true);
+    setError(null);
     try {
       console.log('🔍 Loading users with real database counts...');
       
@@ -93,6 +95,7 @@ export const UserSearchPage: React.FC = () => {
 
       if (error) {
         console.error('❌ Error loading users:', error);
+        setError('Failed to load users. Please try again.');
         setUsers([]);
         return;
       }
@@ -121,9 +124,11 @@ export const UserSearchPage: React.FC = () => {
 
       if (followError) {
         console.error('❌ Error loading follow data:', followError);
+        setError('Failed to load follow relationships. Counts may be inaccurate.');
       }
       if (reviewError) {
         console.error('❌ Error loading review data:', reviewError);
+        setError('Failed to load review data. Review counts may be inaccurate.');
       }
 
       // Create lookup maps for counts (use string keys to match transformed user IDs)
@@ -214,6 +219,7 @@ export const UserSearchPage: React.FC = () => {
       setUsers(transformedUsers);
     } catch (error) {
       console.error('💥 Unexpected error loading users:', error);
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred while loading users');
       setUsers([]);
     } finally {
       setLoadingUsers(false);
@@ -231,7 +237,7 @@ export const UserSearchPage: React.FC = () => {
     }
   };
 
-  const saveRecentSearch = (term: string) => {
+  const saveRecentSearch = useCallback((term: string) => {
     if (!term.trim() || term.length < 2) return;
     
     try {
@@ -241,7 +247,7 @@ export const UserSearchPage: React.FC = () => {
     } catch (error) {
       console.error('Error saving recent search:', error);
     }
-  };
+  }, [recentSearches]);
 
   const loadFollowingList = async () => {
     try {
@@ -257,7 +263,7 @@ export const UserSearchPage: React.FC = () => {
 
   const toggleFollow = useCallback(async (userId: string) => {
     if (!canFollow) {
-      // Show error or prompt to login
+      setError('You must be logged in to follow users');
       console.warn('User must be authenticated to follow/unfollow');
       return;
     }
@@ -288,18 +294,22 @@ export const UserSearchPage: React.FC = () => {
       } else {
         // Revert optimistic update on failure
         setFollowingUsers(followingUsers);
+        const errorMessage = result.error || 'Failed to update follow status';
+        setError(errorMessage);
         console.error('Follow operation failed:', result.error);
       }
     } catch (error) {
       // Revert optimistic update on error
       setFollowingUsers(followingUsers);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred while updating follow status';
+      setError(errorMessage);
       console.error('Error in toggleFollow:', error);
     }
   }, [canFollow, followingUsers, dbToggleFollow, loadUsers]);
 
   // Memoized filtered and sorted users
   const filteredUsers = useMemo(() => {
-    let filtered = users.filter(user => {
+    const filtered = users.filter(user => {
       // Exclude current user (extra safety check)
       if (currentDbUserId && user.id === currentDbUserId.toString()) {
         return false;
@@ -313,17 +323,14 @@ export const UserSearchPage: React.FC = () => {
     // Sort users based on selected criteria
     switch (sortBy) {
       case 'followers':
-        filtered.sort((a, b) => b.followers - a.followers);
-        break;
+        return [...filtered].sort((a, b) => b.followers - a.followers);
       case 'reviews':
-        filtered.sort((a, b) => b.reviewCount - a.reviewCount);
-        break;
+        return [...filtered].sort((a, b) => b.reviewCount - a.reviewCount);
       case 'recent':
-        filtered.sort((a, b) => new Date(b.joinDate || 0).getTime() - new Date(a.joinDate || 0).getTime());
-        break;
+        return [...filtered].sort((a, b) => new Date(b.joinDate || 0).getTime() - new Date(a.joinDate || 0).getTime());
       default: // relevance
         // For relevance, prioritize exact username matches, then bio matches
-        filtered.sort((a, b) => {
+        return [...filtered].sort((a, b) => {
           const aUsernameMatch = a.username.toLowerCase().includes(searchTerm.toLowerCase());
           const bUsernameMatch = b.username.toLowerCase().includes(searchTerm.toLowerCase());
           if (aUsernameMatch && !bUsernameMatch) return -1;
@@ -331,8 +338,6 @@ export const UserSearchPage: React.FC = () => {
           return b.followers - a.followers; // Secondary sort by followers
         });
     }
-
-    return filtered;
   }, [users, searchTerm, sortBy, currentDbUserId]);
 
   // Popular reviewers (top users by review count)
@@ -379,7 +384,7 @@ export const UserSearchPage: React.FC = () => {
             <div className="flex items-center gap-4">
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as 'relevance' | 'followers' | 'reviews' | 'recent')}
                 className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
               >
                 <option value="relevance">Most Relevant</option>
@@ -404,6 +409,22 @@ export const UserSearchPage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 bg-red-900/50 border border-red-700 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <span className="text-red-400">⚠️</span>
+              <p className="text-red-300">{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="ml-auto text-red-400 hover:text-red-300 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Main Content */}
