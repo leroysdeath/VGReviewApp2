@@ -113,6 +113,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         `)
         .eq('user_id', parseInt(userId))
         .eq('started', true)
+        .eq('completed', false)
         .order('started_date', { ascending: false });
 
       if (error) throw error;
