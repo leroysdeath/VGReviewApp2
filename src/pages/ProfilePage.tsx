@@ -6,6 +6,7 @@ import { ProfileInfo } from '../components/ProfileInfo';
 import { ProfileDetails } from '../components/ProfileDetails';
 import { ProfileData } from '../components/ProfileData';
 import { UserSettingsModal } from '../components/profile/UserSettingsModal';
+import { FollowersFollowingModal } from '../components/FollowersFollowingModal';
 
 const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState(null);
@@ -18,6 +19,9 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [currentDbUserId, setCurrentDbUserId] = useState<string>('');
+  const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
+  const [modalInitialTab, setModalInitialTab] = useState<'followers' | 'following'>('followers');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -75,6 +79,11 @@ const ProfilePage = () => {
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') throw profileError;
+
+      // Set database user ID if profile exists
+      if (profileData?.id) {
+        setCurrentDbUserId(profileData.id.toString());
+      }
 
       // If no profile exists yet, use auth metadata
       const profile = profileData || {
@@ -200,6 +209,16 @@ const ProfilePage = () => {
     setShowSettingsModal(true);
   };
 
+  const handleFollowersClick = () => {
+    setModalInitialTab('followers');
+    setIsFollowersModalOpen(true);
+  };
+
+  const handleFollowingClick = () => {
+    setModalInitialTab('following');
+    setIsFollowersModalOpen(true);
+  };
+
   if (loading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
 
   return (
@@ -213,7 +232,11 @@ const ProfilePage = () => {
             onEditClick={handleEditClick}
             isCurrentUser={true}
           />
-          <ProfileDetails stats={stats} />
+          <ProfileDetails 
+            stats={stats} 
+            onFollowersClick={handleFollowersClick}
+            onFollowingClick={handleFollowingClick}
+          />
         </div>
 
         {/* Tabs Navigation */}
@@ -261,6 +284,17 @@ const ProfilePage = () => {
         onClose={() => setShowSettingsModal(false)}
         userId={currentUserId}
       />
+
+      {/* Followers/Following Modal */}
+      {currentDbUserId && userProfile && (
+        <FollowersFollowingModal
+          isOpen={isFollowersModalOpen}
+          onClose={() => setIsFollowersModalOpen(false)}
+          userId={currentDbUserId}
+          userName={userProfile.username}
+          initialTab={modalInitialTab}
+        />
+      )}
     </div>
   );
 };
