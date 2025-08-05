@@ -116,15 +116,18 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   };
 
   return (
-    <div className={`
-      group relative overflow-hidden rounded-xl border-2 
-      bg-gray-900/80 backdrop-blur-lg
-      transition-all duration-500 ease-out
-      hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-900/50
-      ${themeStyles.border} ${themeStyles.hoverBorder}
-      ${compact ? 'p-4' : 'p-6'}
-      ${className}
-    `}>
+    <Link 
+      to={`/review/${review.userId}/${review.gameId}`}
+      className={`
+        group relative overflow-hidden rounded-xl border-2 block
+        bg-gray-900/80 backdrop-blur-lg
+        transition-all duration-500 ease-out
+        hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-900/50
+        ${themeStyles.border} ${themeStyles.hoverBorder}
+        ${compact ? 'p-4' : 'p-6'}
+        ${className}
+      `}
+    >
       {/* Background gradient overlay on hover */}
       <div className={`
         absolute inset-0 opacity-0 group-hover:opacity-10 
@@ -136,7 +139,14 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       <div className="relative flex items-start gap-4">
         {/* User Avatar */}
         <div className="flex-shrink-0">
-          <Link to={`/user/${review.userId}`} className="group/avatar">
+          <div 
+            className="group/avatar cursor-pointer"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.location.href = `/user/${review.userId}`;
+            }}
+          >
             {review.authorAvatar ? (
               <img
                 src={review.authorAvatar}
@@ -160,23 +170,27 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                 {getUserInitial(review.author)}
               </div>
             )}
-          </Link>
+          </div>
         </div>
 
         {/* Review Content */}
         <div className="flex-1 min-w-0">
           {/* Header with username and game title */}
           <div className="mb-3">
-            <Link
-              to={`/user/${review.userId}`}
+            <span
               className={`
-                font-semibold transition-colors duration-300
+                font-semibold transition-colors duration-300 cursor-pointer
                 text-white hover:${themeStyles.accent.replace('text-', 'text-')}
                 ${compact ? 'text-sm' : 'text-base'}
               `}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = `/user/${review.userId}`;
+              }}
             >
               {review.author}
-            </Link>
+            </span>
             
             {showGameTitle && review.gameTitle && (
               <div className={`${compact ? 'text-xs' : 'text-sm'} text-gray-400 mt-1`}>
@@ -243,6 +257,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         transition-opacity duration-500 pointer-events-none -z-10
         bg-gradient-to-r ${themeStyles.gradient} blur-xl
       `} />
-    </div>
+    </Link>
   );
 };
