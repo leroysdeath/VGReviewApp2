@@ -47,16 +47,18 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     setActiveTab(initialTab);
   }, [initialTab]);
 
-  // Load all games for the user (from ratings table)
+  // Load all games for the user (started or completed games from game_progress table)
   const loadAllGames = useCallback(async () => {
     setLoadingAll(true);
     setError(null);
     try {
       const { data, error } = await supabase
-        .from('rating')
+        .from('game_progress')
         .select(`
-          rating,
-          post_date_time,
+          started,
+          started_date,
+          completed,
+          completed_date,
           game:game_id (
             id,
             name,
@@ -66,7 +68,8 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           )
         `)
         .eq('user_id', parseInt(userId))
-        .order('rating', { ascending: false });
+        .or('started.eq.true,completed.eq.true')
+        .order('started_date', { ascending: false });
 
       if (error) throw error;
 
@@ -78,7 +81,10 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           coverImage: item.game.pic_url || '/default-cover.png',
           genre: item.game.genre || '',
           releaseDate: item.game.release_date || '',
-          rating: item.rating
+          started: item.started,
+          completed: item.completed,
+          started_date: item.started_date,
+          completed_date: item.completed_date
         }));
 
       setAllGames(gamesData);
@@ -350,18 +356,19 @@ export const GamesModal: React.FC<GamesModalProps> = ({
                         }}
                       />
                       
-                      {/* Rating overlay for 'all' tab */}
-                      {activeTab === 'all' && game.rating && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-gray-900/80 px-1 py-0.5">
-                          <div className="text-center">
-                            <span className="text-white text-xs font-bold">
-                              {game.rating.toFixed(1)}
-                            </span>
-                          </div>
+                      {/* Progress indicators for all tabs */}
+                      {activeTab === 'all' && game.completed && (
+                        <div className="absolute top-1 right-1 bg-green-600 text-white w-6 h-6 rounded-full flex items-center justify-center">
+                          <CheckCircle className="h-3 w-3" />
                         </div>
                       )}
                       
-                      {/* Progress indicators for started/finished tabs */}
+                      {activeTab === 'all' && game.started && !game.completed && (
+                        <div className="absolute top-1 right-1 bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center">
+                          <Play className="h-3 w-3" />
+                        </div>
+                      )}
+                      
                       {activeTab === 'started' && (
                         <div className="absolute top-1 right-1 bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center">
                           <Play className="h-3 w-3" />
@@ -403,21 +410,23 @@ export const GamesModal: React.FC<GamesModalProps> = ({
                         }}
                       />
                       
-                      {/* Rating overlay for mobile 'all' tab */}
-                      {activeTab === 'all' && game.rating && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-gray-900/80 px-1 py-0.5">
-                          <div className="text-center">
-                            <span className="text-white text-xs font-bold">
-                              {game.rating.toFixed(1)}
-                            </span>
-                          </div>
-                        </div>
-                      )}
                     </div>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         {/* Progress indicators for mobile */}
+                        {activeTab === 'all' && game.completed && (
+                          <div className="bg-green-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
+                            <CheckCircle className="h-3 w-3" />
+                          </div>
+                        )}
+                        
+                        {activeTab === 'all' && game.started && !game.completed && (
+                          <div className="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
+                            <Play className="h-3 w-3" />
+                          </div>
+                        )}
+                        
                         {activeTab === 'started' && (
                           <div className="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
                             <Play className="h-3 w-3" />
@@ -436,10 +445,16 @@ export const GamesModal: React.FC<GamesModalProps> = ({
                       
                       <div className="flex items-center gap-2 text-xs text-gray-400">
                         {game.genre && <span>{game.genre}</span>}
-                        {activeTab === 'all' && game.rating && (
+                        {activeTab === 'all' && game.completed && game.completed_date && (
                           <>
                             {game.genre && <span>•</span>}
-                            <span className="text-yellow-400">★ {game.rating.toFixed(1)}</span>
+                            <span>Finished {new Date(game.completed_date).toLocaleDateString()}</span>
+                          </>
+                        )}
+                        {activeTab === 'all' && game.started && !game.completed && game.started_date && (
+                          <>
+                            {game.genre && <span>•</span>}
+                            <span>Started {new Date(game.started_date).toLocaleDateString()}</span>
                           </>
                         )}
                         {(activeTab === 'started' || activeTab === 'finished') && game.started_date && (
