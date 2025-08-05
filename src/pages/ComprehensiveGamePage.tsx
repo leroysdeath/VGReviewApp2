@@ -200,6 +200,7 @@ export const ComprehensiveGamePage: React.FC = () => {
               id: review.id.toString(),
               userId: review.user_id.toString(),
               gameId: review.game_id.toString(),
+              igdbGameId: id, // Use the IGDB game_id from the URL parameter
               rating: review.rating,
               text: review.review || '',
               date: new Date(review.post_date_time).toISOString().split('T')[0],
