@@ -171,7 +171,7 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                       ref={dropdownRef}
                       className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1 z-50">
                       <Link
-                        to={currentUserId ? `/user/${currentUserId}` : "/profile"}
+                        to="/profile"
                         className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
@@ -179,7 +179,7 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                         Profile
                       </Link>
                       <Link
-                        to={currentUserId ? `/user/${currentUserId}` : "/profile"}
+                        to="/profile"
                         className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
@@ -274,7 +274,7 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                       </div>
                     </div>
                     <Link
-                      to={currentUserId ? `/user/${currentUserId}` : "/profile"}
+                      to="/profile"
                       className="flex items-center space-x-3 px-3 py-3 text-gray-300 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
@@ -282,7 +282,7 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                       <span>Profile</span>
                     </Link>
                     <Link
-                      to={currentUserId ? `/user/${currentUserId}` : "/profile"}
+                      to="/profile"
                       className="flex items-center space-x-3 px-3 py-3 text-gray-300 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
