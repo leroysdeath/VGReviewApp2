@@ -33,12 +33,30 @@ export const UserSearchPage: React.FC = () => {
   const { toggleFollow: dbToggleFollow, getFollowingList, loading: followLoading, canFollow } = useFollow();
   const { userId: currentDbUserId } = useCurrentUserId();
 
-  // Load real users from Supabase
-  useEffect(() => {
-    loadUsers();
-    loadRecentSearches();
-    loadFollowingListFromDB();
-  }, [loadUsers, loadFollowingListFromDB]); // Reload when loadUsers function changes (depends on currentDbUserId)
+  // Load recent searches from localStorage
+  const loadRecentSearches = () => {
+    try {
+      const saved = localStorage.getItem('user_recent_searches');
+      if (saved) {
+        setRecentSearches(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading recent searches:', error);
+    }
+  };
+
+  // Load following list from localStorage fallback
+  const loadFollowingList = async () => {
+    try {
+      // In a real app, this would load from user's following list
+      const saved = localStorage.getItem('following_users');
+      if (saved) {
+        setFollowingUsers(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading following list:', error);
+    }
+  };
 
   // Load following list from database
   const loadFollowingListFromDB = useCallback(async () => {
@@ -58,16 +76,7 @@ export const UserSearchPage: React.FC = () => {
     }
   }, [canFollow, getFollowingList]);
 
-  // Update URL when search term changes
-  useEffect(() => {
-    if (searchTerm) {
-      setSearchParams({ q: searchTerm });
-      saveRecentSearch(searchTerm);
-    } else {
-      setSearchParams({});
-    }
-  }, [searchTerm, setSearchParams, saveRecentSearch]);
-
+  // Load users from database with counts
   const loadUsers = useCallback(async () => {
     setLoadingUsers(true);
     setError(null);
@@ -226,17 +235,7 @@ export const UserSearchPage: React.FC = () => {
     }
   }, [currentDbUserId]);
 
-  const loadRecentSearches = () => {
-    try {
-      const saved = localStorage.getItem('user_recent_searches');
-      if (saved) {
-        setRecentSearches(JSON.parse(saved));
-      }
-    } catch (error) {
-      console.error('Error loading recent searches:', error);
-    }
-  };
-
+  // Save recent search function
   const saveRecentSearch = useCallback((term: string) => {
     if (!term.trim() || term.length < 2) return;
     
@@ -249,17 +248,24 @@ export const UserSearchPage: React.FC = () => {
     }
   }, [recentSearches]);
 
-  const loadFollowingList = async () => {
-    try {
-      // In a real app, this would load from user's following list
-      const saved = localStorage.getItem('following_users');
-      if (saved) {
-        setFollowingUsers(JSON.parse(saved));
-      }
-    } catch (error) {
-      console.error('Error loading following list:', error);
+  // Load real users from Supabase on component mount and when currentDbUserId changes
+  useEffect(() => {
+    loadUsers();
+    loadRecentSearches();
+    loadFollowingListFromDB();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentDbUserId]); // Only depend on currentDbUserId to avoid circular dependency
+
+  // Update URL when search term changes
+  useEffect(() => {
+    if (searchTerm) {
+      setSearchParams({ q: searchTerm });
+      saveRecentSearch(searchTerm);
+    } else {
+      setSearchParams({});
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, setSearchParams]); // Removed saveRecentSearch to avoid circular dependency
 
   const toggleFollow = useCallback(async (userId: string) => {
     if (!canFollow) {
