@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabaseClient';
 import { igdbService } from '../services/igdbApi';
@@ -7,6 +7,7 @@ import { ProfileDetails } from '../components/ProfileDetails';
 import { ProfileData } from '../components/ProfileData';
 import { UserSettingsModal } from '../components/profile/UserSettingsModal';
 import { FollowersFollowingModal } from '../components/FollowersFollowingModal';
+import { GamesModal } from '../components/GamesModal';
 
 const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState(null);
@@ -22,15 +23,17 @@ const ProfilePage = () => {
   const [currentDbUserId, setCurrentDbUserId] = useState<string>('');
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
   const [modalInitialTab, setModalInitialTab] = useState<'followers' | 'following'>('followers');
+  const [isGamesModalOpen, setIsGamesModalOpen] = useState(false);
+  const [gamesModalInitialTab, setGamesModalInitialTab] = useState<'all' | 'started' | 'finished'>('all');
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchProfileData();
-  }, []);
+  }, [fetchProfileData]);
 
   useEffect(() => {
     // Sort reviews based on filter
-    let sorted = [...reviews];
+    const sorted = [...reviews];
     switch (reviewFilter) {
       case 'highest':
         sorted.sort((a, b) => b.rating - a.rating);
@@ -60,7 +63,7 @@ const ProfilePage = () => {
     })));
   }, [reviews, reviewFilter, userProfile]);
 
-  async function fetchProfileData() {
+  const fetchProfileData = useCallback(async () => {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -203,7 +206,7 @@ const ProfilePage = () => {
     } finally {
       setLoading(false);
     }
-  }
+  }, [navigate]);
 
   const handleEditClick = () => {
     setShowSettingsModal(true);
@@ -217,6 +220,11 @@ const ProfilePage = () => {
   const handleFollowingClick = () => {
     setModalInitialTab('following');
     setIsFollowersModalOpen(true);
+  };
+
+  const handleGamesClick = () => {
+    setGamesModalInitialTab('all');
+    setIsGamesModalOpen(true);
   };
 
   if (loading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
@@ -236,6 +244,7 @@ const ProfilePage = () => {
             stats={stats} 
             onFollowersClick={handleFollowersClick}
             onFollowingClick={handleFollowingClick}
+            onGamesClick={handleGamesClick}
           />
         </div>
 
@@ -293,6 +302,17 @@ const ProfilePage = () => {
           userId={currentDbUserId}
           userName={userProfile.username}
           initialTab={modalInitialTab}
+        />
+      )}
+
+      {/* Games Modal */}
+      {currentDbUserId && userProfile && (
+        <GamesModal
+          isOpen={isGamesModalOpen}
+          onClose={() => setIsGamesModalOpen(false)}
+          userId={currentDbUserId}
+          userName={userProfile.username}
+          initialTab={gamesModalInitialTab}
         />
       )}
     </div>
