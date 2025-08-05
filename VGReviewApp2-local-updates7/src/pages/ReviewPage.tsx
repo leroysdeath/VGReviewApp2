@@ -1,0 +1,470 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { Star, Calendar, User, MessageCircle, Heart, X } from 'lucide-react';
+import { StarRating } from '../components/StarRating';
+import { igdbService, Game } from '../services/igdbApi';
+import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../services/supabase';
+
+interface Review {
+  id: string;
+  user_id: number;
+  game_id: number;
+  rating: number;
+  review: string;
+  post_date_time: string;
+  user: {
+    id: number;
+    name: string;
+    picurl?: string;
+  };
+}
+
+interface Comment {
+  id: string;
+  review_id: string;
+  user_id: number;
+  comment: string;
+  post_date_time: string;
+  hearts_count: number;
+  user_has_hearted: boolean;
+  user: {
+    id: number;
+    name: string;
+    picurl?: string;
+  };
+}
+
+export const ReviewPage: React.FC = () => {
+  const { userId, gameId } = useParams<{ userId: string; gameId: string }>();
+  const { isAuthenticated, user } = useAuth();
+  
+  const [game, setGame] = useState<Game | null>(null);
+  const [review, setReview] = useState<Review | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showFullReview, setShowFullReview] = useState(false);
+  const [reviewExpanded, setReviewExpanded] = useState(false);
+
+  useEffect(() => {
+    if (userId && gameId) {
+      loadReviewData();
+    }
+  }, [userId, gameId]);
+
+  const loadReviewData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Load game data
+      const gameData = await igdbService.getGameById(gameId!);
+      if (!gameData) {
+        throw new Error('Game not found');
+      }
+      setGame(gameData);
+
+      // Load review data
+      const { data: reviewData, error: reviewError } = await supabase
+        .from('rating')
+        .select(`
+          id,
+          user_id,
+          game_id,
+          rating,
+          review,
+          post_date_time,
+          user:user_id (
+            id,
+            name,
+            picurl
+          )
+        `)
+        .eq('user_id', parseInt(userId!))
+        .eq('game_id', parseInt(gameId!))
+        .single();
+
+      if (reviewError) {
+        throw new Error('Review not found');
+      }
+
+      setReview(reviewData);
+
+      // Load comments for this review
+      await loadComments(reviewData.id);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load review');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadComments = async (reviewId: string) => {
+    try {
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('review_comments')
+        .select(`
+          id,
+          review_id,
+          user_id,
+          comment,
+          post_date_time,
+          user:user_id (
+            id,
+            name,
+            picurl
+          )
+        `)
+        .eq('review_id', reviewId)
+        .order('post_date_time', { ascending: true });
+
+      if (commentsError) {
+        console.error('Error loading comments:', commentsError);
+        return;
+      }
+
+      // Get heart counts and user heart status for each comment
+      const commentsWithHearts = await Promise.all(
+        (commentsData || []).map(async (comment) => {
+          const { data: heartsData } = await supabase
+            .from('comment_hearts')
+            .select('user_id')
+            .eq('comment_id', comment.id);
+
+          const heartsCount = heartsData?.length || 0;
+          const userHasHearted = isAuthenticated && heartsData?.some(heart => heart.user_id === user?.id) || false;
+
+          return {
+            ...comment,
+            hearts_count: heartsCount,
+            user_has_hearted: userHasHearted
+          };
+        })
+      );
+
+      setComments(commentsWithHearts);
+    } catch (err) {
+      console.error('Error loading comments:', err);
+    }
+  };
+
+  const handleHeartComment = async (commentId: string) => {
+    if (!isAuthenticated || !user?.id) return;
+
+    const comment = comments.find(c => c.id === commentId);
+    if (!comment) return;
+
+    try {
+      if (comment.user_has_hearted) {
+        // Remove heart
+        await supabase
+          .from('comment_hearts')
+          .delete()
+          .eq('comment_id', commentId)
+          .eq('user_id', user.id);
+      } else {
+        // Add heart
+        await supabase
+          .from('comment_hearts')
+          .insert({
+            comment_id: commentId,
+            user_id: user.id
+          });
+      }
+
+      // Reload comments to update heart counts
+      if (review) {
+        await loadComments(review.id);
+      }
+    } catch (err) {
+      console.error('Error toggling heart:', err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500 mr-2"></div>
+            <span className="text-gray-400">Loading review...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !game || !review) {
+    return (
+      <div className="min-h-screen bg-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold text-white mb-4">
+              {error || 'Review not found'}
+            </h1>
+            <Link
+              to="/search"
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+            >
+              Browse Games
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const reviewText = review.review || '';
+  const isLongReview = reviewText.length > 500;
+
+  return (
+    <div className="min-h-screen bg-gray-900 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Review Header */}
+        <div className="grid lg:grid-cols-3 gap-8 mb-12">
+          {/* Game Cover and Info */}
+          <div className="lg:col-span-2">
+            <div className="bg-gray-800 rounded-lg overflow-hidden">
+              <div className="md:flex">
+                <div className="md:flex-shrink-0">
+                  <img
+                    src={game.coverImage || '/placeholder-game.jpg'}
+                    alt={game.title}
+                    className="h-64 w-full object-cover md:h-80 md:w-64"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder-game.jpg';
+                    }}
+                  />
+                </div>
+                <div className="p-8">
+                  <Link 
+                    to={`/game/${gameId}`}
+                    className="text-3xl font-bold text-white mb-4 hover:text-purple-400 transition-colors"
+                  >
+                    {game.title}
+                  </Link>
+                  <div className="space-y-2 text-gray-400 mb-6">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>
+                        {game.releaseDate ? new Date(game.releaseDate).getFullYear() : 'Unknown'}
+                      </span>
+                    </div>
+                    {game.genre && (
+                      <div><strong>Genre:</strong> {game.genre}</div>
+                    )}
+                    {game.platforms && game.platforms.length > 0 && (
+                      <div><strong>Platforms:</strong> {game.platforms.join(', ')}</div>
+                    )}
+                    {game.developer && (
+                      <div><strong>Developer:</strong> {game.developer}</div>
+                    )}
+                    {game.publisher && (
+                      <div><strong>Publisher:</strong> {game.publisher}</div>
+                    )}
+                  </div>
+                  
+                  {/* Review Content */}
+                  <div className="bg-gray-700 rounded-lg p-4 mb-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <img
+                        src={review.user.picurl || '/default-avatar.png'}
+                        alt={review.user.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                          const fallback = target.nextElementSibling;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
+                      />
+                      <div 
+                        className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm"
+                        style={{ display: 'none' }}
+                      >
+                        {review.user.name ? review.user.name.charAt(0).toUpperCase() : '?'}
+                      </div>
+                      <div>
+                        <Link
+                          to={`/user/${review.user.id}`}
+                          className="text-white font-medium hover:text-purple-400 transition-colors"
+                        >
+                          {review.user.name}
+                        </Link>
+                        <div className="text-sm text-gray-400">
+                          {new Date(review.post_date_time).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {reviewText && (
+                      <div className="text-gray-300 leading-relaxed">
+                        {isLongReview && !reviewExpanded ? (
+                          <>
+                            <p>{reviewText.substring(0, 500)}...</p>
+                            <button
+                              onClick={() => setShowFullReview(true)}
+                              className="mt-2 text-purple-400 hover:text-purple-300 transition-colors text-sm"
+                            >
+                              more
+                            </button>
+                          </>
+                        ) : (
+                          <p>{reviewText}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Review Score Box */}
+          <div className="space-y-6">
+            <div className="bg-gray-800 rounded-lg p-6">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+                  {review.user.name}'s rating
+                </h3>
+              </div>
+              <div className="border-b border-gray-700 mb-4"></div>
+              
+              <div className="text-center">
+                <div className="text-4xl font-bold text-green-400 mb-2">
+                  {review.rating.toFixed(1)}
+                </div>
+                <div className="flex justify-center mb-2">
+                  <StarRating rating={review.rating} />
+                </div>
+                <div className="text-sm text-gray-400">
+                  out of 10
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Comments Section */}
+        <div>
+          <div className="border-b border-gray-700 mb-6"></div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-white">Comments</h2>
+          </div>
+
+          <div className="space-y-4">
+            {comments.length > 0 ? (
+              comments.map(comment => (
+                <div key={comment.id} className="bg-gray-800 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <img
+                      src={comment.user.picurl || '/default-avatar.png'}
+                      alt={comment.user.name}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const fallback = target.nextElementSibling;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                    <div 
+                      className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                      style={{ display: 'none' }}
+                    >
+                      {comment.user.name ? comment.user.name.charAt(0).toUpperCase() : '?'}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Link
+                          to={`/user/${comment.user.id}`}
+                          className="text-white font-medium hover:text-purple-400 transition-colors"
+                        >
+                          {comment.user.name}
+                        </Link>
+                        <span className="text-gray-400 text-sm">
+                          {new Date(comment.post_date_time).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-gray-300 text-sm mb-2">{comment.comment}</p>
+                      
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleHeartComment(comment.id)}
+                          disabled={!isAuthenticated}
+                          className={`flex items-center gap-1 text-sm transition-colors ${
+                            comment.user_has_hearted 
+                              ? 'text-red-400' 
+                              : 'text-gray-400 hover:text-red-400'
+                          } ${!isAuthenticated ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                        >
+                          <Heart 
+                            className={`h-4 w-4 ${
+                              comment.user_has_hearted ? 'fill-current' : ''
+                            }`} 
+                          />
+                          {comment.hearts_count > 0 && (
+                            <span className="text-green-400 font-medium">
+                              {comment.hearts_count}
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-600" />
+                <p>No comments yet. Be the first to comment on this review!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Full Review Modal */}
+      {showFullReview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <h3 className="text-lg font-bold text-white">Full Review</h3>
+              <button
+                onClick={() => setShowFullReview(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <img
+                  src={review.user.picurl || '/default-avatar.png'}
+                  alt={review.user.name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+                <div>
+                  <div className="text-white font-medium">{review.user.name}</div>
+                  <div className="text-sm text-gray-400">
+                    {new Date(review.post_date_time).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="ml-auto flex items-center gap-1">
+                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                  <span className="text-yellow-500">{review.rating}/10</span>
+                </div>
+              </div>
+              <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                {reviewText}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
