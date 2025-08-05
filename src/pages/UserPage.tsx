@@ -23,6 +23,7 @@ export const UserPage: React.FC = () => {
       
       try {
         setLoading(true);
+        console.log('🔍 Loading user data with real follower/following counts...');
         
         // Fetch user data
         const { data: userData, error: userError } = await supabase
@@ -33,33 +34,78 @@ export const UserPage: React.FC = () => {
           
         if (userError) throw userError;
         
-        // Fetch user reviews
+        // Fetch user reviews (only those with valid ratings)
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('rating')
           .select(`
             *,
             game:game_id(*)
           `)
-          .eq('user_id', id);
+          .eq('user_id', id)
+          .not('rating', 'is', null);
           
         if (reviewsError) throw reviewsError;
         
-        // Get game IDs from reviews
-        const gameIds = reviewsData.map(review => review.game_id);
+        // Filter out any reviews with invalid ratings as an extra safety measure
+        const validReviewsData = reviewsData?.filter(review => 
+          review.rating != null && 
+          !isNaN(review.rating) && 
+          typeof review.rating === 'number'
+        ) || [];
         
-        // Fetch games data
-        const { data: gamesData, error: gamesError } = await supabase
-          .from('game')
-          .select('*')
-          .in('id', gameIds);
+        // Get game IDs from valid reviews
+        const gameIds = validReviewsData.map(review => review.game_id);
+        
+        // Fetch games data (only if there are game IDs)
+        let gamesData = [];
+        if (gameIds.length > 0) {
+          const { data: fetchedGames, error: gamesError } = await supabase
+            .from('game')
+            .select('*')
+            .in('id', gameIds);
+            
+          if (gamesError) throw gamesError;
+          gamesData = fetchedGames || [];
+        }
+        
+        // Fetch follower count (users who follow this user)
+        const { count: followerCount, error: followerError } = await supabase
+          .from('user_follow')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_id', id);
           
-        if (gamesError) throw gamesError;
+        if (followerError) {
+          console.error('❌ Error fetching follower count:', followerError);
+        }
+        
+        // Fetch following count (users this user follows)
+        const { count: followingCount, error: followingError } = await supabase
+          .from('user_follow')
+          .select('*', { count: 'exact', head: true })
+          .eq('follower_id', id);
+          
+        if (followingError) {
+          console.error('❌ Error fetching following count:', followingError);
+        }
+        
+        console.log('📊 User stats:', {
+          userId: id,
+          username: userData.name,
+          totalReviews: reviewsData?.length || 0,
+          validReviews: validReviewsData.length,
+          followers: followerCount || 0,
+          following: followingCount || 0
+        });
+        
+        // Store the counts for use in stats calculation
+        userData._followerCount = followerCount || 0;
+        userData._followingCount = followingCount || 0;
         
         setUser(userData);
-        setUserReviews(reviewsData);
+        setUserReviews(validReviewsData);
         setGames(gamesData);
       } catch (err) {
-        console.error('Error fetching user data:', err);
+        console.error('💥 Error fetching user data:', err);
         setError('Failed to load user data');
       } finally {
         setLoading(false);
@@ -81,28 +127,34 @@ export const UserPage: React.FC = () => {
   const transformedUser = {
     id: user.id,
     username: user.name,
-    avatar: user.picurl || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
-    bio: user.bio || 'Gaming enthusiast',
+    avatar: user.picurl || '', // No placeholder avatar, let UI handle default
+    bio: user.bio || '', // No placeholder bio, let UI handle empty state
     joinDate: new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }),
     location: user.location,
     website: user.website
   };
   
-  // Calculate user stats
+  // Calculate user stats with real data
   const stats = {
     films: userReviews.length,
     thisYear: userReviews.filter(r => new Date(r.post_date_time).getFullYear() === new Date().getFullYear()).length,
-    lists: 0, // To be implemented with real data
-    following: 0, // To be implemented with real data
-    followers: 0 // To be implemented with real data
+    lists: 0, // To be implemented with real data when lists feature is added
+    following: user._followingCount || 0, // Real following count from database
+    followers: user._followerCount || 0 // Real follower count from database
   };
 
   const sortedReviews = [...userReviews].sort((a, b) => {
     switch (reviewFilter) {
       case 'highest':
-        return b.rating - a.rating;
+        // Safety check for ratings before comparison
+        const aRating = typeof a.rating === 'number' ? a.rating : 0;
+        const bRating = typeof b.rating === 'number' ? b.rating : 0;
+        return bRating - aRating;
       case 'lowest':
-        return a.rating - b.rating;
+        // Safety check for ratings before comparison
+        const aRatingLow = typeof a.rating === 'number' ? a.rating : 0;
+        const bRatingLow = typeof b.rating === 'number' ? b.rating : 0;
+        return aRatingLow - bRatingLow;
       case 'oldest':
         return new Date(a.post_date_time).getTime() - new Date(b.post_date_time).getTime();
       default:

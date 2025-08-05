@@ -74,7 +74,11 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                 {/* Rating at the bottom of cover art - full width */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-2 py-1">
                   <div className="text-center">
-                    <span className="text-white text-sm font-bold">{game.rating.toFixed(1)}</span>
+                    <span className="text-white text-sm font-bold">
+                      {game.rating && typeof game.rating === 'number' && game.rating > 0 
+                        ? game.rating.toFixed(1) 
+                        : '-'}
+                    </span>
                   </div>
                 </div>
                 {/* Rank number */}
@@ -108,7 +112,11 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                 {/* Rating overlay for mobile */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
                   <div className="text-center">
-                    <span className="text-white text-xs font-bold">{game.rating.toFixed(1)}</span>
+                    <span className="text-white text-xs font-bold">
+                      {game.rating && typeof game.rating === 'number' && game.rating > 0 
+                        ? game.rating.toFixed(1) 
+                        : '-'}
+                    </span>
                   </div>
                 </div>
                 {/* Rank number for mobile */}
@@ -159,7 +167,11 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                 {/* Rating at the bottom of cover art - full width */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
                   <div className="text-center">
-                    <span className="text-white text-xs font-bold">{game.rating.toFixed(1)}</span>
+                    <span className="text-white text-xs font-bold">
+                      {game.rating && typeof game.rating === 'number' && game.rating > 0 
+                        ? game.rating.toFixed(1) 
+                        : '-'}
+                    </span>
                   </div>
                 </div>
                 {/* Rank number */}
@@ -193,7 +205,11 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                 {/* Rating at the bottom of cover art - full width */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
                   <div className="text-center">
-                    <span className="text-white text-xs font-bold">{game.rating.toFixed(1)}</span>
+                    <span className="text-white text-xs font-bold">
+                      {game.rating && typeof game.rating === 'number' && game.rating > 0 
+                        ? game.rating.toFixed(1) 
+                        : '-'}
+                    </span>
                   </div>
                 </div>
                 {/* Rank number */}
@@ -227,7 +243,11 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                 {/* Rating overlay for mobile */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
                   <div className="text-center">
-                    <span className="text-white text-xs font-bold">{game.rating.toFixed(1)}</span>
+                    <span className="text-white text-xs font-bold">
+                      {game.rating && typeof game.rating === 'number' && game.rating > 0 
+                        ? game.rating.toFixed(1) 
+                        : '-'}
+                    </span>
                   </div>
                 </div>
               </div>

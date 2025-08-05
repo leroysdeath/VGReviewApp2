@@ -14,8 +14,8 @@ import { UserPage } from './pages/UserPage';
 import { UserSearchPage } from './pages/UserSearchPage';
 import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
+import { ReviewPage } from './pages/ReviewPage';
 import ProfilePage from './pages/ProfilePage'; // Changed to default import
-import { SettingsPage } from './pages/SettingsPage';
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
@@ -49,8 +49,8 @@ function App() {
                   <Route path="/users" element={<UserSearchPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/review/:gameId?" element={<ReviewFormPage />} />
+                  <Route path="/review/:userId/:gameId" element={<ReviewPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
                   {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
                 </Routes>
                 <AuthModal />

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Search, Users, UserPlus, UserCheck, TrendingUp, Clock, Filter, Star, MessageCircle } from 'lucide-react';
+import { Search, Users, UserPlus, UserCheck, TrendingUp, Clock, Filter, Star } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { mockUsers } from '../data/mockData';
 import { useResponsive } from '../hooks/useResponsive';
 import { supabase } from '../services/supabase';
+import { useFollow } from '../hooks/useFollow';
+import { useCurrentUserId } from '../hooks/useCurrentUserId';
 
 interface User {
   id: string;
@@ -22,71 +23,17 @@ export const UserSearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
   const [followingUsers, setFollowingUsers] = useState<string[]>([]);
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'relevance' | 'followers' | 'reviews' | 'recent'>('relevance');
   const [showFilters, setShowFilters] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { isMobile } = useResponsive();
+  const { toggleFollow: dbToggleFollow, getFollowingList, loading: followLoading, canFollow } = useFollow();
+  const { userId: currentDbUserId } = useCurrentUserId();
 
-  // Load real users from Supabase
-  useEffect(() => {
-    loadUsers();
-    loadRecentSearches();
-    loadFollowingList();
-  }, []);
-
-  // Update URL when search term changes
-  useEffect(() => {
-    if (searchTerm) {
-      setSearchParams({ q: searchTerm });
-      saveRecentSearch(searchTerm);
-    } else {
-      setSearchParams({});
-    }
-  }, [searchTerm, setSearchParams]);
-
-  const loadUsers = async () => {
-    setLoadingUsers(true);
-    try {
-      const { data: realUsers, error } = await supabase
-        .from('user')
-        .select(`
-          id,
-          name,
-          bio,
-          picurl,
-          created_at
-        `)
-        .limit(50);
-
-      if (!error && realUsers) {
-        // Transform Supabase users to match our interface
-        const transformedUsers = realUsers.map(user => ({
-          id: user.id.toString(),
-          username: user.name || 'Anonymous',
-          bio: user.bio || 'No bio available',
-          avatar: user.picurl || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
-          reviewCount: Math.floor(Math.random() * 50) + 1, // Would come from ratings count
-          followers: Math.floor(Math.random() * 1000) + 10,
-          following: Math.floor(Math.random() * 200) + 5,
-          averageRating: (Math.random() * 3 + 7).toFixed(1), // 7-10 range
-          joinDate: user.created_at,
-          verified: Math.random() > 0.7
-        }));
-
-        // Combine with mock users for demo purposes
-        setUsers([...transformedUsers, ...mockUsers]);
-      } else {
-        console.log('Using mock users only');
-      }
-    } catch (error) {
-      console.error('Error loading users:', error);
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
-
+  // Load recent searches from localStorage
   const loadRecentSearches = () => {
     try {
       const saved = localStorage.getItem('user_recent_searches');
@@ -98,18 +45,7 @@ export const UserSearchPage: React.FC = () => {
     }
   };
 
-  const saveRecentSearch = (term: string) => {
-    if (!term.trim() || term.length < 2) return;
-    
-    try {
-      const updatedSearches = [term, ...recentSearches.filter(s => s !== term)].slice(0, 5);
-      setRecentSearches(updatedSearches);
-      localStorage.setItem('user_recent_searches', JSON.stringify(updatedSearches));
-    } catch (error) {
-      console.error('Error saving recent search:', error);
-    }
-  };
-
+  // Load following list from localStorage fallback
   const loadFollowingList = async () => {
     try {
       // In a real app, this would load from user's following list
@@ -122,42 +58,285 @@ export const UserSearchPage: React.FC = () => {
     }
   };
 
-  const toggleFollow = useCallback(async (userId: string) => {
-    setFollowingUsers(prev => {
-      const newFollowing = prev.includes(userId)
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId];
-      
-      // Save to localStorage (in real app, would save to backend)
-      localStorage.setItem('following_users', JSON.stringify(newFollowing));
-      return newFollowing;
-    });
+  // Load following list from database
+  const loadFollowingListFromDB = useCallback(async () => {
+    if (canFollow) {
+      try {
+        const following = await getFollowingList();
+        setFollowingUsers(following);
+        // Also cache in localStorage for faster UI updates
+        localStorage.setItem('following_users', JSON.stringify(following));
+      } catch (error) {
+        console.error('Error loading following list:', error);
+        // Fallback to localStorage if database fails
+        loadFollowingList();
+      }
+    } else {
+      loadFollowingList(); // Use localStorage fallback
+    }
+  }, [canFollow, getFollowingList]);
 
-    // In a real app, you would also make an API call here
-    // await supabase.from('user_follows').insert/delete...
-  }, []);
+  // Load users from database with counts
+  const loadUsers = useCallback(async () => {
+    setLoadingUsers(true);
+    setError(null);
+    try {
+      console.log('🔍 Loading users with real database counts...');
+      
+      // Get basic user data (exclude current user if authenticated)
+      let query = supabase
+        .from('user')
+        .select(`
+          id,
+          name,
+          bio,
+          picurl,
+          created_at
+        `);
+      
+      // Filter out current user if we have their database ID
+      if (currentDbUserId) {
+        query = query.neq('id', currentDbUserId);
+        console.log(`🚫 Excluding current user (ID: ${currentDbUserId}) from search results`);
+      }
+      
+      const { data: realUsers, error } = await query.limit(50);
+
+      if (error) {
+        console.error('❌ Error loading users:', error);
+        setError('Failed to load users. Please try again.');
+        setUsers([]);
+        return;
+      }
+
+      if (!realUsers || realUsers.length === 0) {
+        console.log('ℹ️ No users found in database');
+        setUsers([]);
+        return;
+      }
+
+      console.log(`📊 Processing ${realUsers.length} users...`);
+
+      // Create a map of user IDs for quick lookup
+      const userIds = realUsers.map(user => user.id);
+
+      // Get all follow relationships in a single query (more efficient)
+      const { data: followData, error: followError } = await supabase
+        .from('user_follow')
+        .select('follower_id, following_id')
+        .or(`follower_id.in.(${userIds.join(',')}),following_id.in.(${userIds.join(',')})`);
+
+      const { data: reviewData, error: reviewError } = await supabase
+        .from('rating')
+        .select('user_id, rating')
+        .in('user_id', userIds);
+
+      if (followError) {
+        console.error('❌ Error loading follow data:', followError);
+        setError('Failed to load follow relationships. Counts may be inaccurate.');
+      }
+      if (reviewError) {
+        console.error('❌ Error loading review data:', reviewError);
+        setError('Failed to load review data. Review counts may be inaccurate.');
+      }
+
+      // Create lookup maps for counts (use string keys to match transformed user IDs)
+      const followerCounts = new Map<string, number>();
+      const followingCounts = new Map<string, number>();
+      const reviewCounts = new Map<string, number>();
+      const averageRatings = new Map<string, number>();
+
+      // Count followers and following from single follow data source
+      if (followData) {
+        console.log(`📊 Processing ${followData.length} follow relationships`);
+        followData.forEach(follow => {
+          // Count followers: someone follows this user (following_id)
+          const followedUserId = follow.following_id.toString();
+          if (userIds.includes(follow.following_id)) {
+            const followerCount = followerCounts.get(followedUserId) || 0;
+            followerCounts.set(followedUserId, followerCount + 1);
+          }
+          
+          // Count following: this user follows someone (follower_id)
+          const followerUserId = follow.follower_id.toString();
+          if (userIds.includes(follow.follower_id)) {
+            const followingCount = followingCounts.get(followerUserId) || 0;
+            followingCounts.set(followerUserId, followingCount + 1);
+          }
+        });
+      }
+
+      // Count reviews and calculate averages for each user
+      if (reviewData) {
+        console.log(`📊 Processing ${reviewData.length} reviews`);
+        const userReviews = new Map<string, number[]>();
+        
+        reviewData.forEach(review => {
+          const userId = review.user_id.toString();
+          if (!userReviews.has(userId)) {
+            userReviews.set(userId, []);
+          }
+          userReviews.get(userId)!.push(review.rating);
+        });
+
+        userReviews.forEach((ratings, userId) => {
+          reviewCounts.set(userId, ratings.length);
+          if (ratings.length > 0) {
+            const average = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+            averageRatings.set(userId, parseFloat(average.toFixed(1)));
+          }
+        });
+      }
+
+      console.log('✅ All user data queries completed');
+
+      // Transform Supabase users to match our interface with real data
+      const transformedUsers = realUsers.map((user) => {
+        const userIdStr = user.id.toString();
+        const followerCount = followerCounts.get(userIdStr) || 0;
+        const followingCount = followingCounts.get(userIdStr) || 0;
+        
+        console.log(`User ${user.name} (ID: ${userIdStr}): ${followerCount} followers, ${followingCount} following`);
+        
+        return {
+          id: userIdStr,
+          username: user.name || 'Anonymous',
+          bio: user.bio || '',
+          avatar: user.picurl || '',
+          reviewCount: reviewCounts.get(userIdStr) || 0,
+          followers: followerCount,
+          following: followingCount,
+          averageRating: averageRatings.get(userIdStr) || undefined,
+          joinDate: user.created_at,
+          verified: false // Could be added to user table later
+        };
+      });
+
+      console.log('📈 User stats summary:', {
+        totalUsers: transformedUsers.length,
+        usersWithReviews: transformedUsers.filter(u => u.reviewCount > 0).length,
+        usersWithFollowers: transformedUsers.filter(u => u.followers > 0).length,
+        usersFollowingOthers: transformedUsers.filter(u => u.following > 0).length,
+        totalFollowRelationships: followData?.length || 0,
+        totalReviews: transformedUsers.reduce((sum, u) => sum + u.reviewCount, 0),
+        totalFollows: transformedUsers.reduce((sum, u) => sum + u.followers, 0),
+        avgFollowers: transformedUsers.length > 0 ? 
+          (transformedUsers.reduce((sum, u) => sum + u.followers, 0) / transformedUsers.length).toFixed(1) : 0,
+        followersDetail: transformedUsers.map(u => ({ id: u.id, name: u.username, followers: u.followers }))
+      });
+
+      setUsers(transformedUsers);
+    } catch (error) {
+      console.error('💥 Unexpected error loading users:', error);
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred while loading users');
+      setUsers([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [currentDbUserId]);
+
+  // Save recent search function
+  const saveRecentSearch = useCallback((term: string) => {
+    if (!term.trim() || term.length < 2) return;
+    
+    try {
+      const updatedSearches = [term, ...recentSearches.filter(s => s !== term)].slice(0, 5);
+      setRecentSearches(updatedSearches);
+      localStorage.setItem('user_recent_searches', JSON.stringify(updatedSearches));
+    } catch (error) {
+      console.error('Error saving recent search:', error);
+    }
+  }, [recentSearches]);
+
+  // Load real users from Supabase on component mount and when currentDbUserId changes
+  useEffect(() => {
+    loadUsers();
+    loadRecentSearches();
+    loadFollowingListFromDB();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentDbUserId]); // Only depend on currentDbUserId to avoid circular dependency
+
+  // Update URL when search term changes
+  useEffect(() => {
+    if (searchTerm) {
+      setSearchParams({ q: searchTerm });
+      saveRecentSearch(searchTerm);
+    } else {
+      setSearchParams({});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, setSearchParams]); // Removed saveRecentSearch to avoid circular dependency
+
+  const toggleFollow = useCallback(async (userId: string) => {
+    if (!canFollow) {
+      setError('You must be logged in to follow users');
+      console.warn('User must be authenticated to follow/unfollow');
+      return;
+    }
+
+    try {
+      // Optimistically update UI
+      const isCurrentlyFollowing = followingUsers.includes(userId);
+      const optimisticFollowing = isCurrentlyFollowing
+        ? followingUsers.filter(id => id !== userId)
+        : [...followingUsers, userId];
+      
+      setFollowingUsers(optimisticFollowing);
+
+      // Perform database operation
+      const result = await dbToggleFollow(userId);
+      
+      if (result.success) {
+        console.log(`Successfully ${result.isFollowing ? 'followed' : 'unfollowed'} user ${userId}`);
+        
+        // Add delay to ensure database changes have propagated
+        await new Promise(resolve => setTimeout(resolve, 30));
+        
+        // Reload user counts to show updated follower numbers
+        await loadUsers();
+        
+        // Update localStorage cache
+        localStorage.setItem('following_users', JSON.stringify(optimisticFollowing));
+      } else {
+        // Revert optimistic update on failure
+        setFollowingUsers(followingUsers);
+        const errorMessage = result.error || 'Failed to update follow status';
+        setError(errorMessage);
+        console.error('Follow operation failed:', result.error);
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setFollowingUsers(followingUsers);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred while updating follow status';
+      setError(errorMessage);
+      console.error('Error in toggleFollow:', error);
+    }
+  }, [canFollow, followingUsers, dbToggleFollow, loadUsers]);
 
   // Memoized filtered and sorted users
   const filteredUsers = useMemo(() => {
-    let filtered = users.filter(user =>
-      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.bio.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filtered = users.filter(user => {
+      // Exclude current user (extra safety check)
+      if (currentDbUserId && user.id === currentDbUserId.toString()) {
+        return false;
+      }
+      
+      // Apply search filter
+      return user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.bio && user.bio.toLowerCase().includes(searchTerm.toLowerCase()));
+    });
 
     // Sort users based on selected criteria
     switch (sortBy) {
       case 'followers':
-        filtered.sort((a, b) => b.followers - a.followers);
-        break;
+        return [...filtered].sort((a, b) => b.followers - a.followers);
       case 'reviews':
-        filtered.sort((a, b) => b.reviewCount - a.reviewCount);
-        break;
+        return [...filtered].sort((a, b) => b.reviewCount - a.reviewCount);
       case 'recent':
-        filtered.sort((a, b) => new Date(b.joinDate || 0).getTime() - new Date(a.joinDate || 0).getTime());
-        break;
+        return [...filtered].sort((a, b) => new Date(b.joinDate || 0).getTime() - new Date(a.joinDate || 0).getTime());
       default: // relevance
         // For relevance, prioritize exact username matches, then bio matches
-        filtered.sort((a, b) => {
+        return [...filtered].sort((a, b) => {
           const aUsernameMatch = a.username.toLowerCase().includes(searchTerm.toLowerCase());
           const bUsernameMatch = b.username.toLowerCase().includes(searchTerm.toLowerCase());
           if (aUsernameMatch && !bUsernameMatch) return -1;
@@ -165,16 +344,15 @@ export const UserSearchPage: React.FC = () => {
           return b.followers - a.followers; // Secondary sort by followers
         });
     }
-
-    return filtered;
-  }, [users, searchTerm, sortBy]);
+  }, [users, searchTerm, sortBy, currentDbUserId]);
 
   // Popular reviewers (top users by review count)
   const popularReviewers = useMemo(() => {
     return [...users]
+      .filter(user => !currentDbUserId || user.id !== currentDbUserId.toString())
       .sort((a, b) => b.reviewCount - a.reviewCount)
       .slice(0, 3);
-  }, [users]);
+  }, [users, currentDbUserId]);
 
   const clearRecentSearches = () => {
     setRecentSearches([]);
@@ -212,7 +390,7 @@ export const UserSearchPage: React.FC = () => {
             <div className="flex items-center gap-4">
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as 'relevance' | 'followers' | 'reviews' | 'recent')}
                 className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
               >
                 <option value="relevance">Most Relevant</option>
@@ -238,6 +416,22 @@ export const UserSearchPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 bg-red-900/50 border border-red-700 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <span className="text-red-400">⚠️</span>
+              <p className="text-red-300">{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="ml-auto text-red-400 hover:text-red-300 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3">
@@ -256,14 +450,17 @@ export const UserSearchPage: React.FC = () => {
                     <div key={user.id} className={`bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors ${isMobile ? 'p-4' : 'p-6'}`}>
                       <div className={`flex items-center gap-4 ${isMobile ? 'mb-3' : 'mb-4'}`}>
                         <div className="relative">
-                          <img
-                            src={user.avatar}
-                            alt={user.username}
-                            className={`rounded-full object-cover ${isMobile ? 'w-12 h-12' : 'w-16 h-16'}`}
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150';
-                            }}
-                          />
+                          {user.avatar ? (
+                            <img
+                              src={user.avatar}
+                              alt={user.username}
+                              className={`rounded-full object-cover ${isMobile ? 'w-12 h-12' : 'w-16 h-16'}`}
+                            />
+                          ) : (
+                            <div className={`rounded-full bg-purple-600 flex items-center justify-center text-white font-bold ${isMobile ? 'w-12 h-12 text-lg' : 'w-16 h-16 text-xl'}`}>
+                              {user.username.charAt(0).toUpperCase()}
+                            </div>
+                          )}
                           {user.verified && (
                             <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
                               <UserCheck className="h-3 w-3 text-white" />
@@ -290,9 +487,11 @@ export const UserSearchPage: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      <p className={`text-gray-300 mb-4 line-clamp-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                        {user.bio}
-                      </p>
+                      {user.bio && (
+                        <p className={`text-gray-300 mb-4 line-clamp-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                          {user.bio}
+                        </p>
+                      )}
                       <div className={`flex items-center justify-between ${isMobile ? 'flex-col gap-3' : ''}`}>
                         <div className={`flex items-center gap-4 text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                           <div className="flex items-center gap-1">
@@ -302,15 +501,23 @@ export const UserSearchPage: React.FC = () => {
                         </div>
                         <button
                           onClick={() => toggleFollow(user.id)}
+                          disabled={followLoading || !canFollow}
                           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                             isMobile ? 'text-xs' : 'text-sm'
                           } ${
-                            followingUsers.includes(user.id)
+                            followLoading || !canFollow
+                              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                              : followingUsers.includes(user.id)
                               ? 'bg-green-600 text-white hover:bg-green-700'
                               : 'bg-purple-600 text-white hover:bg-purple-700'
                           }`}
                         >
-                          {followingUsers.includes(user.id) ? (
+                          {followLoading ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Loading...
+                            </>
+                          ) : followingUsers.includes(user.id) ? (
                             <>
                               <UserCheck className="h-4 w-4" />
                               Following
@@ -318,7 +525,7 @@ export const UserSearchPage: React.FC = () => {
                           ) : (
                             <>
                               <UserPlus className="h-4 w-4" />
-                              Follow
+                              {canFollow ? 'Follow' : 'Login to Follow'}
                             </>
                           )}
                         </button>
@@ -357,14 +564,17 @@ export const UserSearchPage: React.FC = () => {
                   <div className={`flex items-center justify-between ${isMobile ? 'flex-col gap-3' : ''}`}>
                     <div className={`flex items-center gap-4 ${isMobile ? 'w-full' : ''}`}>
                       <div className="relative">
-                        <img
-                          src={user.avatar}
-                          alt={user.username}
-                          className={`rounded-full object-cover ${isMobile ? 'w-10 h-10' : 'w-12 h-12'}`}
-                          onError={(e) => {
-                            e.currentTarget.src = 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150';
-                          }}
-                        />
+                        {user.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user.username}
+                            className={`rounded-full object-cover ${isMobile ? 'w-10 h-10' : 'w-12 h-12'}`}
+                          />
+                        ) : (
+                          <div className={`rounded-full bg-purple-600 flex items-center justify-center text-white font-bold ${isMobile ? 'w-10 h-10 text-sm' : 'w-12 h-12 text-base'}`}>
+                            {user.username.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         {user.verified && (
                           <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
                             <UserCheck className="h-2 w-2 text-white" />
@@ -378,9 +588,11 @@ export const UserSearchPage: React.FC = () => {
                         >
                           {user.username}
                         </Link>
-                        <p className={`text-gray-400 ${isMobile ? 'text-xs truncate' : 'text-sm'}`}>
-                          {user.bio}
-                        </p>
+                        {user.bio && (
+                          <p className={`text-gray-400 ${isMobile ? 'text-xs truncate' : 'text-sm'}`}>
+                            {user.bio}
+                          </p>
+                        )}
                         {user.averageRating && (
                           <div className="flex items-center gap-1 mt-1">
                             <Star className="h-3 w-3 text-yellow-500 fill-current" />
@@ -404,15 +616,23 @@ export const UserSearchPage: React.FC = () => {
                       )}
                       <button
                         onClick={() => toggleFollow(user.id)}
+                        disabled={followLoading || !canFollow}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                           isMobile ? 'text-xs' : 'text-sm'
                         } ${
-                          followingUsers.includes(user.id)
+                          followLoading || !canFollow
+                            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            : followingUsers.includes(user.id)
                             ? 'bg-green-600 text-white hover:bg-green-700'
                             : 'bg-purple-600 text-white hover:bg-purple-700'
                         }`}
                       >
-                        {followingUsers.includes(user.id) ? (
+                        {followLoading ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Loading...
+                          </>
+                        ) : followingUsers.includes(user.id) ? (
                           <>
                             <UserCheck className="h-4 w-4" />
                             Following
@@ -420,7 +640,7 @@ export const UserSearchPage: React.FC = () => {
                         ) : (
                           <>
                             <UserPlus className="h-4 w-4" />
-                            Follow
+                            {canFollow ? 'Follow' : 'Login to Follow'}
                           </>
                         )}
                       </button>
@@ -431,17 +651,25 @@ export const UserSearchPage: React.FC = () => {
             </div>
 
             {/* No Results */}
-            {filteredUsers.length === 0 && searchTerm && !loadingUsers && (
+            {filteredUsers.length === 0 && !loadingUsers && (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">👥</div>
-                <h2 className="text-xl font-semibold mb-2">No users found</h2>
-                <p className="text-gray-400 mb-4">Try adjusting your search terms</p>
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                >
-                  Clear Search
-                </button>
+                <h2 className="text-xl font-semibold text-white mb-2">
+                  {searchTerm ? 'No users found' : 'No users yet'}
+                </h2>
+                <p className="text-gray-400 mb-4">
+                  {searchTerm 
+                    ? 'Try adjusting your search terms'
+                    : 'Be the first to join the community!'}
+                </p>
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                  >
+                    Clear Search
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -490,6 +718,12 @@ export const UserSearchPage: React.FC = () => {
                   <span className="text-gray-400">Active Reviewers</span>
                   <span className="text-white font-semibold">
                     {users.filter(u => u.reviewCount > 0).length.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Total Reviews</span>
+                  <span className="text-purple-400 font-semibold">
+                    {users.reduce((sum, u) => sum + u.reviewCount, 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">

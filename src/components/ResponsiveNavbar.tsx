@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, Menu, X, Gamepad2, Home, Users, TestTube, MessageSquare, Bell, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useCurrentUserId } from '../hooks/useCurrentUserId';
 import { useAuthModal } from '../context/AuthModalContext'; // NEW IMPORT
 import { useResponsive } from '../hooks/useResponsive';
 import { NotificationBadge } from './NotificationBadge';
@@ -16,7 +17,10 @@ export const ResponsiveNavbar: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
   const { user, isAuthenticated, signOut, loading } = useAuth();
+  const { userId: currentUserId } = useCurrentUserId();
   const { openModal } = useAuthModal(); // USE GLOBAL AUTH MODAL
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const userButtonRef = useRef<HTMLButtonElement>(null);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -40,6 +44,26 @@ export const ResponsiveNavbar: React.FC = () => {
     openModal(); // SIMPLIFIED - NO LOCAL STATE NEEDED
     setIsMenuOpen(false);
   };
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target as Node) &&
+        userButtonRef.current &&
+        !userButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isUserMenuOpen]);
 
   if (isMobile) {
     return (
@@ -165,7 +189,7 @@ export const ResponsiveNavbar: React.FC = () => {
                   {isAuthenticated && (
                     <>
                       <Link
-                        to="/profile"
+                        to={currentUserId ? `/user/${currentUserId}` : "/profile"}
                         className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                         onClick={() => setIsMenuOpen(false)}
                       >
@@ -321,8 +345,9 @@ export const ResponsiveNavbar: React.FC = () => {
               
               {/* User Menu */}
               {isAuthenticated ? (
-                <div className="relative">
+               <div className="relative">
                   <button
+                    ref={userButtonRef}
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="flex items-center space-x-2 p-2 text-gray-400 hover:text-white transition-colors"
                   >
@@ -342,10 +367,12 @@ export const ResponsiveNavbar: React.FC = () => {
 
                   {/* Dropdown Menu */}
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50">
+                    <div 
+                      ref={dropdownRef}
+                      className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50">
                       <div className="py-1">
                         <Link
-                          to="/profile"
+                          to={currentUserId ? `/user/${currentUserId}` : "/profile"}
                           className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
                           onClick={() => setIsUserMenuOpen(false)}
                         >
@@ -437,7 +464,7 @@ export const ResponsiveNavbar: React.FC = () => {
             {isAuthenticated ? (
               <>
                 <Link
-                  to="/profile"
+                  to={currentUserId ? `/user/${currentUserId}` : "/profile"}
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >

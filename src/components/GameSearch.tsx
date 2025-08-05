@@ -13,6 +13,7 @@ interface GameSearchProps {
   className?: string;
   showHealthCheck?: boolean;
   showExploreButton?: boolean;
+  initialQuery?: string;
 }
 
 interface SearchState {
@@ -31,10 +32,11 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   maxResults = 20,
   className = '',
   showHealthCheck = false,
-  showExploreButton = true
+  showExploreButton = true,
+  initialQuery = ''
 }) => {
   const [searchState, setSearchState] = useState<SearchState>({
-    query: '',
+    query: initialQuery,
     results: [],
     loading: false,
     error: null,
@@ -52,7 +54,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   const generateSuggestions = useCallback((query: string): SearchSuggestion[] => {
     if (!query.trim()) return [];
     
-    // Generate game suggestions
+    // Generate game suggestions only if we have results
     const gameSuggestions: SearchSuggestion[] = searchState.results.slice(0, 3).map(game => ({
       id: game.id,
       title: game.title,
@@ -60,27 +62,33 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       type: 'game'
     }));
     
-    // Generate genre suggestions based on query
-    const genreSuggestions: SearchSuggestion[] = ['Action', 'Adventure', 'RPG', 'Strategy', 'Simulation']
-      .filter(genre => genre.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, 2)
-      .map(genre => ({
-        id: `genre-${genre.toLowerCase()}`,
-        title: genre,
-        type: 'genre'
-      }));
+    // Only generate genre/platform suggestions if query is at least 2 characters
+    // This prevents false matches on single letters
+    if (query.length >= 2) {
+      // Generate genre suggestions based on query - using startsWith instead of includes
+      const genreSuggestions: SearchSuggestion[] = ['Action', 'Adventure', 'RPG', 'Strategy', 'Simulation']
+        .filter(genre => genre.toLowerCase().startsWith(query.toLowerCase()))
+        .slice(0, 2)
+        .map(genre => ({
+          id: `genre-${genre.toLowerCase()}`,
+          title: genre,
+          type: 'genre'
+        }));
+      
+      // Generate platform suggestions based on query
+      const platformSuggestions: SearchSuggestion[] = ['PC', 'PlayStation 5', 'Xbox Series X', 'Nintendo Switch']
+        .filter(platform => platform.toLowerCase().startsWith(query.toLowerCase()))
+        .slice(0, 2)
+        .map(platform => ({
+          id: `platform-${platform.toLowerCase().replace(/\s+/g, '-')}`,
+          title: platform,
+          type: 'platform'
+        }));
+      
+      return [...gameSuggestions, ...genreSuggestions, ...platformSuggestions];
+    }
     
-    // Generate platform suggestions based on query
-    const platformSuggestions: SearchSuggestion[] = ['PC', 'PlayStation 5', 'Xbox Series X', 'Nintendo Switch']
-      .filter(platform => platform.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, 2)
-      .map(platform => ({
-        id: `platform-${platform.toLowerCase().replace(/\s+/g, '-')}`,
-        title: platform,
-        type: 'platform'
-      }));
-    
-    return [...gameSuggestions, ...genreSuggestions, ...platformSuggestions];
+    return gameSuggestions;
   }, [searchState.results]);
   
   // Debounced search function
@@ -118,9 +126,11 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         error: null
       }));
       
-      // Update suggestions
-      const newSuggestions = generateSuggestions(searchTerm);
-      setSuggestions(newSuggestions);
+      // Update suggestions after results are set
+      setTimeout(() => {
+        const newSuggestions = generateSuggestions(searchTerm);
+        setSuggestions(newSuggestions);
+      }, 0);
       
       console.log('✅ Search completed, found', games.length, 'games');
       if (DEBUG_MODE) {
@@ -146,6 +156,71 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       }));
     }
   }, [maxResults, generateSuggestions]);
+
+  // Trigger initial search when component mounts with initialQuery
+  useEffect(() => {
+    if (initialQuery && initialQuery.trim()) {
+      // Call performSearch directly without including it in dependencies
+      // This avoids circular dependency issues
+      const searchInitialQuery = async () => {
+        if (!initialQuery.trim()) {
+          setSearchState(prev => ({
+            ...prev,
+            results: [],
+            loading: false,
+            error: null,
+            hasSearched: false
+          }));
+          return;
+        }
+
+        setSearchState(prev => ({
+          ...prev,
+          query: initialQuery,
+          loading: true,
+          error: null,
+          hasSearched: true
+        }));
+
+        try {
+          console.log('🔍 Performing initial search for:', initialQuery);
+          const games = await igdbService.searchGames(initialQuery, maxResults);
+          
+          setSearchState(prev => ({
+            ...prev,
+            query: initialQuery,
+            results: games,
+            loading: false, 
+            error: null
+          }));
+          
+          // Update suggestions after results are set
+          setTimeout(() => {
+            const newSuggestions = generateSuggestions(initialQuery);
+            setSuggestions(newSuggestions);
+          }, 0);
+          
+          console.log('✅ Initial search completed, found', games.length, 'games');
+        } catch (error) {
+          console.error('❌ Initial search failed:', error);
+          
+          const errorMessage = error instanceof Error 
+            ? error.message 
+            : 'Failed to search games. Please try again.';
+          
+          setSearchState(prev => ({
+            ...prev,
+            query: initialQuery,
+            results: [],
+            loading: false,
+            error: errorMessage
+          }));
+        }
+      };
+
+      searchInitialQuery();
+    }
+  }, [initialQuery, maxResults, generateSuggestions]); // Safe dependencies without performSearch
 
   // Handle input change with debouncing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -477,7 +552,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         </div>
         
         {/* Search Suggestions */}
-        {showSuggestions && suggestions.length > 0 && (
+        {showSuggestions && suggestions.length > 0 && !searchState.loading && (
           <div 
             id="search-suggestions"
             className="absolute z-50 mt-2 w-full bg-gray-800 border border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto"

@@ -4,32 +4,146 @@ import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText } f
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { AuthModal } from '../components/auth/AuthModal';
-import { useIGDBGame } from '../hooks/useIGDBCache';
+import { igdbService, Game } from '../services/igdbApi';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
+import { getGameProgress, markGameStarted, markGameCompleted } from '../services/gameProgressService';
+import { ensureGameExists, getUserReviewForGame } from '../services/reviewService';
+import { generateRatingDistribution } from '../utils/dataTransformers';
 
 export const GamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const gameIdNumber = id ? parseInt(id) : null;
   const { isAuthenticated, user } = useAuth();
 
-  // Use the new caching hook for game data
-  const {
-    data: game,
-    loading: gameLoading,
-    error: gameError,
-    cached: isGameCached,
-    refetch: refetchGame,
-    isStale: isGameStale
-  } = useIGDBGame(gameIdNumber);
+  // Use the working igdbService for game data
+  const [game, setGame] = useState<Game | null>(null);
+  const [gameLoading, setGameLoading] = useState(false);
+  const [gameError, setGameError] = useState<Error | null>(null);
 
-  const [isInWishlist, setIsInWishlist] = useState(false);
+  // Refetch function
+  const refetchGame = async () => {
+    if (!id) return;
+    
+    setGameLoading(true);
+    setGameError(null);
+
+    try {
+      const gameData = await igdbService.getGameById(id);
+      if (gameData) {
+        setGame(gameData);
+      } else {
+        setGameError(new Error('Game not found'));
+      }
+    } catch (error) {
+      setGameError(error as Error);
+    } finally {
+      setGameLoading(false);
+    }
+  };
+
+  const [isStarted, setIsStarted] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [progressLoading, setProgressLoading] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [userHasReviewed, setUserHasReviewed] = useState(false);
+  const [userReviewLoading, setUserReviewLoading] = useState(false);
+
+  // Load game data
+  useEffect(() => {
+    const loadGame = async () => {
+      if (!id) return;
+
+      setGameLoading(true);
+      setGameError(null);
+
+      try {
+        console.log('Loading game with ID:', id);
+        const gameData = await igdbService.getGameById(id);
+        
+        if (gameData) {
+          setGame(gameData);
+          console.log('✅ Game loaded successfully:', gameData.title);
+        } else {
+          setGameError(new Error('Game not found'));
+          console.log('❌ Game not found for ID:', id);
+        }
+      } catch (error) {
+        console.error('❌ Failed to load game:', error);
+        setGameError(error as Error);
+      } finally {
+        setGameLoading(false);
+      }
+    };
+
+    loadGame();
+  }, [id]);
+
+  // Load game progress when user is authenticated and game is loaded
+  useEffect(() => {
+    const loadGameProgress = async () => {
+      if (!game || !id || !isAuthenticated) return;
+
+      setProgressLoading(true);
+      try {
+        console.log('Loading game progress for game ID:', id);
+        const result = await getGameProgress(parseInt(id));
+        
+        if (result.success && result.data) {
+          setIsStarted(result.data.started);
+          setIsCompleted(result.data.completed);
+          console.log('✅ Game progress loaded:', result.data);
+        } else {
+          // No progress found, set to false
+          setIsStarted(false);
+          setIsCompleted(false);
+          console.log('ℹ️ No game progress found');
+        }
+      } catch (error) {
+        console.error('❌ Error loading game progress:', error);
+        setIsStarted(false);
+        setIsCompleted(false);
+      } finally {
+        setProgressLoading(false);
+      }
+    };
+
+    loadGameProgress();
+  }, [game, id, isAuthenticated]);
+
+  // Check if user has already reviewed this game
+  useEffect(() => {
+    const checkUserReview = async () => {
+      if (!game || !id || !isAuthenticated) {
+        setUserHasReviewed(false);
+        return;
+      }
+
+      setUserReviewLoading(true);
+      try {
+        console.log('Checking if user has reviewed game ID:', id);
+        const result = await getUserReviewForGame(parseInt(id));
+        
+        if (result.success) {
+          setUserHasReviewed(!!result.data);
+          console.log('User has reviewed game:', !!result.data);
+        } else {
+          console.error('Error checking user review:', result.error);
+          setUserHasReviewed(false);
+        }
+      } catch (error) {
+        console.error('Error checking user review:', error);
+        setUserHasReviewed(false);
+      } finally {
+        setUserReviewLoading(false);
+      }
+    };
+
+    checkUserReview();
+  }, [game, id, isAuthenticated]);
 
   // Load reviews when game data is available
   useEffect(() => {
@@ -94,17 +208,96 @@ export const GamePage: React.FC = () => {
     executeAction(action);
   };
 
-  const executeAction = (action: string) => {
+  const executeAction = async (action: string) => {
+    if (!game || !id) return;
+
     switch (action) {
       case 'mark_started':
-        setIsInWishlist(!isInWishlist);
+        await handleMarkStarted();
         break;
       case 'mark_completed':
-        setIsCompleted(!isCompleted);
+        await handleMarkCompleted();
         break;
       case 'write_review':
         // Navigate to review page - handled by Link component
         break;
+    }
+  };
+
+  const handleMarkStarted = async () => {
+    if (!game || !id || isStarted) return; // Don't allow if already started
+
+    setProgressLoading(true);
+    try {
+      // First ensure the game exists in the database
+      const ensureResult = await ensureGameExists(
+        parseInt(id),
+        game.title,
+        game.coverImage,
+        game.genre,
+        game.releaseDate
+      );
+
+      if (!ensureResult.success) {
+        console.error('Failed to ensure game exists:', ensureResult.error);
+        alert(`Failed to add game to database: ${ensureResult.error}`);
+        return;
+      }
+
+      // Mark game as started
+      const result = await markGameStarted(parseInt(id));
+      
+      if (result.success) {
+        setIsStarted(true);
+        console.log('✅ Game marked as started');
+      } else {
+        console.error('Failed to mark game as started:', result.error);
+        alert(`Failed to mark game as started: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error marking game as started:', error);
+      alert('Failed to mark game as started. Please try again.');
+    } finally {
+      setProgressLoading(false);
+    }
+  };
+
+  const handleMarkCompleted = async () => {
+    if (!game || !id || isCompleted) return; // Don't allow if already completed
+
+    setProgressLoading(true);
+    try {
+      // First ensure the game exists in the database
+      const ensureResult = await ensureGameExists(
+        parseInt(id),
+        game.title,
+        game.coverImage,
+        game.genre,
+        game.releaseDate
+      );
+
+      if (!ensureResult.success) {
+        console.error('Failed to ensure game exists:', ensureResult.error);
+        alert(`Failed to add game to database: ${ensureResult.error}`);
+        return;
+      }
+
+      // Mark game as completed (this will also mark as started)
+      const result = await markGameCompleted(parseInt(id));
+      
+      if (result.success) {
+        setIsStarted(true); // Auto-mark as started when completed
+        setIsCompleted(true);
+        console.log('✅ Game marked as completed');
+      } else {
+        console.error('Failed to mark game as completed:', result.error);
+        alert(`Failed to mark game as completed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error marking game as completed:', error);
+      alert('Failed to mark game as completed. Please try again.');
+    } finally {
+      setProgressLoading(false);
     }
   };
 
@@ -121,7 +314,7 @@ export const GamePage: React.FC = () => {
     id: review.id.toString(),
     userId: review.user_id.toString(),
     gameId: review.game_id.toString(),
-    gameTitle: game?.name || game?.title || 'Unknown Game',
+    gameTitle: game?.title || 'Unknown Game',
     rating: review.rating,
     text: review.review || '',
     date: new Date(review.post_date_time).toISOString().split('T')[0],
@@ -129,7 +322,7 @@ export const GamePage: React.FC = () => {
     likeCount: 0, // To be implemented with real data
     commentCount: 0, // To be implemented with real data
     author: review.user?.name || 'Anonymous',
-    authorAvatar: review.user?.picurl || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
+    authorAvatar: review.user?.picurl || '/default-avatar.png'
   }));
 
   const topReviews = transformedReviews.filter(r => r.rating >= 8).slice(0, 3);
@@ -139,16 +332,13 @@ export const GamePage: React.FC = () => {
     ? transformedReviews.reduce((sum, review) => sum + review.rating, 0) / transformedReviews.length
     : 0;
 
-  const ratingDistribution = [
-    { rating: 10, count: 15 },
-    { rating: 9, count: 25 },
-    { rating: 8, count: 30 },
-    { rating: 7, count: 20 },
-    { rating: 6, count: 8 },
-    { rating: 5, count: 2 },
-  ];
+  // Calculate rating distribution from actual reviews data
+  // Only calculate when reviews are loaded to avoid empty state during loading
+  const ratingDistribution = reviewsLoading ? 
+    Array.from({ length: 10 }, (_, i) => ({ rating: 10 - i, count: 0 })) : // Show empty bars while loading
+    generateRatingDistribution(reviews);
 
-  const maxCount = Math.max(...ratingDistribution.map(d => d.count));
+  const maxCount = Math.max(...ratingDistribution.map(d => d.count), 1); // Ensure minimum of 1 to avoid division by 0
 
   if (gameLoading) {
     return (
@@ -233,31 +423,6 @@ export const GamePage: React.FC = () => {
     <div className="min-h-screen bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* Cache Status Indicator */}
-        {(isGameCached || isGameStale) && (
-          <div className="mb-4 flex items-center justify-between bg-gray-800 rounded-lg p-3">
-            <div className="flex items-center gap-2">
-              {isGameCached && (
-                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                  📦 Cached Data
-                </span>
-              )}
-              {isGameStale && (
-                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                  ⚠️ Data may be outdated
-                </span>
-              )}
-            </div>
-            {isGameStale && (
-              <button
-                onClick={refetchGame}
-                className="px-3 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors"
-              >
-                🔄 Refresh
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Game Header */}
         <div className="grid lg:grid-cols-3 gap-8 mb-12">
@@ -267,8 +432,8 @@ export const GamePage: React.FC = () => {
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
                   <img
-                    src={game.cover?.url || game.coverImage || '/placeholder-game.jpg'}
-                    alt={game.name || game.title}
+                    src={game.coverImage || '/placeholder-game.jpg'}
+                    alt={game.title}
                     className="h-64 w-full object-cover md:h-80 md:w-64"
                     onError={(e) => {
                       e.currentTarget.src = '/placeholder-game.jpg';
@@ -277,38 +442,33 @@ export const GamePage: React.FC = () => {
                 </div>
                 <div className="p-8">
                   <h1 className="text-3xl font-bold text-white mb-4">
-                    {game.name || game.title}
+                    {game.title}
                   </h1>
                   <div className="space-y-2 text-gray-400 mb-6">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {game.first_release_date
-                          ? new Date(game.first_release_date * 1000).getFullYear()
-                          : game.releaseDate || 'Unknown'
-                        }
+                        {game.releaseDate ? new Date(game.releaseDate).getFullYear() : 'Unknown'}
                       </span>
                     </div>
-                    {game.genres && (
-                      <div><strong>Genre:</strong> {
-                        Array.isArray(game.genres)
-                          ? game.genres.map(g => g.name || g).join(', ')
-                          : game.genre || 'Unknown'
-                      }</div>
+                    {game.genre && (
+                      <div><strong>Genre:</strong> {game.genre}</div>
                     )}
-                    {game.platforms && (
-                      <div><strong>Platforms:</strong> {
-                        Array.isArray(game.platforms)
-                          ? game.platforms.map(p => p.name || p).join(', ')
-                          : 'Multiple'
-                      }</div>
+                    {game.platforms && game.platforms.length > 0 && (
+                      <div><strong>Platforms:</strong> {game.platforms.join(', ')}</div>
                     )}
-                    {game.rating && (
-                      <div><strong>IGDB Rating:</strong> {Math.round(game.rating)}/100</div>
+                    {game.rating > 0 && (
+                      <div><strong>Rating:</strong> {game.rating}/10</div>
+                    )}
+                    {game.developer && (
+                      <div><strong>Developer:</strong> {game.developer}</div>
+                    )}
+                    {game.publisher && (
+                      <div><strong>Publisher:</strong> {game.publisher}</div>
                     )}
                   </div>
                   <p className="text-gray-300 mb-6 leading-relaxed">
-                    {game.summary || game.description || 'No description available.'}
+                    {game.description || 'No description available.'}
                   </p>
                 </div>
               </div>
@@ -318,66 +478,77 @@ export const GamePage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleAuthRequiredAction('mark_started')}
-                    className={`relative w-6 h-6 border-2 border-gray-400 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
-                      isInWishlist
-                        ? 'bg-gray-800 border-gray-300'
-                        : 'bg-gray-800 hover:bg-gray-700'
+                    disabled={isStarted || progressLoading}
+                    className={`relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
+                      isStarted
+                        ? 'bg-green-100 border-green-500 cursor-not-allowed'
+                        : progressLoading
+                        ? 'bg-gray-700 border-gray-500 cursor-not-allowed opacity-50'
+                        : 'border-gray-400 bg-gray-800 hover:bg-gray-700 cursor-pointer'
                     }`}
                   >
-                    {isInWishlist && (
-                      <Check className="h-7 w-7 text-green-500 stroke-[3] absolute -top-0.5 -left-0.5" />
-                    )}
+                    {progressLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                    ) : isStarted ? (
+                      <Check className="h-6 w-6 text-green-600 stroke-[2]" />
+                    ) : null}
                   </button>
-                  <span className="text-gray-300 text-sm">Started Game</span>
+                  <span className={`text-sm ${isStarted ? 'text-green-400' : 'text-gray-300'}`}>
+                    {isStarted ? 'Started ✓' : 'Started Game'}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleAuthRequiredAction('mark_completed')}
-                    className={`relative w-6 h-6 border-2 border-gray-400 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
+                    disabled={isCompleted || progressLoading}
+                    className={`relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
                       isCompleted
-                        ? 'bg-gray-800 border-gray-300'
-                        : 'bg-gray-800 hover:bg-gray-700'
+                        ? 'bg-green-100 border-green-500 cursor-not-allowed'
+                        : progressLoading
+                        ? 'bg-gray-700 border-gray-500 cursor-not-allowed opacity-50'
+                        : 'border-gray-400 bg-gray-800 hover:bg-gray-700 cursor-pointer'
                     }`}
                   >
-                    {isCompleted && (
-                      <Check className="h-7 w-7 text-green-500 stroke-[3] absolute -top-0.5 -left-0.5" />
-                    )}
+                    {progressLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                    ) : isCompleted ? (
+                      <Check className="h-6 w-6 text-green-600 stroke-[2]" />
+                    ) : null}
                   </button>
-                  <span className="text-gray-300 text-sm">Finished Game</span>
+                  <span className={`text-sm ${isCompleted ? 'text-green-400' : 'text-gray-300'}`}>
+                    {isCompleted ? 'Finished ✓' : 'Finished Game'}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-3 ml-4">
                   {isAuthenticated ? (
-                    <>
+                    <div className="flex items-center gap-3">
                       <Link
                         to={`/review/${game.id}`}
-                        className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center hover:bg-purple-700 transition-colors"
+                        className="relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible bg-purple-600 border-purple-500 hover:bg-purple-700 cursor-pointer"
                       >
                         <ScrollText className="h-4 w-4 text-white" />
                       </Link>
                       <Link
                         to={`/review/${game.id}`}
-                        className="text-gray-300 text-sm hover:text-purple-400 transition-colors"
+                        className={`text-sm ${userHasReviewed ? 'text-purple-400' : 'text-gray-300'} hover:text-purple-400 transition-colors`}
                       >
-                        Write a Review
+                        {userReviewLoading ? 'Loading...' : userHasReviewed ? 'Edit Review' : 'Write a Review'}
                       </Link>
-                    </>
+                    </div>
                   ) : (
-                    <>
+                    <div className="flex items-center gap-3">
                       <button
                         onClick={() => handleAuthRequiredAction('write_review')}
-                        className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center hover:bg-purple-700 transition-colors"
+                        className="relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible bg-purple-600 border-purple-500 hover:bg-purple-700 cursor-pointer"
                       >
                         <ScrollText className="h-4 w-4 text-white" />
                       </button>
-                      <button
-                        onClick={() => handleAuthRequiredAction('write_review')}
-                        className="text-gray-300 text-sm hover:text-purple-400 transition-colors"
-                      >
+                      <span className="text-sm text-gray-300">
                         Write a Review
-                      </button>
-                    </>
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -448,13 +619,29 @@ export const GamePage: React.FC = () => {
           {transformedReviews.length > 0 ? (
             <div className="space-y-4">
               {topReviews.map(review => (
-                <div key={review.id} className="bg-gray-800 rounded-lg p-4">
+                <Link 
+                  key={review.id} 
+                  to={`/review/${review.userId}/${review.gameId}`}
+                  className="bg-gray-800 rounded-lg p-4 block hover:bg-gray-700 transition-colors"
+                >
                   <div className="flex items-center gap-3 mb-2">
                     <img
-                      src={review.authorAvatar}
+                      src={review.authorAvatar || '/default-avatar.png'}
                       alt={review.author}
-                      className="w-8 h-8 rounded-full"
+                      className="w-8 h-8 rounded-full object-cover"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const fallback = target.nextElementSibling;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
                     />
+                    <div 
+                      className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm"
+                      style={{ display: 'none' }}
+                    >
+                      {review.author ? review.author.charAt(0).toUpperCase() : '?'}
+                    </div>
                     <span className="text-white font-medium">{review.author}</span>
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 text-yellow-500 fill-current" />
@@ -464,7 +651,7 @@ export const GamePage: React.FC = () => {
                   {review.text && (
                     <p className="text-gray-300 text-sm">{review.text}</p>
                   )}
-                </div>
+                </Link>
               ))}
             </div>
           ) : !reviewsLoading && (

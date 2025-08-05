@@ -94,7 +94,7 @@ export const UserActivityFeed: React.FC<UserActivityFeedProps> = ({
           <span>
             reviewed <Link to={`/game/${activity.game?.id}`} className="font-medium text-white hover:text-purple-400 transition-colors">{activity.game?.title}</Link>
             {activity.review?.rating && (
-              <span className="ml-1 text-yellow-400 font-medium">{activity.review.rating.toFixed(1)}/10</span>
+              <span className="ml-1 text-yellow-400 font-medium">{(activity.review.rating || 0).toFixed(1)}/10</span>
             )}
           </span>
         );
@@ -102,7 +102,7 @@ export const UserActivityFeed: React.FC<UserActivityFeedProps> = ({
         return (
           <span>
             rated <Link to={`/game/${activity.game?.id}`} className="font-medium text-white hover:text-purple-400 transition-colors">{activity.game?.title}</Link>
-            <span className="ml-1 text-yellow-400 font-medium">{activity.review?.rating.toFixed(1)}/10</span>
+            <span className="ml-1 text-yellow-400 font-medium">{(activity.review?.rating || 0).toFixed(1)}/10</span>
           </span>
         );
       case 'completion':

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import {
   Save, 
   Loader2, 
   AlertCircle,
+  Gamepad2,
   Check,
   Image,
   Key,
@@ -28,6 +29,7 @@ const profileSchema = z.object({
   bio: z.string().max(160, 'Bio must be 160 characters or less').optional(),
   location: z.string().max(50, 'Location must be 50 characters or less').optional(),
   website: z.string().url('Please enter a valid URL').or(z.string().length(0)).optional(),
+  platform: z.string().optional(),
   notifications: z.object({
     email: z.boolean().optional(),
     push: z.boolean().optional(),
@@ -41,13 +43,15 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 interface UserSettingsPanelProps {
-  initialData: {
+  userId?: string;  // Add this for compatibility
+  initialData?: {   // Make this optional
     username: string;
     displayName?: string;
     email: string;
     bio?: string;
     location?: string;
     website?: string;
+    platform?: string; 
     avatar?: string;
     notifications?: {
       email: boolean;
@@ -58,18 +62,32 @@ interface UserSettingsPanelProps {
       achievements: boolean;
     };
   };
-  onSave: (data: ProfileFormValues) => Promise<void>;
+  onSave?: (data: ProfileFormValues) => Promise<void>;
   onPasswordChange?: () => void;
   onDeleteAccount?: () => void;
   className?: string;
+  onSuccess?: () => void;  // Add this line
+  onFormChange?: (isDirty: boolean) => void; // Add this line
 }
 
 export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
-  initialData,
+  userId,
+  initialData = {    // Provide default values
+    username: '',
+    displayName: '',
+    email: '',
+    bio: '',
+    location: '',
+    website: '',
+    platform: '',
+    avatar: ''
+  },
   onSave,
   onPasswordChange,
   onDeleteAccount,
-  className = ''
+  className = '',
+  onSuccess,
+  onFormChange
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'notifications' | 'privacy'>('profile');
   const [isLoading, setIsLoading] = useState(false);
@@ -94,6 +112,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       bio: initialData.bio || '',
       location: initialData.location || '',
       website: initialData.website || '',
+      platform: initialData.platform || '', 
       notifications: initialData.notifications || {
         email: true,
         push: true,
@@ -104,6 +123,11 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       }
     }
   });
+
+  // Notify parent of form dirty state changes
+  useEffect(() => {
+    onFormChange?.(isDirty);
+  }, [isDirty, onFormChange]);
 
   // Password change form
   const passwordForm = useForm({
@@ -146,16 +170,19 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     setIsLoading(true);
     setSaveError(null);
     setSaveSuccess(false);
-    
+
     try {
-      await onSave(data);
+      if (onSave) {
+        await onSave(data);
+      }
       setSaveSuccess(true);
-      reset(data); // Reset form with new values
-      
-      // Clear success message after 3 seconds
       setTimeout(() => {
         setSaveSuccess(false);
-      }, 3000);
+        onSuccess?.(); // Close modal on successful save
+      }, 1500);
+
+      // Reset form with new values
+      reset(data);
     } catch (error) {
       setSaveError('Failed to save changes. Please try again.');
     } finally {

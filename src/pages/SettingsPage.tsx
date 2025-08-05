@@ -22,16 +22,16 @@ const SettingsPage = () => {
       if (!user) navigate('/login');
 
       const { data, error } = await supabase
-        .from('profiles')
-        .select('display_name, bio, avatar_url, location, website')
-        .eq('id', user.id)
+        .from('user')
+        .select('name, username, bio, picurl, location, website')
+        .eq('provider_id', user.id)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      if (data) {
-        setDisplayName(data.display_name || '');
+       if (data) {
+        setDisplayName(data.name || data.username || '');
         setBio(data.bio || '');
-        setAvatarUrl(data.avatar_url || '');
+        setAvatarUrl(data.picurl || '');
         setLocation(data.location || '');
         setWebsite(data.website || '');
       }
@@ -48,16 +48,18 @@ const SettingsPage = () => {
       const { data: { user } } = await supabase.auth.getUser();
 
       const updates = {
-        id: user.id,
-        display_name: displayName,
+        name: displayName,
         bio,
-        avatar_url: avatarUrl,
+        picurl: avatarUrl,
         location,
         website,
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase.from('profiles').upsert(updates);
+      const { error } = await supabase
+        .from('user')
+        .update(updates)
+        .eq('provider_id', user.id);
       if (error) throw error;
 
       alert('Profile updated!');

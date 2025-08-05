@@ -1,6 +1,12 @@
-import React, { ReactNode } from 'react';
-import { Settings, ExternalLink } from 'lucide-react';
+import React, { ReactNode, useState, useEffect } from 'react';
+import { Settings, ExternalLink, UserPlus, UserCheck } from 'lucide-react';
 import { useResponsive } from '../hooks/useResponsive';
+import { useAuth } from '../hooks/useAuth';
+import { UserSettingsModal } from './profile/UserSettingsModal';
+import { supabase } from '../services/supabase';
+import { useFollow } from '../hooks/useFollow';
+import { FollowersFollowingModal } from './FollowersFollowingModal';
+import { GamesModal } from './GamesModal';
 
 interface UserStats {
   films: number;
@@ -18,6 +24,7 @@ interface UserInfo {
   joinDate?: string;
   location?: string;
   website?: string;
+  platform?: string;
 }
 
 interface ResponsiveUserPageLayoutProps {
@@ -46,6 +53,76 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
   isDummy = false
 }) => {
   const { isMobile } = useResponsive();
+  const { user: authUser, isAuthenticated } = useAuth();
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const { toggleFollow, isFollowing, loading: followLoading, canFollow } = useFollow();
+  const [isUserFollowing, setIsUserFollowing] = useState(false);
+  const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
+  const [modalInitialTab, setModalInitialTab] = useState<'followers' | 'following'>('followers');
+  const [isGamesModalOpen, setIsGamesModalOpen] = useState(false);
+  const [gamesModalInitialTab, setGamesModalInitialTab] = useState<'all' | 'started' | 'finished'>('all');
+  
+  // Check if current user is viewing their own profile
+  // Note: authUser.id is the Supabase auth UUID, user.id is the database integer ID
+  // We need to compare against provider_id field or use a different approach
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  
+  useEffect(() => {
+    const checkIsOwnProfile = async () => {
+      if (!isAuthenticated || !authUser?.id) {
+        setIsOwnProfile(false);
+        return;
+      }
+      
+      // Fetch the database user record for the current auth user
+      const { data: currentUserData } = await supabase
+        .from('user')
+        .select('id')
+        .eq('provider_id', authUser.id)
+        .single();
+        
+      const isOwn = currentUserData?.id === parseInt(user.id);
+      setIsOwnProfile(isOwn);
+      
+      // Check if following this user (only if not own profile)
+      if (!isOwn && canFollow) {
+        const followingStatus = await isFollowing(user.id);
+        setIsUserFollowing(followingStatus);
+      }
+    };
+    
+    checkIsOwnProfile();
+  }, [isAuthenticated, authUser?.id, user.id, canFollow, isFollowing]);
+
+  const handleSettingsClick = () => {
+    if (isOwnProfile) {
+      setIsSettingsModalOpen(true);
+    }
+  };
+
+  const handleFollowClick = async () => {
+    if (!canFollow) return;
+    
+    const result = await toggleFollow(user.id);
+    if (result.success) {
+      setIsUserFollowing(result.isFollowing || false);
+    }
+  };
+
+  const handleFollowersClick = () => {
+    setModalInitialTab('followers');
+    setIsFollowersModalOpen(true);
+  };
+
+  const handleFollowingClick = () => {
+    setModalInitialTab('following');
+    setIsFollowersModalOpen(true);
+  };
+
+  const handleGamesClick = () => {
+    setGamesModalInitialTab('all');
+    setIsGamesModalOpen(true);
+  };
 
   if (isMobile) {
     return (
@@ -63,52 +140,99 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
           <div className="px-4 py-6">
             {/* Profile Image and Basic Info */}
             <div className="flex items-start gap-4 mb-6">
-              <img
-                src={user.avatar}
-                alt={user.username}
-                className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
-              />
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.username}
+                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div 
+                className={`w-20 h-20 rounded-full border-2 border-gray-600 bg-purple-600 flex items-center justify-center text-white font-bold text-2xl ${user.avatar ? 'hidden' : 'flex'}`}
+                style={{ display: user.avatar ? 'none' : 'flex' }}
+              >
+                {user.username ? user.username.charAt(0).toUpperCase() : '?'}
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <h1 className="text-2xl font-bold text-white">{user.username}</h1>
-                  <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
-                    PATRON
-                  </span>
+                  {isOwnProfile && (
+                    <button 
+                      onClick={handleSettingsClick}
+                      className="text-gray-400 hover:text-white p-1"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </button>
+                  )}
+                  {!isOwnProfile && isAuthenticated && (
+                    <button
+                      onClick={handleFollowClick}
+                      disabled={followLoading}
+                      className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                        followLoading
+                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                          : isUserFollowing
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-purple-600 text-white hover:bg-purple-700'
+                      }`}
+                    >
+                      {followLoading ? (
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : isUserFollowing ? (
+                        <>
+                          <UserCheck className="h-3 w-3" />
+                          Following
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-3 w-3" />
+                          Follow
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
                 <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
-              </div>
-              <button className="text-gray-400 hover:text-white p-2">
-                <Settings className="h-5 w-5" />
-              </button>
-            </div>
-            
-            {/* Additional Profile Info */}
-            <div className="space-y-2 text-sm text-gray-400 mb-4">
-              <div className="flex items-center gap-1">
-                <span>🎮 platform 9¾</span>
-                <span className="mx-2">🔗</span>
-                {user.website ? (
-                  <a 
-                    href={user.website} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="hover:text-blue-400 transition-colors flex items-center gap-1"
-                  >
-                    {isDummy ? 'dummytestuser.card.co' : 'gamevault.card.co'}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                ) : (
-                  <span>{isDummy ? 'dummytestuser.card.co' : 'gamevault.card.co'}</span>
+                
+                {/* Additional Profile Info */}
+                {(user.platform || user.website) && (
+                  <div className="flex items-center gap-1 text-gray-400 text-sm mb-2">
+                    {user.platform && (
+                      <>
+                        <span>🎮 {user.platform}</span>
+                        {user.website && <span className="mx-2">•</span>}
+                      </>
+                    )}
+                    {user.website && (
+                      <a 
+                        href={user.website} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="hover:text-blue-400 transition-colors flex items-center gap-1"
+                      >
+                        {user.website}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                )}
+                
+                {user.location && (
+                  <div className="text-gray-400 text-sm">
+                    📍 {user.location}
+                  </div>
+                )}
+                
+                {user.joinDate && (
+                  <div className="text-gray-400 text-sm mt-1">
+                    📅 Joined {user.joinDate}
+                  </div>
                 )}
               </div>
-              
-              {user.location && (
-                <div>📍 {user.location}</div>
-              )}
-              
-              {user.joinDate && (
-                <div>📅 Joined {user.joinDate}</div>
-              )}
             </div>
           </div>
         </div>
@@ -146,10 +270,13 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             
             {/* Main Stats Grid */}
             <div className="grid grid-cols-5 gap-3 text-center mb-6">
-              <div>
+              <button
+                onClick={handleGamesClick}
+                className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+              >
                 <div className="text-lg font-bold text-white">{stats.films.toLocaleString()}</div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">GAMES</div>
-              </div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">GAMES</div>
+              </button>
               <div>
                 <div className="text-lg font-bold text-white">{stats.thisYear}</div>
                 <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
@@ -158,14 +285,24 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                 <div className="text-lg font-bold text-white">{stats.lists}</div>
                 <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
               </div>
-              <div>
+              <button
+                onClick={handleFollowingClick}
+                className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+              >
                 <div className="text-lg font-bold text-white">{stats.following}</div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWING</div>
-              </div>
-              <div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">
+                  FOLLOWING
+                </div>
+              </button>
+              <button
+                onClick={handleFollowersClick}
+                className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+              >
                 <div className="text-lg font-bold text-white">{stats.followers.toLocaleString()}</div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
-              </div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">
+                  FOLLOWERS
+                </div>
+              </button>
             </div>
 
             {/* Additional Stats */}
@@ -181,6 +318,13 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             </div>
           </div>
         </div>
+
+        {/* Settings Modal */}
+        <UserSettingsModal 
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          userId={user.id}
+        />
       </div>
     );
   }
@@ -203,65 +347,117 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             {/* Profile Info Section */}
             <div className="flex items-start gap-6">
               <div className="relative flex-shrink-0">
-                <img
-                  src={user.avatar}
-                  alt={user.username}
-                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
-                />
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.username}
+                    className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className={`w-20 h-20 rounded-full border-2 border-gray-600 bg-purple-600 flex items-center justify-center text-white font-bold text-2xl ${user.avatar ? 'hidden' : 'flex'}`}
+                  style={{ display: user.avatar ? 'none' : 'flex' }}
+                >
+                  {user.username ? user.username.charAt(0).toUpperCase() : '?'}
+                </div>
               </div>
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="text-2xl font-bold text-white">{user.username}</h1>
-                  <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
-                    PATRON
-                  </span>
-                  <button className="text-gray-400 hover:text-white">
-                    <Settings className="h-4 w-4" />
-                  </button>
+                  {isOwnProfile && (
+                    <button 
+                      onClick={handleSettingsClick}
+                      className="text-gray-400 hover:text-white p-1"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </button>
+                  )}
+                  {!isOwnProfile && isAuthenticated && (
+                    <button
+                      onClick={handleFollowClick}
+                      disabled={followLoading}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        followLoading
+                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                          : isUserFollowing
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-purple-600 text-white hover:bg-purple-700'
+                      }`}
+                    >
+                      {followLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Loading...
+                        </>
+                      ) : isUserFollowing ? (
+                        <>
+                          <UserCheck className="h-4 w-4" />
+                          Following
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-4 w-4" />
+                          Follow
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
                 
                 <p className="text-blue-400 text-sm mb-3">{user.bio}</p>
                 
-                <div className="flex items-center gap-1 text-gray-400 text-sm mb-4">
-                  <span>🎮 platform 9¾</span>
-                  <span className="mx-2">🔗</span>
-                  {user.website ? (
-                    <a 
-                      href={user.website} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="hover:text-blue-400 transition-colors flex items-center gap-1"
-                    >
-                      {isDummy ? 'dummytestuser.card.co' : 'gamevault.card.co'}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  ) : (
-                    <span>{isDummy ? 'dummytestuser.card.co' : 'gamevault.card.co'}</span>
-                  )}
-                </div>
-                
-                {user.location && (
-                  <div className="text-gray-400 text-sm">
-                    📍 {user.location}
-                  </div>
-                )}
-                
-                {user.joinDate && (
-                  <div className="text-gray-400 text-sm mt-1">
-                    📅 Joined {user.joinDate}
+                {/* Additional Profile Info */}
+                {(user.platform || user.website || user.location || user.joinDate) && (
+                  <div className="space-y-2 text-sm text-gray-400 mb-4">
+                    {(user.platform || user.website) && (
+                      <div className="flex items-center gap-1">
+                        {user.platform && (
+                          <>
+                            <span>🎮 {user.platform}</span>
+                            {user.website && <span className="mx-2">•</span>}
+                          </>
+                        )}
+                        {user.website && (
+                          <a 
+                            href={user.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="hover:text-blue-400 transition-colors flex items-center gap-1"
+                          >
+                            {user.website}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    
+                    {user.location && (
+                      <div>📍 {user.location}</div>
+                    )}
+                    
+                    {user.joinDate && (
+                      <div>📅 Joined {user.joinDate}</div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
             
-            {/* Profile Details Section */}
-            <div className="flex-shrink-0 flex flex-col gap-4">
+            {/* Profile Stats Section */}
+            <div className="flex-shrink-0">
               <div className="flex items-center gap-6">
-                <div className="text-center">
+                <button
+                  onClick={handleGamesClick}
+                  className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+                >
                   <div className="text-xl font-bold text-white">{stats.films.toLocaleString()}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">GAMES</div>
-                </div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">GAMES</div>
+                </button>
                 <div className="text-center">
                   <div className="text-xl font-bold text-white">{stats.thisYear}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
@@ -270,14 +466,24 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                   <div className="text-xl font-bold text-white">{stats.lists}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
                 </div>
-                <div className="text-center">
+                <button
+                  onClick={handleFollowingClick}
+                  className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+                >
                   <div className="text-xl font-bold text-white">{stats.following}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWING</div>
-                </div>
-                <div className="text-center">
+                  <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">
+                    FOLLOWING
+                  </div>
+                </button>
+                <button
+                  onClick={handleFollowersClick}
+                  className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+                >
                   <div className="text-xl font-bold text-white">{stats.followers.toLocaleString()}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">FOLLOWERS</div>
-                </div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">
+                    FOLLOWERS
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -309,6 +515,31 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </div>
+
+      {/* Settings Modal */}
+      <UserSettingsModal 
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        userId={user.id}
+      />
+
+      {/* Followers/Following Modal */}
+      <FollowersFollowingModal
+        isOpen={isFollowersModalOpen}
+        onClose={() => setIsFollowersModalOpen(false)}
+        userId={user.id}
+        userName={user.username}
+        initialTab={modalInitialTab}
+      />
+
+      {/* Games Modal */}
+      <GamesModal
+        isOpen={isGamesModalOpen}
+        onClose={() => setIsGamesModalOpen(false)}
+        userId={user.id}
+        userName={user.username}
+        initialTab={gamesModalInitialTab}
+      />
     </div>
   );
 };

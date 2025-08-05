@@ -74,7 +74,7 @@ export const UserStatsPanel: React.FC<UserStatsPanelProps> = ({
           
           <div className="bg-gray-700/50 rounded-lg p-4 flex flex-col items-center">
             <Star className="h-6 w-6 text-yellow-400 mb-2" />
-            <div className="text-xl font-bold text-white">{stats.averageRating.toFixed(1)}</div>
+            <div className="text-xl font-bold text-white">{(stats.averageRating || 0).toFixed(1)}</div>
             <div className="text-xs text-gray-400 uppercase tracking-wide">Avg Rating</div>
           </div>
           
