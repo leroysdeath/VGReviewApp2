@@ -68,8 +68,8 @@ export const ResponsiveLandingPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-900">
         {/* Mobile Hero Section */}
-        <div className="relative bg-gradient-to-br from-purple-900 via-blue-900 to-gray-900 px-4 py-12">
-          <div className="text-center">
+        <div className="relative bg-gradient-to-br from-purple-900 via-blue-900 to-gray-900 px-4 py-12 min-h-screen flex items-center">
+          <div className="text-center w-full">
             <div className="flex items-center justify-center mb-6">
               <Gamepad2 className="h-12 w-12 text-purple-400" />
             </div>
@@ -80,7 +80,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               </span>
             </h1>
             <p className="text-gray-300 mb-8 leading-relaxed">
-              Join the ultimate gaming community. Rate, review, and discover games through social gaming.
+              Join the ultimate gaming community. Rate, review, and discuss games through social gaming.
             </p>
             <div className="space-y-3">
               <Link
@@ -117,60 +117,6 @@ export const ResponsiveLandingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Featured Games Section */}
-        <div className="px-4 py-12 bg-gray-900">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Featured Games</h2>
-            <Link
-              to="/search"
-              className="text-purple-400 hover:text-purple-300 transition-colors text-sm flex items-center gap-1"
-            >
-              View All <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          {loading ? (
-            <div className="grid grid-cols-2 gap-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
-                  <div className="aspect-[3/4] bg-gray-700"></div>
-                  <div className="p-3">
-                    <div className="h-4 bg-gray-700 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-2/3"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {featuredGames.map((game) => (
-                <GameCard 
-                  key={game.id} 
-                  game={game} 
-                  showQuickActions={isAuthenticated}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Mobile Recent Reviews Section */}
-        <div className="px-4 py-12 bg-gray-800">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Recent Reviews</h2>
-            <Link
-              to="/users"
-              className="text-purple-400 hover:text-purple-300 transition-colors text-sm flex items-center gap-1"
-            >
-              View All <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="space-y-4">
-            {recentReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} compact />
-            ))}
-          </div>
-        </div>
-
         {/* Auth Modal */}
         <AuthModal
           isOpen={showAuthModal}
@@ -189,9 +135,9 @@ export const ResponsiveLandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-purple-900 via-blue-900 to-gray-900 overflow-hidden">
+      <div className="relative bg-gradient-to-br from-purple-900 via-blue-900 to-gray-900 overflow-hidden min-h-screen flex items-center">
         <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
               Discover the
@@ -200,8 +146,8 @@ export const ResponsiveLandingPage: React.FC = () => {
               </span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Join the ultimate gaming community. Rate, review, and discuss games
-              through the power of social gaming.
+              Join the ultimate gaming community. Rate, review, and discover games
+              through the power of social gaming. Your next favorite game is just a click away.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
@@ -229,65 +175,6 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </button>
               )}
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Featured Games Section */}
-      <div className="py-16 bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-white">Featured Games</h2>
-            <Link
-              to="/search"
-              className="text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2"
-            >
-              View All <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
-                  <div className="aspect-[3/4] bg-gray-700"></div>
-                  <div className="p-4">
-                    <div className="h-4 bg-gray-700 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-2/3 mb-3"></div>
-                    <div className="h-3 bg-gray-700 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredGames.map((game) => (
-                <GameCard 
-                  key={game.id} 
-                  game={game} 
-                  showQuickActions={isAuthenticated}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Recent Reviews Section */}
-      <div className="py-16 bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-white">Recent Reviews</h2>
-            <Link
-              to="/users"
-              className="text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2"
-            >
-              View All <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            {recentReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
-            ))}
           </div>
         </div>
       </div>
