@@ -74,9 +74,9 @@ export const ResponsiveLandingPage: React.FC = () => {
               <Gamepad2 className="h-12 w-12 text-purple-400" />
             </div>
             <h1 className="text-3xl font-bold text-white mb-4">
-              Discover Your Next
+              Discover the
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block">
-                Gaming Adventure
+                Gaming Community
               </span>
             </h1>
             <p className="text-gray-300 mb-8 leading-relaxed">
@@ -113,31 +113,6 @@ export const ResponsiveLandingPage: React.FC = () => {
                   </div>
                 </button>
               )}
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Features Section */}
-        <div className="px-4 py-12 bg-gray-800">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-3">Why GameVault?</h2>
-            <p className="text-gray-400">The social gaming platform built for enthusiasts</p>
-          </div>
-          <div className="space-y-6">
-            <div className="text-center p-6 bg-gray-700 rounded-lg">
-              <Star className="h-10 w-10 text-purple-400 mx-auto mb-3" />
-              <h3 className="text-lg font-semibold text-white mb-2">Precise Ratings</h3>
-              <p className="text-gray-400 text-sm">Rate games on a 1-10 scale with half-point precision.</p>
-            </div>
-            <div className="text-center p-6 bg-gray-700 rounded-lg">
-              <Users className="h-10 w-10 text-blue-400 mx-auto mb-3" />
-              <h3 className="text-lg font-semibold text-white mb-2">Social Discovery</h3>
-              <p className="text-gray-400 text-sm">Follow gamers with similar tastes and discover games.</p>
-            </div>
-            <div className="text-center p-6 bg-gray-700 rounded-lg">
-              <TrendingUp className="h-10 w-10 text-green-400 mx-auto mb-3" />
-              <h3 className="text-lg font-semibold text-white mb-2">Personal Stats</h3>
-              <p className="text-gray-400 text-sm">Track your gaming journey with detailed statistics.</p>
             </div>
           </div>
         </div>
@@ -219,14 +194,14 @@ export const ResponsiveLandingPage: React.FC = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              Discover Your Next
+              Discover the
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
-                {' '}Gaming Adventure
+                {' '}Gaming Community
               </span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Join the ultimate gaming community. Rate, review, and discover games
-              through the power of social gaming. Your next favorite game is just a click away.
+              Join the ultimate gaming community. Rate, review, and discuss games
+              through the power of social gaming.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
@@ -253,33 +228,6 @@ export const ResponsiveLandingPage: React.FC = () => {
                   <ArrowRight className="h-5 w-5" />
                 </button>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="py-16 bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">Why GameVault?</h2>
-            <p className="text-gray-400 text-lg">The social gaming platform built for enthusiasts</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
-              <Star className="h-12 w-12 text-purple-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">Precise Ratings</h3>
-              <p className="text-gray-400">Rate games on a 1-10 scale with half-point precision. Your opinions matter.</p>
-            </div>
-            <div className="text-center p-6 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
-              <Users className="h-12 w-12 text-blue-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">Social Discovery</h3>
-              <p className="text-gray-400">Follow gamers with similar tastes and discover your next favorite game.</p>
-            </div>
-            <div className="text-center p-6 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
-              <TrendingUp className="h-12 w-12 text-green-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">Personal Stats</h3>
-              <p className="text-gray-400">Track your gaming journey with detailed statistics and personal lists.</p>
             </div>
           </div>
         </div>
