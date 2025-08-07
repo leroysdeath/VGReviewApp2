@@ -4,6 +4,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ResponsiveNavbar } from './components/ResponsiveNavbar';
 import { ResponsiveLandingPage } from './components/ResponsiveLandingPage';
+import { Footer } from './components/Footer';
 import { ReviewProvider } from './context/ReviewContext';
 import { AuthModalProvider } from './context/AuthModalContext';
 import { AuthModal } from './components/auth/AuthModal';
@@ -37,22 +38,25 @@ function App() {
         <AuthModalProvider>
           <ReviewProvider currentUserId={user?.id ? parseInt(user.id) : 1}>
             <Router>
-              <div className="min-h-screen bg-gray-900">
+              <div className="min-h-screen bg-gray-900 flex flex-col">
                 <SEOHead />
                 <ResponsiveNavbar />
-                <Routes>
-                  <Route path="/" element={<ResponsiveLandingPage />} />
-                  <Route path="/game/:id" element={<GamePage />} />
-                  <Route path="/search" element={<SearchResultsPage />} />
-                  <Route path="/search-results" element={<SearchResultsPage />} />
-                  <Route path="/user/:id" element={<UserPage />} />
-                  <Route path="/users" element={<UserSearchPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/review/:gameId?" element={<ReviewFormPage />} />
-                  <Route path="/review/:userId/:gameId" element={<ReviewPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
-                </Routes>
+                <main className="flex-grow">
+                  <Routes>
+                    <Route path="/" element={<ResponsiveLandingPage />} />
+                    <Route path="/game/:id" element={<GamePage />} />
+                    <Route path="/search" element={<SearchResultsPage />} />
+                    <Route path="/search-results" element={<SearchResultsPage />} />
+                    <Route path="/user/:id" element={<UserPage />} />
+                    <Route path="/users" element={<UserSearchPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/review/:gameId?" element={<ReviewFormPage />} />
+                    <Route path="/review/:userId/:gameId" element={<ReviewPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
+                  </Routes>
+                </main>
+                <Footer />
                 <AuthModal />
               </div>
             </Router>
