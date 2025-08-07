@@ -327,9 +327,9 @@ export const ResponsiveNavbar: React.FC = () => {
   // Determine placeholder text
   const getPlaceholder = () => {
     if (!hasSearched || !isSearchOpen) {
-      return \"Search games or users...\";
+      return "Search games or users...";
     }
-    return activeTab === 'games' ? \"Search games...\" : \"Search users...\";
+    return activeTab === 'games' ? "Search games..." : "Search users...";
   };
 
   const clearRecentSearches = () => {
