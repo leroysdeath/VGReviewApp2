@@ -251,6 +251,111 @@ export const ReviewFormPage: React.FC = () => {
     });
   };
 
+  // Game Card Component for Grid View
+  const GameCard: React.FC<{ game: Game }> = ({ game }) => (
+    <div
+      onClick={() => handleGameClick(game)}
+      className="bg-gray-700 rounded-lg overflow-hidden hover:bg-gray-600 transition-all duration-200 cursor-pointer group hover:scale-105 relative"
+      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)}
+    >
+      <div className="aspect-[3/4] relative overflow-hidden">
+        {game.coverImage ? (
+          <img
+            src={game.coverImage}
+            alt={game.title}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+            <span className="text-gray-500 text-sm">No Image</span>
+          </div>
+        )}
+        {game.rating && (
+          <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded-lg text-sm flex items-center">
+            <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
+            {Math.round(game.rating / 10)}
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors line-clamp-2">
+          {game.title}
+        </h3>
+        {game.releaseDate && (
+          <p className="text-gray-400 text-sm mt-1 flex items-center">
+            <Calendar className="w-3 h-3 mr-1" />
+            {game.releaseDate}
+          </p>
+        )}
+        {game.genre && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            <span className="bg-purple-600 bg-opacity-20 text-purple-300 px-2 py-1 rounded text-xs">
+              {game.genre}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+  
+  // Game List Item Component for List View
+  const GameListItem: React.FC<{ game: Game }> = ({ game }) => (
+    <div
+      onClick={() => handleGameClick(game)}
+      className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer group flex gap-4 relative"
+      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)}
+    >
+      <div className="w-16 h-20 flex-shrink-0 overflow-hidden rounded">
+        {game.coverImage ? (
+          <img
+            src={game.coverImage}
+            alt={game.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+            <span className="text-gray-500 text-xs">No Image</span>
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors truncate">
+          {game.title}
+        </h3>
+        {game.releaseDate && (
+          <p className="text-gray-400 text-sm mt-1 flex items-center">
+            <Calendar className="w-3 h-3 mr-1" />
+            {game.releaseDate}
+          </p>
+        )}
+        {game.description && (
+          <p className="text-gray-300 text-sm mt-2 line-clamp-2">
+            {game.description}
+          </p>
+        )}
+        {game.genre && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            <span className="bg-purple-600 bg-opacity-20 text-purple-300 px-2 py-1 rounded text-xs">
+              {game.genre}
+            </span>
+          </div>
+        )}
+      </div>
+      {game.rating && (
+        <div className="flex-shrink-0 text-right">
+          <div className="flex items-center text-yellow-400">
+            <Star className="w-4 h-4 mr-1 fill-current" />
+            <span className="text-white font-semibold">
+              {Math.round(game.rating / 10)}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && gameSearch.trim()) {
       e.preventDefault();
@@ -937,111 +1042,6 @@ export const ReviewFormPage: React.FC = () => {
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-  
-  // Game Card Component for Grid View
-  const GameCard: React.FC<{ game: Game }> = ({ game }) => (
-    <div
-      onClick={() => handleGameClick(game)}
-      className="bg-gray-700 rounded-lg overflow-hidden hover:bg-gray-600 transition-all duration-200 cursor-pointer group hover:scale-105 relative"
-      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)}
-    >
-      <div className="aspect-[3/4] relative overflow-hidden">
-        {game.coverImage ? (
-          <img
-            src={game.coverImage}
-            alt={game.title}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full bg-gray-600 flex items-center justify-center">
-            <span className="text-gray-500 text-sm">No Image</span>
-          </div>
-        )}
-        {game.rating && (
-          <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded-lg text-sm flex items-center">
-            <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
-            {Math.round(game.rating / 10)}
-          </div>
-        )}
-      </div>
-      <div className="p-4">
-        <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors line-clamp-2">
-          {game.title}
-        </h3>
-        {game.releaseDate && (
-          <p className="text-gray-400 text-sm mt-1 flex items-center">
-            <Calendar className="w-3 h-3 mr-1" />
-            {game.releaseDate}
-          </p>
-        )}
-        {game.genre && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            <span className="bg-purple-600 bg-opacity-20 text-purple-300 px-2 py-1 rounded text-xs">
-              {game.genre}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-  
-  // Game List Item Component for List View
-  const GameListItem: React.FC<{ game: Game }> = ({ game }) => (
-    <div
-      onClick={() => handleGameClick(game)}
-      className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer group flex gap-4 relative"
-      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)}
-    >
-      <div className="w-16 h-20 flex-shrink-0 overflow-hidden rounded">
-        {game.coverImage ? (
-          <img
-            src={game.coverImage}
-            alt={game.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full bg-gray-600 flex items-center justify-center">
-            <span className="text-gray-500 text-xs">No Image</span>
-          </div>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors truncate">
-          {game.title}
-        </h3>
-        {game.releaseDate && (
-          <p className="text-gray-400 text-sm mt-1 flex items-center">
-            <Calendar className="w-3 h-3 mr-1" />
-            {game.releaseDate}
-          </p>
-        )}
-        {game.description && (
-          <p className="text-gray-300 text-sm mt-2 line-clamp-2">
-            {game.description}
-          </p>
-        )}
-        {game.genre && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            <span className="bg-purple-600 bg-opacity-20 text-purple-300 px-2 py-1 rounded text-xs">
-              {game.genre}
-            </span>
-          </div>
-        )}
-      </div>
-      {game.rating && (
-        <div className="flex-shrink-0 text-right">
-          <div className="flex items-center text-yellow-400">
-            <Star className="w-4 h-4 mr-1 fill-current" />
-            <span className="text-white font-semibold">
-              {Math.round(game.rating / 10)}
-            </span>
           </div>
         </div>
       )}
