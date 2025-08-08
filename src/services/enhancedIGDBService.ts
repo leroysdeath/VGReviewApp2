@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { browserCache } from './browserCacheService';
+import { sortGamesByPlatformPriority } from '../utils/platformPriority';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL!,
@@ -140,7 +141,8 @@ class EnhancedIGDBService {
           this.refreshSearchInBackground(searchTerm, filters, opts);
         }
         
-        return browserCached;
+        // Browser cached results should already be sorted, but ensure consistency
+        return Array.isArray(browserCached) ? sortGamesByPlatformPriority(browserCached) : browserCached;
       }
     }
 
@@ -155,9 +157,12 @@ class EnhancedIGDBService {
       });
 
       if (response.data) {
-        // Store in browser cache
+        // Apply platform-based sorting to search results
+        const sortedResults = sortGamesByPlatformPriority(response.data);
+        
+        // Store sorted results in browser cache
         if (opts.useCache) {
-          browserCache.set(browserCacheKey, response.data, opts.browserCacheTTL);
+          browserCache.set(browserCacheKey, sortedResults, opts.browserCacheTTL);
         }
 
         console.log(
@@ -167,12 +172,12 @@ class EnhancedIGDBService {
           searchTerm
         );
         
-        return response.data;
+        return sortedResults;
       }
     } catch (error) {
       console.error('Error searching games:', error);
       
-      // Return stale cache if available
+      // Return stale cache if available (already sorted)
       const staleCache = browserCache.get(browserCacheKey);
       if (staleCache) {
         console.log('⚠️ Returning stale search cache due to error');
@@ -202,7 +207,8 @@ class EnhancedIGDBService {
           this.refreshPopularInBackground(opts);
         }
         
-        return browserCached;
+        // Browser cached results should already be sorted, but ensure consistency
+        return Array.isArray(browserCached) ? sortGamesByPlatformPriority(browserCached) : browserCached;
       }
     }
 
@@ -214,8 +220,11 @@ class EnhancedIGDBService {
       });
 
       if (response.data) {
+        // Apply platform-based sorting to popular games
+        const sortedResults = sortGamesByPlatformPriority(response.data);
+        
         if (opts.useCache) {
-          browserCache.set(browserCacheKey, response.data, opts.browserCacheTTL);
+          browserCache.set(browserCacheKey, sortedResults, opts.browserCacheTTL);
         }
 
         console.log(
@@ -224,7 +233,7 @@ class EnhancedIGDBService {
             : '🌐 Fresh fetch: IGDB API (popular)'
         );
         
-        return response.data;
+        return sortedResults;
       }
     } catch (error) {
       console.error('Error fetching popular games:', error);
