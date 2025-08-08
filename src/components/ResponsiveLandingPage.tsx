@@ -1,18 +1,71 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Star, TrendingUp, Users, Search, ArrowRight, Gamepad2 } from 'lucide-react';
-import { ReviewCard } from './ReviewCard';
-import { mockReviews } from '../data/mockData';
+import { ReviewCard, ReviewData } from './ReviewCard';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthModal } from '../context/AuthModalContext';
+import { getReviews, Review } from '../services/reviewService';
 
 export const ResponsiveLandingPage: React.FC = () => {
+  const [recentReviews, setRecentReviews] = useState<ReviewData[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
   const { isMobile } = useResponsive();
   const { isAuthenticated } = useAuth();
   const { openModal } = useAuthModal();
   const navigate = useNavigate();
-  const recentReviews = mockReviews.slice(0, isMobile ? 3 : 4);
+  
+  // Transform Review to ReviewData interface
+  const transformReviewData = (review: Review): ReviewData => {
+    const theme: ReviewData['theme'] = ['purple', 'green', 'orange', 'blue', 'red'][review.id % 5] as ReviewData['theme'];
+    
+    return {
+      id: review.id.toString(),
+      userId: review.userId.toString(),
+      gameId: review.gameId.toString(),
+      // Use the game's game_id (IGDB ID) for proper navigation, fallback to database game id
+      igdbGameId: (review.game as any)?.game_id ? (review.game as any).game_id.toString() : review.gameId.toString(),
+      gameTitle: review.game?.name || 'Unknown Game',
+      rating: review.rating,
+      text: review.review || '',
+      date: review.postDateTime,
+      hasText: !!review.review && review.review.trim().length > 0,
+      author: review.user?.name || 'Anonymous',
+      authorAvatar: review.user?.picurl || '',
+      likeCount: review.likeCount || 0,
+      commentCount: review.commentCount || 0,
+      theme
+    };
+  };
+  
+  // Load recent reviews
+  useEffect(() => {
+    const loadRecentReviews = async () => {
+      try {
+        setReviewsLoading(true);
+        setReviewsError(null);
+        
+        const result = await getReviews(10); // Get up to 10 recent reviews
+        
+        if (result.success && result.data) {
+          const transformedReviews = result.data.map(transformReviewData);
+          // Limit based on screen size
+          const limitedReviews = transformedReviews.slice(0, isMobile ? 3 : 4);
+          setRecentReviews(limitedReviews);
+        } else {
+          setReviewsError(result.error || 'Failed to load reviews');
+        }
+      } catch (error) {
+        console.error('Failed to load recent reviews:', error);
+        setReviewsError('Failed to load reviews');
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+    
+    loadRecentReviews();
+  }, [isMobile]);
 
 
   // Handle join community button click
@@ -115,11 +168,41 @@ export const ResponsiveLandingPage: React.FC = () => {
               View All <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="space-y-4">
-            {recentReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} compact />
-            ))}
-          </div>
+          
+          {reviewsLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-gray-700 rounded-lg overflow-hidden animate-pulse">
+                  <div className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 bg-gray-600 rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-600 rounded mb-2 w-3/4"></div>
+                        <div className="h-3 bg-gray-600 rounded mb-3 w-1/2"></div>
+                        <div className="h-3 bg-gray-600 rounded w-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : reviewsError ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400 mb-2">Failed to load recent reviews</p>
+              <p className="text-sm text-gray-500">{reviewsError}</p>
+            </div>
+          ) : recentReviews.length > 0 ? (
+            <div className="space-y-4">
+              {recentReviews.map((review) => (
+                <ReviewCard key={review.id} review={review} compact />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-400">No recent reviews yet</p>
+              <p className="text-sm text-gray-500 mt-2">Be the first to share your gaming experience!</p>
+            </div>
+          )}
         </div>
 
       </div>
@@ -214,11 +297,45 @@ export const ResponsiveLandingPage: React.FC = () => {
               View All <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            {recentReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
-            ))}
-          </div>
+          
+          {reviewsLoading ? (
+            <div className="grid md:grid-cols-2 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-gray-700 rounded-lg overflow-hidden animate-pulse">
+                  <div className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-gray-600 rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-600 rounded mb-3 w-3/4"></div>
+                        <div className="h-3 bg-gray-600 rounded mb-4 w-1/2"></div>
+                        <div className="space-y-2">
+                          <div className="h-3 bg-gray-600 rounded w-full"></div>
+                          <div className="h-3 bg-gray-600 rounded w-4/5"></div>
+                          <div className="h-3 bg-gray-600 rounded w-3/4"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : reviewsError ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg mb-2">Failed to load recent reviews</p>
+              <p className="text-sm text-gray-500">{reviewsError}</p>
+            </div>
+          ) : recentReviews.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-6">
+              {recentReviews.map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg">No recent reviews yet</p>
+              <p className="text-sm text-gray-500 mt-2">Be the first to share your gaming experience!</p>
+            </div>
+          )}
         </div>
       </div>
 
