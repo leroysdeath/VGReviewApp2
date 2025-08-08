@@ -944,3 +944,58 @@ export const addComment = async (
     };
   }
 };
+
+/**
+ * Get recent reviews from all users (for landing page)
+ */
+export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>> => {
+  try {
+    console.log('🔍 Fetching recent reviews:', { limit });
+
+    const { data, error, count } = await supabase
+      .from('rating')
+      .select(`
+        *,
+        user:user_id(*),
+        game:game_id(id, name, pic_url, game_id)
+      `, { count: 'exact' })
+      .order('post_date_time', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('❌ Error fetching reviews:', error);
+      throw error;
+    }
+
+    const reviews: Review[] = data?.map(item => ({
+      id: item.id,
+      userId: item.user_id,
+      gameId: item.game_id,
+      rating: item.rating,
+      review: item.review,
+      postDateTime: item.post_date_time,
+      isRecommended: item.is_recommended,
+      likeCount: 0, // Will be populated by separate query if needed
+      commentCount: 0, // Will be populated by separate query if needed
+      user: item.user ? {
+        id: item.user.id,
+        name: item.user.name,
+        picurl: item.user.picurl
+      } : undefined,
+      game: item.game ? {
+        id: item.game.id,
+        name: item.game.name,
+        pic_url: item.game.pic_url
+      } : undefined
+    })) || [];
+
+    console.log('✅ Successfully fetched reviews:', { count: reviews.length });
+    return { success: true, data: reviews, count };
+  } catch (error) {
+    console.error('💥 Error fetching reviews:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch reviews'
+    };
+  }
+};
