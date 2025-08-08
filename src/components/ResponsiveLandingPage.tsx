@@ -3,19 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Star, TrendingUp, Users, Search, ArrowRight, Gamepad2 } from 'lucide-react';
 import { GameCard } from './GameCard';
 import { ReviewCard } from './ReviewCard';
-import { AuthModal } from './auth/AuthModal';
 import { mockReviews } from '../data/mockData';
 import { igdbService, Game } from '../services/igdbApi';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
+import { useAuthModal } from '../context/AuthModalContext';
 
 export const ResponsiveLandingPage: React.FC = () => {
   const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const { isMobile } = useResponsive();
   const { isAuthenticated } = useAuth();
+  const { openModal } = useAuthModal();
   const navigate = useNavigate();
   const recentReviews = mockReviews.slice(0, isMobile ? 3 : 4);
 
@@ -34,35 +33,14 @@ export const ResponsiveLandingPage: React.FC = () => {
     loadFeaturedGames();
   }, [isMobile]);
 
-  // Handle auth-required actions
-  const handleAuthRequiredAction = (action: string) => {
+  // Handle join community button click
+  const handleJoinCommunity = () => {
     if (!isAuthenticated) {
-      setPendingAction(action);
-      setShowAuthModal(true);
+      openModal(); // Use global auth modal
       return;
     }
-    executeAction(action);
-  };
-
-  const executeAction = (action: string) => {
-    switch (action) {
-      case 'join_community':
-        // Navigate to users page for community features
-        navigate('/users');
-        break;
-      case 'start_rating':
-        // Navigate to games to start rating
-        navigate('/search');
-        break;
-    }
-  };
-
-  const handleAuthSuccess = () => {
-    setShowAuthModal(false);
-    if (pendingAction) {
-      executeAction(pendingAction);
-      setPendingAction(null);
-    }
+    // Navigate to users page if already authenticated
+    navigate('/users');
   };
 
   if (isMobile) {
@@ -105,7 +83,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </Link>
               ) : (
                 <button
-                  onClick={() => handleAuthRequiredAction('join_community')}
+                  onClick={handleJoinCommunity}
                   className="block w-full px-6 py-3 bg-transparent border-2 border-purple-400 text-purple-400 rounded-lg hover:bg-purple-400 hover:text-white transition-colors font-medium"
                 >
                   <div className="flex items-center justify-center gap-2">
@@ -197,16 +175,6 @@ export const ResponsiveLandingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Auth Modal */}
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => {
-            setShowAuthModal(false);
-            setPendingAction(null);
-          }}
-          onLoginSuccess={handleAuthSuccess}
-          onSignupSuccess={handleAuthSuccess}
-        />
       </div>
     );
   }
@@ -247,7 +215,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </Link>
               ) : (
                 <button
-                  onClick={() => handleAuthRequiredAction('join_community')}
+                  onClick={handleJoinCommunity}
                   className="px-8 py-3 bg-transparent border-2 border-purple-400 text-purple-400 rounded-lg hover:bg-purple-400 hover:text-white transition-colors flex items-center gap-2 text-lg font-medium"
                 >
                   Join Community
@@ -345,16 +313,6 @@ export const ResponsiveLandingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => {
-          setShowAuthModal(false);
-          setPendingAction(null);
-        }}
-        onLoginSuccess={handleAuthSuccess}
-        onSignupSuccess={handleAuthSuccess}
-      />
     </div>
   );
 };
