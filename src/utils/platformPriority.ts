@@ -137,6 +137,15 @@ export function isMobileOnlyGame(game: any): boolean {
 }
 
 /**
+ * Check if a game has a meaningful description
+ */
+export function hasDescription(game: any): boolean {
+  const description = game.summary || game.description || '';
+  // Consider meaningful if it has more than 10 characters (to filter out empty or placeholder text)
+  return typeof description === 'string' && description.trim().length > 10;
+}
+
+/**
  * Get platform priority score for sorting (higher = better priority)
  * 3 = PC + Console (cross-platform)
  * 2 = PC only or Console only  
@@ -176,15 +185,33 @@ export function getPlatformPriorityScore(game: any): number {
 }
 
 /**
- * Sort games by platform priority while preserving other sorting criteria
- * Games with higher platform priority appear first
+ * Get composite priority score that combines description and platform priority
+ * Higher score = better priority
+ * 
+ * Scoring system:
+ * - Has Description + Platform Score: 10 + platform_score
+ * - No Description + Platform Score: 0 + platform_score
+ * 
+ * This ensures games with descriptions always rank higher than games without,
+ * while maintaining platform-based sorting within each group.
+ */
+export function getCompositePriorityScore(game: any): number {
+  const platformScore = getPlatformPriorityScore(game);
+  const descriptionBonus = hasDescription(game) ? 10 : 0;
+  
+  return descriptionBonus + platformScore;
+}
+
+/**
+ * Sort games by composite priority (description + platform) while preserving other sorting criteria
+ * Games with descriptions appear first, then sorted by platform priority within each group
  */
 export function sortGamesByPlatformPriority(games: any[]): any[] {
   return [...games].sort((a, b) => {
-    const scoreA = getPlatformPriorityScore(a);
-    const scoreB = getPlatformPriorityScore(b);
+    const scoreA = getCompositePriorityScore(a);
+    const scoreB = getCompositePriorityScore(b);
     
-    // Primary sort: Platform priority (higher score first)
+    // Primary sort: Composite priority (description + platform, higher score first)
     if (scoreA !== scoreB) {
       return scoreB - scoreA;
     }
@@ -197,8 +224,8 @@ export function sortGamesByPlatformPriority(games: any[]): any[] {
     }
     
     // Tertiary sort: Name alphabetically
-    const nameA = (a.name || '').toLowerCase();
-    const nameB = (b.name || '').toLowerCase();
+    const nameA = (a.name || a.title || '').toLowerCase();
+    const nameB = (b.name || b.title || '').toLowerCase();
     return nameA.localeCompare(nameB);
   });
 }
@@ -218,34 +245,45 @@ export function getPlatformTypeDescription(game: any): string {
     return 'Unknown platforms';
   }
   
-  const score = getPlatformPriorityScore(game);
+  const platformScore = getPlatformPriorityScore(game);
+  const hasDesc = hasDescription(game);
   const hasPC = isPCGame(game);
   const hasConsole = isConsoleGame(game);
   
-  switch (score) {
+  let platformDesc = '';
+  switch (platformScore) {
     case 3:
-      return 'PC & Console';
+      platformDesc = 'PC & Console';
+      break;
     case 2:
-      return hasPC ? 'PC' : 'Console';
+      platformDesc = hasPC ? 'PC' : 'Console';
+      break;
     case 1:
-      return 'Multi-platform';
+      platformDesc = 'Multi-platform';
+      break;
     case 0:
-      return isMobileOnlyGame(game) ? 'Mobile only' : 'Other platforms';
+      platformDesc = isMobileOnlyGame(game) ? 'Mobile only' : 'Other platforms';
+      break;
     default:
-      return 'Unknown';
+      platformDesc = 'Unknown';
   }
+  
+  return hasDesc ? `${platformDesc} (with description)` : platformDesc;
 }
 
 /**
- * Debug utility to log platform information for a game
+ * Debug utility to log platform and description information for a game
  */
 export function debugGamePlatforms(game: any): void {
   if (!import.meta.env.DEV) return;
   
-  console.log('Game:', game.name);
+  console.log('Game:', game.name || game.title);
   console.log('Platforms:', game.platforms?.map((p: any) => typeof p === 'string' ? p : p.name));
-  console.log('Priority Score:', getPlatformPriorityScore(game));
+  console.log('Has Description:', hasDescription(game));
+  console.log('Description Length:', (game.summary || game.description || '').length);
+  console.log('Platform Priority Score:', getPlatformPriorityScore(game));
+  console.log('Composite Priority Score:', getCompositePriorityScore(game));
   console.log('Platform Type:', getPlatformTypeDescription(game));
-  console.log('High Priority:', hasHighPriorityPlatform(game));
+  console.log('High Priority Platform:', hasHighPriorityPlatform(game));
   console.log('---');
 }
