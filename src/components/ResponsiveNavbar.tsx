@@ -299,9 +299,9 @@ export const ResponsiveNavbar: React.FC = () => {
   };
 
   const handleSuggestionClick = (game: Game) => {
-    setSearchQuery(game.name);
+    setSearchQuery('');
     saveRecentSearch(game.name, 'games');
-    navigateToSearch(game.name);
+    navigate(`/game/${game.id}`);
     setIsSearchOpen(false);
     setShowSuggestions(false);
     setHasSearched(false);
