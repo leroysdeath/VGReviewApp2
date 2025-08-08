@@ -1,37 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Star, TrendingUp, Users, Search, ArrowRight, Gamepad2 } from 'lucide-react';
-import { GameCard } from './GameCard';
 import { ReviewCard } from './ReviewCard';
 import { mockReviews } from '../data/mockData';
-import { igdbService, Game } from '../services/igdbApi';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthModal } from '../context/AuthModalContext';
 
 export const ResponsiveLandingPage: React.FC = () => {
-  const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
-  const [loading, setLoading] = useState(true);
   const { isMobile } = useResponsive();
   const { isAuthenticated } = useAuth();
   const { openModal } = useAuthModal();
   const navigate = useNavigate();
   const recentReviews = mockReviews.slice(0, isMobile ? 3 : 4);
 
-  useEffect(() => {
-    const loadFeaturedGames = async () => {
-      try {
-        const games = await igdbService.getPopularGames(isMobile ? 4 : 6);
-        setFeaturedGames(games);
-      } catch (error) {
-        console.error('Failed to load featured games:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadFeaturedGames();
-  }, [isMobile]);
 
   // Handle join community button click
   const handleJoinCommunity = () => {
@@ -121,41 +103,6 @@ export const ResponsiveLandingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Featured Games Section */}
-        <div className="px-4 py-12 bg-gray-900">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Featured Games</h2>
-            <Link
-              to="/search"
-              className="text-purple-400 hover:text-purple-300 transition-colors text-sm flex items-center gap-1"
-            >
-              View All <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          {loading ? (
-            <div className="grid grid-cols-2 gap-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
-                  <div className="aspect-[3/4] bg-gray-700"></div>
-                  <div className="p-3">
-                    <div className="h-4 bg-gray-700 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-2/3"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {featuredGames.map((game) => (
-                <GameCard 
-                  key={game.id} 
-                  game={game} 
-                  showQuickActions={isAuthenticated}
-                />
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Mobile Recent Reviews Section */}
         <div className="px-4 py-12 bg-gray-800">
@@ -254,44 +201,6 @@ export const ResponsiveLandingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Featured Games Section */}
-      <div className="py-16 bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-white">Featured Games</h2>
-            <Link
-              to="/search"
-              className="text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2"
-            >
-              View All <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
-                  <div className="aspect-[3/4] bg-gray-700"></div>
-                  <div className="p-4">
-                    <div className="h-4 bg-gray-700 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-2/3 mb-3"></div>
-                    <div className="h-3 bg-gray-700 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredGames.map((game) => (
-                <GameCard 
-                  key={game.id} 
-                  game={game} 
-                  showQuickActions={isAuthenticated}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Recent Reviews Section */}
       <div className="py-16 bg-gray-800">
