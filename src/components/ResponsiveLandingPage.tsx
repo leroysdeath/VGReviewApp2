@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Star, TrendingUp, Users, Search, ArrowRight, Gamepad2 } from 'lucide-react';
 import { GameCard } from './GameCard';
 import { ReviewCard } from './ReviewCard';
@@ -16,6 +16,7 @@ export const ResponsiveLandingPage: React.FC = () => {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const { isMobile } = useResponsive();
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const recentReviews = mockReviews.slice(0, isMobile ? 3 : 4);
 
   useEffect(() => {
@@ -46,12 +47,12 @@ export const ResponsiveLandingPage: React.FC = () => {
   const executeAction = (action: string) => {
     switch (action) {
       case 'join_community':
-        // Redirect to community features or profile setup
-        console.log('Redirecting to community features');
+        // Navigate to users page for community features
+        navigate('/users');
         break;
       case 'start_rating':
-        // Redirect to games to start rating
-        window.location.href = '/search';
+        // Navigate to games to start rating
+        navigate('/search');
         break;
     }
   };
