@@ -207,6 +207,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
               </div>
             ) : (
               <UserSettingsPanel 
+                key={isLoading ? 'loading' : 'loaded'}
                 userId={userId}
                 initialData={userData || {
                   username: '',
