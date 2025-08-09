@@ -110,7 +110,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   onSuccess,
   onFormChange
 }) => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'notifications' | 'privacy'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'notifications'>('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -290,16 +290,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             }`}
           >
             Notifications
-          </button>
-          <button
-            onClick={() => setActiveTab('privacy')}
-            className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'privacy'
-                ? 'border-purple-500 text-purple-400'
-                : 'border-transparent text-gray-400 hover:text-white'
-            }`}
-          >
-            Privacy & Security
           </button>
         </div>
       </div>
@@ -601,17 +591,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             {/* Email Change */}
             <div className="bg-gray-750 rounded-lg p-6 border border-gray-700">
               <h3 className="text-lg font-medium text-white mb-4">Change Email</h3>
-              
-              {/* Current Email Display */}
-              <div className="mb-4 p-3 bg-gray-700 rounded-lg">
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Current Email
-                </label>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-300">{initialData.email}</span>
-                </div>
-              </div>
 
               <form onSubmit={emailForm.handleSubmit(handleEmailChange)} className="space-y-4">
                 {/* New Email */}
@@ -678,67 +657,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   </button>
                 </div>
               </form>
-            </div>
-
-            {/* Connected Accounts */}
-            <div className="bg-gray-750 rounded-lg p-6 border border-gray-700">
-              <h3 className="text-lg font-medium text-white mb-4">Connected Accounts</h3>
-              
-              <div className="space-y-4">
-                {/* Google */}
-                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                      <svg className="h-5 w-5 text-gray-900" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">Google</div>
-                      <div className="text-sm text-gray-400">Not connected</div>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
-                    Connect
-                  </button>
-                </div>
-
-                {/* Discord */}
-                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#5865F2] rounded-full flex items-center justify-center">
-                      <svg className="h-5 w-5 text-white" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">Discord</div>
-                      <div className="text-sm text-gray-400">Not connected</div>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
-                    Connect
-                  </button>
-                </div>
-
-                {/* Steam */}
-                <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#171a21] rounded-full flex items-center justify-center">
-                      <svg className="h-5 w-5 text-white" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.253 0-2.265-1.014-2.265-2.265z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">Steam</div>
-                      <div className="text-sm text-green-400">Connected</div>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                    Disconnect
-                  </button>
-                </div>
-              </div>
             </div>
 
             {/* Danger Zone */}
@@ -889,170 +807,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               </button>
             </div>
           </form>
-        )}
-
-        {/* Privacy & Security Settings */}
-        {activeTab === 'privacy' && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium text-white mb-4">Privacy & Security</h3>
-            
-            {/* Privacy Settings */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Profile Visibility</h4>
-                  <p className="text-sm text-gray-400">Control who can see your profile</p>
-                </div>
-                <select
-                  className="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  defaultValue="public"
-                >
-                  <option value="public">Public</option>
-                  <option value="followers">Followers Only</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Activity Visibility</h4>
-                  <p className="text-sm text-gray-400">Control who can see your gaming activity</p>
-                </div>
-                <select
-                  className="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  defaultValue="public"
-                >
-                  <option value="public">Public</option>
-                  <option value="followers">Followers Only</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Show Online Status</h4>
-                  <p className="text-sm text-gray-400">Let others see when you're online</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    defaultChecked={true}
-                    className="sr-only peer" 
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-            </div>
-
-            {/* Security Settings */}
-            <div className="mt-8">
-              <h3 className="text-lg font-medium text-white mb-4">Security</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Shield className="h-6 w-6 text-green-400" />
-                    <div>
-                      <h4 className="font-medium text-white">Two-Factor Authentication</h4>
-                      <p className="text-sm text-gray-400">Add an extra layer of security to your account</p>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                    Enable
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Bell className="h-6 w-6 text-yellow-400" />
-                    <div>
-                      <h4 className="font-medium text-white">Login Alerts</h4>
-                      <p className="text-sm text-gray-400">Get notified of new logins to your account</p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={true}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Key className="h-6 w-6 text-blue-400" />
-                    <div>
-                      <h4 className="font-medium text-white">Active Sessions</h4>
-                      <p className="text-sm text-gray-400">Manage devices where you're logged in</p>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
-                    Manage
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Data & Privacy */}
-            <div className="mt-8">
-              <h3 className="text-lg font-medium text-white mb-4">Data & Privacy</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-white">Data Collection</h4>
-                    <p className="text-sm text-gray-400">Allow us to collect usage data to improve your experience</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={true}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-white">Personalized Recommendations</h4>
-                    <p className="text-sm text-gray-400">Allow us to suggest games based on your activity</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={true}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-white">Marketing Emails</h4>
-                    <p className="text-sm text-gray-400">Receive emails about new features and promotions</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      defaultChecked={false}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <button className="text-purple-400 hover:text-purple-300 transition-colors text-sm">
-                  Download my data
-                </button>
-              </div>
-            </div>
-          </div>
         )}
       </div>
     </div>
