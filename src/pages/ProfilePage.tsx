@@ -31,42 +31,6 @@ const ProfilePage = () => {
   const [gamesModalInitialTab, setGamesModalInitialTab] = useState<'all' | 'started' | 'finished'>('all');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchProfileData();
-  }, [fetchProfileData]);
-
-  useEffect(() => {
-    // Sort reviews based on filter
-    const sorted = [...reviews];
-    switch (reviewFilter) {
-      case 'highest':
-        sorted.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'lowest':
-        sorted.sort((a, b) => a.rating - b.rating);
-        break;
-      case 'oldest':
-        sorted.sort((a, b) => new Date(a.post_date_time).getTime() - new Date(b.post_date_time).getTime());
-        break;
-      case 'recent':
-      default:
-        sorted.sort((a, b) => new Date(b.post_date_time).getTime() - new Date(a.post_date_time).getTime());
-        break;
-    }
-    setSortedReviews(sorted.map(review => ({
-      id: review.id,
-      userId: review.user_id,
-      gameId: review.game_id,
-      gameTitle: review.game?.name || 'Unknown Game',
-      rating: review.rating,
-      text: review.review, // Column is 'review' not 'text'
-      date: new Date(review.post_date_time).toLocaleDateString(),
-      hasText: !!review.review,
-      author: userProfile?.username || '',
-      authorAvatar: userProfile?.avatar || '/default-avatar.png'
-    })));
-  }, [reviews, reviewFilter, userProfile]);
-
   const fetchProfileData = useCallback(async () => {
     try {
       setLoading(true);
@@ -211,6 +175,22 @@ const ProfilePage = () => {
       setLoading(false);
     }
   }, [navigate]);
+
+  // Fetch profile data on component mount
+  useEffect(() => {
+    fetchProfileData();
+  }, [fetchProfileData]);
+
+  // Sort reviews based on filter
+  useEffect(() => {
+    const sorted = [...reviews];
+    if (reviewFilter === 'recent') {
+      sorted.sort((a, b) => new Date(b.post_date_time).getTime() - new Date(a.post_date_time).getTime());
+    } else if (reviewFilter === 'rating') {
+      sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    }
+    setSortedReviews(sorted);
+  }, [reviews, reviewFilter]);
 
   const handleEditClick = () => {
     setShowSettingsModal(true);
