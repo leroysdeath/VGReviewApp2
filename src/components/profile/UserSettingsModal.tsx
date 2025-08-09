@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { UserSettingsPanel } from './UserSettingsPanel';
-import { supabase } from '../../services/supabaseClient';
+import { supabase } from '../../utils/supabaseClient';
 
 interface UserSettingsModalProps {
   isOpen: boolean;
