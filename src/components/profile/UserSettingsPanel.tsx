@@ -117,6 +117,10 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData.avatar || null);
 
+  // Debug logging
+  console.log('UserSettingsPanel initialData:', initialData);
+  console.log('UserSettingsPanel initialData.username:', initialData.username);
+
   // Form setup
   const { 
     register, 
@@ -143,6 +147,27 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       }
     }
   });
+
+  // Reset form when initialData changes
+  useEffect(() => {
+    console.log('Resetting form with new initialData:', initialData);
+    reset({
+      username: initialData.username,
+      displayName: initialData.displayName || '',
+      bio: initialData.bio || '',
+      location: initialData.location || '',
+      website: initialData.website || '',
+      platform: initialData.platform || '', 
+      notifications: initialData.notifications || {
+        email: true,
+        push: true,
+        reviews: true,
+        mentions: true,
+        followers: true,
+        achievements: true
+      }
+    });
+  }, [initialData, reset]);
 
   // Notify parent of form dirty state changes
   useEffect(() => {
