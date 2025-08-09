@@ -1,12 +1,16 @@
-import React, { ReactNode, useState, useEffect } from 'react';
+import React, { ReactNode, useState, useEffect, lazy, Suspense } from 'react';
 import { Settings, ExternalLink, UserPlus, UserCheck } from 'lucide-react';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
-import { UserSettingsModal } from './profile/UserSettingsModal';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
 import { FollowersFollowingModal } from './FollowersFollowingModal';
 import { GamesModal } from './GamesModal';
+
+// Lazy load UserSettingsModal to avoid initialization issues
+const UserSettingsModal = lazy(() => import('./profile/UserSettingsModal').then(module => ({
+  default: module.UserSettingsModal
+})));
 
 interface UserStats {
   films: number;
@@ -320,11 +324,13 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
         </div>
 
         {/* Settings Modal */}
-        <UserSettingsModal 
-          isOpen={isSettingsModalOpen}
-          onClose={() => setIsSettingsModalOpen(false)}
-          userId={user.id}
-        />
+        <Suspense fallback={<div />}>
+          <UserSettingsModal 
+            isOpen={isSettingsModalOpen}
+            onClose={() => setIsSettingsModalOpen(false)}
+            userId={user.id}
+          />
+        </Suspense>
       </div>
     );
   }
@@ -517,11 +523,13 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
       </div>
 
       {/* Settings Modal */}
-      <UserSettingsModal 
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        userId={user.id}
-      />
+      <Suspense fallback={<div />}>
+        <UserSettingsModal 
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          userId={user.id}
+        />
+      </Suspense>
 
       {/* Followers/Following Modal */}
       <FollowersFollowingModal
