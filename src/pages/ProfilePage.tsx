@@ -1,13 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabaseClient';
 import { igdbService } from '../services/igdbApi';
 import { ProfileInfo } from '../components/ProfileInfo';
 import { ProfileDetails } from '../components/ProfileDetails';
 import { ProfileData } from '../components/ProfileData';
-import { UserSettingsModal } from '../components/profile/UserSettingsModal';
 import { FollowersFollowingModal } from '../components/FollowersFollowingModal';
 import { GamesModal } from '../components/GamesModal';
+
+// Lazy load UserSettingsModal to avoid initialization issues
+const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsModal').then(module => ({
+  default: module.UserSettingsModal
+})));
 
 const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState(null);
@@ -288,11 +292,13 @@ const ProfilePage = () => {
       </div>
 
       {/* User Settings Modal */}
-      <UserSettingsModal
-        isOpen={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
-        userId={currentUserId}
-      />
+      <Suspense fallback={<div />}>
+        <UserSettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          userId={currentUserId}
+        />
+      </Suspense>
 
       {/* Followers/Following Modal */}
       {currentDbUserId && userProfile && (
