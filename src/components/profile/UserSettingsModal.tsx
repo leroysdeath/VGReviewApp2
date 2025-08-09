@@ -16,13 +16,28 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
 }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [userData, setUserData] = useState<any>({
+    username: '',
+    displayName: '',
+    email: '',
+    bio: '',
+    location: '',
+    website: '',
+    platform: '',
+    avatar: ''
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const modalContentRef = useRef<HTMLDivElement>(null);
 
   // Fetch user data when modal opens
   useEffect(() => {
     const fetchUserData = async () => {
+      if (!isOpen) {
+        // Reset loading state when modal is closed
+        setIsLoading(true);
+        return;
+      }
+      
       if (isOpen && userId) {
         setIsLoading(true);
         try {
@@ -193,7 +208,16 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
             ) : (
               <UserSettingsPanel 
                 userId={userId}
-                initialData={userData}
+                initialData={userData || {
+                  username: '',
+                  displayName: '',
+                  email: '',
+                  bio: '',
+                  location: '',
+                  website: '',
+                  platform: '',
+                  avatar: ''
+                }}
                 onSuccess={handleSuccess}
                 onFormChange={handleFormChange}
               />
