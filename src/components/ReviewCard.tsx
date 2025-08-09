@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Star } from 'lucide-react';
-import { StarRating } from './StarRating';
+import { Calendar } from 'lucide-react';
 import { ReviewInteractions } from './ReviewInteractions';
 import { useReviewInteractions } from '../hooks/useReviewInteractions';
 
@@ -196,29 +195,37 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
             {showGameTitle && review.gameTitle && (
               <div className={`${compact ? 'text-xs' : 'text-sm'} text-gray-400 mt-1`}>
                 reviewed <span className="text-gray-300 font-medium">{review.gameTitle}</span>
+                {/* Grey bar rating below game title */}
+                <div className="flex items-center gap-4 mt-2">
+                  <div className="bg-gray-500 px-2 py-0.5 rounded">
+                    <span className="text-white text-xs font-bold">{(review.rating || 0).toFixed(1)}/10</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-1 text-gray-500">
+                    <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                    <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
+                      {formatDate(review.date)}
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
-          </div>
-
-          {/* Rating and Date */}
-          <div className="flex items-center gap-4 mb-3">
-            <div className="flex items-center gap-2">
-              <StarRating rating={review.rating} size={compact ? 'sm' : 'md'} />
-              <span className={`
-                font-bold transition-colors duration-300
-                ${themeStyles.accent} group-hover:text-white
-                ${compact ? 'text-sm' : 'text-base'}
-              `}>
-                {(review.rating || 0).toFixed(1)}/10
-              </span>
-            </div>
             
-            <div className="flex items-center gap-1 text-gray-500">
-              <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
-              <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
-                {formatDate(review.date)}
-              </span>
-            </div>
+            {/* Rating and Date for when no game title is shown */}
+            {!showGameTitle || !review.gameTitle ? (
+              <div className="flex items-center gap-4 mt-2">
+                <div className="bg-gray-500 px-2 py-0.5 rounded">
+                  <span className="text-white text-xs font-bold">{(review.rating || 0).toFixed(1)}/10</span>
+                </div>
+                
+                <div className="flex items-center gap-1 text-gray-500">
+                  <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                  <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
+                    {formatDate(review.date)}
+                  </span>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {/* Review Text */}
