@@ -64,7 +64,8 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
             });
           } else {
             console.log('Fetched user data:', data);
-            setUserData({
+            console.log('Username from DB:', data.name, data.username);
+            const processedUserData = {
               username: data.name || data.username || '',
               displayName: data.display_name || '',
               email: data.email || '',
@@ -73,7 +74,9 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
               website: data.website || '',
               platform: data.platform || '',
               avatar: data.avatar_url || data.picurl || ''
-            });
+            };
+            console.log('Processed user data:', processedUserData);
+            setUserData(processedUserData);
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
