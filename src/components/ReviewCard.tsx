@@ -198,7 +198,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                 {/* Grey bar rating below game title */}
                 <div className="flex items-center gap-4 mt-2">
                   <div className="bg-gray-500 px-2 py-0.5 rounded">
-                    <span className="text-white text-xs font-bold">{(review.rating || 0).toFixed(1)}/10</span>
+                    <span className="text-white text-xs font-bold">{review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10</span>
                   </div>
                   
                   <div className="flex items-center gap-1 text-gray-500">
@@ -215,7 +215,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
             {!showGameTitle || !review.gameTitle ? (
               <div className="flex items-center gap-4 mt-2">
                 <div className="bg-gray-500 px-2 py-0.5 rounded">
-                  <span className="text-white text-xs font-bold">{(review.rating || 0).toFixed(1)}/10</span>
+                  <span className="text-white text-xs font-bold">{review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10</span>
                 </div>
                 
                 <div className="flex items-center gap-1 text-gray-500">
