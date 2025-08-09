@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import * as z from 'zod';
 import { 
   User, 
   Mail, 
@@ -21,8 +21,8 @@ import {
   Trash2
 } from 'lucide-react';
 
-// Form validation schema
-const profileSchema = z.object({
+// Create schemas as functions to avoid initialization issues
+const getProfileSchema = () => z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   displayName: z.string().optional(),
   bio: z.string().max(160, 'Bio must be 160 characters or less').optional(),
@@ -39,7 +39,29 @@ const profileSchema = z.object({
   }).optional()
 });
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
+const getPasswordSchema = () => z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  confirmPassword: z.string().min(1, 'Please confirm your password')
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"]
+});
+
+const getEmailSchema = () => z.object({
+  newEmail: z.string().email('Please enter a valid email address'),
+  confirmEmail: z.string().min(1, 'Please confirm your email')
+}).refine(data => data.newEmail === data.confirmEmail, {
+  message: "Email addresses don't match",
+  path: ["confirmEmail"]
+});
+
+type ProfileFormValues = z.infer<ReturnType<typeof getProfileSchema>>;
 
 interface UserSettingsPanelProps {
   userId?: string;  // Add this for compatibility
@@ -103,7 +125,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     reset,
     watch
   } = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
+    resolver: zodResolver(getProfileSchema()),
     defaultValues: {
       username: initialData.username,
       displayName: initialData.displayName || '',
@@ -129,21 +151,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
   // Password change form
   const passwordForm = useForm({
-    resolver: zodResolver(
-      z.object({
-        currentPassword: z.string().min(1, 'Current password is required'),
-        newPassword: z.string()
-          .min(8, 'Password must be at least 8 characters')
-          .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-          .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-          .regex(/[0-9]/, 'Password must contain at least one number')
-          .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
-        confirmPassword: z.string().min(1, 'Please confirm your password')
-      }).refine(data => data.newPassword === data.confirmPassword, {
-        message: "Passwords don't match",
-        path: ["confirmPassword"]
-      })
-    ),
+    resolver: zodResolver(getPasswordSchema()),
     defaultValues: {
       currentPassword: '',
       newPassword: '',
@@ -153,15 +161,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
   // Email change form
   const emailForm = useForm({
-    resolver: zodResolver(
-      z.object({
-        newEmail: z.string().email('Please enter a valid email address'),
-        confirmEmail: z.string().min(1, 'Please confirm your email')
-      }).refine(data => data.newEmail === data.confirmEmail, {
-        message: "Email addresses don't match",
-        path: ["confirmEmail"]
-      })
-    ),
+    resolver: zodResolver(getEmailSchema()),
     defaultValues: {
       newEmail: '',
       confirmEmail: ''
