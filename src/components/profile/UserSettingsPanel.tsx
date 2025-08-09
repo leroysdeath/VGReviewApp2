@@ -25,7 +25,6 @@ import {
 const profileSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   displayName: z.string().optional(),
-  email: z.string().email('Please enter a valid email address'),
   bio: z.string().max(160, 'Bio must be 160 characters or less').optional(),
   location: z.string().max(50, 'Location must be 50 characters or less').optional(),
   website: z.string().url('Please enter a valid URL').or(z.string().length(0)).optional(),
@@ -108,7 +107,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     defaultValues: {
       username: initialData.username,
       displayName: initialData.displayName || '',
-      email: initialData.email,
       bio: initialData.bio || '',
       location: initialData.location || '',
       website: initialData.website || '',
@@ -150,6 +148,23 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       currentPassword: '',
       newPassword: '',
       confirmPassword: ''
+    }
+  });
+
+  // Email change form
+  const emailForm = useForm({
+    resolver: zodResolver(
+      z.object({
+        newEmail: z.string().email('Please enter a valid email address'),
+        confirmEmail: z.string().min(1, 'Please confirm your email')
+      }).refine(data => data.newEmail === data.confirmEmail, {
+        message: "Email addresses don't match",
+        path: ["confirmEmail"]
+      })
+    ),
+    defaultValues: {
+      newEmail: '',
+      confirmEmail: ''
     }
   });
 
@@ -211,6 +226,31 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       }, 3000);
     } catch (error) {
       setSaveError('Failed to change password. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle email change
+  const handleEmailChange = async (data: any) => {
+    setIsLoading(true);
+    setSaveError(null);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('Email change data:', data);
+      
+      // Reset form
+      emailForm.reset();
+      setSaveSuccess(true);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
+    } catch (error) {
+      setSaveError('Failed to change email. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -361,28 +401,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               )}
             </div>
 
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                <input
-                  id="email"
-                  type="email"
-                  {...register('email')}
-                  className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                    errors.email ? 'border-red-500' : 'border-gray-600'
-                  }`}
-                  placeholder="your.email@example.com"
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
-              )}
-            </div>
 
             {/* Bio */}
             <div>
@@ -574,6 +592,88 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                       </>
                     ) : (
                       'Update Password'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Email Change */}
+            <div className="bg-gray-750 rounded-lg p-6 border border-gray-700">
+              <h3 className="text-lg font-medium text-white mb-4">Change Email</h3>
+              
+              {/* Current Email Display */}
+              <div className="mb-4 p-3 bg-gray-700 rounded-lg">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Current Email
+                </label>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-gray-400" />
+                  <span className="text-gray-300">{initialData.email}</span>
+                </div>
+              </div>
+
+              <form onSubmit={emailForm.handleSubmit(handleEmailChange)} className="space-y-4">
+                {/* New Email */}
+                <div>
+                  <label htmlFor="newEmail" className="block text-sm font-medium text-gray-300 mb-1">
+                    New Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                    <input
+                      id="newEmail"
+                      type="email"
+                      {...emailForm.register('newEmail')}
+                      className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                        emailForm.formState.errors.newEmail ? 'border-red-500' : 'border-gray-600'
+                      }`}
+                      placeholder="your.new@example.com"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  {emailForm.formState.errors.newEmail && (
+                    <p className="mt-1 text-sm text-red-400">{emailForm.formState.errors.newEmail.message}</p>
+                  )}
+                </div>
+
+                {/* Confirm New Email */}
+                <div>
+                  <label htmlFor="confirmEmail" className="block text-sm font-medium text-gray-300 mb-1">
+                    Confirm New Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                    <input
+                      id="confirmEmail"
+                      type="email"
+                      {...emailForm.register('confirmEmail')}
+                      className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                        emailForm.formState.errors.confirmEmail ? 'border-red-500' : 'border-gray-600'
+                      }`}
+                      placeholder="your.new@example.com"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  {emailForm.formState.errors.confirmEmail && (
+                    <p className="mt-1 text-sm text-red-400">{emailForm.formState.errors.confirmEmail.message}</p>
+                  )}
+                </div>
+
+                {/* Submit button */}
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      'Update Email'
                     )}
                   </button>
                 </div>
