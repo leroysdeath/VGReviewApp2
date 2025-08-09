@@ -65,14 +65,14 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           } else {
             console.log('Fetched user data:', data);
             setUserData({
-              username: data.username || '',
+              username: data.name || data.username || '',
               displayName: data.display_name || '',
               email: data.email || '',
               bio: data.bio || '',
               location: data.location || '',
               website: data.website || '',
               platform: data.platform || '',
-              avatar: data.avatar_url || ''
+              avatar: data.avatar_url || data.picurl || ''
             });
           }
         } catch (error) {
