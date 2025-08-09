@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { UserSettingsPanel } from './UserSettingsPanel';
+import { supabase } from '../../services/supabaseClient';
 
 interface UserSettingsModalProps {
   isOpen: boolean;
@@ -15,7 +16,71 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
 }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const modalContentRef = useRef<HTMLDivElement>(null);
+
+  // Fetch user data when modal opens
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (isOpen && userId) {
+        setIsLoading(true);
+        try {
+          console.log('Fetching user data for userId:', userId);
+          
+          const { data, error } = await supabase
+            .from('user')
+            .select('*')
+            .eq('provider_id', userId)
+            .single();
+
+          if (error) {
+            console.error('Error fetching user data:', error);
+            // Set default data if user not found
+            setUserData({
+              username: '',
+              displayName: '',
+              email: '',
+              bio: '',
+              location: '',
+              website: '',
+              platform: '',
+              avatar: ''
+            });
+          } else {
+            console.log('Fetched user data:', data);
+            setUserData({
+              username: data.username || '',
+              displayName: data.display_name || '',
+              email: data.email || '',
+              bio: data.bio || '',
+              location: data.location || '',
+              website: data.website || '',
+              platform: data.platform || '',
+              avatar: data.avatar_url || ''
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          // Set default data on error
+          setUserData({
+            username: '',
+            displayName: '',
+            email: '',
+            bio: '',
+            location: '',
+            website: '',
+            platform: '',
+            avatar: ''
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [isOpen, userId]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -120,11 +185,19 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           
           {/* Modal Content */}
           <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
-            <UserSettingsPanel 
-              userId={userId}
-              onSuccess={handleSuccess}
-              onFormChange={handleFormChange}
-            />
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                <span className="ml-3 text-gray-400">Loading profile data...</span>
+              </div>
+            ) : (
+              <UserSettingsPanel 
+                userId={userId}
+                initialData={userData}
+                onSuccess={handleSuccess}
+                onFormChange={handleFormChange}
+              />
+            )}
           </div>
         </div>
       </div>
