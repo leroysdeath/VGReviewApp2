@@ -226,7 +226,7 @@ export const createReview = async (
       commentCount: 0,
       user: data.user ? {
         id: data.user.id,
-        name: data.user.name,
+        name: data.user.username || data.user.name,
         picurl: data.user.picurl
       } : undefined,
       game: data.game ? {
@@ -382,7 +382,7 @@ export const getUserReviewForGame = async (gameId: number): Promise<ServiceRespo
       commentCount: 0,
       user: data.user ? {
         id: data.user.id,
-        name: data.user.name,
+        name: data.user.username || data.user.name,
         picurl: data.user.picurl
       } : undefined,
       game: data.game ? {
@@ -469,7 +469,7 @@ export const updateReview = async (
       commentCount: 0,
       user: data.user ? {
         id: data.user.id,
-        name: data.user.name,
+        name: data.user.username || data.user.name,
         picurl: data.user.picurl
       } : undefined,
       game: data.game ? {
@@ -596,7 +596,7 @@ export const getReview = async (
       commentCount: commentCount || 0,
       user: data.user ? {
         id: data.user.id,
-        name: data.user.name,
+        name: data.user.username || data.user.name,
         picurl: data.user.picurl
       } : undefined,
       game: data.game ? {
@@ -787,7 +787,7 @@ export const getCommentsForReview = async (
       .from('review_comment')
       .select(`
         *,
-        user:user_id(id, name, picurl)
+        user:user_id(id, username, name, picurl)
       `, { count: 'exact' })
       .eq('review_id', reviewId)
       .order('created_at', { ascending: false })
@@ -812,7 +812,7 @@ export const getCommentsForReview = async (
         replies: [],
         user: item.user ? {
           id: item.user.id,
-          name: item.user.name,
+          name: item.user.username || item.user.name,
           picurl: item.user.picurl
         } : undefined
       };
@@ -909,7 +909,7 @@ export const addComment = async (
       })
       .select(`
         *,
-        user:user_id(id, name, picurl)
+        user:user_id(id, username, name, picurl)
       `)
       .single();
 
@@ -927,7 +927,7 @@ export const addComment = async (
       replies: [],
       user: data.user ? {
         id: data.user.id,
-        name: data.user.name,
+        name: data.user.username || data.user.name,
         picurl: data.user.picurl
       } : undefined
     };
