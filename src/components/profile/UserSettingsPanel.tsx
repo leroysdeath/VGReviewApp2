@@ -62,15 +62,7 @@ const getProfileSchema = () => z.object({
     }, {
       message: 'Please enter a valid URL (e.g., example.com or https://example.com)'
     }),
-  platform: z.string().optional().or(z.literal('')),
-  notifications: z.object({
-    email: z.boolean().optional(),
-    push: z.boolean().optional(),
-    reviews: z.boolean().optional(),
-    mentions: z.boolean().optional(),
-    followers: z.boolean().optional(),
-    achievements: z.boolean().optional()
-  }).optional()
+  platform: z.string().optional().or(z.literal(''))
 });
 
 // Dynamic validation schema based on changed fields - only validates fields that have been modified
@@ -149,26 +141,6 @@ const getDynamicProfileSchema = (changedFields: Set<string>) => {
     schema.platform = z.string().optional().or(z.literal(''));
   } else {
     schema.platform = z.string().optional().or(z.literal(''));
-  }
-  
-  if (changedFields.has('notifications')) {
-    schema.notifications = z.object({
-      email: z.boolean().optional(),
-      push: z.boolean().optional(),
-      reviews: z.boolean().optional(),
-      mentions: z.boolean().optional(),
-      followers: z.boolean().optional(),
-      achievements: z.boolean().optional()
-    }).optional();
-  } else {
-    schema.notifications = z.object({
-      email: z.boolean().optional(),
-      push: z.boolean().optional(),
-      reviews: z.boolean().optional(),
-      mentions: z.boolean().optional(),
-      followers: z.boolean().optional(),
-      achievements: z.boolean().optional()
-    }).optional();
   }
   
   return z.object(schema);
@@ -252,7 +224,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     onSaveFunction: onSave
   });
   
-  const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'notifications'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'account'>('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -265,15 +237,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     bio: initialData.bio || '',
     location: initialData.location || '',
     website: initialData.website || '',
-    platform: initialData.platform || '', 
-    notifications: initialData.notifications || {
-      email: true,
-      push: true,
-      reviews: true,
-      mentions: true,
-      followers: true,
-      achievements: true
-    }
+    platform: initialData.platform || ''
   });
 
 
@@ -316,15 +280,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       bio: initialData.bio || '',
       location: initialData.location || '',
       website: initialData.website || '',
-      platform: initialData.platform || '', 
-      notifications: initialData.notifications || {
-        email: true,
-        push: true,
-        reviews: true,
-        mentions: true,
-        followers: true,
-        achievements: true
-      }
+      platform: initialData.platform || ''
     };
     setOriginalValues(newValues);
     setChangedFields(new Set());
@@ -368,13 +324,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       console.log('🟡 Platform changed:', originalValues.platform, '->', watchedValues.platform);
     }
     
-    // Check notifications changes
-    const currentNotifications = watchedValues.notifications || {};
-    const originalNotifications = originalValues.notifications || {};
-    if (JSON.stringify(currentNotifications) !== JSON.stringify(originalNotifications)) {
-      newChangedFields.add('notifications');
-      console.log('🟡 Notifications changed:', originalNotifications, '->', currentNotifications);
-    }
 
     console.log('🔥 Field change detection:', {
       username: { current: watchedValues.username, original: originalValues.username, changed: watchedValues.username !== originalValues.username },
@@ -641,16 +590,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             }`}
           >
             Account
-          </button>
-          <button
-            onClick={() => setActiveTab('notifications')}
-            className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'notifications'
-                ? 'border-purple-500 text-purple-400'
-                : 'border-transparent text-gray-400 hover:text-white'
-            }`}
-          >
-            Notifications
           </button>
         </div>
       </div>
@@ -1075,137 +1014,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
           </div>
         )}
 
-        {/* Notification Settings */}
-        {activeTab === 'notifications' && (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <h3 className="text-lg font-medium text-white mb-4">Notification Preferences</h3>
-            
-            <div className="space-y-4">
-              {/* Email Notifications */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Email Notifications</h4>
-                  <p className="text-sm text-gray-400">Receive email updates about your account</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    {...register('notifications.email')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {/* Push Notifications */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Push Notifications</h4>
-                  <p className="text-sm text-gray-400">Receive notifications on your device</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    {...register('notifications.push')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {/* Review Notifications */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Review Notifications</h4>
-                  <p className="text-sm text-gray-400">Get notified when someone comments on your reviews</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    {...register('notifications.reviews')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {/* Mentions */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Mentions</h4>
-                  <p className="text-sm text-gray-400">Get notified when someone mentions you</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    {...register('notifications.mentions')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {/* New Followers */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">New Followers</h4>
-                  <p className="text-sm text-gray-400">Get notified when someone follows you</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    {...register('notifications.followers')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {/* Achievements */}
-              <div className="flex items-center justify-between p-4 bg-gray-750 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-white">Achievements</h4>
-                  <p className="text-sm text-gray-400">Get notified when you earn achievements</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    {...register('notifications.achievements')}
-                    className="sr-only peer" 
-                    disabled={isLoading}
-                  />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-            </div>
-
-            {/* Submit button */}
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={isLoading || !isDirty}
-                className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-5 w-5" />
-                    Save Changes
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        )}
       </div>
     </div>
   );
