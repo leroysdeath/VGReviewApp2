@@ -39,6 +39,50 @@ const getProfileSchema = () => z.object({
   }).optional()
 });
 
+// Dynamic validation schema based on changed fields
+const getDynamicProfileSchema = (changedFields: Set<string>) => {
+  const schema: any = {};
+  
+  if (changedFields.has('username')) {
+    schema.username = z.string().min(3, 'Username must be at least 3 characters');
+  } else {
+    schema.username = z.string().optional();
+  }
+  
+  if (changedFields.has('displayName')) {
+    schema.displayName = z.string().optional();
+  }
+  
+  if (changedFields.has('bio')) {
+    schema.bio = z.string().max(160, 'Bio must be 160 characters or less').optional();
+  }
+  
+  if (changedFields.has('location')) {
+    schema.location = z.string().max(50, 'Location must be 50 characters or less').optional();
+  }
+  
+  if (changedFields.has('website')) {
+    schema.website = z.string().url('Please enter a valid URL').or(z.string().length(0)).optional();
+  }
+  
+  if (changedFields.has('platform')) {
+    schema.platform = z.string().optional();
+  }
+  
+  if (changedFields.has('notifications')) {
+    schema.notifications = z.object({
+      email: z.boolean().optional(),
+      push: z.boolean().optional(),
+      reviews: z.boolean().optional(),
+      mentions: z.boolean().optional(),
+      followers: z.boolean().optional(),
+      achievements: z.boolean().optional()
+    }).optional();
+  }
+  
+  return z.object(schema);
+};
+
 const getPasswordSchema = () => z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z.string()
@@ -116,42 +160,43 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData.avatar || null);
+  const [changedFields, setChangedFields] = useState<Set<string>>(new Set());
+  const [originalValues, setOriginalValues] = useState<ProfileFormValues>({
+    username: initialData.username,
+    displayName: initialData.displayName || '',
+    bio: initialData.bio || '',
+    location: initialData.location || '',
+    website: initialData.website || '',
+    platform: initialData.platform || '', 
+    notifications: initialData.notifications || {
+      email: true,
+      push: true,
+      reviews: true,
+      mentions: true,
+      followers: true,
+      achievements: true
+    }
+  });
 
-  // Debug logging
-  console.log('UserSettingsPanel initialData:', initialData);
-  console.log('UserSettingsPanel initialData.username:', initialData.username);
 
-  // Form setup
+  // Form setup with dynamic validation
   const { 
     register, 
     handleSubmit, 
     formState: { errors, isDirty },
     reset,
-    watch
+    watch,
+    clearErrors,
+    trigger
   } = useForm<ProfileFormValues>({
-    resolver: zodResolver(getProfileSchema()),
-    defaultValues: {
-      username: initialData.username,
-      displayName: initialData.displayName || '',
-      bio: initialData.bio || '',
-      location: initialData.location || '',
-      website: initialData.website || '',
-      platform: initialData.platform || '', 
-      notifications: initialData.notifications || {
-        email: true,
-        push: true,
-        reviews: true,
-        mentions: true,
-        followers: true,
-        achievements: true
-      }
-    }
+    resolver: zodResolver(getDynamicProfileSchema(changedFields)),
+    defaultValues: originalValues,
+    mode: 'onChange'
   });
 
   // Reset form when initialData changes
   useEffect(() => {
-    console.log('Resetting form with new initialData:', initialData);
-    reset({
+    const newValues = {
       username: initialData.username,
       displayName: initialData.displayName || '',
       bio: initialData.bio || '',
@@ -166,8 +211,59 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         followers: true,
         achievements: true
       }
-    });
+    };
+    setOriginalValues(newValues);
+    setChangedFields(new Set());
+    reset(newValues);
   }, [initialData, reset]);
+
+  // Watch all form values to track changes
+  const watchedValues = watch();
+
+  // Track field changes
+  useEffect(() => {
+    const newChangedFields = new Set<string>();
+    
+    // Compare current values with original values
+    if (watchedValues.username !== originalValues.username) {
+      newChangedFields.add('username');
+    }
+    if (watchedValues.displayName !== originalValues.displayName) {
+      newChangedFields.add('displayName');
+    }
+    if (watchedValues.bio !== originalValues.bio) {
+      newChangedFields.add('bio');
+    }
+    if (watchedValues.location !== originalValues.location) {
+      newChangedFields.add('location');
+    }
+    if (watchedValues.website !== originalValues.website) {
+      newChangedFields.add('website');
+    }
+    if (watchedValues.platform !== originalValues.platform) {
+      newChangedFields.add('platform');
+    }
+    
+    // Check notifications changes
+    const currentNotifications = watchedValues.notifications || {};
+    const originalNotifications = originalValues.notifications || {};
+    if (JSON.stringify(currentNotifications) !== JSON.stringify(originalNotifications)) {
+      newChangedFields.add('notifications');
+    }
+
+    // Update changed fields state if different
+    if (newChangedFields.size !== changedFields.size || 
+        ![...newChangedFields].every(field => changedFields.has(field))) {
+      setChangedFields(newChangedFields);
+    }
+  }, [watchedValues, originalValues, changedFields]);
+
+  // Re-trigger validation when changed fields change
+  useEffect(() => {
+    if (changedFields.size > 0) {
+      trigger();
+    }
+  }, [changedFields, trigger]);
 
   // Notify parent of form dirty state changes
   useEffect(() => {
@@ -213,15 +309,30 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
     try {
       if (onSave) {
-        await onSave(data);
+        // Only submit changed fields
+        const changedData: Partial<ProfileFormValues> = {};
+        
+        changedFields.forEach(fieldName => {
+          if (fieldName in data) {
+            (changedData as any)[fieldName] = (data as any)[fieldName];
+          }
+        });
+
+        
+        await onSave(changedData as ProfileFormValues);
       }
+      
       setSaveSuccess(true);
       setTimeout(() => {
         setSaveSuccess(false);
         onSuccess?.(); // Close modal on successful save
       }, 1500);
 
-      // Reset form with new values
+      // Update original values and reset changed fields tracking
+      setOriginalValues(data);
+      setChangedFields(new Set());
+      
+      // Reset form with new values as original values
       reset(data);
     } catch (error) {
       setSaveError('Failed to save changes. Please try again.');
@@ -512,7 +623,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={isLoading || !isDirty}
+                disabled={isLoading || changedFields.size === 0}
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? (
@@ -523,7 +634,10 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                 ) : (
                   <>
                     <Save className="h-5 w-5" />
-                    Save Changes
+                    {changedFields.size > 0 
+                      ? `Save Changes (${changedFields.size} field${changedFields.size > 1 ? 's' : ''})`
+                      : 'Save Changes'
+                    }
                   </>
                 )}
               </button>
