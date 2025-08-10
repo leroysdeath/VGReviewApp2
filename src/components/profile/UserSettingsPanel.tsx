@@ -285,6 +285,22 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     // Update changed fields state if different
     if (newChangedFields.size !== changedFields.size || 
         ![...newChangedFields].every(field => changedFields.has(field))) {
+      
+      if (newChangedFields.size !== changedFields.size) {
+        console.warn('🔴 FIELD COUNT CHANGING:', {
+          oldSize: changedFields.size,
+          newSize: newChangedFields.size,
+          oldFields: Array.from(changedFields),
+          newFields: Array.from(newChangedFields),
+          allFormFields: ['username', 'displayName', 'bio', 'location', 'website', 'platform'],
+          currentValues: {
+            displayName: watchedValues.displayName,
+            bio: watchedValues.bio,
+            location: watchedValues.location,
+            platform: watchedValues.platform
+          }
+        });
+      }
       console.log('🟡 Updating changedFields state from', Array.from(changedFields), 'to', Array.from(newChangedFields));
       setChangedFields(newChangedFields);
     } else {
@@ -344,6 +360,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
   // Handle form submission
   const onSubmit = async (data: ProfileFormValues) => {
+    alert(`Form submitted! Changed fields: ${Array.from(changedFields).join(', ')}\nData keys: ${Object.keys(data).join(', ')}`);
     console.log('🔵 UserSettingsPanel - onSubmit called');
     console.log('📋 Raw form data received:', data);
     console.log('🔄 Changed fields array:', Array.from(changedFields));
