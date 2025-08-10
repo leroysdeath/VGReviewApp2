@@ -408,10 +408,18 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         
         try {
           alert('About to call onSave...');
-          await onSave(changedData as ProfileFormValues);
-          alert('onSave completed successfully');
+          console.log('Data being sent to onSave:', changedData);
+          alert(`Sending data to save: ${JSON.stringify(changedData)}`);
+          
+          if (onSave && typeof onSave === 'function') {
+            const result = await onSave(changedData as ProfileFormValues);
+            alert('onSave completed successfully');
+            return result;
+          } else {
+            throw new Error('onSave function is not available');
+          }
         } catch (error) {
-          alert(`onSave ERROR: ${error.message || error}`);
+          alert(`onSave ERROR: ${error?.message || error || 'Unknown error'}`);
           console.error('onSave error full details:', error);
           throw error;
         }
