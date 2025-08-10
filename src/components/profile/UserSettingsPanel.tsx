@@ -183,7 +183,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   const { 
     register, 
     handleSubmit, 
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, isValid },
     reset,
     watch,
     clearErrors,
@@ -193,6 +193,16 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     defaultValues: originalValues,
     mode: 'onChange'
   });
+
+  // Debug form initialization
+  useEffect(() => {
+    console.log('🟣 Form initialized with:');
+    console.log('🟣 defaultValues (originalValues):', originalValues);
+    console.log('🟣 errors object:', errors);
+    console.log('🟣 isDirty:', isDirty);
+    console.log('🟣 isValid:', isValid);
+    console.log('🟣 errors is empty:', Object.keys(errors).length === 0);
+  }, [originalValues, errors, isDirty, isValid]);
 
   // Reset form when initialData changes
   useEffect(() => {
@@ -222,26 +232,36 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
   // Track field changes
   useEffect(() => {
+    console.log('🟡 Checking for field changes...');
+    console.log('🟡 Current watchedValues:', watchedValues);
+    console.log('🟡 Original values:', originalValues);
+    
     const newChangedFields = new Set<string>();
     
     // Compare current values with original values
     if (watchedValues.username !== originalValues.username) {
       newChangedFields.add('username');
+      console.log('🟡 Username changed:', originalValues.username, '->', watchedValues.username);
     }
     if (watchedValues.displayName !== originalValues.displayName) {
       newChangedFields.add('displayName');
+      console.log('🟡 DisplayName changed:', originalValues.displayName, '->', watchedValues.displayName);
     }
     if (watchedValues.bio !== originalValues.bio) {
       newChangedFields.add('bio');
+      console.log('🟡 Bio changed:', originalValues.bio, '->', watchedValues.bio);
     }
     if (watchedValues.location !== originalValues.location) {
       newChangedFields.add('location');
+      console.log('🟡 Location changed:', originalValues.location, '->', watchedValues.location);
     }
     if (watchedValues.website !== originalValues.website) {
       newChangedFields.add('website');
+      console.log('🟡 Website changed:', originalValues.website, '->', watchedValues.website);
     }
     if (watchedValues.platform !== originalValues.platform) {
       newChangedFields.add('platform');
+      console.log('🟡 Platform changed:', originalValues.platform, '->', watchedValues.platform);
     }
     
     // Check notifications changes
@@ -249,12 +269,19 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     const originalNotifications = originalValues.notifications || {};
     if (JSON.stringify(currentNotifications) !== JSON.stringify(originalNotifications)) {
       newChangedFields.add('notifications');
+      console.log('🟡 Notifications changed:', originalNotifications, '->', currentNotifications);
     }
+
+    console.log('🟡 Changed fields result:', Array.from(newChangedFields));
+    console.log('🟡 Previous changed fields:', Array.from(changedFields));
 
     // Update changed fields state if different
     if (newChangedFields.size !== changedFields.size || 
         ![...newChangedFields].every(field => changedFields.has(field))) {
+      console.log('🟡 Updating changedFields state from', Array.from(changedFields), 'to', Array.from(newChangedFields));
       setChangedFields(newChangedFields);
+    } else {
+      console.log('🟡 No change in changedFields state needed');
     }
   }, [watchedValues, originalValues, changedFields]);
 
@@ -650,6 +677,18 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               <button
                 type="submit"
                 disabled={isLoading || changedFields.size === 0}
+                onClick={() => {
+                  console.log('🔴 BUTTON CLICKED!');
+                  console.log('🔴 Button state:', {
+                    isLoading,
+                    changedFieldsSize: changedFields.size,
+                    changedFields: Array.from(changedFields),
+                    errors,
+                    isDirty,
+                    isValid,
+                    disabled: isLoading || changedFields.size === 0
+                  });
+                }}
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? (
