@@ -442,6 +442,28 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               )}
             </div>
 
+            {/* Gaming Platform */}
+            <div>
+              <label htmlFor="platform" className="block text-sm font-medium text-gray-300 mb-1">
+                Gaming Platform (optional)
+              </label>
+              <div className="relative">
+                <Gamepad2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                <input
+                  id="platform"
+                  type="text"
+                  {...register('platform')}
+                  maxLength={50}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                  placeholder="PC, PlayStation, Xbox, etc."
+                  disabled={isLoading}
+                />
+              </div>
+              {errors.platform && (
+                <p className="mt-1 text-sm text-red-400">{errors.platform.message}</p>
+              )}
+            </div>
+
             {/* Location */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-300 mb-1">
@@ -483,28 +505,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               </div>
               {errors.website && (
                 <p className="mt-1 text-sm text-red-400">{errors.website.message}</p>
-              )}
-            </div>
-
-            {/* Gaming Platform */}
-            <div>
-              <label htmlFor="platform" className="block text-sm font-medium text-gray-300 mb-1">
-                Gaming Platform (optional)
-              </label>
-              <div className="relative">
-                <Gamepad2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                <input
-                  id="platform"
-                  type="text"
-                  {...register('platform')}
-                  maxLength={50}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                  placeholder="PC, PlayStation, Xbox, etc."
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.platform && (
-                <p className="mt-1 text-sm text-red-400">{errors.platform.message}</p>
               )}
             </div>
 
