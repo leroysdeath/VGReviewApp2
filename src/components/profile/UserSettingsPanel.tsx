@@ -272,6 +272,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       console.log('🟡 Notifications changed:', originalNotifications, '->', currentNotifications);
     }
 
+    console.log('🔥 Field change detection:', {
+      username: { current: watchedValues.username, original: originalValues.username, changed: watchedValues.username !== originalValues.username },
+      displayName: { current: watchedValues.displayName, original: originalValues.displayName, changed: watchedValues.displayName !== originalValues.displayName },
+      bio: { current: watchedValues.bio, original: originalValues.bio, changed: watchedValues.bio !== originalValues.bio },
+      totalChangedFields: newChangedFields.size
+    });
+    
     console.log('🟡 Changed fields result:', Array.from(newChangedFields));
     console.log('🟡 Previous changed fields:', Array.from(changedFields));
 
@@ -371,6 +378,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
         console.log('📤 Final data being passed to onSave:', changedData);
         console.log('📤 Data types:', Object.entries(changedData).map(([key, value]) => `${key}: ${typeof value}`));
+        
+        console.log('🚨 CRITICAL: About to call onSave with:', {
+          changedData,
+          changedDataKeys: Object.keys(changedData),
+          changedDataJSON: JSON.stringify(changedData),
+          changedFieldsBeforeSave: Array.from(changedFields)
+        });
         
         await onSave(changedData as ProfileFormValues);
       }
