@@ -43,7 +43,9 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       if (isOpen && userId) {
         setIsLoading(true);
         try {
-          console.log('Fetching user data for userId:', userId);
+          console.log('🟢 UserSettingsModal - fetchUserData called');
+          console.log('👤 Fetching user data for userId:', userId);
+          console.log('📝 Query: SELECT * FROM user WHERE provider_id =', userId);
           
           const { data, error } = await supabase
             .from('user')
@@ -51,10 +53,19 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
             .eq('provider_id', userId)
             .single();
 
+          console.log('💾 Raw database response:', { data, error });
+          console.log('🔍 Error details:', error ? {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          } : 'No error');
+
           if (error) {
-            console.error('Error fetching user data:', error);
+            console.error('🔴 Error fetching user data:', error);
+            console.log('⚠️ Setting default user data due to error');
             // Set default data if user not found
-            setUserData({
+            const defaultData = {
               username: '',
               displayName: '',
               email: '',
@@ -63,10 +74,25 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
               website: '',
               platform: '',
               avatar: ''
-            });
+            };
+            console.log('📋 Default user data set:', defaultData);
+            setUserData(defaultData);
           } else {
-            console.log('Fetched user data:', data);
-            console.log('Username from DB:', data.name, data.username);
+            console.log('✅ Successfully fetched user data from database');
+            console.log('📥 Raw user data received:', data);
+            console.log('🔍 Field analysis:');
+            console.log('  📝 username field:', data.username);
+            console.log('  📝 name field:', data.name);
+            console.log('  📝 display_name field:', data.display_name);
+            console.log('  📝 bio field:', data.bio);
+            console.log('  📝 location field:', data.location);
+            console.log('  📝 website field:', data.website);
+            console.log('  📝 platform field:', data.platform);
+            console.log('  📝 avatar_url field:', data.avatar_url);
+            console.log('  📝 picurl field:', data.picurl);
+            console.log('  📧 email field:', data.email);
+            
+            console.log('🔄 Starting field transformation (snake_case -> camelCase)...');
             const processedUserData = {
               username: data.username || data.name || '',
               displayName: data.display_name || '',
@@ -77,13 +103,32 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
               platform: data.platform || '',
               avatar: data.avatar_url || data.picurl || ''
             };
-            console.log('Processed user data:', processedUserData);
+            
+            console.log('📤 Processed user data (for UserSettingsPanel):', processedUserData);
+            console.log('🔍 Transformation details:');
+            console.log('  ✅ username:', `'${data.username}' || '${data.name}' -> '${processedUserData.username}'`);
+            console.log('  ✅ displayName:', `'${data.display_name}' -> '${processedUserData.displayName}'`);
+            console.log('  ✅ bio:', `'${data.bio}' -> '${processedUserData.bio}'`);
+            console.log('  ✅ location:', `'${data.location}' -> '${processedUserData.location}'`);
+            console.log('  ✅ website:', `'${data.website}' -> '${processedUserData.website}'`);
+            console.log('  ✅ platform:', `'${data.platform}' -> '${processedUserData.platform}'`);
+            console.log('  ✅ avatar:', `'${data.avatar_url}' || '${data.picurl}' -> '${processedUserData.avatar}'`);
+            console.log('  ✅ email:', `'${data.email}' -> '${processedUserData.email}'`);
+            
             setUserData(processedUserData);
+            console.log('🎯 UserData state updated with processed data');
           }
         } catch (error) {
-          console.error('Error fetching user data:', error);
+          console.error('💥 Unexpected error in fetchUserData:', error);
+          console.error('🔴 Error details:', {
+            name: error instanceof Error ? error.name : 'Unknown',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : 'No stack trace'
+          });
+          
+          console.log('⚠️ Setting default user data due to catch block');
           // Set default data on error
-          setUserData({
+          const errorDefaultData = {
             username: '',
             displayName: '',
             email: '',
@@ -92,7 +137,9 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
             website: '',
             platform: '',
             avatar: ''
-          });
+          };
+          console.log('📋 Error default data set:', errorDefaultData);
+          setUserData(errorDefaultData);
         } finally {
           setIsLoading(false);
         }
