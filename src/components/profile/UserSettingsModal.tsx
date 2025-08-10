@@ -16,6 +16,15 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   userId,
   onSave 
 }) => {
+  // Debug props at component start
+  console.log('🚨 UserSettingsModal props received:', { 
+    isOpen, 
+    hasOnClose: !!onClose, 
+    userId, 
+    hasOnSave: !!onSave, 
+    onSaveType: typeof onSave,
+    onSaveFunction: onSave 
+  });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [userData, setUserData] = useState<any>({
