@@ -180,6 +180,12 @@ const ProfilePage = () => {
 
   // Handle profile save
   const handleSaveProfile = async (profileData: any) => {
+    console.log('🚨 CRITICAL: handleSaveProfile received:', {
+      profileData,
+      profileDataKeys: Object.keys(profileData),
+      profileDataJSON: JSON.stringify(profileData),
+      profileDataType: typeof profileData
+    });
     console.log('🟢 ProfilePage - handleSaveProfile called');
     console.log('📥 ProfileData received from form:', profileData);
     console.log('📥 ProfileData keys:', Object.keys(profileData));
