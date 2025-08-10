@@ -7,12 +7,14 @@ interface UserSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  onSave?: (data: any) => Promise<void>;
 }
 
 export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ 
   isOpen, 
   onClose,
-  userId 
+  userId,
+  onSave 
 }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -222,6 +224,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                   platform: '',
                   avatar: ''
                 }}
+                onSave={onSave}
                 onSuccess={handleSuccess}
                 onFormChange={handleFormChange}
               />
