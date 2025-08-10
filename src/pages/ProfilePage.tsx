@@ -70,7 +70,7 @@ const ProfilePage = () => {
       
       setUserProfile({
         id: user.id,
-        username: profile.name || profile.username,
+        username: profile.username || profile.name,
         avatar: profile.picurl || null,
         bio: profile.bio || '',
         joinDate: new Date(profile.created_at).toLocaleString('default', { month: 'long', year: 'numeric' }),
