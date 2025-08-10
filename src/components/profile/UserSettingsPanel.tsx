@@ -373,6 +373,9 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     setSaveSuccess(false);
 
     try {
+      console.log('🔍 onSave check:', { onSave, hasOnSave: !!onSave, onSaveType: typeof onSave });
+      alert(`onSave check: hasOnSave=${!!onSave}, type=${typeof onSave}`);
+      
       if (onSave) {
         // Only submit changed fields
         const changedData: Partial<ProfileFormValues> = {};
@@ -412,6 +415,11 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
           console.error('onSave error full details:', error);
           throw error;
         }
+      } else {
+        alert('🔴 ERROR: onSave is undefined! Cannot save profile changes.');
+        console.error('🔴 onSave prop is undefined - profile cannot be saved');
+        setSaveError('Save function not available. Please refresh and try again.');
+        return;
       }
       
       setSaveSuccess(true);
