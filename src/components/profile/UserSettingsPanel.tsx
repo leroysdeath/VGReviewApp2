@@ -295,7 +295,14 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setAvatarPreview(e.target?.result as string);
+        const newAvatarData = e.target?.result as string;
+        setAvatarPreview(newAvatarData);
+        
+        // Mark avatar as changed if different from original
+        const originalAvatar = originalValues.avatar || initialData.avatar;
+        if (newAvatarData !== originalAvatar) {
+          setChangedFields(prev => new Set([...prev, 'avatar']));
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -303,6 +310,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
   // Handle form submission
   const onSubmit = async (data: ProfileFormValues) => {
+    console.log('🔵 UserSettingsPanel - onSubmit called');
+    console.log('📋 Raw form data received:', data);
+    console.log('🔄 Changed fields array:', Array.from(changedFields));
+    console.log('📊 Original values:', originalValues);
+    console.log('🖼️ Avatar preview:', avatarPreview);
+    console.log('🖼️ Original avatar:', originalValues.avatar || initialData.avatar);
+    
     setIsLoading(true);
     setSaveError(null);
     setSaveSuccess(false);
@@ -312,12 +326,24 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         // Only submit changed fields
         const changedData: Partial<ProfileFormValues> = {};
         
+        console.log('🔍 Processing changed fields...');
         changedFields.forEach(fieldName => {
           if (fieldName in data) {
             (changedData as any)[fieldName] = (data as any)[fieldName];
+            console.log(`  ✅ Added ${fieldName}:`, (data as any)[fieldName]);
+          } else {
+            console.log(`  ❌ Field ${fieldName} not found in form data`);
           }
         });
 
+        // Include avatar if it has changed
+        if (avatarPreview && avatarPreview !== (originalValues.avatar || initialData.avatar)) {
+          (changedData as any).avatar = avatarPreview;
+          console.log('🖼️ Added changed avatar to submit data');
+        }
+
+        console.log('📤 Final data being passed to onSave:', changedData);
+        console.log('📤 Data types:', Object.entries(changedData).map(([key, value]) => `${key}: ${typeof value}`));
         
         await onSave(changedData as ProfileFormValues);
       }
