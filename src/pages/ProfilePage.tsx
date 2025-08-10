@@ -180,6 +180,7 @@ const ProfilePage = () => {
 
   // Handle profile save
   const handleSaveProfile = async (profileData: any) => {
+    alert(`handleSaveProfile called!\nData keys: ${Object.keys(profileData).join(', ')}\nData values: ${JSON.stringify(profileData)}`);
     console.log('🚨 CRITICAL: handleSaveProfile received:', {
       profileData,
       profileDataKeys: Object.keys(profileData),
