@@ -180,17 +180,18 @@ const ProfilePage = () => {
 
   // Handle profile save
   const handleSaveProfile = async (profileData: any) => {
-    alert(`handleSaveProfile called!\nData keys: ${Object.keys(profileData).join(', ')}\nData values: ${JSON.stringify(profileData)}`);
-    console.log('🚨 CRITICAL: handleSaveProfile received:', {
-      profileData,
-      profileDataKeys: Object.keys(profileData),
-      profileDataJSON: JSON.stringify(profileData),
-      profileDataType: typeof profileData
-    });
-    console.log('🟢 ProfilePage - handleSaveProfile called');
-    console.log('📥 ProfileData received from form:', profileData);
-    console.log('📥 ProfileData keys:', Object.keys(profileData));
-    console.log('📥 ProfileData values:', Object.entries(profileData));
+    try {
+      alert(`handleSaveProfile called!\nData keys: ${Object.keys(profileData).join(', ')}\nData values: ${JSON.stringify(profileData)}`);
+      console.log('🚨 CRITICAL: handleSaveProfile received:', {
+        profileData,
+        profileDataKeys: Object.keys(profileData),
+        profileDataJSON: JSON.stringify(profileData),
+        profileDataType: typeof profileData
+      });
+      console.log('🟢 ProfilePage - handleSaveProfile called');
+      console.log('📥 ProfileData received from form:', profileData);
+      console.log('📥 ProfileData keys:', Object.keys(profileData));
+      console.log('📥 ProfileData values:', Object.entries(profileData));
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -426,6 +427,11 @@ const ProfilePage = () => {
       }
       
       console.error('🔴 Profile save failed - throwing error to UI');
+      throw error;
+    }
+    } catch (error) {
+      alert(`handleSaveProfile ERROR: ${error.message || error}`);
+      console.error('handleSaveProfile full error:', error);
       throw error;
     }
   };
