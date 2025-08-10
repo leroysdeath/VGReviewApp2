@@ -403,7 +403,15 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
           changedFieldsBeforeSave: Array.from(changedFields)
         });
         
-        await onSave(changedData as ProfileFormValues);
+        try {
+          alert('About to call onSave...');
+          await onSave(changedData as ProfileFormValues);
+          alert('onSave completed successfully');
+        } catch (error) {
+          alert(`onSave ERROR: ${error.message || error}`);
+          console.error('onSave error full details:', error);
+          throw error;
+        }
       }
       
       setSaveSuccess(true);
