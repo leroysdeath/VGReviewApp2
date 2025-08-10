@@ -196,11 +196,11 @@ export const UserSearchPage: React.FC = () => {
         const followerCount = followerCounts.get(userIdStr) || 0;
         const followingCount = followingCounts.get(userIdStr) || 0;
         
-        console.log(`User ${user.name} (ID: ${userIdStr}): ${followerCount} followers, ${followingCount} following`);
+        console.log(`User ${user.username || user.name} (ID: ${userIdStr}): ${followerCount} followers, ${followingCount} following`);
         
         return {
           id: userIdStr,
-          username: user.name || 'Anonymous',
+          username: user.username || user.name || 'Anonymous',
           bio: user.bio || '',
           avatar: user.picurl || '',
           reviewCount: reviewCounts.get(userIdStr) || 0,
