@@ -186,7 +186,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   });
 
 
-  // Form setup with dynamic validation
+  // Form setup with static validation (always validate all fields)
   const { 
     register, 
     handleSubmit, 
@@ -196,7 +196,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     clearErrors,
     trigger
   } = useForm<ProfileFormValues>({
-    resolver: zodResolver(getDynamicProfileSchema(changedFields)),
+    resolver: zodResolver(getProfileSchema()),
     defaultValues: originalValues,
     mode: 'onChange'
   });
@@ -209,6 +209,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     console.log('🟣 isDirty:', isDirty);
     console.log('🟣 isValid:', isValid);
     console.log('🟣 errors is empty:', Object.keys(errors).length === 0);
+    console.log('🟣 using static schema validation (not dynamic)');
   }, [originalValues, errors, isDirty, isValid]);
 
   // Reset form when initialData changes
@@ -315,12 +316,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     }
   }, [watchedValues, originalValues, changedFields]);
 
-  // Re-trigger validation when changed fields change
-  useEffect(() => {
-    if (changedFields.size > 0) {
-      trigger();
-    }
-  }, [changedFields, trigger]);
+  // Note: Using static validation schema, so no need to re-trigger based on changed fields
 
   // Notify parent of form dirty state changes
   useEffect(() => {
@@ -425,13 +421,17 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         });
         alert(`🚨 FINAL CHECK - onSave: ${onSave}, type: ${typeof onSave}, isFunction: ${typeof onSave === 'function'}`);
         
-        if (onSave && typeof onSave === 'function') {
-          const result = await onSave(changedData as ProfileFormValues);
-          alert('onSave completed successfully');
-          return result;
-        } else {
-          throw new Error('onSave function is not available');
+        if (!onSave) {
+          throw new Error('onSave function is not provided. Please check the prop chain from ProfilePage.');
         }
+        
+        if (typeof onSave !== 'function') {
+          throw new Error(`onSave is not a function. It is: ${typeof onSave}`);
+        }
+        
+        const result = await onSave(changedData as ProfileFormValues);
+        alert('onSave completed successfully');
+        return result;
       } catch (error) {
         alert(`onSave ERROR: ${error?.message || error || 'Unknown error'}`);
         console.error('onSave error full details:', error);
