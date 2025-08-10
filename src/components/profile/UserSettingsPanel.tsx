@@ -154,6 +154,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   onSuccess,
   onFormChange
 }) => {
+  // Debug props at component level
+  console.log('🟦 UserSettingsPanel component rendered with onSave:', {
+    hasOnSave: !!onSave,
+    onSaveType: typeof onSave,
+    onSaveFunction: onSave
+  });
+  
   const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'notifications'>('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -409,6 +416,14 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         alert('About to call onSave...');
         console.log('Data being sent to onSave:', changedData);
         alert(`Sending data to save: ${JSON.stringify(changedData)}`);
+        
+        console.log('🚨 FINAL onSave check before call:', {
+          onSave,
+          onSaveType: typeof onSave,
+          hasOnSave: !!onSave,
+          isFunction: typeof onSave === 'function'
+        });
+        alert(`🚨 FINAL CHECK - onSave: ${onSave}, type: ${typeof onSave}, isFunction: ${typeof onSave === 'function'}`);
         
         if (onSave && typeof onSave === 'function') {
           const result = await onSave(changedData as ProfileFormValues);
