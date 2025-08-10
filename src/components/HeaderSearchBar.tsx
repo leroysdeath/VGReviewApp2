@@ -327,7 +327,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
   };
 
   const handleUserClick = (user: User) => {
-    saveRecentSearch(user.name, 'users');
+    saveRecentSearch(user.username || user.name, 'users');
     navigate(`/user/${user.id}`);
     setIsOpen(false);
     setShowSuggestions(false);
@@ -601,7 +601,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
                       {user.picurl ? (
                         <img
                           src={user.picurl}
-                          alt={user.name}
+                          alt={user.username || user.name}
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
@@ -615,7 +615,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
                     {/* User Info */}
                     <div className="min-w-0 flex-1">
                       <div className="text-white font-medium truncate group-hover:text-purple-300 transition-colors">
-                        {user.name}
+                        {user.username || user.name}
                       </div>
                       {user.bio && (
                         <div className="text-xs text-gray-400 truncate">
