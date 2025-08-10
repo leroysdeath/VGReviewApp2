@@ -258,7 +258,13 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                 <span className="ml-3 text-gray-400">Loading profile data...</span>
               </div>
             ) : (
-              <UserSettingsPanel 
+              <>
+                {console.log('UserSettingsModal props check:', {
+                  hasOnSave: !!onSave,
+                  onSaveType: typeof onSave,
+                  userId: userId
+                })}
+                <UserSettingsPanel 
                 key={isLoading ? 'loading' : 'loaded'}
                 userId={userId}
                 initialData={userData || {
@@ -275,6 +281,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                 onSuccess={handleSuccess}
                 onFormChange={handleFormChange}
               />
+              </>
             )}
           </div>
         </div>
