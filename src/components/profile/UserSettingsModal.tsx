@@ -66,7 +66,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
             console.log('Fetched user data:', data);
             console.log('Username from DB:', data.name, data.username);
             const processedUserData = {
-              username: data.name || data.username || '',
+              username: data.username || data.name || '',
               displayName: data.display_name || '',
               email: data.email || '',
               bio: data.bio || '',
