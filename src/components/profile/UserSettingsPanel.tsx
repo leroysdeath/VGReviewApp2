@@ -73,37 +73,94 @@ const getProfileSchema = () => z.object({
   }).optional()
 });
 
-// Dynamic validation schema based on changed fields
+// Dynamic validation schema based on changed fields - only validates fields that have been modified
 const getDynamicProfileSchema = (changedFields: Set<string>) => {
   const schema: any = {};
+  
+  // Always include all fields in schema, but only apply validation to changed fields
   
   if (changedFields.has('username')) {
     schema.username = z.string().min(3, 'Username must be at least 3 characters');
   } else {
-    schema.username = z.string().optional();
+    schema.username = z.string().optional().or(z.literal(''));
   }
   
   if (changedFields.has('displayName')) {
-    schema.displayName = z.string().optional();
+    schema.displayName = z.string().optional().or(z.literal(''));
+  } else {
+    schema.displayName = z.string().optional().or(z.literal(''));
   }
   
   if (changedFields.has('bio')) {
-    schema.bio = z.string().max(160, 'Bio must be 160 characters or less').optional();
+    schema.bio = z.string().max(160, 'Bio must be 160 characters or less').optional().or(z.literal(''));
+  } else {
+    schema.bio = z.string().optional().or(z.literal(''));
   }
   
   if (changedFields.has('location')) {
-    schema.location = z.string().max(50, 'Location must be 50 characters or less').optional();
+    schema.location = z.string().max(50, 'Location must be 50 characters or less').optional().or(z.literal(''));
+  } else {
+    schema.location = z.string().optional().or(z.literal(''));
   }
   
   if (changedFields.has('website')) {
-    schema.website = z.string().url('Please enter a valid URL').or(z.string().length(0)).optional();
+    // Apply full website validation with transformation only if website field is being changed
+    schema.website = z.string()
+      .optional()
+      .transform((val) => {
+        // Handle empty or whitespace-only strings
+        if (!val || val.trim() === '') {
+          return '';
+        }
+        
+        // Trim whitespace
+        const trimmed = val.trim();
+        
+        // If it already has protocol, return as is
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+          return trimmed;
+        }
+        
+        // Auto-prepend https:// for URLs without protocol
+        return `https://${trimmed}`;
+      })
+      .refine((val) => {
+        // Allow empty strings
+        if (!val || val === '') {
+          return true;
+        }
+        
+        // Validate URL format
+        try {
+          new URL(val);
+          return true;
+        } catch {
+          return false;
+        }
+      }, {
+        message: 'Please enter a valid URL (e.g., example.com or https://example.com)'
+      });
+  } else {
+    // If website field is not changed, accept any value without validation
+    schema.website = z.string().optional().or(z.literal(''));
   }
   
   if (changedFields.has('platform')) {
-    schema.platform = z.string().optional();
+    schema.platform = z.string().optional().or(z.literal(''));
+  } else {
+    schema.platform = z.string().optional().or(z.literal(''));
   }
   
   if (changedFields.has('notifications')) {
+    schema.notifications = z.object({
+      email: z.boolean().optional(),
+      push: z.boolean().optional(),
+      reviews: z.boolean().optional(),
+      mentions: z.boolean().optional(),
+      followers: z.boolean().optional(),
+      achievements: z.boolean().optional()
+    }).optional();
+  } else {
     schema.notifications = z.object({
       email: z.boolean().optional(),
       push: z.boolean().optional(),
@@ -220,7 +277,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   });
 
 
-  // Form setup with static validation (always validate all fields)
+  // Form setup with dynamic validation (only validate changed fields)
   const { 
     register, 
     handleSubmit, 
@@ -230,7 +287,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     clearErrors,
     trigger
   } = useForm<ProfileFormValues>({
-    resolver: zodResolver(getProfileSchema()),
+    resolver: zodResolver(getDynamicProfileSchema(changedFields)),
     defaultValues: originalValues,
     mode: 'onChange'
   });
@@ -243,7 +300,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     console.log('🟣 isDirty:', isDirty);
     console.log('🟣 isValid:', isValid);
     console.log('🟣 errors is empty:', Object.keys(errors).length === 0);
-    console.log('🟣 using static schema validation with improved website handling');
+    console.log('🟣 using DYNAMIC schema validation - only validates changed fields:', Array.from(changedFields));
     
     // Log specific field errors for debugging
     if (Object.keys(errors).length > 0) {
@@ -326,6 +383,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       totalChangedFields: newChangedFields.size
     });
     
+    console.log('🎯 Dynamic validation will apply to these fields only:', Array.from(newChangedFields));
+    
     console.log('🟡 Changed fields result:', Array.from(newChangedFields));
     console.log('🟡 Previous changed fields:', Array.from(changedFields));
 
@@ -355,7 +414,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     }
   }, [watchedValues, originalValues, changedFields]);
 
-  // Note: Using static validation schema, so no need to re-trigger based on changed fields
+  // Re-trigger validation when changed fields change (needed for dynamic validation)
+  useEffect(() => {
+    if (changedFields.size > 0) {
+      console.log('🔄 Re-triggering validation for changed fields:', Array.from(changedFields));
+      trigger();
+    }
+  }, [changedFields, trigger]);
 
   // Notify parent of form dirty state changes
   useEffect(() => {
