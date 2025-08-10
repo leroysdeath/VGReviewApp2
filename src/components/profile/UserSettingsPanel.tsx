@@ -424,6 +424,17 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
           throw error;
         }
       } else {
+        console.error('🔴 onSave is not defined at submission time');
+        alert(`🔴 DEBUG: onSave is ${onSave}, type: ${typeof onSave}, hasOnSave: ${!!onSave}`);
+        console.error('🔴 Full onSave analysis:', {
+          onSave,
+          onSaveType: typeof onSave,
+          hasOnSave: !!onSave,
+          onSaveString: String(onSave),
+          isNull: onSave === null,
+          isUndefined: onSave === undefined,
+          isFalsy: !onSave
+        });
         alert('🔴 ERROR: onSave is undefined! Cannot save profile changes.');
         console.error('🔴 onSave prop is undefined - profile cannot be saved');
         setSaveError('Save function not available. Please refresh and try again.');
