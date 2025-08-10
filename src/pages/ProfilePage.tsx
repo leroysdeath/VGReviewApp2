@@ -176,6 +176,145 @@ const ProfilePage = () => {
     }
   }, [navigate]);
 
+  // Handle profile save
+  const handleSaveProfile = async (profileData: any) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Prepare update data - only include changed fields
+      const updateData: any = {};
+      
+      // Map form fields to database columns
+      if ('username' in profileData) {
+        updateData.username = profileData.username;
+        updateData.name = profileData.username; // Also update name field for backwards compatibility
+      }
+      
+      if ('displayName' in profileData) {
+        updateData.display_name = profileData.displayName;
+      }
+      
+      if ('bio' in profileData) {
+        updateData.bio = profileData.bio;
+      }
+      
+      if ('location' in profileData) {
+        updateData.location = profileData.location;
+      }
+      
+      if ('website' in profileData) {
+        updateData.website = profileData.website;
+      }
+      
+      if ('platform' in profileData) {
+        updateData.platform = profileData.platform;
+      }
+
+      // Handle avatar upload if provided
+      if (profileData.avatar && profileData.avatar.startsWith('data:')) {
+        try {
+          // Convert data URL to blob
+          const response = await fetch(profileData.avatar);
+          const blob = await response.blob();
+          
+          // Validate image type and size
+          if (!blob.type.startsWith('image/')) {
+            throw new Error('File must be an image');
+          }
+          
+          if (blob.size > 2 * 1024 * 1024) { // 2MB limit
+            throw new Error('Image must be smaller than 2MB');
+          }
+          
+          // Generate unique filename
+          const fileExt = blob.type.split('/')[1] || 'jpg';
+          const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+          
+          console.log('Uploading avatar:', fileName, 'Size:', blob.size);
+          
+          // Upload to Supabase storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, blob, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (uploadError) {
+            console.error('Avatar upload error:', uploadError);
+            throw uploadError;
+          } else {
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(fileName);
+            
+            console.log('Avatar uploaded successfully:', publicUrl);
+            updateData.picurl = publicUrl;
+            updateData.avatar_url = publicUrl;
+          }
+        } catch (avatarError) {
+          console.error('Error processing avatar:', avatarError);
+          // Throw error to let user know avatar upload failed
+          throw new Error(`Avatar upload failed: ${avatarError.message}`);
+        }
+      }
+
+      console.log('Updating profile with data:', updateData);
+
+      // Don't proceed if no data to update
+      if (Object.keys(updateData).length === 0) {
+        console.log('No changes to save');
+        return;
+      }
+
+      // Check if user profile exists first
+      const { data: existingUser } = await supabase
+        .from('user')
+        .select('id')
+        .eq('provider_id', user.id)
+        .single();
+
+      let result;
+      if (existingUser) {
+        // Update existing user profile
+        result = await supabase
+          .from('user')
+          .update(updateData)
+          .eq('provider_id', user.id);
+      } else {
+        // Create new user profile
+        const newUserData = {
+          provider_id: user.id,
+          email: user.email,
+          created_at: new Date().toISOString(),
+          ...updateData
+        };
+        
+        result = await supabase
+          .from('user')
+          .insert([newUserData]);
+      }
+
+      if (result.error) {
+        console.error('Profile save error:', result.error);
+        throw result.error;
+      }
+
+      console.log('Profile saved successfully');
+      
+      // Refresh profile data to reflect changes
+      await fetchProfileData();
+      
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      throw error;
+    }
+  };
+
   // Fetch profile data on component mount
   useEffect(() => {
     fetchProfileData();
@@ -277,6 +416,7 @@ const ProfilePage = () => {
           isOpen={showSettingsModal}
           onClose={() => setShowSettingsModal(false)}
           userId={currentUserId}
+          onSave={handleSaveProfile}
         />
       </Suspense>
 
