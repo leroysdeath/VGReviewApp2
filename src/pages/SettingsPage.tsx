@@ -29,7 +29,7 @@ const SettingsPage = () => {
 
       if (error && error.code !== 'PGRST116') throw error;
        if (data) {
-        setDisplayName(data.name || data.username || '');
+        setDisplayName(data.username || data.name || '');
         setBio(data.bio || '');
         setAvatarUrl(data.picurl || '');
         setLocation(data.location || '');
