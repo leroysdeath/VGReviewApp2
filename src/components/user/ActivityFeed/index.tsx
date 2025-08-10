@@ -371,7 +371,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                           '&:hover': { color: '#7289DA' }
                         }}
                       >
-                        {activity.user.name}
+                        {activity.user.username || activity.user.name}
                       </Link>
                       <Typography variant="body2" color="#818384">
                         {formatRelativeTime(activity.timestamp)}
@@ -444,11 +444,11 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                     <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Avatar 
                         src={activity.user.avatar} 
-                        alt={activity.user.name}
+                        alt={activity.user.username || activity.user.name}
                         sx={{ width: 24, height: 24 }}
                       />
                       <Typography variant="caption" color="#818384">
-                        {activity.user.name}
+                        {activity.user.username || activity.user.name}
                       </Typography>
                     </Box>
                   )}
