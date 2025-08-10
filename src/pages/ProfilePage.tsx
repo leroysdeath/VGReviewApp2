@@ -60,6 +60,7 @@ const ProfilePage = () => {
       const profile = profileData || {
         name: user.user_metadata?.username || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
         username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
+        display_name: user.user_metadata?.name || '',
         bio: '',
         picurl: user.user_metadata?.avatar_url || null,
         created_at: new Date().toISOString(),
@@ -71,6 +72,7 @@ const ProfilePage = () => {
       setUserProfile({
         id: user.id,
         username: profile.username || profile.name,
+        displayName: profile.display_name || '',
         avatar: profile.picurl || null,
         bio: profile.bio || '',
         joinDate: new Date(profile.created_at).toLocaleString('default', { month: 'long', year: 'numeric' }),
@@ -272,25 +274,34 @@ const ProfilePage = () => {
       }
 
       // Check if user profile exists first
-      const { data: existingUser } = await supabase
+      const { data: existingUser, error: selectError } = await supabase
         .from('user')
         .select('id')
         .eq('provider_id', user.id)
         .single();
 
       let result;
-      if (existingUser) {
-        // Update existing user profile
+      if (existingUser || (selectError && selectError.code !== 'PGRST116')) {
+        // Update existing user profile (or if there was an error other than "not found")
+        if (selectError && selectError.code !== 'PGRST116') {
+          console.warn('Error checking user existence:', selectError);
+        }
+        
+        // Add updated_at timestamp for updates
+        updateData.updated_at = new Date().toISOString();
+        
         result = await supabase
           .from('user')
           .update(updateData)
           .eq('provider_id', user.id);
       } else {
-        // Create new user profile
+        // Create new user profile (selectError.code === 'PGRST116' means no rows found)
         const newUserData = {
           provider_id: user.id,
           email: user.email,
+          provider: 'supabase',
           created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
           ...updateData
         };
         
