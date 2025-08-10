@@ -533,6 +533,12 @@ const ProfilePage = () => {
 
       {/* User Settings Modal */}
       <Suspense fallback={<div />}>
+        {console.log('🚨 ProfilePage rendering UserSettingsModal with:', {
+          showSettingsModal,
+          currentUserId,
+          hasHandleSaveProfile: !!handleSaveProfile,
+          handleSaveProfileType: typeof handleSaveProfile
+        })}
         <UserSettingsModal
           isOpen={showSettingsModal}
           onClose={() => setShowSettingsModal(false)}
