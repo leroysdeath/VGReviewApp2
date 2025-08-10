@@ -376,69 +376,51 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       console.log('🔍 onSave check:', { onSave, hasOnSave: !!onSave, onSaveType: typeof onSave });
       alert(`onSave check: hasOnSave=${!!onSave}, type=${typeof onSave}`);
       
-      if (onSave) {
-        // Only submit changed fields
-        const changedData: Partial<ProfileFormValues> = {};
-        
-        console.log('🔍 Processing changed fields...');
-        changedFields.forEach(fieldName => {
-          if (fieldName in data) {
-            (changedData as any)[fieldName] = (data as any)[fieldName];
-            console.log(`  ✅ Added ${fieldName}:`, (data as any)[fieldName]);
-          } else {
-            console.log(`  ❌ Field ${fieldName} not found in form data`);
-          }
-        });
-
-        // Include avatar if it has changed
-        if (avatarPreview && avatarPreview !== (originalValues.avatar || initialData.avatar)) {
-          (changedData as any).avatar = avatarPreview;
-          console.log('🖼️ Added changed avatar to submit data');
+      // Only submit changed fields
+      const changedData: Partial<ProfileFormValues> = {};
+      
+      console.log('🔍 Processing changed fields...');
+      changedFields.forEach(fieldName => {
+        if (fieldName in data) {
+          (changedData as any)[fieldName] = (data as any)[fieldName];
+          console.log(`  ✅ Added ${fieldName}:`, (data as any)[fieldName]);
+        } else {
+          console.log(`  ❌ Field ${fieldName} not found in form data`);
         }
+      });
 
-        console.log('📤 Final data being passed to onSave:', changedData);
-        console.log('📤 Data types:', Object.entries(changedData).map(([key, value]) => `${key}: ${typeof value}`));
+      // Include avatar if it has changed
+      if (avatarPreview && avatarPreview !== (originalValues.avatar || initialData.avatar)) {
+        (changedData as any).avatar = avatarPreview;
+        console.log('🖼️ Added changed avatar to submit data');
+      }
+
+      console.log('📤 Final data being passed to onSave:', changedData);
+      console.log('📤 Data types:', Object.entries(changedData).map(([key, value]) => `${key}: ${typeof value}`));
+      
+      console.log('🚨 CRITICAL: About to call onSave with:', {
+        changedData,
+        changedDataKeys: Object.keys(changedData),
+        changedDataJSON: JSON.stringify(changedData),
+        changedFieldsBeforeSave: Array.from(changedFields)
+      });
+      
+      try {
+        alert('About to call onSave...');
+        console.log('Data being sent to onSave:', changedData);
+        alert(`Sending data to save: ${JSON.stringify(changedData)}`);
         
-        console.log('🚨 CRITICAL: About to call onSave with:', {
-          changedData,
-          changedDataKeys: Object.keys(changedData),
-          changedDataJSON: JSON.stringify(changedData),
-          changedFieldsBeforeSave: Array.from(changedFields)
-        });
-        
-        try {
-          alert('About to call onSave...');
-          console.log('Data being sent to onSave:', changedData);
-          alert(`Sending data to save: ${JSON.stringify(changedData)}`);
-          
-          if (onSave && typeof onSave === 'function') {
-            const result = await onSave(changedData as ProfileFormValues);
-            alert('onSave completed successfully');
-            return result;
-          } else {
-            throw new Error('onSave function is not available');
-          }
-        } catch (error) {
-          alert(`onSave ERROR: ${error?.message || error || 'Unknown error'}`);
-          console.error('onSave error full details:', error);
-          throw error;
+        if (onSave && typeof onSave === 'function') {
+          const result = await onSave(changedData as ProfileFormValues);
+          alert('onSave completed successfully');
+          return result;
+        } else {
+          throw new Error('onSave function is not available');
         }
-      } else {
-        console.error('🔴 onSave is not defined at submission time');
-        alert(`🔴 DEBUG: onSave is ${onSave}, type: ${typeof onSave}, hasOnSave: ${!!onSave}`);
-        console.error('🔴 Full onSave analysis:', {
-          onSave,
-          onSaveType: typeof onSave,
-          hasOnSave: !!onSave,
-          onSaveString: String(onSave),
-          isNull: onSave === null,
-          isUndefined: onSave === undefined,
-          isFalsy: !onSave
-        });
-        alert('🔴 ERROR: onSave is undefined! Cannot save profile changes.');
-        console.error('🔴 onSave prop is undefined - profile cannot be saved');
-        setSaveError('Save function not available. Please refresh and try again.');
-        return;
+      } catch (error) {
+        alert(`onSave ERROR: ${error?.message || error || 'Unknown error'}`);
+        console.error('onSave error full details:', error);
+        throw error;
       }
       
       setSaveSuccess(true);
