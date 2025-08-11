@@ -284,6 +284,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     };
     setOriginalValues(newValues);
     setChangedFields(new Set());
+    setAvatarPreview(initialData.avatar || null); // Reset avatar preview
     reset(newValues);
   }, [initialData, reset]);
 
@@ -371,10 +372,22 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     }
   }, [changedFields, trigger]);
 
-  // Notify parent of form dirty state changes
+  // Notify parent of form dirty state changes (including avatar changes)
   useEffect(() => {
-    onFormChange?.(isDirty);
-  }, [isDirty, onFormChange]);
+    const originalAvatar = originalValues.avatar || initialData.avatar;
+    const avatarHasChanged = avatarPreview !== originalAvatar;
+    const hasAnyChanges = isDirty || avatarHasChanged;
+    
+    console.log('🔄 Form change notification check:', {
+      isDirty,
+      avatarHasChanged,
+      hasAnyChanges,
+      originalAvatar,
+      currentAvatarPreview: avatarPreview
+    });
+    
+    onFormChange?.(hasAnyChanges);
+  }, [isDirty, avatarPreview, originalValues.avatar, initialData.avatar, onFormChange]);
 
   // Password change form
   const passwordForm = useForm({
@@ -402,12 +415,21 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       const reader = new FileReader();
       reader.onload = (e) => {
         const newAvatarData = e.target?.result as string;
+        const originalAvatar = initialData.avatar || null;
+        
+        console.log('🖼️ Avatar change detected:', {
+          hasNewData: !!newAvatarData,
+          originalAvatar: originalAvatar,
+          isChanged: newAvatarData !== originalAvatar,
+          newDataLength: newAvatarData?.length || 0
+        });
+        
         setAvatarPreview(newAvatarData);
         
         // Mark avatar as changed if different from original
-        const originalAvatar = originalValues.avatar || initialData.avatar;
         if (newAvatarData !== originalAvatar) {
           setChangedFields(prev => new Set([...prev, 'avatar']));
+          console.log('🖼️ Avatar marked as changed');
         }
       };
       reader.readAsDataURL(file);
