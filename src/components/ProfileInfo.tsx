@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, ExternalLink, HelpCircle } from 'lucide-react';
+import { Settings, ExternalLink } from 'lucide-react';
 
 interface ProfileInfoProps {
   user: {
@@ -14,11 +14,10 @@ interface ProfileInfoProps {
   } | null;
   isDummy?: boolean;
   onEditClick?: () => void;
-  onEditLocationClick?: () => void;
   isCurrentUser?: boolean;
 }
 
-export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false, onEditClick, onEditLocationClick, isCurrentUser = false }) => {
+export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false, onEditClick, isCurrentUser = false }) => {
   // Handle null user case
   if (!user) {
     return (
@@ -55,19 +54,9 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false,
             PATRON
           </span>
           {isCurrentUser && (
-            <div className="flex gap-2">
-              <button onClick={onEditClick} className="text-gray-400 hover:text-white">
-                <Settings className="h-4 w-4" />
-              </button>
-              <button 
-                onClick={onEditLocationClick} 
-                className="text-red-500 hover:text-red-400"
-                title="Edit Location"
-                aria-label="Edit Location"
-              >
-                <HelpCircle className="h-4 w-4" />
-              </button>
-            </div>
+            <button onClick={onEditClick} className="text-gray-400 hover:text-white">
+              <Settings className="h-4 w-4" />
+            </button>
           )}
         </div>
         <p className="text-blue-400 text-sm mb-3">{user.bio || ''}</p>

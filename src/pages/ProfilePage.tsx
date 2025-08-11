@@ -13,11 +13,6 @@ const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsM
   default: module.UserSettingsModal
 })));
 
-// Lazy load UserLocationModal
-const UserLocationModal = lazy(() => import('../components/profile/UserLocationModal').then(module => ({
-  default: module.UserLocationModal
-})));
-
 const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [allGames, setAllGames] = useState([]);
@@ -28,7 +23,6 @@ const ProfilePage = () => {
   const [sortedReviews, setSortedReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showLocationModal, setShowLocationModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [currentDbUserId, setCurrentDbUserId] = useState<string>('');
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
@@ -462,14 +456,6 @@ const ProfilePage = () => {
     setShowSettingsModal(true);
   };
 
-  const handleEditLocationClick = () => {
-    setShowLocationModal(true);
-  };
-
-  const handleLocationUpdate = (newLocation: string) => {
-    setUserProfile(prev => prev ? { ...prev, location: newLocation } : null);
-  };
-
   const handleFollowersClick = () => {
     setModalInitialTab('followers');
     setIsFollowersModalOpen(true);
@@ -496,7 +482,6 @@ const ProfilePage = () => {
             user={userProfile}
             isDummy={false}
             onEditClick={handleEditClick}
-            onEditLocationClick={handleEditLocationClick}
             isCurrentUser={true}
           />
           <ProfileDetails 
@@ -559,17 +544,6 @@ const ProfilePage = () => {
           onClose={() => setShowSettingsModal(false)}
           userId={currentUserId}
           onSave={handleSaveProfile}
-        />
-      </Suspense>
-
-      {/* User Location Modal */}
-      <Suspense fallback={<div />}>
-        <UserLocationModal
-          isOpen={showLocationModal}
-          onClose={() => setShowLocationModal(false)}
-          userId={currentUserId}
-          currentLocation={userProfile?.location || ''}
-          onLocationUpdate={handleLocationUpdate}
         />
       </Suspense>
 
