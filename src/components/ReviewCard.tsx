@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Star } from 'lucide-react';
-import { StarRating } from './StarRating';
+import { Calendar } from 'lucide-react';
 import { ReviewInteractions } from './ReviewInteractions';
 import { useReviewInteractions } from '../hooks/useReviewInteractions';
 
@@ -10,7 +9,9 @@ export interface ReviewData {
   id: string;
   userId: string;
   gameId: string;
+  igdbGameId?: string; // IGDB game ID for proper routing
   gameTitle: string;
+  gameCoverUrl?: string; // Game cover image URL
   rating: number;
   text: string;
   date: string;
@@ -96,6 +97,18 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     return username.charAt(0).toUpperCase();
   };
 
+  // Split game title at colon for better formatting
+  const splitGameTitle = (title: string) => {
+    const colonIndex = title.indexOf(':');
+    if (colonIndex !== -1) {
+      return {
+        firstPart: title.substring(0, colonIndex + 1),
+        secondPart: title.substring(colonIndex + 1).trim()
+      };
+    }
+    return { firstPart: title, secondPart: null };
+  };
+
   // Format date for display
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
@@ -117,7 +130,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 
   return (
     <Link 
-      to={`/review/${review.userId}/${review.gameId}`}
+      to={`/review/${review.userId}/${review.igdbGameId || review.gameId}`}
       className={`
         group relative overflow-hidden rounded-xl border-2 block
         bg-gray-900/80 backdrop-blur-lg
@@ -174,7 +187,35 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         </div>
 
         {/* Review Content */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 relative">
+          {/* Game Cover Image - positioned on the right */}
+          {showGameTitle && review.gameTitle && review.gameCoverUrl && (
+            <div className={`
+              float-right ml-4 mb-4 flex-shrink-0
+              ${compact ? 'w-16 h-20' : 'w-20 h-28'}
+            `}>
+              <div className="relative">
+                <img
+                  src={review.gameCoverUrl}
+                  alt={review.gameTitle}
+                  className={`
+                    w-full h-full object-cover rounded
+                    ${compact ? 'w-16 h-20' : 'w-20 h-28'}
+                  `}
+                  loading="lazy"
+                />
+                {/* Grey rating bar at bottom of image */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
+                  <div className="text-center">
+                    <span className="text-white text-xs font-bold">
+                      {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Header with username and game title */}
           <div className="mb-3">
             <span
@@ -194,33 +235,68 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
             
             {showGameTitle && review.gameTitle && (
               <div className={`${compact ? 'text-xs' : 'text-sm'} text-gray-400 mt-1`}>
-                reviewed <span className="text-gray-300 font-medium">{review.gameTitle}</span>
+                reviewed{' '}
+                {(() => {
+                  const { firstPart, secondPart } = splitGameTitle(review.gameTitle);
+                  return (
+                    <span className="text-gray-300 font-medium">
+                      {firstPart}
+                      {secondPart && (
+                        <>
+                          <br />
+                          <span className="text-right block">{secondPart}</span>
+                        </>
+                      )}
+                    </span>
+                  );
+                })()}
+                
+                {/* Date - only show if no cover image (otherwise rating is on image) */}
+                {!review.gameCoverUrl && (
+                  <div className="flex items-center gap-4 mt-2">
+                    <div className="bg-gray-500 px-2 py-0.5 rounded">
+                      <span className="text-white text-xs font-bold">{review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-1 text-gray-500">
+                      <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                      <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
+                        {formatDate(review.date)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Date when cover image is present */}
+                {review.gameCoverUrl && (
+                  <div className="flex items-center gap-1 text-gray-500 mt-2">
+                    <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                    <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
+                      {formatDate(review.date)}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-
-          {/* Rating and Date */}
-          <div className="flex items-center gap-4 mb-3">
-            <div className="flex items-center gap-2">
-              <StarRating rating={review.rating} size={compact ? 'sm' : 'md'} />
-              <span className={`
-                font-bold transition-colors duration-300
-                ${themeStyles.accent} group-hover:text-white
-                ${compact ? 'text-sm' : 'text-base'}
-              `}>
-                {(review.rating || 0).toFixed(1)}/10
-              </span>
-            </div>
             
-            <div className="flex items-center gap-1 text-gray-500">
-              <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
-              <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
-                {formatDate(review.date)}
-              </span>
-            </div>
+            {/* Rating and Date for when no game title is shown */}
+            {!showGameTitle || !review.gameTitle ? (
+              <div className="flex items-center gap-4 mt-2">
+                <div className="bg-gray-500 px-2 py-0.5 rounded">
+                  <span className="text-white text-xs font-bold">{review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10</span>
+                </div>
+                
+                <div className="flex items-center gap-1 text-gray-500">
+                  <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                  <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
+                    {formatDate(review.date)}
+                  </span>
+                </div>
+              </div>
+            ) : null}
           </div>
 
-          {/* Review Text */}
+          {/* Review Text - wraps around the floated image */}
           {review.hasText && (
             <p className={`
               text-gray-300 leading-relaxed mb-4 transition-colors duration-300
@@ -230,6 +306,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               {compact ? truncateText(review.text, 120) : review.text}
             </p>
           )}
+
+          {/* Clear float to ensure interactions appear below */}
+          <div className="clear-both"></div>
 
           {/* Review Interactions */}
           {!compact && (

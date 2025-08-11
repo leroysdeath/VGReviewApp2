@@ -1,67 +1,81 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Star, TrendingUp, Users, Search, ArrowRight, Gamepad2 } from 'lucide-react';
-import { GameCard } from './GameCard';
-import { ReviewCard } from './ReviewCard';
-import { AuthModal } from './auth/AuthModal';
-import { mockReviews } from '../data/mockData';
-import { igdbService, Game } from '../services/igdbApi';
+import { ReviewCard, ReviewData } from './ReviewCard';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
+import { useAuthModal } from '../context/AuthModalContext';
+import { getReviews, Review } from '../services/reviewService';
 
 export const ResponsiveLandingPage: React.FC = () => {
-  const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [recentReviews, setRecentReviews] = useState<ReviewData[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
   const { isMobile } = useResponsive();
   const { isAuthenticated } = useAuth();
-  const recentReviews = mockReviews.slice(0, isMobile ? 3 : 4);
-
+  const { openModal } = useAuthModal();
+  const navigate = useNavigate();
+  
+  // Transform Review to ReviewData interface
+  const transformReviewData = (review: Review): ReviewData => {
+    const theme: ReviewData['theme'] = ['purple', 'green', 'orange', 'blue', 'red'][review.id % 5] as ReviewData['theme'];
+    
+    return {
+      id: review.id.toString(),
+      userId: review.userId.toString(),
+      gameId: review.gameId.toString(),
+      // Use the game's game_id (IGDB ID) for proper navigation, fallback to database game id
+      igdbGameId: (review.game as any)?.game_id ? (review.game as any).game_id.toString() : review.gameId.toString(),
+      gameTitle: review.game?.name || 'Unknown Game',
+      rating: review.rating,
+      text: review.review || '',
+      date: review.postDateTime,
+      hasText: !!review.review && review.review.trim().length > 0,
+      author: review.user?.name || 'Anonymous',
+      authorAvatar: review.user?.picurl || '',
+      likeCount: review.likeCount || 0,
+      commentCount: review.commentCount || 0,
+      theme
+    };
+  };
+  
+  // Load recent reviews
   useEffect(() => {
-    const loadFeaturedGames = async () => {
+    const loadRecentReviews = async () => {
       try {
-        const games = await igdbService.getPopularGames(isMobile ? 4 : 6);
-        setFeaturedGames(games);
+        setReviewsLoading(true);
+        setReviewsError(null);
+        
+        const result = await getReviews(10); // Get up to 10 recent reviews
+        
+        if (result.success && result.data) {
+          const transformedReviews = result.data.map(transformReviewData);
+          // Limit based on screen size
+          const limitedReviews = transformedReviews.slice(0, isMobile ? 3 : 4);
+          setRecentReviews(limitedReviews);
+        } else {
+          setReviewsError(result.error || 'Failed to load reviews');
+        }
       } catch (error) {
-        console.error('Failed to load featured games:', error);
+        console.error('Failed to load recent reviews:', error);
+        setReviewsError('Failed to load reviews');
       } finally {
-        setLoading(false);
+        setReviewsLoading(false);
       }
     };
-
-    loadFeaturedGames();
+    
+    loadRecentReviews();
   }, [isMobile]);
 
-  // Handle auth-required actions
-  const handleAuthRequiredAction = (action: string) => {
+
+  // Handle join community button click
+  const handleJoinCommunity = () => {
     if (!isAuthenticated) {
-      setPendingAction(action);
-      setShowAuthModal(true);
+      openModal(); // Use global auth modal
       return;
     }
-    executeAction(action);
-  };
-
-  const executeAction = (action: string) => {
-    switch (action) {
-      case 'join_community':
-        // Redirect to community features or profile setup
-        console.log('Redirecting to community features');
-        break;
-      case 'start_rating':
-        // Redirect to games to start rating
-        window.location.href = '/search';
-        break;
-    }
-  };
-
-  const handleAuthSuccess = () => {
-    setShowAuthModal(false);
-    if (pendingAction) {
-      executeAction(pendingAction);
-      setPendingAction(null);
-    }
+    // Navigate to users page if already authenticated
+    navigate('/users');
   };
 
   if (isMobile) {
@@ -104,7 +118,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </Link>
               ) : (
                 <button
-                  onClick={() => handleAuthRequiredAction('join_community')}
+                  onClick={handleJoinCommunity}
                   className="block w-full px-6 py-3 bg-transparent border-2 border-purple-400 text-purple-400 rounded-lg hover:bg-purple-400 hover:text-white transition-colors font-medium"
                 >
                   <div className="flex items-center justify-center gap-2">
@@ -142,41 +156,6 @@ export const ResponsiveLandingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Featured Games Section */}
-        <div className="px-4 py-12 bg-gray-900">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Featured Games</h2>
-            <Link
-              to="/search"
-              className="text-purple-400 hover:text-purple-300 transition-colors text-sm flex items-center gap-1"
-            >
-              View All <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          {loading ? (
-            <div className="grid grid-cols-2 gap-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
-                  <div className="aspect-[3/4] bg-gray-700"></div>
-                  <div className="p-3">
-                    <div className="h-4 bg-gray-700 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-2/3"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {featuredGames.map((game) => (
-                <GameCard 
-                  key={game.id} 
-                  game={game} 
-                  showQuickActions={isAuthenticated}
-                />
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Mobile Recent Reviews Section */}
         <div className="px-4 py-12 bg-gray-800">
@@ -189,23 +168,43 @@ export const ResponsiveLandingPage: React.FC = () => {
               View All <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="space-y-4">
-            {recentReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} compact />
-            ))}
-          </div>
+          
+          {reviewsLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-gray-700 rounded-lg overflow-hidden animate-pulse">
+                  <div className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 bg-gray-600 rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-600 rounded mb-2 w-3/4"></div>
+                        <div className="h-3 bg-gray-600 rounded mb-3 w-1/2"></div>
+                        <div className="h-3 bg-gray-600 rounded w-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : reviewsError ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400 mb-2">Failed to load recent reviews</p>
+              <p className="text-sm text-gray-500">{reviewsError}</p>
+            </div>
+          ) : recentReviews.length > 0 ? (
+            <div className="space-y-4">
+              {recentReviews.map((review) => (
+                <ReviewCard key={review.id} review={review} compact />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-400">No recent reviews yet</p>
+              <p className="text-sm text-gray-500 mt-2">Be the first to share your gaming experience!</p>
+            </div>
+          )}
         </div>
 
-        {/* Auth Modal */}
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => {
-            setShowAuthModal(false);
-            setPendingAction(null);
-          }}
-          onLoginSuccess={handleAuthSuccess}
-          onSignupSuccess={handleAuthSuccess}
-        />
       </div>
     );
   }
@@ -246,7 +245,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </Link>
               ) : (
                 <button
-                  onClick={() => handleAuthRequiredAction('join_community')}
+                  onClick={handleJoinCommunity}
                   className="px-8 py-3 bg-transparent border-2 border-purple-400 text-purple-400 rounded-lg hover:bg-purple-400 hover:text-white transition-colors flex items-center gap-2 text-lg font-medium"
                 >
                   Join Community
@@ -285,44 +284,6 @@ export const ResponsiveLandingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Featured Games Section */}
-      <div className="py-16 bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-white">Featured Games</h2>
-            <Link
-              to="/search"
-              className="text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2"
-            >
-              View All <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
-                  <div className="aspect-[3/4] bg-gray-700"></div>
-                  <div className="p-4">
-                    <div className="h-4 bg-gray-700 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-2/3 mb-3"></div>
-                    <div className="h-3 bg-gray-700 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredGames.map((game) => (
-                <GameCard 
-                  key={game.id} 
-                  game={game} 
-                  showQuickActions={isAuthenticated}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Recent Reviews Section */}
       <div className="py-16 bg-gray-800">
@@ -336,24 +297,48 @@ export const ResponsiveLandingPage: React.FC = () => {
               View All <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            {recentReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
-            ))}
-          </div>
+          
+          {reviewsLoading ? (
+            <div className="grid md:grid-cols-2 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-gray-700 rounded-lg overflow-hidden animate-pulse">
+                  <div className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-gray-600 rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-600 rounded mb-3 w-3/4"></div>
+                        <div className="h-3 bg-gray-600 rounded mb-4 w-1/2"></div>
+                        <div className="space-y-2">
+                          <div className="h-3 bg-gray-600 rounded w-full"></div>
+                          <div className="h-3 bg-gray-600 rounded w-4/5"></div>
+                          <div className="h-3 bg-gray-600 rounded w-3/4"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : reviewsError ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg mb-2">Failed to load recent reviews</p>
+              <p className="text-sm text-gray-500">{reviewsError}</p>
+            </div>
+          ) : recentReviews.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-6">
+              {recentReviews.map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg">No recent reviews yet</p>
+              <p className="text-sm text-gray-500 mt-2">Be the first to share your gaming experience!</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => {
-          setShowAuthModal(false);
-          setPendingAction(null);
-        }}
-        onLoginSuccess={handleAuthSuccess}
-        onSignupSuccess={handleAuthSuccess}
-      />
     </div>
   );
 };

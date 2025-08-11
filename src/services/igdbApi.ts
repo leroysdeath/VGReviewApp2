@@ -1,4 +1,6 @@
 // IGDB API service with Netlify function integration
+import { sortGamesByPlatformPriority } from '../utils/platformPriority';
+
 export interface IGDBGame {
   id: number;
   name: string;
@@ -180,23 +182,27 @@ class IGDBService {
     // Check cache first
     const cached = this.getFromCache(cacheKey);
     if (cached) {
-      return cached;
+      // Ensure cached results are sorted consistently
+      return Array.isArray(cached) ? sortGamesByPlatformPriority(cached) : cached;
     }
 
     try {
       const igdbGames = await this.makeNetlifyRequest(trimmedQuery, limit);
       const games = igdbGames.map(game => this.mapIGDBToGame(game));
       
+      // Apply platform-based sorting to prioritize PC/console games
+      const sortedGames = sortGamesByPlatformPriority(games);
+      
       console.log('🎯 IGDB Service: Search completed:', {
         query: trimmedQuery,
-        found: games.length,
-        firstGame: games[0]?.title || 'None'
+        found: sortedGames.length,
+        firstGame: sortedGames[0]?.title || 'None'
       });
       
-      // Cache the results
-      this.setCache(cacheKey, games);
+      // Cache the sorted results
+      this.setCache(cacheKey, sortedGames);
       
-      return games;
+      return sortedGames;
     } catch (error) {
       console.error('❌ IGDB Service: Search games failed:', {
         query: trimmedQuery,

@@ -1,21 +1,162 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { UserSettingsPanel } from './UserSettingsPanel';
+import { supabase } from '../../utils/supabaseClient';
 
 interface UserSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  onSave?: (data: any) => Promise<void>;
 }
 
 export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ 
   isOpen, 
   onClose,
-  userId 
+  userId,
+  onSave 
 }) => {
+  // Debug props at component start
+  console.log('🚨 UserSettingsModal props received:', { 
+    isOpen, 
+    hasOnClose: !!onClose, 
+    userId, 
+    hasOnSave: !!onSave, 
+    onSaveType: typeof onSave,
+    onSaveFunction: onSave 
+  });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [userData, setUserData] = useState<any>({
+    username: '',
+    displayName: '',
+    email: '',
+    bio: '',
+    location: '',
+    website: '',
+    platform: '',
+    avatar: ''
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const modalContentRef = useRef<HTMLDivElement>(null);
+
+  // Fetch user data when modal opens
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!isOpen) {
+        // Reset loading state when modal is closed
+        setIsLoading(true);
+        return;
+      }
+      
+      if (isOpen && userId) {
+        setIsLoading(true);
+        try {
+          console.log('🟢 UserSettingsModal - fetchUserData called');
+          console.log('👤 Fetching user data for userId:', userId);
+          console.log('📝 Query: SELECT * FROM user WHERE provider_id =', userId);
+          
+          const { data, error } = await supabase
+            .from('user')
+            .select('*')
+            .eq('provider_id', userId)
+            .single();
+
+          console.log('💾 Raw database response:', { data, error });
+          console.log('🔍 Error details:', error ? {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          } : 'No error');
+
+          if (error) {
+            console.error('🔴 Error fetching user data:', error);
+            console.log('⚠️ Setting default user data due to error');
+            // Set default data if user not found
+            const defaultData = {
+              username: '',
+              displayName: '',
+              email: '',
+              bio: '',
+              location: '',
+              website: '',
+              platform: '',
+              avatar: ''
+            };
+            console.log('📋 Default user data set:', defaultData);
+            setUserData(defaultData);
+          } else {
+            console.log('✅ Successfully fetched user data from database');
+            console.log('📥 Raw user data received:', data);
+            console.log('🔍 Field analysis:');
+            console.log('  📝 username field:', data.username);
+            console.log('  📝 name field:', data.name);
+            console.log('  📝 display_name field:', data.display_name);
+            console.log('  📝 bio field:', data.bio);
+            console.log('  📝 location field:', data.location);
+            console.log('  📝 website field:', data.website);
+            console.log('  📝 platform field:', data.platform);
+            console.log('  📝 avatar_url field:', data.avatar_url);
+            console.log('  📝 picurl field:', data.picurl);
+            console.log('  📧 email field:', data.email);
+            
+            console.log('🔄 Starting field transformation (snake_case -> camelCase)...');
+            const processedUserData = {
+              username: data.username || data.name || '',
+              displayName: data.display_name || '',
+              email: data.email || '',
+              bio: data.bio || '',
+              location: data.location || '',
+              website: data.website || '',
+              platform: data.platform || '',
+              avatar: data.avatar_url || data.picurl || ''
+            };
+            
+            console.log('📤 Processed user data (for UserSettingsPanel):', processedUserData);
+            console.log('🔍 Transformation details:');
+            console.log('  ✅ username:', `'${data.username}' || '${data.name}' -> '${processedUserData.username}'`);
+            console.log('  ✅ displayName:', `'${data.display_name}' -> '${processedUserData.displayName}'`);
+            console.log('  ✅ bio:', `'${data.bio}' -> '${processedUserData.bio}'`);
+            console.log('  ✅ location:', `'${data.location}' -> '${processedUserData.location}'`);
+            console.log('  ✅ website:', `'${data.website}' -> '${processedUserData.website}'`);
+            console.log('  ✅ platform:', `'${data.platform}' -> '${processedUserData.platform}'`);
+            console.log('  ✅ avatar:', `'${data.avatar_url}' || '${data.picurl}' -> '${processedUserData.avatar}'`);
+            console.log('  ✅ email:', `'${data.email}' -> '${processedUserData.email}'`);
+            
+            setUserData(processedUserData);
+            console.log('🎯 UserData state updated with processed data');
+          }
+        } catch (error) {
+          console.error('💥 Unexpected error in fetchUserData:', error);
+          console.error('🔴 Error details:', {
+            name: error instanceof Error ? error.name : 'Unknown',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : 'No stack trace'
+          });
+          
+          console.log('⚠️ Setting default user data due to catch block');
+          // Set default data on error
+          const errorDefaultData = {
+            username: '',
+            displayName: '',
+            email: '',
+            bio: '',
+            location: '',
+            website: '',
+            platform: '',
+            avatar: ''
+          };
+          console.log('📋 Error default data set:', errorDefaultData);
+          setUserData(errorDefaultData);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [isOpen, userId]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -120,11 +261,37 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           
           {/* Modal Content */}
           <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
-            <UserSettingsPanel 
-              userId={userId}
-              onSuccess={handleSuccess}
-              onFormChange={handleFormChange}
-            />
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                <span className="ml-3 text-gray-400">Loading profile data...</span>
+              </div>
+            ) : (
+              <>
+                {console.log('UserSettingsModal props check:', {
+                  hasOnSave: !!onSave,
+                  onSaveType: typeof onSave,
+                  userId: userId
+                })}
+                <UserSettingsPanel 
+                key={isLoading ? 'loading' : 'loaded'}
+                userId={userId}
+                initialData={userData || {
+                  username: '',
+                  displayName: '',
+                  email: '',
+                  bio: '',
+                  location: '',
+                  website: '',
+                  platform: '',
+                  avatar: ''
+                }}
+                onSave={onSave}
+                onSuccess={handleSuccess}
+                onFormChange={handleFormChange}
+              />
+              </>
+            )}
           </div>
         </div>
       </div>

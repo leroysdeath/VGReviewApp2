@@ -53,6 +53,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
         .select(`
           follower:follower_id (
             id,
+            username,
             name,
             bio,
             picurl
@@ -67,7 +68,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
         .filter(Boolean)
         .map(user => ({
           id: user.id.toString(),
-          username: user.name || 'Unknown User',
+          username: user.username || user.name || 'Unknown User',
           avatar: user.picurl || '',
           bio: user.bio || ''
         }));
@@ -90,6 +91,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
         .select(`
           following:following_id (
             id,
+            username,
             name,
             bio,
             picurl
@@ -104,7 +106,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
         .filter(Boolean)
         .map(user => ({
           id: user.id.toString(),
-          username: user.name || 'Unknown User',
+          username: user.username || user.name || 'Unknown User',
           avatar: user.picurl || '',
           bio: user.bio || ''
         }));

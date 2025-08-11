@@ -525,7 +525,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
               focusedItemIndex === index ? 'ring-2 ring-[#7289DA]' : ''
             }`}
             role="article"
-            aria-label={`${activity.user.name}'s ${activity.type} activity from ${formatRelativeTime(activity.timestamp)}`}
+            aria-label={`${activity.user.username || activity.user.name}'s ${activity.type} activity from ${formatRelativeTime(activity.timestamp)}`}
             tabIndex={0}
             onKeyDown={(e) => handleKeyDown(e, index)}
           >
@@ -543,7 +543,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                       to={`/user/${activity.user.id}`}
                       className="font-medium text-white hover:text-[#7289DA] transition-colors"
                     >
-                      {activity.user.name}
+                      {activity.user.username || activity.user.name}
                     </Link>
                     <span className="text-[#B3B3B3] text-sm">
                       {formatRelativeTime(activity.timestamp)}

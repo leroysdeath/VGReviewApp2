@@ -17,9 +17,10 @@ export const GameSearchPage: React.FC = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [loadingPopular, setLoadingPopular] = useState(false);
   const [showCacheStats, setShowCacheStats] = useState(false);
-
-  // Get initial search term from URL params
+  
+  // Get initial search term from URL params and maintain it in local state
   const initialSearchTerm = searchParams.get('q') || '';
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
 
   useEffect(() => {
     // Load popular games when component mounts
@@ -27,6 +28,14 @@ export const GameSearchPage: React.FC = () => {
     // Load recent searches from localStorage
     loadRecentSearches();
   }, []);
+  
+  // Sync searchTerm with URL params
+  useEffect(() => {
+    const urlSearchTerm = searchParams.get('q') || '';
+    if (urlSearchTerm !== searchTerm) {
+      setSearchTerm(urlSearchTerm);
+    }
+  }, [searchParams, searchTerm]);
 
   const loadPopularGames = async () => {
     setLoadingPopular(true);
@@ -77,14 +86,15 @@ export const GameSearchPage: React.FC = () => {
     navigate(`/game/${game.id}`);
   };
 
-  const handleSearch = (searchTerm: string) => {
-    if (searchTerm.trim()) {
-      // Update URL with search term
-      setSearchParams({ q: searchTerm });
-      // Save to recent searches
-      saveRecentSearch(searchTerm.trim());
+  // Handle direct search bar input changes
+  const handleDirectSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    // Update URL as user types (debounced by GameSearch component)
+    if (value.trim()) {
+      setSearchParams({ q: value });
+      saveRecentSearch(value.trim());
     } else {
-      // Clear search param if empty
       setSearchParams({});
     }
   };
@@ -150,6 +160,27 @@ export const GameSearchPage: React.FC = () => {
             </div>
           )}
 
+          {/* Search Bar */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search games by name..."
+              value={searchTerm}
+              onChange={handleDirectSearchChange}
+              className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+            />
+          </div>
+
+          {/* Search Results Counter */}
+          {searchTerm && (
+            <div className="mb-4">
+              <p className="text-gray-400 text-sm">
+                Searching for "{searchTerm}"...
+              </p>
+            </div>
+          )}
+
           {/* Search Description */}
           <p className="text-gray-400 text-lg">
             Search through thousands of games with intelligent caching for lightning-fast results
@@ -160,14 +191,13 @@ export const GameSearchPage: React.FC = () => {
         <div className="mb-8">
           <GameSearch
             onGameSelect={handleGameSelect}
-            onSearch={handleSearch}
-            placeholder="Search for games..."
+            placeholder="Advanced search with filters..."
             showViewToggle={!isMobile}
             initialViewMode="grid"
             maxResults={20}
             showHealthCheck={import.meta.env.DEV}
-            initialSearchTerm={initialSearchTerm}
-            enableCaching={true}
+            initialQuery={searchTerm}
+            showExploreButton={true}
           />
         </div>
 

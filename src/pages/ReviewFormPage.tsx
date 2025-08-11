@@ -1,11 +1,23 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Star, Save, Eye, EyeOff, X, Lock } from 'lucide-react';
+import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart } from 'lucide-react';
 import { igdbService, Game } from '../services/igdbApi';
+import { useIGDBSearch } from '../hooks/useIGDBCache';
+import { enhancedIGDBService } from '../services/enhancedIGDBService';
 import { GameSearch } from '../components/GameSearch';
 import { createReview, ensureGameExists, getUserReviewForGame, updateReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
+import { useAuth } from '../hooks/useAuth';
+
+// Search filters interface from SearchResultsPage
+interface SearchFilters {
+  genres: string[];
+  platforms: string[];
+  minRating?: number;
+  sortBy: 'popularity' | 'rating' | 'release_date' | 'name';
+  sortOrder: 'asc' | 'desc';
+}
 
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -19,6 +31,34 @@ export const ReviewFormPage: React.FC = () => {
   const [gameAlreadyCompleted, setGameAlreadyCompleted] = useState(false);
   const [isGameCompletionLocked, setIsGameCompletionLocked] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  
+  // Enhanced search state from SearchResultsPage
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<SearchFilters>({
+    genres: [],
+    platforms: [],
+    sortBy: 'popularity',
+    sortOrder: 'desc'
+  });
+  
+  const { isAuthenticated } = useAuth();
+  
+  // Use the caching search hook from SearchResultsPage
+  const {
+    data: searchResults,
+    loading: searchLoading,
+    error: searchError,
+    cached: isSearchCached,
+    refetch: refetchSearch,
+    isStale: isSearchStale,
+    searchTerm: debouncedSearchTerm
+  } = useIGDBSearch(searchTerm, filters, {
+    enabled: showSearchModal && searchTerm.length > 0,
+    ttl: 1800,
+    staleWhileRevalidate: true
+  });
   
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -183,8 +223,138 @@ export const ReviewFormPage: React.FC = () => {
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game);
     setGameSearch('');
+    setSearchTerm('');
     setShowSearchModal(false);
   };
+  
+  const handleGameClick = (game: Game) => {
+    // Prefetch game data for faster loading
+    enhancedIGDBService.prefetchGame(game.id);
+    handleGameSelect(game);
+  };
+  
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+  };
+  
+  const updateFilters = (newFilters: Partial<SearchFilters>) => {
+    const updatedFilters = { ...filters, ...newFilters };
+    setFilters(updatedFilters);
+  };
+  
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  // Game Card Component for Grid View
+  const GameCard: React.FC<{ game: Game }> = ({ game }) => (
+    <div
+      onClick={() => handleGameClick(game)}
+      className="bg-gray-700 rounded-lg overflow-hidden hover:bg-gray-600 transition-all duration-200 cursor-pointer group hover:scale-105 relative"
+      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)}
+    >
+      <div className="aspect-[3/4] relative overflow-hidden">
+        {game.coverImage ? (
+          <img
+            src={game.coverImage}
+            alt={game.title}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+            <span className="text-gray-500 text-sm">No Image</span>
+          </div>
+        )}
+        {game.rating && (
+          <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded-lg text-sm flex items-center">
+            <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
+            {Math.round(game.rating / 10)}
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors line-clamp-2">
+          {game.title}
+        </h3>
+        {game.releaseDate && (
+          <p className="text-gray-400 text-sm mt-1 flex items-center">
+            <Calendar className="w-3 h-3 mr-1" />
+            {game.releaseDate}
+          </p>
+        )}
+        {game.genre && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            <span className="bg-purple-600 bg-opacity-20 text-purple-300 px-2 py-1 rounded text-xs">
+              {game.genre}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+  
+  // Game List Item Component for List View
+  const GameListItem: React.FC<{ game: Game }> = ({ game }) => (
+    <div
+      onClick={() => handleGameClick(game)}
+      className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer group flex gap-4 relative"
+      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)}
+    >
+      <div className="w-16 h-20 flex-shrink-0 overflow-hidden rounded">
+        {game.coverImage ? (
+          <img
+            src={game.coverImage}
+            alt={game.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+            <span className="text-gray-500 text-xs">No Image</span>
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors truncate">
+          {game.title}
+        </h3>
+        {game.releaseDate && (
+          <p className="text-gray-400 text-sm mt-1 flex items-center">
+            <Calendar className="w-3 h-3 mr-1" />
+            {game.releaseDate}
+          </p>
+        )}
+        {game.description && (
+          <p className="text-gray-300 text-sm mt-2 line-clamp-2">
+            {game.description}
+          </p>
+        )}
+        {game.genre && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            <span className="bg-purple-600 bg-opacity-20 text-purple-300 px-2 py-1 rounded text-xs">
+              {game.genre}
+            </span>
+          </div>
+        )}
+      </div>
+      {game.rating && (
+        <div className="flex-shrink-0 text-right">
+          <div className="flex items-center text-yellow-400">
+            <Star className="w-4 h-4 mr-1 fill-current" />
+            <span className="text-white font-semibold">
+              {Math.round(game.rating / 10)}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && gameSearch.trim()) {
@@ -588,14 +758,14 @@ export const ReviewFormPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Game Search Modal */}
+      {/* Enhanced Game Search Modal */}
       {showSearchModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
           onClick={() => setShowSearchModal(false)}
         >
           <div
-            className="relative w-full max-w-6xl max-h-[90vh] overflow-hidden bg-gray-800 rounded-xl shadow-2xl border border-gray-700"
+            className="relative w-full max-w-7xl max-h-[90vh] overflow-hidden bg-gray-800 rounded-xl shadow-2xl border border-gray-700"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -612,17 +782,265 @@ export const ReviewFormPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Modal Body with GameSearch */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-              <GameSearch
-                onGameSelect={handleGameSelect}
-                placeholder="Search for games..."
-                showViewToggle={true}
-                initialViewMode="grid"
-                showExploreButton={false}
-                initialQuery={gameSearch}
-                key={gameSearch}
-              />
+            {/* Modal Body with Enhanced Search */}
+            <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+              <div className="p-6">
+                {/* Search Controls Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">
+                      {searchTerm ? `Search Results for "${searchTerm}"` : 'Find Games to Review'}
+                    </h3>
+                    {searchResults && searchResults.length > 0 && (
+                      <p className="text-gray-400 text-sm mt-1">
+                        {searchResults.length.toLocaleString()} games found
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                    >
+                      <Filter className="w-4 h-4 mr-2" />
+                      Filters
+                    </button>
+                    
+                    {searchResults && searchResults.length > 0 && (
+                      <div className="flex bg-gray-700 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => setViewMode('grid')}
+                          className={`p-2 transition-colors ${
+                            viewMode === 'grid' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          <Grid className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setViewMode('list')}
+                          className={`p-2 transition-colors ${
+                            viewMode === 'list' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          <List className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Search Bar */}
+                <div className="relative mb-6">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search games by title..."
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    autoFocus
+                  />
+                </div>
+                
+                {/* Filters Panel */}
+                {showFilters && (
+                  <div className="bg-gray-700 rounded-lg p-6 mb-6 border border-gray-600">
+                    <h4 className="text-lg font-semibold mb-4 text-white">Filter Results</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      
+                      {/* Sort By */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Sort By
+                        </label>
+                        <select
+                          value={`${filters.sortBy}:${filters.sortOrder}`}
+                          onChange={(e) => {
+                            const [sortBy, sortOrder] = e.target.value.split(':');
+                            updateFilters({ sortBy: sortBy as any, sortOrder: sortOrder as any });
+                          }}
+                          className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                        >
+                          <option value="popularity:desc">Most Popular</option>
+                          <option value="rating:desc">Highest Rated</option>
+                          <option value="release_date:desc">Newest First</option>
+                          <option value="release_date:asc">Oldest First</option>
+                          <option value="name:asc">Name A-Z</option>
+                          <option value="name:desc">Name Z-A</option>
+                        </select>
+                      </div>
+                      
+                      {/* Minimum Rating */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Minimum Rating
+                        </label>
+                        <select
+                          value={filters.minRating || ''}
+                          onChange={(e) => {
+                            const value = e.target.value ? parseInt(e.target.value) : undefined;
+                            updateFilters({ minRating: value });
+                          }}
+                          className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                        >
+                          <option value="">Any Rating</option>
+                          <option value="90">90+ Exceptional</option>
+                          <option value="80">80+ Great</option>
+                          <option value="70">70+ Good</option>
+                          <option value="60">60+ Decent</option>
+                        </select>
+                      </div>
+                      
+                      {/* Quick Genre Filters */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Quick Filters
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {['Action', 'RPG', 'Strategy', 'Indie'].map((genre) => (
+                            <button
+                              key={genre}
+                              onClick={() => {
+                                const newGenres = filters.genres.includes(genre)
+                                  ? filters.genres.filter(g => g !== genre)
+                                  : [...filters.genres, genre];
+                                updateFilters({ genres: newGenres });
+                              }}
+                              className={`px-3 py-1 rounded-full text-xs transition-colors ${
+                                filters.genres.includes(genre)
+                                  ? 'bg-purple-600 text-white'
+                                  : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                              }`}
+                            >
+                              {genre}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end mt-4">
+                      <button
+                        onClick={() => {
+                          updateFilters({
+                            genres: [],
+                            platforms: [],
+                            minRating: undefined,
+                            sortBy: 'popularity',
+                            sortOrder: 'desc'
+                          });
+                        }}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Loading State */}
+                {searchLoading && (!searchResults || searchResults.length === 0) && (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader className="w-8 h-8 animate-spin text-purple-400" />
+                    <span className="ml-3 text-gray-400">
+                      {isSearchCached ? 'Updating results...' : 'Searching for games...'}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Error State */}
+                {searchError && (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+                      <p className="text-red-400 font-semibold mb-2">Search Error</p>
+                      <p className="text-gray-400 mb-4">{searchError.message}</p>
+                      <button
+                        onClick={() => refetchSearch()}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* No Results */}
+                {!searchLoading && !searchError && (!searchResults || searchResults.length === 0) && searchTerm && (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">🎮</div>
+                    <h3 className="text-xl font-semibold mb-2 text-white">No games found</h3>
+                    <p className="text-gray-400 mb-4">
+                      Try adjusting your search terms or filters
+                    </p>
+                    <div className="space-x-2">
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+                      >
+                        Clear Search
+                      </button>
+                      <button
+                        onClick={() => setShowFilters(true)}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                      >
+                        Adjust Filters
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Initial State */}
+                {!searchTerm && (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">🎯</div>
+                    <h3 className="text-xl font-semibold mb-2 text-white">Search for Games to Review</h3>
+                    <p className="text-gray-400">
+                      Enter a game title above to find games you want to review
+                    </p>
+                  </div>
+                )}
+                
+                {/* Results */}
+                {searchResults && searchResults.length > 0 && (
+                  <>
+                    {viewMode === 'grid' ? (
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {searchResults.map((game) => (
+                          <GameCard key={game.id} game={game} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {searchResults.map((game) => (
+                          <GameListItem key={game.id} game={game} />
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Search Status Footer */}
+                    <div className="mt-8 text-center">
+                      <div className="inline-flex items-center gap-4 px-6 py-3 bg-gray-700 rounded-lg">
+                        <span className="text-gray-300 text-sm">
+                          Showing {searchResults.length} results
+                        </span>
+                        {isSearchCached && (
+                          <div className="flex items-center gap-1 text-green-400 text-sm">
+                            <span>Cached</span>
+                          </div>
+                        )}
+                        {searchLoading && (
+                          <div className="flex items-center gap-1 text-blue-400 text-sm">
+                            <Loader className="h-3 w-3 animate-spin" />
+                            <span>Loading more...</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>

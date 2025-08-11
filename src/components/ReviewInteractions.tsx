@@ -212,7 +212,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
           {comment.user?.picurl ? (
             <img
               src={comment.user.picurl}
-              alt={`${comment.user.name}'s avatar`}
+              alt={`${comment.user.username || comment.user.name}'s avatar`}
               className="w-8 h-8 rounded-full object-cover"
             />
           ) : (

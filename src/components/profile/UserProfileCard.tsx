@@ -9,7 +9,8 @@ import {
   MessageSquare,
   Trophy,
   Gamepad2,
-  Users
+  Users,
+  HelpCircle
 } from 'lucide-react';
 
 export interface UserProfile {
@@ -41,6 +42,7 @@ export interface UserProfile {
 interface UserProfileCardProps {
   profile: UserProfile;
   onEditProfile?: () => void;
+  onEditLocation?: () => void;
   onFollowToggle?: () => void;
   isFollowing?: boolean;
   className?: string;
@@ -49,6 +51,7 @@ interface UserProfileCardProps {
 export const UserProfileCard: React.FC<UserProfileCardProps> = ({
   profile,
   onEditProfile,
+  onEditLocation,
   onFollowToggle,
   isFollowing = false,
   className = ''
@@ -101,13 +104,23 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({
           {/* Action Buttons */}
           <div className="flex gap-2">
             {profile.isCurrentUser ? (
-              <button
-                onClick={onEditProfile}
-                className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
-              >
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </button>
+              <>
+                <button
+                  onClick={onEditProfile}
+                  className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Settings</span>
+                </button>
+                <button
+                  onClick={onEditLocation}
+                  className="px-3 py-2 bg-gray-700 text-red-500 rounded-lg hover:bg-gray-600 transition-colors flex items-center"
+                  title="Edit Location"
+                  aria-label="Edit Location"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </button>
+              </>
             ) : (
               <>
                 <button

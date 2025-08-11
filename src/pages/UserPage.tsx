@@ -126,7 +126,7 @@ export const UserPage: React.FC = () => {
   // Transform user data to match expected format
   const transformedUser = {
     id: user.id,
-    username: user.name,
+    username: user.username || user.name,
     avatar: user.picurl || '', // No placeholder avatar, let UI handle default
     bio: user.bio || '', // No placeholder bio, let UI handle empty state
     joinDate: new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }),

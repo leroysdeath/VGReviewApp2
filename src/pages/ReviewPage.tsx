@@ -77,6 +77,7 @@ export const ReviewPage: React.FC = () => {
           post_date_time,
           user:user_id (
             id,
+            username,
             name,
             picurl
           )
@@ -113,6 +114,7 @@ export const ReviewPage: React.FC = () => {
           post_date_time,
           user:user_id (
             id,
+            username,
             name,
             picurl
           )
@@ -271,7 +273,7 @@ export const ReviewPage: React.FC = () => {
                     <div className="flex items-center gap-3 mb-4">
                       <img
                         src={review.user.picurl || '/default-avatar.png'}
-                        alt={review.user.name}
+                        alt={review.user.username || review.user.name}
                         className="w-10 h-10 rounded-full object-cover"
                         onError={(e) => {
                           const target = e.currentTarget;
@@ -284,14 +286,14 @@ export const ReviewPage: React.FC = () => {
                         className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm"
                         style={{ display: 'none' }}
                       >
-                        {review.user.name ? review.user.name.charAt(0).toUpperCase() : '?'}
+                        {(review.user.username || review.user.name) ? (review.user.username || review.user.name).charAt(0).toUpperCase() : '?'}
                       </div>
                       <div>
                         <Link
                           to={`/user/${review.user.id}`}
                           className="text-white font-medium hover:text-purple-400 transition-colors"
                         >
-                          {review.user.name}
+                          {review.user.username || review.user.name}
                         </Link>
                         <div className="text-sm text-gray-400">
                           {new Date(review.post_date_time).toLocaleDateString()}
@@ -327,7 +329,7 @@ export const ReviewPage: React.FC = () => {
             <div className="bg-gray-800 rounded-lg p-6">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-                  {review.user.name}'s rating
+                  {review.user.username || review.user.name}'s rating
                 </h3>
               </div>
               <div className="border-b border-gray-700 mb-4"></div>
@@ -361,7 +363,7 @@ export const ReviewPage: React.FC = () => {
                   <div className="flex items-start gap-3">
                     <img
                       src={comment.user.picurl || '/default-avatar.png'}
-                      alt={comment.user.name}
+                      alt={comment.user.username || comment.user.name}
                       className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                       onError={(e) => {
                         const target = e.currentTarget;
@@ -374,7 +376,7 @@ export const ReviewPage: React.FC = () => {
                       className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
                       style={{ display: 'none' }}
                     >
-                      {comment.user.name ? comment.user.name.charAt(0).toUpperCase() : '?'}
+                      {(comment.user.username || comment.user.name) ? (comment.user.username || comment.user.name).charAt(0).toUpperCase() : '?'}
                     </div>
                     
                     <div className="flex-1 min-w-0">
@@ -383,7 +385,7 @@ export const ReviewPage: React.FC = () => {
                           to={`/user/${comment.user.id}`}
                           className="text-white font-medium hover:text-purple-400 transition-colors"
                         >
-                          {comment.user.name}
+                          {comment.user.username || comment.user.name}
                         </Link>
                         <span className="text-gray-400 text-sm">
                           {new Date(comment.post_date_time).toLocaleDateString()}
@@ -448,7 +450,7 @@ export const ReviewPage: React.FC = () => {
                   className="w-10 h-10 rounded-full object-cover"
                 />
                 <div>
-                  <div className="text-white font-medium">{review.user.name}</div>
+                  <div className="text-white font-medium">{review.user.username || review.user.name}</div>
                   <div className="text-sm text-gray-400">
                     {new Date(review.post_date_time).toLocaleDateString()}
                   </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, Zap, Database, Heart, Plus } from 'lucide-react';
+import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, Zap, Database, Heart, Plus, Search } from 'lucide-react';
 import { useIGDBSearch } from '../hooks/useIGDBCache';
 import { enhancedIGDBService } from '../services/enhancedIGDBService';
 import { AuthModal } from '../components/auth/AuthModal';
@@ -126,6 +126,20 @@ export const SearchResultsPage: React.FC = () => {
       executeAction(pendingAction.action, pendingAction.gameId);
       setPendingAction(null);
     }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Update URL parameters
+    const newParams = new URLSearchParams(searchParams);
+    if (value.trim()) {
+      newParams.set('q', value);
+    } else {
+      newParams.delete('q');
+    }
+    setSearchParams(newParams);
   };
 
   const updateFilters = (newFilters: Partial<SearchFilters>) => {
@@ -422,6 +436,18 @@ export const SearchResultsPage: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search games by title..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+          />
         </div>
 
         {/* Filters Panel */}
