@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabaseClient';
 import { igdbService } from '../services/igdbApi';
+import { updateUserProfile, getCurrentAuthUser, ProfileUpdateData } from '../services/profileService';
 import { ProfileInfo } from '../components/ProfileInfo';
 import { ProfileDetails } from '../components/ProfileDetails';
 import { ProfileData } from '../components/ProfileData';
@@ -178,260 +179,39 @@ const ProfilePage = () => {
     }
   }, [navigate]);
 
-  // Handle profile save
-  const handleSaveProfile = async (profileData: any) => {
+  // Handle profile save using profileService
+  const handleSaveProfile = async (profileData: ProfileUpdateData) => {
     try {
-      alert(`handleSaveProfile called!\nData keys: ${Object.keys(profileData).join(', ')}\nData values: ${JSON.stringify(profileData)}`);
-      console.log('🚨 CRITICAL: handleSaveProfile received:', {
-        profileData,
-        profileDataKeys: Object.keys(profileData),
-        profileDataJSON: JSON.stringify(profileData),
-        profileDataType: typeof profileData
-      });
-      console.log('🟢 ProfilePage - handleSaveProfile called');
-      console.log('📥 ProfileData received from form:', profileData);
-      console.log('📥 ProfileData keys:', Object.keys(profileData));
-      console.log('📥 ProfileData values:', Object.entries(profileData));
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-      
-      console.log('👤 Authenticated user:', { id: user.id, email: user.email });
-
-      // Prepare update data - only include changed fields
-      const updateData: any = {};
-      
-      console.log('🔄 Starting field mapping (camelCase -> snake_case)...');
-      
-      // Map form fields to database columns
-      if ('username' in profileData) {
-        updateData.username = profileData.username;
-        updateData.name = profileData.username; // Also update name field for backwards compatibility
-        console.log('  ✅ username mapped:', profileData.username, '-> username & name');
-      }
-      
-      if ('displayName' in profileData) {
-        updateData.display_name = profileData.displayName;
-        console.log('  ✅ displayName mapped:', profileData.displayName, '-> display_name');
-      }
-      
-      if ('bio' in profileData) {
-        updateData.bio = profileData.bio;
-        console.log('  ✅ bio mapped:', profileData.bio, '-> bio');
-      }
-      
-      if ('location' in profileData) {
-        updateData.location = profileData.location;
-        console.log('  ✅ location mapped:', profileData.location, '-> location');
-      }
-      
-      if ('website' in profileData) {
-        updateData.website = profileData.website;
-        console.log('  ✅ website mapped:', profileData.website, '-> website');
-      }
-      
-      if ('platform' in profileData) {
-        updateData.platform = profileData.platform;
-        console.log('  ✅ platform mapped:', profileData.platform, '-> platform');
-      }
-      
-      console.log('📋 Update data after field mapping:', updateData);
-
-      // Handle avatar upload if provided
-      if (profileData.avatar && profileData.avatar.startsWith('data:')) {
-        console.log('🖼️ Avatar upload detected');
-        console.log('🖼️ Avatar data length:', profileData.avatar.length);
-        
-        try {
-          // Convert data URL to blob
-          const response = await fetch(profileData.avatar);
-          const blob = await response.blob();
-          
-          console.log('🖼️ Avatar blob created:', { type: blob.type, size: blob.size });
-          
-          // Validate image type and size
-          if (!blob.type.startsWith('image/')) {
-            throw new Error('File must be an image');
-          }
-          
-          if (blob.size > 2 * 1024 * 1024) { // 2MB limit
-            throw new Error('Image must be smaller than 2MB');
-          }
-          
-          // Generate unique filename
-          const fileExt = blob.type.split('/')[1] || 'jpg';
-          const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-          
-          console.log('🖼️ Uploading avatar:', fileName, 'Size:', blob.size);
-          
-          // Upload to Supabase storage
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(fileName, blob, {
-              cacheControl: '3600',
-              upsert: false
-            });
-
-          if (uploadError) {
-            console.error('🔴 Avatar upload error:', uploadError);
-            console.error('🔴 Upload error details:', {
-              message: uploadError.message,
-              statusCode: uploadError.statusCode,
-              error: uploadError.error
-            });
-            throw uploadError;
-          } else {
-            // Get public URL
-            const { data: { publicUrl } } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(fileName);
-            
-            console.log('🖼️ Avatar uploaded successfully:', publicUrl);
-            updateData.picurl = publicUrl;
-            updateData.avatar_url = publicUrl;
-            console.log('🖼️ Avatar URLs added to updateData');
-          }
-        } catch (avatarError) {
-          console.error('🔴 Error processing avatar:', avatarError);
-          // Throw error to let user know avatar upload failed
-          throw new Error(`Avatar upload failed: ${avatarError.message}`);
-        }
-      }
-
-      console.log('📊 Final update data before sending to database:', updateData);
-      console.log('📊 Update data keys:', Object.keys(updateData));
-
-      // Don't proceed if no data to update
-      if (Object.keys(updateData).length === 0) {
-        console.log('⚠️ No changes to save - aborting update');
-        return;
-      }
-
-      console.log('🔍 Checking if user profile exists in database...');
-      // Check if user profile exists first
-      const { data: existingUser, error: selectError } = await supabase
-        .from('user')
-        .select('id, provider_id, username, name, display_name, bio, location, website, platform')
-        .eq('provider_id', user.id)
-        .single();
-
-      console.log('🔍 User existence check result:', {
-        existingUser,
-        selectError,
-        errorCode: selectError?.code,
-        errorMessage: selectError?.message
+      console.log('🟢 ProfilePage - handleSaveProfile called with service layer');
+      console.log('📥 ProfileData received from form:', {
+        ...profileData,
+        avatar: profileData.avatar ? `[${profileData.avatar.length} chars]` : undefined
       });
 
-      let result;
-      if (existingUser || (selectError && selectError.code !== 'PGRST116')) {
-        // Update existing user profile (or if there was an error other than "not found")
-        if (selectError && selectError.code !== 'PGRST116') {
-          console.warn('⚠️ Error checking user existence (but proceeding with update):', selectError);
-        }
-        
-        console.log('🔄 Updating existing user profile...');
-        console.log('🔄 Existing user data:', existingUser);
-        
-        // Add updated_at timestamp for updates
-        updateData.updated_at = new Date().toISOString();
-        
-        console.log('📤 Sending UPDATE to database with data:', updateData);
-        
-        result = await supabase
-          .from('user')
-          .update(updateData)
-          .eq('provider_id', user.id)
-          .select(); // Return updated data
-          
-        console.log('✅ UPDATE result:', result);
-      } else {
-        // Create new user profile (selectError.code === 'PGRST116' means no rows found)
-        console.log('🆕 Creating new user profile...');
-        
-        const newUserData = {
-          provider_id: user.id,
-          email: user.email,
-          provider: 'supabase',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          ...updateData
-        };
-        
-        console.log('📤 Sending INSERT to database with data:', newUserData);
-        
-        result = await supabase
-          .from('user')
-          .insert([newUserData])
-          .select(); // Return inserted data
-          
-        console.log('✅ INSERT result:', result);
+      // Get current authenticated user
+      const authResult = await getCurrentAuthUser();
+      if (!authResult.success || !authResult.data) {
+        throw new Error(authResult.error || 'User not authenticated');
       }
 
-      if (result.error) {
-        console.error('🔴 Database operation failed:', result.error);
-        console.error('🔴 Error details:', {
-          message: result.error.message,
-          details: result.error.details,
-          hint: result.error.hint,
-          code: result.error.code
-        });
-        throw result.error;
+      const { id: providerId } = authResult.data;
+      console.log('👤 Authenticated user provider_id:', providerId);
+
+      // Use profileService to update the profile
+      const updateResult = await updateUserProfile(providerId, profileData);
+      
+      if (!updateResult.success) {
+        throw new Error(updateResult.error || 'Profile update failed');
       }
 
-      console.log('✅ Profile saved successfully!');
-      console.log('✅ Database operation result:', result.data);
+      console.log('✅ Profile updated successfully via service layer');
+      console.log('✅ Updated profile data:', updateResult.data);
       
       // Refresh profile data to reflect changes
       await fetchProfileData();
       
     } catch (error) {
-      console.error('🔴 CRITICAL ERROR in handleSaveProfile:', error);
-      
-      // Enhanced error logging
-      if (error && typeof error === 'object') {
-        const errorObj = error as any;
-        console.error('🔴 Error analysis:', {
-          name: errorObj.name,
-          message: errorObj.message,
-          code: errorObj.code,
-          details: errorObj.details,
-          hint: errorObj.hint,
-          statusCode: errorObj.statusCode,
-          error: errorObj.error
-        });
-        
-        // Log Supabase specific error information
-        if (errorObj.code) {
-          console.error('🔴 Supabase error code:', errorObj.code);
-          if (errorObj.code === 'PGRST116') {
-            console.error('🔴 PGRST116: No rows found - this might indicate user record doesn\'t exist');
-          } else if (errorObj.code.startsWith('PGRST')) {
-            console.error('🔴 PostgREST error detected');
-          } else if (errorObj.code.startsWith('23')) {
-            console.error('🔴 Database constraint violation');
-          }
-        }
-        
-        // Log request details if available
-        if (errorObj.details) {
-          console.error('🔴 Additional error details:', errorObj.details);
-        }
-        
-        // Log stack trace if available
-        if (errorObj.stack) {
-          console.error('🔴 Stack trace:', errorObj.stack);
-        }
-      }
-      
-      console.error('🔴 Profile save failed - throwing error to UI');
-      throw error;
-    }
-    } catch (error) {
-      alert(`handleSaveProfile ERROR: ${error.message || error}`);
-      console.error('handleSaveProfile full error:', error);
+      console.error('🔴 Error in handleSaveProfile:', error);
       throw error;
     }
   };

@@ -20,6 +20,7 @@ import {
   Shield,
   Trash2
 } from 'lucide-react';
+import { ProfileUpdateData } from '../../services/profileService';
 
 // Create schemas as functions to avoid initialization issues
 const getProfileSchema = () => z.object({
@@ -190,7 +191,7 @@ interface UserSettingsPanelProps {
       achievements: boolean;
     };
   };
-  onSave?: (data: ProfileFormValues) => Promise<void>;
+  onSave?: (data: ProfileUpdateData) => Promise<void>;
   onPasswordChange?: () => void;
   onDeleteAccount?: () => void;
   className?: string;
@@ -509,7 +510,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
           throw new Error(`onSave is not a function. It is: ${typeof onSave}`);
         }
         
-        const result = await onSave(changedData as ProfileFormValues);
+        const result = await onSave(changedData as ProfileUpdateData);
         alert('onSave completed successfully');
         return result;
       } catch (error) {

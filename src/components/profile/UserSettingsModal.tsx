@@ -2,12 +2,13 @@ import React, { useEffect, useState, useRef } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { UserSettingsPanel } from './UserSettingsPanel';
 import { supabase } from '../../utils/supabaseClient';
+import { ProfileUpdateData } from '../../services/profileService';
 
 interface UserSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
-  onSave?: (data: any) => Promise<void>;
+  onSave?: (data: ProfileUpdateData) => Promise<void>;
 }
 
 export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ 
