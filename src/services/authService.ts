@@ -26,10 +26,8 @@ class AuthService {
 
       if (error) return { user: null, error };
 
-      // Create user profile in our database
-      if (data.user) {
-        await this.createUserProfile(data.user, username);
-      }
+      // Database trigger handle_new_user() will automatically create the user profile
+      // No need to manually create it here - prevents race condition
 
       return { user: data.user, error: null };
     } catch (error) {
@@ -152,28 +150,8 @@ class AuthService {
     return supabase.auth.onAuthStateChange(callback);
   }
 
-  // Create user profile in database after successful signup
-  private async createUserProfile(user: User, username: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('user')
-        .insert({
-          provider: 'supabase',
-          provider_id: user.id,
-          email: user.email || '',
-          name: username,
-          picurl: user.user_metadata?.avatar_url,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        console.error('Error creating user profile:', error);
-      }
-    } catch (error) {
-      console.error('Error creating user profile:', error);
-    }
-  }
+  // Note: createUserProfile method removed - database trigger handles user creation automatically
+  // This prevents race conditions and ensures consistent user creation
 
   // Get user profile from database
   async getUserProfile(userId: string): Promise<{ data: any; error: any }> {

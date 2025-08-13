@@ -139,14 +139,48 @@ export const ensureUserProfileExists = async (
       return existingProfileResult;
     }
 
-    console.log('📝 Creating new user profile...');
+    console.log('📝 Profile not found - database trigger should have created it');
+    console.log('⚠️ This might indicate the trigger failed or auth user doesn\'t exist');
+    
+    // Since we're using database-first approach, the trigger should have created the profile
+    // If we're here, it means either:
+    // 1. The user signed up before the trigger was added
+    // 2. The trigger failed for some reason
+    // 3. This is being called for a non-existent auth user
+    
+    // Let's try to create the profile manually as a fallback
+    console.log('📝 Attempting manual profile creation as fallback...');
+
+    // Generate unique username
+    let username = defaultUsername || email?.split('@')[0] || 'user';
+    let usernameAttempt = username;
+    let counter = 0;
+    
+    // Check for username uniqueness
+    while (true) {
+      const { data: existingUser } = await supabase
+        .from('user')
+        .select('id')
+        .eq('username', usernameAttempt)
+        .maybeSingle();
+      
+      if (!existingUser) break;
+      
+      counter++;
+      usernameAttempt = `${username}_${counter}`;
+      if (counter > 100) {
+        // Fallback to random number if too many attempts
+        usernameAttempt = `${username}_${Math.floor(Math.random() * 10000)}`;
+        break;
+      }
+    }
 
     // Prepare user data for insertion
     const userData = {
       provider_id: providerId,
       email: email || null,
       provider: 'supabase',
-      username: defaultUsername || email?.split('@')[0] || 'user',
+      username: usernameAttempt,
       name: defaultUsername || email?.split('@')[0] || 'User',
       display_name: '',
       bio: '',
@@ -157,9 +191,9 @@ export const ensureUserProfileExists = async (
       updated_at: new Date().toISOString()
     };
 
-    console.log('📝 Inserting new user profile:', userData);
+    console.log('📝 Inserting new user profile with username:', usernameAttempt);
 
-    // Insert new user profile
+    // Insert new user profile with conflict handling
     const { data: newUser, error: insertError } = await supabase
       .from('user')
       .insert(userData)
@@ -169,6 +203,15 @@ export const ensureUserProfileExists = async (
     console.log('💾 User profile insert result:', { newUser, insertError });
 
     if (insertError) {
+      // Check if it's a duplicate key error
+      if (insertError.code === '23505') {
+        console.log('⚠️ Profile already exists (race condition), fetching it...');
+        // Profile was created by another process, fetch it
+        const retryResult = await getUserProfile(providerId);
+        if (retryResult.success && retryResult.data) {
+          return retryResult;
+        }
+      }
       console.error('❌ User profile insert error:', insertError);
       return { success: false, error: `Failed to create user profile: ${insertError.message} (Code: ${insertError.code})` };
     }
@@ -340,13 +383,13 @@ export const updateUserProfile = async (
 
     console.log('📤 Sending UPDATE to database with data:', updateData);
 
-    // Update the user profile
+    // Update the user profile with better error handling
     const { data: updatedUser, error: updateError } = await supabase
       .from('user')
       .update(updateData)
       .eq('provider_id', providerId)
       .select('*')
-      .single();
+      .maybeSingle(); // Use maybeSingle to handle missing records gracefully
 
     console.log('✅ UPDATE result:', { updatedUser, updateError });
 
@@ -358,11 +401,51 @@ export const updateUserProfile = async (
         hint: updateError.hint,
         code: updateError.code
       });
+      
+      // Check if it's a "no rows" error and try to create the profile
+      if (updateError.code === 'PGRST116') {
+        console.log('⚠️ User profile not found, attempting to create it...');
+        const createResult = await ensureUserProfileExists(providerId);
+        if (createResult.success) {
+          // Retry the update after creating the profile
+          console.log('🔄 Retrying update after profile creation...');
+          const { data: retryUpdate, error: retryError } = await supabase
+            .from('user')
+            .update(updateData)
+            .eq('provider_id', providerId)
+            .select('*')
+            .single();
+          
+          if (retryError) {
+            return { success: false, error: `Profile update failed after creation: ${retryError.message}` };
+          }
+          return { success: true, data: retryUpdate as UserProfile };
+        }
+        return { success: false, error: 'Profile not found and could not be created' };
+      }
+      
       return { success: false, error: `Profile update failed: ${updateError.message}` };
     }
 
     if (!updatedUser) {
-      return { success: false, error: 'Profile update failed - no data returned' };
+      // Profile might not exist yet, try to ensure it exists
+      console.log('⚠️ No data returned from update, checking if profile exists...');
+      const ensureResult = await ensureUserProfileExists(providerId);
+      if (!ensureResult.success) {
+        return { success: false, error: 'Profile update failed - profile does not exist' };
+      }
+      // Retry the update
+      const { data: retryUpdate, error: retryError } = await supabase
+        .from('user')
+        .update(updateData)
+        .eq('provider_id', providerId)
+        .select('*')
+        .single();
+      
+      if (retryError || !retryUpdate) {
+        return { success: false, error: 'Profile update failed after ensuring profile exists' };
+      }
+      return { success: true, data: retryUpdate as UserProfile };
     }
 
     console.log('✅ Profile updated successfully:', updatedUser);
