@@ -6,234 +6,164 @@ import { useNavigate } from 'react-router-dom';
 const PRIVACY_CONTENT = `
 # Privacy Policy
 
+*Last Updated: August 2025*
+
 ## 1. Introduction
 
-GameVault ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our gaming review platform.
+GameVault ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our gaming community platform.
 
 ## 2. Information We Collect
 
-### 2.1 Personal Information
-We collect information you provide directly to us, such as:
-- **Account Information**: Username, email address, password (encrypted)
-- **Profile Information**: Display name, bio, location, website, gaming platform preferences
-- **User Content**: Game reviews, ratings, comments, and other content you post
+### 2.1 Information You Provide
+- **Account Information**: Username, email address, password (encrypted), and profile information
+- **Profile Data**: Avatar, bio, location (optional), gaming preferences, and platform preferences
+- **User Content**: Reviews, ratings, comments, game lists, and other content you post
+- **Communications**: Messages you send to us or other users through the platform
 
-### 2.2 Automatically Collected Information
-When you use our service, we automatically collect:
-- **Usage Data**: Pages visited, time spent, features used, games searched
-- **Device Information**: Browser type, operating system, IP address, device identifiers
-- **Performance Data**: Load times, errors, crash reports for service improvement
+### 2.2 Information Collected Automatically
+- **Usage Data**: Pages visited, features used, time spent on the platform, and interaction patterns
+- **Game Activity**: Games viewed, reviewed, rated, and added to lists
+- **Device Information**: Browser type, operating system, device type, and screen resolution
+- **Log Data**: IP address, access times, and referring URLs
 
-### 2.3 Third-Party Information
-We receive information from third-party services:
-- **IGDB**: Game metadata, images, and information for our game database
-- **Authentication Providers**: If you sign up using social logins (future feature)
+### 2.3 Information from Third Parties
+- **Authentication Providers**: If you sign in using social login, we receive basic profile information
+- **Game Data**: We retrieve game information from IGDB (Internet Game Database)
 
 ## 3. How We Use Your Information
 
-### 3.1 Service Provision
+We use collected information to:
+- Provide and maintain the Service
 - Create and manage your account
-- Display your profile and content to other users
-- Enable game reviews, ratings, and social features
-- Provide personalized game recommendations
-
-### 3.2 Communication
-- Send account-related notifications
-- Respond to your inquiries and support requests
-- Send important service updates (security, terms changes)
-
-### 3.3 Improvement and Analytics
-- Analyze usage patterns to improve our service
-- Monitor and analyze trends and user behavior
-- Develop new features and functionality
-
-### 3.4 Legal and Safety
-- Enforce our Terms of Service
-- Protect against fraud and abuse
+- Personalize your experience and provide game recommendations
+- Process and display your reviews, ratings, and other content
+- Communicate with you about updates, features, and community activities
+- Improve our Service through analytics and user feedback
+- Detect and prevent fraud, abuse, and security issues
 - Comply with legal obligations
 
 ## 4. Information Sharing and Disclosure
 
-### 4.1 Public Information
-The following information is publicly visible:
-- Username and display name
-- Profile information (bio, location, website, platform)
-- Game reviews and ratings
-- Comments on reviews
-- Public activity (games reviewed, ratings given)
+### 4.1 We Do Not Sell Your Data
+We never sell, rent, or trade your personal information to third parties for their marketing purposes.
 
 ### 4.2 Service Providers
-We may share information with trusted third-party service providers:
-- **Hosting Services**: Supabase for database and authentication
-- **Content Delivery**: For fast loading of images and content
-- **Analytics**: To understand how our service is used (anonymized data)
+We share information with third-party service providers that help us operate the Service:
+- **Supabase**: Authentication and database services
+- **IGDB**: Game information and metadata
+- **Analytics Providers**: To understand usage patterns (anonymized data only)
 
-### 4.3 Legal Requirements
-We may disclose information when required by law or to:
-- Respond to legal requests or court orders
-- Protect our rights, property, or safety
-- Prevent fraud or abuse
-- Investigate potential violations of our terms
+### 4.3 Public Information
+Your public profile, reviews, ratings, and comments are visible to other users. You control what information appears on your public profile.
 
-### 4.4 Business Transfers
-In the event of a merger, acquisition, or sale, user information may be transferred as part of the business assets.
+### 4.4 Legal Requirements
+We may disclose information if required by law, court order, or government request, or if necessary to protect our rights, users, or the public.
 
 ## 5. Data Security
 
-### 5.1 Security Measures
-We implement appropriate technical and organizational measures:
-- **Encryption**: Data is encrypted in transit and at rest
-- **Access Controls**: Limited access to personal information
-- **Regular Audits**: Security reviews and vulnerability assessments
-- **Secure Infrastructure**: Using enterprise-grade hosting services
+We implement appropriate technical and organizational measures to protect your information:
+- Encryption of passwords and sensitive data
+- Secure HTTPS connections
+- Regular security audits and updates
+- Limited access to personal information by employees
+- Secure data storage with Supabase
 
-### 5.2 Account Security
-You can help protect your account by:
-- Using a strong, unique password
-- Not sharing your login credentials
-- Logging out of shared devices
-- Reporting suspicious activity immediately
+However, no method of transmission over the internet is 100% secure, and we cannot guarantee absolute security.
 
-## 6. Your Rights and Choices
+## 6. Cookies and Tracking Technologies
 
-### 6.1 Account Management
-You can:
-- Update your profile information anytime
-- Change your password and email
-- Control what information is publicly visible
-- Delete your reviews and comments
+### 6.1 How We Use Cookies
+- **Essential Cookies**: For authentication and core functionality
+- **Preference Cookies**: To remember your settings and preferences
+- **Analytics Cookies**: To understand how users interact with the Service
 
-### 6.2 Data Access and Portability
-You have the right to:
-- Request a copy of your personal data
-- Export your reviews and ratings
-- Receive your data in a machine-readable format
+### 6.2 Managing Cookies
+You can control cookies through your browser settings. Disabling certain cookies may limit functionality.
 
-### 6.3 Data Correction and Deletion
-You can:
-- Correct inaccurate personal information
-- Request deletion of your account and data
-- Remove specific reviews or comments
+## 7. Your Rights and Choices
 
-### 6.4 Communication Preferences
-You can opt out of:
-- Non-essential email communications
-- Promotional notifications
-- Feature announcements (while keeping security updates)
+### 7.1 Access and Update
+You can access and update your account information through your profile settings.
 
-## 7. Data Retention
+### 7.2 Data Portability
+You can request a copy of your data in a machine-readable format.
 
-### 7.1 Active Accounts
-We retain your information while your account is active and as needed to provide services.
+### 7.3 Deletion
+You can request deletion of your account and associated data. Some information may be retained for legal or legitimate business purposes.
 
-### 7.2 Inactive Accounts
-After account deletion, we may retain some information for:
-- Legal compliance (as required by law)
-- Fraud prevention
-- Analytics (in anonymized form)
+### 7.4 Opt-Out
+You can opt-out of:
+- Promotional emails (through unsubscribe links)
+- Certain data collection through privacy settings
+- Analytics tracking through browser settings
 
-### 7.3 Content Retention
-- Deleted reviews may be cached for up to 30 days
-- Comments on others' reviews may remain visible unless specifically deleted
-- Public contributions to the gaming database may be retained for community benefit
+### 7.5 Do Not Track
+We currently do not respond to Do Not Track browser signals.
 
-## 8. International Data Transfers
+## 8. Data Retention
 
-GameVault is hosted on servers that may be located in different countries. By using our service, you consent to the transfer of your information to countries that may have different data protection laws.
+We retain your information for as long as your account is active or as needed to provide the Service. After account deletion:
+- Account data is deleted within 30 days
+- Anonymized analytics data may be retained
+- Content you posted may remain visible but dissociated from your account
+- We may retain certain information to comply with legal obligations
 
-## 9. Children's Privacy
+## 9. International Data Transfers
 
-### 9.1 Age Restrictions
-Our service is not intended for children under 13. We do not knowingly collect personal information from children under 13.
+If you access GameVault from outside the United States, your information may be transferred to and processed in the United States. By using the Service, you consent to this transfer.
 
-### 9.2 Parental Controls
-If you believe a child under 13 has provided personal information, please contact us immediately for removal.
+### 9.1 GDPR Compliance (European Users)
+For users in the European Economic Area:
+- We process data based on consent, contract, or legitimate interests
+- You have rights to access, rectification, erasure, and data portability
+- You may lodge complaints with supervisory authorities
+- Contact us for any GDPR-related requests
 
-## 10. Cookies and Tracking
+## 10. California Privacy Rights
 
-### 10.1 Essential Cookies
-We use cookies that are necessary for:
-- User authentication and session management
-- Security and fraud prevention
-- Basic site functionality
-
-### 10.2 Analytics Cookies
-We may use analytics cookies to:
-- Understand how users interact with our service
-- Identify popular features and content
-- Improve user experience
-
-### 10.3 Cookie Management
-You can control cookies through your browser settings, though this may affect site functionality.
-
-## 11. Third-Party Links and Services
-
-### 11.1 External Links
-Our service may contain links to third-party websites. We are not responsible for their privacy practices.
-
-### 11.2 Game Information
-Game data and images are sourced from IGDB. Their use is subject to IGDB's terms and policies.
-
-## 12. Changes to This Policy
-
-### 12.1 Policy Updates
-We may update this Privacy Policy to reflect:
-- Changes in our practices
-- Legal or regulatory requirements
-- Service improvements
-
-### 12.2 Notification
-We will notify you of significant changes through:
-- Email notification to registered users
-- Prominent notice on our website
-- In-app notifications
-
-### 12.3 Continued Use
-Continued use of our service after policy changes constitutes acceptance of the updated terms.
-
-## 13. Regional Privacy Rights
-
-### 13.1 GDPR (European Users)
-If you are in the European Economic Area, you have additional rights under GDPR:
-- Right to be informed about data processing
-- Right of access to your personal data
-- Right to rectification of inaccurate data
-- Right to erasure ("right to be forgotten")
-- Right to restrict processing
-- Right to data portability
-- Right to object to processing
-- Rights related to automated decision-making
-
-### 13.2 CCPA (California Users)
-California residents have rights under the California Consumer Privacy Act:
+California residents have additional rights under the California Consumer Privacy Act (CCPA):
 - Right to know what personal information is collected
-- Right to delete personal information
-- Right to opt-out of the sale of personal information (we do not sell data)
+- Right to know if information is sold or disclosed (we do not sell information)
+- Right to deletion of personal information
 - Right to non-discrimination for exercising privacy rights
 
-## 14. Contact Information
+## 11. Changes to This Privacy Policy
 
-### 14.1 Privacy Inquiries
-For privacy-related questions, contact us at:
+We may update this Privacy Policy periodically. We will notify you of material changes via:
+- Email notification to registered users
+- Prominent notice on the Service
+- Update to the "Last Updated" date
+
+Your continued use after changes constitutes acceptance of the updated policy.
+
+## 12. Third-Party Links
+
+GameVault may contain links to third-party websites. We are not responsible for their privacy practices. We encourage you to review their privacy policies.
+
+## 13. Contact Information
+
+For privacy-related questions or concerns:
 - **Email**: privacy@gamevault.com
-- **Subject Line**: Privacy Policy Inquiry
+- **Data Protection Officer**: dpo@gamevault.com
+- **Address**: GameVault LLC
 
-### 14.2 Data Protection Officer
-For GDPR-related inquiries:
-- **Email**: dpo@gamevault.com
+For GDPR inquiries (EU residents): gdpr@gamevault.com
+For CCPA inquiries (California residents): ccpa@gamevault.com
 
-### 14.3 Response Time
-We will respond to privacy inquiries within:
-- 30 days for general inquiries
-- 72 hours for urgent security matters
-- As required by applicable law for formal requests
+## 14. Data Protection Framework
 
-## 15. Effective Date
-
-This Privacy Policy is effective as of the "Last Updated" date shown at the top of this page and will remain in effect except with respect to any changes in its provisions in the future, which will be in effect immediately after being posted.
+We adhere to the following principles:
+- **Lawfulness**: Processing data only with legal basis
+- **Transparency**: Clear communication about data use
+- **Purpose Limitation**: Using data only for stated purposes
+- **Data Minimization**: Collecting only necessary information
+- **Accuracy**: Keeping information up to date
+- **Storage Limitation**: Retaining data only as long as needed
+- **Integrity**: Ensuring data security and confidentiality
+- **Accountability**: Taking responsibility for data protection
 `;
 
-const LAST_UPDATED = "January 15, 2024";
+const LAST_UPDATED = "January 2025";
 
 interface TableOfContentsItem {
   id: string;
@@ -252,18 +182,18 @@ const PrivacyPage: React.FC = React.memo(() => {
     const lines = PRIVACY_CONTENT.split('\n');
     const items: TableOfContentsItem[] = [];
     
-    lines.forEach((line, index) => {
+    lines.forEach((line) => {
       const trimmed = line.trim();
       if (trimmed.startsWith('#')) {
         const level = trimmed.match(/^#+/)?.[0].length || 1;
-        const title = trimmed.replace(/^#+\s*/, '');
+        const title = trimmed.replace(/^#+\s*/, '').replace(/^\*.*\*$/, ''); // Remove italic markers
         const id = title.toLowerCase()
           .replace(/[^\w\s-]/g, '')
           .replace(/\s+/g, '-')
           .replace(/-+/g, '-')
           .trim();
         
-        if (title && level <= 3) {
+        if (title && level <= 3 && !title.includes('Last Updated')) {
           items.push({ id, title, level });
         }
       }
@@ -311,17 +241,50 @@ const PrivacyPage: React.FC = React.memo(() => {
   const renderContent = () => {
     const lines = PRIVACY_CONTENT.split('\n');
     const elements: JSX.Element[] = [];
+    let inList = false;
+    let listItems: string[] = [];
 
     lines.forEach((line, index) => {
       const trimmed = line.trim();
       
       if (!trimmed) {
+        if (inList && listItems.length > 0) {
+          elements.push(
+            <ul key={`list-${index}`} className="list-disc list-inside text-gray-300 mb-4 space-y-2 ml-4">
+              {listItems.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          );
+          listItems = [];
+          inList = false;
+        }
         elements.push(<div key={index} className="mb-4" />);
         return;
       }
 
+      // Italic text (for date)
+      if (trimmed.startsWith('*') && trimmed.endsWith('*')) {
+        elements.push(
+          <p key={index} className="text-gray-400 italic mb-4">
+            {trimmed.slice(1, -1)}
+          </p>
+        );
+      }
       // Headers
-      if (trimmed.startsWith('#')) {
+      else if (trimmed.startsWith('#')) {
+        if (inList && listItems.length > 0) {
+          elements.push(
+            <ul key={`list-${index}`} className="list-disc list-inside text-gray-300 mb-4 space-y-2 ml-4">
+              {listItems.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          );
+          listItems = [];
+          inList = false;
+        }
+
         const level = trimmed.match(/^#+/)?.[0].length || 1;
         const title = trimmed.replace(/^#+\s*/, '');
         const id = title.toLowerCase()
@@ -342,6 +305,11 @@ const PrivacyPage: React.FC = React.memo(() => {
           </h1>
         );
       }
+      // List items
+      else if (trimmed.startsWith('-')) {
+        inList = true;
+        listItems.push(trimmed.substring(1).trim());
+      }
       // Bold text (markdown **text**)
       else if (trimmed.includes('**')) {
         const parts = trimmed.split(/(\*\*[^*]+\*\*)/);
@@ -360,6 +328,17 @@ const PrivacyPage: React.FC = React.memo(() => {
       }
       // Regular paragraphs
       else {
+        if (inList && listItems.length > 0) {
+          elements.push(
+            <ul key={`list-${index}`} className="list-disc list-inside text-gray-300 mb-4 space-y-2 ml-4">
+              {listItems.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          );
+          listItems = [];
+          inList = false;
+        }
         elements.push(
           <p key={index} className="text-gray-300 mb-4 leading-relaxed">
             {trimmed}
@@ -367,6 +346,17 @@ const PrivacyPage: React.FC = React.memo(() => {
         );
       }
     });
+
+    // Handle any remaining list items
+    if (inList && listItems.length > 0) {
+      elements.push(
+        <ul key="list-final" className="list-disc list-inside text-gray-300 mb-4 space-y-2 ml-4">
+          {listItems.map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
+        </ul>
+      );
+    }
 
     return elements;
   };
