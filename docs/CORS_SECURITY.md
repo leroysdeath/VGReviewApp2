@@ -65,15 +65,15 @@ The previous CORS configuration allowed requests from any origin (`Access-Contro
 ### Production
 ```typescript
 allowedOrigins: [
-  'https://your-production-domain.com',
-  'https://your-production-domain.netlify.app'
+  'https://grand-narwhal-4e85d9.space',
+  'https://grand-narwhal-4e85d9.space'
 ]
 ```
 
 ### Staging
 ```typescript
 allowedOrigins: [
-  'https://your-staging-domain.netlify.app',
+  'https://staging.grand-narwhal-4e85d9.space',
   'http://localhost:5173',
   'http://localhost:3000'
 ]
@@ -133,8 +133,8 @@ export default serve(async (req: Request): Promise<Response> => {
    // In src/config/cors.ts and supabase/functions/_shared/cors.ts
    case 'production':
      return [
-       'https://your-actual-domain.com',        // ← Update this
-       'https://your-actual-domain.netlify.app' // ← Update this
+       'https://grand-narwhal-4e85d9.space',
+       'https://www.grand-narwhal-4e85d9.space'
      ];
    ```
 
@@ -142,7 +142,7 @@ export default serve(async (req: Request): Promise<Response> => {
    ```typescript
    case 'staging':
      return [
-       'https://your-staging-domain.netlify.app', // ← Update this
+       'https://staging.grand-narwhal-4e85d9.space',
        'http://localhost:5173',
        'http://localhost:3000'
      ];

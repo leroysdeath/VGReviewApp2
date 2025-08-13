@@ -1,19 +1,8 @@
-interface CorsConfig {
-  allowedOrigins: string[];
-  allowedMethods: string[];
-  allowedHeaders: string[];
-  maxAge: number;
-}
-
-const getEnvironment = (): 'development' | 'staging' | 'production' => {
-  const env = Deno.env.get('ENVIRONMENT') || Deno.env.get('NODE_ENV') || 'development';
-  
-  if (env === 'production') return 'production';
-  if (env === 'staging') return 'staging';
-  return 'development';
+const getEnvironment = () => {
+  return process.env.ENVIRONMENT || process.env.NODE_ENV || 'development';
 };
 
-const getAllowedOrigins = (): string[] => {
+const getAllowedOrigins = () => {
   const environment = getEnvironment();
   
   switch (environment) {
@@ -43,37 +32,25 @@ const getAllowedOrigins = (): string[] => {
   }
 };
 
-const corsConfig: CorsConfig = {
-  allowedOrigins: getAllowedOrigins(),
-  allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'authorization',
-    'x-client-info',
-    'apikey',
-    'content-type',
-    'x-requested-with'
-  ],
-  maxAge: 86400
-};
-
-export const validateOrigin = (origin: string | null): string | null => {
+const validateOrigin = (origin) => {
   if (!origin) return null;
   
+  const allowedOrigins = getAllowedOrigins();
   const normalizedOrigin = origin.toLowerCase();
-  const isAllowed = corsConfig.allowedOrigins.some(allowed => 
+  const isAllowed = allowedOrigins.some(allowed => 
     normalizedOrigin === allowed.toLowerCase()
   );
   
   return isAllowed ? origin : null;
 };
 
-export const getCorsHeaders = (origin: string | null = null): Record<string, string> => {
+const getCorsHeaders = (origin = null) => {
   const validOrigin = validateOrigin(origin);
   
-  const headers: Record<string, string> = {
-    'Access-Control-Allow-Methods': corsConfig.allowedMethods.join(', '),
-    'Access-Control-Allow-Headers': corsConfig.allowedHeaders.join(', '),
-    'Access-Control-Max-Age': corsConfig.maxAge.toString(),
+  const headers = {
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Client-Info, ApiKey',
+    'Access-Control-Max-Age': '86400',
     'Vary': 'Origin'
   };
   
@@ -85,11 +62,10 @@ export const getCorsHeaders = (origin: string | null = null): Record<string, str
   return headers;
 };
 
-export const corsHeaders = getCorsHeaders();
-
-export const handleCorsRequest = (request: Request): Response | null => {
+export default async (request, context) => {
   const origin = request.headers.get('origin');
   
+  // Handle preflight OPTIONS requests
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -97,8 +73,10 @@ export const handleCorsRequest = (request: Request): Response | null => {
     });
   }
   
+  // Validate origin for non-OPTIONS requests
   const validOrigin = validateOrigin(origin);
   if (origin && !validOrigin) {
+    console.log(`CORS: Origin ${origin} not allowed`);
     return new Response('Origin not allowed', {
       status: 403,
       headers: {
@@ -107,5 +85,14 @@ export const handleCorsRequest = (request: Request): Response | null => {
     });
   }
   
-  return null;
+  // Continue to the next middleware/function
+  const response = await context.next();
+  
+  // Add CORS headers to the response
+  const corsHeaders = getCorsHeaders(origin);
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+  
+  return response;
 };

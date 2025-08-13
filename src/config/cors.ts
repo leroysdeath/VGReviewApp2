@@ -20,21 +20,21 @@ const getEnvironmentConfig = (): CorsConfig => {
       return {
         environment: 'production',
         allowedOrigins: [
-          'https://your-production-domain.com',
-          'https://your-production-domain.netlify.app'
+          'https://grand-narwhal-4e85d9.space',
+          'https://www.grand-narwhal-4e85d9.space'
         ],
-        apiBaseUrl: 'https://your-production-domain.com/api'
+        apiBaseUrl: 'https://grand-narwhal-4e85d9.space/api'
       };
     
     case 'staging':
       return {
         environment: 'staging',
         allowedOrigins: [
-          'https://your-staging-domain.netlify.app',
+          'https://staging.grand-narwhal-4e85d9.space',
           'http://localhost:5173',
           'http://localhost:3000'
         ],
-        apiBaseUrl: 'https://your-staging-domain.netlify.app/api'
+        apiBaseUrl: 'https://staging.grand-narwhal-4e85d9.space/api'
       };
     
     case 'development':
