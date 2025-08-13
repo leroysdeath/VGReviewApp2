@@ -40,8 +40,11 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   });
   const [isLoading, setIsLoading] = useState(true);
   const modalContentRef = useRef<HTMLDivElement>(null);
+  
+  // Add a refresh counter to force data refetch
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
-  // Fetch user data when modal opens
+  // Fetch user data when modal opens - force refresh every time
   useEffect(() => {
     const fetchUserData = async () => {
       if (!isOpen) {
@@ -51,6 +54,8 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       }
       
       if (isOpen && userId) {
+        // Force fresh data fetch every time modal opens
+        console.log('🔄 Modal opened - forcing fresh data fetch');
         setIsLoading(true);
         try {
           console.log('🟢 UserSettingsModal - fetchUserData called');
@@ -157,7 +162,15 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     };
 
     fetchUserData();
-  }, [isOpen, userId]);
+  }, [isOpen, userId, refreshCounter]); // Re-fetch every time modal opens or refresh is triggered
+  
+  // Force refresh when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔄 Modal opened - incrementing refresh counter to force data fetch');
+      setRefreshCounter(prev => prev + 1);
+    }
+  }, [isOpen]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -275,7 +288,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                   userId: userId
                 })}
                 <UserSettingsPanel 
-                key={isLoading ? 'loading' : 'loaded'}
+                key={`${userId}-${isLoading ? 'loading' : 'loaded'}-${userData?.username || 'empty'}`}
                 userId={userId}
                 initialData={userData || {
                   username: '',
