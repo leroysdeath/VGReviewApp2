@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const TERMS_CONTENT = `
 # Terms of Service
 
-*Last Updated: January 2025*
+*Last Updated: August 2025*
 
 ## 1. Acceptance of Terms
 
