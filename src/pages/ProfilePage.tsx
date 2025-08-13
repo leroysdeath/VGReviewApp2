@@ -281,6 +281,12 @@ const ProfilePage = () => {
             Top 5
           </button>
           <button
+            onClick={() => setActiveTab('last5')}
+            className={`pb-2 ${activeTab === 'last5' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
+          >
+            Last 5
+          </button>
+          <button
             onClick={() => setActiveTab('reviews')}
             className={`pb-2 ${activeTab === 'reviews' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
@@ -291,12 +297,6 @@ const ProfilePage = () => {
             className={`pb-2 ${activeTab === 'activity' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
             Activity
-          </button>
-          <button
-            onClick={() => setActiveTab('lists')}
-            className={`pb-2 ${activeTab === 'lists' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
-          >
-            Lists
           </button>
         </div>
 

@@ -28,7 +28,7 @@ interface Review {
 }
 
 interface ProfileDataProps {
-  activeTab: 'top5' | 'last5' | 'reviews' | 'activity' | 'lists';
+  activeTab: 'top5' | 'last5' | 'reviews' | 'activity';
   allGames: Game[];
   sortedReviews: Review[];
   reviewFilter: string;
@@ -54,7 +54,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
     return (
       <div>
         <h2 className="text-xl font-semibold text-white mb-6">
-          {isDummy ? 'Dummy ' : ''}Top 5 Highest Rated Games
+          {isDummy ? 'Dummy ' : ''}Top 5 Games
         </h2>
         
         {/* Desktop Version */}
@@ -137,90 +137,57 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
     );
   }
 
-  // Top 50 Tab Content
-  if (activeTab === 'top50') {
-    // Get top 50 highest rated games
-    const top50Games = [...allGames]
-      .sort((a, b) => b.rating - a.rating)
-      .slice(0, 50);
+  // Last 5 Tab Content
+  if (activeTab === 'last5') {
+    // Get the 5 most recent reviews and map to games
+    const last5Reviews = [...sortedReviews]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+    
+    const last5Games = last5Reviews
+      .map(review => allGames.find(game => game.id === review.gameId))
+      .filter(game => game !== undefined) as Game[];
 
     return (
       <div>
         <h2 className="text-xl font-semibold text-white mb-6">
-          {isDummy ? 'Dummy ' : ''}Top 50 Highest Rated Games
+          {isDummy ? 'Dummy ' : ''}Last 5 Games
         </h2>
         
-        {/* Desktop Version - 10 columns */}
-        <div className="hidden lg:grid lg:grid-cols-10 gap-4">
-          {top50Games.map((game, index) => (
+        {/* Desktop Version */}
+        <div className="hidden md:flex gap-6 justify-center">
+          {last5Games.map((game, index) => (
             <Link
               key={game.id}
               to={`/game/${game.id}`}
-              className="group relative hover:scale-105 transition-transform"
+              className="group relative flex-shrink-0 hover:scale-105 transition-transform"
             >
               <div className="relative">
                 <img
                   src={game.coverImage}
                   alt={game.title}
-                  className="w-full aspect-[3/4] object-cover rounded"
+                  className="w-48 h-64 object-cover rounded-lg"
                 />
                 {/* Rating at the bottom of cover art - full width */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
+                <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-2 py-1 rounded-b-lg">
                   <div className="text-center">
-                    <span className="text-white text-xs font-bold">
+                    <span className="text-white text-sm font-bold">
                       {game.rating && typeof game.rating === 'number' && game.rating > 0 
                         ? game.rating.toFixed(1) 
-                        : '-'}
+                        : 'No Rating'}
                     </span>
                   </div>
                 </div>
                 {/* Rank number */}
-                <div className="absolute top-1 left-1 bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                <div className="absolute top-2 left-2 bg-purple-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
                   {index + 1}
                 </div>
               </div>
-              <div className="mt-1">
-                <h3 className="text-white text-xs font-medium group-hover:text-purple-400 transition-colors line-clamp-2">
+              <div className="mt-2">
+                <h3 className="text-white font-medium text-center group-hover:text-purple-400 transition-colors">
                   {game.title}
                 </h3>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {/* Tablet Version - 6 columns */}
-        <div className="hidden md:grid lg:hidden md:grid-cols-6 gap-3">
-          {top50Games.map((game, index) => (
-            <Link
-              key={game.id}
-              to={`/game/${game.id}`}
-              className="group relative hover:scale-105 transition-transform"
-            >
-              <div className="relative">
-                <img
-                  src={game.coverImage}
-                  alt={game.title}
-                  className="w-full aspect-[3/4] object-cover rounded"
-                />
-                {/* Rating at the bottom of cover art - full width */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
-                  <div className="text-center">
-                    <span className="text-white text-xs font-bold">
-                      {game.rating && typeof game.rating === 'number' && game.rating > 0 
-                        ? game.rating.toFixed(1) 
-                        : '-'}
-                    </span>
-                  </div>
-                </div>
-                {/* Rank number */}
-                <div className="absolute top-1 left-1 bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
-                  {index + 1}
-                </div>
-              </div>
-              <div className="mt-1">
-                <h3 className="text-white text-xs font-medium group-hover:text-purple-400 transition-colors line-clamp-2">
-                  {game.title}
-                </h3>
+                <p className="text-gray-400 text-sm text-center">{game.genre}</p>
               </div>
             </Link>
           ))}
@@ -228,7 +195,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
 
         {/* Mobile Version - List format */}
         <div className="md:hidden space-y-3">
-          {top50Games.map((game, index) => (
+          {last5Games.map((game, index) => (
             <Link
               key={game.id}
               to={`/game/${game.id}`}
@@ -238,9 +205,8 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                 <img
                   src={game.coverImage}
                   alt={game.title}
-                  className="w-12 h-16 object-cover rounded"
+                  className="w-16 h-20 object-cover rounded"
                 />
-                {/* Rating overlay for mobile */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
                   <div className="text-center">
                     <span className="text-white text-xs font-bold">
@@ -250,17 +216,16 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                     </span>
                   </div>
                 </div>
+                {/* Rank number for mobile */}
+                <div className="absolute top-1 left-1 bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                  {index + 1}
+                </div>
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
-                    {index + 1}
-                  </div>
-                  <h3 className="text-white font-medium text-sm group-hover:text-purple-400 transition-colors">
-                    {game.title}
-                  </h3>
-                </div>
-                <p className="text-gray-400 text-xs">{game.genre}</p>
+                <h3 className="text-white font-medium group-hover:text-purple-400 transition-colors">
+                  {game.title}
+                </h3>
+                <p className="text-gray-400 text-sm">{game.genre}</p>
               </div>
             </Link>
           ))}

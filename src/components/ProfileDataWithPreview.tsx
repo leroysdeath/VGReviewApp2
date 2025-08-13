@@ -26,7 +26,7 @@ interface Review {
 }
 
 interface ProfileDataWithPreviewProps {
-  activeTab: 'top5' | 'last5' | 'reviews' | 'activity' | 'lists';
+  activeTab: 'top5' | 'last5' | 'reviews' | 'activity';
   sortedReviews: Review[];
   allGames: Game[];
   reviewFilter: string;
