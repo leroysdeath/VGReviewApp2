@@ -15,6 +15,15 @@ X-Content-Type-Options = "nosniff"
 Referrer-Policy = "strict-origin-when-cross-origin"
 Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
+# Production CORS headers (restrictive)
+[[headers]]
+for = "/api/*"
+[headers.values]
+Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+Access-Control-Allow-Headers = "Content-Type, Authorization, X-Requested-With, X-Client-Info, ApiKey"
+Access-Control-Max-Age = "86400"
+Vary = "Origin"
+
 # Cache for static assets
 [[headers]]
 for = "/assets/*"
@@ -40,9 +49,35 @@ status = 200
 # Environment-specific configurations
 [context.production.environment]
 NODE_ENV = "production"
+ENVIRONMENT = "production"
 
 [context.deploy-preview.environment]
 NODE_ENV = "development"
+ENVIRONMENT = "staging"
 
 [context.branch-deploy.environment]
 NODE_ENV = "development"
+ENVIRONMENT = "development"
+
+# Development-specific CORS (more permissive for localhost)
+[context.deploy-preview]
+[[context.deploy-preview.headers]]
+for = "/api/*"
+[context.deploy-preview.headers.values]
+Access-Control-Allow-Origin = "http://localhost:5173, http://localhost:3000, http://localhost:8888"
+Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+Access-Control-Allow-Headers = "Content-Type, Authorization, X-Requested-With, X-Client-Info, ApiKey"
+Access-Control-Allow-Credentials = "true"
+Access-Control-Max-Age = "86400"
+Vary = "Origin"
+
+[context.branch-deploy]
+[[context.branch-deploy.headers]]
+for = "/api/*"
+[context.branch-deploy.headers.values]
+Access-Control-Allow-Origin = "http://localhost:5173, http://localhost:3000, http://localhost:8888"
+Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+Access-Control-Allow-Headers = "Content-Type, Authorization, X-Requested-With, X-Client-Info, ApiKey"
+Access-Control-Allow-Credentials = "true"
+Access-Control-Max-Age = "86400"
+Vary = "Origin"

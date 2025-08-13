@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../utils/supabaseClient';
 import crypto from 'crypto';
 
 export interface CacheConfig {
