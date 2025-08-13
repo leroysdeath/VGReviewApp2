@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthModal } from '../../context/AuthModalContext';
+import { LegalModal } from '../LegalModal';
 
 // Form validation schemas
 const loginSchema = z.object({
@@ -59,6 +60,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [showLegalModal, setShowLegalModal] = useState(false);
+  const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy'>('terms');
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -471,13 +474,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   />
                   <span className="text-sm text-gray-300">
                     I agree to the{' '}
-                    <a href="/terms" className="text-purple-400 hover:text-purple-300" target="_blank" rel="noopener noreferrer">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLegalModalType('terms');
+                        setShowLegalModal(true);
+                      }}
+                      className="text-purple-400 hover:text-purple-300 underline"
+                      disabled={isLoading}
+                    >
                       Terms of Service
-                    </a>
+                    </button>
                     {' '}and{' '}
-                    <a href="/privacy" className="text-purple-400 hover:text-purple-300" target="_blank" rel="noopener noreferrer">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLegalModalType('privacy');
+                        setShowLegalModal(true);
+                      }}
+                      className="text-purple-400 hover:text-purple-300 underline"
+                      disabled={isLoading}
+                    >
                       Privacy Policy
-                    </a>
+                    </button>
                   </span>
                 </label>
                 {signupForm.formState.errors.agreeToTerms && (
@@ -583,6 +602,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Legal Modal */}
+      <LegalModal
+        isOpen={showLegalModal}
+        onClose={() => setShowLegalModal(false)}
+        type={legalModalType}
+      />
     </div>
   );
 };
