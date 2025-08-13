@@ -1,0 +1,194 @@
+// Supabase Authentication Service
+import { supabase } from './supabase';
+import type { User, Session } from '@supabase/supabase-js';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  created_at: string;
+}
+
+class AuthService {
+  async signUp(email: string, password: string, username: string): Promise<{ user: User | null; error: any }> {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username,
+            name: username
+          }
+        }
+      });
+
+      if (error) return { user: null, error };
+
+      // Database trigger handle_new_user() will automatically create the user profile
+      // No need to manually create it here - prevents race condition
+
+      return { user: data.user, error: null };
+    } catch (error) {
+      return { user: null, error };
+    }
+  }
+
+  async signIn(email: string, password: string): Promise<{ user: User | null; error: any }> {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      return { user: data.user, error };
+    } catch (error) {
+      return { user: null, error };
+    }
+  }
+
+  async signOut(): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase.auth.signOut();
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  }
+
+  async getCurrentUser(): Promise<User | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    } catch (error) {
+      console.error('Get current user error:', error);
+      return null;
+    }
+  }
+
+  async getCurrentSession(): Promise<Session | null> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session;
+    } catch (error) {
+      console.error('Get current session error:', error);
+      return null;
+    }
+  }
+
+  async updateProfile(updates: { username?: string; avatar?: string }): Promise<{ error: any }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { error: 'No user found' };
+
+      // Update auth metadata
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          username: updates.username,
+          avatar_url: updates.avatar,
+          name: updates.username || user.user_metadata?.username
+        }
+      });
+
+      if (authError) return { error: authError };
+
+      // Update user profile in database
+      const { error: profileError } = await supabase
+        .from('user')
+        .update({
+          name: updates.username || user.user_metadata?.username,
+          picurl: updates.avatar,
+          updated_at: new Date().toISOString()
+        })
+        .eq('provider_id', user.id);
+
+      return { error: profileError };
+    } catch (error) {
+      return { error };
+    }
+  }
+
+  async resetPassword(email: string): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  }
+
+  async updatePassword(newPassword: string): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  }
+
+  async signInWithProvider(provider: 'google' | 'github' | 'discord'): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  }
+
+  // Listen to auth state changes
+  onAuthStateChange(callback: (event: string, session: Session | null) => void) {
+    return supabase.auth.onAuthStateChange(callback);
+  }
+
+  // Note: createUserProfile method removed - database trigger handles user creation automatically
+  // This prevents race conditions and ensures consistent user creation
+
+  // Get user profile from database
+  async getUserProfile(userId: string): Promise<{ data: any; error: any }> {
+    try {
+      const { data, error } = await supabase
+        .from('user')
+        .select('*')
+        .eq('provider_id', userId)
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  }
+
+  // Delete user account
+  async deleteAccount(): Promise<{ error: any }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { error: 'No user found' };
+
+      // Delete user profile from database first
+      await supabase
+        .from('user')
+        .delete()
+        .eq('provider_id', user.id);
+
+      // Note: Supabase doesn't provide a direct way to delete auth users from client
+      // You would need to implement this via an Edge Function or handle it server-side
+      // For now, we'll just sign out the user
+      const { error } = await supabase.auth.signOut();
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  }
+}
+
+export const authService = new AuthService();
