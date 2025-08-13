@@ -6,115 +6,130 @@ import { useNavigate } from 'react-router-dom';
 const TERMS_CONTENT = `
 # Terms of Service
 
+*Last Updated: January 2025*
+
 ## 1. Acceptance of Terms
 
-By accessing and using GameVault ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
+By accessing or using GameVault ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use the Service.
 
-## 2. Description of Service
+## 2. User Accounts & Registration
 
-GameVault is a web-based platform that allows users to:
-- Create accounts and user profiles
-- Search and discover video games
-- Write and publish game reviews
-- Rate games on a scale of 1-10
-- Interact with other users' reviews through comments
-- Maintain personal game libraries and wishlists
+### 2.1 Eligibility
+You must be at least 16 years old to use GameVault. By creating an account, you represent that you meet this age requirement.
 
-## 3. User Accounts
+### 2.2 Account Information
+You agree to provide accurate, current, and complete information during registration and to update such information to keep it accurate, current, and complete.
 
-### 3.1 Registration
-To access certain features of the Service, you must register for an account by providing accurate, current, and complete information about yourself as prompted by the registration form.
+### 2.3 Account Security
+You are responsible for safeguarding your account password and for any activities or actions under your account. You agree to notify us immediately of any unauthorized use of your account.
 
-### 3.2 Account Security
-You are responsible for safeguarding the password and all activities that occur under your account. You agree to immediately notify us of any unauthorized use of your account.
+## 3. Acceptable Use Policy
 
-### 3.3 Account Termination
-We reserve the right to suspend or terminate your account at any time for violations of these Terms of Service.
+### 3.1 Prohibited Content
+You may not post, upload, or share content that:
+- Contains pornographic or sexually explicit material
+- Promotes or depicts violence, gore, or graphic content
+- Harasses, threatens, or discriminates against individuals or groups
+- Contains hate speech based on race, ethnicity, religion, gender, sexual orientation, disability, or other protected characteristics
+- Violates any applicable laws or regulations
 
-## 4. User Content and Conduct
+### 3.2 Profanity
+While profanity is permitted on the platform, it must not be used to target, harass, or attack other users. Profanity used in a harassing manner will be treated as a violation of our harassment policy.
 
-### 4.1 Content Guidelines
-Users may post reviews, comments, and other content ("User Content"). You agree that your User Content will not:
-- Contain harmful, threatening, abusive, harassing, defamatory, vulgar, obscene, or otherwise objectionable material
-- Infringe any patent, trademark, trade secret, copyright, or other proprietary rights
-- Contain spam, chain letters, or pyramid schemes
-- Impersonate any person or entity or misrepresent your affiliation with any person or entity
+### 3.3 Consequences
+Violations of this policy may result in content removal and account termination.
 
-### 4.2 Content Ownership
-You retain ownership of your User Content, but by posting it on GameVault, you grant us a non-exclusive, worldwide, royalty-free license to use, display, and distribute your content in connection with the Service.
+## 4. User-Generated Content
 
-### 4.3 Content Moderation
-We reserve the right to remove any User Content that violates these terms or is otherwise objectionable, at our sole discretion.
+### 4.1 Your Content
+You retain ownership of the reviews, ratings, comments, and other content you post on GameVault ("Your Content").
 
-## 5. Intellectual Property
+### 4.2 License to GameVault
+By posting Your Content, you grant GameVault a non-exclusive, worldwide, royalty-free, perpetual license to use, display, reproduce, and distribute Your Content in connection with the Service.
 
-### 5.1 GameVault Property
-The Service and its original content, features, and functionality are owned by GameVault and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
+### 4.3 Content Responsibility
+You are solely responsible for Your Content and the consequences of posting it. You represent that you have all necessary rights to post Your Content.
 
-### 5.2 Third-Party Content
-Game information, images, and metadata are sourced from third-party providers including IGDB. All rights to such content remain with their respective owners.
+## 5. Community Guidelines
 
-## 6. Privacy and Data Protection
+### 5.1 Authentic Reviews
+All reviews and ratings must be based on your genuine experience with games. Fake reviews, review manipulation, or incentivized reviews are prohibited.
 
-Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the Service, to understand our practices.
+### 5.2 No Spam
+Do not post repetitive, irrelevant, or promotional content. Self-promotion should be limited and relevant to the gaming community.
 
-## 7. Prohibited Uses
+### 5.3 No Impersonation
+Do not impersonate other users, developers, or any other individuals or entities.
 
-You may not use the Service:
-- For any unlawful purpose or to solicit others to perform unlawful acts
-- To violate any international, federal, provincial, or state regulations, rules, laws, or local ordinances
-- To infringe upon or violate our intellectual property rights or the intellectual property rights of others
-- To harass, abuse, insult, harm, defame, slander, disparage, intimidate, or discriminate
-- To submit false or misleading information
-- To upload viruses or other malicious code
-- To spam, phish, pharm, pretext, spider, crawl, or scrape
+## 6. Intellectual Property
 
-## 8. Service Availability
+### 6.1 Respect for IP Rights
+You must respect the intellectual property rights of game developers, publishers, and other content creators.
 
-### 8.1 Uptime
-While we strive to maintain high availability, we do not guarantee that the Service will be available 100% of the time.
+### 6.2 DMCA Compliance
+We respond to notices of alleged copyright infringement that comply with the Digital Millennium Copyright Act. If you believe your copyright has been infringed, please contact us with the required information.
 
-### 8.2 Maintenance
-We may temporarily suspend the Service for maintenance, updates, or improvements.
+### 6.3 Game Data
+Game information, images, and metadata are provided through third-party services (IGDB) and remain the property of their respective owners.
 
-## 9. Disclaimer of Warranties
+## 7. Privacy & Data Collection
 
-The Service is provided on an "AS IS" and "AS AVAILABLE" basis. GameVault expressly disclaims all warranties of any kind, whether express or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
+Your use of GameVault is also governed by our Privacy Policy, which describes how we collect, use, and protect your information.
 
-## 10. Limitation of Liability
+## 8. Third-Party Services
 
-In no event shall GameVault, its directors, employees, partners, agents, suppliers, or affiliates be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your use of the Service.
+### 8.1 External Services
+GameVault integrates with third-party services including IGDB for game data and Supabase for authentication and data storage. Your use of these services is subject to their respective terms and policies.
 
-## 11. Indemnification
+### 8.2 External Links
+GameVault may contain links to third-party websites. We are not responsible for the content or practices of these external sites.
 
-You agree to defend, indemnify, and hold harmless GameVault and its licensee and licensors, and their employees, contractors, agents, officers and directors, from and against any and all claims, damages, obligations, losses, liabilities, costs or debt, and expenses (including but not limited to attorney's fees).
+## 9. Termination & Suspension
 
-## 12. Termination
+We reserve the right to terminate or suspend your account immediately, without prior notice, for any violation of these Terms or for any other reason at our sole discretion.
 
-We may terminate or suspend your account and bar access to the Service immediately, without prior notice or liability, under our sole discretion, for any reason whatsoever and without limitation, including but not limited to a breach of the Terms.
+## 10. Disclaimers & Limitations
 
-## 13. Governing Law
+### 10.1 Service Availability
+GameVault is provided "as is" and "as available" without warranties of any kind. We do not guarantee uninterrupted or error-free service.
 
-These Terms shall be interpreted and governed by the laws of the jurisdiction in which GameVault operates, without regard to its conflict of law provisions.
+### 10.2 Limitation of Liability
+To the maximum extent permitted by law, GameVault shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the Service.
 
-## 14. Changes to Terms
+### 10.3 User Disputes
+You are solely responsible for your interactions with other users. We reserve the right, but have no obligation, to monitor disputes between users.
 
-We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will provide at least 30 days notice prior to any new terms taking effect.
+## 11. Dispute Resolution
 
-## 15. Contact Information
+### 11.1 Governing Law
+These Terms shall be governed by and construed in accordance with the laws of the United States, without regard to its conflict of law provisions.
 
-If you have any questions about these Terms of Service, please contact us at legal@gamevault.com.
+### 11.2 Arbitration
+Any dispute arising from these Terms shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association.
 
-## 16. Severability
+### 11.3 Class Action Waiver
+You agree to resolve disputes with GameVault on an individual basis and waive your right to participate in class actions.
 
-If any provision of these Terms is held to be unenforceable or invalid, such provision will be changed and interpreted to accomplish the objectives of such provision to the greatest extent possible under applicable law and the remaining provisions will continue in full force and effect.
+## 12. Changes to Terms
 
-## 17. Waiver
+We reserve the right to modify these Terms at any time. We will notify users of any material changes via email or through the Service. Your continued use of GameVault after such modifications constitutes acceptance of the updated Terms.
 
-The failure of GameVault to enforce any right or provision of these Terms will not be considered a waiver of those rights.
+## 13. Contact Information
+
+If you have any questions about these Terms of Service, please contact us at:
+- Email: legal@gamevault.com
+- Address: GameVault LLC
+
+## 14. Severability
+
+If any provision of these Terms is found to be unenforceable, the remaining provisions shall continue in full force and effect.
+
+## 15. Entire Agreement
+
+These Terms, together with our Privacy Policy, constitute the entire agreement between you and GameVault regarding the use of the Service.
 `;
 
-const LAST_UPDATED = "January 15, 2024";
+const LAST_UPDATED = "January 2025";
 
 interface TableOfContentsItem {
   id: string;
@@ -133,18 +148,18 @@ const TermsPage: React.FC = React.memo(() => {
     const lines = TERMS_CONTENT.split('\n');
     const items: TableOfContentsItem[] = [];
     
-    lines.forEach((line, index) => {
+    lines.forEach((line) => {
       const trimmed = line.trim();
       if (trimmed.startsWith('#')) {
         const level = trimmed.match(/^#+/)?.[0].length || 1;
-        const title = trimmed.replace(/^#+\s*/, '');
+        const title = trimmed.replace(/^#+\s*/, '').replace(/^\*.*\*$/, ''); // Remove italic markers
         const id = title.toLowerCase()
           .replace(/[^\w\s-]/g, '')
           .replace(/\s+/g, '-')
           .replace(/-+/g, '-')
           .trim();
         
-        if (title && level <= 3) {
+        if (title && level <= 3 && !title.includes('Last Updated')) {
           items.push({ id, title, level });
         }
       }
@@ -192,18 +207,50 @@ const TermsPage: React.FC = React.memo(() => {
   const renderContent = () => {
     const lines = TERMS_CONTENT.split('\n');
     const elements: JSX.Element[] = [];
-    let currentIndex = 0;
+    let inList = false;
+    let listItems: string[] = [];
 
     lines.forEach((line, index) => {
       const trimmed = line.trim();
       
       if (!trimmed) {
+        if (inList && listItems.length > 0) {
+          elements.push(
+            <ul key={`list-${index}`} className="list-disc list-inside text-gray-300 mb-4 space-y-2 ml-4">
+              {listItems.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          );
+          listItems = [];
+          inList = false;
+        }
         elements.push(<div key={index} className="mb-4" />);
         return;
       }
 
+      // Italic text (for date)
+      if (trimmed.startsWith('*') && trimmed.endsWith('*')) {
+        elements.push(
+          <p key={index} className="text-gray-400 italic mb-4">
+            {trimmed.slice(1, -1)}
+          </p>
+        );
+      }
       // Headers
-      if (trimmed.startsWith('#')) {
+      else if (trimmed.startsWith('#')) {
+        if (inList && listItems.length > 0) {
+          elements.push(
+            <ul key={`list-${index}`} className="list-disc list-inside text-gray-300 mb-4 space-y-2 ml-4">
+              {listItems.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          );
+          listItems = [];
+          inList = false;
+        }
+
         const level = trimmed.match(/^#+/)?.[0].length || 1;
         const title = trimmed.replace(/^#+\s*/, '');
         const id = title.toLowerCase()
@@ -224,8 +271,40 @@ const TermsPage: React.FC = React.memo(() => {
           </h1>
         );
       }
+      // List items
+      else if (trimmed.startsWith('-')) {
+        inList = true;
+        listItems.push(trimmed.substring(1).trim());
+      }
+      // Bold text (markdown **text**)
+      else if (trimmed.includes('**')) {
+        const parts = trimmed.split(/(\*\*[^*]+\*\*)/);
+        const formattedParts = parts.map((part, partIndex) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={partIndex} className="font-semibold text-white">{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        });
+        
+        elements.push(
+          <p key={index} className="text-gray-300 mb-4 leading-relaxed">
+            {formattedParts}
+          </p>
+        );
+      }
       // Regular paragraphs
       else {
+        if (inList && listItems.length > 0) {
+          elements.push(
+            <ul key={`list-${index}`} className="list-disc list-inside text-gray-300 mb-4 space-y-2 ml-4">
+              {listItems.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          );
+          listItems = [];
+          inList = false;
+        }
         elements.push(
           <p key={index} className="text-gray-300 mb-4 leading-relaxed">
             {trimmed}
@@ -233,6 +312,17 @@ const TermsPage: React.FC = React.memo(() => {
         );
       }
     });
+
+    // Handle any remaining list items
+    if (inList && listItems.length > 0) {
+      elements.push(
+        <ul key="list-final" className="list-disc list-inside text-gray-300 mb-4 space-y-2 ml-4">
+          {listItems.map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
+        </ul>
+      );
+    }
 
     return elements;
   };
