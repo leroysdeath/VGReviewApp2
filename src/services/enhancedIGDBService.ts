@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { browserCache } from './browserCacheService';
 import { sortGamesByPlatformPriority } from '../utils/platformPriority';
+import { igdbService } from './igdbApi';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL!,
@@ -55,7 +56,7 @@ class EnhancedIGDBService {
     staleWhileRevalidate: true,
   };
 
-  private edgeFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/igdb-cache`;
+  private edgeFunctionUrl = '/.netlify/functions/igdb-search';
 
   /**
    * Get game with multi-level caching
@@ -105,6 +106,20 @@ class EnhancedIGDBService {
       }
     } catch (error) {
       console.error('Error fetching game:', error);
+      
+      // Fallback to original igdbService for development
+      if (import.meta.env.DEV) {
+        console.log('🔄 Fallback: Using original igdbService for game:', gameId);
+        try {
+          const fallbackResult = await igdbService.getGameById(gameId.toString());
+          if (fallbackResult && opts.useCache) {
+            browserCache.set(browserCacheKey, fallbackResult, opts.browserCacheTTL);
+          }
+          return fallbackResult;
+        } catch (fallbackError) {
+          console.error('Fallback also failed:', fallbackError);
+        }
+      }
       
       // Return stale browser cache if available on error
       const staleCache = browserCache.get(browserCacheKey);
@@ -177,6 +192,21 @@ class EnhancedIGDBService {
     } catch (error) {
       console.error('Error searching games:', error);
       
+      // Fallback to original igdbService for development
+      if (import.meta.env.DEV) {
+        console.log('🔄 Fallback: Using original igdbService for search:', searchTerm);
+        try {
+          const fallbackResult = await igdbService.searchGames(searchTerm, filters.limit || 20);
+          const sortedFallback = sortGamesByPlatformPriority(fallbackResult);
+          if (sortedFallback && opts.useCache) {
+            browserCache.set(browserCacheKey, sortedFallback, opts.browserCacheTTL);
+          }
+          return sortedFallback;
+        } catch (fallbackError) {
+          console.error('Fallback search also failed:', fallbackError);
+        }
+      }
+      
       // Return stale cache if available (already sorted)
       const staleCache = browserCache.get(browserCacheKey);
       if (staleCache) {
@@ -237,6 +267,21 @@ class EnhancedIGDBService {
       }
     } catch (error) {
       console.error('Error fetching popular games:', error);
+      
+      // Fallback to original igdbService for development
+      if (import.meta.env.DEV) {
+        console.log('🔄 Fallback: Using original igdbService for popular games');
+        try {
+          const fallbackResult = await igdbService.getPopularGames(20);
+          const sortedFallback = sortGamesByPlatformPriority(fallbackResult);
+          if (sortedFallback && opts.useCache) {
+            browserCache.set(browserCacheKey, sortedFallback, opts.browserCacheTTL);
+          }
+          return sortedFallback;
+        } catch (fallbackError) {
+          console.error('Fallback popular games also failed:', fallbackError);
+        }
+      }
       
       const staleCache = browserCache.get(browserCacheKey);
       if (staleCache) {
@@ -485,28 +530,62 @@ class EnhancedIGDBService {
   // Private helper methods
 
   private async callEdgeFunction(params: any): Promise<CachedResponse> {
+    // Transform parameters to match the Netlify function format
+    let requestBody: any = {};
+
+    if (params.gameId) {
+      // Single game request
+      requestBody = {
+        gameId: params.gameId,
+        type: 'getById'
+      };
+    } else if (params.searchTerm) {
+      // Search request
+      requestBody = {
+        searchTerm: params.searchTerm,
+        limit: params.filters?.limit || 20
+      };
+    } else if (params.endpoint === 'popular') {
+      // Popular games request - use a popular search term
+      requestBody = {
+        searchTerm: 'zelda mario witcher',
+        limit: 20
+      };
+    }
+
     const response = await fetch(this.edgeFunctionUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(params)
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Edge function error: ${response.status} ${errorText}`);
+      throw new Error(`Netlify function error: ${response.status} ${errorText}`);
     }
 
     const result = await response.json();
     
+    // Handle different response formats from the Netlify function
+    let data;
+    let cached = false; // Netlify function doesn't indicate cache status
+    
+    if (params.gameId) {
+      // Single game response
+      data = result;
+    } else {
+      // Search/popular response
+      data = result.games || result;
+    }
+    
     return {
-      data: result.data,
-      cached: result.cached,
-      timestamp: new Date(result.timestamp),
+      data,
+      cached,
+      timestamp: new Date(),
       expiresAt: new Date(Date.now() + (params.ttl || 3600) * 1000),
-      cacheKey: result.cacheKey
+      cacheKey: `${params.endpoint || 'games'}:${params.gameId || params.searchTerm || 'popular'}`
     };
   }
 

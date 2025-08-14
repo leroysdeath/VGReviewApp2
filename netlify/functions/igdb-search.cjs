@@ -84,9 +84,17 @@ exports.handler = async (event, context) => {
     let query = null;
     let gameId = null;
     let requestType = 'search'; // default
+    let endpoint = 'games'; // default endpoint
+    let customRequestBody = null;
 
+    // Check if this is a bulk scraping request
+    if (requestData.isBulkRequest && requestData.endpoint) {
+      requestType = 'bulk';
+      endpoint = requestData.endpoint;
+      customRequestBody = requestData.requestBody;
+    }
     // Check if this is a game ID lookup request
-    if (requestData.type === 'getById' || requestData.gameId) {
+    else if (requestData.type === 'getById' || requestData.gameId) {
       requestType = 'getById';
       gameId = requestData.gameId || queryParams.gameId || queryParams.id;
     } else {
@@ -98,17 +106,33 @@ exports.handler = async (event, context) => {
     console.log('=== IGDB REQUEST DEBUG ===');
     console.log('HTTP Method:', event.httpMethod);
     console.log('Request Type:', requestType);
+    console.log('Endpoint:', endpoint);
     console.log('Query:', query);
     console.log('Game ID:', gameId);
     console.log('Request Data:', requestData);
     console.log('Query Params:', queryParams);
     console.log('=========================');
 
-    const igdbUrl = 'https://api.igdb.com/v4/games';
+    const igdbUrl = `https://api.igdb.com/v4/${endpoint}`;
     let requestBody = '';
     let limit = requestData.limit || queryParams.limit || 20;
 
-    if (requestType === 'getById') {
+    if (requestType === 'bulk') {
+      // Handle bulk scraping request with custom request body
+      if (!customRequestBody) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            error: 'Request body is required for bulk requests',
+            debug: { requestData, queryParams }
+          })
+        };
+      }
+
+      requestBody = customRequestBody;
+      console.log('Making IGDB bulk request for endpoint:', endpoint);
+    } else if (requestType === 'getById') {
       // Handle individual game lookup by ID
       if (!gameId) {
         return {
@@ -234,6 +258,13 @@ limit ${limit};
         statusCode: 200,
         headers,
         body: JSON.stringify(transformedData.length > 0 ? transformedData[0] : null)
+      };
+    } else if (requestType === 'bulk') {
+      // For bulk requests, return the raw data array
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(transformedData)
       };
     } else {
       // For search requests, return the full response with metadata

@@ -18,6 +18,7 @@ import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ReviewPage } from './pages/ReviewPage';
 import ProfilePage from './pages/ProfilePage'; // Changed to default import
 import { IGDBTestPage } from './pages/IGDBTestPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
 
@@ -50,6 +51,7 @@ function App() {
                     <Route path="/user/:id" element={<UserPage />} />
                     <Route path="/users" element={<UserSearchPage />} />
                     <Route path="/login" element={<LoginPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route path="/review/:gameId?" element={<ReviewFormPage />} />
                     <Route path="/review/:userId/:gameId" element={<ReviewPage />} />
                     <Route path="/profile" element={<ProfilePage />} />

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api-docs.igdb.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm run dev:*)",
+      "Bash(netlify dev:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run type-check:*)"
+    ],
+    "deny": []
+  }
+}
