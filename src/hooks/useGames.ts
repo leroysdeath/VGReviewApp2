@@ -159,23 +159,69 @@ export const useIGDBSearch = (
     setCached(false);
 
     try {
+      // For now, just pass the search term and limit since igdbService doesn't support advanced filters
       const searchResults = await igdbService.searchGames(debouncedSearchTerm.current, {
-        limit: 20,
-        filters: {
-          genres: filters.genres,
-          platforms: filters.platforms,
-          minRating: filters.minRating
-        },
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder
+        limit: 20
       });
 
+      // Apply client-side filtering until the backend supports it
+      let filteredResults = searchResults;
+      
+      // Filter by genres if specified
+      if (filters.genres.length > 0) {
+        filteredResults = filteredResults.filter(game => 
+          filters.genres.some(genre => 
+            game.genre?.toLowerCase().includes(genre.toLowerCase())
+          )
+        );
+      }
+      
+      // Filter by platforms if specified
+      if (filters.platforms.length > 0) {
+        filteredResults = filteredResults.filter(game => 
+          game.platforms?.some(platform => 
+            filters.platforms.some(filterPlatform => 
+              platform.toLowerCase().includes(filterPlatform.toLowerCase())
+            )
+          )
+        );
+      }
+      
+      // Filter by minimum rating if specified
+      if (filters.minRating) {
+        filteredResults = filteredResults.filter(game => 
+          game.rating >= filters.minRating
+        );
+      }
+      
+      // Sort the results
+      if (filters.sortBy) {
+        filteredResults.sort((a, b) => {
+          switch (filters.sortBy) {
+            case 'rating':
+              return filters.sortOrder === 'asc' ? 
+                (a.rating - b.rating) : (b.rating - a.rating);
+            case 'release_date':
+              return filters.sortOrder === 'asc' ?
+                new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime() :
+                new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
+            case 'name':
+              return filters.sortOrder === 'asc' ?
+                a.title.localeCompare(b.title) :
+                b.title.localeCompare(a.title);
+            default: // 'popularity'
+              return filters.sortOrder === 'asc' ?
+                (a.rating - b.rating) : (b.rating - a.rating);
+          }
+        });
+      }
+
       if (!abortControllerRef.current.signal.aborted) {
-        setGames(searchResults);
+        setGames(filteredResults);
         
         // Cache the results
         if (browserCache) {
-          browserCache.set(cacheKey, searchResults, ttl);
+          browserCache.set(cacheKey, filteredResults, ttl);
         }
       }
     } catch (err: any) {
