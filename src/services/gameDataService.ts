@@ -82,50 +82,76 @@ class GameDataService {
     try {
       const searchPattern = `%${searchTerm.toLowerCase()}%`
       
-      const { data, error } = await supabase
+      // First try searching by cache_key for basic matching
+      let { data, error } = await supabase
         .from('igdb_cache')
         .select('id, response_data, hit_count')
-        .or(`cache_key.ilike.${searchPattern},response_data->0->name.ilike.${searchPattern}`)
+        .ilike('cache_key', searchPattern)
         .gte('expires_at', new Date().toISOString())
         .order('hit_count', { ascending: false })
-        .limit(50)
+        .limit(25)
 
       if (error) {
         console.error('Cache search error:', error)
         return []
       }
 
+      // If no results from cache_key search, get more general results
+      if (!data || data.length === 0) {
+        ({ data, error } = await supabase
+          .from('igdb_cache')
+          .select('id, response_data, hit_count')
+          .gte('expires_at', new Date().toISOString())
+          .order('hit_count', { ascending: false })
+          .limit(100))
+
+        if (error) {
+          console.error('Cache general search error:', error)
+          return []
+        }
+      }
+
       if (!data || data.length === 0) {
         return []
       }
 
-      // Batch update hit counts for better performance
-      const updatePromises: Promise<any>[] = []
       const games: IGDBGame[] = []
+      const updatePromises: Promise<any>[] = []
+      const processedIds = new Set<string>()
       
       for (const record of data) {
+        if (processedIds.has(record.id)) continue
+        processedIds.add(record.id)
+
         const parsedGames = this.parseResponseData(record.response_data)
         if (parsedGames) {
-          const filteredGames = parsedGames.filter(game => 
-            game.name && game.name.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-          games.push(...filteredGames)
+          // Filter games by name match
+          const filteredGames = parsedGames.filter(game => {
+            if (!game.name) return false
+            return game.name.toLowerCase().includes(searchTerm.toLowerCase())
+          })
+          
+          if (filteredGames.length > 0) {
+            games.push(...filteredGames)
 
-          // Add to batch update
-          updatePromises.push(
-            supabase
-              .from('igdb_cache')
-              .update({
-                hit_count: (record.hit_count || 0) + 1,
-                last_accessed: new Date().toISOString()
-              })
-              .eq('id', record.id)
-          )
+            // Add to batch update only if we found matching games
+            updatePromises.push(
+              supabase
+                .from('igdb_cache')
+                .update({
+                  hit_count: (record.hit_count || 0) + 1,
+                  last_accessed: new Date().toISOString()
+                })
+                .eq('id', record.id)
+            )
+          }
         }
       }
 
-      // Execute all updates in parallel
-      await Promise.allSettled(updatePromises)
+      // Execute all updates in parallel if we have any
+      if (updatePromises.length > 0) {
+        await Promise.allSettled(updatePromises)
+      }
 
       return this.deduplicateGames(games)
     } catch (error) {

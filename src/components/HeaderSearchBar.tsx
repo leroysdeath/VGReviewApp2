@@ -127,7 +127,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
         fields: 'name,cover.url,first_release_date,rating,genres.name'
       });
 
-      if (results && Array.isArray(results)) {
+      if (results && Array.isArray(results) && results.length > 0) {
         const limitedResults = results.slice(0, maxSuggestions);
         setSuggestions(limitedResults);
         setIsFromCache(false);
@@ -149,8 +149,14 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
           console.log('🌐 Game search fresh fetch:', query, limitedResults.length, 'results');
         }
       } else {
+        // Handle empty results array - show no results state
         setSuggestions([]);
-        setShowSuggestions(false);
+        setShowSuggestions(true); // Still show suggestions dropdown to display "no results" message
+        setCacheStatus('fresh');
+        
+        if (import.meta.env.DEV) {
+          console.log('🌐 Game search returned no results for:', query);
+        }
       }
 
     } catch (error) {

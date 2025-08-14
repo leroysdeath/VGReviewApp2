@@ -73,9 +73,19 @@ class IGDBService {
     };
   }
 
-  async searchGames(searchTerm: string, limit: number = 20): Promise<Game[]> {
+  async searchGames(searchTerm: string, options?: { limit?: number; fields?: string } | number): Promise<Game[]> {
     try {
+      // Handle both old number parameter and new options object
+      const limit = typeof options === 'number' ? options : (options?.limit || 20);
+      
       const dataServiceGames = await gameDataService.searchGames(searchTerm);
+      
+      // If cache returns no results, use fallback games
+      if (!dataServiceGames || dataServiceGames.length === 0) {
+        console.log('📦 Cache returned no results, using fallback for:', searchTerm);
+        return this.getFallbackGames(searchTerm);
+      }
+      
       const igdbGames = dataServiceGames.slice(0, limit).map(g => this.mapDataServiceToIGDB(g));
       
       const sortedGames = sortGamesByPlatformPriority(igdbGames);
