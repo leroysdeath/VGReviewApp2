@@ -115,42 +115,25 @@ class GameDataService {
         return []
       }
 
+      // Batch update hit counts for better performance
+      const recordIds = data.map(record => record.id)
       const games: IGDBGame[] = []
-      const updatePromises: Promise<any>[] = []
-      const processedIds = new Set<string>()
-      
-      for (const record of data) {
-        if (processedIds.has(record.id)) continue
-        processedIds.add(record.id)
 
+      for (const record of data) {
         const parsedGames = this.parseResponseData(record.response_data)
         if (parsedGames) {
-          // Filter games by name match
-          const filteredGames = parsedGames.filter(game => {
-            if (!game.name) return false
-            return game.name.toLowerCase().includes(searchTerm.toLowerCase())
-          })
-          
-          if (filteredGames.length > 0) {
-            games.push(...filteredGames)
-
-            // Add to batch update only if we found matching games
-            updatePromises.push(
-              supabase
-                .from('igdb_cache')
-                .update({
-                  hit_count: (record.hit_count || 0) + 1,
-                  last_accessed: new Date().toISOString()
-                })
-                .eq('id', record.id)
-            )
-          }
+          const filteredGames = parsedGames.filter(game => 
+            game.name && game.name.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+          games.push(...filteredGames)
         }
       }
 
-      // Execute all updates in parallel if we have any
-      if (updatePromises.length > 0) {
-        await Promise.allSettled(updatePromises)
+      // Single batch update instead of multiple promises
+      if (recordIds.length > 0) {
+        await supabase.rpc('increment_cache_hit_counts', {
+          cache_ids: recordIds
+        }).catch(err => console.warn('Hit count update failed:', err))
       }
 
       return this.deduplicateGames(games)

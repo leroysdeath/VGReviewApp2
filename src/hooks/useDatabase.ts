@@ -10,63 +10,6 @@ import {
   UpdateRatingRequest 
 } from '../types/database';
 
-// Hook for managing games
-export const useGames = () => {
-  const [games, setGames] = useState<GameWithRatings[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const searchGames = useCallback(async (query: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await databaseService.searchGames(query);
-      setGames(result.games);
-    } catch (err) {
-      setError('Failed to search games');
-      console.error('Search games error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const getPopularGames = useCallback(async (limit = 20) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const popularGames = await databaseService.getPopularGames(limit);
-      setGames(popularGames);
-    } catch (err) {
-      setError('Failed to load popular games');
-      console.error('Popular games error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const getRecentGames = useCallback(async (limit = 20) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const recentGames = await databaseService.getRecentGames(limit);
-      setGames(recentGames);
-    } catch (err) {
-      setError('Failed to load recent games');
-      console.error('Recent games error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  return {
-    games,
-    loading,
-    error,
-    searchGames,
-    getPopularGames,
-    getRecentGames,
-  };
-};
 
 // Hook for managing a single game
 export const useGame = (gameId: number | null) => {
