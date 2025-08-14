@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, MessageSquare, Calendar, Gamepad2, Database, Loader2 } from 'lucide-react';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
+import { igdbService } from '../services/igdbApi';
 import { browserCache } from '../services/browserCacheService';
 
 // TypeScript interface for game data structure
@@ -107,7 +107,7 @@ export const InteractiveGameCard: React.FC<InteractiveGameCardProps> = ({
         
         const gameId = typeof game.id === 'string' ? parseInt(game.id) : game.id;
         if (!isNaN(gameId)) {
-          await enhancedIGDBService.prefetchGame(gameId);
+          await 
           setCacheStatus('prefetched');
           
           if (import.meta.env.DEV) {

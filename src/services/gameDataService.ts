@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase } from '../utils/supabaseClient'
 
 export interface IGDBGame {
   id: number
@@ -54,7 +54,7 @@ class GameDataService {
     try {
       const { data, error } = await supabase
         .from('igdb_cache')
-        .select('*')
+        .select('id, response_data, hit_count')
         .eq('cache_key', cacheKey)
         .gte('expires_at', new Date().toISOString())
         .single()
@@ -84,9 +84,10 @@ class GameDataService {
       
       const { data, error } = await supabase
         .from('igdb_cache')
-        .select('*')
+        .select('id, response_data, hit_count')
         .or(`cache_key.ilike.${searchPattern},response_data->0->name.ilike.${searchPattern}`)
         .gte('expires_at', new Date().toISOString())
+        .order('hit_count', { ascending: false })
         .limit(50)
 
       if (error) {
@@ -98,24 +99,33 @@ class GameDataService {
         return []
       }
 
+      // Batch update hit counts for better performance
+      const updatePromises: Promise<any>[] = []
       const games: IGDBGame[] = []
+      
       for (const record of data) {
         const parsedGames = this.parseResponseData(record.response_data)
         if (parsedGames) {
           const filteredGames = parsedGames.filter(game => 
-            game.name.toLowerCase().includes(searchTerm.toLowerCase())
+            game.name && game.name.toLowerCase().includes(searchTerm.toLowerCase())
           )
           games.push(...filteredGames)
 
-          await supabase
-            .from('igdb_cache')
-            .update({
-              hit_count: (record.hit_count || 0) + 1,
-              last_accessed: new Date().toISOString()
-            })
-            .eq('id', record.id)
+          // Add to batch update
+          updatePromises.push(
+            supabase
+              .from('igdb_cache')
+              .update({
+                hit_count: (record.hit_count || 0) + 1,
+                last_accessed: new Date().toISOString()
+              })
+              .eq('id', record.id)
+          )
         }
       }
+
+      // Execute all updates in parallel
+      await Promise.allSettled(updatePromises)
 
       return this.deduplicateGames(games)
     } catch (error) {
@@ -130,22 +140,25 @@ class GameDataService {
       
       const games = Array.isArray(responseData) ? responseData : [responseData]
       
-      return games.map(game => ({
-        id: game.id,
-        name: game.name || '',
-        summary: game.summary,
-        rating: game.rating,
-        first_release_date: game.first_release_date,
-        cover: game.cover ? {
-          id: game.cover.id || game.cover,
-          image_id: game.cover.image_id || game.cover.url?.split('/').pop()?.replace('.jpg', ''),
-          url: game.cover.url
-        } : undefined,
-        genres: game.genres || [],
-        platforms: game.platforms || [],
-        screenshots: game.screenshots || [],
-        videos: game.videos || []
-      }))
+      return games
+        .filter(game => game && typeof game === 'object' && game.id)
+        .map(game => ({
+          id: Number(game.id),
+          name: game.name || '',
+          summary: typeof game.summary === 'string' ? game.summary : undefined,
+          rating: typeof game.rating === 'number' ? game.rating : undefined,
+          first_release_date: typeof game.first_release_date === 'number' ? game.first_release_date : undefined,
+          cover: game.cover && typeof game.cover === 'object' ? {
+            id: Number(game.cover.id) || Number(game.cover) || 0,
+            image_id: game.cover.image_id || game.cover.url?.split('/').pop()?.replace('.jpg', '') || '',
+            url: game.cover.url
+          } : undefined,
+          genres: Array.isArray(game.genres) ? game.genres.filter(g => g && g.id && g.name) : [],
+          platforms: Array.isArray(game.platforms) ? game.platforms.filter(p => p && p.id && p.name) : [],
+          screenshots: Array.isArray(game.screenshots) ? game.screenshots.filter(s => s && s.id) : [],
+          videos: Array.isArray(game.videos) ? game.videos.filter(v => v && v.id) : []
+        }))
+        .filter(game => game.id && game.name)
     } catch (error) {
       console.error('Error parsing response data:', error)
       return null
@@ -182,8 +195,9 @@ class GameDataService {
     try {
       const { data, error } = await supabase
         .from('igdb_cache')
-        .select('*')
+        .select('id, response_data, hit_count')
         .gte('expires_at', new Date().toISOString())
+        .order('hit_count', { ascending: false })
         .limit(100)
 
       if (error) {
@@ -225,8 +239,9 @@ class GameDataService {
       if (!games) {
         const { data, error } = await supabase
           .from('igdb_cache')
-          .select('*')
+          .select('id, response_data, hit_count')
           .gte('expires_at', new Date().toISOString())
+          .order('hit_count', { ascending: false })
           .limit(100)
 
         if (error) {
@@ -259,8 +274,9 @@ class GameDataService {
     try {
       const { data, error } = await supabase
         .from('igdb_cache')
-        .select('*')
+        .select('id, response_data, hit_count')
         .gte('expires_at', new Date().toISOString())
+        .order('hit_count', { ascending: false })
         .limit(100)
 
       if (error) {

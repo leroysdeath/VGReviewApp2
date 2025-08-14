@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, Zap, Database, Heart, Plus, Search } from 'lucide-react';
-import { useIGDBSearch } from '../hooks/useIGDBCache';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
+import { useGames } from '../hooks/useGames';
 import { AuthModal } from '../components/auth/AuthModal';
 import { useAuth } from '../hooks/useAuth';
 
@@ -82,7 +81,7 @@ export const SearchResultsPage: React.FC = () => {
 
   const handleGameClick = (game: Game) => {
     // Prefetch game data for faster loading
-    enhancedIGDBService.prefetchGame(game.id);
+    
     navigate(`/game/${game.id}`);
   };
 
@@ -184,7 +183,6 @@ export const SearchResultsPage: React.FC = () => {
     <div
       onClick={() => handleGameClick(game)}
       className="bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-750 transition-all duration-200 cursor-pointer group hover:scale-105 relative"
-      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)} // Prefetch on hover
     >
       <div className="aspect-[3/4] relative overflow-hidden">
         {game.cover?.url ? (
@@ -264,7 +262,6 @@ export const SearchResultsPage: React.FC = () => {
     <div
       onClick={() => handleGameClick(game)}
       className="bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition-colors cursor-pointer group flex gap-4 relative"
-      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)} // Prefetch on hover
     >
       <div className="w-16 h-20 flex-shrink-0 overflow-hidden rounded">
         {game.cover?.url ? (

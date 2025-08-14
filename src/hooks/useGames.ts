@@ -41,7 +41,7 @@ export const useGames = () => {
     setError(null);
 
     try {
-      const recentGames = await igdbService.getRecentGames();
+      const recentGames = await igdbService.getPopularGames(10);
       setGames(recentGames);
     } catch (err) {
       setError('Failed to load recent games. Please try again.');

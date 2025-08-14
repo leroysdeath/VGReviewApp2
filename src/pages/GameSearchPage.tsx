@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { GameSearch } from '../components/GameSearch';
-import { Game } from '../services/igdbService';
+import { Game } from '../services/igdbApi';
 import { useResponsive } from '../hooks/useResponsive';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
-import { useCacheManagement } from '../hooks/useIGDBCache';
+import { useCacheManagement } from '../hooks/useGames';
 import { Search, TrendingUp, Clock, Star, Filter } from 'lucide-react';
 
 export const GameSearchPage: React.FC = () => {
@@ -41,7 +40,6 @@ export const GameSearchPage: React.FC = () => {
     setLoadingPopular(true);
     try {
       console.log('🔥 Loading popular games with caching...');
-      const games = await enhancedIGDBService.getPopularGames({
         useCache: true,
         cacheTTL: 7200, // 2 hours
         browserCacheTTL: 600, // 10 minutes
@@ -81,7 +79,6 @@ export const GameSearchPage: React.FC = () => {
   const handleGameSelect = (game: Game) => {
     // Prefetch game data for faster loading
     if (game.id) {
-      enhancedIGDBService.prefetchGame(typeof game.id === 'string' ? parseInt(game.id) : game.id);
     }
     navigate(`/game/${game.id}`);
   };

@@ -8,7 +8,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { NotificationBadge } from './NotificationBadge';
 import { NotificationCenter } from './NotificationCenter';
 import { useGameSearch } from '../hooks/useGameSearch';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
+import { igdbService } from '../services/igdbApi';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
 
@@ -121,7 +121,7 @@ export const ResponsiveNavbar: React.FC = () => {
       }
 
       // Fetch fresh results using enhanced IGDB service
-      const results = await enhancedIGDBService.searchGames(query, {
+      const results = await igdbService.searchGames(query, {
         limit: 8,
         fields: 'name,cover.url,first_release_date,rating,genres.name'
       });

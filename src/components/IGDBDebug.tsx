@@ -12,8 +12,7 @@ import {
   Clock,
   Zap
 } from 'lucide-react';
-import { igdbService } from '../services/igdb';
-import { igdbCache } from '../services/igdbCacheService';
+import { igdbService } from '../services/igdbApi';
 
 interface DebugTest {
   id: string;
@@ -124,8 +123,10 @@ export const IGDBDebug: React.FC = () => {
 
   const loadCacheStats = async () => {
     try {
-      const stats = await igdbCache.getCacheStats();
-      setCacheStats(stats);
+      // Cache stats are now handled at the database level
+      setCacheStats({
+        message: 'Cache statistics are managed by Supabase igdb_cache table'
+      });
     } catch (error) {
       console.error('Failed to load cache stats:', error);
     }
@@ -133,8 +134,8 @@ export const IGDBDebug: React.FC = () => {
 
   const clearCache = async () => {
     try {
-      await igdbCache.clearExpiredCache();
-      await loadCacheStats();
+      // Cache clearing is now handled at the database level
+      console.log('Cache operations are now handled by Supabase');
     } catch (error) {
       console.error('Failed to clear cache:', error);
     }
@@ -187,25 +188,8 @@ export const IGDBDebug: React.FC = () => {
 
       {cacheStats && (
         <div className="bg-gray-800 rounded p-4">
-          <h3 className="text-sm font-semibold text-gray-300 mb-2">Cache Statistics</h3>
-          <div className="grid grid-cols-4 gap-4 text-sm">
-            <div>
-              <span className="text-gray-400">Total Entries:</span>
-              <span className="ml-2 text-white">{cacheStats.totalEntries}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Active:</span>
-              <span className="ml-2 text-green-400">{cacheStats.activeEntries}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Expired:</span>
-              <span className="ml-2 text-red-400">{cacheStats.expiredEntries}</span>
-            </div>
-            <div>
-              <span className="text-gray-400">Total Hits:</span>
-              <span className="ml-2 text-blue-400">{cacheStats.totalHits}</span>
-            </div>
-          </div>
+          <h3 className="text-sm font-semibold text-gray-300 mb-2">Cache Information</h3>
+          <p className="text-sm text-gray-400">{cacheStats.message}</p>
         </div>
       )}
 

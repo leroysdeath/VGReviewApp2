@@ -6,7 +6,7 @@ import { ReviewCard } from '../components/ReviewCard';
 import { SEOHead } from '../components/SEOHead';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { useIGDBGame } from '../hooks/useIGDBCache';
+import { useIGDBGame } from '../hooks/useGames';
 import { useResponsive } from '../hooks/useResponsive';
 import { supabase } from '../services/supabase';
 

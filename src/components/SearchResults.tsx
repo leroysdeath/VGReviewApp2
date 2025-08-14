@@ -8,7 +8,7 @@ interface SearchResultsProps {
   totalResults: number;aimport React, { useState, useEffect } from 'react';
 import { Loader2, Search, Database, RefreshCw, Clock, AlertCircle, TrendingUp } from 'lucide-react';
 import { browserCache } from '../services/browserCacheService';
-import { useCacheManagement } from '../hooks/useIGDBCache';
+import { useCacheManagement } from '../hooks/useGames';
 
 interface SearchResultsProps {
   results: any[];

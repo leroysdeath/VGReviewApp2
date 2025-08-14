@@ -33,31 +33,6 @@ export interface Game {
 }
 
 class IGDBService {
-  private cache = new Map<string, { data: any; timestamp: number }>();
-  private readonly CACHE_DURATION = 5 * 60 * 1000;
-
-  private getCacheKey(searchTerm: string, limit: number): string {
-    return `search:${searchTerm}:${limit}`;
-  }
-
-  private getFromCache(key: string): any | null {
-    const cached = this.cache.get(key);
-    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      console.log('🎯 Cache hit for:', key);
-      return cached.data;
-    }
-    if (cached) {
-      console.log('⏰ Cache expired for:', key);
-      this.cache.delete(key);
-    }
-    return null;
-  }
-
-  private setCache(key: string, data: any): void {
-    console.log('💾 Caching data for:', key);
-    this.cache.set(key, { data, timestamp: Date.now() });
-  }
-
   private mapDataServiceToIGDB(game: DataServiceGame): IGDBGame {
     return {
       id: game.id,
@@ -99,29 +74,14 @@ class IGDBService {
   }
 
   async searchGames(searchTerm: string, limit: number = 20): Promise<Game[]> {
-    const cacheKey = this.getCacheKey(searchTerm, limit);
-    
-    const cached = this.getFromCache(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
     try {
-      console.log('🔍 Searching games from Supabase cache:', { searchTerm, limit });
-      
       const dataServiceGames = await gameDataService.searchGames(searchTerm);
       const igdbGames = dataServiceGames.slice(0, limit).map(g => this.mapDataServiceToIGDB(g));
       
-      console.log(`✅ Found ${igdbGames.length} games`);
-      
       const sortedGames = sortGamesByPlatformPriority(igdbGames);
-      const games = sortedGames.map(game => this.mapIGDBToGame(game));
-      
-      this.setCache(cacheKey, games);
-      return games;
+      return sortedGames.map(game => this.mapIGDBToGame(game));
     } catch (error) {
       console.error('❌ Search error:', error);
-      
       return this.getFallbackGames(searchTerm);
     }
   }
@@ -205,11 +165,6 @@ class IGDBService {
     return fallbackGames.filter(game => 
       game.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }
-
-  clearCache(): void {
-    console.log('🧹 Clearing IGDB cache');
-    this.cache.clear();
   }
 }
 

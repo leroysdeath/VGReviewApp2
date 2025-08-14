@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, X, Loader2, Database, Clock, TrendingUp } from 'lucide-react';
 import { SearchSuggestion } from '../types/search';
 import { browserCache } from '../services/browserCacheService';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
+import { igdbService } from '../services/igdbApi';
 
 interface SearchBarProps {
   query: string;

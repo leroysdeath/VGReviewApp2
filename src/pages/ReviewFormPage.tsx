@@ -3,8 +3,7 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart } from 'lucide-react';
 import { igdbService, Game } from '../services/igdbApi';
-import { useIGDBSearch } from '../hooks/useIGDBCache';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
+import { useIGDBSearch } from '../hooks/useGames';
 import { GameSearch } from '../components/GameSearch';
 import { createReview, ensureGameExists, getUserReviewForGame, updateReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
@@ -229,7 +228,6 @@ export const ReviewFormPage: React.FC = () => {
   
   const handleGameClick = (game: Game) => {
     // Prefetch game data for faster loading
-    enhancedIGDBService.prefetchGame(game.id);
     handleGameSelect(game);
   };
   
@@ -256,7 +254,6 @@ export const ReviewFormPage: React.FC = () => {
     <div
       onClick={() => handleGameClick(game)}
       className="bg-gray-700 rounded-lg overflow-hidden hover:bg-gray-600 transition-all duration-200 cursor-pointer group hover:scale-105 relative"
-      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)}
     >
       <div className="aspect-[3/4] relative overflow-hidden">
         {game.coverImage ? (
@@ -304,7 +301,6 @@ export const ReviewFormPage: React.FC = () => {
     <div
       onClick={() => handleGameClick(game)}
       className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer group flex gap-4 relative"
-      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)}
     >
       <div className="w-16 h-20 flex-shrink-0 overflow-hidden rounded">
         {game.coverImage ? (

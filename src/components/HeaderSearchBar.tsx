@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X, Clock, TrendingUp, Database, Loader2, Star, Gamepad2, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGameSearch } from '../hooks/useGameSearch';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
+import { igdbService } from '../services/igdbApi';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
 
@@ -122,7 +122,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
       }
 
       // Fetch fresh results using enhanced IGDB service
-      const results = await enhancedIGDBService.searchGames(query, {
+      const results = await igdbService.searchGames(query, {
         limit: maxSuggestions,
         fields: 'name,cover.url,first_release_date,rating,genres.name'
       });
