@@ -26,8 +26,10 @@ class AuthService {
 
       if (error) return { user: null, error };
 
-      // Database trigger handle_new_user() will automatically create the user profile
-      // No need to manually create it here - prevents race condition
+      // Create user profile in our database
+      if (data.user) {
+        await this.createUserProfile(data.user, username);
+      }
 
       return { user: data.user, error: null };
     } catch (error) {
@@ -111,8 +113,12 @@ class AuthService {
 
   async resetPassword(email: string): Promise<{ error: any }> {
     try {
+      // Use current origin for development and production
+      // This will work correctly whether running on localhost:5173, localhost:8888, or production
+      const redirectUrl = `${window.location.origin}/reset-password`;
+        
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
+        redirectTo: redirectUrl
       });
       return { error };
     } catch (error) {
@@ -150,8 +156,28 @@ class AuthService {
     return supabase.auth.onAuthStateChange(callback);
   }
 
-  // Note: createUserProfile method removed - database trigger handles user creation automatically
-  // This prevents race conditions and ensures consistent user creation
+  // Create user profile in database after successful signup
+  private async createUserProfile(user: User, username: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('user')
+        .insert({
+          provider: 'supabase',
+          provider_id: user.id,
+          email: user.email || '',
+          name: username,
+          picurl: user.user_metadata?.avatar_url,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error creating user profile:', error);
+      }
+    } catch (error) {
+      console.error('Error creating user profile:', error);
+    }
+  }
 
   // Get user profile from database
   async getUserProfile(userId: string): Promise<{ data: any; error: any }> {
