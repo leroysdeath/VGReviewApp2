@@ -42,7 +42,7 @@ interface ResponsiveUserPageLayoutProps {
 
 const TABS = [
   { key: 'top5', label: 'Top 5' },
-  { key: 'last5', label: 'Last 5' },
+  { key: 'top10', label: 'Top 10' },
   { key: 'reviews', label: 'Wishlist' },
   { key: 'activity', label: 'Activity' },
 ];
