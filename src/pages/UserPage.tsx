@@ -8,7 +8,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export const UserPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [activeTab, setActiveTab] = useState<'top5' | 'last5' | 'reviews' | 'activity'>('top5');
+  const [activeTab, setActiveTab] = useState<'top5' | 'top10' | 'reviews' | 'activity'>('top5');
   const [reviewFilter, setReviewFilter] = useState('recent');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [user, setUser] = useState<any>(null);
