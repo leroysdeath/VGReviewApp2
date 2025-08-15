@@ -439,7 +439,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
   // Handle form submission
   const onSubmit = async (data: ProfileFormValues) => {
-    alert(`Form submitted! Changed fields: ${Array.from(changedFields).join(', ')}\nData keys: ${Object.keys(data).join(', ')}`);
+    console.log(`Form submitted! Changed fields: ${Array.from(changedFields).join(', ')}\nData keys: ${Object.keys(data).join(', ')}`);
     console.log('🔵 UserSettingsPanel - onSubmit called');
     console.log('📋 Raw form data received:', data);
     console.log('🔄 Changed fields array:', Array.from(changedFields));
@@ -453,7 +453,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
     try {
       console.log('🔍 onSave check:', { onSave, hasOnSave: !!onSave, onSaveType: typeof onSave });
-      alert(`onSave check: hasOnSave=${!!onSave}, type=${typeof onSave}`);
+      console.log(`onSave check: hasOnSave=${!!onSave}, type=${typeof onSave}`);
       
       // Only submit changed fields
       const changedData: Partial<ProfileFormValues> = {};
@@ -490,9 +490,9 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       });
       
       try {
-        alert('About to call onSave...');
+        console.log('About to call onSave...');
         console.log('Data being sent to onSave:', changedData);
-        alert(`Sending data to save: ${JSON.stringify(changedData)}`);
+        console.log(`Sending data to save: ${JSON.stringify(changedData)}`);
         
         console.log('🚨 FINAL onSave check before call:', {
           onSave,
@@ -500,7 +500,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
           hasOnSave: !!onSave,
           isFunction: typeof onSave === 'function'
         });
-        alert(`🚨 FINAL CHECK - onSave: ${onSave}, type: ${typeof onSave}, isFunction: ${typeof onSave === 'function'}`);
+        console.log(`🚨 FINAL CHECK - onSave: ${onSave}, type: ${typeof onSave}, isFunction: ${typeof onSave === 'function'}`);
         
         if (!onSave) {
           throw new Error('onSave function is not provided. Please check the prop chain from ProfilePage.');
@@ -511,10 +511,10 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         }
         
         const result = await onSave(changedData as ProfileUpdateData);
-        alert('onSave completed successfully');
+        console.log('onSave completed successfully');
         return result;
       } catch (error) {
-        alert(`onSave ERROR: ${error?.message || error || 'Unknown error'}`);
+        console.error(`onSave ERROR: ${error?.message || error || 'Unknown error'}`);
         console.error('onSave error full details:', error);
         throw error;
       }

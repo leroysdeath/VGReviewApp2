@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { UserSettingsPanel } from './UserSettingsPanel';
-import { supabase } from '../../utils/supabaseClient';
-import { ProfileUpdateData } from '../../services/profileService';
+import { getUserProfile, ProfileUpdateData } from '../../services/profileService';
 
 interface UserSettingsModalProps {
   isOpen: boolean;
@@ -60,15 +59,12 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
         try {
           console.log('🟢 UserSettingsModal - fetchUserData called');
           console.log('👤 Fetching user data for userId:', userId);
-          console.log('📝 Query: SELECT * FROM user WHERE provider_id =', userId);
           
-          const { data, error } = await supabase
-            .from('user')
-            .select('*')
-            .eq('provider_id', userId)
-            .single();
+          const response = await getUserProfile(userId);
+          const data = response.success ? response.data : null;
+          const error = response.success ? null : new Error(response.error || 'Failed to load profile');
 
-          console.log('💾 Raw database response:', { data, error });
+          console.log('💾 Profile service response:', { data, error });
           console.log('🔍 Error details:', error ? {
             code: error.code,
             message: error.message,

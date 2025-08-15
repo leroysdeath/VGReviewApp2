@@ -17,6 +17,7 @@ import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ReviewPage } from './pages/ReviewPage';
 import ProfilePage from './pages/ProfilePage'; // Changed to default import
+import { SettingsPage } from './pages/SettingsPage';
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
@@ -70,6 +71,36 @@ function App() {
                         <ProtectedRoute showModal={true}>
                           <ProfilePage />
                         </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/settings" 
+                      element={
+                        <ProtectedRoute showModal={true}>
+                          <SettingsPage />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/contact" 
+                      element={
+                        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                          <div className="text-white text-center">
+                            <h1 className="text-3xl font-bold mb-4">Contact Us</h1>
+                            <p>Contact page coming soon</p>
+                          </div>
+                        </div>
+                      } 
+                    />
+                    <Route 
+                      path="/faq" 
+                      element={
+                        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                          <div className="text-white text-center">
+                            <h1 className="text-3xl font-bold mb-4">FAQ</h1>
+                            <p>FAQ page coming soon</p>
+                          </div>
+                        </div>
                       } 
                     />
                     <Route 

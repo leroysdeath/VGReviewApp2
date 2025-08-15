@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabaseClient';
 import { igdbService } from '../services/igdbApi';
-import { updateUserProfile, getCurrentAuthUser, ProfileUpdateData } from '../services/profileService';
+import { getUserProfile, updateUserProfile, getCurrentAuthUser, ProfileUpdateData } from '../services/profileService';
 import { ProfileInfo } from '../components/ProfileInfo';
 import { ProfileDetails } from '../components/ProfileDetails';
 import { ProfileData } from '../components/ProfileData';
@@ -10,9 +10,7 @@ import { FollowersFollowingModal } from '../components/FollowersFollowingModal';
 import { GamesModal } from '../components/GamesModal';
 
 // Lazy load UserSettingsModal to avoid initialization issues
-const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsModal').then(module => ({
-  default: module.UserSettingsModal
-})));
+const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsModal'));
 
 const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState(null);
@@ -43,14 +41,9 @@ const ProfilePage = () => {
       
       setCurrentUserId(user.id);
 
-      // Fetch profile from user table using provider_id (auth.uid)
-      const { data: profileData, error: profileError } = await supabase
-        .from('user')
-        .select('*')
-        .eq('provider_id', user.id)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') throw profileError;
+      // Fetch profile from user table using profileService
+      const profileResponse = await getUserProfile(user.id);
+      const profileData = profileResponse.success ? profileResponse.data : null;
 
       // Set database user ID if profile exists
       if (profileData?.id) {
@@ -312,20 +305,23 @@ const ProfilePage = () => {
       </div>
 
       {/* User Settings Modal */}
-      <Suspense fallback={<div />}>
-        {console.log('🚨 ProfilePage rendering UserSettingsModal with:', {
-          showSettingsModal,
-          currentUserId,
-          hasHandleSaveProfile: !!handleSaveProfile,
-          handleSaveProfileType: typeof handleSaveProfile
-        })}
-        <UserSettingsModal
-          isOpen={showSettingsModal}
-          onClose={() => setShowSettingsModal(false)}
-          userId={currentUserId}
-          onSave={handleSaveProfile}
-        />
-      </Suspense>
+      {showSettingsModal && (
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-gray-900 p-8 rounded-lg">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+              <p className="text-white mt-4">Loading settings...</p>
+            </div>
+          </div>
+        }>
+          <UserSettingsModal
+            isOpen={showSettingsModal}
+            onClose={() => setShowSettingsModal(false)}
+            userId={currentUserId}
+            onSave={handleSaveProfile}
+          />
+        </Suspense>
+      )}
 
       {/* Followers/Following Modal */}
       {currentDbUserId && userProfile && (
