@@ -19,7 +19,6 @@ import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { ResetPasswordPage } from './components/ResetPasswordPage';
 
 
 // Lazy load legal pages for better performance

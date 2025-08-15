@@ -66,14 +66,17 @@ export const ResetPasswordPage: React.FC = () => {
           if (error) {
             console.error('Session error:', error);
             setError('Invalid or expired reset link. Please request a new password reset.');
+            setIsValidSession(false);
           } else {
             console.log('Session set successfully:', data.session?.user?.email);
             // Clear the error if session was set successfully
             setError(null);
+            setIsValidSession(true);
           }
         } catch (err) {
           console.error('Reset session error:', err);
           setError('Invalid or expired reset link. Please request a new password reset.');
+          setIsValidSession(false);
         }
       } else {
         // Check if we already have a valid session
@@ -82,9 +85,11 @@ export const ResetPasswordPage: React.FC = () => {
         if (!session || error) {
           console.log('No valid session found:', { session: !!session, error });
           setError('Invalid or expired reset link. Please request a new password reset.');
+          setIsValidSession(false);
         } else {
           console.log('Valid session found:', session.user?.email);
           setError(null);
+          setIsValidSession(true);
         }
       }
     };
