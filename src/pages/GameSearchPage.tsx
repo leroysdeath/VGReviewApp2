@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GameSearch } from '../components/GameSearch';
-import { Game } from '../services/igdbService';
+import { Game } from '../services/igdbApi';
 import { useResponsive } from '../hooks/useResponsive';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { enhancedIGDBService } from '../services/enhancedIGDBService';

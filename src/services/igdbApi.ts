@@ -1,20 +1,9 @@
 import { sortGamesByPlatformPriority } from '../utils/platformPriority';
-import { gameDataService, IGDBGame as DataServiceGame } from './gameDataService';
+import { gameDataService } from './gameDataService';
+import type { IGDBGame as GameDataServiceGame } from './gameDataService';
 
-export interface IGDBGame {
-  id: number;
-  name: string;
-  summary?: string;
-  cover?: {
-    id: number;
-    url: string;
-  };
-  platforms?: Array<{ id: number; name: string }>;
-  genres?: Array<{ id: number; name: string }>;
-  first_release_date?: number;
-  rating?: number;
-  screenshots?: Array<{ id: number; url: string }>;
-}
+// Local alias to avoid export conflicts
+type IGDBGame = GameDataServiceGame;
 
 export interface Game {
   id: string;
@@ -58,22 +47,16 @@ class IGDBService {
     this.cache.set(key, { data, timestamp: Date.now() });
   }
 
-  private mapDataServiceToIGDB(game: DataServiceGame): IGDBGame {
+  private ensureGameUrls(game: IGDBGame): IGDBGame {
     return {
-      id: game.id,
-      name: game.name,
-      summary: game.summary,
+      ...game,
       cover: game.cover ? {
-        id: game.cover.id,
+        ...game.cover,
         url: game.cover.url || gameDataService.getCoverImageUrl(game.cover.image_id || '', 'cover_big')
       } : undefined,
-      platforms: game.platforms,
-      genres: game.genres,
-      first_release_date: game.first_release_date,
-      rating: game.rating,
       screenshots: game.screenshots?.map(s => ({
-        id: s.id,
-        url: gameDataService.getCoverImageUrl(s.image_id, 'cover_big')
+        ...s,
+        url: s.url || gameDataService.getCoverImageUrl(s.image_id, 'cover_big')
       }))
     };
   }
@@ -110,7 +93,7 @@ class IGDBService {
       console.log('🔍 Searching games from Supabase cache:', { searchTerm, limit });
       
       const dataServiceGames = await gameDataService.searchGames(searchTerm);
-      const igdbGames = dataServiceGames.slice(0, limit).map(g => this.mapDataServiceToIGDB(g));
+      const igdbGames = dataServiceGames.slice(0, limit).map(g => this.ensureGameUrls(g));
       
       console.log(`✅ Found ${igdbGames.length} games`);
       
@@ -131,7 +114,7 @@ class IGDBService {
       const game = await gameDataService.getGameById(id);
       if (!game) return null;
       
-      const igdbGame = this.mapDataServiceToIGDB(game);
+      const igdbGame = this.ensureGameUrls(game);
       return this.mapIGDBToGame(igdbGame);
     } catch (error) {
       console.error('❌ Error fetching game by ID:', error);
@@ -142,7 +125,7 @@ class IGDBService {
   async getPopularGames(limit: number = 20): Promise<Game[]> {
     try {
       const games = await gameDataService.getPopularGames(limit);
-      const igdbGames = games.map(g => this.mapDataServiceToIGDB(g));
+      const igdbGames = games.map(g => this.ensureGameUrls(g));
       return igdbGames.map(game => this.mapIGDBToGame(game));
     } catch (error) {
       console.error('❌ Error fetching popular games:', error);

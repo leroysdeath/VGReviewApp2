@@ -1,6 +1,7 @@
-import { gameDataService, IGDBGame } from './gameDataService'
+import { gameDataService } from './gameDataService'
+import type { IGDBGame } from './gameDataService'
 
-export { IGDBGame }
+export type { IGDBGame }
 
 class IGDBService {
   async searchGames(searchTerm: string, limit: number = 20): Promise<IGDBGame[]> {

@@ -1,6 +1,6 @@
 // Enhanced games hook with IGDB integration
 import { useState, useEffect, useCallback } from 'react';
-import { igdbService, Game } from '../services/igdbService';
+import { igdbService, Game } from '../services/igdbApi';
 
 export const useEnhancedGames = () => {
   const [games, setGames] = useState<Game[]>([]);

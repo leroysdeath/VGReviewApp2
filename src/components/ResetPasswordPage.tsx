@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Key, Eye, EyeOff, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../services/supabase';
 
 const resetPasswordSchema = z.object({
   password: z.string()
@@ -39,15 +40,55 @@ export const ResetPasswordPage: React.FC = () => {
     }
   });
 
-  // Check if we have the required URL parameters
+  // Check if we have a valid reset session
   useEffect(() => {
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    const type = searchParams.get('type');
+    const checkResetSession = async () => {
+      const accessToken = searchParams.get('access_token');
+      const refreshToken = searchParams.get('refresh_token');
+      const type = searchParams.get('type');
 
-    if (!accessToken || !refreshToken || type !== 'recovery') {
-      setError('Invalid or expired reset link. Please request a new password reset.');
-    }
+      console.log('Reset password page - URL params:', { 
+        hasAccessToken: !!accessToken, 
+        hasRefreshToken: !!refreshToken, 
+        type 
+      });
+
+      // If we have URL parameters, set the session with Supabase
+      if (accessToken && refreshToken && type === 'recovery') {
+        console.log('Setting session with tokens...');
+        try {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          if (error) {
+            console.error('Session error:', error);
+            setError('Invalid or expired reset link. Please request a new password reset.');
+          } else {
+            console.log('Session set successfully:', data.session?.user?.email);
+            // Clear the error if session was set successfully
+            setError(null);
+          }
+        } catch (err) {
+          console.error('Reset session error:', err);
+          setError('Invalid or expired reset link. Please request a new password reset.');
+        }
+      } else {
+        // Check if we already have a valid session
+        console.log('Checking existing session...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (!session || error) {
+          console.log('No valid session found:', { session: !!session, error });
+          setError('Invalid or expired reset link. Please request a new password reset.');
+        } else {
+          console.log('Valid session found:', session.user?.email);
+          setError(null);
+        }
+      }
+    };
+
+    checkResetSession();
   }, [searchParams]);
 
   const handleResetPassword = async (data: ResetPasswordFormValues) => {
@@ -55,20 +96,33 @@ export const ResetPasswordPage: React.FC = () => {
     setError(null);
 
     try {
+      // Check if we have a valid session before attempting password update
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (!session || sessionError) {
+        setError('Your session has expired. Please request a new password reset link.');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('Updating password for user:', session.user?.email);
       const result = await updatePassword(data.password);
 
       if (result.error) {
+        console.error('Password update error:', result.error);
         setError(result.error.message || 'Failed to update password. Please try again.');
       } else {
+        console.log('Password updated successfully');
         setSuccess(true);
-        // Redirect to login after 3 seconds
+        // Redirect to home page after 3 seconds
         setTimeout(() => {
-          navigate('/login', { 
-            state: { message: 'Password updated successfully. Please sign in with your new password.' }
+          navigate('/', { 
+            replace: true
           });
         }, 3000);
       }
     } catch (error) {
+      console.error('Password reset error:', error);
       setError('Failed to update password. Please try again.');
     } finally {
       setIsLoading(false);
@@ -130,6 +184,19 @@ export const ResetPasswordPage: React.FC = () => {
           <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded-lg flex items-start space-x-2">
             <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 flex-shrink-0" />
             <p className="text-red-200 text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Debug info in development */}
+        {import.meta.env.DEV && (
+          <div className="mb-4 p-3 bg-blue-900/50 border border-blue-700 rounded-lg">
+            <p className="text-blue-200 text-xs">
+              Debug Info - URL Params: {JSON.stringify({
+                access_token: searchParams.get('access_token') ? 'present' : 'missing',
+                refresh_token: searchParams.get('refresh_token') ? 'present' : 'missing',
+                type: searchParams.get('type')
+              })}
+            </p>
           </div>
         )}
 

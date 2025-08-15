@@ -1,0 +1,20 @@
+{
+	"geolocation": {
+		"data": {
+			"city": "Grand Rapids",
+			"country": {
+				"code": "US",
+				"name": "United States"
+			},
+			"subdivision": {
+				"code": "MI",
+				"name": "Michigan"
+			},
+			"timezone": "America/Detroit",
+			"latitude": 42.9282,
+			"longitude": -85.5473,
+			"postalCode": "49546"
+		},
+		"timestamp": 1755206861687
+	}
+}

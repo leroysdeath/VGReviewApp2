@@ -15,6 +15,7 @@ import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ReviewPage } from './pages/ReviewPage';
 import ProfilePage from './pages/ProfilePage'; // Changed to default import
 import { IGDBTestPage } from './pages/IGDBTestPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -121,6 +122,7 @@ function App() {
                         </Suspense>
                       } 
                     />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                     {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
                   </Routes>
                 </main>

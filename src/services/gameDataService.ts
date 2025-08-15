@@ -23,6 +23,7 @@ export interface IGDBGame {
   screenshots?: Array<{
     id: number
     image_id: string
+    url?: string
   }>
   videos?: Array<{
     id: number
