@@ -27,7 +27,7 @@ interface Review {
 }
 
 interface UserPageContentProps {
-  activeTab: 'top5' | 'last5' | 'reviews' | 'activity';
+  activeTab: 'top5' | 'top10' | 'reviews' | 'activity';
   sortedReviews: Review[];
   allGames: Game[];
   reviewFilter: string;
