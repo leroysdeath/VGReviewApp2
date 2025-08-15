@@ -5,6 +5,7 @@ interface AuthModalContextType {
   isOpen: boolean;
   mode: 'login' | 'signup' | 'reset';
   openModal: (mode?: 'login' | 'signup' | 'reset') => void;
+  openAuthModal: (mode?: 'login' | 'signup' | 'reset') => void; // Alias for consistency
   closeModal: () => void;
   setMode: (mode: 'login' | 'signup' | 'reset') => void;
 }
@@ -32,6 +33,7 @@ export const AuthModalProvider: React.FC<AuthModalProviderProps> = ({ children }
     isOpen,
     mode,
     openModal,
+    openAuthModal: openModal, // Alias for consistency
     closeModal,
     setMode
   };

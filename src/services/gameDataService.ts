@@ -99,6 +99,9 @@ class GameDataService {
       }
 
       const games: IGDBGame[] = []
+      const recordsToUpdate: { id: number; hit_count: number }[] = []
+      
+      // First pass: collect games and record IDs that need updating
       for (const record of data) {
         const parsedGames = this.parseResponseData(record.response_data)
         if (parsedGames) {
@@ -106,14 +109,53 @@ class GameDataService {
             game.name.toLowerCase().includes(searchTerm.toLowerCase())
           )
           games.push(...filteredGames)
+          
+          // Collect records to update
+          recordsToUpdate.push({
+            id: record.id,
+            hit_count: (record.hit_count || 0) + 1
+          })
+        }
+      }
 
-          await supabase
-            .from('igdb_cache')
-            .update({
-              hit_count: (record.hit_count || 0) + 1,
-              last_accessed: new Date().toISOString()
-            })
-            .eq('id', record.id)
+      // Batch update all cache hits at once
+      if (recordsToUpdate.length > 0) {
+        const updateTime = new Date().toISOString()
+        const recordIds = recordsToUpdate.map(r => r.id)
+        
+        try {
+          // Try to use the optimized RPC function first (if migration has been run)
+          await supabase.rpc('increment_cache_hits', {
+            cache_ids: recordIds,
+            access_time: updateTime
+          })
+        } catch (rpcError) {
+          // Fallback to batch updates if RPC doesn't exist
+          console.log('Using fallback batch update method')
+          
+          // Group records by hit count for efficient batch updates
+          const hitCountGroups = recordsToUpdate.reduce((groups, record) => {
+            const hitCount = record.hit_count
+            if (!groups[hitCount]) {
+              groups[hitCount] = []
+            }
+            groups[hitCount].push(record.id)
+            return groups
+          }, {} as Record<number, number[]>)
+          
+          // Execute batch updates for each hit count group
+          const updatePromises = Object.entries(hitCountGroups).map(([hitCount, ids]) =>
+            supabase
+              .from('igdb_cache')
+              .update({
+                hit_count: parseInt(hitCount),
+                last_accessed: updateTime
+              })
+              .in('id', ids)
+          )
+          
+          // Execute all batch updates in parallel
+          await Promise.all(updatePromises)
         }
       }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Search, Loader2, AlertCircle, Calendar, Star, Gamepad2, Grid, List, Activity, Bug, ArrowRight } from 'lucide-react';
 import { igdbService, Game } from '../services/igdbApi';
 import { Link } from 'react-router-dom';
@@ -44,7 +44,8 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   });
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialViewMode);
-  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const suggestionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -127,7 +128,10 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       }));
       
       // Update suggestions after results are set
-      setTimeout(() => {
+      if (suggestionTimerRef.current) {
+        clearTimeout(suggestionTimerRef.current);
+      }
+      suggestionTimerRef.current = setTimeout(() => {
         const newSuggestions = generateSuggestions(searchTerm);
         setSuggestions(newSuggestions);
       }, 0);
@@ -195,7 +199,10 @@ export const GameSearch: React.FC<GameSearchProps> = ({
           }));
           
           // Update suggestions after results are set
-          setTimeout(() => {
+          if (suggestionTimerRef.current) {
+            clearTimeout(suggestionTimerRef.current);
+          }
+          suggestionTimerRef.current = setTimeout(() => {
             const newSuggestions = generateSuggestions(initialQuery);
             setSuggestions(newSuggestions);
           }, 0);
@@ -232,8 +239,8 @@ export const GameSearch: React.FC<GameSearchProps> = ({
     }));
 
     // Clear existing timer
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
 
     if (DEBUG_MODE) {
@@ -241,12 +248,10 @@ export const GameSearch: React.FC<GameSearchProps> = ({
     }
 
     // Set new timer for debounced search
-    const timer = setTimeout(() => {
+    debounceTimerRef.current = setTimeout(() => {
       setShowSuggestions(true);
       performSearch(newQuery);
     }, 300);
-
-    setDebounceTimer(timer);
   };
 
   // Handle suggestion selection
@@ -284,14 +289,17 @@ export const GameSearch: React.FC<GameSearchProps> = ({
     };
   }, []);
 
-  // Cleanup timer on unmount
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (suggestionTimerRef.current) {
+        clearTimeout(suggestionTimerRef.current);
       }
     };
-  }, [debounceTimer]);
+  }, []); // Empty dependency array - only cleanup on unmount
 
   // Handle game selection
   const handleGameClick = (game: Game) => {

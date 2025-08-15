@@ -110,6 +110,7 @@ export const useAuth = () => {
     user,
     session,
     loading,
+    isAuthenticated: !!user,
     signUp,
     signIn,
     signOut,
@@ -118,7 +119,6 @@ export const useAuth = () => {
     updatePassword,
     signInWithProvider,
     getUserProfile,
-    deleteAccount,
-    isAuthenticated: !!user
+    deleteAccount
   };
 };

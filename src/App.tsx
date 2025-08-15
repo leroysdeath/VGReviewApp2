@@ -20,6 +20,7 @@ import ProfilePage from './pages/ProfilePage'; // Changed to default import
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Lazy load legal pages for better performance
 const TermsPage = lazy(() => import('./pages/TermsPage'));
@@ -54,9 +55,23 @@ function App() {
                     <Route path="/user/:id" element={<UserPage />} />
                     <Route path="/users" element={<UserSearchPage />} />
                     <Route path="/login" element={<LoginPage />} />
-                    <Route path="/review/:gameId?" element={<ReviewFormPage />} />
+                    <Route 
+                      path="/review/:gameId?" 
+                      element={
+                        <ProtectedRoute showModal={true}>
+                          <ReviewFormPage />
+                        </ProtectedRoute>
+                      } 
+                    />
                     <Route path="/review/:userId/:gameId" element={<ReviewPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route 
+                      path="/profile" 
+                      element={
+                        <ProtectedRoute showModal={true}>
+                          <ProfilePage />
+                        </ProtectedRoute>
+                      } 
+                    />
                     <Route 
                       path="/terms" 
                       element={
