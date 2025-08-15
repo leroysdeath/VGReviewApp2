@@ -5,6 +5,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
 import { useCurrentUserId } from '../hooks/useCurrentUserId';
+import { sanitizeSearchTerm, sanitizeIdArray } from '../utils/sqlSecurity';
 
 interface User {
   id: string;
@@ -121,15 +122,31 @@ export const UserSearchPage: React.FC = () => {
       const userIds = realUsers.map(user => user.id);
 
       // Get all follow relationships in a single query (more efficient)
-      const { data: followData, error: followError } = await supabase
-        .from('user_follow')
-        .select('follower_id, following_id')
-        .or(`follower_id.in.(${userIds.join(',')}),following_id.in.(${userIds.join(',')})`);
+      // Use safe parameterized queries to prevent SQL injection
+      const validUserIds = sanitizeIdArray(userIds)
+      
+      const [followersQuery, followingQuery] = await Promise.all([
+        supabase
+          .from('user_follow')
+          .select('follower_id, following_id')
+          .in('follower_id', validUserIds),
+        supabase
+          .from('user_follow')
+          .select('follower_id, following_id')
+          .in('following_id', validUserIds)
+      ])
+      
+      const followData = [
+        ...(followersQuery.data || []),
+        ...(followingQuery.data || [])
+      ]
+      
+      const followError = followersQuery.error || followingQuery.error
 
       const { data: reviewData, error: reviewError } = await supabase
         .from('rating')
         .select('user_id, rating')
-        .in('user_id', userIds);
+        .in('user_id', validUserIds);
 
       if (followError) {
         console.error('❌ Error loading follow data:', followError);
@@ -321,9 +338,14 @@ export const UserSearchPage: React.FC = () => {
         return false;
       }
       
-      // Apply search filter
-      return user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.bio && user.bio.toLowerCase().includes(searchTerm.toLowerCase()));
+      // Apply search filter with sanitized search term
+      const sanitizedSearch = sanitizeSearchTerm(searchTerm)
+      if (!sanitizedSearch) {
+        return true // Show all users if no valid search term
+      }
+      
+      return user.username.toLowerCase().includes(sanitizedSearch.toLowerCase()) ||
+        (user.bio && user.bio.toLowerCase().includes(sanitizedSearch.toLowerCase()));
     });
 
     // Sort users based on selected criteria

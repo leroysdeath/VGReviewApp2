@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { sanitizeSearchTerm } from '../utils/sqlSecurity';
 import { Database } from '../types/supabase';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -53,6 +54,13 @@ export const supabaseHelpers = {
   },
 
   async searchGames(query: string, limit = 20) {
+    // Sanitize search query to prevent SQL injection
+    const sanitizedQuery = sanitizeSearchTerm(query);
+    
+    if (!sanitizedQuery) {
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('game')
       .select(`
@@ -61,8 +69,8 @@ export const supabaseHelpers = {
           platform(*)
         )
       `)
-      .or(`name.ilike.%${query}%,description.ilike.%${query}%,genre.ilike.%${query}%`)
-      .limit(limit);
+      .or(`name.ilike.*${sanitizedQuery}*,description.ilike.*${sanitizedQuery}*,genre.ilike.*${sanitizedQuery}*`)
+      .limit(Math.min(limit, 100)); // Also limit the max results for safety
     
     if (error) throw error;
     return data;

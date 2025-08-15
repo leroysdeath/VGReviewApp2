@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { sanitizeSearchTerm } from '../utils/sqlSecurity'
 
 export interface IGDBGame {
   id: number
@@ -80,12 +81,18 @@ class GameDataService {
 
   private async searchCachedGames(searchTerm: string): Promise<IGDBGame[]> {
     try {
-      const searchPattern = `%${searchTerm.toLowerCase()}%`
+      // Sanitize the search term to prevent SQL injection
+      const sanitizedTerm = sanitizeSearchTerm(searchTerm)
       
+      if (!sanitizedTerm) {
+        return []
+      }
+      
+      // Use Supabase's built-in text search functions with safe parameterization
       const { data, error } = await supabase
         .from('igdb_cache')
         .select('*')
-        .or(`cache_key.ilike.${searchPattern},response_data->0->name.ilike.${searchPattern}`)
+        .or(`cache_key.ilike.*${sanitizedTerm}*,response_data->0->name.ilike.*${sanitizedTerm}*`)
         .gte('expires_at', new Date().toISOString())
         .limit(50)
 
