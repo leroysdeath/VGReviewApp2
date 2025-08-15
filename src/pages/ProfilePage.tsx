@@ -280,10 +280,10 @@ const ProfilePage = () => {
             Top 5
           </button>
           <button
-            onClick={() => setActiveTab('last5')}
-            className={`pb-2 ${activeTab === 'last5' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
+            onClick={() => setActiveTab('top10')}
+            className={`pb-2 ${activeTab === 'top10' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
-            Last 5
+            Top 10
           </button>
           <button
             onClick={() => setActiveTab('reviews')}
