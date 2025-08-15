@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,7 +24,6 @@ type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 export const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { updatePassword, user, session } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -44,9 +43,11 @@ export const ResetPasswordPage: React.FC = () => {
   // Check if we have a valid reset session
   useEffect(() => {
     const checkResetSession = async () => {
-      const accessToken = searchParams.get('access_token');
-      const refreshToken = searchParams.get('refresh_token');
-      const type = searchParams.get('type');
+      // Parse tokens from hash fragment (Supabase sends tokens in hash, not query params)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type = hashParams.get('type');
 
       console.log('Reset password page - URL params:', { 
         hasAccessToken: !!accessToken, 
@@ -95,7 +96,7 @@ export const ResetPasswordPage: React.FC = () => {
     };
 
     checkResetSession();
-  }, [searchParams]);
+  }, []);
 
   const handleResetPassword = async (data: ResetPasswordFormValues) => {
     setIsLoading(true);
