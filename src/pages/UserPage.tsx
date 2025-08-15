@@ -53,6 +53,17 @@ export const UserPage: React.FC = () => {
           typeof review.rating === 'number'
         ) || [];
         
+        // Query games marked as started from game_progress table
+        const { data: startedGamesData, error: startedGamesError } = await supabase
+          .from('game_progress')
+          .select('game_id')
+          .eq('user_id', id)
+          .eq('started', true);
+          
+        if (startedGamesError) throw startedGamesError;
+        
+        const startedGamesCount = startedGamesData?.length || 0;
+        
         // Get game IDs from valid reviews
         const gameIds = validReviewsData.map(review => review.game_id);
         
@@ -100,6 +111,7 @@ export const UserPage: React.FC = () => {
         // Store the counts for use in stats calculation
         userData._followerCount = followerCount || 0;
         userData._followingCount = followingCount || 0;
+        userData._startedGamesCount = startedGamesCount;
         
         setUser(userData);
         setUserReviews(validReviewsData);
@@ -136,8 +148,8 @@ export const UserPage: React.FC = () => {
   
   // Calculate user stats with real data
   const stats = {
-    films: userReviews.length,
-    thisYear: userReviews.filter(r => new Date(r.post_date_time).getFullYear() === new Date().getFullYear()).length,
+    films: user._startedGamesCount || 0, // Total games marked as started
+    thisYear: userReviews.length, // Total reviews count
     lists: 0, // To be implemented with real data when lists feature is added
     following: user._followingCount || 0, // Real following count from database
     followers: user._followerCount || 0 // Real follower count from database
