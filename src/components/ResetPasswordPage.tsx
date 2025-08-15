@@ -187,18 +187,6 @@ export const ResetPasswordPage: React.FC = () => {
           </div>
         )}
 
-        {/* Debug info in development */}
-        {import.meta.env.DEV && (
-          <div className="mb-4 p-3 bg-blue-900/50 border border-blue-700 rounded-lg">
-            <p className="text-blue-200 text-xs">
-              Debug Info - URL Params: {JSON.stringify({
-                access_token: searchParams.get('access_token') ? 'present' : 'missing',
-                refresh_token: searchParams.get('refresh_token') ? 'present' : 'missing',
-                type: searchParams.get('type')
-              })}
-            </p>
-          </div>
-        )}
 
         <form onSubmit={form.handleSubmit(handleResetPassword)} className="space-y-4">
           <div>
