@@ -363,3 +363,64 @@ export const IGDBTestPage: React.FC = () => {
     </div>
   );
 };
+
+// Netlify Function Health Check Component
+const NetlifyFunctionHealthCheck: React.FC = () => {
+  const [status, setStatus] = useState<'idle' | 'checking' | 'success' | 'error'>('idle');
+  const [error, setError] = useState<string | null>(null);
+
+  const checkHealth = async () => {
+    setStatus('checking');
+    setError(null);
+    
+    try {
+      const response = await fetch('/.netlify/functions/igdb-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: 'test' }),
+      });
+      
+      if (response.ok) {
+        setStatus('success');
+      } else {
+        const errorText = await response.text();
+        setError(`Function returned ${response.status}: ${errorText}`);
+        setStatus('error');
+      }
+    } catch (err) {
+      setError(`Network error: ${err.message}`);
+      setStatus('error');
+    }
+  };
+
+  return (
+    <div className="bg-gray-800 rounded-lg p-6">
+      <h3 className="text-lg font-bold text-white mb-4">Netlify Function Health</h3>
+      
+      <div className="space-y-4">
+        <button
+          onClick={checkHealth}
+          disabled={status === 'checking'}
+          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+        >
+          {status === 'checking' ? 'Checking...' : 'Check Function Health'}
+        </button>
+        
+        {status === 'success' && (
+          <div className="p-3 bg-green-900 bg-opacity-50 border border-green-700 rounded-lg">
+            <p className="text-green-400">✅ Function is healthy and responding</p>
+          </div>
+        )}
+        
+        {status === 'error' && error && (
+          <div className="p-3 bg-red-900 bg-opacity-50 border border-red-700 rounded-lg">
+            <p className="text-red-400">❌ Function error:</p>
+            <p className="text-red-300 text-sm mt-1">{error}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

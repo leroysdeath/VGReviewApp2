@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ResponsiveNavbar } from './components/ResponsiveNavbar';
@@ -9,15 +9,11 @@ import { ReviewProvider } from './context/ReviewContext';
 import { AuthModalProvider } from './context/AuthModalContext';
 import { AuthModal } from './components/auth/AuthModal';
 import { GamePage } from './pages/GamePage';
-import { GameSearchPage } from './pages/GameSearchPage';
-import { SearchResultsPage } from './pages/SearchResultsPage';
+import { UnifiedSearchPage } from './pages/UnifiedSearchPage';
 import { UserPage } from './pages/UserPage';
-import { UserSearchPage } from './pages/UserSearchPage';
-import { LoginPage } from './pages/LoginPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ReviewPage } from './pages/ReviewPage';
 import ProfilePage from './pages/ProfilePage'; // Changed to default import
-import { SettingsPage } from './pages/SettingsPage';
 import { IGDBTestPage } from './pages/IGDBTestPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
@@ -42,29 +38,37 @@ function App() {
     <HelmetProvider>
       <ErrorBoundary>
         <AuthModalProvider>
-          <ReviewProvider currentUserId={user?.id ? parseInt(user.id) : 1}>
-            <Router>
-              <div className="min-h-screen bg-gray-900 flex flex-col">
-                <SEOHead />
-                <ResponsiveNavbar />
-                <main className="flex-grow">
-                  <Routes>
-                    <Route path="/" element={<ResponsiveLandingPage />} />
-                    <Route path="/game/:id" element={<GamePage />} />
-                    <Route path="/search" element={<SearchResultsPage />} />
-                    <Route path="/search-results" element={<SearchResultsPage />} />
+          <Router>
+            <div className="min-h-screen bg-gray-900 flex flex-col">
+              <SEOHead />
+              <ResponsiveNavbar />
+              <main className="flex-grow">
+                <Routes>
+                  <Route path="/" element={<ResponsiveLandingPage />} />
+                  <Route path="/game/:id" element={
+                    <ReviewProvider currentUserId={user?.id ? parseInt(user.id) : 1}>
+                      <GamePage />
+                    </ReviewProvider>
+                  } />
+                    <Route path="/search" element={<UnifiedSearchPage />} />
+                    <Route path="/search-results" element={<UnifiedSearchPage />} />
                     <Route path="/user/:id" element={<UserPage />} />
-                    <Route path="/users" element={<UserSearchPage />} />
-                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/users" element={<UnifiedSearchPage />} />
                     <Route 
                       path="/review/:gameId?" 
                       element={
                         <ProtectedRoute showModal={true}>
-                          <ReviewFormPage />
+                          <ReviewProvider currentUserId={user?.id ? parseInt(user.id) : 1}>
+                            <ReviewFormPage />
+                          </ReviewProvider>
                         </ProtectedRoute>
                       } 
                     />
-                    <Route path="/review/:userId/:gameId" element={<ReviewPage />} />
+                    <Route path="/review/:userId/:gameId" element={
+                      <ReviewProvider currentUserId={user?.id ? parseInt(user.id) : 1}>
+                        <ReviewPage />
+                      </ReviewProvider>
+                    } />
                     <Route 
                       path="/profile" 
                       element={
@@ -75,11 +79,7 @@ function App() {
                     />
                     <Route 
                       path="/settings" 
-                      element={
-                        <ProtectedRoute showModal={true}>
-                          <SettingsPage />
-                        </ProtectedRoute>
-                      } 
+                      element={<Navigate to="/profile" replace />}
                     />
                     <Route 
                       path="/contact" 
@@ -134,7 +134,6 @@ function App() {
                 <AuthModal />
               </div>
             </Router>
-          </ReviewProvider>
         </AuthModalProvider>
       </ErrorBoundary>
     </HelmetProvider>
