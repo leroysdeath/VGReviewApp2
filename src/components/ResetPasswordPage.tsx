@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Key, Eye, EyeOff, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../services/supabase';
 
 const resetPasswordSchema = z.object({
   password: z.string()
@@ -24,12 +25,13 @@ type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 export const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { updatePassword } = useAuth();
+  const { updatePassword, user, session } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [isValidSession, setIsValidSession] = useState(false);
 
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -39,16 +41,41 @@ export const ResetPasswordPage: React.FC = () => {
     }
   });
 
-  // Check if we have the required URL parameters
+  // Check for valid session and handle auth state changes
   useEffect(() => {
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    const type = searchParams.get('type');
+    const checkSession = async () => {
+      console.log('Current session:', session);
+      console.log('Current user:', user);
+      
+      if (session?.user) {
+        console.log('Valid session found for password reset');
+        setIsValidSession(true);
+        setError(null);
+      } else {
+        console.log('No valid session found');
+        setIsValidSession(false);
+        setError('Invalid or expired reset link. Please request a new password reset.');
+      }
+    };
 
-    if (!accessToken || !refreshToken || type !== 'recovery') {
-      setError('Invalid or expired reset link. Please request a new password reset.');
-    }
-  }, [searchParams]);
+    checkSession();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session);
+      
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
+        console.log('Valid password recovery session detected');
+        setIsValidSession(true);
+        setError(null);
+      } else if (event === 'SIGNED_OUT') {
+        setIsValidSession(false);
+        setError('Session expired. Please request a new password reset.');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [session, user]);
 
   const handleResetPassword = async (data: ResetPasswordFormValues) => {
     setIsLoading(true);
@@ -211,7 +238,7 @@ export const ResetPasswordPage: React.FC = () => {
 
           <button
             type="submit"
-            disabled={isLoading || !!error}
+            disabled={isLoading || !isValidSession}
             className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? (
