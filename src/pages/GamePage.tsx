@@ -28,7 +28,13 @@ export const GamePage: React.FC = () => {
     setGameError(null);
 
     try {
-      const gameData = await igdbService.getGameById(id);
+      // Convert string ID to number for database lookup
+      const gameId = parseInt(id);
+      if (isNaN(gameId)) {
+        throw new Error('Invalid game ID');
+      }
+      
+      const gameData = await igdbService.getGameById(gameId);
       if (gameData) {
         setGame(gameData);
       } else {

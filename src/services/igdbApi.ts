@@ -1,36 +1,5 @@
 import { sortGamesByPlatformPriority } from '../utils/platformPriority';
-import { gameDataService, IGDBGame as DataServiceGame } from './gameDataService';
-
-export interface IGDBGame {
-  id: number;
-  name: string;
-  summary?: string;
-  cover?: {
-    id: number;
-    url: string;
-  };
-  platforms?: Array<{ id: number; name: string }>;
-  genres?: Array<{ id: number; name: string }>;
-  first_release_date?: number;
-  rating?: number;
-  screenshots?: Array<{ id: number; url: string }>;
-}
-
-export interface Game {
-  id: string;
-  title: string;
-  coverImage: string;
-  releaseDate: string;
-  genre: string;
-  rating: number;
-  description: string;
-  developer: string;
-  publisher: string;
-  platforms?: string[];
-  screenshots?: string[];
-  videos?: string[];
-  igdbId?: number;
-}
+import { databaseGameService, Game, IGDBGame } from './databaseGameService';
 
 class IGDBService {
   private cache = new Map<string, { data: any; timestamp: number }>();
@@ -58,46 +27,6 @@ class IGDBService {
     this.cache.set(key, { data, timestamp: Date.now() });
   }
 
-  private mapDataServiceToIGDB(game: DataServiceGame): IGDBGame {
-    return {
-      id: game.id,
-      name: game.name,
-      summary: game.summary,
-      cover: game.cover ? {
-        id: game.cover.id,
-        url: game.cover.url || gameDataService.getCoverImageUrl(game.cover.image_id || '', 'cover_big')
-      } : undefined,
-      platforms: game.platforms,
-      genres: game.genres,
-      first_release_date: game.first_release_date,
-      rating: game.rating,
-      screenshots: game.screenshots?.map(s => ({
-        id: s.id,
-        url: gameDataService.getCoverImageUrl(s.image_id, 'cover_big')
-      }))
-    };
-  }
-
-  private mapIGDBToGame(igdbGame: IGDBGame): Game {
-    return {
-      id: igdbGame.id.toString(),
-      title: igdbGame.name,
-      coverImage: igdbGame.cover?.url || 'https://images.pexels.com/photos/442576/pexels-photo-442576.jpeg?auto=compress&cs=tinysrgb&w=400',
-      releaseDate: igdbGame.first_release_date 
-        ? new Date(igdbGame.first_release_date * 1000).toISOString().split('T')[0]
-        : '',
-      genre: igdbGame.genres?.[0]?.name || 'Unknown',
-      rating: igdbGame.rating ? Math.round(igdbGame.rating / 10) : 0,
-      description: igdbGame.summary || '',
-      developer: (igdbGame as any).developer || 'Unknown',
-      publisher: (igdbGame as any).publisher || 'Unknown',
-      platforms: igdbGame.platforms?.map(p => p.name) || [],
-      screenshots: igdbGame.screenshots?.map(s => s.url) || [],
-      videos: [],
-      igdbId: igdbGame.id
-    };
-  }
-
   async searchGames(searchTerm: string, limit: number = 20): Promise<Game[]> {
     const cacheKey = this.getCacheKey(searchTerm, limit);
     
@@ -107,20 +36,26 @@ class IGDBService {
     }
 
     try {
-      console.log('🔍 Searching games from Supabase cache:', { searchTerm, limit });
+      console.log('🔍 Searching games from database:', { searchTerm, limit });
       
-      const dataServiceGames = await gameDataService.searchGames(searchTerm);
-      const igdbGames = dataServiceGames.slice(0, limit).map(g => this.mapDataServiceToIGDB(g));
+      const games = await databaseGameService.searchGames(searchTerm, undefined, limit);
       
-      console.log(`✅ Found ${igdbGames.length} games`);
+      console.log(`✅ Found ${games.length} games`);
       
-      const sortedGames = sortGamesByPlatformPriority(igdbGames);
-      const games = sortedGames.map(game => this.mapIGDBToGame(game));
+      // Apply platform priority sorting on the IGDBGame format for compatibility
+      const igdbGames = await databaseGameService.searchGamesAsIGDB(searchTerm, limit);
+      const sortedIGDBGames = sortGamesByPlatformPriority(igdbGames);
       
-      this.setCache(cacheKey, games);
-      return games;
+      // Convert back to Game format maintaining the sorted order
+      const sortedGames = sortedIGDBGames.map(igdbGame => {
+        const game = games.find(g => g.databaseId === igdbGame.id);
+        return game || games[0]; // Fallback to first game if not found
+      }).filter(Boolean);
+      
+      this.setCache(cacheKey, sortedGames);
+      return sortedGames;
     } catch (error) {
-      console.error('❌ Search error:', error);
+      console.error('❌ Database search error:', error);
       
       return this.getFallbackGames(searchTerm);
     }
@@ -128,11 +63,16 @@ class IGDBService {
 
   async getGameById(id: number): Promise<Game | null> {
     try {
-      const game = await gameDataService.getGameById(id);
-      if (!game) return null;
+      console.log('🔍 Fetching game by database ID:', id);
+      const game = await databaseGameService.getGameById(id);
       
-      const igdbGame = this.mapDataServiceToIGDB(game);
-      return this.mapIGDBToGame(igdbGame);
+      if (!game) {
+        console.log('❌ Game not found in database:', id);
+        return null;
+      }
+      
+      console.log('✅ Found game:', game.title);
+      return game;
     } catch (error) {
       console.error('❌ Error fetching game by ID:', error);
       return null;
@@ -141,9 +81,11 @@ class IGDBService {
 
   async getPopularGames(limit: number = 20): Promise<Game[]> {
     try {
-      const games = await gameDataService.getPopularGames(limit);
-      const igdbGames = games.map(g => this.mapDataServiceToIGDB(g));
-      return igdbGames.map(game => this.mapIGDBToGame(game));
+      console.log('🔍 Fetching popular games from database:', limit);
+      const games = await databaseGameService.getPopularGames(limit);
+      
+      console.log(`✅ Found ${games.length} popular games`);
+      return games;
     } catch (error) {
       console.error('❌ Error fetching popular games:', error);
       return this.getFallbackGames('');
@@ -207,8 +149,60 @@ class IGDBService {
     );
   }
 
+  async getGamesByGenre(genre: string, limit: number = 20): Promise<Game[]> {
+    try {
+      console.log('🔍 Fetching games by genre from database:', genre);
+      const games = await databaseGameService.getGamesByGenre(genre, limit);
+      
+      console.log(`✅ Found ${games.length} games in genre ${genre}`);
+      return games;
+    } catch (error) {
+      console.error('❌ Error fetching games by genre:', error);
+      return [];
+    }
+  }
+
+  async getRecentGames(limit: number = 20): Promise<Game[]> {
+    try {
+      console.log('🔍 Fetching recent games from database:', limit);
+      const games = await databaseGameService.getRecentGames(limit);
+      
+      console.log(`✅ Found ${games.length} recent games`);
+      return games;
+    } catch (error) {
+      console.error('❌ Error fetching recent games:', error);
+      return [];
+    }
+  }
+
+  async getGenres(): Promise<string[]> {
+    try {
+      console.log('🔍 Fetching genres from database');
+      const genres = await databaseGameService.getGenres();
+      
+      console.log(`✅ Found ${genres.length} genres`);
+      return genres;
+    } catch (error) {
+      console.error('❌ Error fetching genres:', error);
+      return [];
+    }
+  }
+
+  async getPlatforms(): Promise<Array<{ id: number; name: string; slug: string }>> {
+    try {
+      console.log('🔍 Fetching platforms from database');
+      const platforms = await databaseGameService.getPlatforms();
+      
+      console.log(`✅ Found ${platforms.length} platforms`);
+      return platforms;
+    } catch (error) {
+      console.error('❌ Error fetching platforms:', error);
+      return [];
+    }
+  }
+
   clearCache(): void {
-    console.log('🧹 Clearing IGDB cache');
+    console.log('🧹 Clearing service cache');
     this.cache.clear();
   }
 }

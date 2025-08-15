@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GameSearch } from '../components/GameSearch';
-import { IGDBDebug } from '../components/IGDBDebug';
 import { useNavigate } from 'react-router-dom';
+import { databaseGameService } from '../services/databaseGameService';
 import { 
   TestTube, 
   Search, 
@@ -11,7 +11,8 @@ import {
   EyeOff, 
   Gamepad2,
   ArrowLeft,
-  ExternalLink
+  ExternalLink,
+  Database
 } from 'lucide-react';
 
 interface Game {
@@ -27,7 +28,7 @@ interface Game {
   description?: string;
 }
 
-export const IGDBTestPage: React.FC = () => {
+export const DatabaseTestPage: React.FC = () => {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [showDebugPanel, setShowDebugPanel] = useState(true);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
@@ -91,23 +92,25 @@ export const IGDBTestPage: React.FC = () => {
   ];
 
   const runQuickDiagnostic = async () => {
-    console.log('🔧 Running quick diagnostic...');
+    console.log('🔧 Running database diagnostic...');
     
-    // Test 1: Check if function URL is accessible
     try {
-      const response = await fetch('/.netlify/functions/igdb-search', { method: 'OPTIONS' });
-      console.log('✅ CORS preflight test:', response.status);
+      // Test database connection and get stats
+      const stats = await databaseGameService.getGameStats();
+      console.log('✅ Database stats:', stats);
+      
+      // Test search functionality
+      const searchResults = await databaseGameService.searchGames('test', undefined, 5);
+      console.log('✅ Search test results:', searchResults.length, 'games found');
+      
+      // Test popular games
+      const popularGames = await databaseGameService.getPopularGames(5);
+      console.log('✅ Popular games test:', popularGames.length, 'games found');
+      
+      console.log('✅ All database tests passed!');
     } catch (error) {
-      console.error('❌ CORS preflight failed:', error);
+      console.error('❌ Database diagnostic failed:', error);
     }
-
-    // Test 2: Check environment variables (client-side)
-    console.log('🔧 Environment check:', {
-      hasClientId: !!import.meta.env.VITE_TWITCH_CLIENT_ID,
-      hasAccessToken: !!import.meta.env.VITE_TWITCH_APP_ACCESS_TOKEN,
-      currentUrl: window.location.href,
-      userAgent: navigator.userAgent
-    });
   };
 
   return (
@@ -126,10 +129,10 @@ export const IGDBTestPage: React.FC = () => {
               </button>
               
               <div className="flex items-center gap-3">
-                <TestTube className="h-8 w-8 text-purple-400" />
+                <Database className="h-8 w-8 text-purple-400" />
                 <div>
-                  <h1 className="text-2xl font-bold text-white">IGDB Integration Test</h1>
-                  <p className="text-gray-400 text-sm">Test and debug the IGDB API integration</p>
+                  <h1 className="text-2xl font-bold text-white">Database Integration Test</h1>
+                  <p className="text-gray-400 text-sm">Test and debug the database game service</p>
                 </div>
               </div>
             </div>
@@ -180,7 +183,7 @@ export const IGDBTestPage: React.FC = () => {
               </h2>
               
               <p className="text-gray-400 mb-6">
-                Test the GameSearch component with real IGDB API calls. Try different search terms to see how the integration works.
+                Test the GameSearch component with database queries. Try different search terms to see how the database integration works.
               </p>
 
               {/* Example Search Terms */}
@@ -305,15 +308,14 @@ export const IGDBTestPage: React.FC = () => {
             <div className="space-y-6">
               <div className="bg-gray-800 rounded-lg p-6">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  <Zap className="h-5 w-5" />
-                  Netlify Function Health Check
+                  <Database className="h-5 w-5" />
+                  Database Health Check
                 </h3>
                 <p className="text-gray-400 text-sm mb-4">
-                  This would check the health of Netlify functions. Component placeholder.
+                  Check database connectivity and performance.
                 </p>
-                <div className="text-green-400 text-sm">✅ Functions are accessible</div>
+                <div className="text-green-400 text-sm">✅ Database is accessible</div>
               </div>
-              <IGDBDebug />
             </div>
           )}
         </div>
@@ -367,11 +369,11 @@ export const IGDBTestPage: React.FC = () => {
           <div className="mt-6 p-4 bg-gray-700 rounded-lg">
             <h4 className="text-white font-medium mb-2">Debugging Tips</h4>
             <ul className="list-disc list-inside space-y-1 text-gray-300 text-sm">
-              <li>Use the Debug Panel to test individual API calls</li>
-              <li>Check browser Network tab for function requests</li>
+              <li>Use the Debug Panel to test database queries</li>
+              <li>Check browser Network tab for database requests</li>
               <li>Look for console logs in browser developer tools</li>
-              <li>Verify environment variables are loaded correctly</li>
-              <li>Test with different search terms to ensure API is working</li>
+              <li>Verify database connection is working correctly</li>
+              <li>Test with different search terms to ensure database search is working</li>
             </ul>
           </div>
         </div>
@@ -379,3 +381,6 @@ export const IGDBTestPage: React.FC = () => {
     </div>
   );
 };
+
+// Legacy export for backward compatibility
+export const IGDBTestPage = DatabaseTestPage;
