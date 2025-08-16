@@ -391,85 +391,55 @@ export const GamesModal: React.FC<GamesModalProps> = ({
                 ))}
               </div>
 
-              {/* Mobile List */}
-              <div className="md:hidden space-y-3">
+              {/* Mobile Grid */}
+              <div className="md:hidden grid grid-cols-4 gap-2">
                 {currentGames.map((game) => (
                   <Link
                     key={game.id}
                     to={`/game/${game.id}`}
-                    className="group flex items-center gap-3 p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+                    className="group relative hover:scale-105 transition-transform"
                     onClick={onClose}
                   >
-                    <div className="relative flex-shrink-0">
+                    <div className="relative">
                       <img
                         src={game.coverImage}
                         alt={game.title}
-                        className="w-12 h-16 object-cover rounded"
+                        className="w-full aspect-[3/4] object-cover rounded"
                         onError={(e) => {
                           e.currentTarget.src = '/default-cover.png';
                         }}
                       />
                       
+                      {/* Progress indicators for all tabs */}
+                      {activeTab === 'all' && game.completed && (
+                        <div className="absolute top-1 right-1 bg-green-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
+                          <CheckCircle className="h-2.5 w-2.5" />
+                        </div>
+                      )}
+                      
+                      {activeTab === 'all' && game.started && !game.completed && (
+                        <div className="absolute top-1 right-1 bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
+                          <Play className="h-2.5 w-2.5" />
+                        </div>
+                      )}
+                      
+                      {activeTab === 'started' && (
+                        <div className="absolute top-1 right-1 bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
+                          <Play className="h-2.5 w-2.5" />
+                        </div>
+                      )}
+                      
+                      {activeTab === 'finished' && (
+                        <div className="absolute top-1 right-1 bg-green-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
+                          <CheckCircle className="h-2.5 w-2.5" />
+                        </div>
+                      )}
                     </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {/* Progress indicators for mobile */}
-                        {activeTab === 'all' && game.completed && (
-                          <div className="bg-green-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
-                            <CheckCircle className="h-3 w-3" />
-                          </div>
-                        )}
-                        
-                        {activeTab === 'all' && game.started && !game.completed && (
-                          <div className="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
-                            <Play className="h-3 w-3" />
-                          </div>
-                        )}
-                        
-                        {activeTab === 'started' && (
-                          <div className="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
-                            <Play className="h-3 w-3" />
-                          </div>
-                        )}
-                        {activeTab === 'finished' && (
-                          <div className="bg-green-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
-                            <CheckCircle className="h-3 w-3" />
-                          </div>
-                        )}
-                        
-                        <h3 className="text-white font-medium text-sm group-hover:text-purple-400 transition-colors truncate">
-                          {game.title}
-                        </h3>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        {game.genre && <span>{game.genre}</span>}
-                        {activeTab === 'all' && game.completed && game.completed_date && (
-                          <>
-                            {game.genre && <span>•</span>}
-                            <span>Finished {new Date(game.completed_date).toLocaleDateString()}</span>
-                          </>
-                        )}
-                        {activeTab === 'all' && game.started && !game.completed && game.started_date && (
-                          <>
-                            {game.genre && <span>•</span>}
-                            <span>Started {new Date(game.started_date).toLocaleDateString()}</span>
-                          </>
-                        )}
-                        {(activeTab === 'started' || activeTab === 'finished') && game.started_date && (
-                          <>
-                            {game.genre && <span>•</span>}
-                            <span>Started {new Date(game.started_date).toLocaleDateString()}</span>
-                          </>
-                        )}
-                        {activeTab === 'finished' && game.completed_date && (
-                          <>
-                            <span>•</span>
-                            <span>Finished {new Date(game.completed_date).toLocaleDateString()}</span>
-                          </>
-                        )}
-                      </div>
+                    <div className="mt-1">
+                      <h3 className="text-white text-xs font-medium group-hover:text-purple-400 transition-colors line-clamp-2">
+                        {game.title}
+                      </h3>
                     </div>
                   </Link>
                 ))}
