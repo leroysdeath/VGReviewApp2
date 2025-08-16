@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
-import { igdbService, Game } from '../services/igdbApi';
+import { gameDataService } from '../services/gameDataService';
+import type { GameWithCalculatedFields } from '../types/database';
 
 export const useGames = () => {
-  const [games, setGames] = useState<Game[]>([]);
+  const [games, setGames] = useState<GameWithCalculatedFields[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -11,7 +12,7 @@ export const useGames = () => {
     setError(null);
 
     try {
-      const searchResults = await igdbService.searchGames(query);
+      const searchResults = await gameDataService.searchGames(query);
       setGames(searchResults);
     } catch (err) {
       setError('Failed to search games. Please try again.');
@@ -26,7 +27,7 @@ export const useGames = () => {
     setError(null);
 
     try {
-      const popularGames = await igdbService.getPopularGames();
+      const popularGames = await gameDataService.getPopularGames();
       setGames(popularGames);
     } catch (err) {
       setError('Failed to load games. Please try again.');
@@ -41,7 +42,7 @@ export const useGames = () => {
     setError(null);
 
     try {
-      const recentGames = await igdbService.getRecentGames();
+      const recentGames = await gameDataService.getRecentGames();
       setGames(recentGames);
     } catch (err) {
       setError('Failed to load recent games. Please try again.');

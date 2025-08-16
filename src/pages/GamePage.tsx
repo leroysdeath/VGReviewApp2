@@ -4,7 +4,8 @@ import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText } f
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { AuthModal } from '../components/auth/AuthModal';
-import { igdbService, Game } from '../services/igdbApi';
+import { gameDataService } from '../services/gameDataService';
+import type { GameWithCalculatedFields } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 import { getGameProgress, markGameStarted, markGameCompleted } from '../services/gameProgressService';
@@ -15,8 +16,8 @@ export const GamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth();
 
-  // Use the working igdbService for game data
-  const [game, setGame] = useState<Game | null>(null);
+  // Use gameDataService for game data
+  const [game, setGame] = useState<GameWithCalculatedFields | null>(null);
   const [gameLoading, setGameLoading] = useState(false);
   const [gameError, setGameError] = useState<Error | null>(null);
 
@@ -28,7 +29,7 @@ export const GamePage: React.FC = () => {
     setGameError(null);
 
     try {
-      const gameData = await igdbService.getGameById(id);
+      const gameData = await gameDataService.getGameById(parseInt(id));
       if (gameData) {
         setGame(gameData);
       } else {
@@ -62,7 +63,7 @@ export const GamePage: React.FC = () => {
 
       try {
         console.log('Loading game with ID:', id);
-        const gameData = await igdbService.getGameById(id);
+        const gameData = await gameDataService.getGameById(parseInt(id));
         
         if (gameData) {
           setGame(gameData);

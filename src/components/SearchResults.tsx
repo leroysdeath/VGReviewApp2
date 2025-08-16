@@ -8,7 +8,7 @@ interface SearchResultsProps {
   totalResults: number;aimport React, { useState, useEffect } from 'react';
 import { Loader2, Search, Database, RefreshCw, Clock, AlertCircle, TrendingUp } from 'lucide-react';
 import { browserCache } from '../services/browserCacheService';
-import { useCacheManagement } from '../hooks/useIGDBCache';
+// Removed IGDB cache management
 
 interface SearchResultsProps {
   results: any[];
@@ -55,7 +55,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     lastUpdated: null
   });
   const [showStats, setShowStats] = useState(false);
-  const { stats: globalCacheStats, refreshStats } = useCacheManagement();
+  // Removed IGDB cache management
 
   // Update cache statistics
   useEffect(() => {

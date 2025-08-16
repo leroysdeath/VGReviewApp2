@@ -1,22 +1,11 @@
 // hooks/useGameSearch.ts
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// Types for our search functionality
-interface Game {
-  id: number;
-  name: string;
-  cover?: {
-    url: string;
-  };
-  first_release_date?: number;
-  genres?: { name: string }[];
-  platforms?: { name: string }[];
-  rating?: number;
-}
+import { gameDataService } from '../services/gameDataService';
+import type { GameWithCalculatedFields } from '../types/database';
 
 interface SearchResult {
-  games: Game[];
+  games: GameWithCalculatedFields[];
   loading: boolean;
   error: string | null;
   hasMore: boolean;
@@ -78,33 +67,20 @@ export const useGameSearch = () => {
       const offset = append ? searchState.games.length : 0;
       
       // Call your IGDB API endpoint
-      const response = await fetch('/.netlify/functions/igdb-search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: query.trim(),
-          limit: searchParams.limit,
-          offset,
-          filters: {
-            genres: searchParams.genres,
-            platforms: searchParams.platforms,
-            minRating: searchParams.minRating
-          },
-          sort: {
-            field: searchParams.sortBy,
-            direction: searchParams.sortOrder
-          }
-        }),
-        signal: abortControllerRef.current.signal
+      // Call Supabase gameDataService
+      const results = await gameDataService.searchGames(query.trim(), {
+        genres: searchParams.genres,
+        platforms: searchParams.platforms,
+        minRating: searchParams.minRating
       });
 
-      if (!response.ok) {
-        throw new Error(`Search failed: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      // Note: Supabase doesn't support offset pagination the same way,
+      // so we'll handle pagination differently if needed
+      const data = {
+        games: results,
+        hasMore: results.length === searchParams.limit,
+        total: results.length
+      };
       
       setSearchState(prev => ({
         games: append ? [...prev.games, ...data.games] : data.games,
@@ -135,22 +111,8 @@ export const useGameSearch = () => {
     if (query.trim().length < 2) return [];
     
     try {
-      const response = await fetch('/.netlify/functions/igdb-search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: query.trim(),
-          limit: 5,
-          offset: 0,
-          quick: true // Flag for quick search with minimal data
-        })
-      });
-
-      if (!response.ok) return [];
-      const data = await response.json();
-      return data.games || [];
+      const results = await gameDataService.searchGames(query.trim());
+      return results.slice(0, 5); // Limit to 5 results for quick search
     } catch (error) {
       console.error('Quick search failed:', error);
       return [];

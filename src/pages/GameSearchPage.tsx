@@ -1,22 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { GameSearch } from '../components/GameSearch';
-import { Game } from '../services/igdbApi';
+import { gameDataService } from '../services/gameDataService';
+import type { GameWithCalculatedFields } from '../types/database';
 import { useResponsive } from '../hooks/useResponsive';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
-import { useCacheManagement } from '../hooks/useIGDBCache';
 import { Search, TrendingUp, Clock, Star, Filter } from 'lucide-react';
 
 export const GameSearchPage: React.FC = () => {
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { stats } = useCacheManagement();
-  
-  const [popularGames, setPopularGames] = useState<Game[]>([]);
+  const [popularGames, setPopularGames] = useState<GameWithCalculatedFields[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [loadingPopular, setLoadingPopular] = useState(false);
-  const [showCacheStats, setShowCacheStats] = useState(false);
   
   // Get initial search term from URL params and maintain it in local state
   const initialSearchTerm = searchParams.get('q') || '';
@@ -40,13 +36,9 @@ export const GameSearchPage: React.FC = () => {
   const loadPopularGames = async () => {
     setLoadingPopular(true);
     try {
-      console.log('🔥 Loading popular games with caching...');
-      const games = await enhancedIGDBService.getPopularGames({
-        useCache: true,
-        cacheTTL: 7200, // 2 hours
-        browserCacheTTL: 600, // 10 minutes
-      });
-      setPopularGames(games.slice(0, 6)); // Show top 6
+      console.log('🔥 Loading popular games from Supabase...');
+      const games = await gameDataService.getPopularGames(6);
+      setPopularGames(games);
       console.log('✅ Popular games loaded:', games.length);
     } catch (error) {
       console.error('❌ Error loading popular games:', error);
@@ -123,42 +115,8 @@ export const GameSearchPage: React.FC = () => {
               Discover Games
             </h1>
             
-            {/* Cache Stats Toggle (Dev Mode) */}
-            {import.meta.env.DEV && (
-              <button
-                onClick={() => setShowCacheStats(!showCacheStats)}
-                className="flex items-center gap-2 px-3 py-1 bg-gray-800 text-gray-300 rounded-md text-sm hover:bg-gray-700 transition-colors"
-              >
-                <TrendingUp className="h-4 w-4" />
-                Cache Stats
-              </button>
-            )}
           </div>
 
-          {/* Cache Statistics (Dev Mode) */}
-          {import.meta.env.DEV && showCacheStats && (
-            <div className="bg-gray-800 rounded-lg p-4 mb-6">
-              <h3 className="text-white font-semibold mb-3">Cache Performance</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-400">Total Cache:</span>
-                  <span className="text-green-400 ml-2 font-bold">{stats.totalSize}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400">Games:</span>
-                  <span className="text-blue-400 ml-2 font-bold">{stats.gamesCache}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400">Searches:</span>
-                  <span className="text-purple-400 ml-2 font-bold">{stats.searchCache}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400">IGDB Cache:</span>
-                  <span className="text-orange-400 ml-2 font-bold">{stats.igdbCache}</span>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Search Bar */}
           <div className="relative mb-6">

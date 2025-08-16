@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Search, Loader2, AlertCircle, Calendar, Star, Gamepad2, Grid, List, Activity, Bug, ArrowRight } from 'lucide-react';
-import { igdbService, Game } from '../services/igdbApi';
+import { gameDataService } from '../services/gameDataService';
+import type { GameWithCalculatedFields } from '../types/database';
 import { Link } from 'react-router-dom';
 import type { SearchSuggestion } from '../types/search';
 
 interface GameSearchProps {
-  onGameSelect?: (game: Game) => void;
+  onGameSelect?: (game: GameWithCalculatedFields) => void;
   placeholder?: string;
   showViewToggle?: boolean;
   initialViewMode?: 'grid' | 'list';
@@ -18,7 +19,7 @@ interface GameSearchProps {
 
 interface SearchState {
   query: string;
-  results: Game[];
+  results: GameWithCalculatedFields[];
   loading: boolean;
   error: string | null;
   hasSearched: boolean;
@@ -118,7 +119,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         console.log('🐛 [DEBUG] Search context:', { searchTerm, maxResults, timestamp: new Date().toISOString() });
         console.log('🐛 [DEBUG] Current URL:', window.location.href);
       }
-      const games = await igdbService.searchGames(searchTerm, maxResults);
+      const games = await gameDataService.searchGames(searchTerm);
       
       setSearchState(prev => ({
         ...prev,
@@ -188,7 +189,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
 
         try {
           console.log('🔍 Performing initial search for:', initialQuery);
-          const games = await igdbService.searchGames(initialQuery, maxResults);
+          const games = await gameDataService.searchGames(initialQuery);
           
           setSearchState(prev => ({
             ...prev,

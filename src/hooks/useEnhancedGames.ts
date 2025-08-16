@@ -1,9 +1,10 @@
-// Enhanced games hook with IGDB integration
-import { useState, useEffect, useCallback } from 'react';
-import { igdbService, Game } from '../services/igdbApi';
+// Enhanced games hook with Supabase integration
+import { useState, useCallback } from 'react';
+import { gameDataService } from '../services/gameDataService';
+import type { GameWithCalculatedFields } from '../types/database';
 
 export const useEnhancedGames = () => {
-  const [games, setGames] = useState<Game[]>([]);
+  const [games, setGames] = useState<GameWithCalculatedFields[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,15 +18,8 @@ export const useEnhancedGames = () => {
     setError(null);
     
     try {
-      const results = await igdbService.searchGames(query);
+      const results = await gameDataService.searchGames(query);
       setGames(results);
-      
-      // Sync popular games to database
-      if (results.length > 0) {
-        results.slice(0, 5).forEach(game => {
-          igdbService.syncGameToDatabase(game).catch(console.error);
-        });
-      }
     } catch (err) {
       setError('Failed to search games');
       console.error('Search games error:', err);
@@ -39,13 +33,8 @@ export const useEnhancedGames = () => {
     setError(null);
     
     try {
-      const results = await igdbService.getPopularGames(limit);
+      const results = await gameDataService.getPopularGames(limit);
       setGames(results);
-      
-      // Sync to database
-      results.forEach(game => {
-        igdbService.syncGameToDatabase(game).catch(console.error);
-      });
     } catch (err) {
       setError('Failed to load popular games');
       console.error('Popular games error:', err);
@@ -59,13 +48,8 @@ export const useEnhancedGames = () => {
     setError(null);
     
     try {
-      const results = await igdbService.getRecentGames(limit);
+      const results = await gameDataService.getRecentGames(limit);
       setGames(results);
-      
-      // Sync to database
-      results.forEach(game => {
-        igdbService.syncGameToDatabase(game).catch(console.error);
-      });
     } catch (err) {
       setError('Failed to load recent games');
       console.error('Recent games error:', err);
@@ -74,16 +58,12 @@ export const useEnhancedGames = () => {
     }
   }, []);
 
-  const getGameById = useCallback(async (id: string): Promise<Game | null> => {
+  const getGameById = useCallback(async (id: string): Promise<GameWithCalculatedFields | null> => {
     setLoading(true);
     setError(null);
     
     try {
-      const game = await igdbService.getGameById(id);
-      if (game) {
-        // Sync to database
-        await igdbService.syncGameToDatabase(game);
-      }
+      const game = await gameDataService.getGameById(parseInt(id));
       return game;
     } catch (err) {
       setError('Failed to load game');
@@ -94,10 +74,6 @@ export const useEnhancedGames = () => {
     }
   }, []);
 
-  const clearCache = useCallback(() => {
-    igdbService.clearCache();
-  }, []);
-
   return {
     games,
     loading,
@@ -105,7 +81,6 @@ export const useEnhancedGames = () => {
     searchGames,
     getPopularGames,
     getRecentGames,
-    getGameById,
-    clearCache
+    getGameById
   };
 };

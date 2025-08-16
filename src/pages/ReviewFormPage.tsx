@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart } from 'lucide-react';
-import { igdbService, Game } from '../services/igdbApi';
-import { useIGDBSearch } from '../hooks/useIGDBCache';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
+import { gameDataService } from '../services/gameDataService';
+import { gameSearchService } from '../services/gameSearchService';
+import type { GameWithCalculatedFields } from '../types/database';
 import { GameSearch } from '../components/GameSearch';
 import { createReview, ensureGameExists, getUserReviewForGame, updateReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
@@ -22,7 +21,7 @@ interface SearchFilters {
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [selectedGame, setSelectedGame] = useState<GameWithCalculatedFields | null>(null);
   const [gameSearch, setGameSearch] = useState('');
   const [rating, setRating] = useState(5); // Default to 5
   const [reviewText, setReviewText] = useState('');
@@ -46,20 +45,39 @@ export const ReviewFormPage: React.FC = () => {
   
   const { isAuthenticated } = useAuth();
   
-  // Use the caching search hook from SearchResultsPage
-  const {
-    data: searchResults,
-    loading: searchLoading,
-    error: searchError,
-    cached: isSearchCached,
-    refetch: refetchSearch,
-    isStale: isSearchStale,
-    searchTerm: debouncedSearchTerm
-  } = useIGDBSearch(searchTerm, filters, {
-    enabled: showSearchModal && searchTerm.length > 0,
-    ttl: 1800,
-    staleWhileRevalidate: true
-  });
+  // Replace IGDB search with Supabase-based search
+  const [searchResults, setSearchResults] = useState<GameWithCalculatedFields[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  
+  const refetchSearch = useCallback(async () => {
+    if (!searchTerm || searchTerm.length === 0) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setSearchLoading(true);
+    setSearchError(null);
+    
+    try {
+      const results = await gameDataService.searchGames(searchTerm);
+      setSearchResults(results);
+    } catch (error) {
+      setSearchError('Failed to search games');
+      console.error('Search error:', error);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [searchTerm]);
+  
+  // Trigger search when searchTerm changes
+  useEffect(() => {
+    if (showSearchModal && searchTerm.length > 0) {
+      refetchSearch();
+    } else {
+      setSearchResults([]);
+    }
+  }, [showSearchModal, searchTerm, refetchSearch]);
   
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -79,7 +97,7 @@ export const ReviewFormPage: React.FC = () => {
     if (gameId) {
       const loadGame = async () => {
         try {
-          const game = await igdbService.getGameByStringId(gameId);
+          const game = await gameDataService.getGameById(parseInt(gameId));
           if (game) {
             setSelectedGame(game);
           }
@@ -232,9 +250,9 @@ export const ReviewFormPage: React.FC = () => {
     setShowSearchModal(false);
   };
   
-  const handleGameClick = (game: Game) => {
+  const handleGameClick = (game: GameWithCalculatedFields) => {
     // Prefetch game data for faster loading
-    enhancedIGDBService.prefetchGame(game.id);
+    // Game data is already loaded from Supabase
     handleGameSelect(game);
   };
   
@@ -275,7 +293,6 @@ export const ReviewFormPage: React.FC = () => {
     <div
       onClick={() => handleGameClick(game)}
       className="bg-gray-700 rounded-lg overflow-hidden hover:bg-gray-600 transition-all duration-200 cursor-pointer group hover:scale-105 relative"
-      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)}
     >
       <div className="aspect-[3/4] relative overflow-hidden">
         {game.coverImage ? (
@@ -323,7 +340,6 @@ export const ReviewFormPage: React.FC = () => {
     <div
       onClick={() => handleGameClick(game)}
       className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer group flex gap-4 relative"
-      onMouseEnter={() => enhancedIGDBService.prefetchGame(game.id)}
     >
       <div className="w-16 h-20 flex-shrink-0 overflow-hidden rounded">
         {game.coverImage ? (
