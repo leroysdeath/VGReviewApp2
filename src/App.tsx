@@ -14,7 +14,6 @@ import { UserSearchPage } from './pages/UserSearchPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ReviewPage } from './pages/ReviewPage';
 import ProfilePage from './pages/ProfilePage'; // Changed to default import
-import { IGDBTestPage } from './pages/IGDBTestPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
