@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, Play, Download, Share2, Bookmark, Trophy, Clock, Users as UsersIcon } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
-import { igdbService } from '../services/igdbApi';
+import { supabaseHelpers } from '../services/supabase';
 
 export const DummyGamePage: React.FC = () => {
   const [isInWishlist, setIsInWishlist] = useState(false);
@@ -13,24 +13,15 @@ export const DummyGamePage: React.FC = () => {
 
   useEffect(() => {
     const fetchBOTWCover = async () => {
-      // Skip API call if credentials are not properly configured
-      if (!import.meta.env.VITE_IGDB_CLIENT_ID || 
-          !import.meta.env.VITE_IGDB_ACCESS_TOKEN ||
-          import.meta.env.VITE_IGDB_CLIENT_ID === 'your_client_id_here') {
-        console.warn('IGDB API credentials not configured, using fallback image');
-        setLoading(false);
-        return;
-      }
-      
       try {
-        // Search for Breath of the Wild specifically
-        const games = await igdbService.searchGames('The Legend of Zelda Breath of the Wild', 1);
-        if (games.length > 0 && games[0].coverImage) {
-          setCoverImage(games[0].coverImage);
+        // Search for Breath of the Wild in Supabase
+        const games = await supabaseHelpers.searchGames('The Legend of Zelda Breath of the Wild', 1);
+        if (games && games.length > 0 && games[0].pic_url) {
+          setCoverImage(games[0].pic_url);
         }
       } catch (error) {
-        console.error('Failed to fetch BOTW cover from IGDB:', error);
-        // Keep the fallback image if API fails
+        console.error('Failed to fetch BOTW cover from Supabase:', error);
+        // Keep the fallback image if search fails
       } finally {
         setLoading(false);
       }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart } from 'lucide-react';
-import { igdbService, Game } from '../services/igdbApi';
+import { supabaseHelpers } from '../services/supabase';
 import { useIGDBSearch } from '../hooks/useIGDBCache';
 import { enhancedIGDBService } from '../services/enhancedIGDBService';
 import { GameSearch } from '../components/GameSearch';
@@ -22,7 +22,7 @@ interface SearchFilters {
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [selectedGame, setSelectedGame] = useState<any>(null);
   const [gameSearch, setGameSearch] = useState('');
   const [rating, setRating] = useState(5); // Default to 5
   const [reviewText, setReviewText] = useState('');
@@ -77,9 +77,23 @@ export const ReviewFormPage: React.FC = () => {
     if (gameId) {
       const loadGame = async () => {
         try {
-          const game = await igdbService.getGameByStringId(gameId);
-          if (game) {
-            setSelectedGame(game);
+          const gameIdNum = parseInt(gameId);
+          if (!isNaN(gameIdNum)) {
+            const game = await supabaseHelpers.getGame(gameIdNum);
+            if (game) {
+              // Transform to expected format
+              setSelectedGame({
+                id: game.id.toString(),
+                title: game.name,
+                coverImage: game.pic_url || '/default-cover.png',
+                releaseDate: game.release_date || '',
+                genre: game.genre || '',
+                rating: 0,
+                description: game.description || '',
+                developer: game.developer || '',
+                publisher: game.publisher || ''
+              });
+            }
           }
         } catch (error) {
           console.error('Failed to load game:', error);

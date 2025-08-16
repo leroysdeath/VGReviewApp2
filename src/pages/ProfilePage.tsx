@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabaseClient';
-import { igdbService } from '../services/igdbApi';
 import { updateUserProfile, getCurrentAuthUser, ProfileUpdateData } from '../services/profileService';
 import { ProfileInfo } from '../components/ProfileInfo';
 import { ProfileDetails } from '../components/ProfileDetails';
@@ -94,68 +93,20 @@ const ProfilePage = () => {
       
       setReviews(reviewsData || []);
 
-      // Compute allGames with proper cover image handling
-      // First, set games with current data to show UI immediately
+      // Compute allGames from review data
       const initialGames = (reviewsData || []).map(review => ({
         id: review.game_id,
         title: review.game?.name || 'Unknown Game',
         coverImage: review.game?.pic_url || '/default-cover.png',
         releaseDate: review.game?.release_date || '',
         genre: review.game?.genre || '',
-        rating: review.rating, // This should now display correctly
+        rating: review.rating,
         description: '',
         developer: '',
         publisher: ''
       }));
       
       setAllGames(initialGames);
-      
-      // Then fetch missing cover images in batches to avoid overwhelming IGDB API
-      const gamesNeedingCovers = (reviewsData || []).filter(review => 
-        !review.game?.pic_url && review.game?.igdb_id
-      );
-      
-      if (gamesNeedingCovers.length > 0) {
-        console.log(`Fetching cover images for ${gamesNeedingCovers.length} games...`);
-        
-        // Process in batches of 3 to avoid rate limiting
-        const batchSize = 3;
-        for (let i = 0; i < gamesNeedingCovers.length; i += batchSize) {
-          const batch = gamesNeedingCovers.slice(i, i + batchSize);
-          
-          await Promise.all(batch.map(async (review) => {
-            try {
-              const igdbGame = await igdbService.getGameById(review.game.igdb_id.toString());
-              if (igdbGame?.coverImage) {
-                // Update database
-                const { error: updateError } = await supabase
-                  .from('game')
-                  .update({ pic_url: igdbGame.coverImage })
-                  .eq('id', review.game.id);
-                  
-                if (!updateError) {
-                  // Update the local state with the new cover image
-                  setAllGames(prevGames => 
-                    prevGames.map(game => 
-                      game.id === review.game_id 
-                        ? { ...game, coverImage: igdbGame.coverImage }
-                        : game
-                    )
-                  );
-                  console.log(`Updated cover image for game ${review.game.name}`);
-                }
-              }
-            } catch (error) {
-              console.error(`Failed to fetch cover for game ${review.game?.name}:`, error);
-            }
-          }));
-          
-          // Small delay between batches to be respectful to the API
-          if (i + batchSize < gamesNeedingCovers.length) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
-      }
 
       // Fetch/compute stats
       const currentYear = new Date().getFullYear();

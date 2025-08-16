@@ -1,6 +1,18 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Loader2, AlertCircle, Calendar, Star, Gamepad2, Grid, List, Activity, Bug, ArrowRight } from 'lucide-react';
-import { igdbService, Game } from '../services/igdbApi';
+import { supabaseHelpers } from '../services/supabase';
+
+interface Game {
+  id: string;
+  title: string;
+  coverImage: string;
+  releaseDate: string;
+  genre: string;
+  rating: number;
+  description: string;
+  developer: string;
+  publisher: string;
+}
 import { Link } from 'react-router-dom';
 import type { SearchSuggestion } from '../types/search';
 
@@ -117,7 +129,19 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         console.log('🐛 [DEBUG] Search context:', { searchTerm, maxResults, timestamp: new Date().toISOString() });
         console.log('🐛 [DEBUG] Current URL:', window.location.href);
       }
-      const games = await igdbService.searchGames(searchTerm, maxResults);
+      const searchResults = await supabaseHelpers.searchGames(searchTerm, maxResults);
+      // Transform to expected format
+      const games = (searchResults || []).map((game: any) => ({
+        id: game.id.toString(),
+        title: game.name,
+        coverImage: game.pic_url || '/default-cover.png',
+        releaseDate: game.release_date || '',
+        genre: game.genre || '',
+        rating: 0,
+        description: game.description || '',
+        developer: game.developer || '',
+        publisher: game.publisher || ''
+      }));
       
       setSearchState(prev => ({
         ...prev,
@@ -184,7 +208,19 @@ export const GameSearch: React.FC<GameSearchProps> = ({
 
         try {
           console.log('🔍 Performing initial search for:', initialQuery);
-          const games = await igdbService.searchGames(initialQuery, maxResults);
+          const searchResults = await supabaseHelpers.searchGames(initialQuery, maxResults);
+          // Transform to expected format
+          const games = (searchResults || []).map((game: any) => ({
+            id: game.id.toString(),
+            title: game.name,
+            coverImage: game.pic_url || '/default-cover.png',
+            releaseDate: game.release_date || '',
+            genre: game.genre || '',
+            rating: 0,
+            description: game.description || '',
+            developer: game.developer || '',
+            publisher: game.publisher || ''
+          }));
           
           setSearchState(prev => ({
             ...prev,

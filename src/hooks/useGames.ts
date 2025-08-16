@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
-import { igdbService, Game } from '../services/igdbApi';
+import { supabaseHelpers } from '../services/supabase';
 
 export const useGames = () => {
-  const [games, setGames] = useState<Game[]>([]);
+  const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -11,8 +11,20 @@ export const useGames = () => {
     setError(null);
 
     try {
-      const searchResults = await igdbService.searchGames(query);
-      setGames(searchResults);
+      const searchResults = await supabaseHelpers.searchGames(query);
+      // Transform to expected format
+      const transformedGames = (searchResults || []).map((game: any) => ({
+        id: game.id.toString(),
+        title: game.name,
+        coverImage: game.pic_url || '/default-cover.png',
+        releaseDate: game.release_date || '',
+        genre: game.genre || '',
+        rating: 0,
+        description: game.description || '',
+        developer: game.developer || '',
+        publisher: game.publisher || ''
+      }));
+      setGames(transformedGames);
     } catch (err) {
       setError('Failed to search games. Please try again.');
       console.error('Search error:', err);
@@ -26,8 +38,20 @@ export const useGames = () => {
     setError(null);
 
     try {
-      const popularGames = await igdbService.getPopularGames();
-      setGames(popularGames);
+      const popularGames = await supabaseHelpers.getPopularGames();
+      // Transform to expected format
+      const transformedGames = (popularGames || []).map((game: any) => ({
+        id: game.id.toString(),
+        title: game.name,
+        coverImage: game.pic_url || '/default-cover.png',
+        releaseDate: game.release_date || '',
+        genre: game.genre || '',
+        rating: 0,
+        description: game.description || '',
+        developer: game.developer || '',
+        publisher: game.publisher || ''
+      }));
+      setGames(transformedGames);
     } catch (err) {
       setError('Failed to load games. Please try again.');
       console.error('Load games error:', err);
@@ -41,8 +65,21 @@ export const useGames = () => {
     setError(null);
 
     try {
-      const recentGames = await igdbService.getRecentGames();
-      setGames(recentGames);
+      // For recent games, use getPopularGames as Supabase doesn't have getRecentGames
+      const recentGames = await supabaseHelpers.getPopularGames();
+      // Transform to expected format
+      const transformedGames = (recentGames || []).map((game: any) => ({
+        id: game.id.toString(),
+        title: game.name,
+        coverImage: game.pic_url || '/default-cover.png',
+        releaseDate: game.release_date || '',
+        genre: game.genre || '',
+        rating: 0,
+        description: game.description || '',
+        developer: game.developer || '',
+        publisher: game.publisher || ''
+      }));
+      setGames(transformedGames);
     } catch (err) {
       setError('Failed to load recent games. Please try again.');
       console.error('Load recent games error:', err);

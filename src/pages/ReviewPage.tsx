@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Calendar, User, MessageCircle, Heart, X } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
-import { igdbService, Game } from '../services/igdbApi';
+import { supabaseHelpers } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 
@@ -39,7 +39,7 @@ export const ReviewPage: React.FC = () => {
   const { userId, gameId } = useParams<{ userId: string; gameId: string }>();
   const { isAuthenticated, user } = useAuth();
   
-  const [game, setGame] = useState<Game | null>(null);
+  const [game, setGame] = useState<any>(null);
   const [review, setReview] = useState<Review | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,12 +58,28 @@ export const ReviewPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Load game data
-      const gameData = await igdbService.getGameById(gameId!);
-      if (!gameData) {
-        throw new Error('Game not found');
+      // Load game data from Supabase
+      const gameIdNum = parseInt(gameId!);
+      if (!isNaN(gameIdNum)) {
+        const gameData = await supabaseHelpers.getGame(gameIdNum);
+        if (!gameData) {
+          throw new Error('Game not found');
+        }
+        // Transform to expected format
+        setGame({
+          id: gameData.id.toString(),
+          title: gameData.name,
+          coverImage: gameData.pic_url || '/default-cover.png',
+          releaseDate: gameData.release_date || '',
+          genre: gameData.genre || '',
+          rating: 0,
+          description: gameData.description || '',
+          developer: gameData.developer || '',
+          publisher: gameData.publisher || ''
+        });
+      } else {
+        throw new Error('Invalid game ID');
       }
-      setGame(gameData);
 
       // Load review data
       const { data: reviewData, error: reviewError } = await supabase

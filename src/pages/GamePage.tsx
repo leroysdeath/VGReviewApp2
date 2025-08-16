@@ -4,7 +4,7 @@ import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText } f
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { AuthModal } from '../components/auth/AuthModal';
-import { igdbService, Game } from '../services/igdbApi';
+import { supabaseHelpers } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 import { getGameProgress, markGameStarted, markGameCompleted } from '../services/gameProgressService';
@@ -15,8 +15,8 @@ export const GamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth();
 
-  // Use the working igdbService for game data
-  const [game, setGame] = useState<Game | null>(null);
+  // Use Supabase for game data
+  const [game, setGame] = useState<any>(null);
   const [gameLoading, setGameLoading] = useState(false);
   const [gameError, setGameError] = useState<Error | null>(null);
 
@@ -28,11 +28,27 @@ export const GamePage: React.FC = () => {
     setGameError(null);
 
     try {
-      const gameData = await igdbService.getGameById(id);
-      if (gameData) {
-        setGame(gameData);
+      const gameIdNum = parseInt(id);
+      if (!isNaN(gameIdNum)) {
+        const gameData = await supabaseHelpers.getGame(gameIdNum);
+        if (gameData) {
+          // Transform to expected format
+          setGame({
+            id: gameData.id.toString(),
+            title: gameData.name,
+            coverImage: gameData.pic_url || '/default-cover.png',
+            releaseDate: gameData.release_date || '',
+            genre: gameData.genre || '',
+            rating: 0,
+            description: gameData.description || '',
+            developer: gameData.developer || '',
+            publisher: gameData.publisher || ''
+          });
+        } else {
+          setGameError(new Error('Game not found'));
+        }
       } else {
-        setGameError(new Error('Game not found'));
+        setGameError(new Error('Invalid game ID'));
       }
     } catch (error) {
       setGameError(error as Error);
@@ -62,14 +78,32 @@ export const GamePage: React.FC = () => {
 
       try {
         console.log('Loading game with ID:', id);
-        const gameData = await igdbService.getGameById(id);
-        
-        if (gameData) {
-          setGame(gameData);
-          console.log('✅ Game loaded successfully:', gameData.title);
+        const gameIdNum = parseInt(id);
+        if (!isNaN(gameIdNum)) {
+          const gameData = await supabaseHelpers.getGame(gameIdNum);
+          
+          if (gameData) {
+            // Transform to expected format
+            const transformedGame = {
+              id: gameData.id.toString(),
+              title: gameData.name,
+              coverImage: gameData.pic_url || '/default-cover.png',
+              releaseDate: gameData.release_date || '',
+              genre: gameData.genre || '',
+              rating: 0,
+              description: gameData.description || '',
+              developer: gameData.developer || '',
+              publisher: gameData.publisher || ''
+            };
+            setGame(transformedGame);
+            console.log('✅ Game loaded successfully:', transformedGame.title);
+          } else {
+            setGameError(new Error('Game not found'));
+            console.log('❌ Game not found for ID:', id);
+          }
         } else {
-          setGameError(new Error('Game not found'));
-          console.log('❌ Game not found for ID:', id);
+          setGameError(new Error('Invalid game ID'));
+          console.log('❌ Invalid game ID:', id);
         }
       } catch (error) {
         console.error('❌ Failed to load game:', error);
