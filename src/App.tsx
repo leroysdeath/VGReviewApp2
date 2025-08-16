@@ -124,6 +124,7 @@ function App() {
                       } 
                     />
                     <Route path="/reset-password" element={<ResetPasswordPage />} />
+                    {import.meta.env.DEV && <Route path="/igdb-test" element={<IGDBTestPage />} />}
                   </Routes>
                 </main>
                 <Footer />
