@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ResponsiveGameCard } from './ResponsiveGameCard';
 import { AuthModal } from './auth/AuthModal';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
+// Removed IGDB service - using Supabase data directly
 import { useAuth } from '../hooks/useAuth';
 
 interface GameCardProps {
@@ -46,7 +46,7 @@ export const GameCard: React.FC<GameCardProps> = ({
     if (enablePrefetch && game.id) {
       const gameId = typeof game.id === 'string' ? parseInt(game.id) : game.id;
       if (!isNaN(gameId)) {
-        enhancedIGDBService.prefetchGame(gameId);
+        // Prefetching removed - data already loaded from Supabase
       }
     }
   };
@@ -57,7 +57,7 @@ export const GameCard: React.FC<GameCardProps> = ({
     if (enablePrefetch && game.id) {
       const gameId = typeof game.id === 'string' ? parseInt(game.id) : game.id;
       if (!isNaN(gameId)) {
-        enhancedIGDBService.prefetchGame(gameId);
+        // Prefetching removed - data already loaded from Supabase
       }
     }
 

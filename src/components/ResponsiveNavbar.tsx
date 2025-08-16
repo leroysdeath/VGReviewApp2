@@ -8,20 +8,12 @@ import { useResponsive } from '../hooks/useResponsive';
 import { NotificationBadge } from './NotificationBadge';
 import { NotificationCenter } from './NotificationCenter';
 import { useGameSearch } from '../hooks/useGameSearch';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
+import { gameDataService } from '../services/gameDataService';
+import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
 
-interface Game {
-  id: number;
-  name: string;
-  cover?: {
-    url: string;
-  };
-  first_release_date?: number;
-  rating?: number;
-  genres?: Array<{ name: string }>;
-}
+// Using GameWithCalculatedFields from database types
 
 interface UserSearchResult {
   id: string;
@@ -32,7 +24,7 @@ interface UserSearchResult {
 
 interface CachedQuickSearch {
   query: string;
-  results: Game[];
+  results: GameWithCalculatedFields[];
   timestamp: number;
 }
 
@@ -51,7 +43,7 @@ export const ResponsiveNavbar: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('games');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState<Game[]>([]);
+  const [suggestions, setSuggestions] = useState<GameWithCalculatedFields[]>([]);
   const [userSuggestions, setUserSuggestions] = useState<UserSearchResult[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [recentUserSearches, setRecentUserSearches] = useState<string[]>([]);
@@ -120,11 +112,8 @@ export const ResponsiveNavbar: React.FC = () => {
         return;
       }
 
-      // Fetch fresh results using enhanced IGDB service
-      const results = await enhancedIGDBService.searchGames(query, {
-        limit: 8,
-        fields: 'name,cover.url,first_release_date,rating,genres.name'
-      });
+      // Fetch fresh results using Supabase gameDataService
+      const results = await gameDataService.searchGames(query);
 
       if (results && Array.isArray(results)) {
         const limitedResults = results.slice(0, 8);
@@ -542,9 +531,9 @@ export const ResponsiveNavbar: React.FC = () => {
                                 className="flex items-center w-full text-left p-2 hover:bg-gray-700 rounded transition-colors"
                               >
                                 <div className="w-8 h-10 bg-gray-700 rounded mr-3 flex-shrink-0 overflow-hidden">
-                                  {game.cover?.url ? (
+                                  {game.cover_url ? (
                                     <img
-                                      src={game.cover.url.replace('t_thumb', 't_cover_small')}
+                                      src={game.cover_url}
                                       alt={game.name}
                                       className="w-full h-full object-cover"
                                       loading="lazy"
@@ -560,14 +549,14 @@ export const ResponsiveNavbar: React.FC = () => {
                                     {game.name}
                                   </div>
                                   <div className="flex items-center gap-2 text-xs text-gray-400">
-                                    {formatReleaseYear(game.first_release_date) && (
-                                      <span>{formatReleaseYear(game.first_release_date)}</span>
+                                    {formatReleaseYear(game.first_release_date ? new Date(game.first_release_date).getTime() / 1000 : undefined) && (
+                                      <span>{formatReleaseYear(game.first_release_date ? new Date(game.first_release_date).getTime() / 1000 : undefined)}</span>
                                     )}
-                                    {game.rating && (
+                                    {game.averageUserRating && (
                                       <>
-                                        {formatReleaseYear(game.first_release_date) && <span>•</span>}
+                                        {formatReleaseYear(game.first_release_date ? new Date(game.first_release_date).getTime() / 1000 : undefined) && <span>•</span>}
                                         <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                        <span>{(game.rating / 10).toFixed(1)}</span>
+                                        <span>{game.averageUserRating?.toFixed(1) || '0.0'}</span>
                                       </>
                                     )}
                                   </div>
@@ -856,9 +845,9 @@ export const ResponsiveNavbar: React.FC = () => {
                             className="flex items-center w-full text-left p-2 hover:bg-gray-700 rounded group transition-colors"
                           >
                             <div className="w-8 h-10 bg-gray-700 rounded mr-3 flex-shrink-0 overflow-hidden">
-                              {game.cover?.url ? (
+                              {game.cover_url ? (
                                 <img
-                                  src={game.cover.url.replace('t_thumb', 't_cover_small')}
+                                  src={game.cover_url}
                                   alt={game.name}
                                   className="w-full h-full object-cover"
                                   loading="lazy"
@@ -874,14 +863,14 @@ export const ResponsiveNavbar: React.FC = () => {
                                 {game.name}
                               </div>
                               <div className="flex items-center gap-2 text-xs text-gray-400">
-                                {formatReleaseYear(game.first_release_date) && (
-                                  <span>{formatReleaseYear(game.first_release_date)}</span>
+                                {formatReleaseYear(game.first_release_date ? new Date(game.first_release_date).getTime() / 1000 : undefined) && (
+                                  <span>{formatReleaseYear(game.first_release_date ? new Date(game.first_release_date).getTime() / 1000 : undefined)}</span>
                                 )}
-                                {game.rating && (
+                                {game.averageUserRating && (
                                   <>
-                                    {formatReleaseYear(game.first_release_date) && <span>•</span>}
+                                    {formatReleaseYear(game.first_release_date ? new Date(game.first_release_date).getTime() / 1000 : undefined) && <span>•</span>}
                                     <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                    <span>{(game.rating / 10).toFixed(1)}</span>
+                                    <span>{game.averageUserRating?.toFixed(1) || '0.0'}</span>
                                   </>
                                 )}
                               </div>

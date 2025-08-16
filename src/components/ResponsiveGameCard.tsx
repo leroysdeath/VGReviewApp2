@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, Star, Database, Zap, AlertCircle } from 'lucide-react';
 import { StarRating } from './StarRating';
 import { useResponsive } from '../hooks/useResponsive';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
+// Removed IGDB service - using Supabase data directly
 
 interface Game {
   id: string | number;
@@ -75,7 +75,7 @@ export const ResponsiveGameCard: React.FC<ResponsiveGameCardProps> = ({
       try {
         const gameId = typeof game.id === 'string' ? parseInt(game.id) : game.id;
         if (!isNaN(gameId)) {
-          await enhancedIGDBService.prefetchGame(gameId);
+          // Prefetching removed - data already loaded from Supabase
         }
       } catch (error) {
         console.error('Prefetch error:', error);

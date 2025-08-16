@@ -2,20 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X, Clock, TrendingUp, Database, Loader2, Star, Gamepad2, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGameSearch } from '../hooks/useGameSearch';
-import { enhancedIGDBService } from '../services/enhancedIGDBService';
+import { gameDataService } from '../services/gameDataService';
+import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
 
-interface Game {
-  id: number;
-  name: string;
-  cover?: {
-    url: string;
-  };
-  first_release_date?: number;
-  rating?: number;
-  genres?: Array<{ name: string }>;
-}
+// Using GameWithCalculatedFields from database types
 
 interface User {
   id: string;
@@ -35,7 +27,7 @@ interface HeaderSearchBarProps {
 
 interface CachedQuickSearch {
   query: string;
-  results: Game[];
+  results: GameWithCalculatedFields[];
   timestamp: number;
 }
 
@@ -58,7 +50,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<SearchTab>('games');
-  const [suggestions, setSuggestions] = useState<Game[]>([]);
+  const [suggestions, setSuggestions] = useState<GameWithCalculatedFields[]>([]);
   const [userSuggestions, setUserSuggestions] = useState<User[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [recentUserSearches, setRecentUserSearches] = useState<string[]>([]);
@@ -121,11 +113,8 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
         }
       }
 
-      // Fetch fresh results using enhanced IGDB service
-      const results = await enhancedIGDBService.searchGames(query, {
-        limit: maxSuggestions,
-        fields: 'name,cover.url,first_release_date,rating,genres.name'
-      });
+      // Fetch fresh results using Supabase gameDataService
+      const results = await gameDataService.searchGames(query);
 
       if (results && Array.isArray(results)) {
         const limitedResults = results.slice(0, maxSuggestions);
