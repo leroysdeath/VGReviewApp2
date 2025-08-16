@@ -2,40 +2,40 @@
 -- Optimized Game Query Functions and Views
 -- =====================================================
 
--- Enable trigram extension for fuzzy text search
+-- Enable trigram extension for fuzzy text search (if not already enabled)
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Create indexes for better query performance
-CREATE INDEX IF NOT EXISTS idx_games_name_trgm ON games USING gin (name gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_games_genres ON games USING gin (genres);
-CREATE INDEX IF NOT EXISTS idx_games_platforms ON games USING gin (platforms);
-CREATE INDEX IF NOT EXISTS idx_games_release_date ON games (first_release_date);
+CREATE INDEX IF NOT EXISTS idx_game_name_trgm ON game USING gin (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_game_genres ON game USING gin (genres);
+CREATE INDEX IF NOT EXISTS idx_game_platforms ON game USING gin (platforms);
+CREATE INDEX IF NOT EXISTS idx_game_release_date ON game (release_date);
 CREATE INDEX IF NOT EXISTS idx_rating_game_id ON rating (game_id);
 CREATE INDEX IF NOT EXISTS idx_rating_user_game ON rating (user_id, game_id);
 
 -- =====================================================
 -- Function: Search games with trigram similarity
 -- =====================================================
-CREATE OR REPLACE FUNCTION search_games_similarity(
+CREATE OR REPLACE FUNCTION search_game_similarity(
   search_query TEXT,
   similarity_threshold FLOAT DEFAULT 0.1
 )
 RETURNS TABLE (
   id INTEGER,
   igdb_id INTEGER,
-  name TEXT,
+  name VARCHAR(500),
   summary TEXT,
-  first_release_date TEXT,
+  release_date DATE,
   cover_url TEXT,
   genres TEXT[],
   platforms TEXT[],
   screenshots TEXT[],
-  videos TEXT[],
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ,
   similarity_score FLOAT
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
 BEGIN
   RETURN QUERY
@@ -44,16 +44,15 @@ BEGIN
     g.igdb_id,
     g.name,
     g.summary,
-    g.first_release_date,
+    g.release_date,
     g.cover_url,
     g.genres,
     g.platforms,
     g.screenshots,
-    g.videos,
     g.created_at,
     g.updated_at,
     similarity(g.name, search_query) AS similarity_score
-  FROM games g
+  FROM game g
   WHERE similarity(g.name, search_query) > similarity_threshold
   ORDER BY similarity_score DESC, g.name;
 END;
@@ -62,26 +61,26 @@ $$;
 -- =====================================================
 -- Function: Get popular games by rating count
 -- =====================================================
-CREATE OR REPLACE FUNCTION get_popular_games(
+CREATE OR REPLACE FUNCTION get_popular_game(
   limit_count INTEGER DEFAULT 20
 )
 RETURNS TABLE (
   id INTEGER,
   igdb_id INTEGER,
-  name TEXT,
+  name VARCHAR(500),
   summary TEXT,
-  first_release_date TEXT,
+  release_date DATE,
   cover_url TEXT,
   genres TEXT[],
   platforms TEXT[],
   screenshots TEXT[],
-  videos TEXT[],
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ,
   average_rating NUMERIC,
   rating_count BIGINT
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
 BEGIN
   RETURN QUERY
@@ -90,17 +89,16 @@ BEGIN
     g.igdb_id,
     g.name,
     g.summary,
-    g.first_release_date,
+    g.release_date,
     g.cover_url,
     g.genres,
     g.platforms,
     g.screenshots,
-    g.videos,
     g.created_at,
     g.updated_at,
     COALESCE(AVG(r.rating), 0) AS average_rating,
     COUNT(r.id) AS rating_count
-  FROM games g
+  FROM game g
   LEFT JOIN rating r ON g.id = r.game_id
   GROUP BY g.id
   HAVING COUNT(r.id) > 0
@@ -112,7 +110,7 @@ $$;
 -- =====================================================
 -- Function: Get highly rated games
 -- =====================================================
-CREATE OR REPLACE FUNCTION get_highly_rated_games(
+CREATE OR REPLACE FUNCTION get_highly_rated_game(
   min_rating NUMERIC DEFAULT 8.0,
   min_count INTEGER DEFAULT 5,
   limit_count INTEGER DEFAULT 20
@@ -120,20 +118,20 @@ CREATE OR REPLACE FUNCTION get_highly_rated_games(
 RETURNS TABLE (
   id INTEGER,
   igdb_id INTEGER,
-  name TEXT,
+  name VARCHAR(500),
   summary TEXT,
-  first_release_date TEXT,
+  release_date DATE,
   cover_url TEXT,
   genres TEXT[],
   platforms TEXT[],
   screenshots TEXT[],
-  videos TEXT[],
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ,
   average_rating NUMERIC,
   rating_count BIGINT
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
 BEGIN
   RETURN QUERY
@@ -142,17 +140,16 @@ BEGIN
     g.igdb_id,
     g.name,
     g.summary,
-    g.first_release_date,
+    g.release_date,
     g.cover_url,
     g.genres,
     g.platforms,
     g.screenshots,
-    g.videos,
     g.created_at,
     g.updated_at,
     AVG(r.rating) AS average_rating,
     COUNT(r.id) AS rating_count
-  FROM games g
+  FROM game g
   INNER JOIN rating r ON g.id = r.game_id
   GROUP BY g.id
   HAVING COUNT(r.id) >= min_count AND AVG(r.rating) >= min_rating
@@ -164,7 +161,7 @@ $$;
 -- =====================================================
 -- View: Games with rating statistics
 -- =====================================================
-CREATE OR REPLACE VIEW games_with_ratings AS
+CREATE OR REPLACE VIEW game_with_ratings AS
 SELECT 
   g.*,
   COALESCE(rs.average_rating, 0) AS average_rating,
@@ -172,7 +169,7 @@ SELECT
   COALESCE(rs.total_playtime_hours, 0) AS total_playtime_hours,
   COALESCE(rs.recommended_count, 0) AS recommended_count,
   COALESCE(rs.recommended_percentage, 0) AS recommended_percentage
-FROM games g
+FROM game g
 LEFT JOIN (
   SELECT 
     game_id,
@@ -189,12 +186,12 @@ LEFT JOIN (
 -- =====================================================
 -- View: Popular games (cached for performance)
 -- =====================================================
-CREATE MATERIALIZED VIEW IF NOT EXISTS popular_games_cached AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS popular_game_cached AS
 SELECT 
   g.*,
   COALESCE(AVG(r.rating), 0) AS average_rating,
   COUNT(r.id) AS rating_count
-FROM games g
+FROM game g
 LEFT JOIN rating r ON g.id = r.game_id
 GROUP BY g.id
 HAVING COUNT(r.id) > 0
@@ -202,8 +199,8 @@ ORDER BY COUNT(r.id) DESC, AVG(r.rating) DESC
 LIMIT 100;
 
 -- Create index on materialized view
-CREATE INDEX IF NOT EXISTS idx_popular_games_cached_rating_count 
-ON popular_games_cached (rating_count DESC);
+CREATE INDEX IF NOT EXISTS idx_popular_game_cached_rating_count 
+ON popular_game_cached (rating_count DESC);
 
 -- =====================================================
 -- Function: Refresh materialized views
@@ -211,9 +208,10 @@ ON popular_games_cached (rating_count DESC);
 CREATE OR REPLACE FUNCTION refresh_game_views()
 RETURNS void
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
 BEGIN
-  REFRESH MATERIALIZED VIEW CONCURRENTLY popular_games_cached;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY popular_game_cached;
 END;
 $$;
 
@@ -229,6 +227,7 @@ RETURNS TABLE (
   percentage NUMERIC
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
 DECLARE
   total_ratings BIGINT;
@@ -261,16 +260,16 @@ $$;
 -- =====================================================
 -- Function: Get games similar to target game
 -- =====================================================
-CREATE OR REPLACE FUNCTION get_similar_games(
+CREATE OR REPLACE FUNCTION get_similar_game(
   target_game_id INTEGER,
   limit_count INTEGER DEFAULT 10
 )
 RETURNS TABLE (
   id INTEGER,
   igdb_id INTEGER,
-  name TEXT,
+  name VARCHAR(500),
   summary TEXT,
-  first_release_date TEXT,
+  release_date DATE,
   cover_url TEXT,
   genres TEXT[],
   platforms TEXT[],
@@ -280,6 +279,7 @@ RETURNS TABLE (
   platform_similarity INTEGER
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
 DECLARE
   target_genres TEXT[];
@@ -288,7 +288,7 @@ BEGIN
   -- Get target game's genres and platforms
   SELECT g.genres, g.platforms 
   INTO target_genres, target_platforms
-  FROM games g
+  FROM game g
   WHERE g.id = target_game_id;
   
   -- Find similar games
@@ -298,7 +298,7 @@ BEGIN
     g.igdb_id,
     g.name,
     g.summary,
-    g.first_release_date,
+    g.release_date,
     g.cover_url,
     g.genres,
     g.platforms,
@@ -306,7 +306,7 @@ BEGIN
     COUNT(r.id) AS rating_count,
     COALESCE(array_length(array_intersect(g.genres, target_genres), 1), 0) AS genre_similarity,
     COALESCE(array_length(array_intersect(g.platforms, target_platforms), 1), 0) AS platform_similarity
-  FROM games g
+  FROM game g
   LEFT JOIN rating r ON g.id = r.game_id
   WHERE g.id != target_game_id
     AND (
@@ -339,9 +339,10 @@ $$;
 -- =====================================================
 -- Trigger: Auto-refresh popular games cache
 -- =====================================================
-CREATE OR REPLACE FUNCTION trigger_refresh_popular_games()
+CREATE OR REPLACE FUNCTION trigger_refresh_popular_game()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
 BEGIN
   -- Refresh the materialized view asynchronously
@@ -355,28 +356,13 @@ END;
 $$;
 
 -- Create trigger on rating table
-DROP TRIGGER IF EXISTS refresh_popular_games_trigger ON rating;
-CREATE TRIGGER refresh_popular_games_trigger
+DROP TRIGGER IF EXISTS refresh_popular_game_trigger ON rating;
+CREATE TRIGGER refresh_popular_game_trigger
 AFTER INSERT OR UPDATE OR DELETE ON rating
 FOR EACH STATEMENT
-EXECUTE FUNCTION trigger_refresh_popular_games();
-
--- =====================================================
--- RLS Policies for views and functions
--- =====================================================
-
--- Allow all authenticated users to query the views
-ALTER VIEW games_with_ratings OWNER TO authenticated;
-GRANT SELECT ON games_with_ratings TO authenticated, anon;
-
--- Grant execute permissions on functions
-GRANT EXECUTE ON FUNCTION search_games_similarity TO authenticated, anon;
-GRANT EXECUTE ON FUNCTION get_popular_games TO authenticated, anon;
-GRANT EXECUTE ON FUNCTION get_highly_rated_games TO authenticated, anon;
-GRANT EXECUTE ON FUNCTION get_game_rating_distribution TO authenticated, anon;
-GRANT EXECUTE ON FUNCTION get_similar_games TO authenticated, anon;
+EXECUTE FUNCTION trigger_refresh_popular_game();
 
 -- =====================================================
 -- Initial data refresh
 -- =====================================================
-REFRESH MATERIALIZED VIEW popular_games_cached;
+REFRESH MATERIALIZED VIEW popular_game_cached;
