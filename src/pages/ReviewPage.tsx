@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Calendar, User, MessageCircle, Heart, X } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
-import { igdbService, Game } from '../services/igdbApi';
+import { gameDataService } from '../services/gameDataService';
+import type { GameWithCalculatedFields } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 
@@ -39,7 +40,7 @@ export const ReviewPage: React.FC = () => {
   const { userId, gameId } = useParams<{ userId: string; gameId: string }>();
   const { isAuthenticated, user } = useAuth();
   
-  const [game, setGame] = useState<Game | null>(null);
+  const [game, setGame] = useState<GameWithCalculatedFields | null>(null);
   const [review, setReview] = useState<Review | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +60,7 @@ export const ReviewPage: React.FC = () => {
       setError(null);
 
       // Load game data
-      const gameData = await igdbService.getGameById(gameId!);
+      const gameData = await gameDataService.getGameById(parseInt(gameId!));
       if (!gameData) {
         throw new Error('Game not found');
       }
@@ -232,8 +233,8 @@ export const ReviewPage: React.FC = () => {
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
                   <img
-                    src={game.coverImage || '/placeholder-game.jpg'}
-                    alt={game.title}
+                    src={game.cover_url || '/placeholder-game.jpg'}
+                    alt={game.name}
                     className="h-64 w-full object-cover md:h-80 md:w-64"
                     onError={(e) => {
                       e.currentTarget.src = '/placeholder-game.jpg';
@@ -245,26 +246,20 @@ export const ReviewPage: React.FC = () => {
                     to={`/game/${gameId}`}
                     className="text-3xl font-bold text-white mb-4 hover:text-purple-400 transition-colors"
                   >
-                    {game.title}
+                    {game.name}
                   </Link>
                   <div className="space-y-2 text-gray-400 mb-6">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {game.releaseDate ? new Date(game.releaseDate).getFullYear() : 'Unknown'}
+                        {game.first_release_date ? new Date(game.first_release_date).getFullYear() : 'Unknown'}
                       </span>
                     </div>
-                    {game.genre && (
-                      <div><strong>Genre:</strong> {game.genre}</div>
+                    {game.genres && game.genres.length > 0 && (
+                      <div><strong>Genre:</strong> {game.genres.join(', ')}</div>
                     )}
                     {game.platforms && game.platforms.length > 0 && (
                       <div><strong>Platforms:</strong> {game.platforms.join(', ')}</div>
-                    )}
-                    {game.developer && (
-                      <div><strong>Developer:</strong> {game.developer}</div>
-                    )}
-                    {game.publisher && (
-                      <div><strong>Publisher:</strong> {game.publisher}</div>
                     )}
                   </div>
                   
