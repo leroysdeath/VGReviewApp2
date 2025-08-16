@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { StarRating } from './StarRating';
 import { Calendar, ListMusic } from 'lucide-react';
+import { Top5Selector } from './profile/Top5Selector';
 
 interface Game {
   id: string;
@@ -34,6 +35,8 @@ interface ProfileDataProps {
   reviewFilter: string;
   onReviewFilterChange: (filter: string) => void;
   isDummy?: boolean;
+  userId?: string;
+  isOwnProfile?: boolean;
 }
 
 export const ProfileData: React.FC<ProfileDataProps> = ({
@@ -42,11 +45,18 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
   sortedReviews,
   reviewFilter,
   onReviewFilterChange,
-  isDummy = false
+  isDummy = false,
+  userId,
+  isOwnProfile = false
 }) => {
   // Top 5 Tab Content
   if (activeTab === 'top5') {
-    // Get top 5 highest rated games
+    // Use the new Top5Selector component if userId is provided
+    if (userId) {
+      return <Top5Selector userId={userId} isOwnProfile={isOwnProfile} />;
+    }
+    
+    // Fallback to automatic top 5 for dummy or when userId not provided
     const top5Games = [...allGames]
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 5);
