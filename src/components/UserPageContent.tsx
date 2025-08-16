@@ -34,6 +34,8 @@ interface UserPageContentProps {
   onReviewFilterChange: (filter: string) => void;
   isDummy?: boolean;
   showPreviewToggle?: boolean;
+  userId?: string;
+  isOwnProfile?: boolean;
 }
 
 export const UserPageContent: React.FC<UserPageContentProps> = ({
@@ -43,7 +45,9 @@ export const UserPageContent: React.FC<UserPageContentProps> = ({
   reviewFilter,
   onReviewFilterChange,
   showPreviewToggle = false,
-  isDummy = false
+  isDummy = false,
+  userId,
+  isOwnProfile = false
 }) => {
   const [forceMobileView, setForceMobileView] = React.useState(false);
 
@@ -60,6 +64,8 @@ export const UserPageContent: React.FC<UserPageContentProps> = ({
         onReviewFilterChange={onReviewFilterChange}
         forceMobileView={forceMobileView}
         isDummy={isDummy}
+        userId={userId}
+        isOwnProfile={isOwnProfile}
       />
     </>
   );
