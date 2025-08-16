@@ -5,9 +5,11 @@ import { UserPageContent } from '../components/UserPageContent';
 import { supabase } from '../services/supabase';
 import { useEffect } from 'react';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { useAuth } from '../hooks/useAuth';
 
 export const UserPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { user: authUser, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<'top5' | 'top10' | 'reviews' | 'activity'>('top5');
   const [reviewFilter, setReviewFilter] = useState('recent');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -16,6 +18,7 @@ export const UserPage: React.FC = () => {
   const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -33,6 +36,17 @@ export const UserPage: React.FC = () => {
           .single();
           
         if (userError) throw userError;
+        
+        // Check if this is the current user's own profile
+        if (isAuthenticated && authUser?.id) {
+          const { data: currentUserData } = await supabase
+            .from('user')
+            .select('id')
+            .eq('provider_id', authUser.id)
+            .single();
+          
+          setIsOwnProfile(currentUserData?.id === parseInt(id));
+        }
         
         // Fetch user reviews (only those with valid ratings)
         const { data: reviewsData, error: reviewsError } = await supabase
@@ -189,6 +203,8 @@ export const UserPage: React.FC = () => {
         reviewFilter={reviewFilter}
         onReviewFilterChange={setReviewFilter}
         isDummy={false}
+        userId={id}
+        isOwnProfile={isOwnProfile}
       />
     </UserPageLayout>
   );
