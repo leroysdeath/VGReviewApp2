@@ -218,6 +218,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   onSuccess,
   onFormChange
 }) => {
+  // Platform checkbox options
+  const platformOptions = ['Nintendo', 'PlayStation', 'Xbox', 'PC', 'Retro'];
   // Debug props at component level
   console.log('🟦 UserSettingsPanel component rendered with onSave:', {
     hasOnSave: !!onSave,
@@ -240,6 +242,20 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     website: initialData.website || '',
     platform: initialData.platform || ''
   });
+  
+  // Parse initial platform string into selected platforms
+  const [selectedPlatforms, setSelectedPlatforms] = useState<Set<string>>(() => {
+    const platforms = new Set<string>();
+    if (initialData.platform) {
+      initialData.platform.split(',').forEach(p => {
+        const trimmed = p.trim();
+        if (platformOptions.includes(trimmed)) {
+          platforms.add(trimmed);
+        }
+      });
+    }
+    return platforms;
+  });
 
 
   // Form setup with dynamic validation (only validate changed fields)
@@ -250,7 +266,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     reset,
     watch,
     clearErrors,
-    trigger
+    trigger,
+    setValue
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(getDynamicProfileSchema(changedFields)),
     defaultValues: originalValues,
@@ -286,8 +303,21 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     setOriginalValues(newValues);
     setChangedFields(new Set());
     setAvatarPreview(initialData.avatar || null); // Reset avatar preview
+    
+    // Reset selected platforms
+    const platforms = new Set<string>();
+    if (initialData.platform) {
+      initialData.platform.split(',').forEach(p => {
+        const trimmed = p.trim();
+        if (platformOptions.includes(trimmed)) {
+          platforms.add(trimmed);
+        }
+      });
+    }
+    setSelectedPlatforms(platforms);
+    
     reset(newValues);
-  }, [initialData, reset]);
+  }, [initialData, reset, platformOptions]);
 
   // Watch all form values to track changes
   const watchedValues = watch();
@@ -408,6 +438,33 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       confirmEmail: ''
     }
   });
+
+  // Handle platform checkbox change
+  const handlePlatformToggle = (platform: string) => {
+    const newPlatforms = new Set(selectedPlatforms);
+    if (newPlatforms.has(platform)) {
+      newPlatforms.delete(platform);
+    } else {
+      newPlatforms.add(platform);
+    }
+    setSelectedPlatforms(newPlatforms);
+    
+    // Convert to comma-separated string
+    const platformString = Array.from(newPlatforms).sort().join(',');
+    setValue('platform', platformString);
+    
+    // Mark as changed if different from original
+    const originalPlatform = originalValues.platform || '';
+    if (platformString !== originalPlatform) {
+      setChangedFields(prev => new Set([...prev, 'platform']));
+    } else {
+      setChangedFields(prev => {
+        const newSet = new Set(prev);
+        newSet.delete('platform');
+        return newSet;
+      });
+    }
+  };
 
   // Handle avatar change
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -742,23 +799,38 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
             {/* Gaming Platform */}
             <div>
-              <label htmlFor="platform" className="block text-sm font-medium text-gray-300 mb-1">
-                Gaming Platform (optional)
+              <label className="block text-sm font-medium text-gray-300 mb-3">
+                <div className="flex items-center gap-2">
+                  <Gamepad2 className="h-5 w-5 text-gray-500" />
+                  <span>Gaming Platforms (optional)</span>
+                </div>
               </label>
-              <div className="relative">
-                <Gamepad2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                <input
-                  id="platform"
-                  type="text"
-                  {...register('platform')}
-                  maxLength={50}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                  placeholder="PC, PlayStation, Xbox, etc."
-                  disabled={isLoading}
-                />
+              <div className="flex flex-wrap gap-6">
+                {platformOptions.map((platform) => (
+                  <div key={platform} className="flex flex-col items-center">
+                    <label className="cursor-pointer flex flex-col items-center gap-2 group">
+                      <input
+                        type="checkbox"
+                        checked={selectedPlatforms.has(platform)}
+                        onChange={() => handlePlatformToggle(platform)}
+                        disabled={isLoading}
+                        className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
+                      />
+                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
+                        {platform}
+                      </span>
+                    </label>
+                  </div>
+                ))}
               </div>
+              {/* Hidden input to maintain form state */}
+              <input
+                type="hidden"
+                {...register('platform')}
+                value={Array.from(selectedPlatforms).sort().join(',')}
+              />
               {errors.platform && (
-                <p className="mt-1 text-sm text-red-400">{errors.platform.message}</p>
+                <p className="mt-2 text-sm text-red-400">{errors.platform.message}</p>
               )}
             </div>
 

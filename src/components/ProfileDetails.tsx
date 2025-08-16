@@ -33,7 +33,7 @@ export const ProfileDetails: React.FC<ProfileDetailsProps> = ({
         </button>
         <div className="text-center">
           <div className="text-xl font-bold text-white">{stats.thisYear}</div>
-          <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
+          <div className="text-xs text-gray-400 uppercase tracking-wide">REVIEWS</div>
         </div>
         <div className="text-center">
           <div className="text-xl font-bold text-white">{stats.lists}</div>

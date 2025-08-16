@@ -30,6 +30,7 @@ export const ReviewFormPage: React.FC = () => {
   const [didFinishGame, setDidFinishGame] = useState<boolean | null>(null);
   const [gameAlreadyCompleted, setGameAlreadyCompleted] = useState(false);
   const [isGameCompletionLocked, setIsGameCompletionLocked] = useState(false);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [showSearchModal, setShowSearchModal] = useState(false);
   
   // Enhanced search state from SearchResultsPage
@@ -69,6 +70,7 @@ export const ReviewFormPage: React.FC = () => {
     reviewText: string;
     isRecommended: boolean | null;
     didFinishGame: boolean | null;
+    selectedPlatforms: string[];
   } | null>(null);
   const [hasFormChanges, setHasFormChanges] = useState(false);
 
@@ -171,7 +173,8 @@ export const ReviewFormPage: React.FC = () => {
             rating: result.data.rating,
             reviewText: result.data.review || '',
             isRecommended: result.data.isRecommended,
-            didFinishGame: finalDidFinishGame
+            didFinishGame: finalDidFinishGame,
+            selectedPlatforms: [] // Start with empty array for existing reviews
           };
           setInitialFormValues(initialValues);
           
@@ -202,14 +205,16 @@ export const ReviewFormPage: React.FC = () => {
       rating,
       reviewText,
       isRecommended,
-      didFinishGame
+      didFinishGame,
+      selectedPlatforms
     };
 
     const hasChanges = 
       currentValues.rating !== initialFormValues.rating ||
       currentValues.reviewText !== initialFormValues.reviewText ||
       currentValues.isRecommended !== initialFormValues.isRecommended ||
-      (!isGameCompletionLocked && currentValues.didFinishGame !== initialFormValues.didFinishGame);
+      (!isGameCompletionLocked && currentValues.didFinishGame !== initialFormValues.didFinishGame) ||
+      JSON.stringify(currentValues.selectedPlatforms.sort()) !== JSON.stringify(initialFormValues.selectedPlatforms.sort());
 
     setHasFormChanges(hasChanges);
     console.log('Form change detection:', {
@@ -218,7 +223,7 @@ export const ReviewFormPage: React.FC = () => {
       isGameCompletionLocked,
       hasChanges
     });
-  }, [rating, reviewText, isRecommended, didFinishGame, isEditMode, initialFormValues, isGameCompletionLocked]);
+  }, [rating, reviewText, isRecommended, didFinishGame, selectedPlatforms, isEditMode, initialFormValues, isGameCompletionLocked]);
 
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game);
@@ -241,6 +246,20 @@ export const ReviewFormPage: React.FC = () => {
   const updateFilters = (newFilters: Partial<SearchFilters>) => {
     const updatedFilters = { ...filters, ...newFilters };
     setFilters(updatedFilters);
+  };
+
+  const handlePlatformToggle = (platform: string) => {
+    setSelectedPlatforms(prev => {
+      if (prev.includes(platform)) {
+        // Don't allow removing if it's the only selected platform
+        if (prev.length === 1) {
+          return prev;
+        }
+        return prev.filter(p => p !== platform);
+      } else {
+        return [...prev, platform];
+      }
+    });
   };
   
   const formatDate = (timestamp: number) => {
@@ -365,12 +384,12 @@ export const ReviewFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedGame || rating < 0.5 || (!gameAlreadyCompleted && didFinishGame === null)) return;
+    if (!selectedGame || rating < 0.5 || (!gameAlreadyCompleted && didFinishGame === null) || selectedPlatforms.length === 0) return;
 
     try {
       if (isEditMode && existingReviewId) {
         // Update existing review
-        console.log('Updating existing review:', existingReviewId);
+        console.log('Updating existing review:', existingReviewId, 'with platforms:', selectedPlatforms);
         
         const result = await updateReview(
           existingReviewId,
@@ -406,7 +425,7 @@ export const ReviewFormPage: React.FC = () => {
         }
       } else {
         // Create new review
-        console.log('Creating new review');
+        console.log('Creating new review with platforms:', selectedPlatforms);
         
         // First, ensure the game exists in the database
         const ensureGameResult = await ensureGameExists(
@@ -703,6 +722,32 @@ export const ReviewFormPage: React.FC = () => {
               </div>
             )}
 
+            {/* Platform(s) Played On */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-4">
+                Platform(s) Played On *
+              </label>
+              <div className="flex justify-between gap-4">
+                {['PS5', 'Xbox Series X/S', 'Nintendo Switch', 'PC', 'Retro'].map((platform) => (
+                  <div key={platform} className="flex flex-col items-center">
+                    <input
+                      type="checkbox"
+                      id={`platform-${platform}`}
+                      checked={selectedPlatforms.includes(platform)}
+                      onChange={() => handlePlatformToggle(platform)}
+                      className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
+                    />
+                    <label 
+                      htmlFor={`platform-${platform}`}
+                      className="text-sm text-gray-300 mt-2 text-center cursor-pointer hover:text-purple-300 transition-colors"
+                    >
+                      {platform}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Review Text */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -729,6 +774,7 @@ export const ReviewFormPage: React.FC = () => {
                   !selectedGame || 
                   rating < 0.5 || 
                   (!gameAlreadyCompleted && didFinishGame === null) ||
+                  selectedPlatforms.length === 0 ||
                   (isEditMode && !hasFormChanges)
                 }
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

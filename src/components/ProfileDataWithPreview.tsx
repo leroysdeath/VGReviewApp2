@@ -26,7 +26,7 @@ interface Review {
 }
 
 interface ProfileDataWithPreviewProps {
-  activeTab: 'top5' | 'last5' | 'reviews' | 'activity';
+  activeTab: 'top5' | 'top10' | 'reviews' | 'activity';
   sortedReviews: Review[];
   allGames: Game[];
   reviewFilter: string;
@@ -38,6 +38,8 @@ interface ProfileDataWithPreviewProps {
   userFavoriteGames?: Game[];
   userRecentGames?: Game[];
   stats?: any;
+  userId?: string;
+  isOwnProfile?: boolean;
 }
 
 export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
@@ -52,7 +54,9 @@ export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
   onViewModeChange,
   userFavoriteGames,
   userRecentGames,
-  stats
+  stats,
+  userId,
+  isOwnProfile = false
 }) => {
   return (
     <div className={forceMobileView ? 'mobile-preview-context' : ''}>
@@ -63,6 +67,8 @@ export const ProfileDataWithPreview: React.FC<ProfileDataWithPreviewProps> = ({
         reviewFilter={reviewFilter}
         onReviewFilterChange={onReviewFilterChange}
         isDummy={isDummy}
+        userId={userId}
+        isOwnProfile={isOwnProfile}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { StarRating } from './StarRating';
 import { Calendar, ListMusic } from 'lucide-react';
+import { Top5Selector } from './profile/Top5Selector';
 
 interface Game {
   id: string;
@@ -28,12 +29,14 @@ interface Review {
 }
 
 interface ProfileDataProps {
-  activeTab: 'top5' | 'last5' | 'reviews' | 'activity';
+  activeTab: 'top5' | 'top10' | 'reviews' | 'activity';
   allGames: Game[];
   sortedReviews: Review[];
   reviewFilter: string;
   onReviewFilterChange: (filter: string) => void;
   isDummy?: boolean;
+  userId?: string;
+  isOwnProfile?: boolean;
 }
 
 export const ProfileData: React.FC<ProfileDataProps> = ({
@@ -42,11 +45,18 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
   sortedReviews,
   reviewFilter,
   onReviewFilterChange,
-  isDummy = false
+  isDummy = false,
+  userId,
+  isOwnProfile = false
 }) => {
   // Top 5 Tab Content
   if (activeTab === 'top5') {
-    // Get top 5 highest rated games
+    // Use the new Top5Selector component if userId is provided
+    if (userId) {
+      return <Top5Selector userId={userId} isOwnProfile={isOwnProfile} />;
+    }
+    
+    // Fallback to automatic top 5 for dummy or when userId not provided
     const top5Games = [...allGames]
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 5);
@@ -137,36 +147,32 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
     );
   }
 
-  // Last 5 Tab Content
-  if (activeTab === 'last5') {
-    // Get the 5 most recent reviews and map to games
-    const last5Reviews = [...sortedReviews]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
-    
-    const last5Games = last5Reviews
-      .map(review => allGames.find(game => game.id === review.gameId))
-      .filter(game => game !== undefined) as Game[];
+  // Top 10 Tab Content
+  if (activeTab === 'top10') {
+    // Get top 10 highest rated games
+    const top10Games = [...allGames]
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 10);
 
     return (
       <div>
         <h2 className="text-xl font-semibold text-white mb-6">
-          {isDummy ? 'Dummy ' : ''}Last 5 Games
+          {isDummy ? 'Dummy ' : ''}Top 10 Highest Ranked
         </h2>
         
-        {/* Desktop Version */}
-        <div className="hidden md:flex gap-6 justify-center">
-          {last5Games.map((game, index) => (
+        {/* Desktop Version - Grid Layout */}
+        <div className="hidden md:grid grid-cols-5 gap-4">
+          {top10Games.map((game, index) => (
             <Link
               key={game.id}
               to={`/game/${game.id}`}
-              className="group relative flex-shrink-0 hover:scale-105 transition-transform"
+              className="group relative hover:scale-105 transition-transform"
             >
               <div className="relative">
                 <img
                   src={game.coverImage}
                   alt={game.title}
-                  className="w-48 h-64 object-cover rounded-lg"
+                  className="w-full h-64 object-cover rounded-lg"
                 />
                 {/* Rating at the bottom of cover art - full width */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-2 py-1 rounded-b-lg">
@@ -195,7 +201,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
 
         {/* Mobile Version - List format */}
         <div className="md:hidden space-y-3">
-          {last5Games.map((game, index) => (
+          {top10Games.map((game, index) => (
             <Link
               key={game.id}
               to={`/game/${game.id}`}
@@ -234,55 +240,22 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
     );
   }
 
-  // Reviews Tab Content
+  // Wishlist Tab Content (formerly Reviews)
   if (activeTab === 'reviews') {
     return (
       <div>
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">          
-          <h2 className="text-xl font-semibold text-white">
-            {isDummy ? 'Dummy ' : ''}Reviews ({sortedReviews.length})
-          </h2>
-          <select
-            value={reviewFilter}
-            onChange={(e) => onReviewFilterChange(e.target.value)}
-            className="px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-green-500 w-full sm:w-auto"
-          >
-            <option value="recent">Most Recent</option>
-            <option value="highest">Highest Rated</option>
-            <option value="lowest">Lowest Rated</option>
-            <option value="oldest">Oldest</option>
-          </select>
-        </div>
-        <div className="space-y-4 sm:space-y-6">
-          {sortedReviews.map((review) => {
-            const game = allGames.find(g => g.id === review.gameId);
-            return (
-              <div key={review.id} className="flex flex-col sm:flex-row gap-4 p-4 sm:p-6 bg-gray-800 rounded-lg">
-                <Link to={`/game/${game?.id}`} className="flex-shrink-0 self-start">
-                  <img
-                    src={game?.coverImage}
-                    alt={game?.title}
-                    className="w-16 h-20 sm:w-20 sm:h-28 object-cover rounded mx-auto sm:mx-0"
-                  />
-                </Link>
-                <div className="flex-1">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                    <Link
-                      to={`/game/${game?.id}`}
-                      className="text-lg font-semibold text-white hover:text-green-400 transition-colors"
-                    >
-                      {game?.title}
-                    </Link>
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                    <StarRating rating={review.rating} />
-                    <span className="text-sm text-gray-400">{review.date}</span>
-                  </div>
-                  <p className="text-gray-300 leading-relaxed text-sm sm:text-base">{review.text}</p>
-                </div>
-              </div>
-            );
-          })}
+        <h2 className="text-xl font-semibold text-white mb-6">
+          {isDummy ? 'Dummy ' : ''}Playlist/Wishlist
+        </h2>
+        
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ListMusic className="h-8 w-8 text-gray-500" />
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">Wishlist Coming Soon</h3>
+          <p className="text-gray-400">
+            This feature is under development. Check back soon!
+          </p>
         </div>
       </div>
     );

@@ -6,6 +6,7 @@ import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
 import { FollowersFollowingModal } from './FollowersFollowingModal';
 import { GamesModal } from './GamesModal';
+import { ReviewsModal } from './ReviewsModal';
 
 // Lazy load UserSettingsModal to avoid initialization issues
 const UserSettingsModal = lazy(() => import('./profile/UserSettingsModal').then(module => ({
@@ -42,8 +43,8 @@ interface ResponsiveUserPageLayoutProps {
 
 const TABS = [
   { key: 'top5', label: 'Top 5' },
-  { key: 'last5', label: 'Last 5' },
-  { key: 'reviews', label: 'Reviews' },
+  { key: 'top10', label: 'Top 10' },
+  { key: 'reviews', label: 'Wishlist' },
   { key: 'activity', label: 'Activity' },
 ];
 
@@ -64,6 +65,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
   const [modalInitialTab, setModalInitialTab] = useState<'followers' | 'following'>('followers');
   const [isGamesModalOpen, setIsGamesModalOpen] = useState(false);
   const [gamesModalInitialTab, setGamesModalInitialTab] = useState<'all' | 'started' | 'finished'>('all');
+  const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
   
   // Check if current user is viewing their own profile
   // Note: authUser.id is the Supabase auth UUID, user.id is the database integer ID
@@ -125,6 +127,10 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
   const handleGamesClick = () => {
     setGamesModalInitialTab('all');
     setIsGamesModalOpen(true);
+  };
+
+  const handleReviewsClick = () => {
+    setIsReviewsModalOpen(true);
   };
 
   if (isMobile) {
@@ -280,10 +286,13 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                 <div className="text-lg font-bold text-white">{stats.films.toLocaleString()}</div>
                 <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">GAMES</div>
               </button>
-              <div>
+              <button
+                onClick={handleReviewsClick}
+                className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+              >
                 <div className="text-lg font-bold text-white">{stats.thisYear}</div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
-              </div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">REVIEWS</div>
+              </button>
               <div>
                 <div className="text-lg font-bold text-white">{stats.lists}</div>
                 <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
@@ -463,10 +472,13 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
                   <div className="text-xl font-bold text-white">{stats.films.toLocaleString()}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">GAMES</div>
                 </button>
-                <div className="text-center">
+                <button
+                  onClick={handleReviewsClick}
+                  className="text-center hover:bg-gray-700 rounded-lg p-3 transition-colors"
+                >
                   <div className="text-xl font-bold text-white">{stats.thisYear}</div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide">THIS YEAR</div>
-                </div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">REVIEWS</div>
+                </button>
                 <div className="text-center">
                   <div className="text-xl font-bold text-white">{stats.lists}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>
@@ -546,6 +558,14 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
         userId={user.id}
         userName={user.username}
         initialTab={gamesModalInitialTab}
+      />
+
+      {/* Reviews Modal */}
+      <ReviewsModal
+        isOpen={isReviewsModalOpen}
+        onClose={() => setIsReviewsModalOpen(false)}
+        userId={user.id}
+        userName={user.username}
       />
     </div>
   );
