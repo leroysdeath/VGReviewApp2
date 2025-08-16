@@ -36,6 +36,7 @@ interface SearchFilters {
   maxRating?: number;
   sortBy: 'name' | 'release_date' | 'avg_rating' | 'rating_count';
   sortOrder: 'asc' | 'desc';
+  useExactMatch: boolean; // New field for search mode
 }
 
 const ITEMS_PER_PAGE = 20;
@@ -60,7 +61,8 @@ export const SearchResultsPage: React.FC = () => {
     minRating: undefined,
     maxRating: undefined,
     sortBy: 'name',
-    sortOrder: 'asc'
+    sortOrder: 'asc',
+    useExactMatch: true // Default to exact matching
   });
 
   // Load platforms for filter dropdown
@@ -77,6 +79,7 @@ export const SearchResultsPage: React.FC = () => {
     const maxRating = searchParams.get('maxRating');
     const sort = searchParams.get('sort') || 'name:asc';
     const page = searchParams.get('page');
+    const exactMatch = searchParams.get('exact') !== 'false'; // Default to true
 
     const [sortField, sortOrder] = sort.split(':');
     
@@ -87,7 +90,8 @@ export const SearchResultsPage: React.FC = () => {
       minRating: minRating ? parseFloat(minRating) : undefined,
       maxRating: maxRating ? parseFloat(maxRating) : undefined,
       sortBy: sortField as any || 'name',
-      sortOrder: sortOrder as any || 'asc'
+      sortOrder: sortOrder as any || 'asc',
+      useExactMatch: exactMatch
     });
 
     setCurrentPage(page ? parseInt(page) : 1);
@@ -122,10 +126,17 @@ export const SearchResultsPage: React.FC = () => {
         .from('game')
         .select('*', { count: 'exact' });
 
-      // Apply search filter
+      // Apply search filter - prioritize exact title matches
       if (filters.searchTerm) {
-        const searchPattern = `%${filters.searchTerm}%`;
-        query = query.or(`name.ilike.${searchPattern},description.ilike.${searchPattern},summary.ilike.${searchPattern}`);
+        if (filters.useExactMatch) {
+          // Use exact title matching only
+          const searchPattern = `%${filters.searchTerm}%`;
+          query = query.ilike('name', searchPattern);
+        } else {
+          // Use broader search including description and summary
+          const searchPattern = `%${filters.searchTerm}%`;
+          query = query.or(`name.ilike.${searchPattern},description.ilike.${searchPattern},summary.ilike.${searchPattern}`);
+        }
       }
 
       // Apply release year filter
@@ -259,6 +270,7 @@ export const SearchResultsPage: React.FC = () => {
     if (updatedFilters.releaseYear) params.set('year', updatedFilters.releaseYear.toString());
     if (updatedFilters.minRating) params.set('minRating', updatedFilters.minRating.toString());
     if (updatedFilters.maxRating) params.set('maxRating', updatedFilters.maxRating.toString());
+    if (!updatedFilters.useExactMatch) params.set('exact', 'false'); // Only set if fuzzy search
     params.set('sort', `${updatedFilters.sortBy}:${updatedFilters.sortOrder}`);
     
     setSearchParams(params);
@@ -305,6 +317,34 @@ export const SearchResultsPage: React.FC = () => {
                 className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
+            
+            {/* Search Mode Toggle */}
+            {filters.searchTerm && (
+              <div className="flex items-center gap-2 px-4 py-3 bg-gray-800 rounded-lg">
+                <span className="text-sm text-gray-300">Match:</span>
+                <button
+                  onClick={() => handleFilterChange({ useExactMatch: true })}
+                  className={`px-3 py-1 text-sm rounded transition-colors ${
+                    filters.useExactMatch
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  Exact
+                </button>
+                <button
+                  onClick={() => handleFilterChange({ useExactMatch: false })}
+                  className={`px-3 py-1 text-sm rounded transition-colors ${
+                    !filters.useExactMatch
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  Fuzzy
+                </button>
+              </div>
+            )}
+            
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center gap-2 transition-colors"

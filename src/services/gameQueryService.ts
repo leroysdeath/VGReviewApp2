@@ -22,6 +22,7 @@ interface SearchOptions {
   platforms?: string[]
   minRating?: number
   releaseYear?: number
+  useExactMatch?: boolean // New parameter to control exact vs fuzzy search
 }
 
 interface QueryPerformance {
@@ -43,8 +44,9 @@ class GameQueryService {
   }
 
   /**
-   * Search games using PostgreSQL trigram similarity for fuzzy matching
-   * Requires pg_trgm extension to be enabled in the database
+   * Search games with exact title matching as default, falling back to fuzzy search
+   * Exact matching uses ILIKE for substring matching
+   * Fuzzy matching uses PostgreSQL trigram similarity (requires pg_trgm extension)
    */
   async searchGamesWithSimilarity(options: SearchOptions): Promise<GameWithCalculatedFields[]> {
     const startTime = performance.now()
@@ -66,19 +68,59 @@ class GameQueryService {
         genres,
         platforms,
         minRating,
-        releaseYear
+        releaseYear,
+        useExactMatch = true // Default to exact matching
       } = options
 
-      // Build the query with similarity scoring
-      let queryBuilder = supabase
-        .from('games')
-        .select(`
-          *,
-          ratings:rating(rating)
-        `)
+      // Use exact match or fuzzy search based on option
+      if (useExactMatch) {
+        // First try exact title matching using ILIKE
+        let queryBuilder = supabase
+          .from('games')
+          .select(`
+            *,
+            ratings:rating(rating)
+          `)
+          .ilike('name', `%${query}%`)
 
-      // Use RPC function for similarity search if available
-      // This requires a database function to be created
+        // Apply filters
+        if (genres && genres.length > 0) {
+          queryBuilder = queryBuilder.contains('genres', genres)
+        }
+
+        if (platforms && platforms.length > 0) {
+          queryBuilder = queryBuilder.contains('platforms', platforms)
+        }
+
+        if (releaseYear) {
+          const yearStart = `${releaseYear}-01-01`
+          const yearEnd = `${releaseYear}-12-31`
+          queryBuilder = queryBuilder
+            .gte('first_release_date', yearStart)
+            .lte('first_release_date', yearEnd)
+        }
+
+        queryBuilder = queryBuilder
+          .range(offset, offset + limit - 1)
+          .limit(limit)
+
+        const { data, error } = await queryBuilder
+
+        if (error) throw error
+
+        const results = this.transformGamesWithRatings(data || [])
+        
+        // Apply minimum rating filter
+        const finalResults = minRating 
+          ? results.filter(g => g.averageUserRating >= minRating)
+          : results
+
+        this.cacheResult(cacheKey, finalResults, this.DEFAULT_CACHE_TTL)
+        this.logPerformance('searchGamesWithSimilarity', startTime, finalResults.length, false)
+        return finalResults
+      }
+
+      // Use RPC function for fuzzy similarity search if available
       const { data: similarGames, error: rpcError } = await supabase
         .rpc('search_games_similarity', {
           search_query: query,
@@ -131,10 +173,16 @@ class GameQueryService {
         return finalResults
       }
 
-      // Fallback to ILIKE search if RPC function doesn't exist
+      // Fallback to ILIKE search if RPC function doesn't exist for fuzzy search
       console.log('Using fallback ILIKE search (consider creating search_games_similarity function)')
       
-      queryBuilder = queryBuilder.ilike('name', `%${query}%`)
+      let queryBuilder = supabase
+        .from('games')
+        .select(`
+          *,
+          ratings:rating(rating)
+        `)
+        .ilike('name', `%${query}%`)
 
       if (genres && genres.length > 0) {
         queryBuilder = queryBuilder.contains('genres', genres)
