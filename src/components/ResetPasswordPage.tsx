@@ -48,12 +48,37 @@ export const ResetPasswordPage: React.FC = () => {
       const accessToken = hashParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token');
       const type = hashParams.get('type');
+      
+      // Check for error parameters
+      const errorParam = hashParams.get('error');
+      const errorCode = hashParams.get('error_code');
+      const errorDescription = hashParams.get('error_description');
 
       console.log('Reset password page - URL params:', { 
         hasAccessToken: !!accessToken, 
         hasRefreshToken: !!refreshToken, 
-        type 
+        type,
+        error: errorParam,
+        errorCode,
+        errorDescription
       });
+
+      // Handle errors from the URL
+      if (errorParam) {
+        let errorMessage = 'An error occurred with your reset link.';
+        
+        if (errorCode === 'otp_expired') {
+          errorMessage = 'Your password reset link has expired. Please request a new one.';
+        } else if (errorParam === 'access_denied') {
+          errorMessage = 'Access denied. Please request a new password reset link.';
+        } else if (errorDescription) {
+          errorMessage = decodeURIComponent(errorDescription.replace(/\+/g, ' '));
+        }
+        
+        setError(errorMessage);
+        setIsValidSession(false);
+        return;
+      }
 
       // If we have URL parameters, set the session with Supabase
       if (accessToken && refreshToken && type === 'recovery') {
@@ -287,14 +312,23 @@ export const ResetPasswordPage: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-2">
           <button
-            onClick={() => navigate('/login')}
-            className="text-sm text-blue-400 hover:text-blue-300"
+            onClick={() => navigate('/')}
+            className="text-sm text-blue-400 hover:text-blue-300 block mx-auto"
             disabled={isLoading}
           >
-            Back to Login
+            Back to Home
           </button>
+          {error && (
+            <button
+              onClick={() => navigate('/')}
+              className="text-sm text-green-400 hover:text-green-300 block mx-auto"
+              disabled={isLoading}
+            >
+              Request New Password Reset
+            </button>
+          )}
         </div>
       </div>
     </div>
