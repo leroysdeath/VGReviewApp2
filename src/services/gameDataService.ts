@@ -7,7 +7,6 @@ interface SearchFilters {
   platforms?: string[]
   minRating?: number
   releaseYear?: number
-  useExactMatch?: boolean // Control exact vs fuzzy matching
 }
 
 interface GameWithRating extends Game {
@@ -120,16 +119,8 @@ class GameDataService {
         return []
       }
 
-      // Use exact matching by default, fuzzy matching only if explicitly requested
-      const useExactMatch = filters?.useExactMatch !== false // Default to true
-
-      if (useExactMatch) {
-        // Use exact title matching with ILIKE
-        return this.searchGamesExact(sanitizedQuery, filters)
-      } else {
-        // Use fuzzy search via RPC function or fallback to ILIKE
-        return this.searchGamesFuzzy(sanitizedQuery, filters)
-      }
+      // Use exact title matching with ILIKE only
+      return this.searchGamesExact(sanitizedQuery, filters)
     } catch (error) {
       console.error('Error in searchGames:', error)
       return []
@@ -189,74 +180,6 @@ class GameDataService {
     return games
   }
 
-  /**
-   * Search games using fuzzy matching (fallback method)
-   */
-  private async searchGamesFuzzy(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
-    // Try RPC function for similarity search first
-    try {
-      const { data: similarGames, error: rpcError } = await supabase
-        .rpc('search_games_similarity', {
-          search_query: query,
-          similarity_threshold: 0.1
-        })
-
-      if (!rpcError && similarGames) {
-        // Apply filters to similarity results
-        let filteredGames = similarGames
-
-        if (filters) {
-          if (filters.genres && filters.genres.length > 0) {
-            filteredGames = filteredGames.filter((game: any) => 
-              game.genres && filters.genres!.some(g => game.genres.includes(g))
-            )
-          }
-
-          if (filters.platforms && filters.platforms.length > 0) {
-            filteredGames = filteredGames.filter((game: any) =>
-              game.platforms && filters.platforms!.some(p => game.platforms.includes(p))
-            )
-          }
-
-          if (filters.releaseYear) {
-            filteredGames = filteredGames.filter((game: any) => {
-              if (!game.first_release_date) return false
-              const year = new Date(game.first_release_date).getFullYear()
-              return year === filters.releaseYear
-            })
-          }
-        }
-
-        // Get full game data with ratings
-        const gameIds = filteredGames.slice(0, 20).map((g: any) => g.id)
-        const { data: gamesWithRatings } = await supabase
-          .from('games')
-          .select(`
-            *,
-            ratings:rating(rating)
-          `)
-          .in('id', gameIds)
-
-        const games = (gamesWithRatings || []).map((game: GameWithRating) => 
-          this.transformGameWithRatings(game)
-        )
-
-        // Apply minimum rating filter
-        if (filters?.minRating) {
-          return games.filter(game => 
-            game.averageUserRating && game.averageUserRating >= filters.minRating
-          )
-        }
-
-        return games
-      }
-    } catch (error) {
-      console.log('RPC similarity search not available, falling back to ILIKE')
-    }
-
-    // Fallback to exact search if fuzzy search fails
-    return this.searchGamesExact(query, filters)
-  }
 
   async getPopularGames(limit: number = 20): Promise<GameWithCalculatedFields[]> {
     try {
