@@ -116,6 +116,7 @@ export const SearchResultsPage: React.FC = () => {
     if (!filters.searchTerm?.trim()) return;
     
     try {
+      console.log('🔍 SearchResultsPage: Performing search for:', filters.searchTerm);
       await searchGames(filters.searchTerm, {
         genres: filters.platformId ? [filters.platformId.toString()] : undefined,
         minRating: filters.minRating,
@@ -124,8 +125,9 @@ export const SearchResultsPage: React.FC = () => {
                filters.sortBy === 'avg_rating' ? 'rating' : 'popularity',
         sortOrder: filters.sortOrder
       });
+      console.log('✅ SearchResultsPage: Search completed, results:', searchState.games.length);
     } catch (err) {
-      console.error('Search failed:', err);
+      console.error('❌ SearchResultsPage: Search failed:', err);
     }
   };
 
