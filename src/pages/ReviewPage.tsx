@@ -59,14 +59,14 @@ export const ReviewPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Load game data
-      const gameData = await gameDataService.getGameById(parseInt(gameId!));
+      // Load game data using IGDB ID
+      const gameData = await gameDataService.getGameByIGDBId(parseInt(gameId!));
       if (!gameData) {
         throw new Error('Game not found');
       }
       setGame(gameData);
 
-      // Load review data
+      // Load review data (using gameData.id which corresponds to the database ID)
       const { data: reviewData, error: reviewError } = await supabase
         .from('rating')
         .select(`
@@ -84,7 +84,7 @@ export const ReviewPage: React.FC = () => {
           )
         `)
         .eq('user_id', parseInt(userId!))
-        .eq('game_id', parseInt(gameId!))
+        .eq('game_id', gameData.id)
         .single();
 
       if (reviewError) {

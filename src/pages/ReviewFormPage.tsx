@@ -93,11 +93,11 @@ export const ReviewFormPage: React.FC = () => {
   const [hasFormChanges, setHasFormChanges] = useState(false);
 
   useEffect(() => {
-    // Load game if gameId is provided
+    // Load game if gameId is provided (gameId is IGDB ID from URL)
     if (gameId) {
       const loadGame = async () => {
         try {
-          const game = await gameDataService.getGameById(parseInt(gameId));
+          const game = await gameDataService.getGameByIGDBId(parseInt(gameId));
           if (game) {
             setSelectedGame(game);
           }
@@ -118,8 +118,8 @@ export const ReviewFormPage: React.FC = () => {
       }
       
       try {
-        console.log('Checking game progress for game:', selectedGame.id);
-        const result = await getGameProgress(parseInt(selectedGame.id));
+        console.log('Checking game progress for game IGDB ID:', selectedGame.igdb_id);
+        const result = await getGameProgress(selectedGame.igdb_id);
         
         if (result.success) {
           if (result.data) {
@@ -160,7 +160,7 @@ export const ReviewFormPage: React.FC = () => {
       if (!selectedGame || !gameId || !gameProgressLoaded) return;
 
       try {
-        console.log('Checking for existing review for game:', gameId);
+        console.log('Checking for existing review for game IGDB ID:', gameId);
         const result = await getUserReviewForGame(parseInt(gameId));
 
         if (result.success && result.data) {
