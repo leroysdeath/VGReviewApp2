@@ -401,10 +401,8 @@ export const GamePage: React.FC = () => {
   // Calculate rating distribution from actual reviews data
   // Only calculate when reviews are loaded to avoid empty state during loading
   const ratingDistribution = reviewsLoading ? 
-    Array.from({ length: 10 }, (_, i) => ({ rating: 10 - i, count: 0 })) : // Show empty bars while loading
+    Array.from({ length: 10 }, (_, i) => ({ rating: 10 - i, count: 0, percentage: 0 })) : // Show empty bars while loading
     generateRatingDistribution(reviews);
-
-  const maxCount = Math.max(...ratingDistribution.map(d => d.count), 1); // Ensure minimum of 1 to avoid division by 0
 
   if (gameLoading) {
     return (
@@ -621,7 +619,7 @@ export const GamePage: React.FC = () => {
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
                 <span className="text-sm text-blue-400">
-                  {reviewsLoading ? 'Loading...' : `${reviews.length} fans`}
+                  {reviewsLoading ? 'Loading...' : `${reviews.length}`}
                 </span>
               </div>
               <div className="border-b border-gray-700 mb-4"></div>
@@ -638,21 +636,25 @@ export const GamePage: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex items-end justify-between">
-                  <div className="flex items-end gap-1">
-                    <span className="text-green-500 text-sm">1</span>
-                    <div className="flex items-end gap-[2px]">
+                  <div className="flex flex-col">
+                    <div className="flex items-end gap-[2px] mb-1" style={{ height: '80px' }}>
                       {ratingDistribution.map((item) => (
                         <div
                           key={item.rating}
                           className="w-6 bg-gray-700 rounded-sm"
                           style={{
-                            height: `${Math.max(4, (item.count / maxCount) * 40)}px`,
+                            height: item.count > 0 
+                              ? `${Math.max(4, (item.percentage / 100) * 80)}px`
+                              : '4px',
                             backgroundColor: item.rating >= 8 ? '#4ade80' : '#374151'
                           }}
                         ></div>
                       ))}
                     </div>
-                    <span className="text-green-500 text-sm">10</span>
+                    <div className="flex justify-between px-1">
+                      <span className="text-green-500 text-xs">1</span>
+                      <span className="text-green-500 text-xs">10</span>
+                    </div>
                   </div>
                   <div className="text-2xl font-bold text-green-400">
                     {averageRating > 0 ? averageRating.toFixed(1) : '-'}
