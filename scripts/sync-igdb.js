@@ -3,19 +3,31 @@
 // IGDB Sync Script - Run locally to test syncing new games
 // Usage: node scripts/sync-igdb.js [options]
 
+// Load environment variables from .env file
+import { config } from 'dotenv';
+config();
+
 import { createClient } from '@supabase/supabase-js';
 import fetch from 'node-fetch';
 
 // Make fetch global for the sync service
 global.fetch = fetch;
 
-// Configuration
+// Configuration - Load from environment variables
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.error('❌ Missing Supabase environment variables');
   console.error('Make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set');
+  console.error('');
+  console.error('Current environment variables:');
+  console.error(`VITE_SUPABASE_URL: ${SUPABASE_URL ? 'SET' : 'NOT SET'}`);
+  console.error(`VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'}`);
+  console.error('');
+  console.error('Make sure you have a .env file in your project root with:');
+  console.error('VITE_SUPABASE_URL=your_supabase_url');
+  console.error('VITE_SUPABASE_ANON_KEY=your_supabase_anon_key');
   process.exit(1);
 }
 

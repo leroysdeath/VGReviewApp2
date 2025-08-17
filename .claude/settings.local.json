@@ -14,7 +14,8 @@
       "Bash(git pull:*)",
       "Bash(timeout 10 netlify dev)",
       "Bash(mv:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

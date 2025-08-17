@@ -1,4 +1,4 @@
-// netlify/functions/igdb-search.js
+// netlify/functions/igdb-search.cjs
 var https = require("https");
 function fetch(url, options = {}) {
   return new Promise((resolve, reject) => {
