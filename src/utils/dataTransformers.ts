@@ -56,7 +56,8 @@ export const calculateAverageRating = (ratings: DatabaseRating[]): number => {
 // Generate rating distribution for display
 // Groups ratings by whole number (1.0-1.9 -> 1, 2.0-2.9 -> 2, etc)
 // Returns distribution with count and percentage for each rating segment
-export const generateRatingDistribution = (ratings: DatabaseRating[]) => {
+// Accepts any array of objects with a rating property
+export const generateRatingDistribution = (ratings: Array<{ rating: number }>) => {
   // Initialize distribution with all rating segments 1-10
   const distribution = Array.from({ length: 10 }, (_, i) => ({
     rating: 10 - i, // Start from 10 down to 1

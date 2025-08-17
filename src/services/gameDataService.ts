@@ -146,22 +146,7 @@ class GameDataService {
       // First check if game exists in database
       const { data: gameData, error: gameError } = await supabase
         .from('game')
-        .select(`
-          *,
-          ratings:rating(
-            id,
-            user_id,
-            game_id,
-            rating,
-            review,
-            post_date_time,
-            user:user_id(
-              id,
-              name,
-              picurl
-            )
-          )
-        `)
+        .select('*')
         .eq('igdb_id', igdbId)
         .single()
 
@@ -232,17 +217,33 @@ class GameDataService {
         }
       }
 
-      // Game found in database, extract reviews
-      const reviews = gameData.ratings || []
+      // Game found in database, now fetch reviews using the game's database ID
+      const { data: reviewsData, error: reviewsError } = await supabase
+        .from('rating')
+        .select(`
+          *,
+          user:user_id(
+            id,
+            name,
+            picurl
+          )
+        `)
+        .eq('game_id', gameData.id)  // Use game.id (database ID), not igdbId
+        .order('post_date_time', { ascending: false })
+      
+      if (reviewsError) {
+        console.error('Error fetching reviews:', reviewsError)
+      }
+      
+      const reviews = reviewsData || []
       
       // Transform game data for calculated fields
-      const gameWithoutRatings = { ...gameData }
-      delete gameWithoutRatings.ratings
-      
       const game = this.transformGameWithRatings({
-        ...gameWithoutRatings,
+        ...gameData,
         ratings: reviews.map((r: any) => ({ rating: r.rating }))
       } as GameWithRating)
+
+      console.log(`✅ Loaded game "${game.name}" with ${reviews.length} reviews`)
 
       return { game, reviews }
     } catch (error) {
