@@ -123,7 +123,6 @@ function App() {
                         </Suspense>
                       } 
                     />
-                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                   </Routes>
                 </main>
                 <Footer />

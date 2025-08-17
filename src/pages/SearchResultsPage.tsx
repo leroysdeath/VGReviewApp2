@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { useGameSearch } from '../hooks/useGameSearch';
+import { OptimizedImage } from '../components/OptimizedImage';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 
@@ -44,13 +46,10 @@ export const SearchResultsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { searchState, searchGames, searchTerm, setSearchTerm } = useGameSearch();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
-  const [games, setGames] = useState<Game[]>([]);
   const [platforms, setPlatforms] = useState<Platform[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   
   const [filters, setFilters] = useState<SearchFilters>({
@@ -92,10 +91,12 @@ export const SearchResultsPage: React.FC = () => {
     setCurrentPage(page ? parseInt(page) : 1);
   }, [searchParams]);
 
-  // Load games when filters or page changes
+  // Trigger search when filters change
   useEffect(() => {
-    loadGames();
-  }, [filters, currentPage]);
+    if (filters.searchTerm) {
+      performSearch();
+    }
+  }, [filters]);
 
   const loadPlatforms = async () => {
     try {
@@ -111,138 +112,20 @@ export const SearchResultsPage: React.FC = () => {
     }
   };
 
-  const loadGames = async () => {
-    setLoading(true);
-    setError(null);
-
+  const performSearch = async () => {
+    if (!filters.searchTerm?.trim()) return;
+    
     try {
-      // Start with base query
-      let query = supabase
-        .from('game')
-        .select('*', { count: 'exact' });
-
-      // Apply search filter - exact title matching only
-      if (filters.searchTerm) {
-        const searchPattern = `%${filters.searchTerm}%`;
-        query = query.ilike('name', searchPattern);
-      }
-
-      // Apply release year filter
-      if (filters.releaseYear) {
-        const startDate = `${filters.releaseYear}-01-01`;
-        const endDate = `${filters.releaseYear}-12-31`;
-        query = query.gte('release_date', startDate).lte('release_date', endDate);
-      }
-
-      // Apply sorting
-      switch (filters.sortBy) {
-        case 'name':
-          query = query.order('name', { ascending: filters.sortOrder === 'asc' });
-          break;
-        case 'release_date':
-          query = query.order('release_date', { ascending: filters.sortOrder === 'asc', nullsFirst: false });
-          break;
-        case 'avg_rating':
-          // We'll need to handle this separately with ratings data
-          query = query.order('igdb_rating', { ascending: filters.sortOrder === 'asc', nullsFirst: false });
-          break;
-        case 'rating_count':
-          // We'll need to handle this separately with ratings data
-          query = query.order('metacritic_score', { ascending: filters.sortOrder === 'asc', nullsFirst: false });
-          break;
-      }
-
-      // Apply pagination
-      const from = (currentPage - 1) * ITEMS_PER_PAGE;
-      const to = from + ITEMS_PER_PAGE - 1;
-      query = query.range(from, to);
-
-      // Execute query
-      const { data: gamesData, error: gamesError, count } = await query;
-
-      if (gamesError) throw gamesError;
-
-      let filteredGames = gamesData || [];
-      
-      // Apply platform filter if specified
-      if (filters.platformId && filteredGames.length > 0) {
-        const gameIds = filteredGames.map(g => g.id);
-        
-        const { data: platformGames } = await supabase
-          .from('platform_games')
-          .select('game_id')
-          .in('game_id', gameIds)
-          .eq('plat_id', filters.platformId);
-
-        const gamesWithPlatform = new Set(platformGames?.map(pg => pg.game_id) || []);
-        filteredGames = filteredGames.filter(game => gamesWithPlatform.has(game.id));
-      }
-
-      // Get rating statistics for the games
-      if (filteredGames.length > 0) {
-        const gameIds = filteredGames.map(g => g.id);
-        
-        const { data: ratingsData } = await supabase
-          .from('rating')
-          .select('game_id, rating')
-          .in('game_id', gameIds);
-
-        // Calculate average ratings and counts
-        const ratingStats = new Map<number, { sum: number, count: number }>();
-        
-        ratingsData?.forEach(rating => {
-          if (!ratingStats.has(rating.game_id)) {
-            ratingStats.set(rating.game_id, { sum: 0, count: 0 });
-          }
-          const stats = ratingStats.get(rating.game_id)!;
-          stats.sum += rating.rating;
-          stats.count += 1;
-        });
-
-        // Add rating stats to games
-        filteredGames = filteredGames.map(game => ({
-          ...game,
-          avg_user_rating: ratingStats.has(game.id) 
-            ? ratingStats.get(game.id)!.sum / ratingStats.get(game.id)!.count 
-            : undefined,
-          user_rating_count: ratingStats.get(game.id)?.count || 0
-        }));
-
-        // Apply rating filters
-        if (filters.minRating !== undefined) {
-          filteredGames = filteredGames.filter(game => 
-            game.avg_user_rating !== undefined && game.avg_user_rating >= filters.minRating!
-          );
-        }
-        if (filters.maxRating !== undefined) {
-          filteredGames = filteredGames.filter(game => 
-            game.avg_user_rating !== undefined && game.avg_user_rating <= filters.maxRating!
-          );
-        }
-
-        // Re-sort by rating if needed (since we now have the actual user ratings)
-        if (filters.sortBy === 'avg_rating') {
-          filteredGames.sort((a, b) => {
-            const aRating = a.avg_user_rating || 0;
-            const bRating = b.avg_user_rating || 0;
-            return filters.sortOrder === 'asc' ? aRating - bRating : bRating - aRating;
-          });
-        } else if (filters.sortBy === 'rating_count') {
-          filteredGames.sort((a, b) => {
-            const aCount = a.user_rating_count || 0;
-            const bCount = b.user_rating_count || 0;
-            return filters.sortOrder === 'asc' ? aCount - bCount : bCount - aCount;
-          });
-        }
-      }
-
-      setGames(filteredGames);
-      setTotalCount(count || 0);
+      await searchGames(filters.searchTerm, {
+        genres: filters.platformId ? [filters.platformId.toString()] : undefined,
+        minRating: filters.minRating,
+        sortBy: filters.sortBy === 'name' ? 'name' : 
+               filters.sortBy === 'release_date' ? 'release_date' : 
+               filters.sortBy === 'avg_rating' ? 'rating' : 'popularity',
+        sortOrder: filters.sortOrder
+      });
     } catch (err) {
-      console.error('Error loading games:', err);
-      setError('Failed to load games. Please try again.');
-    } finally {
-      setLoading(false);
+      console.error('Search failed:', err);
     }
   };
 
@@ -279,7 +162,7 @@ export const SearchResultsPage: React.FC = () => {
     return game.cover_url || game.pic_url || '/placeholder-game.jpg';
   };
 
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(searchState.totalResults / ITEMS_PER_PAGE);
 
   // Generate year options for filter
   const currentYear = new Date().getFullYear();
@@ -459,10 +342,10 @@ export const SearchResultsPage: React.FC = () => {
           {/* Results Info */}
           <div className="flex justify-between items-center text-gray-400">
             <p>
-              Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, totalCount)} - {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount} games
+              Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, searchState.totalResults)} - {Math.min(currentPage * ITEMS_PER_PAGE, searchState.totalResults)} of {searchState.totalResults} games
             </p>
             <button
-              onClick={loadGames}
+              onClick={performSearch}
               className="flex items-center gap-2 hover:text-white transition-colors"
             >
               <RefreshCw className="h-4 w-4" />
@@ -472,41 +355,40 @@ export const SearchResultsPage: React.FC = () => {
         </div>
 
         {/* Loading State */}
-        {loading && (
+        {searchState.loading && (
           <div className="flex justify-center items-center py-20">
             <Loader className="h-8 w-8 animate-spin text-purple-500" />
           </div>
         )}
 
         {/* Error State */}
-        {error && (
+        {searchState.error && (
           <div className="bg-red-900/20 border border-red-700 rounded-lg p-4 mb-8">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-red-500" />
-              <p className="text-red-300">{error}</p>
+              <p className="text-red-300">{searchState.error}</p>
             </div>
           </div>
         )}
 
         {/* Games Grid/List */}
-        {!loading && !error && (
+        {!searchState.loading && !searchState.error && (
           <>
             {viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-                {games.map(game => (
+                {searchState.games.map(game => (
                   <div
                     key={game.id}
                     onClick={() => handleGameClick(game)}
                     className="bg-gray-800 rounded-lg overflow-hidden cursor-pointer hover:transform hover:scale-105 transition-all duration-200 hover:shadow-xl"
                   >
                     <div className="aspect-[3/4] relative bg-gray-700">
-                      <img
+                      <OptimizedImage
                         src={getCoverUrl(game)}
                         alt={game.name}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/placeholder-game.jpg';
-                        }}
+                        optimization={{ width: 400, height: 600, quality: 85 }}
+                        fallback="/placeholder-game.jpg"
                       />
                       {game.avg_user_rating && (
                         <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
@@ -537,19 +419,18 @@ export const SearchResultsPage: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4 mb-8">
-                {games.map(game => (
+                {searchState.games.map(game => (
                   <div
                     key={game.id}
                     onClick={() => handleGameClick(game)}
                     className="bg-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-750 transition-colors flex gap-4"
                   >
-                    <img
+                    <OptimizedImage
                       src={getCoverUrl(game)}
                       alt={game.name}
                       className="w-24 h-32 object-cover rounded-lg"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder-game.jpg';
-                      }}
+                      optimization={{ width: 200, height: 300, quality: 85 }}
+                      fallback="/placeholder-game.jpg"
                     />
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
@@ -647,7 +528,7 @@ export const SearchResultsPage: React.FC = () => {
         )}
 
         {/* No Results */}
-        {!loading && !error && games.length === 0 && (
+        {!searchState.loading && !searchState.error && searchState.games.length === 0 && (
           <div className="text-center py-20">
             <p className="text-gray-400 text-lg mb-4">No games found matching your criteria</p>
             <button
