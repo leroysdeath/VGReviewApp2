@@ -12,6 +12,21 @@ import { getGameProgress, markGameStarted, markGameCompleted } from '../services
 import { ensureGameExists, getUserReviewForGame } from '../services/reviewService';
 import { generateRatingDistribution } from '../utils/dataTransformers';
 
+// Interface for review data from database
+interface GameReview {
+  id: number;
+  user_id: number;
+  game_id: number;
+  rating: number;
+  review: string | null;
+  post_date_time: string;
+  user?: {
+    id: number;
+    name: string;
+    picurl?: string;
+  };
+}
+
 export const GamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth();
@@ -45,7 +60,7 @@ export const GamePage: React.FC = () => {
   const [isStarted, setIsStarted] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [progressLoading, setProgressLoading] = useState(false);
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<GameReview[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -67,7 +82,7 @@ export const GamePage: React.FC = () => {
         
         if (gameData) {
           setGame(gameData);
-          console.log('✅ Game loaded successfully:', gameData.title);
+          console.log('✅ Game loaded successfully:', gameData.name);
         } else {
           setGameError(new Error('Game not found'));
           console.log('❌ Game not found for IGDB ID:', id);
@@ -161,7 +176,7 @@ export const GamePage: React.FC = () => {
         const { data: existingGame, error: dbError } = await supabase
           .from('game')
           .select('id')
-          .eq('game_id', id)
+          .eq('igdb_id', id)
           .single();
 
         console.log('Database query result:', existingGame, 'Error:', dbError);
@@ -233,10 +248,10 @@ export const GamePage: React.FC = () => {
       // First ensure the game exists in the database
       const ensureResult = await ensureGameExists(
         parseInt(id),
-        game.title,
-        game.coverImage,
-        game.genre,
-        game.releaseDate
+        game.name,
+        game.cover_url || '',
+        game.genres?.join(', ') || '',
+        game.first_release_date || ''
       );
 
       if (!ensureResult.success) {
@@ -271,10 +286,10 @@ export const GamePage: React.FC = () => {
       // First ensure the game exists in the database
       const ensureResult = await ensureGameExists(
         parseInt(id),
-        game.title,
-        game.coverImage,
-        game.genre,
-        game.releaseDate
+        game.name,
+        game.cover_url || '',
+        game.genres?.join(', ') || '',
+        game.first_release_date || ''
       );
 
       if (!ensureResult.success) {
@@ -316,7 +331,7 @@ export const GamePage: React.FC = () => {
     userId: review.user_id.toString(),
     gameId: review.game_id.toString(),
     igdbGameId: id, // Use the IGDB game_id from the URL parameter
-    gameTitle: game?.title || 'Unknown Game',
+    gameTitle: game?.name || 'Unknown Game',
     rating: review.rating,
     text: review.review || '',
     date: new Date(review.post_date_time).toISOString().split('T')[0],
@@ -434,8 +449,8 @@ export const GamePage: React.FC = () => {
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
                   <img
-                    src={game.coverImage || '/placeholder-game.jpg'}
-                    alt={game.title}
+                    src={game.cover_url || '/placeholder-game.jpg'}
+                    alt={game.name}
                     className="h-64 w-full object-cover md:h-80 md:w-64"
                     onError={(e) => {
                       e.currentTarget.src = '/placeholder-game.jpg';
@@ -444,23 +459,23 @@ export const GamePage: React.FC = () => {
                 </div>
                 <div className="p-8">
                   <h1 className="text-3xl font-bold text-white mb-4">
-                    {game.title}
+                    {game.name}
                   </h1>
                   <div className="space-y-2 text-gray-400 mb-6">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {game.releaseDate ? new Date(game.releaseDate).getFullYear() : 'Unknown'}
+                        {game.first_release_date ? new Date(game.first_release_date).getFullYear() : 'Unknown'}
                       </span>
                     </div>
-                    {game.genre && (
-                      <div><strong>Genre:</strong> {game.genre}</div>
+                    {game.genres && game.genres.length > 0 && (
+                      <div><strong>Genres:</strong> {game.genres.join(', ')}</div>
                     )}
                     {game.platforms && game.platforms.length > 0 && (
                       <div><strong>Platforms:</strong> {game.platforms.join(', ')}</div>
                     )}
-                    {game.rating > 0 && (
-                      <div><strong>Rating:</strong> {game.rating}/10</div>
+                    {game.igdb_rating && game.igdb_rating > 0 && (
+                      <div><strong>IGDB Rating:</strong> {game.igdb_rating}/100</div>
                     )}
                     {game.developer && (
                       <div><strong>Developer:</strong> {game.developer}</div>
@@ -470,7 +485,7 @@ export const GamePage: React.FC = () => {
                     )}
                   </div>
                   <p className="text-gray-300 mb-6 leading-relaxed">
-                    {game.description || 'No description available.'}
+                    {game.summary || 'No description available.'}
                   </p>
                 </div>
               </div>
@@ -527,13 +542,13 @@ export const GamePage: React.FC = () => {
                   {isAuthenticated ? (
                     <div className="flex items-center gap-3">
                       <Link
-                        to={`/review/${game.id}`}
+                        to={`/review/${game.igdb_id || game.id}`}
                         className="relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible bg-purple-600 border-purple-500 hover:bg-purple-700 cursor-pointer"
                       >
                         <ScrollText className="h-4 w-4 text-white" />
                       </Link>
                       <Link
-                        to={`/review/${game.id}`}
+                        to={`/review/${game.igdb_id || game.id}`}
                         className={`text-sm ${userHasReviewed ? 'text-purple-400' : 'text-gray-300'} hover:text-purple-400 transition-colors`}
                       >
                         {userReviewLoading ? 'Loading...' : userHasReviewed ? 'Edit Review' : 'Write a Review'}

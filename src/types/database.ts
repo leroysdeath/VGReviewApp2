@@ -25,6 +25,9 @@ export interface Game {
   platforms?: string[];
   screenshots?: string[];
   videos?: string[];
+  developer?: string;
+  publisher?: string;
+  igdb_rating?: number;
   created_at: string;
   updated_at: string;
 }
