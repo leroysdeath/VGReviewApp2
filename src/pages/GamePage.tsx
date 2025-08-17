@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer } from 'react';
+import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
@@ -374,35 +374,80 @@ export const GamePage: React.FC = () => {
     }
   };
 
+  // Recommendation 4: Add data validation for reviews
+  const validRatings = useMemo(() => 
+    reviews.filter(r => 
+      r.rating >= 1 && r.rating <= 10 && !isNaN(r.rating)
+    ),
+    [reviews]
+  );
+
   // Transform reviews to match ReviewCard component expectations
-  const transformedReviews = reviews.map(review => ({
-    id: review.id.toString(),
-    userId: review.user_id.toString(),
-    gameId: review.game_id.toString(),
-    igdbGameId: id, // Use the IGDB game_id from the URL parameter
-    gameTitle: game?.name || 'Unknown Game',
-    rating: review.rating,
-    text: review.review || '',
-    date: new Date(review.post_date_time).toISOString().split('T')[0],
-    hasText: !!review.review,
-    likeCount: 0, // To be implemented with real data
-    commentCount: 0, // To be implemented with real data
-    author: review.user?.name || 'Anonymous',
-    authorAvatar: review.user?.picurl || '/default-avatar.png'
-  }));
+  const transformedReviews = useMemo(() => 
+    validRatings.map((review: GameReview) => ({
+      id: review.id.toString(),
+      userId: review.user_id.toString(),
+      gameId: review.game_id.toString(),
+      igdbGameId: id, // Use the IGDB game_id from the URL parameter
+      gameTitle: game?.name || 'Unknown Game',
+      rating: review.rating,
+      text: review.review || '',
+      date: new Date(review.post_date_time).toISOString().split('T')[0],
+      hasText: !!review.review,
+      likeCount: 0, // To be implemented with real data
+      commentCount: 0, // To be implemented with real data
+      author: review.user?.name || 'Anonymous',
+      authorAvatar: review.user?.picurl || '/default-avatar.png'
+    })),
+    [validRatings, id, game?.name]
+  );
 
-  const topReviews = transformedReviews.filter(r => r.rating >= 8).slice(0, 3);
-  const recentReviews = transformedReviews.slice(0, 5);
+  // Recommendation 6: Clarify terminology - separate reviews with text from ratings
+  const reviewsWithText = useMemo(() => 
+    transformedReviews.filter(r => r.hasText),
+    [transformedReviews]
+  );
 
-  const averageRating = transformedReviews.length > 0
-    ? transformedReviews.reduce((sum, review) => sum + review.rating, 0) / transformedReviews.length
-    : 0;
+  const topReviews = useMemo(() => 
+    transformedReviews.filter(r => r.rating >= 8).slice(0, 3),
+    [transformedReviews]
+  );
+  
+  const recentReviews = useMemo(() => 
+    transformedReviews.slice(0, 5),
+    [transformedReviews]
+  );
 
-  // Calculate rating distribution from actual reviews data
-  // Only calculate when reviews are loaded to avoid empty state during loading
-  const ratingDistribution = reviewsLoading ? 
-    Array.from({ length: 10 }, (_, i) => ({ rating: 10 - i, count: 0, percentage: 0 })) : // Show empty bars while loading
-    generateRatingDistribution(reviews);
+  // Recommendation 3: Use game's calculated average from service
+  const averageRating = game?.averageUserRating || 0;
+
+  // Recommendation 5: Memoize expensive calculations
+  // Recommendation 7: Add error boundaries for distribution
+  const ratingDistribution = useMemo(() => {
+    if (reviewsLoading) {
+      return Array.from({ length: 10 }, (_, i) => ({ 
+        rating: 10 - i, 
+        count: 0, 
+        percentage: 0 
+      }));
+    }
+    
+    try {
+      return generateRatingDistribution(validRatings);
+    } catch (error) {
+      console.error('Error generating rating distribution:', error);
+      // Return default distribution on error
+      return Array.from({ length: 10 }, (_, i) => ({ 
+        rating: 10 - i, 
+        count: 0, 
+        percentage: 0 
+      }));
+    }
+  }, [validRatings, reviewsLoading]);
+
+  // Count ratings vs reviews for clarity
+  const totalRatings = validRatings.length;
+  const totalReviews = reviewsWithText.length;
 
   if (gameLoading) {
     return (
@@ -617,10 +662,16 @@ export const GamePage: React.FC = () => {
           <div className="space-y-6">
             <div className="bg-gray-800 rounded-lg p-6">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
-                <span className="text-sm text-blue-400">
-                  {reviewsLoading ? 'Loading...' : `${reviews.length}`}
-                </span>
+                <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Rating Summary</h3>
+                <div className="flex gap-3 text-sm">
+                  <span className="text-blue-400">
+                    {reviewsLoading ? 'Loading...' : `${totalRatings} ratings`}
+                  </span>
+                  <span className="text-gray-500">•</span>
+                  <span className="text-green-400">
+                    {reviewsLoading ? '' : `${totalReviews} reviews`}
+                  </span>
+                </div>
               </div>
               <div className="border-b border-gray-700 mb-4"></div>
 
@@ -644,16 +695,16 @@ export const GamePage: React.FC = () => {
                           className="w-6 bg-gray-700 rounded-sm"
                           style={{
                             height: item.count > 0 
-                              ? `${Math.max(4, (item.percentage / 100) * 80)}px`
-                              : '4px',
+                              ? `${(item.percentage / 100) * 80}px`
+                              : '2px',
                             backgroundColor: item.rating >= 8 ? '#4ade80' : '#374151'
                           }}
                         ></div>
                       ))}
                     </div>
                     <div className="flex justify-between px-1">
-                      <span className="text-green-500 text-xs">1</span>
                       <span className="text-green-500 text-xs">10</span>
+                      <span className="text-green-500 text-xs">1</span>
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-green-400">
@@ -668,7 +719,7 @@ export const GamePage: React.FC = () => {
         {/* Reviews Section */}
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Top Reviews</h2>
+            <h2 className="text-2xl font-bold text-white">Reviews</h2>
             {reviewsLoading && (
               <div className="flex items-center gap-2 text-gray-400">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
@@ -677,10 +728,10 @@ export const GamePage: React.FC = () => {
             )}
           </div>
 
-          {/* Reviews content */}
-          {transformedReviews.length > 0 ? (
+          {/* Reviews content - show only reviews with text */}
+          {reviewsWithText.length > 0 ? (
             <div className="space-y-4">
-              {topReviews.map(review => (
+              {reviewsWithText.slice(0, 5).map(review => (
                 <Link 
                   key={review.id} 
                   to={`/review/${review.userId}/${review.gameId}`}
@@ -718,7 +769,7 @@ export const GamePage: React.FC = () => {
             </div>
           ) : !reviewsLoading && (
             <div className="text-center py-8 text-gray-500">
-              <p>No reviews yet. Be the first to review this game!</p>
+              <p>No written reviews yet. Be the first to write a review for this game!</p>
               {!isAuthenticated && (
                 <button
                   onClick={() => dispatch({ type: 'SET_AUTH_MODAL', payload: { show: true, pendingAction: null }})}
