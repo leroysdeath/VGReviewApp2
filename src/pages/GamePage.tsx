@@ -308,22 +308,16 @@ export const GamePage: React.FC = () => {
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
-      // First ensure the game exists in the database
-      const ensureResult = await ensureGameExists(
-        parseInt(id),
-        game.name,
-        game.cover_url || '',
-        game.genres?.join(', ') || '',
-        game.first_release_date || ''
-      );
+      // Game should already exist since it was loaded, but verify with database ID
+      const ensureResult = await ensureGameExists(game.id);
 
       if (!ensureResult.success) {
         console.error('Failed to ensure game exists:', ensureResult.error);
-        alert(`Failed to add game to database: ${ensureResult.error}`);
+        alert(`Failed to verify game in database: ${ensureResult.error}`);
         return;
       }
 
-      // Mark game as started
+      // Mark game as started using IGDB ID
       const result = await markGameStarted(parseInt(id));
       
       if (result.success) {
@@ -346,22 +340,16 @@ export const GamePage: React.FC = () => {
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
-      // First ensure the game exists in the database
-      const ensureResult = await ensureGameExists(
-        parseInt(id),
-        game.name,
-        game.cover_url || '',
-        game.genres?.join(', ') || '',
-        game.first_release_date || ''
-      );
+      // Game should already exist since it was loaded, but verify with database ID
+      const ensureResult = await ensureGameExists(game.id);
 
       if (!ensureResult.success) {
         console.error('Failed to ensure game exists:', ensureResult.error);
-        alert(`Failed to add game to database: ${ensureResult.error}`);
+        alert(`Failed to verify game in database: ${ensureResult.error}`);
         return;
       }
 
-      // Mark game as completed (this will also mark as started)
+      // Mark game as completed using IGDB ID (this will also mark as started)
       const result = await markGameCompleted(parseInt(id));
       
       if (result.success) {
