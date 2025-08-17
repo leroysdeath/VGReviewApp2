@@ -10,7 +10,8 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "WebFetch(domain:grand-narwhal-4e85d9.space)"
+      "WebFetch(domain:grand-narwhal-4e85d9.space)",
+      "Bash(git pull:*)"
     ],
     "deny": []
   }
