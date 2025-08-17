@@ -8,7 +8,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { NotificationBadge } from './NotificationBadge';
 import { NotificationCenter } from './NotificationCenter';
 import { useGameSearch } from '../hooks/useGameSearch';
-import { gameDataService } from '../services/gameDataService';
+import { igdbService } from '../services/igdbService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
@@ -112,8 +112,9 @@ export const ResponsiveNavbar: React.FC = () => {
         return;
       }
 
-      // Fetch fresh results using Supabase gameDataService
-      const results = await gameDataService.searchGames(query);
+      // Fetch fresh results using IGDB API
+      const igdbResults = await igdbService.searchGames(query, 8);
+      const results = igdbResults.map(game => igdbService.transformGame(game));
 
       if (results && Array.isArray(results)) {
         const limitedResults = results.slice(0, 8);

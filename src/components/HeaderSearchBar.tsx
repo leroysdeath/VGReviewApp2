@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X, Clock, TrendingUp, Database, Loader2, Star, Gamepad2, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGameSearch } from '../hooks/useGameSearch';
-import { gameDataService } from '../services/gameDataService';
+import { igdbService } from '../services/igdbService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
@@ -113,8 +113,9 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
         }
       }
 
-      // Fetch fresh results using Supabase gameDataService
-      const results = await gameDataService.searchGames(query);
+      // Fetch fresh results using IGDB API
+      const igdbResults = await igdbService.searchGames(query, maxSuggestions);
+      const results = igdbResults.map(game => igdbService.transformGame(game));
 
       if (results && Array.isArray(results)) {
         const limitedResults = results.slice(0, maxSuggestions);
@@ -306,7 +307,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
     setIsOpen(true);
   };
 
-  const handleSuggestionClick = (game: Game) => {
+  const handleSuggestionClick = (game: any) => {
     setSearchTerm(game.name);
     saveRecentSearch(game.name, 'games');
     navigateToSearch(game.name);
@@ -537,9 +538,9 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
                   >
                     {/* Game Cover */}
                     <div className="w-8 h-10 bg-gray-700 rounded mr-3 flex-shrink-0 overflow-hidden">
-                      {game.cover?.url ? (
+                      {game.cover_url || game.pic_url ? (
                         <img
-                          src={game.cover.url.replace('t_thumb', 't_cover_small')}
+                          src={game.cover_url || game.pic_url}
                           alt={game.name}
                           className="w-full h-full object-cover"
                           loading="lazy"
@@ -557,14 +558,14 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
                         {game.name}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-400">
-                        {formatReleaseYear(game.first_release_date) && (
+                        {game.first_release_date && (
                           <>
                             <span>{formatReleaseYear(game.first_release_date)}</span>
                           </>
                         )}
                         {game.rating && (
                           <>
-                            {formatReleaseYear(game.first_release_date) && <span>•</span>}
+                            {game.first_release_date && <span>•</span>}
                             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                             <span>{(game.rating / 10).toFixed(1)}</span>
                           </>

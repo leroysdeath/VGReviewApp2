@@ -7,6 +7,17 @@
       "Bash(npx tsc:*)",
       "Bash(rm:*)",
       "Bash(timeout 15 npm run dev)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:grand-narwhal-4e85d9.space)",
+      "Bash(git pull:*)",
+      "Bash(timeout 10 netlify dev)",
+      "Bash(mv:*)",
+      "Bash(npm install:*)",
+      "Bash(grep:*)",
+      "Bash(npm run sync-igdb:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }
