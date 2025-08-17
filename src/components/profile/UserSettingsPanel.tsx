@@ -233,7 +233,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData.avatar || null);
-  const [changedFields, setChangedFields] = useState<Set<string>>(new Set());
   const [originalValues, setOriginalValues] = useState<ProfileFormValues>({
     username: initialData.username,
     displayName: initialData.displayName || '',
@@ -258,37 +257,29 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   });
 
 
-  // Form setup with dynamic validation (only validate changed fields)
+  // Form setup with standard validation (validate all fields)
   const { 
     register, 
     handleSubmit, 
-    formState: { errors, isDirty, isValid },
+    formState: { errors, isDirty, isValid, dirtyFields },
     reset,
     watch,
     clearErrors,
     trigger,
-    setValue
+    setValue,
+    getValues
   } = useForm<ProfileFormValues>({
-    resolver: zodResolver(getDynamicProfileSchema(changedFields)),
+    resolver: zodResolver(getProfileSchema()),
     defaultValues: originalValues,
     mode: 'onChange'
   });
 
   // Debug form initialization
   useEffect(() => {
-    console.log('🟣 Form initialized with:');
-    console.log('🟣 defaultValues (originalValues):', originalValues);
-    console.log('🟣 errors object:', errors);
-    console.log('🟣 isDirty:', isDirty);
-    console.log('🟣 isValid:', isValid);
-    console.log('🟣 errors is empty:', Object.keys(errors).length === 0);
-    console.log('🟣 using DYNAMIC schema validation - only validates changed fields:', Array.from(changedFields));
-    
-    // Log specific field errors for debugging
     if (Object.keys(errors).length > 0) {
-      console.log('🔴 Validation errors found:', errors);
+      console.log('Validation errors:', errors);
     }
-  }, [originalValues, errors, isDirty, isValid]);
+  }, [errors]);
 
   // Reset form when initialData changes
   useEffect(() => {
@@ -301,7 +292,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       platform: initialData.platform || ''
     };
     setOriginalValues(newValues);
-    setChangedFields(new Set());
     setAvatarPreview(initialData.avatar || null); // Reset avatar preview
     
     // Reset selected platforms
@@ -322,86 +312,11 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   // Watch all form values to track changes
   const watchedValues = watch();
 
-  // Track field changes
+  // Simple tracking for debugging
   useEffect(() => {
-    console.log('🟡 Checking for field changes...');
-    console.log('🟡 Current watchedValues:', watchedValues);
-    console.log('🟡 Original values:', originalValues);
-    
-    const newChangedFields = new Set<string>();
-    
-    // Compare current values with original values
-    if (watchedValues.username !== originalValues.username) {
-      newChangedFields.add('username');
-      console.log('🟡 Username changed:', originalValues.username, '->', watchedValues.username);
-    }
-    if (watchedValues.displayName !== originalValues.displayName) {
-      newChangedFields.add('displayName');
-      console.log('🟡 DisplayName changed:', originalValues.displayName, '->', watchedValues.displayName);
-    }
-    if (watchedValues.bio !== originalValues.bio) {
-      newChangedFields.add('bio');
-      console.log('🟡 Bio changed:', originalValues.bio, '->', watchedValues.bio);
-    }
-    if (watchedValues.location !== originalValues.location) {
-      newChangedFields.add('location');
-      console.log('🟡 Location changed:', originalValues.location, '->', watchedValues.location);
-    }
-    if (watchedValues.website !== originalValues.website) {
-      newChangedFields.add('website');
-      console.log('🟡 Website changed:', originalValues.website, '->', watchedValues.website);
-    }
-    if (watchedValues.platform !== originalValues.platform) {
-      newChangedFields.add('platform');
-      console.log('🟡 Platform changed:', originalValues.platform, '->', watchedValues.platform);
-    }
-    
+    console.log('Form state:', { isDirty, dirtyFields, errors });
+  }, [isDirty, dirtyFields, errors]);
 
-    console.log('🔥 Field change detection:', {
-      username: { current: watchedValues.username, original: originalValues.username, changed: watchedValues.username !== originalValues.username },
-      displayName: { current: watchedValues.displayName, original: originalValues.displayName, changed: watchedValues.displayName !== originalValues.displayName },
-      bio: { current: watchedValues.bio, original: originalValues.bio, changed: watchedValues.bio !== originalValues.bio },
-      totalChangedFields: newChangedFields.size
-    });
-    
-    console.log('🎯 Dynamic validation will apply to these fields only:', Array.from(newChangedFields));
-    
-    console.log('🟡 Changed fields result:', Array.from(newChangedFields));
-    console.log('🟡 Previous changed fields:', Array.from(changedFields));
-
-    // Update changed fields state if different
-    if (newChangedFields.size !== changedFields.size || 
-        ![...newChangedFields].every(field => changedFields.has(field))) {
-      
-      if (newChangedFields.size !== changedFields.size) {
-        console.warn('🔴 FIELD COUNT CHANGING:', {
-          oldSize: changedFields.size,
-          newSize: newChangedFields.size,
-          oldFields: Array.from(changedFields),
-          newFields: Array.from(newChangedFields),
-          allFormFields: ['username', 'displayName', 'bio', 'location', 'website', 'platform'],
-          currentValues: {
-            displayName: watchedValues.displayName,
-            bio: watchedValues.bio,
-            location: watchedValues.location,
-            platform: watchedValues.platform
-          }
-        });
-      }
-      console.log('🟡 Updating changedFields state from', Array.from(changedFields), 'to', Array.from(newChangedFields));
-      setChangedFields(newChangedFields);
-    } else {
-      console.log('🟡 No change in changedFields state needed');
-    }
-  }, [watchedValues, originalValues, changedFields]);
-
-  // Re-trigger validation when changed fields change (needed for dynamic validation)
-  useEffect(() => {
-    if (changedFields.size > 0) {
-      console.log('🔄 Re-triggering validation for changed fields:', Array.from(changedFields));
-      trigger();
-    }
-  }, [changedFields, trigger]);
 
   // Notify parent of form dirty state changes (including avatar changes)
   useEffect(() => {
@@ -449,21 +364,9 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     }
     setSelectedPlatforms(newPlatforms);
     
-    // Convert to comma-separated string
+    // Convert to comma-separated string and update form value
     const platformString = Array.from(newPlatforms).sort().join(',');
-    setValue('platform', platformString);
-    
-    // Mark as changed if different from original
-    const originalPlatform = originalValues.platform || '';
-    if (platformString !== originalPlatform) {
-      setChangedFields(prev => new Set([...prev, 'platform']));
-    } else {
-      setChangedFields(prev => {
-        const newSet = new Set(prev);
-        newSet.delete('platform');
-        return newSet;
-      });
-    }
+    setValue('platform', platformString, { shouldDirty: true, shouldValidate: true });
   };
 
   // Handle avatar change
@@ -483,12 +386,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         });
         
         setAvatarPreview(newAvatarData);
-        
-        // Mark avatar as changed if different from original
-        if (newAvatarData !== originalAvatar) {
-          setChangedFields(prev => new Set([...prev, 'avatar']));
-          console.log('🖼️ Avatar marked as changed');
-        }
       };
       reader.readAsDataURL(file);
     }
@@ -496,99 +393,49 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
   // Handle form submission
   const onSubmit = async (data: ProfileFormValues) => {
-    console.log(`Form submitted! Changed fields: ${Array.from(changedFields).join(', ')}\nData keys: ${Object.keys(data).join(', ')}`);
     console.log('🔵 UserSettingsPanel - onSubmit called');
-    console.log('📋 Raw form data received:', data);
-    console.log('🔄 Changed fields array:', Array.from(changedFields));
-    console.log('📊 Original values:', originalValues);
-    console.log('🖼️ Avatar preview:', avatarPreview);
-    console.log('🖼️ Original avatar:', originalValues.avatar || initialData.avatar);
+    console.log('📋 Form data:', data);
+    console.log('📊 Dirty fields:', dirtyFields);
     
     setIsLoading(true);
     setSaveError(null);
     setSaveSuccess(false);
 
     try {
-      console.log('🔍 onSave check:', { onSave, hasOnSave: !!onSave, onSaveType: typeof onSave });
-      console.log(`onSave check: hasOnSave=${!!onSave}, type=${typeof onSave}`);
+      // Build the data to submit (only changed fields)
+      const submitData: any = {};
       
-      // Only submit changed fields
-      const changedData: Partial<ProfileFormValues> = {};
-      
-      console.log('🔍 Processing changed fields...');
-      changedFields.forEach(fieldName => {
+      // Add dirty fields
+      Object.keys(dirtyFields).forEach(fieldName => {
         if (fieldName in data) {
-          (changedData as any)[fieldName] = (data as any)[fieldName];
-          console.log(`  ✅ Added ${fieldName}:`, (data as any)[fieldName]);
-          
-          // Special logging for website field to show auto-prepended protocol
-          if (fieldName === 'website' && (data as any)[fieldName]) {
-            console.log(`  🌐 Website field transformed:`, (data as any)[fieldName]);
-          }
-        } else {
-          console.log(`  ❌ Field ${fieldName} not found in form data`);
+          submitData[fieldName] = (data as any)[fieldName];
         }
       });
 
       // Include avatar if it has changed
       if (avatarPreview && avatarPreview !== (originalValues.avatar || initialData.avatar)) {
-        (changedData as any).avatar = avatarPreview;
-        console.log('🖼️ Added changed avatar to submit data');
+        submitData.avatar = avatarPreview;
       }
 
-      console.log('📤 Final data being passed to onSave:', changedData);
-      console.log('📤 Data types:', Object.entries(changedData).map(([key, value]) => `${key}: ${typeof value}`));
+      console.log('📤 Submitting data:', submitData);
       
-      console.log('🚨 CRITICAL: About to call onSave with:', {
-        changedData,
-        changedDataKeys: Object.keys(changedData),
-        changedDataJSON: JSON.stringify(changedData),
-        changedFieldsBeforeSave: Array.from(changedFields)
-      });
-      
-      try {
-        console.log('About to call onSave...');
-        console.log('Data being sent to onSave:', changedData);
-        console.log(`Sending data to save: ${JSON.stringify(changedData)}`);
-        
-        console.log('🚨 FINAL onSave check before call:', {
-          onSave,
-          onSaveType: typeof onSave,
-          hasOnSave: !!onSave,
-          isFunction: typeof onSave === 'function'
-        });
-        console.log(`🚨 FINAL CHECK - onSave: ${onSave}, type: ${typeof onSave}, isFunction: ${typeof onSave === 'function'}`);
-        
-        if (!onSave) {
-          throw new Error('onSave function is not provided. Please check the prop chain from ProfilePage.');
-        }
-        
-        if (typeof onSave !== 'function') {
-          throw new Error(`onSave is not a function. It is: ${typeof onSave}`);
-        }
-        
-        const result = await onSave(changedData as ProfileUpdateData);
-        console.log('onSave completed successfully');
-        return result;
-      } catch (error) {
-        console.error(`onSave ERROR: ${error?.message || error || 'Unknown error'}`);
-        console.error('onSave error full details:', error);
-        throw error;
+      if (!onSave) {
+        throw new Error('onSave function is not provided');
       }
+      
+      await onSave(submitData as ProfileUpdateData);
       
       setSaveSuccess(true);
       setTimeout(() => {
         setSaveSuccess(false);
-        onSuccess?.(); // Close modal on successful save
+        onSuccess?.();
       }, 1500);
 
-      // Update original values and reset changed fields tracking
+      // Update original values
       setOriginalValues(data);
-      setChangedFields(new Set());
-      
-      // Reset form with new values as original values
       reset(data);
     } catch (error) {
+      console.error('Save error:', error);
       setSaveError('Failed to save changes. Please try again.');
     } finally {
       setIsLoading(false);
@@ -882,17 +729,17 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={isLoading || changedFields.size === 0}
+                disabled={isLoading || (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar))}
                 onClick={() => {
                   console.log('🔴 BUTTON CLICKED!');
                   console.log('🔴 Button state:', {
                     isLoading,
-                    changedFieldsSize: changedFields.size,
-                    changedFields: Array.from(changedFields),
-                    errors,
                     isDirty,
+                    dirtyFields,
+                    avatarChanged: avatarPreview !== (originalValues.avatar || initialData.avatar),
+                    errors,
                     isValid,
-                    disabled: isLoading || changedFields.size === 0
+                    disabled: isLoading || (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar))
                   });
                 }}
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
@@ -905,10 +752,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                 ) : (
                   <>
                     <Save className="h-5 w-5" />
-                    {changedFields.size > 0 
-                      ? `Save Changes (${changedFields.size} field${changedFields.size > 1 ? 's' : ''})`
-                      : 'Save Changes'
-                    }
+                    Save Changes
                   </>
                 )}
               </button>
