@@ -66,7 +66,7 @@ export const calculateAverageRating = (ratings: SupabaseRating[]): number => {
 export const generateRatingDistribution = (ratings: Array<{ rating: number }>) => {
   // Initialize distribution with all rating segments 1-10
   const distribution = Array.from({ length: 10 }, (_, i) => ({
-    rating: 10 - i, // Start from 10 down to 1
+    rating: i + 1, // Start from 1 up to 10
     count: 0,
     percentage: 0
   }));
@@ -79,8 +79,8 @@ export const generateRatingDistribution = (ratings: Array<{ rating: number }>) =
     
     // Ensure rating segment is within valid range (1-10)
     if (ratingSegment >= 1 && ratingSegment <= 10) {
-      // Find the index in our distribution array (which goes 10 to 1)
-      const index = 10 - ratingSegment;
+      // Find the index in our distribution array (which goes 1 to 10)
+      const index = ratingSegment - 1;
       distribution[index].count++;
     }
   });
@@ -93,7 +93,7 @@ export const generateRatingDistribution = (ratings: Array<{ rating: number }>) =
     });
   }
 
-  return distribution; // Already in descending order (10 to 1)
+  return distribution; // Now in ascending order (1 to 10)
 };
 
 // Format date for display

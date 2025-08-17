@@ -426,19 +426,20 @@ export const GamePage: React.FC = () => {
   const ratingDistribution = useMemo(() => {
     if (reviewsLoading) {
       return Array.from({ length: 10 }, (_, i) => ({ 
-        rating: 10 - i, 
+        rating: i + 1, 
         count: 0, 
         percentage: 0 
       }));
     }
     
     try {
+      // Get distribution already in ascending order (1-10)
       return generateRatingDistribution(validRatings);
     } catch (error) {
       console.error('Error generating rating distribution:', error);
       // Return default distribution on error
       return Array.from({ length: 10 }, (_, i) => ({ 
-        rating: 10 - i, 
+        rating: i + 1, 
         count: 0, 
         percentage: 0 
       }));
@@ -662,14 +663,10 @@ export const GamePage: React.FC = () => {
           <div className="space-y-6">
             <div className="bg-gray-800 rounded-lg p-6">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Rating Summary</h3>
-                <div className="flex gap-3 text-sm">
+                <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
+                <div className="text-sm">
                   <span className="text-blue-400">
-                    {reviewsLoading ? 'Loading...' : `${totalRatings} ratings`}
-                  </span>
-                  <span className="text-gray-500">•</span>
-                  <span className="text-green-400">
-                    {reviewsLoading ? '' : `${totalReviews} reviews`}
+                    {reviewsLoading ? 'Loading...' : totalRatings}
                   </span>
                 </div>
               </div>
@@ -702,9 +699,9 @@ export const GamePage: React.FC = () => {
                         ></div>
                       ))}
                     </div>
-                    <div className="flex justify-between px-1">
-                      <span className="text-green-500 text-xs">10</span>
-                      <span className="text-green-500 text-xs">1</span>
+                    <div className="flex justify-between">
+                      <span className="text-green-500 text-xs" style={{ width: '24px', textAlign: 'center' }}>1</span>
+                      <span className="text-green-500 text-xs" style={{ width: '24px', textAlign: 'center' }}>10</span>
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-green-400">
