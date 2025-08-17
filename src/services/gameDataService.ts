@@ -66,6 +66,73 @@ class GameDataService {
   }
 
   /**
+   * Fetch game data with full review details in a single query
+   * This reduces redundant API calls and improves performance
+   */
+  async getGameWithFullReviews(igdbId: number): Promise<{
+    game: GameWithCalculatedFields | null;
+    reviews: Array<{
+      id: number;
+      user_id: number;
+      game_id: number;
+      rating: number;
+      review: string | null;
+      post_date_time: string;
+      user?: {
+        id: number;
+        name: string;
+        picurl?: string;
+      };
+    }>;
+  }> {
+    try {
+      // First check if game exists in database
+      const { data: gameData, error: gameError } = await supabase
+        .from('game')
+        .select(`
+          *,
+          ratings:rating(
+            id,
+            user_id,
+            game_id,
+            rating,
+            review,
+            post_date_time,
+            user:user_id(
+              id,
+              name,
+              picurl
+            )
+          )
+        `)
+        .eq('igdb_id', igdbId)
+        .single()
+
+      if (gameError || !gameData) {
+        console.error('Error fetching game with reviews:', gameError)
+        return { game: null, reviews: [] }
+      }
+
+      // Extract reviews from the nested data
+      const reviews = gameData.ratings || []
+      
+      // Transform game data for calculated fields
+      const gameWithoutRatings = { ...gameData }
+      delete gameWithoutRatings.ratings
+      
+      const game = this.transformGameWithRatings({
+        ...gameWithoutRatings,
+        ratings: reviews.map((r: any) => ({ rating: r.rating }))
+      } as GameWithRating)
+
+      return { game, reviews }
+    } catch (error) {
+      console.error('Error in getGameWithFullReviews:', error)
+      return { game: null, reviews: [] }
+    }
+  }
+
+  /**
    * Convert IGDB ID to database ID
    */
   async convertIGDBIdToGameId(igdbId: number): Promise<number | null> {

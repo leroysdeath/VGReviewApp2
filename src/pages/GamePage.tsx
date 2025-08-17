@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
@@ -27,103 +27,216 @@ interface GameReview {
   };
 }
 
+// State interface for useReducer
+interface GamePageState {
+  game: GameWithCalculatedFields | null;
+  gameLoading: boolean;
+  gameError: Error | null;
+  reviews: GameReview[];
+  reviewsLoading: boolean;
+  reviewsError: string | null;
+  isStarted: boolean;
+  isCompleted: boolean;
+  progressLoading: boolean;
+  userHasReviewed: boolean;
+  userReviewLoading: boolean;
+  showAuthModal: boolean;
+  pendingAction: string | null;
+}
+
+// Action types for reducer
+type GamePageAction = 
+  | { type: 'SET_GAME_LOADING'; payload: boolean }
+  | { type: 'SET_GAME'; payload: GameWithCalculatedFields | null }
+  | { type: 'SET_GAME_ERROR'; payload: Error | null }
+  | { type: 'SET_REVIEWS_LOADING'; payload: boolean }
+  | { type: 'SET_REVIEWS'; payload: GameReview[] }
+  | { type: 'SET_REVIEWS_ERROR'; payload: string | null }
+  | { type: 'SET_PROGRESS'; payload: { isStarted: boolean; isCompleted: boolean } }
+  | { type: 'SET_PROGRESS_LOADING'; payload: boolean }
+  | { type: 'SET_USER_REVIEW_STATUS'; payload: { hasReviewed: boolean; loading: boolean } }
+  | { type: 'SET_AUTH_MODAL'; payload: { show: boolean; pendingAction: string | null } }
+  | { type: 'LOAD_GAME_SUCCESS'; payload: { game: GameWithCalculatedFields; reviews: GameReview[] } }
+  | { type: 'LOAD_GAME_ERROR'; payload: Error };
+
+// Reducer function
+function gamePageReducer(state: GamePageState, action: GamePageAction): GamePageState {
+  switch (action.type) {
+    case 'SET_GAME_LOADING':
+      return { ...state, gameLoading: action.payload, gameError: null };
+    case 'SET_GAME':
+      return { ...state, game: action.payload, gameLoading: false };
+    case 'SET_GAME_ERROR':
+      return { ...state, gameError: action.payload, gameLoading: false };
+    case 'SET_REVIEWS_LOADING':
+      return { ...state, reviewsLoading: action.payload, reviewsError: null };
+    case 'SET_REVIEWS':
+      return { ...state, reviews: action.payload, reviewsLoading: false };
+    case 'SET_REVIEWS_ERROR':
+      return { ...state, reviewsError: action.payload, reviewsLoading: false };
+    case 'SET_PROGRESS':
+      return { ...state, ...action.payload };
+    case 'SET_PROGRESS_LOADING':
+      return { ...state, progressLoading: action.payload };
+    case 'SET_USER_REVIEW_STATUS':
+      return { 
+        ...state, 
+        userHasReviewed: action.payload.hasReviewed, 
+        userReviewLoading: action.payload.loading 
+      };
+    case 'SET_AUTH_MODAL':
+      return { 
+        ...state, 
+        showAuthModal: action.payload.show, 
+        pendingAction: action.payload.pendingAction 
+      };
+    case 'LOAD_GAME_SUCCESS':
+      return {
+        ...state,
+        game: action.payload.game,
+        reviews: action.payload.reviews,
+        gameLoading: false,
+        reviewsLoading: false,
+        gameError: null,
+        reviewsError: null
+      };
+    case 'LOAD_GAME_ERROR':
+      return {
+        ...state,
+        gameError: action.payload,
+        gameLoading: false,
+        reviewsLoading: false
+      };
+    default:
+      return state;
+  }
+}
+
+// Initial state
+const initialState: GamePageState = {
+  game: null,
+  gameLoading: false,
+  gameError: null,
+  reviews: [],
+  reviewsLoading: false,
+  reviewsError: null,
+  isStarted: false,
+  isCompleted: false,
+  progressLoading: false,
+  userHasReviewed: false,
+  userReviewLoading: false,
+  showAuthModal: false,
+  pendingAction: null
+};
+
 export const GamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth();
 
-  // Use gameDataService for game data
-  const [game, setGame] = useState<GameWithCalculatedFields | null>(null);
-  const [gameLoading, setGameLoading] = useState(false);
-  const [gameError, setGameError] = useState<Error | null>(null);
+  // Validate IGDB ID parameter
+  const isValidId = id && !isNaN(parseInt(id)) && parseInt(id) > 0;
+  
+  // Use reducer for centralized state management
+  const [state, dispatch] = useReducer(gamePageReducer, initialState);
+  const { 
+    game, 
+    gameLoading, 
+    gameError, 
+    reviews, 
+    reviewsLoading, 
+    reviewsError,
+    isStarted,
+    isCompleted,
+    progressLoading,
+    userHasReviewed,
+    userReviewLoading,
+    showAuthModal,
+    pendingAction
+  } = state;
 
-  // Refetch function
+  // Refetch function using the new consolidated service method
   const refetchGame = async () => {
-    if (!id) return;
+    if (!isValidId) {
+      dispatch({ type: 'SET_GAME_ERROR', payload: new Error('Invalid game ID') });
+      return;
+    }
     
-    setGameLoading(true);
-    setGameError(null);
+    dispatch({ type: 'SET_GAME_LOADING', payload: true });
 
     try {
-      const gameData = await gameDataService.getGameByIGDBId(parseInt(id));
+      // Use the new consolidated method to fetch both game and reviews
+      const { game: gameData, reviews: reviewData } = await gameDataService.getGameWithFullReviews(parseInt(id));
+      
       if (gameData) {
-        setGame(gameData);
+        dispatch({ type: 'LOAD_GAME_SUCCESS', payload: { game: gameData, reviews: reviewData } });
       } else {
-        setGameError(new Error('Game not found'));
+        dispatch({ type: 'LOAD_GAME_ERROR', payload: new Error('Game not found') });
       }
     } catch (error) {
-      setGameError(error as Error);
-    } finally {
-      setGameLoading(false);
+      dispatch({ type: 'LOAD_GAME_ERROR', payload: error as Error });
     }
   };
 
-  const [isStarted, setIsStarted] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [progressLoading, setProgressLoading] = useState(false);
-  const [reviews, setReviews] = useState<GameReview[]>([]);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [reviewsError, setReviewsError] = useState<string | null>(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const [userHasReviewed, setUserHasReviewed] = useState(false);
-  const [userReviewLoading, setUserReviewLoading] = useState(false);
-
-  // Load game data
+  // Load game data and reviews in a single call
   useEffect(() => {
-    const loadGame = async () => {
-      if (!id) return;
+    const loadGameData = async () => {
+      if (!isValidId) {
+        dispatch({ type: 'SET_GAME_ERROR', payload: new Error('Invalid or missing game ID') });
+        return;
+      }
 
-      setGameLoading(true);
-      setGameError(null);
+      dispatch({ type: 'SET_GAME_LOADING', payload: true });
+      dispatch({ type: 'SET_REVIEWS_LOADING', payload: true });
 
       try {
         console.log('Loading game with IGDB ID:', id);
-        const gameData = await gameDataService.getGameByIGDBId(parseInt(id));
+        
+        // Use the consolidated method to fetch both game and reviews
+        const { game: gameData, reviews: reviewData } = await gameDataService.getGameWithFullReviews(parseInt(id));
         
         if (gameData) {
-          setGame(gameData);
           console.log('✅ Game loaded successfully:', gameData.name);
+          console.log(`✅ Loaded ${reviewData.length} reviews`);
+          dispatch({ type: 'LOAD_GAME_SUCCESS', payload: { game: gameData, reviews: reviewData } });
         } else {
-          setGameError(new Error('Game not found'));
           console.log('❌ Game not found for IGDB ID:', id);
+          dispatch({ type: 'LOAD_GAME_ERROR', payload: new Error('Game not found') });
         }
       } catch (error) {
         console.error('❌ Failed to load game:', error);
-        setGameError(error as Error);
-      } finally {
-        setGameLoading(false);
+        dispatch({ type: 'LOAD_GAME_ERROR', payload: error as Error });
       }
     };
 
-    loadGame();
-  }, [id]);
+    loadGameData();
+  }, [id, isValidId]);
 
   // Load game progress when user is authenticated and game is loaded
   useEffect(() => {
     const loadGameProgress = async () => {
       if (!game || !id || !isAuthenticated) return;
 
-      setProgressLoading(true);
+      dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
       try {
         console.log('Loading game progress for game ID:', id);
         const result = await getGameProgress(parseInt(id));
         
         if (result.success && result.data) {
-          setIsStarted(result.data.started);
-          setIsCompleted(result.data.completed);
+          dispatch({ type: 'SET_PROGRESS', payload: { 
+            isStarted: result.data.started, 
+            isCompleted: result.data.completed 
+          }});
           console.log('✅ Game progress loaded:', result.data);
         } else {
           // No progress found, set to false
-          setIsStarted(false);
-          setIsCompleted(false);
+          dispatch({ type: 'SET_PROGRESS', payload: { isStarted: false, isCompleted: false }});
           console.log('ℹ️ No game progress found');
         }
       } catch (error) {
         console.error('❌ Error loading game progress:', error);
-        setIsStarted(false);
-        setIsCompleted(false);
+        dispatch({ type: 'SET_PROGRESS', payload: { isStarted: false, isCompleted: false }});
       } finally {
-        setProgressLoading(false);
+        dispatch({ type: 'SET_PROGRESS_LOADING', payload: false });
       }
     };
 
@@ -134,91 +247,41 @@ export const GamePage: React.FC = () => {
   useEffect(() => {
     const checkUserReview = async () => {
       if (!game || !id || !isAuthenticated) {
-        setUserHasReviewed(false);
+        dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: false }});
         return;
       }
 
-      setUserReviewLoading(true);
+      dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: true }});
       try {
         console.log('Checking if user has reviewed game ID:', id);
         const result = await getUserReviewForGame(parseInt(id));
         
         if (result.success) {
-          setUserHasReviewed(!!result.data);
+          dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { 
+            hasReviewed: !!result.data, 
+            loading: false 
+          }});
           console.log('User has reviewed game:', !!result.data);
         } else {
           console.error('Error checking user review:', result.error);
-          setUserHasReviewed(false);
+          dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: false }});
         }
       } catch (error) {
         console.error('Error checking user review:', error);
-        setUserHasReviewed(false);
-      } finally {
-        setUserReviewLoading(false);
+        dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: false }});
       }
     };
 
     checkUserReview();
   }, [game, id, isAuthenticated]);
 
-  // Load reviews when game data is available
-  useEffect(() => {
-    const loadReviews = async () => {
-      if (!game || !id) return;
-
-      setReviewsLoading(true);
-      setReviewsError(null);
-
-      try {
-        console.log('Loading reviews for game ID:', id);
-
-        // Check if game exists in our database
-        const { data: existingGame, error: dbError } = await supabase
-          .from('game')
-          .select('id')
-          .eq('igdb_id', id)
-          .single();
-
-        console.log('Database query result:', existingGame, 'Error:', dbError);
-
-        if (existingGame) {
-          // Fetch reviews for this game
-          console.log('Fetching reviews for game:', existingGame.id);
-          const { data: gameReviews, error: reviewsError } = await supabase
-            .from('rating')
-            .select(`
-              *,
-              user:user_id(*)
-            `)
-            .eq('game_id', existingGame.id);
-
-          console.log('Reviews fetched:', gameReviews, 'Error:', reviewsError);
-
-          if (!reviewsError && gameReviews) {
-            setReviews(gameReviews);
-          } else if (reviewsError) {
-            setReviewsError('Failed to load reviews');
-          }
-        } else {
-          console.log('Game not found in local database');
-          setReviews([]);
-        }
-      } catch (err) {
-        console.error('Error loading reviews:', err);
-        setReviewsError('Failed to load reviews');
-      } finally {
-        setReviewsLoading(false);
-      }
-    };
-
-    loadReviews();
-  }, [game, id]);
+  // Reviews are now loaded with game data in the main useEffect
+  // This reduces redundant API calls and improves performance
 
   // Handle auth-required actions
   const handleAuthRequiredAction = (action: string) => {
     if (!isAuthenticated) {
-      setPendingAction(action);
-      setShowAuthModal(true);
+      dispatch({ type: 'SET_AUTH_MODAL', payload: { show: true, pendingAction: action }});
       return;
     }
     executeAction(action);
@@ -243,7 +306,7 @@ export const GamePage: React.FC = () => {
   const handleMarkStarted = async () => {
     if (!game || !id || isStarted) return; // Don't allow if already started
 
-    setProgressLoading(true);
+    dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
       // First ensure the game exists in the database
       const ensureResult = await ensureGameExists(
@@ -264,7 +327,7 @@ export const GamePage: React.FC = () => {
       const result = await markGameStarted(parseInt(id));
       
       if (result.success) {
-        setIsStarted(true);
+        dispatch({ type: 'SET_PROGRESS', payload: { isStarted: true, isCompleted } });
         console.log('✅ Game marked as started');
       } else {
         console.error('Failed to mark game as started:', result.error);
@@ -274,14 +337,14 @@ export const GamePage: React.FC = () => {
       console.error('Error marking game as started:', error);
       alert('Failed to mark game as started. Please try again.');
     } finally {
-      setProgressLoading(false);
+      dispatch({ type: 'SET_PROGRESS_LOADING', payload: false });
     }
   };
 
   const handleMarkCompleted = async () => {
     if (!game || !id || isCompleted) return; // Don't allow if already completed
 
-    setProgressLoading(true);
+    dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
       // First ensure the game exists in the database
       const ensureResult = await ensureGameExists(
@@ -302,8 +365,7 @@ export const GamePage: React.FC = () => {
       const result = await markGameCompleted(parseInt(id));
       
       if (result.success) {
-        setIsStarted(true); // Auto-mark as started when completed
-        setIsCompleted(true);
+        dispatch({ type: 'SET_PROGRESS', payload: { isStarted: true, isCompleted: true } });
         console.log('✅ Game marked as completed');
       } else {
         console.error('Failed to mark game as completed:', result.error);
@@ -313,15 +375,14 @@ export const GamePage: React.FC = () => {
       console.error('Error marking game as completed:', error);
       alert('Failed to mark game as completed. Please try again.');
     } finally {
-      setProgressLoading(false);
+      dispatch({ type: 'SET_PROGRESS_LOADING', payload: false });
     }
   };
 
   const handleAuthSuccess = () => {
-    setShowAuthModal(false);
+    dispatch({ type: 'SET_AUTH_MODAL', payload: { show: false, pendingAction: null }});
     if (pendingAction) {
       executeAction(pendingAction);
-      setPendingAction(null);
     }
   };
 
@@ -676,7 +737,7 @@ export const GamePage: React.FC = () => {
               <p>No reviews yet. Be the first to review this game!</p>
               {!isAuthenticated && (
                 <button
-                  onClick={() => setShowAuthModal(true)}
+                  onClick={() => dispatch({ type: 'SET_AUTH_MODAL', payload: { show: true, pendingAction: null }})}
                   className="mt-3 text-purple-400 hover:text-purple-300 transition-colors"
                 >
                   Sign in to write a review
@@ -691,8 +752,7 @@ export const GamePage: React.FC = () => {
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => {
-          setShowAuthModal(false);
-          setPendingAction(null);
+          dispatch({ type: 'SET_AUTH_MODAL', payload: { show: false, pendingAction: null }});
         }}
         onLoginSuccess={handleAuthSuccess}
         onSignupSuccess={handleAuthSuccess}
