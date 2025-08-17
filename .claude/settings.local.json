@@ -11,7 +11,9 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "WebFetch(domain:grand-narwhal-4e85d9.space)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(timeout 10 netlify dev)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

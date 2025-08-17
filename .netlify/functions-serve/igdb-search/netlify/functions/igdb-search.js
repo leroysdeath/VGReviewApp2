@@ -1,6 +1,5 @@
-// netlify/functions/igdb-search.cjs
+// netlify/functions/igdb-search.js
 var https = require("https");
-var { URL, URLSearchParams } = require("url");
 function fetch(url, options = {}) {
   return new Promise((resolve, reject) => {
     const urlObj = new URL(url);
@@ -46,10 +45,12 @@ exports.handler = async (event, context) => {
     const clientId = process.env.TWITCH_CLIENT_ID;
     const accessToken = process.env.TWITCH_APP_ACCESS_TOKEN;
     if (!clientId || !accessToken) {
+      console.error("Missing API credentials:", { hasClientId: !!clientId, hasAccessToken: !!accessToken });
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({
+          success: false,
           error: "Missing API credentials",
           debug: { hasClientId: !!clientId, hasAccessToken: !!accessToken }
         })
@@ -79,12 +80,12 @@ exports.handler = async (event, context) => {
     } else {
       query = requestData.searchTerm || requestData.query || requestData.q || queryParams.query || queryParams.q || queryParams.search || queryParams.term;
     }
-    console.log("=== IGDB REQUEST DEBUG ===");
-    console.log("HTTP Method:", event.httpMethod);
+    console.log("=========================");
+    console.log("IGDB API Request Details:");
     console.log("Request Type:", requestType);
-    console.log("Endpoint:", endpoint);
     console.log("Query:", query);
     console.log("Game ID:", gameId);
+    console.log("Endpoint:", endpoint);
     console.log("Request Data:", requestData);
     console.log("Query Params:", queryParams);
     console.log("=========================");
@@ -92,58 +93,33 @@ exports.handler = async (event, context) => {
     let requestBody = "";
     let limit = requestData.limit || queryParams.limit || 20;
     if (requestType === "bulk") {
-      if (!customRequestBody) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({
-            error: "Request body is required for bulk requests",
-            debug: { requestData, queryParams }
-          })
-        };
-      }
       requestBody = customRequestBody;
-      console.log("Making IGDB bulk request for endpoint:", endpoint);
     } else if (requestType === "getById") {
       if (!gameId) {
         return {
           statusCode: 400,
           headers,
           body: JSON.stringify({
-            error: "Game ID is required for getById request",
-            debug: { requestData, queryParams }
+            success: false,
+            error: "Game ID is required for getById requests"
           })
         };
       }
-      requestBody = `
-fields name, cover.url, first_release_date, rating, summary, platforms.name, genres.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
-where id = ${gameId};
-      `.trim();
-      console.log("Making IGDB request for game ID:", gameId);
+      requestBody = `fields name, summary, first_release_date, rating, cover.url, genres.name, platforms.name, involved_companies.company.name; where id = ${gameId};`;
     } else {
       if (!query || query.trim().length === 0) {
         return {
           statusCode: 400,
           headers,
           body: JSON.stringify({
-            error: "Search query is required",
-            debug: {
-              receivedParams: queryParams,
-              receivedBody: event.body ? "Present" : "Missing",
-              extractedQuery: query,
-              message: "No valid search term found in request"
-            }
+            success: false,
+            error: "Search query is required"
           })
         };
       }
-      query = query.trim();
-      requestBody = `
-fields name, cover.url, first_release_date, rating, summary, platforms.name, genres.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher;
-search "${query}";
-limit ${limit};
-      `.trim();
-      console.log("Making IGDB search request for query:", query);
+      requestBody = `fields name, summary, first_release_date, rating, cover.url, genres.name, platforms.name, involved_companies.company.name; search "${query.trim()}"; limit ${limit};`;
     }
+    console.log("IGDB Request Body:", requestBody);
     const response = await fetch(igdbUrl, {
       method: "POST",
       headers: {
@@ -153,88 +129,41 @@ limit ${limit};
       },
       body: requestBody
     });
-    console.log("IGDB response status:", response.status);
+    console.log("IGDB Response Status:", response.status);
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("IGDB API error:", response.status, errorText);
-      if (response.status === 401) {
-        return {
-          statusCode: 401,
-          headers,
-          body: JSON.stringify({
-            error: "Authentication failed - check your API credentials",
-            details: errorText
-          })
-        };
-      }
+      console.error("IGDB API Error:", response.status, errorText);
       return {
         statusCode: response.status,
         headers,
         body: JSON.stringify({
-          error: "IGDB API error",
-          status: response.status,
+          success: false,
+          error: `IGDB API error: ${response.status}`,
           details: errorText
         })
       };
     }
     const data = await response.json();
-    console.log("IGDB data received:", data.length, "games");
-    const transformedData = data.map((game) => {
-      let developer = "Unknown";
-      let publisher = "Unknown";
-      if (game.involved_companies && game.involved_companies.length > 0) {
-        const dev = game.involved_companies.find((ic) => ic.developer && ic.company);
-        const pub = game.involved_companies.find((ic) => ic.publisher && ic.company);
-        if (dev && dev.company && dev.company.name) {
-          developer = dev.company.name;
-        }
-        if (pub && pub.company && pub.company.name) {
-          publisher = pub.company.name;
-        }
-      }
-      return {
-        ...game,
-        developer,
-        publisher,
-        cover: game.cover ? {
-          ...game.cover,
-          url: game.cover.url?.startsWith("//") ? `https:${game.cover.url}` : game.cover.url
-        } : null
-      };
-    });
-    if (requestType === "getById") {
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(transformedData.length > 0 ? transformedData[0] : null)
-      };
-    } else if (requestType === "bulk") {
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(transformedData)
-      };
-    } else {
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          query,
-          count: transformedData.length,
-          games: transformedData
-        })
-      };
-    }
+    console.log("IGDB Response Data:", data.length, "games returned");
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        games: data || [],
+        query,
+        requestType
+      })
+    };
   } catch (error) {
     console.error("Function error:", error);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
+        success: false,
         error: "Internal server error",
-        message: error.message,
-        stack: error.stack
+        details: error.message
       })
     };
   }

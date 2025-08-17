@@ -187,3 +187,5 @@ typings/
 
 # Bolt specific
 .bolt/
+# Local Netlify folder
+.netlify
