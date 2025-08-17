@@ -6,6 +6,7 @@ import { useResponsive } from '../hooks/useResponsive';
 
 interface Game {
   id: string;
+  igdb_id?: string | number; // IGDB ID for navigation
   title: string;
   coverImage: string;
   releaseDate: string;
@@ -61,6 +62,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           completed_date,
           game:game_id (
             id,
+            igdb_id,
             name,
             pic_url,
             genre,
@@ -77,6 +79,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         .filter(item => item.game)
         .map(item => ({
           id: item.game.id.toString(),
+          igdb_id: item.game.igdb_id,
           title: item.game.name || 'Unknown Game',
           coverImage: item.game.pic_url || '/default-cover.png',
           genre: item.game.genre || '',
@@ -111,6 +114,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           completed_date,
           game:game_id (
             id,
+            igdb_id,
             name,
             pic_url,
             genre,
@@ -128,6 +132,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         .filter(item => item.game)
         .map(item => ({
           id: item.game.id.toString(),
+          igdb_id: item.game.igdb_id,
           title: item.game.name || 'Unknown Game',
           coverImage: item.game.pic_url || '/default-cover.png',
           genre: item.game.genre || '',
@@ -161,6 +166,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           started_date,
           game:game_id (
             id,
+            igdb_id,
             name,
             pic_url,
             genre,
@@ -177,6 +183,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         .filter(item => item.game)
         .map(item => ({
           id: item.game.id.toString(),
+          igdb_id: item.game.igdb_id,
           title: item.game.name || 'Unknown Game',
           coverImage: item.game.pic_url || '/default-cover.png',
           genre: item.game.genre || '',
@@ -342,7 +349,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
                 {currentGames.map((game) => (
                   <Link
                     key={game.id}
-                    to={`/game/${game.id}`}
+                    to={`/game/${game.igdb_id || game.id}`}
                     className="group relative hover:scale-105 transition-transform"
                     onClick={onClose}
                   >
@@ -396,7 +403,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
                 {currentGames.map((game) => (
                   <Link
                     key={game.id}
-                    to={`/game/${game.id}`}
+                    to={`/game/${game.igdb_id || game.id}`}
                     className="group relative hover:scale-105 transition-transform"
                     onClick={onClose}
                   >

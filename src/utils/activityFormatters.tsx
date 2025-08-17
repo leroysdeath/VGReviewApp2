@@ -19,6 +19,7 @@ export interface ActivityData {
   };
   game?: {
     id: string;
+    igdb_id?: string | number; // IGDB ID for navigation
     name: string;
   };
   content?: string;
@@ -100,7 +101,7 @@ export const formatActivity = (activity: ActivityData, currentUserId?: string): 
               </>
             )}
             <Link 
-              to={`/game/${activity.game.id}`}
+              to={`/game/${activity.game.igdb_id || activity.game.id}`}
               className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
             >
               {activity.game.name}
@@ -143,7 +144,7 @@ export const formatActivity = (activity: ActivityData, currentUserId?: string): 
             )}
             <> of </>
             <Link 
-              to={`/game/${activity.game.id}`}
+              to={`/game/${activity.game.igdb_id || activity.game.id}`}
               className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
             >
               {activity.game.name}
@@ -186,7 +187,7 @@ export const formatActivity = (activity: ActivityData, currentUserId?: string): 
             )}
             <> of </>
             <Link 
-              to={`/game/${activity.game.id}`}
+              to={`/game/${activity.game.igdb_id || activity.game.id}`}
               className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
             >
               {activity.game.name}
@@ -229,7 +230,7 @@ export const formatActivity = (activity: ActivityData, currentUserId?: string): 
             )}
             <> on </>
             <Link 
-              to={`/game/${activity.game.id}`}
+              to={`/game/${activity.game.igdb_id || activity.game.id}`}
               className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
             >
               {activity.game.name}
@@ -272,7 +273,7 @@ export const formatActivity = (activity: ActivityData, currentUserId?: string): 
             )}
             <> on </>
             <Link 
-              to={`/game/${activity.game.id}`}
+              to={`/game/${activity.game.igdb_id || activity.game.id}`}
               className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
             >
               {activity.game.name}
