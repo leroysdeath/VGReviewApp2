@@ -29,7 +29,7 @@ export const GamePage: React.FC = () => {
     setGameError(null);
 
     try {
-      const gameData = await gameDataService.getGameById(parseInt(id));
+      const gameData = await gameDataService.getGameByIGDBId(parseInt(id));
       if (gameData) {
         setGame(gameData);
       } else {
@@ -62,15 +62,15 @@ export const GamePage: React.FC = () => {
       setGameError(null);
 
       try {
-        console.log('Loading game with ID:', id);
-        const gameData = await gameDataService.getGameById(parseInt(id));
+        console.log('Loading game with IGDB ID:', id);
+        const gameData = await gameDataService.getGameByIGDBId(parseInt(id));
         
         if (gameData) {
           setGame(gameData);
           console.log('✅ Game loaded successfully:', gameData.title);
         } else {
           setGameError(new Error('Game not found'));
-          console.log('❌ Game not found for ID:', id);
+          console.log('❌ Game not found for IGDB ID:', id);
         }
       } catch (error) {
         console.error('❌ Failed to load game:', error);
@@ -399,7 +399,7 @@ export const GamePage: React.FC = () => {
               {gameError?.message || 'Game not found'}
             </h1>
             <p className="text-gray-400 mb-4">
-              Debug: Tried to load game with ID: {id}
+              Debug: Tried to load game with IGDB ID: {id}
             </p>
             <div className="flex gap-4 justify-center">
               <button
