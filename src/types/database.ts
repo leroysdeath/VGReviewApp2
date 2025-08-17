@@ -113,6 +113,13 @@ export interface UpdateRatingRequest extends Partial<CreateRatingRequest> {
   id: number;
 }
 
+// Rating distribution type for analytics
+export interface RatingDistribution {
+  rating: number;
+  count: number;
+  percentage: number;
+}
+
 export interface CreateGameRequest {
   igdb_id: number;
   name: string;

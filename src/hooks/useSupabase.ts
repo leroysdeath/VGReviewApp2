@@ -7,6 +7,7 @@ import {
   RatingWithBoth,
   Platform
 } from '../types/supabase';
+import { RatingDistribution } from '../types/database';
 
 // Hook for managing games
 export const useSupabaseGames = () => {
@@ -256,7 +257,7 @@ export const useGameStats = (gameId: number | null) => {
   const [stats, setStats] = useState<{
     averageRating: number;
     totalRatings: number;
-    ratingDistribution: { rating: number; count: number }[];
+    ratingDistribution: RatingDistribution[];
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
