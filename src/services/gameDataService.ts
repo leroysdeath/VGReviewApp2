@@ -22,7 +22,7 @@ class GameDataService {
   async getGameById(id: number): Promise<GameWithCalculatedFields | null> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select(`
           *,
           ratings:rating(rating)
@@ -45,7 +45,7 @@ class GameDataService {
   async getGameByIGDBId(igdbId: number): Promise<GameWithCalculatedFields | null> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select(`
           *,
           ratings:rating(rating)
@@ -71,7 +71,7 @@ class GameDataService {
   async convertIGDBIdToGameId(igdbId: number): Promise<number | null> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select('id')
         .eq('igdb_id', igdbId)
         .single()
@@ -94,7 +94,7 @@ class GameDataService {
   async convertGameIdToIGDBId(gameId: number): Promise<number | null> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select('igdb_id')
         .eq('id', gameId)
         .single()
@@ -132,7 +132,7 @@ class GameDataService {
    */
   private async searchGamesExact(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
     let queryBuilder = supabase
-      .from('games')
+      .from('game')
       .select(`
         *,
         ratings:rating(rating)
@@ -185,7 +185,7 @@ class GameDataService {
     try {
       // Get games with the most ratings, ordered by rating count
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select(`
           *,
           ratings:rating(rating)
@@ -219,7 +219,7 @@ class GameDataService {
   async getRecentGames(limit: number = 20): Promise<GameWithCalculatedFields[]> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select(`
           *,
           ratings:rating(rating)
@@ -246,7 +246,7 @@ class GameDataService {
       const [gameResult, userRatingResult] = await Promise.all([
         // Get game with all ratings
         supabase
-          .from('games')
+          .from('game')
           .select(`
             *,
             ratings:rating(rating)
@@ -285,7 +285,7 @@ class GameDataService {
   async getGamesByGenre(genre: string, limit: number = 20): Promise<GameWithCalculatedFields[]> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select(`
           *,
           ratings:rating(rating)
@@ -310,7 +310,7 @@ class GameDataService {
   async getGamesByPlatform(platform: string, limit: number = 20): Promise<GameWithCalculatedFields[]> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select(`
           *,
           ratings:rating(rating)
