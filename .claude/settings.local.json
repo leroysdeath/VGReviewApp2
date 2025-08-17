@@ -15,7 +15,9 @@
       "Bash(timeout 10 netlify dev)",
       "Bash(mv:*)",
       "Bash(npm install:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run sync-igdb:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

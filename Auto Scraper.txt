@@ -1,0 +1,65 @@
+🚀 How to Use It:
+
+  # 1. Start netlify dev (for IGDB API access)
+  netlify dev
+
+  # 2. In another terminal, test it first:
+  npm run sync-igdb:dry
+
+  # 3. If it looks good, run it for real:
+  npm run sync-igdb
+
+  # 4. Custom options:
+  node scripts/sync-igdb.js --days 14 --limit 100
+
+  🛡️ Safety Features:
+
+  - ✅ Dry run mode - See what would be synced without making changes
+  - ✅ Local only - Won't affect your production/remote database
+  - ✅ Duplicate prevention - Won't add games that already exist
+  - ✅ Error handling - Continues even if some games fail
+  - ✅ Detailed logging - Shows exactly what's happening
+
+  📊 What Gets Synced:
+
+  - Game names, descriptions, release dates
+  - IGDB ratings and cover images (high quality)
+  - Genres, developers, publishers, platforms
+  - Proper IGDB IDs for future reference
+
+  🧪 Test It:
+
+  1. Make sure netlify dev is running
+  2. Run npm run sync-igdb:dry to see what would happen
+  3. Run npm run sync-igdb to actually sync games
+
+  The system will tell you exactly how many games it found, which ones are new, and how many it added to your
+  database. Perfect for keeping your local game database current with IGDB updates!
+
+
+
+ 🎯 Ready to Test:
+
+  1. Make sure netlify dev is running (for the IGDB API):
+  netlify dev
+  2. In another terminal, test the sync:
+  # Test what would be synced (safe dry run)
+  npm run sync-igdb:dry
+
+  # Or run for real
+  npm run sync-igdb
+  3. Custom options:
+  # Check last 3 days only
+  node scripts/sync-igdb.js --dry-run --days 3 --limit 20
+
+  What the script will do:
+
+  1. ✅ Load your .env file (including Supabase credentials)
+  2. 🔍 Check IGDB for games updated in the last 7 days
+  3. 📊 Compare against your local Supabase database
+  4. 🆕 Find games that aren't in your database yet
+  5. 💾 Add new games to your local database (with full metadata)
+
+  The sync should now work properly with your environment variables! Try running npm run sync-igdb:dry first to see        
+  what games it would sync.
+  npm run sync-igdb -- --days 14 --limit 100 -checks games from the last 14 days 

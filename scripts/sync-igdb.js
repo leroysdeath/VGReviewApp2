@@ -31,8 +31,20 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   process.exit(1);
 }
 
-// Initialize Supabase client
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase client with custom timeout
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  db: {
+    schema: 'public'
+  },
+  auth: {
+    persistSession: false
+  },
+  global: {
+    headers: {
+      'X-Supabase-Timeout': '30'
+    }
+  }
+});
 
 // IGDB Service (simplified for Node.js)
 class NodeIGDBSyncService {
@@ -213,25 +225,32 @@ class NodeIGDBSyncService {
   async addGameToDatabase(igdbGame) {
     try {
       const gameData = {
+        game_id: igdbGame.id.toString(),
         igdb_id: igdbGame.id,
         name: igdbGame.name,
+        slug: igdbGame.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
         summary: igdbGame.summary || null,
         description: igdbGame.summary || null,
         release_date: igdbGame.first_release_date 
-          ? new Date(igdbGame.first_release_date * 1000).toISOString() 
+          ? new Date(igdbGame.first_release_date * 1000).toISOString().split('T')[0]
           : null,
-        igdb_rating: igdbGame.rating || null,
+        igdb_rating: igdbGame.rating ? Math.round(parseFloat(igdbGame.rating)) : null,
         cover_url: igdbGame.cover?.url 
           ? igdbGame.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') 
           : null,
         pic_url: igdbGame.cover?.url 
           ? igdbGame.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') 
           : null,
+        igdb_link: `https://www.igdb.com/games/${igdbGame.id}`,
         genre: igdbGame.genres?.[0]?.name || null,
-        genres: igdbGame.genres?.map(g => g.name) || [],
-        developer: igdbGame.involved_companies?.[0]?.company?.name || null,
-        publisher: igdbGame.involved_companies?.[0]?.company?.name || null,
-        platforms: igdbGame.platforms?.map(p => p.name) || [],
+        genres: igdbGame.genres?.map(g => g.name) || null,
+        developer: igdbGame.involved_companies?.find(c => c.developer)?.company?.name || 
+                   igdbGame.involved_companies?.[0]?.company?.name || null,
+        publisher: igdbGame.involved_companies?.find(c => c.publisher)?.company?.name || 
+                   igdbGame.involved_companies?.[0]?.company?.name || null,
+        platforms: igdbGame.platforms?.map(p => p.name) || null,
+        is_verified: false,
+        view_count: 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -348,13 +367,40 @@ async function preflightChecks() {
   }
   console.log('✅ Netlify dev server is running');
   
-  // Test Supabase connection
+  // Test Supabase connection with simple query
   try {
-    const { error } = await supabase.from('game').select('count').limit(1);
-    if (error) throw error;
+    console.log('   Testing Supabase connection...');
+    
+    // Try a simple table existence check first
+    const { data, error } = await supabase
+      .from('game')
+      .select('igdb_id')
+      .limit(1);
+    
+    if (error) {
+      // If 'game' table doesn't exist, suggest table names
+      if (error.message.includes('relation') && error.message.includes('does not exist')) {
+        console.error('❌ Table "game" does not exist in your database');
+        console.error('');
+        console.error('Available options:');
+        console.error('1. Create the "game" table in your Supabase database');
+        console.error('2. Or modify the script to use your existing table name');
+        console.error('');
+        console.error('Common table names: games, Game, GAME');
+        process.exit(1);
+      }
+      throw error;
+    }
+    
     console.log('✅ Supabase connection working');
+    console.log(`   Database has ${data ? 'data' : 'no data'} in game table`);
   } catch (error) {
     console.error('❌ Supabase connection failed:', error.message);
+    console.error('   This could be due to:');
+    console.error('   - Network timeout');
+    console.error('   - Wrong database URL/key');
+    console.error('   - Database not accessible');
+    console.error('   - Table permissions');
     process.exit(1);
   }
   
