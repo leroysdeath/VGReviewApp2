@@ -1,7 +1,7 @@
 // hooks/useGameSearch.ts
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { gameDataService } from '../services/gameDataService';
+import { igdbService } from '../services/igdbService';
 import type { GameWithCalculatedFields } from '../types/database';
 
 interface SearchResult {
@@ -66,13 +66,9 @@ export const useGameSearch = () => {
       const searchParams = { ...searchOptions, ...options };
       const offset = append ? searchState.games.length : 0;
       
-      // Call your IGDB API endpoint
-      // Call Supabase gameDataService
-      const results = await gameDataService.searchGames(query.trim(), {
-        genres: searchParams.genres,
-        platforms: searchParams.platforms,
-        minRating: searchParams.minRating
-      });
+      // Call IGDB API
+      const igdbResults = await igdbService.searchGames(query.trim(), searchParams.limit || 20);
+      const results = igdbResults.map(game => igdbService.transformGame(game));
 
       // Note: Supabase doesn't support offset pagination the same way,
       // so we'll handle pagination differently if needed
@@ -111,8 +107,9 @@ export const useGameSearch = () => {
     if (query.trim().length < 2) return [];
     
     try {
-      const results = await gameDataService.searchGames(query.trim());
-      return results.slice(0, 5); // Limit to 5 results for quick search
+      const igdbResults = await igdbService.searchGames(query.trim(), 5);
+      const results = igdbResults.map(game => igdbService.transformGame(game));
+      return results; // Already limited to 5 results for quick search
     } catch (error) {
       console.error('Quick search failed:', error);
       return [];
