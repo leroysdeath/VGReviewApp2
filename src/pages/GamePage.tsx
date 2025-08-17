@@ -517,14 +517,8 @@ export const GamePage: React.FC = () => {
                         {game.first_release_date ? new Date(game.first_release_date).getFullYear() : 'Unknown'}
                       </span>
                     </div>
-                    {game.genres && game.genres.length > 0 && (
-                      <div><strong>Genres:</strong> {game.genres.join(', ')}</div>
-                    )}
                     {game.platforms && game.platforms.length > 0 && (
                       <div><strong>Platforms:</strong> {game.platforms.join(', ')}</div>
-                    )}
-                    {game.igdb_rating && game.igdb_rating > 0 && (
-                      <div><strong>IGDB Rating:</strong> {game.igdb_rating}/100</div>
                     )}
                     {game.developer && (
                       <div><strong>Developer:</strong> {game.developer}</div>
