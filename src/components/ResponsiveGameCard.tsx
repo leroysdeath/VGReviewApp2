@@ -7,6 +7,7 @@ import { useResponsive } from '../hooks/useResponsive';
 
 interface Game {
   id: string | number;
+  igdb_id?: string | number; // IGDB ID for navigation
   title: string;
   name?: string; // Alternative title field from IGDB
   coverImage: string;
@@ -187,7 +188,7 @@ export const ResponsiveGameCard: React.FC<ResponsiveGameCardProps> = ({
         onMouseEnter={handleMouseEnter}
       >
         <Link
-          to={`/game/${game.id}`}
+          to={`/game/${game.igdb_id || game.id}`}
           onClick={handleClick}
           className="flex items-center gap-4 p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-all duration-200 hover:shadow-lg"
         >
@@ -250,7 +251,7 @@ export const ResponsiveGameCard: React.FC<ResponsiveGameCardProps> = ({
       onMouseEnter={handleMouseEnter}
     >
       <Link
-        to={`/game/${game.id}`}
+        to={`/game/${game.igdb_id || game.id}`}
         onClick={handleClick}
         className="block bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-700 transition-all duration-200 hover:shadow-lg hover:scale-105"
       >

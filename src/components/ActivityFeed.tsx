@@ -37,6 +37,7 @@ export interface Activity {
   };
   game?: {
     id: string;
+    igdb_id?: string | number; // IGDB ID for navigation
     title: string;
     coverImage?: string;
   };
@@ -123,7 +124,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
         e.preventDefault();
         const activity = activities[index];
         if (activity.game) {
-          navigate(`/game/${activity.game.id}`);
+          navigate(`/game/${activity.game.igdb_id || activity.game.id}`);
           // Provide haptic feedback if available
           if (navigator.vibrate) {
             navigator.vibrate(50);
@@ -246,7 +247,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Link 
-                to={`/game/${activity.game?.id}`}
+                to={`/game/${activity.game?.igdb_id || activity.game?.id}`}
                 className="font-medium text-white hover:text-[#7289DA] transition-colors"
               >
                 {activity.game?.title}
@@ -272,7 +273,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
             <p className="text-[#B3B3B3]">
               liked a review of{' '}
               <Link 
-                to={`/game/${activity.game?.id}`}
+                to={`/game/${activity.game?.igdb_id || activity.game?.id}`}
                 className="font-medium text-white hover:text-[#7289DA] transition-colors"
               >
                 {activity.game?.title}
@@ -294,7 +295,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
             <p className="text-[#B3B3B3]">
               commented on a review of{' '}
               <Link 
-                to={`/game/${activity.game?.id}`}
+                to={`/game/${activity.game?.igdb_id || activity.game?.id}`}
                 className="font-medium text-white hover:text-[#7289DA] transition-colors"
               >
                 {activity.game?.title}
@@ -316,7 +317,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
             <p className="text-[#B3B3B3]">
               liked a comment on{' '}
               <Link 
-                to={`/game/${activity.game?.id}`}
+                to={`/game/${activity.game?.igdb_id || activity.game?.id}`}
                 className="font-medium text-white hover:text-[#7289DA] transition-colors"
               >
                 {activity.game?.title}
@@ -338,7 +339,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
             <p className="text-[#B3B3B3]">
               replied to a comment on{' '}
               <Link 
-                to={`/game/${activity.game?.id}`}
+                to={`/game/${activity.game?.igdb_id || activity.game?.id}`}
                 className="font-medium text-white hover:text-[#7289DA] transition-colors"
               >
                 {activity.game?.title}
@@ -551,7 +552,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                   </div>
                   
                   {activity.game?.coverImage && (
-                    <Link to={`/game/${activity.game.id}`} className="flex-shrink-0">
+                    <Link to={`/game/${activity.game.igdb_id || activity.game.id}`} className="flex-shrink-0">
                       <img 
                         loading="lazy"
                         src={activity.game.coverImage} 

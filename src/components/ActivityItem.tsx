@@ -31,6 +31,7 @@ interface ActivityItemProps {
   };
   game?: {
     id: string;
+    igdb_id?: string | number; // IGDB ID for navigation
     name: string;
     coverImage?: string;
   };
@@ -91,7 +92,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
             )}
             {' posted a review for '}
             <Link 
-              to={`/game/${game.id}`}
+              to={`/game/${game.igdb_id || game.id}`}
               className="font-medium text-white hover:text-blue-400 transition-colors"
             >
               {game.name}
@@ -127,7 +128,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
             )}
             {' of '}
             <Link 
-              to={`/game/${game.id}`}
+              to={`/game/${game.igdb_id || game.id}`}
               className="font-medium text-white hover:text-blue-400 transition-colors"
             >
               {game.name}
@@ -163,7 +164,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
             )}
             {' of '}
             <Link 
-              to={`/game/${game.id}`}
+              to={`/game/${game.igdb_id || game.id}`}
               className="font-medium text-white hover:text-blue-400 transition-colors"
             >
               {game.name}
@@ -199,7 +200,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
             )}
             {' on '}
             <Link 
-              to={`/game/${game.id}`}
+              to={`/game/${game.igdb_id || game.id}`}
               className="font-medium text-white hover:text-blue-400 transition-colors"
             >
               {game.name}
@@ -235,7 +236,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
             )}
             {' on '}
             <Link 
-              to={`/game/${game.id}`}
+              to={`/game/${game.igdb_id || game.id}`}
               className="font-medium text-white hover:text-blue-400 transition-colors"
             >
               {game.name}
@@ -300,7 +301,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
           {/* Game Image */}
           {game?.coverImage && (
             <div className="mt-2">
-              <Link to={`/game/${game.id}`}>
+              <Link to={`/game/${game.igdb_id || game.id}`}>
                 <img 
                   src={game.coverImage} 
                   alt={game.name}

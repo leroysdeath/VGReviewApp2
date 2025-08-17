@@ -70,12 +70,12 @@ export const GameSearchPage: React.FC = () => {
     }
   };
 
-  const handleGameSelect = (game: Game) => {
+  const handleGameSelect = (game: GameWithCalculatedFields) => {
     // Prefetch game data for faster loading
     if (game.id) {
       enhancedIGDBService.prefetchGame(typeof game.id === 'string' ? parseInt(game.id) : game.id);
     }
-    navigate(`/game/${game.id}`);
+    navigate(`/game/${game.igdb_id || game.id}`);
   };
 
   // Handle direct search bar input changes
@@ -91,7 +91,7 @@ export const GameSearchPage: React.FC = () => {
     }
   };
 
-  const handlePopularGameClick = (game: Game) => {
+  const handlePopularGameClick = (game: GameWithCalculatedFields) => {
     handleGameSelect(game);
   };
 
