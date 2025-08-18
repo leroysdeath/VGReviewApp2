@@ -30,7 +30,7 @@ BEGIN
       CASE WHEN g.publisher IS NULL THEN 'publisher' END,
       CASE WHEN g.genres IS NULL OR array_length(g.genres, 1) IS NULL THEN 'genres' END,
       CASE WHEN g.platforms IS NULL OR array_length(g.platforms, 1) IS NULL THEN 'platforms' END,
-      CASE WHEN g.first_release_date IS NULL THEN 'release_date' END
+      CASE WHEN g.release_date IS NULL THEN 'release_date' END
     ], NULL) as missing_fields
   FROM game g
   WHERE 
@@ -163,7 +163,7 @@ CREATE OR REPLACE FUNCTION update_game_from_igdb(
   p_genres text[] DEFAULT NULL,
   p_platforms text[] DEFAULT NULL,
   p_igdb_rating integer DEFAULT NULL,
-  p_first_release_date date DEFAULT NULL
+  p_release_date date DEFAULT NULL
 )
 RETURNS TABLE(
   success boolean,
@@ -229,9 +229,9 @@ BEGIN
     v_updated_fields := v_updated_fields || jsonb_build_object('igdb_rating', p_igdb_rating);
   END IF;
   
-  IF p_first_release_date IS NOT NULL THEN
-    UPDATE game SET first_release_date = p_first_release_date WHERE id = v_game_id AND first_release_date IS NULL;
-    v_updated_fields := v_updated_fields || jsonb_build_object('first_release_date', p_first_release_date);
+  IF p_release_date IS NOT NULL THEN
+    UPDATE game SET release_date = p_release_date WHERE id = v_game_id AND release_date IS NULL;
+    v_updated_fields := v_updated_fields || jsonb_build_object('release_date', p_release_date);
   END IF;
   
   -- Update the game's updated_at timestamp
@@ -323,7 +323,7 @@ LIMIT 100;
 --   ARRAY['Role-playing (RPG)', 'Adventure'], -- genres
 --   ARRAY['PC (Microsoft Windows)', 'Xbox', 'Mac', 'iOS', 'Android'], -- platforms
 --   90, -- igdb_rating
---   '2003-07-15'::date -- first_release_date
+--   '2003-07-15'::date -- release_date
 -- );
 
 -- 6. Check progress:
@@ -361,6 +361,45 @@ SELECT * FROM update_game_from_igdb(
   ARRAY['PC (Microsoft Windows)', 'Xbox One', 'Xbox Series X|S'],
   85,
   '2019-11-14'::date
+);
+
+-- Update Skies of Arcadia Legends (IGDB ID: 4152)
+SELECT * FROM update_game_from_igdb(
+  4152,
+  'The classic Dreamcast RPG returns with enhanced graphics and new content. Join Vyse and his band of air pirates in an unforgettable adventure.',
+  'https://images.igdb.com/igdb/image/upload/t_cover_big/co2ola.jpg',
+  'Overworks',
+  'Sega',
+  ARRAY['Role-playing (RPG)', 'Adventure'],
+  ARRAY['Nintendo GameCube'],
+  88,
+  '2002-12-26'::date
+);
+
+-- Update The Legend of Zelda: Ocarina of Time - Master Quest (IGDB ID: 45142)
+SELECT * FROM update_game_from_igdb(
+  45142,
+  'A remixed version of Ocarina of Time with redesigned dungeons for a greater challenge.',
+  'https://images.igdb.com/igdb/image/upload/t_cover_big/co5zdv.jpg',
+  'Nintendo EAD',
+  'Nintendo',
+  ARRAY['Adventure', 'Puzzle'],
+  ARRAY['Nintendo GameCube'],
+  89,
+  '2002-02-28'::date
+);
+
+-- Update Clair Obscur: Expedition 33 (IGDB ID: 305152)
+SELECT * FROM update_game_from_igdb(
+  305152,
+  'A turn-based RPG with real-time mechanics set in a surreal, painterly world inspired by Belle Époque France.',
+  'https://images.igdb.com/igdb/image/upload/t_cover_big/co9gam.jpg',
+  'Sandfall Interactive',
+  'Kepler Interactive',
+  ARRAY['Role-playing (RPG)', 'Turn-based strategy (TBS)', 'Adventure'],
+  ARRAY['PC (Microsoft Windows)', 'PlayStation 5', 'Xbox Series X|S'],
+  NULL, -- No rating yet (unreleased)
+  '2025-04-24'::date
 );
 
 -- Add similar updates for the other games (4152, 305152, 45142) as needed
