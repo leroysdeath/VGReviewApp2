@@ -77,7 +77,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
             console.log('⚠️ Setting default user data due to error');
             // Set default data if user not found
             const defaultData = {
-              username: '',
+              username: 'User',
               displayName: '',
               email: '',
               bio: '',
@@ -105,7 +105,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
             
             console.log('🔄 Starting field transformation (snake_case -> camelCase)...');
             const processedUserData = {
-              username: data.username || data.name || '',
+              username: data.username || data.name || 'User',
               displayName: data.display_name || '',
               email: data.email || '',
               bio: data.bio || '',
@@ -140,7 +140,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           console.log('⚠️ Setting default user data due to catch block');
           // Set default data on error
           const errorDefaultData = {
-            username: '',
+            username: 'User',
             displayName: '',
             email: '',
             bio: '',
@@ -287,7 +287,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                 key={`${userId}-${isLoading ? 'loading' : 'loaded'}-${userData?.username || 'empty'}`}
                 userId={userId}
                 initialData={userData || {
-                  username: '',
+                  username: 'User',
                   displayName: '',
                   email: '',
                   bio: '',
