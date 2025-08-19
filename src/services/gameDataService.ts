@@ -414,7 +414,14 @@ class GameDataService {
         .map((game: GameWithRating) => this.transformGameWithRatings(game))
         .filter(game => game.totalUserRatings && game.totalUserRatings > 0)
         .sort((a, b) => {
-          // Sort by rating count first, then by average rating
+          // First priority: games with summaries come before games without
+          const aHasSummary = a.summary && a.summary.trim().length > 0
+          const bHasSummary = b.summary && b.summary.trim().length > 0
+          
+          if (aHasSummary && !bHasSummary) return -1
+          if (!aHasSummary && bHasSummary) return 1
+          
+          // If both have or don't have summaries, sort by rating count first, then by average rating
           const countDiff = (b.totalUserRatings || 0) - (a.totalUserRatings || 0)
           if (countDiff !== 0) return countDiff
           return (b.averageUserRating || 0) - (a.averageUserRating || 0)
