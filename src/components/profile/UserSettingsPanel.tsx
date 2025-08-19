@@ -555,7 +555,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   />
                 ) : (
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                    {initialData.username.charAt(0).toUpperCase()}
+                    {(initialData.username || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div>
@@ -592,6 +592,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                     errors.username ? 'border-red-500' : 'border-gray-600'
                   }`}
                   placeholder="GamerTag"
+                  autoComplete="off"
                   disabled={isLoading}
                 />
               </div>
