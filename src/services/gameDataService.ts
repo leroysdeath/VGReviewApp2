@@ -45,7 +45,8 @@ class GameDataService {
 
   async getGameByIGDBId(igdbId: number): Promise<GameWithCalculatedFields | null> {
     try {
-      const { data, error } = await supabase
+      // First try with igdb_id field (integer)
+      let { data, error } = await supabase
         .from('game')
         .select(`
           *,
@@ -53,6 +54,23 @@ class GameDataService {
         `)
         .eq('igdb_id', igdbId)
         .single()
+
+      // If not found, try with game_id field (string)
+      if ((error || !data) && igdbId) {
+        const { data: gameIdData, error: gameIdError } = await supabase
+          .from('game')
+          .select(`
+            *,
+            ratings:rating(rating)
+          `)
+          .eq('game_id', igdbId.toString())
+          .single()
+        
+        if (!gameIdError && gameIdData) {
+          data = gameIdData
+          error = null
+        }
+      }
 
       if (error || !data) {
         console.log(`Game with IGDB ID ${igdbId} not found in database, fetching from IGDB API...`)

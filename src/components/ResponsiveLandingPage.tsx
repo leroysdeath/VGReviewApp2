@@ -24,8 +24,8 @@ export const ResponsiveLandingPage: React.FC = () => {
       id: review.id.toString(),
       userId: review.userId.toString(),
       gameId: review.gameId.toString(),
-      // Use the game's game_id (IGDB ID) for proper navigation, fallback to igdb_id, then database game id
-      igdbGameId: (review.game as any)?.game_id || (review.game as any)?.igdb_id?.toString() || review.gameId.toString(),
+      // Use the game's igdb_id (integer) for proper navigation, fallback to game_id (string), then database id
+      igdbGameId: (review.game as any)?.igdb_id?.toString() || (review.game as any)?.game_id || review.gameId.toString(),
       gameTitle: review.game?.name || 'Unknown Game',
       rating: review.rating,
       text: review.review || '',
