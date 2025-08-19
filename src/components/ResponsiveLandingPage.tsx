@@ -16,6 +16,30 @@ export const ResponsiveLandingPage: React.FC = () => {
   const { openModal } = useAuthModal();
   const navigate = useNavigate();
   
+  // Helper function to get reliable IGDB ID for URL generation
+  const getReliableIgdbId = (review: Review): string => {
+    // Priority 1: Use rating.igdb_id (most reliable for URL generation)
+    if ((review as any).igdb_id) {
+      return (review as any).igdb_id.toString();
+    }
+    
+    // Priority 2: Use game.igdb_id if available
+    if ((review.game as any)?.igdb_id) {
+      console.warn('⚠️ Using game.igdb_id as fallback for review', review.id);
+      return (review.game as any).igdb_id.toString();
+    }
+    
+    // Priority 3: Use game.game_id (may cause lookup issues)
+    if ((review.game as any)?.game_id) {
+      console.warn('⚠️ Using game.game_id as fallback for review', review.id);
+      return (review.game as any).game_id;
+    }
+    
+    // Last resort: database game_id
+    console.error('❌ No IGDB ID available for review', review.id);
+    return review.gameId.toString();
+  };
+
   // Transform Review to ReviewData interface
   const transformReviewData = (review: Review): ReviewData => {
     const theme: ReviewData['theme'] = ['purple', 'green', 'orange', 'blue', 'red'][review.id % 5] as ReviewData['theme'];
@@ -31,11 +55,7 @@ export const ResponsiveLandingPage: React.FC = () => {
       gameGameId: (review.game as any)?.game_id,
     });
     
-    // Use rating.igdb_id if game is missing, otherwise use game's igdb_id or game_id
-    const igdbId = (review as any).igdb_id?.toString() || 
-                   (review.game as any)?.igdb_id?.toString() || 
-                   (review.game as any)?.game_id || 
-                   review.gameId.toString();
+    const igdbId = getReliableIgdbId(review);
     console.log('📍 Final IGDB ID for routing:', igdbId);
     
     return {

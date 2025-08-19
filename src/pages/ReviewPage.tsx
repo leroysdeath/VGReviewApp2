@@ -59,14 +59,25 @@ export const ReviewPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
+      // Validate URL parameters
+      const userIdNum = parseInt(userId!);
+      const gameIdNum = parseInt(gameId!);
+
+      if (isNaN(userIdNum) || isNaN(gameIdNum)) {
+        throw new Error('Invalid review URL parameters. User ID and Game ID must be numbers.');
+      }
+
       console.log('🎮 ReviewPage - Loading review data:', {
-        userId,
-        gameId,
-        parsedGameId: parseInt(gameId!)
+        userId: userIdNum,
+        gameId: gameIdNum,
+        originalParams: { userId, gameId }
       });
 
-      // First try to find the review using igdb_id directly since rating table has it
-      const { data: reviewData, error: reviewError } = await supabase
+      let reviewData = null;
+      let reviewError = null;
+
+      // Strategy 1: Try igdb_id match (current approach)
+      const { data: igdbMatchData, error: igdbMatchError } = await supabase
         .from('rating')
         .select(`
           id,
@@ -83,20 +94,59 @@ export const ReviewPage: React.FC = () => {
             picurl
           )
         `)
-        .eq('user_id', parseInt(userId!))
-        .eq('igdb_id', parseInt(gameId!))
-        .single();
+        .eq('user_id', userIdNum)
+        .eq('igdb_id', gameIdNum)
+        .maybeSingle();
 
-      console.log('🎮 ReviewPage - Review query result:', { reviewData, reviewError });
+      console.log('🎮 ReviewPage - IGDB ID match result:', { igdbMatchData, igdbMatchError });
+
+      if (igdbMatchData) {
+        reviewData = igdbMatchData;
+      } else {
+        // Strategy 2: Fallback to game_id match via join
+        console.log('🔄 ReviewPage - Trying fallback strategy with game table join...');
+        const { data: gameIdMatchData, error: gameIdMatchError } = await supabase
+          .from('rating')
+          .select(`
+            id,
+            user_id,
+            game_id,
+            igdb_id,
+            rating,
+            review,
+            post_date_time,
+            user:user_id (
+              id,
+              username,
+              name,
+              picurl
+            ),
+            game:game_id!inner(igdb_id)
+          `)
+          .eq('user_id', userIdNum)
+          .eq('game.igdb_id', gameIdNum)
+          .maybeSingle();
+          
+        console.log('🎮 ReviewPage - Game ID fallback result:', { gameIdMatchData, gameIdMatchError });
+        
+        if (gameIdMatchData) {
+          reviewData = gameIdMatchData;
+        } else {
+          reviewError = igdbMatchError || gameIdMatchError || new Error('Review not found with either strategy');
+        }
+      }
 
       if (reviewError || !reviewData) {
-        throw new Error('Review not found');
+        const errorMsg = reviewError?.message || 'Review not found';
+        const detailedError = `Review not found for user ${userIdNum} and game ${gameIdNum}. ${errorMsg}`;
+        console.error('❌ ReviewPage error:', { reviewError, userId: userIdNum, gameId: gameIdNum });
+        throw new Error(detailedError);
       }
 
       setReview(reviewData);
 
       // Now load game data using IGDB ID
-      const gameData = await gameDataService.getGameByIGDBId(parseInt(gameId!));
+      const gameData = await gameDataService.getGameByIGDBId(gameIdNum);
       console.log('🎮 ReviewPage - Game data result:', gameData);
       
       // If game not in database, create a minimal game object

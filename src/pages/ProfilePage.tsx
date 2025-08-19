@@ -250,15 +250,24 @@ const ProfilePage = () => {
           </button>
         </div>
 
-        {/* Profile Data */}
-        <ProfileData
-          activeTab={activeTab}
-          allGames={allGames}
-          sortedReviews={sortedReviews}
-          reviewFilter={reviewFilter}
-          onReviewFilterChange={setReviewFilter}
-          isDummy={false}
-        />
+        {/* Profile Data - only render when we have database user ID */}
+        {currentDbUserId ? (
+          <ProfileData
+            activeTab={activeTab}
+            allGames={allGames}
+            sortedReviews={sortedReviews}
+            reviewFilter={reviewFilter}
+            onReviewFilterChange={setReviewFilter}
+            isDummy={false}
+            userId={currentDbUserId}
+            isOwnProfile={true}
+          />
+        ) : (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+            <p className="text-gray-400">Loading profile data...</p>
+          </div>
+        )}
       </div>
 
       {/* User Settings Modal */}
