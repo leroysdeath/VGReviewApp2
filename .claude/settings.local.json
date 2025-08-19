@@ -18,13 +18,10 @@
       "Bash(grep:*)",
       "Bash(npm run sync-igdb:*)",
       "Bash(node:*)",
-<<<<<<< HEAD
-      "Bash(netlify dev:*)",
-      "Bash(curl:*)"
-=======
-      "Bash(echo $VITE_SUPABASE_URL)",
-      "Bash(npx netlify dev:*)"
->>>>>>> 3b68858d8cc54cde890885ee77b08491637137ee
+"Bash(netlify dev:*)",
+"Bash(curl:*)",
+"Bash(echo $VITE_SUPABASE_URL)",
+"Bash(npx netlify dev:*)"
     ],
     "deny": []
   }
