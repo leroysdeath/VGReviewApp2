@@ -59,20 +59,20 @@ export const ReviewPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Load game data using IGDB ID
-      const gameData = await gameDataService.getGameByIGDBId(parseInt(gameId!));
-      if (!gameData) {
-        throw new Error('Game not found');
-      }
-      setGame(gameData);
+      console.log('🎮 ReviewPage - Loading review data:', {
+        userId,
+        gameId,
+        parsedGameId: parseInt(gameId!)
+      });
 
-      // Load review data (using gameData.id which corresponds to the database ID)
+      // First try to find the review using igdb_id directly since rating table has it
       const { data: reviewData, error: reviewError } = await supabase
         .from('rating')
         .select(`
           id,
           user_id,
           game_id,
+          igdb_id,
           rating,
           review,
           post_date_time,
@@ -84,14 +84,41 @@ export const ReviewPage: React.FC = () => {
           )
         `)
         .eq('user_id', parseInt(userId!))
-        .eq('game_id', gameData.id)
+        .eq('igdb_id', parseInt(gameId!))
         .single();
 
-      if (reviewError) {
+      console.log('🎮 ReviewPage - Review query result:', { reviewData, reviewError });
+
+      if (reviewError || !reviewData) {
         throw new Error('Review not found');
       }
 
       setReview(reviewData);
+
+      // Now load game data using IGDB ID
+      const gameData = await gameDataService.getGameByIGDBId(parseInt(gameId!));
+      console.log('🎮 ReviewPage - Game data result:', gameData);
+      
+      // If game not in database, create a minimal game object
+      if (!gameData) {
+        // Try to get basic game info from IGDB or create placeholder
+        const placeholderGame: GameWithCalculatedFields = {
+          id: reviewData.game_id,
+          igdb_id: reviewData.igdb_id,
+          name: 'Game #' + reviewData.igdb_id,
+          cover_url: null,
+          first_release_date: null,
+          genres: [],
+          platforms: [],
+          summary: null,
+          averageUserRating: reviewData.rating,
+          totalUserRatings: 1
+        } as GameWithCalculatedFields;
+        
+        setGame(placeholderGame);
+      } else {
+        setGame(gameData);
+      }
 
       // Load comments for this review
       await loadComments(reviewData.id);

@@ -20,12 +20,30 @@ export const ResponsiveLandingPage: React.FC = () => {
   const transformReviewData = (review: Review): ReviewData => {
     const theme: ReviewData['theme'] = ['purple', 'green', 'orange', 'blue', 'red'][review.id % 5] as ReviewData['theme'];
     
+    // Debug logging to understand the data structure
+    console.log('🔍 Transforming review:', {
+      reviewId: review.id,
+      userId: review.userId,
+      gameId: review.gameId,
+      reviewIgdbId: (review as any).igdb_id,
+      game: review.game,
+      gameIgdbId: (review.game as any)?.igdb_id,
+      gameGameId: (review.game as any)?.game_id,
+    });
+    
+    // Use rating.igdb_id if game is missing, otherwise use game's igdb_id or game_id
+    const igdbId = (review as any).igdb_id?.toString() || 
+                   (review.game as any)?.igdb_id?.toString() || 
+                   (review.game as any)?.game_id || 
+                   review.gameId.toString();
+    console.log('📍 Final IGDB ID for routing:', igdbId);
+    
     return {
       id: review.id.toString(),
       userId: review.userId.toString(),
       gameId: review.gameId.toString(),
       // Use the game's igdb_id (integer) for proper navigation, fallback to game_id (string), then database id
-      igdbGameId: (review.game as any)?.igdb_id?.toString() || (review.game as any)?.game_id || review.gameId.toString(),
+      igdbGameId: igdbId,
       gameTitle: review.game?.name || 'Unknown Game',
       rating: review.rating,
       text: review.review || '',

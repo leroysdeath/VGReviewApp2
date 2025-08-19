@@ -129,9 +129,18 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     return text.substring(0, maxLength).trim() + '...';
   };
 
+  // Debug logging
+  const reviewUrl = `/review/${review.userId}/${review.igdbGameId || review.gameId}`;
+  console.log('🔗 ReviewCard URL:', {
+    userId: review.userId,
+    igdbGameId: review.igdbGameId,
+    gameId: review.gameId,
+    finalUrl: reviewUrl
+  });
+
   return (
     <Link 
-      to={`/review/${review.userId}/${review.igdbGameId || review.gameId}`}
+      to={reviewUrl}
       className={`
         group relative overflow-hidden rounded-xl border-2 block
         bg-gray-900/80 backdrop-blur-lg
