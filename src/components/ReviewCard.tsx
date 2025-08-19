@@ -129,14 +129,29 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     return text.substring(0, maxLength).trim() + '...';
   };
 
-  // Debug logging
-  const reviewUrl = `/review/${review.userId}/${review.igdbGameId || review.gameId}`;
-  console.log('🔗 ReviewCard URL:', {
-    userId: review.userId,
-    igdbGameId: review.igdbGameId,
-    gameId: review.gameId,
-    finalUrl: reviewUrl
-  });
+  // Generate and validate review URL
+  const generateReviewUrl = (review: ReviewData): string => {
+    const userId = review.userId;
+    const gameId = review.igdbGameId || review.gameId;
+    
+    // Validate components
+    if (!userId || !gameId) {
+      console.error('❌ Invalid URL components:', { userId, gameId, review });
+      return '/search'; // Fallback to search page
+    }
+    
+    const url = `/review/${userId}/${gameId}`;
+    console.log('🔗 ReviewCard URL:', {
+      userId: review.userId,
+      igdbGameId: review.igdbGameId,
+      gameId: review.gameId,
+      finalUrl: url
+    });
+    
+    return url;
+  };
+
+  const reviewUrl = generateReviewUrl(review);
 
   return (
     <Link 
