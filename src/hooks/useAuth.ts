@@ -79,8 +79,8 @@ export const useAuth = () => {
     return result;
   };
 
-  const resetPassword = async (email: string) => {
-    return await authService.resetPassword(email);
+  const resetPassword = async (email: string, customRedirectUrl?: string) => {
+    return await authService.resetPassword(email, customRedirectUrl);
   };
 
   const updatePassword = async (newPassword: string) => {

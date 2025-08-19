@@ -17,7 +17,9 @@
       "Bash(npm install:*)",
       "Bash(grep:*)",
       "Bash(npm run sync-igdb:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(netlify dev:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }
