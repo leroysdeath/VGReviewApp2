@@ -23,7 +23,9 @@
       "Bash(echo $VITE_SUPABASE_URL)",
       "Bash(npx netlify dev:*)",
       "Bash(claude mcp:*)",
-      "WebFetch(domain:supabase.com)"
+      "WebFetch(domain:supabase.com)",
+      "Bash(npm run build:*)",
+      "Bash(timeout 10 npm run preview)"
     ],
     "deny": []
   }

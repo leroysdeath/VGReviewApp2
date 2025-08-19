@@ -40,6 +40,12 @@ for = "/*.css"
 [headers.values]
 Cache-Control = "public, max-age=31536000, immutable"
 
+# Specific redirect for reset-password to ensure it works
+[[redirects]]
+from = "/reset-password"
+to = "/index.html"
+status = 200
+
 # SPA fallback (keep this last)
 [[redirects]]
 from = "/*"
