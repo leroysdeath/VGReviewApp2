@@ -263,16 +263,27 @@ class GameSearchService {
             const aNameMatch = a.name.toLowerCase().includes(lowerQuery) ? 100 : 0
             const bNameMatch = b.name.toLowerCase().includes(lowerQuery) ? 100 : 0
             
+            // Add bonus for having a summary (deprioritize games without summaries)
+            const aHasSummary = (a.summary && a.summary.trim().length > 0) ? 50 : 0
+            const bHasSummary = (b.summary && b.summary.trim().length > 0) ? 50 : 0
+            
             // Then sort by rating count (popularity)
-            const aScore = aExact + aNameMatch + (a.user_rating_count || 0)
-            const bScore = bExact + bNameMatch + (b.user_rating_count || 0)
+            const aScore = aExact + aNameMatch + aHasSummary + (a.user_rating_count || 0)
+            const bScore = bExact + bNameMatch + bHasSummary + (b.user_rating_count || 0)
             
             return direction === 'desc' ? bScore - aScore : aScore - bScore
           })
         } else {
-          // Without query, sort by popularity (rating count)
+          // Without query, sort by popularity (rating count) and summary presence
           sorted.sort((a, b) => {
-            const diff = (b.user_rating_count || 0) - (a.user_rating_count || 0)
+            // Add significant penalty for missing summary
+            const aHasSummary = (a.summary && a.summary.trim().length > 0) ? 1000 : 0
+            const bHasSummary = (b.summary && b.summary.trim().length > 0) ? 1000 : 0
+            
+            const aScore = aHasSummary + (a.user_rating_count || 0)
+            const bScore = bHasSummary + (b.user_rating_count || 0)
+            
+            const diff = bScore - aScore
             return direction === 'desc' ? diff : -diff
           })
         }
