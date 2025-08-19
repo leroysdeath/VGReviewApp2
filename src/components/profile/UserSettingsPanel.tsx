@@ -24,7 +24,7 @@ import { ProfileUpdateData } from '../../services/profileService';
 
 // Create schemas as functions to avoid initialization issues
 const getProfileSchema = () => z.object({
-  username: z.string().min(3, 'Username must be at least 3 characters'),
+  username: z.string().min(3, 'Username must be at least 3 characters').or(z.literal('')),
   displayName: z.string().optional().or(z.literal('')),
   bio: z.string().max(160, 'Bio must be 160 characters or less').optional().or(z.literal('')),
   location: z.string().max(50, 'Location must be 50 characters or less').optional().or(z.literal('')),
@@ -271,7 +271,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(getProfileSchema()),
     defaultValues: originalValues,
-    mode: 'onChange'
+    mode: 'onBlur'
   });
 
   // Debug form initialization
@@ -729,7 +729,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={isLoading || (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar))}
+                disabled={isLoading || (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar)) || Object.keys(errors).length > 0}
                 onClick={() => {
                   console.log('🔴 BUTTON CLICKED!');
                   console.log('🔴 Button state:', {
@@ -739,7 +739,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                     avatarChanged: avatarPreview !== (originalValues.avatar || initialData.avatar),
                     errors,
                     isValid,
-                    disabled: isLoading || (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar))
+                    hasErrors: Object.keys(errors).length > 0,
+                    disabled: isLoading || (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar)) || Object.keys(errors).length > 0
                   });
                 }}
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
