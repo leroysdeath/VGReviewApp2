@@ -915,7 +915,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       .select(`
         *,
         user:user_id(*),
-        game:game_id(id, name, pic_url, cover_url)
+        game:game_id(id, name, pic_url, cover_url, game_id, igdb_id)
       `, { count: 'exact' })
       .order('post_date_time', { ascending: false })
       .limit(limit);
