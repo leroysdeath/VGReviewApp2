@@ -48,6 +48,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
           post_date_time,
           game:game_id (
             id,
+            igdb_id,
             name,
             pic_url
           )
@@ -80,7 +81,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
         .filter(item => item.game && item.review)
         .map(item => ({
           id: item.id.toString(),
-          gameId: item.game.id.toString(),
+          gameId: item.game.igdb_id ? item.game.igdb_id.toString() : item.game.id.toString(),
           gameTitle: item.game.name || 'Unknown Game',
           gameCover: item.game.pic_url || '/default-cover.png',
           rating: item.rating || 0,
