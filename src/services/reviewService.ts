@@ -235,6 +235,7 @@ export interface Review {
   id: number;
   userId: number;
   gameId: number;
+  igdb_id?: number; // Add igdb_id from rating table
   rating: number;
   review: string | null;
   postDateTime: string;
@@ -915,7 +916,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       .select(`
         *,
         user:user_id(*),
-        game:game_id(id, name, pic_url, cover_url)
+        game:game_id(id, name, pic_url, cover_url, game_id, igdb_id)
       `, { count: 'exact' })
       .order('post_date_time', { ascending: false })
       .limit(limit);
@@ -929,6 +930,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       id: item.id,
       userId: item.user_id,
       gameId: item.game_id,
+      igdb_id: item.igdb_id, // Include igdb_id from rating table
       rating: item.rating,
       review: item.review,
       postDateTime: item.post_date_time,

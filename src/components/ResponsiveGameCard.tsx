@@ -201,9 +201,6 @@ export const ResponsiveGameCard: React.FC<ResponsiveGameCardProps> = ({
               {displayGame.title}
             </h3>
             
-            <p className={`text-gray-400 mb-2 line-clamp-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-              {displayGame.genre}
-            </p>
             
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">
@@ -264,9 +261,6 @@ export const ResponsiveGameCard: React.FC<ResponsiveGameCardProps> = ({
             {displayGame.title}
           </h3>
           
-          <p className="text-gray-400 text-sm mb-3 line-clamp-1">
-            {displayGame.genre}
-          </p>
           
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">

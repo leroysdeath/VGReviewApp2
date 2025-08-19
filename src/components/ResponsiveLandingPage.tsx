@@ -16,16 +16,54 @@ export const ResponsiveLandingPage: React.FC = () => {
   const { openModal } = useAuthModal();
   const navigate = useNavigate();
   
+  // Helper function to get reliable IGDB ID for URL generation
+  const getReliableIgdbId = (review: Review): string => {
+    // Priority 1: Use rating.igdb_id (most reliable for URL generation)
+    if ((review as any).igdb_id) {
+      return (review as any).igdb_id.toString();
+    }
+    
+    // Priority 2: Use game.igdb_id if available
+    if ((review.game as any)?.igdb_id) {
+      console.warn('⚠️ Using game.igdb_id as fallback for review', review.id);
+      return (review.game as any).igdb_id.toString();
+    }
+    
+    // Priority 3: Use game.game_id (may cause lookup issues)
+    if ((review.game as any)?.game_id) {
+      console.warn('⚠️ Using game.game_id as fallback for review', review.id);
+      return (review.game as any).game_id;
+    }
+    
+    // Last resort: database game_id
+    console.error('❌ No IGDB ID available for review', review.id);
+    return review.gameId.toString();
+  };
+
   // Transform Review to ReviewData interface
   const transformReviewData = (review: Review): ReviewData => {
     const theme: ReviewData['theme'] = ['purple', 'green', 'orange', 'blue', 'red'][review.id % 5] as ReviewData['theme'];
+    
+    // Debug logging to understand the data structure
+    console.log('🔍 Transforming review:', {
+      reviewId: review.id,
+      userId: review.userId,
+      gameId: review.gameId,
+      reviewIgdbId: (review as any).igdb_id,
+      game: review.game,
+      gameIgdbId: (review.game as any)?.igdb_id,
+      gameGameId: (review.game as any)?.game_id,
+    });
+    
+    const igdbId = getReliableIgdbId(review);
+    console.log('📍 Final IGDB ID for routing:', igdbId);
     
     return {
       id: review.id.toString(),
       userId: review.userId.toString(),
       gameId: review.gameId.toString(),
-      // Use the game's game_id (IGDB ID) for proper navigation, fallback to database game id
-      igdbGameId: (review.game as any)?.game_id ? (review.game as any).game_id.toString() : review.gameId.toString(),
+      // Use the game's igdb_id (integer) for proper navigation, fallback to game_id (string), then database id
+      igdbGameId: igdbId,
       gameTitle: review.game?.name || 'Unknown Game',
       rating: review.rating,
       text: review.review || '',

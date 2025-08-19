@@ -25,6 +25,9 @@ export interface Game {
   platforms?: string[];
   screenshots?: string[];
   videos?: string[];
+  developer?: string;
+  publisher?: string;
+  igdb_rating?: number;
   created_at: string;
   updated_at: string;
 }
@@ -108,6 +111,13 @@ export interface CreateRatingRequest {
 
 export interface UpdateRatingRequest extends Partial<CreateRatingRequest> {
   id: number;
+}
+
+// Rating distribution type for analytics
+export interface RatingDistribution {
+  rating: number;
+  count: number;
+  percentage: number;
 }
 
 export interface CreateGameRequest {

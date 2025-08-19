@@ -93,11 +93,11 @@ export const ReviewFormPage: React.FC = () => {
   const [hasFormChanges, setHasFormChanges] = useState(false);
 
   useEffect(() => {
-    // Load game if gameId is provided
+    // Load game if gameId is provided (gameId is IGDB ID from URL)
     if (gameId) {
       const loadGame = async () => {
         try {
-          const game = await gameDataService.getGameById(parseInt(gameId));
+          const game = await gameDataService.getGameByIGDBId(parseInt(gameId));
           if (game) {
             setSelectedGame(game);
           }
@@ -118,8 +118,8 @@ export const ReviewFormPage: React.FC = () => {
       }
       
       try {
-        console.log('Checking game progress for game:', selectedGame.id);
-        const result = await getGameProgress(parseInt(selectedGame.id));
+        console.log('Checking game progress for game IGDB ID:', selectedGame.igdb_id);
+        const result = await getGameProgress(selectedGame.igdb_id);
         
         if (result.success) {
           if (result.data) {
@@ -160,7 +160,7 @@ export const ReviewFormPage: React.FC = () => {
       if (!selectedGame || !gameId || !gameProgressLoaded) return;
 
       try {
-        console.log('Checking for existing review for game:', gameId);
+        console.log('Checking for existing review for game IGDB ID:', gameId);
         const result = await getUserReviewForGame(parseInt(gameId));
 
         if (result.success && result.data) {
@@ -400,7 +400,7 @@ export const ReviewFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedGame || rating < 0.5 || (!gameAlreadyCompleted && didFinishGame === null) || selectedPlatforms.length === 0) return;
+    if (!selectedGame || rating < 1 || (!gameAlreadyCompleted && didFinishGame === null) || selectedPlatforms.length === 0) return;
 
     try {
       if (isEditMode && existingReviewId) {
@@ -570,7 +570,7 @@ export const ReviewFormPage: React.FC = () => {
                       const value = parseFloat(e.target.value);
                       if (!isNaN(value)) {
                         // Clamp to range and round to nearest 0.5
-                        const clampedValue = Math.max(0.5, Math.min(10, value));
+                        const clampedValue = Math.max(1, Math.min(10, value));
                         const snappedValue = Math.round(clampedValue * 2) / 2;
                         setRating(snappedValue);
                       }
@@ -582,7 +582,7 @@ export const ReviewFormPage: React.FC = () => {
                       }
                     }}
                     className="w-16 px-2 py-1 text-center text-lg font-bold bg-gray-700 text-white border border-gray-600 rounded focus:outline-none focus:border-purple-500"
-                    min="0.5"
+                    min="1"
                     max="10"
                     step="0.5"
                     inputMode="decimal"
@@ -595,14 +595,14 @@ export const ReviewFormPage: React.FC = () => {
                   <div className="relative h-2 bg-gray-700 rounded-full overflow-hidden">
                     <div 
                       className="absolute h-full bg-purple-500 transition-all duration-150"
-                      style={{ width: `${((rating - 0.5) / 9.5) * 100}%` }}
+                      style={{ width: `${((rating - 1) / 9) * 100}%` }}
                     />
                   </div>
 
                   {/* Range Input */}
                   <input
                     type="range"
-                    min="0.5"
+                    min="1"
                     max="10"
                     step="0.5"
                     value={rating}
@@ -619,8 +619,8 @@ export const ReviewFormPage: React.FC = () => {
 
                   {/* Tick Marks */}
                   <div className="absolute inset-x-0 -bottom-6">
-                    {[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10].map((tick) => {
-                      const position = ((tick - 0.5) / 9.5) * 100;
+                    {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10].map((tick) => {
+                      const position = ((tick - 1) / 9) * 100;
                       return (
                         <div 
                           key={tick} 
@@ -642,7 +642,7 @@ export const ReviewFormPage: React.FC = () => {
                 {/* Helper Text */}
                 <div className="mt-8 text-center">
                   <span className="text-sm text-gray-400">
-                    {rating === 0.5 ? 'Minimum rating' : rating === 10 ? 'Perfect score!' : `${rating.toFixed(1)} out of 10`}
+                    {rating === 1 ? 'Minimum rating' : rating === 10 ? 'Perfect score!' : `${rating.toFixed(1)} out of 10`}
                   </span>
                 </div>
               </div>
@@ -788,7 +788,7 @@ export const ReviewFormPage: React.FC = () => {
                 type="submit"
                 disabled={
                   !selectedGame || 
-                  rating < 0.5 || 
+                  rating < 1 || 
                   (!gameAlreadyCompleted && didFinishGame === null) ||
                   selectedPlatforms.length === 0 ||
                   (isEditMode && !hasFormChanges)

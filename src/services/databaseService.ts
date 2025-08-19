@@ -12,7 +12,8 @@ import {
   UpdateRatingRequest,
   CreateGameRequest,
   GameSearchResult,
-  UserSearchResult
+  UserSearchResult,
+  RatingDistribution
 } from '../types/database';
 
 class DatabaseService {
@@ -228,7 +229,7 @@ class DatabaseService {
   async getGameStats(gameId: number): Promise<{
     averageRating: number;
     totalRatings: number;
-    ratingDistribution: { rating: number; count: number }[];
+    ratingDistribution: RatingDistribution[];
   }> {
     try {
       const response = await fetch(`${this.baseUrl}/games/${gameId}/stats`);

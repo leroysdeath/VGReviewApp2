@@ -54,20 +54,40 @@ export const calculateAverageRating = (ratings: DatabaseRating[]): number => {
 };
 
 // Generate rating distribution for display
-export const generateRatingDistribution = (ratings: DatabaseRating[]) => {
+// Groups ratings by whole number (1.0-1.9 -> 1, 2.0-2.9 -> 2, etc)
+// Returns distribution with count and percentage for each rating segment
+// Accepts any array of objects with a rating property
+export const generateRatingDistribution = (ratings: Array<{ rating: number }>) => {
+  // Initialize distribution with all rating segments 1-10
   const distribution = Array.from({ length: 10 }, (_, i) => ({
-    rating: i + 1,
-    count: 0
+    rating: i + 1, // Start from 1 up to 10
+    count: 0,
+    percentage: 0
   }));
 
+  // Count ratings for each segment
   ratings.forEach(rating => {
-    const ratingIndex = Math.floor(rating.rating) - 1;
-    if (ratingIndex >= 0 && ratingIndex < 10) {
-      distribution[ratingIndex].count++;
+    // Group ratings by floor value (1.0-1.9 -> 1, 2.0-2.9 -> 2, etc)
+    // Special case: 10.0 is its own segment (no 10.5 exists)
+    let ratingSegment = Math.floor(rating.rating);
+    
+    // Ensure rating segment is within valid range (1-10)
+    if (ratingSegment >= 1 && ratingSegment <= 10) {
+      // Find the index in our distribution array (which goes 1 to 10)
+      const index = ratingSegment - 1;
+      distribution[index].count++;
     }
   });
 
-  return distribution.reverse(); // Show 10 to 1
+  // Calculate percentages
+  const totalRatings = ratings.length;
+  if (totalRatings > 0) {
+    distribution.forEach(segment => {
+      segment.percentage = (segment.count / totalRatings) * 100;
+    });
+  }
+
+  return distribution; // Now in ascending order (1 to 10)
 };
 
 // Format date for display

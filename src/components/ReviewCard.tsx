@@ -129,9 +129,33 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     return text.substring(0, maxLength).trim() + '...';
   };
 
+  // Generate and validate review URL
+  const generateReviewUrl = (review: ReviewData): string => {
+    const userId = review.userId;
+    const gameId = review.igdbGameId || review.gameId;
+    
+    // Validate components
+    if (!userId || !gameId) {
+      console.error('❌ Invalid URL components:', { userId, gameId, review });
+      return '/search'; // Fallback to search page
+    }
+    
+    const url = `/review/${userId}/${gameId}`;
+    console.log('🔗 ReviewCard URL:', {
+      userId: review.userId,
+      igdbGameId: review.igdbGameId,
+      gameId: review.gameId,
+      finalUrl: url
+    });
+    
+    return url;
+  };
+
+  const reviewUrl = generateReviewUrl(review);
+
   return (
     <Link 
-      to={`/review/${review.userId}/${review.igdbGameId || review.gameId}`}
+      to={reviewUrl}
       className={`
         group relative overflow-hidden rounded-xl border-2 block
         bg-gray-900/80 backdrop-blur-lg
@@ -153,12 +177,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       <div className="relative flex items-start gap-4">
         {/* User Avatar */}
         <div className="flex-shrink-0">
-          <div 
+          <Link 
+            to={`/user/${review.userId}`}
             className="group/avatar cursor-pointer"
             onClick={(e) => {
-              e.preventDefault();
               e.stopPropagation();
-              window.location.href = `/user/${review.userId}`;
             }}
           >
             {review.authorAvatar ? (
@@ -184,7 +207,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                 {getUserInitial(review.author)}
               </div>
             )}
-          </div>
+          </Link>
         </div>
 
         {/* Review Content */}
@@ -219,20 +242,19 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 
           {/* Header with username and game title */}
           <div className="mb-3">
-            <span
+            <Link
+              to={`/user/${review.userId}`}
               className={`
                 font-semibold transition-colors duration-300 cursor-pointer
                 text-white hover:${themeStyles.accent.replace('text-', 'text-')}
                 ${compact ? 'text-sm' : 'text-base'}
               `}
               onClick={(e) => {
-                e.preventDefault();
                 e.stopPropagation();
-                window.location.href = `/user/${review.userId}`;
               }}
             >
               {review.author}
-            </span>
+            </Link>
             
             {showGameTitle && review.gameTitle && (
               <div className={`${compact ? 'text-xs' : 'text-sm'} text-gray-400 mt-1`}>

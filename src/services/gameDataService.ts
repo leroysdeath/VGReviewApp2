@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { sanitizeSearchTerm } from '../utils/sqlSecurity'
 import type { Game, GameWithCalculatedFields } from '../types/database'
+import { igdbService } from './igdbService'
 
 interface SearchFilters {
   genres?: string[]
@@ -22,7 +23,7 @@ class GameDataService {
   async getGameById(id: number): Promise<GameWithCalculatedFields | null> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select(`
           *,
           ratings:rating(rating)
@@ -44,8 +45,11 @@ class GameDataService {
 
   async getGameByIGDBId(igdbId: number): Promise<GameWithCalculatedFields | null> {
     try {
-      const { data, error } = await supabase
-        .from('games')
+      console.log('🔍 gameDataService.getGameByIGDBId called with:', igdbId);
+      
+      // First try with igdb_id field (integer)
+      let { data, error } = await supabase
+        .from('game')
         .select(`
           *,
           ratings:rating(rating)
@@ -53,9 +57,86 @@ class GameDataService {
         .eq('igdb_id', igdbId)
         .single()
 
+      console.log('🔍 First query (igdb_id):', { found: !!data, error });
+
+      // If not found, try with game_id field (string)
+      if ((error || !data) && igdbId) {
+        console.log('🔍 Trying fallback with game_id field...');
+        const { data: gameIdData, error: gameIdError } = await supabase
+          .from('game')
+          .select(`
+            *,
+            ratings:rating(rating)
+          `)
+          .eq('game_id', igdbId.toString())
+          .single()
+        
+        console.log('🔍 Second query (game_id):', { found: !!gameIdData, error: gameIdError });
+        
+        if (!gameIdError && gameIdData) {
+          data = gameIdData
+          error = null
+        }
+      }
+
       if (error || !data) {
-        console.error('Error fetching game by IGDB ID:', error)
-        return null
+        console.log(`Game with IGDB ID ${igdbId} not found in database, fetching from IGDB API...`)
+        
+        // Game not in database, try to fetch from IGDB API
+        try {
+          const igdbGame = await igdbService.getGameById(igdbId)
+          
+          if (!igdbGame) {
+            console.error('Game not found in IGDB either')
+            return null
+          }
+          
+          // Transform IGDB game to our format
+          const transformedGame = igdbService.transformGame(igdbGame)
+          
+          // Add the game to database for future use
+          const { data: insertedGame, error: insertError } = await supabase
+            .from('game')
+            .insert({
+              igdb_id: transformedGame.igdb_id,
+              name: transformedGame.name,
+              summary: transformedGame.summary,
+              first_release_date: transformedGame.first_release_date 
+                ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
+                : null,
+              cover_url: transformedGame.cover_url,
+              genres: transformedGame.genres || [],
+              platforms: transformedGame.platforms || [],
+              developer: transformedGame.developer,
+              publisher: transformedGame.publisher,
+              igdb_rating: Math.round(transformedGame.igdb_rating || 0),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select(`
+              *,
+              ratings:rating(rating)
+            `)
+            .single()
+          
+          if (insertError) {
+            console.error('Error inserting game into database:', insertError)
+            // Even if insert fails, return the game data from IGDB
+            return {
+              ...transformedGame,
+              averageUserRating: 0,
+              totalUserRatings: 0
+            } as GameWithCalculatedFields
+          }
+          
+          console.log(`✅ Game "${transformedGame.name}" added to database`)
+          
+          // Return the newly inserted game
+          return this.transformGameWithRatings(insertedGame as GameWithRating)
+        } catch (igdbError) {
+          console.error('Error fetching from IGDB:', igdbError)
+          return null
+        }
       }
 
       return this.transformGameWithRatings(data as GameWithRating)
@@ -66,12 +147,143 @@ class GameDataService {
   }
 
   /**
+   * Fetch game data with full review details in a single query
+   * This reduces redundant API calls and improves performance
+   * Now includes fallback to IGDB API if game not found in database
+   */
+  async getGameWithFullReviews(igdbId: number): Promise<{
+    game: GameWithCalculatedFields | null;
+    reviews: Array<{
+      id: number;
+      user_id: number;
+      game_id: number;
+      rating: number;
+      review: string | null;
+      post_date_time: string;
+      user?: {
+        id: number;
+        name: string;
+        picurl?: string;
+      };
+    }>;
+  }> {
+    try {
+      // First check if game exists in database
+      const { data: gameData, error: gameError } = await supabase
+        .from('game')
+        .select('*')
+        .eq('igdb_id', igdbId)
+        .single()
+
+      if (gameError || !gameData) {
+        console.log(`Game with IGDB ID ${igdbId} not found in database, fetching from IGDB API...`)
+        
+        // Game not in database, try to fetch from IGDB API
+        try {
+          const igdbGame = await igdbService.getGameById(igdbId)
+          
+          if (!igdbGame) {
+            console.error('Game not found in IGDB either')
+            return { game: null, reviews: [] }
+          }
+          
+          // Transform IGDB game to our format
+          const transformedGame = igdbService.transformGame(igdbGame)
+          
+          // Add the game to database for future use
+          const { data: insertedGame, error: insertError } = await supabase
+            .from('game')
+            .insert({
+              igdb_id: transformedGame.igdb_id,
+              name: transformedGame.name,
+              summary: transformedGame.summary,
+              first_release_date: transformedGame.first_release_date 
+                ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
+                : null,
+              cover_url: transformedGame.cover_url,
+              genres: transformedGame.genres || [],
+              platforms: transformedGame.platforms || [],
+              developer: transformedGame.developer,
+              publisher: transformedGame.publisher,
+              igdb_rating: Math.round(transformedGame.igdb_rating || 0),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single()
+          
+          if (insertError) {
+            console.error('Error inserting game into database:', insertError)
+            // Even if insert fails, return the game data from IGDB
+            return {
+              game: {
+                ...transformedGame,
+                averageUserRating: 0,
+                totalUserRatings: 0
+              } as GameWithCalculatedFields,
+              reviews: []
+            }
+          }
+          
+          console.log(`✅ Game "${transformedGame.name}" added to database`)
+          
+          // Return the newly inserted game with no reviews yet
+          return {
+            game: {
+              ...insertedGame,
+              averageUserRating: 0,
+              totalUserRatings: 0
+            } as GameWithCalculatedFields,
+            reviews: []
+          }
+        } catch (igdbError) {
+          console.error('Error fetching from IGDB:', igdbError)
+          return { game: null, reviews: [] }
+        }
+      }
+
+      // Game found in database, now fetch reviews using the game's database ID
+      const { data: reviewsData, error: reviewsError } = await supabase
+        .from('rating')
+        .select(`
+          *,
+          user:user_id(
+            id,
+            name,
+            picurl
+          )
+        `)
+        .eq('game_id', gameData.id)  // Use game.id (database ID), not igdbId
+        .order('post_date_time', { ascending: false })
+      
+      if (reviewsError) {
+        console.error('Error fetching reviews:', reviewsError)
+      }
+      
+      const reviews = reviewsData || []
+      
+      // Transform game data for calculated fields
+      const game = this.transformGameWithRatings({
+        ...gameData,
+        ratings: reviews.map((r: any) => ({ rating: r.rating }))
+      } as GameWithRating)
+
+      console.log(`✅ Loaded game "${game.name}" with ${reviews.length} reviews`)
+
+      return { game, reviews }
+    } catch (error) {
+      console.error('Error in getGameWithFullReviews:', error)
+      return { game: null, reviews: [] }
+    }
+  }
+
+  /**
    * Convert IGDB ID to database ID
    */
   async convertIGDBIdToGameId(igdbId: number): Promise<number | null> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select('id')
         .eq('igdb_id', igdbId)
         .single()
@@ -94,7 +306,7 @@ class GameDataService {
   async convertGameIdToIGDBId(gameId: number): Promise<number | null> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select('igdb_id')
         .eq('id', gameId)
         .single()
@@ -132,7 +344,7 @@ class GameDataService {
    */
   private async searchGamesExact(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
     let queryBuilder = supabase
-      .from('games')
+      .from('game')
       .select(`
         *,
         ratings:rating(rating)
@@ -185,7 +397,7 @@ class GameDataService {
     try {
       // Get games with the most ratings, ordered by rating count
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select(`
           *,
           ratings:rating(rating)
@@ -202,7 +414,14 @@ class GameDataService {
         .map((game: GameWithRating) => this.transformGameWithRatings(game))
         .filter(game => game.totalUserRatings && game.totalUserRatings > 0)
         .sort((a, b) => {
-          // Sort by rating count first, then by average rating
+          // First priority: games with summaries come before games without
+          const aHasSummary = a.summary && a.summary.trim().length > 0
+          const bHasSummary = b.summary && b.summary.trim().length > 0
+          
+          if (aHasSummary && !bHasSummary) return -1
+          if (!aHasSummary && bHasSummary) return 1
+          
+          // If both have or don't have summaries, sort by rating count first, then by average rating
           const countDiff = (b.totalUserRatings || 0) - (a.totalUserRatings || 0)
           if (countDiff !== 0) return countDiff
           return (b.averageUserRating || 0) - (a.averageUserRating || 0)
@@ -219,7 +438,7 @@ class GameDataService {
   async getRecentGames(limit: number = 20): Promise<GameWithCalculatedFields[]> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select(`
           *,
           ratings:rating(rating)
@@ -246,7 +465,7 @@ class GameDataService {
       const [gameResult, userRatingResult] = await Promise.all([
         // Get game with all ratings
         supabase
-          .from('games')
+          .from('game')
           .select(`
             *,
             ratings:rating(rating)
@@ -285,7 +504,7 @@ class GameDataService {
   async getGamesByGenre(genre: string, limit: number = 20): Promise<GameWithCalculatedFields[]> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select(`
           *,
           ratings:rating(rating)
@@ -310,7 +529,7 @@ class GameDataService {
   async getGamesByPlatform(platform: string, limit: number = 20): Promise<GameWithCalculatedFields[]> {
     try {
       const { data, error } = await supabase
-        .from('games')
+        .from('game')
         .select(`
           *,
           ratings:rating(rating)
