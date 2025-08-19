@@ -18,10 +18,12 @@
       "Bash(grep:*)",
       "Bash(npm run sync-igdb:*)",
       "Bash(node:*)",
-"Bash(netlify dev:*)",
-"Bash(curl:*)",
-"Bash(echo $VITE_SUPABASE_URL)",
-"Bash(npx netlify dev:*)"
+      "Bash(netlify dev:*)",
+      "Bash(curl:*)",
+      "Bash(echo $VITE_SUPABASE_URL)",
+      "Bash(npx netlify dev:*)",
+      "Bash(claude mcp:*)",
+      "WebFetch(domain:supabase.com)"
     ],
     "deny": []
   }

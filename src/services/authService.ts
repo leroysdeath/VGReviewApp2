@@ -122,22 +122,27 @@ class AuthService {
         // Auto-detect based on current environment
         const currentOrigin = window.location.origin;
         
-        // For development environments, keep the same origin
-        if (currentOrigin.includes('localhost') || currentOrigin.includes('127.0.0.1')) {
-          redirectUrl = `${currentOrigin}/reset-password`;
-        } else {
-          // For production, always use the production URL
-          redirectUrl = 'https://grand-narwhal-4e85d9.space/reset-password';
-        }
+        // For all environments, use the current origin unless specifically overridden
+        redirectUrl = `${currentOrigin}/reset-password`;
+        
+        // Log for debugging
+        console.log('Password reset redirect URL:', redirectUrl);
+        console.log('Current origin:', currentOrigin);
       }
-      
-      console.log('Password reset redirect URL:', redirectUrl);
         
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl
       });
+      
+      if (error) {
+        console.error('Password reset email error:', error);
+      } else {
+        console.log('Password reset email sent successfully');
+      }
+      
       return { error };
     } catch (error) {
+      console.error('Password reset error:', error);
       return { error };
     }
   }
