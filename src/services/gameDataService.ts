@@ -45,6 +45,8 @@ class GameDataService {
 
   async getGameByIGDBId(igdbId: number): Promise<GameWithCalculatedFields | null> {
     try {
+      console.log('🔍 gameDataService.getGameByIGDBId called with:', igdbId);
+      
       // First try with igdb_id field (integer)
       let { data, error } = await supabase
         .from('game')
@@ -55,8 +57,11 @@ class GameDataService {
         .eq('igdb_id', igdbId)
         .single()
 
+      console.log('🔍 First query (igdb_id):', { found: !!data, error });
+
       // If not found, try with game_id field (string)
       if ((error || !data) && igdbId) {
+        console.log('🔍 Trying fallback with game_id field...');
         const { data: gameIdData, error: gameIdError } = await supabase
           .from('game')
           .select(`
@@ -65,6 +70,8 @@ class GameDataService {
           `)
           .eq('game_id', igdbId.toString())
           .single()
+        
+        console.log('🔍 Second query (game_id):', { found: !!gameIdData, error: gameIdError });
         
         if (!gameIdError && gameIdData) {
           data = gameIdData
