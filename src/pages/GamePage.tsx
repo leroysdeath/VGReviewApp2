@@ -624,7 +624,7 @@ export const GamePage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {game.first_release_date ? new Date(game.first_release_date).getFullYear() : 'Unknown'}
+                        {game.first_release_date ? new Date(game.first_release_date * 1000).getFullYear() : 'Unknown'}
                       </span>
                     </div>
                     {game.platforms && game.platforms.length > 0 && (
