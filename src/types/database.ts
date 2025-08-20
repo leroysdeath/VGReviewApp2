@@ -6,7 +6,15 @@ export interface User {
   provider_id: string;
   email: string;
   name: string;
-  picurl?: string;
+  username?: string;
+  avatar_url?: string;
+  display_name?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+  platform?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Platform {
@@ -19,7 +27,7 @@ export interface Game {
   igdb_id: number;
   name: string;
   summary?: string;
-  first_release_date?: string;
+  release_date?: string;
   cover_url?: string;
   genres?: string[];
   platforms?: string[];
@@ -107,6 +115,7 @@ export interface CreateRatingRequest {
   rating: number;
   review?: string;
   finished: boolean;
+  completion_status?: string; // Optional completion status override
 }
 
 export interface UpdateRatingRequest extends Partial<CreateRatingRequest> {
@@ -124,7 +133,7 @@ export interface CreateGameRequest {
   igdb_id: number;
   name: string;
   summary?: string;
-  first_release_date?: string;
+  release_date?: string;
   cover_url?: string;
   genres?: string[];
   platforms?: string[];

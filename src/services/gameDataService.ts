@@ -101,7 +101,7 @@ class GameDataService {
               igdb_id: transformedGame.igdb_id,
               name: transformedGame.name,
               summary: transformedGame.summary,
-              first_release_date: transformedGame.first_release_date 
+              release_date: transformedGame.first_release_date 
                 ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
                 : null,
               cover_url: transformedGame.cover_url,
@@ -197,7 +197,7 @@ class GameDataService {
               igdb_id: transformedGame.igdb_id,
               name: transformedGame.name,
               summary: transformedGame.summary,
-              first_release_date: transformedGame.first_release_date 
+              release_date: transformedGame.first_release_date 
                 ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
                 : null,
               cover_url: transformedGame.cover_url,
@@ -366,8 +366,8 @@ class GameDataService {
         const yearStart = `${filters.releaseYear}-01-01`
         const yearEnd = `${filters.releaseYear}-12-31`
         queryBuilder = queryBuilder
-          .gte('first_release_date', yearStart)
-          .lte('first_release_date', yearEnd)
+          .gte('release_date', yearStart)
+          .lte('release_date', yearEnd)
       }
     }
 

@@ -130,11 +130,13 @@ export const supabaseHelpers = {
     rating: number;
     review?: string;
     finished: boolean;
+    completion_status?: string;
   }) {
     const { data, error } = await supabase
       .from('rating')
       .insert({
         ...ratingData,
+        completion_status: ratingData.completion_status || 'started', // ✅ Explicitly set completion status
         post_date_time: new Date().toISOString()
       })
       .select()

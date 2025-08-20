@@ -90,8 +90,9 @@ export const UserSearchPage: React.FC = () => {
         .select(`
           id,
           name,
+          username,
           bio,
-          picurl,
+          avatar_url,
           created_at
         `);
       
@@ -219,7 +220,7 @@ export const UserSearchPage: React.FC = () => {
           id: userIdStr,
           username: user.username || user.name || 'Anonymous',
           bio: user.bio || '',
-          avatar: user.picurl || '',
+          avatar: user.avatar_url || '',
           reviewCount: reviewCounts.get(userIdStr) || 0,
           followers: followerCount,
           following: followingCount,

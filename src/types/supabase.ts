@@ -9,7 +9,15 @@ export interface Database {
           provider_id: string;
           email: string;
           name: string;
-          picurl: string | null;
+          username: string | null;
+          avatar_url: string | null;
+          display_name: string | null;
+          bio: string | null;
+          location: string | null;
+          website: string | null;
+          platform: string | null;
+          created_at: string | null;
+          updated_at: string | null;
         };
         Insert: {
           id?: number;
@@ -17,7 +25,15 @@ export interface Database {
           provider_id: string;
           email: string;
           name: string;
-          picurl?: string | null;
+          username?: string | null;
+          avatar_url?: string | null;
+          display_name?: string | null;
+          bio?: string | null;
+          location?: string | null;
+          website?: string | null;
+          platform?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
         };
         Update: {
           id?: number;
@@ -25,7 +41,15 @@ export interface Database {
           provider_id?: string;
           email?: string;
           name?: string;
-          picurl?: string | null;
+          username?: string | null;
+          avatar_url?: string | null;
+          display_name?: string | null;
+          bio?: string | null;
+          location?: string | null;
+          website?: string | null;
+          platform?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
         };
       };
       platform: {
