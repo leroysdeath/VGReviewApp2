@@ -24,7 +24,7 @@ class DLCService {
   private readonly endpoint = '/.netlify/functions/igdb-search';
 
   /**
-   * Get DLC/expansions for a main game
+   * Get DLC/expansions for a main game (official content only)
    */
   async getDLCForGame(gameId: number): Promise<DLCGame[]> {
     try {
@@ -38,7 +38,8 @@ class DLCService {
         body: JSON.stringify({
           isBulkRequest: true,
           endpoint: 'games',
-          requestBody: `fields name, summary, first_release_date, cover.url, category, parent_game; where parent_game = ${gameId} & category != null & category != 0; sort first_release_date asc; limit 50;`
+          // Filter for official DLC only: has parent_game, is DLC/expansion category (1-4), has cover image, and exclude user-generated content
+          requestBody: `fields name, summary, first_release_date, cover.url, category, parent_game, involved_companies.company.name; where parent_game = ${gameId} & category != null & category != 0 & category < 5 & cover != null & involved_companies != null; sort first_release_date asc; limit 20;`
         })
       });
 
@@ -54,8 +55,24 @@ class DLCService {
         return [];
       }
 
-      console.log('✅ Found', data.games?.length || 0, 'DLC/expansions');
-      return data.games || [];
+      // Additional filtering for official content
+      const officialDLC = (data.games || []).filter(game => {
+        // Must have a cover image
+        if (!game.cover?.url) return false;
+        
+        // Must be proper DLC/expansion category
+        if (!game.category || game.category < 1 || game.category > 4) return false;
+        
+        // Filter out obviously non-official content (basic heuristics)
+        const name = game.name?.toLowerCase() || '';
+        const skipTerms = ['mod', 'unofficial', 'fan', 'homebrew', 'patch', 'fix'];
+        if (skipTerms.some(term => name.includes(term))) return false;
+        
+        return true;
+      });
+
+      console.log('✅ Found', officialDLC.length, 'official DLC/expansions');
+      return officialDLC;
 
     } catch (error) {
       console.error('DLC fetch failed:', error);
