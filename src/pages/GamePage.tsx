@@ -13,6 +13,7 @@ import { ensureGameExists, getUserReviewForGame } from '../services/reviewServic
 import { generateRatingDistribution } from '../utils/dataTransformers';
 import { DLCSection } from '../components/DLCSection';
 import { ParentGameSection } from '../components/ParentGameSection';
+import { ModSection } from '../components/ModSection';
 import { dlcService } from '../services/dlcService';
 
 // Interface for review data from database
@@ -775,18 +776,23 @@ export const GamePage: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Parent Game Section (for DLC/Expansions) */}
+            {game && !categoryLoading && gameCategory && dlcService.isDLC(gameCategory) && (
+              <ParentGameSection dlcId={game.igdb_id} />
+            )}
+
+            {/* DLC Section (for Main Games) */}
+            {game && !categoryLoading && (!gameCategory || gameCategory === 0) && (
+              <DLCSection gameId={game.igdb_id} />
+            )}
+
+            {/* Mod Section (for Main Games) */}
+            {game && !categoryLoading && (!gameCategory || gameCategory === 0) && (
+              <ModSection gameId={game.igdb_id} />
+            )}
           </div>
         </div>
-
-        {/* Parent Game Section (for DLC/Expansions) */}
-        {game && !categoryLoading && gameCategory && dlcService.isDLC(gameCategory) && (
-          <ParentGameSection dlcId={game.igdb_id} className="mb-8" />
-        )}
-
-        {/* DLC Section (for Main Games) */}
-        {game && !categoryLoading && (!gameCategory || gameCategory === 0) && (
-          <DLCSection gameId={game.igdb_id} className="mb-8" />
-        )}
 
         {/* Reviews Section */}
         <div>

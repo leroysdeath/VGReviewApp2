@@ -81,6 +81,72 @@ class DLCService {
   }
 
   /**
+   * Get mods and unofficial content for a main game
+   */
+  async getModsForGame(gameId: number): Promise<DLCGame[]> {
+    try {
+      console.log('🔧 Fetching mods for game ID:', gameId);
+
+      const response = await fetch(this.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isBulkRequest: true,
+          endpoint: 'games',
+          // Search for content related to the main game that appears unofficial/mod-like
+          requestBody: `fields name, summary, first_release_date, cover.url, category, parent_game; where parent_game = ${gameId} & cover != null; sort first_release_date desc; limit 30;`
+        })
+      });
+
+      if (!response.ok) {
+        console.error('IGDB API response not ok:', response.status, response.statusText);
+        return [];
+      }
+
+      const data: DLCResponse = await response.json();
+      
+      if (!data.success) {
+        console.error('IGDB API returned error:', data.error);
+        return [];
+      }
+
+      // Filter for potential mod/unofficial content
+      const modContent = (data.games || []).filter(game => {
+        // Must have a cover image
+        if (!game.cover?.url) return false;
+        
+        const name = game.name?.toLowerCase() || '';
+        
+        // Look for mod-like indicators in the name
+        const modTerms = ['mod', 'unofficial', 'fan', 'homebrew', 'patch', 'remix', 'remaster', 'edition', 'enhanced', 'definitive'];
+        const hasModTerms = modTerms.some(term => name.includes(term));
+        
+        // Also include games without official category or with unusual categories
+        const isUnofficialCategory = !game.category || game.category > 4;
+        
+        // Include if it has mod terms or unusual category, but exclude obvious official content
+        if (hasModTerms || isUnofficialCategory) {
+          // Exclude definitely official releases
+          const officialTerms = ['goty', 'game of the year', 'complete', 'legendary', 'special edition'];
+          const isOfficial = officialTerms.some(term => name.includes(term));
+          return !isOfficial;
+        }
+        
+        return false;
+      });
+
+      console.log('✅ Found', modContent.length, 'potential mod/fan content items');
+      return modContent.slice(0, 15); // Limit to 15 items for performance
+
+    } catch (error) {
+      console.error('Mod fetch failed:', error);
+      return [];
+    }
+  }
+
+  /**
    * Get parent game for DLC/expansion
    */
   async getParentGame(dlcId: number): Promise<DLCGame | null> {
