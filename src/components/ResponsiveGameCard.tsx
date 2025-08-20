@@ -13,7 +13,7 @@ interface Game {
   coverImage: string;
   cover?: { url: string }; // IGDB cover format
   releaseDate: string;
-  first_release_date?: number; // IGDB timestamp format
+  release_date?: string; // Database date format
   genre: string;
   genres?: Array<{ name: string }>; // IGDB genres format
   rating: number;
@@ -57,8 +57,8 @@ export const ResponsiveGameCard: React.FC<ResponsiveGameCardProps> = ({
     title: game.title || game.name || 'Unknown Game',
     coverImage: game.coverImage || game.cover?.url || '/placeholder-game.jpg',
     releaseDate: game.releaseDate || (
-      game.first_release_date 
-        ? new Date(game.first_release_date * 1000).getFullYear().toString()
+      game.release_date 
+        ? new Date(game.release_date).getFullYear().toString()
         : 'Unknown'
     ),
     genre: game.genre || (

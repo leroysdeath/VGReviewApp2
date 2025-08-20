@@ -88,8 +88,8 @@ class GameQueryService {
         const yearStart = `${releaseYear}-01-01`
         const yearEnd = `${releaseYear}-12-31`
         queryBuilder = queryBuilder
-          .gte('first_release_date', yearStart)
-          .lte('first_release_date', yearEnd)
+          .gte('release_date', yearStart)
+          .lte('release_date', yearEnd)
       }
 
       queryBuilder = queryBuilder

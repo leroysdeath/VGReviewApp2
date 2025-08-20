@@ -157,7 +157,7 @@ export const ReviewPage: React.FC = () => {
           igdb_id: reviewData.igdb_id,
           name: 'Game #' + reviewData.igdb_id,
           cover_url: null,
-          first_release_date: null,
+          release_date: null,
           genres: [],
           platforms: [],
           summary: null,
@@ -329,7 +329,7 @@ export const ReviewPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {game.first_release_date ? new Date(game.first_release_date).getFullYear() : 'Unknown'}
+                        {game.release_date ? new Date(game.release_date).getFullYear() : 'Unknown'}
                       </span>
                     </div>
                     {game.genres && game.genres.length > 0 && (

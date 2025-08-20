@@ -24,7 +24,6 @@ export interface UserProfile {
   location?: string;
   website?: string;
   platform?: string;
-  picurl?: string;
   avatar_url?: string;
   created_at: string;
   updated_at: string;
@@ -390,7 +389,6 @@ export const updateUserProfile = async (
         return { success: false, error: avatarUploadResult.error };
       }
       
-      updateData.picurl = avatarUploadResult.data;
       updateData.avatar_url = avatarUploadResult.data;
       console.log('🖼️ Avatar URLs added to updateData');
     }

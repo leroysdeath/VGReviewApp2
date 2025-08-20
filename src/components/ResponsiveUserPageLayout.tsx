@@ -375,7 +375,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             isOpen={isSettingsModalOpen}
             onClose={() => setIsSettingsModalOpen(false)}
             userId={authUser?.id || ''}
-            onSave={handleSaveProfile}
+            onSave={authUser ? handleSaveProfile : undefined}
           />
         </Suspense>
       </div>
@@ -578,7 +578,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
           isOpen={isSettingsModalOpen}
           onClose={() => setIsSettingsModalOpen(false)}
           userId={authUser?.id || ''}
-          onSave={handleSaveProfile}
+          onSave={authUser ? handleSaveProfile : undefined}
         />
       </Suspense>
 
