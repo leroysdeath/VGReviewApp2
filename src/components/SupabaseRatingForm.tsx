@@ -50,7 +50,8 @@ export const SupabaseRatingForm: React.FC<SupabaseRatingFormProps> = ({
           game_id: gameId,
           rating,
           review: review.trim() || undefined,
-          finished
+          finished,
+          completion_status: 'started' // ✅ Explicitly set completion status when creating review
         });
       }
       
