@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { UserSettingsPanel } from './UserSettingsPanel';
 import { getUserProfile, ProfileUpdateData } from '../../services/profileService';
+import { mapDatabaseUserToForm } from '../../utils/userFieldMapping';
 
 interface UserSettingsModalProps {
   isOpen: boolean;
@@ -53,6 +54,14 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       }
       
       if (isOpen && userId) {
+        // Validate userId is present and valid
+        if (!userId || userId === '') {
+          console.error('❌ No user ID available for settings modal');
+          console.error('⚠️ Modal will close due to missing user ID');
+          onClose();
+          return;
+        }
+        
         // Force fresh data fetch every time modal opens
         console.log('🔄 Modal opened - forcing fresh data fetch');
         setIsLoading(true);
@@ -75,17 +84,8 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           if (error) {
             console.error('🔴 Error fetching user data:', error);
             console.log('⚠️ Setting default user data due to error');
-            // Set default data if user not found
-            const defaultData = {
-              username: '',
-              displayName: '',
-              email: '',
-              bio: '',
-              location: '',
-              website: '',
-              platform: '',
-              avatar: ''
-            };
+            // Set default data if user not found using utility
+            const defaultData = mapDatabaseUserToForm(null);
             console.log('📋 Default user data set:', defaultData);
             setUserData(defaultData);
           } else {
@@ -103,28 +103,10 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
             console.log('  📝 picurl field:', data.picurl);
             console.log('  📧 email field:', data.email);
             
-            console.log('🔄 Starting field transformation (snake_case -> camelCase)...');
-            const processedUserData = {
-              username: data.username || data.name || '',
-              displayName: data.display_name || '',
-              email: data.email || '',
-              bio: data.bio || '',
-              location: data.location || '',
-              website: data.website || '',
-              platform: data.platform || '',
-              avatar: data.avatar_url || data.picurl || ''
-            };
+            console.log('🔄 Using standardized field mapping utility...');
+            const processedUserData = mapDatabaseUserToForm(data);
             
             console.log('📤 Processed user data (for UserSettingsPanel):', processedUserData);
-            console.log('🔍 Transformation details:');
-            console.log('  ✅ username:', `'${data.username}' || '${data.name}' -> '${processedUserData.username}'`);
-            console.log('  ✅ displayName:', `'${data.display_name}' -> '${processedUserData.displayName}'`);
-            console.log('  ✅ bio:', `'${data.bio}' -> '${processedUserData.bio}'`);
-            console.log('  ✅ location:', `'${data.location}' -> '${processedUserData.location}'`);
-            console.log('  ✅ website:', `'${data.website}' -> '${processedUserData.website}'`);
-            console.log('  ✅ platform:', `'${data.platform}' -> '${processedUserData.platform}'`);
-            console.log('  ✅ avatar:', `'${data.avatar_url}' || '${data.picurl}' -> '${processedUserData.avatar}'`);
-            console.log('  ✅ email:', `'${data.email}' -> '${processedUserData.email}'`);
             
             setUserData(processedUserData);
             console.log('🎯 UserData state updated with processed data');
@@ -138,17 +120,8 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           });
           
           console.log('⚠️ Setting default user data due to catch block');
-          // Set default data on error
-          const errorDefaultData = {
-            username: '',
-            displayName: '',
-            email: '',
-            bio: '',
-            location: '',
-            website: '',
-            platform: '',
-            avatar: ''
-          };
+          // Set default data on error using utility
+          const errorDefaultData = mapDatabaseUserToForm(null);
           console.log('📋 Error default data set:', errorDefaultData);
           setUserData(errorDefaultData);
         } finally {
@@ -240,7 +213,13 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     setShowConfirmDialog(false);
   };
 
+  // Validate that we have required props before rendering
   if (!isOpen) return null;
+  
+  if (!userId || userId === '') {
+    console.error('❌ UserSettingsModal cannot render without a valid userId');
+    return null;
+  }
 
   return (
     <>

@@ -13,7 +13,7 @@ interface GameCardProps {
     cover?: { url: string };
     rating?: number;
     releaseDate?: string;
-    first_release_date?: number;
+    release_date?: string;
     genre?: string;
     genres?: Array<{ name: string }>;
     [key: string]: any;
@@ -113,11 +113,7 @@ export const GameCard: React.FC<GameCardProps> = ({
     title: game.title || game.name || 'Unknown Game',
     coverImage: game.coverImage || game.cover?.url || '/placeholder-game.jpg',
     rating: game.rating || 0,
-    releaseDate: game.releaseDate || (
-      game.first_release_date
-        ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
-        : undefined
-    ),
+    releaseDate: game.releaseDate || game.release_date || undefined,
     genre: game.genre || (
       Array.isArray(game.genres)
         ? game.genres.map(g => g.name || g).join(', ')

@@ -407,9 +407,9 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
     }
   };
 
-  const formatReleaseYear = (timestamp?: number) => {
-    if (!timestamp) return '';
-    return new Date(timestamp * 1000).getFullYear();
+  const formatReleaseYear = (dateString?: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).getFullYear();
   };
 
   return (
@@ -558,14 +558,14 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
                         {game.name}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-400">
-                        {game.first_release_date && (
+                        {game.release_date && (
                           <>
-                            <span>{formatReleaseYear(game.first_release_date)}</span>
+                            <span>{formatReleaseYear(game.release_date)}</span>
                           </>
                         )}
                         {game.rating && (
                           <>
-                            {game.first_release_date && <span>•</span>}
+                            {game.release_date && <span>•</span>}
                             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                             <span>{(game.rating / 10).toFixed(1)}</span>
                           </>

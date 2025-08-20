@@ -332,9 +332,9 @@ export const ResponsiveNavbar: React.FC = () => {
     }
   };
 
-  const formatReleaseYear = (timestamp?: number) => {
-    if (!timestamp) return '';
-    return new Date(timestamp * 1000).getFullYear();
+  const formatReleaseYear = (dateString?: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).getFullYear();
   };
 
   const getCacheStatusColor = () => {
@@ -550,12 +550,12 @@ export const ResponsiveNavbar: React.FC = () => {
                                     {game.name}
                                   </div>
                                   <div className="flex items-center gap-2 text-xs text-gray-400">
-                                    {formatReleaseYear(game.first_release_date ? new Date(game.first_release_date).getTime() / 1000 : undefined) && (
-                                      <span>{formatReleaseYear(game.first_release_date ? new Date(game.first_release_date).getTime() / 1000 : undefined)}</span>
+                                    {game.release_date && (
+                                      <span>{formatReleaseYear(game.release_date)}</span>
                                     )}
                                     {game.averageUserRating && (
                                       <>
-                                        {formatReleaseYear(game.first_release_date ? new Date(game.first_release_date).getTime() / 1000 : undefined) && <span>•</span>}
+                                        {game.release_date && <span>•</span>}
                                         <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                                         <span>{game.averageUserRating?.toFixed(1) || '0.0'}</span>
                                       </>
@@ -864,12 +864,12 @@ export const ResponsiveNavbar: React.FC = () => {
                                 {game.name}
                               </div>
                               <div className="flex items-center gap-2 text-xs text-gray-400">
-                                {formatReleaseYear(game.first_release_date ? new Date(game.first_release_date).getTime() / 1000 : undefined) && (
-                                  <span>{formatReleaseYear(game.first_release_date ? new Date(game.first_release_date).getTime() / 1000 : undefined)}</span>
+                                {game.release_date && (
+                                  <span>{formatReleaseYear(game.release_date)}</span>
                                 )}
                                 {game.averageUserRating && (
                                   <>
-                                    {formatReleaseYear(game.first_release_date ? new Date(game.first_release_date).getTime() / 1000 : undefined) && <span>•</span>}
+                                    {game.release_date && <span>•</span>}
                                     <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                                     <span>{game.averageUserRating?.toFixed(1) || '0.0'}</span>
                                   </>

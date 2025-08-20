@@ -56,7 +56,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
             username,
             name,
             bio,
-            picurl
+            avatar_url
           )
         `)
         .eq('following_id', parseInt(userId));
@@ -69,7 +69,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
         .map(user => ({
           id: user.id.toString(),
           username: user.username || user.name || 'Unknown User',
-          avatar: user.picurl || '',
+          avatar: user.avatar_url || '',
           bio: user.bio || ''
         }));
 
@@ -94,7 +94,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
             username,
             name,
             bio,
-            picurl
+            avatar_url
           )
         `)
         .eq('follower_id', parseInt(userId));
@@ -107,7 +107,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
         .map(user => ({
           id: user.id.toString(),
           username: user.username || user.name || 'Unknown User',
-          avatar: user.picurl || '',
+          avatar: user.avatar_url || '',
           bio: user.bio || ''
         }));
 
