@@ -7,6 +7,7 @@ import { useFollow } from '../hooks/useFollow';
 import { FollowersFollowingModal } from './FollowersFollowingModal';
 import { GamesModal } from './GamesModal';
 import { ReviewsModal } from './ReviewsModal';
+import { ProfileUpdateData, updateUserProfile, getCurrentAuthUser } from '../services/profileService';
 
 // Lazy load UserSettingsModal to avoid initialization issues
 const UserSettingsModal = lazy(() => import('./profile/UserSettingsModal').then(module => ({
@@ -71,6 +72,43 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
   // Note: authUser.id is the Supabase auth UUID, user.id is the database integer ID
   // We need to compare against provider_id field or use a different approach
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  
+  // Handle profile save
+  const handleSaveProfile = async (profileData: ProfileUpdateData) => {
+    try {
+      console.log('🟢 ResponsiveUserPageLayout - handleSaveProfile called');
+      console.log('📥 ProfileData received from form:', {
+        ...profileData,
+        avatar: profileData.avatar ? `[${profileData.avatar.length} chars]` : undefined
+      });
+
+      // Get current authenticated user
+      const authResult = await getCurrentAuthUser();
+      if (!authResult.success || !authResult.data) {
+        throw new Error(authResult.error || 'User not authenticated');
+      }
+
+      const { id: providerId } = authResult.data;
+      console.log('👤 Authenticated user provider_id:', providerId);
+
+      // Use profileService to update the profile
+      const updateResult = await updateUserProfile(providerId, profileData);
+      
+      if (!updateResult.success) {
+        throw new Error(updateResult.error || 'Failed to update profile');
+      }
+
+      console.log('✅ Profile updated successfully:', updateResult.data);
+      
+      // Optionally refresh the page or update local state
+      window.location.reload();
+      
+      return;
+    } catch (error) {
+      console.error('🔴 Error in handleSaveProfile:', error);
+      throw error;
+    }
+  };
   
   useEffect(() => {
     const checkIsOwnProfile = async () => {
@@ -337,6 +375,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
             isOpen={isSettingsModalOpen}
             onClose={() => setIsSettingsModalOpen(false)}
             userId={authUser?.id || ''}
+            onSave={handleSaveProfile}
           />
         </Suspense>
       </div>
@@ -539,6 +578,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
           isOpen={isSettingsModalOpen}
           onClose={() => setIsSettingsModalOpen(false)}
           userId={authUser?.id || ''}
+          onSave={handleSaveProfile}
         />
       </Suspense>
 

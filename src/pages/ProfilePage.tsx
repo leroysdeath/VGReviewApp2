@@ -74,45 +74,55 @@ const ProfilePage = () => {
         platform: profile.platform || ''
       });
 
-      // Use database user.id (not auth.uid) for reviews
+      // Ensure we have a valid database user ID
+      if (!profileData?.id) {
+        console.error('No database user ID found');
+        return;
+      }
+
+      // Use database user.id for reviews with LEFT JOIN to handle missing games
       const { data: reviewsData } = await supabase
-        .from('rating') // NOT 'reviews'
+        .from('rating')
         .select(`
           *,
           game:game_id (id, name, pic_url, genre, release_date, igdb_id)
         `)
-        .eq('user_id', profileData?.id) // Use database user ID
+        .eq('user_id', profileData.id) // Use database user ID consistently
         .order('post_date_time', { ascending: false });
       
       setReviews(reviewsData || []);
 
-      // Compute allGames from Supabase data only
-      const allGamesData = (reviewsData || []).map(review => ({
-        id: review.game_id,
-        title: review.game?.name || 'Unknown Game',
-        coverImage: review.game?.pic_url || '/default-cover.png',
-        releaseDate: review.game?.release_date || '',
-        genre: review.game?.genre || '',
-        rating: review.rating,
-        description: '',
-        developer: '',
-        publisher: ''
-      }));
+      // Compute allGames from Supabase data with proper fallbacks and correct IDs
+      const allGamesData = (reviewsData || [])
+        .filter(review => review.rating && review.rating > 0) // Only include rated games
+        .map(review => ({
+          id: review.game?.igdb_id || review.igdb_id || review.game_id, // Use IGDB ID for navigation
+          dbId: review.game_id, // Keep database ID for internal use
+          title: review.game?.name || `Game ${review.igdb_id || review.game_id}`,
+          coverImage: review.game?.pic_url || '/default-cover.png',
+          releaseDate: review.game?.release_date || '',
+          genre: review.game?.genre || 'Unknown',
+          rating: review.rating,
+          description: '',
+          developer: '',
+          publisher: '',
+          hasGameData: !!review.game // Track if we have complete game data
+        }));
       
       setAllGames(allGamesData);
 
-      // Fetch/compute stats
+      // Fetch/compute stats using consistent database user ID
       const currentYear = new Date().getFullYear();
       // Query games marked as started from game_progress table
       const { count: startedGamesCount } = await supabase
         .from('game_progress')
         .select('game_id', { count: 'exact' })
-        .eq('user_id', user.id)
+        .eq('user_id', profileData.id)
         .eq('started', true);
       
-      const { count: listsCount } = await supabase.from('lists').select('id', { count: 'exact' }).eq('user_id', user.id);
-      const { count: followingCount } = await supabase.from('user_follow').select('id', { count: 'exact' }).eq('follower_id', user.id);
-      const { count: followersCount } = await supabase.from('user_follow').select('id', { count: 'exact' }).eq('following_id', user.id);
+      const { count: listsCount } = await supabase.from('lists').select('id', { count: 'exact' }).eq('user_id', profileData.id);
+      const { count: followingCount } = await supabase.from('user_follow').select('id', { count: 'exact' }).eq('follower_id', profileData.id);
+      const { count: followersCount } = await supabase.from('user_follow').select('id', { count: 'exact' }).eq('following_id', profileData.id);
 
       setStats({
         films: startedGamesCount || 0, // Games marked as started

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart } from 'lucide-react';
 import { gameDataService } from '../services/gameDataService';
 import { gameSearchService } from '../services/gameSearchService';
-import type { GameWithCalculatedFields } from '../types/database';
+import type { Game, GameWithCalculatedFields } from '../types/database';
 import { GameSearch } from '../components/GameSearch';
 import { createReview, ensureGameExists, getUserReviewForGame, updateReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
@@ -227,25 +227,21 @@ export const ReviewFormPage: React.FC = () => {
             console.log('Game progress data takes priority - didFinishGame remains:', didFinishGame);
           }
           
-          // Set up platforms for this game if not already set
-          if (selectedGame.platforms && selectedGame.platforms.length > 0 && availablePlatforms.length === 0) {
+          // Set up platforms for this game and handle existing review platforms
+          let currentAvailablePlatforms = availablePlatforms;
+          if (selectedGame.platforms && selectedGame.platforms.length > 0) {
             const mappedPlatforms = mapPlatformNames(selectedGame.platforms);
             setAvailablePlatforms(mappedPlatforms);
+            currentAvailablePlatforms = mappedPlatforms;
           }
           
           // Handle existing review platforms - validate against available platforms
           let validSelectedPlatforms: string[] = [];
           if (result.data.platforms && Array.isArray(result.data.platforms)) {
-            if (availablePlatforms.length > 0) {
+            if (currentAvailablePlatforms.length > 0) {
               // Keep only platforms that are still available for the game
               validSelectedPlatforms = result.data.platforms.filter(p => 
-                availablePlatforms.includes(p)
-              );
-            } else if (selectedGame.platforms && selectedGame.platforms.length > 0) {
-              // If available platforms not set yet, check against mapped platforms
-              const mappedPlatforms = mapPlatformNames(selectedGame.platforms);
-              validSelectedPlatforms = result.data.platforms.filter(p => 
-                mappedPlatforms.includes(p)
+                currentAvailablePlatforms.includes(p)
               );
             } else {
               // No platform constraints, keep all
