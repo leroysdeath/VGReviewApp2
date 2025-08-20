@@ -54,19 +54,23 @@ export const getCurrentUserId = async (): Promise<number | null> => {
 
 /**
  * Ensure game exists in database before creating review
- * This now expects the database game.id directly
+ * Creates the game if it doesn't exist
  */
 export const ensureGameExists = async (
-  gameId: number
+  igdbId: number,
+  title: string,
+  coverImage?: string,
+  genre?: string,
+  releaseDate?: string
 ): Promise<ServiceResponse<{ gameId: number }>> => {
   try {
-    console.log('🎮 Checking if game exists:', { gameId });
+    console.log('🎮 Ensuring game exists:', { igdbId, title, coverImage, genre, releaseDate });
     
-    // Check if game exists by database ID
+    // Check if game exists by IGDB ID
     const { data: existingGame, error: checkError } = await supabase
       .from('game')
-      .select('id, name')
-      .eq('id', gameId)
+      .select('id, name, igdb_id')
+      .eq('igdb_id', igdbId)
       .single();
 
     console.log('🔍 Game existence check:', { existingGame, checkError });
@@ -76,15 +80,38 @@ export const ensureGameExists = async (
       return { success: false, error: `Game existence check failed: ${checkError.message}` };
     }
 
-    if (!existingGame) {
-      console.error('❌ Game not found in database');
-      return { success: false, error: 'Game not found in database' };
+    if (existingGame) {
+      console.log('✅ Game already exists in database:', existingGame);
+      return { success: true, data: { gameId: existingGame.id } };
     }
 
-    console.log('✅ Game exists in database:', existingGame);
-    return { success: true, data: { gameId: existingGame.id } };
+    // Game doesn't exist, create it
+    console.log('📝 Creating new game in database');
+    const gameData = {
+      igdb_id: igdbId,
+      name: title,
+      pic_url: coverImage,
+      genre: genre,
+      release_date: releaseDate,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: newGame, error: insertError } = await supabase
+      .from('game')
+      .insert(gameData)
+      .select('id, name, igdb_id')
+      .single();
+
+    if (insertError) {
+      console.error('❌ Error creating game:', insertError);
+      return { success: false, error: `Failed to create game: ${insertError.message}` };
+    }
+
+    console.log('✅ Game created successfully:', newGame);
+    return { success: true, data: { gameId: newGame.id } };
   } catch (error) {
-    console.error('💥 Unexpected error checking game exists:', error);
+    console.error('💥 Unexpected error ensuring game exists:', error);
     
     if (error instanceof Error) {
       console.error('Error details:', { name: error.name, message: error.message, stack: error.stack });
@@ -92,23 +119,28 @@ export const ensureGameExists = async (
     
     return {
       success: false,
-      error: error instanceof Error ? `Unexpected error: ${error.message}` : 'Failed to check game exists due to unexpected error'
+      error: error instanceof Error ? `Unexpected error: ${error.message}` : 'Failed to ensure game exists due to unexpected error'
     };
   }
 };
 
 /**
  * Create a new review using proper user ID handling
- * @param gameId - The database game.id (not IGDB ID)
+ * @param igdbId - The IGDB ID of the game
+ * @param rating - The rating score
+ * @param reviewText - The review text (optional)
+ * @param isRecommended - Whether the game is recommended
+ * @param gameInfo - Game information for creating the game record if needed
  */
 export const createReview = async (
-  gameId: number, 
+  igdbId: number, 
   rating: number, 
   reviewText?: string, 
-  isRecommended?: boolean
+  isRecommended?: boolean,
+  gameInfo?: { title: string; coverImage?: string; genre?: string; releaseDate?: string }
 ): Promise<ServiceResponse<Review>> => {
   try {
-    console.log('🔍 Creating review with params:', { gameId, rating, reviewText, isRecommended });
+    console.log('🔍 Creating review with params:', { igdbId, rating, reviewText, isRecommended, gameInfo });
     
     const userId = await getCurrentUserId();
     console.log('👤 Current user ID:', userId);
@@ -117,26 +149,46 @@ export const createReview = async (
       return { success: false, error: 'User not authenticated or not found in database' };
     }
 
-    // Verify game exists by database ID
-    const { data: gameRecord, error: gameError } = await supabase
-      .from('game')
-      .select('id, name')
-      .eq('id', gameId)
-      .single();
+    // Ensure game exists in database (create if needed)
+    let gameId: number;
+    if (gameInfo) {
+      const ensureResult = await ensureGameExists(
+        igdbId,
+        gameInfo.title,
+        gameInfo.coverImage,
+        gameInfo.genre,
+        gameInfo.releaseDate
+      );
+      
+      if (!ensureResult.success) {
+        return { success: false, error: ensureResult.error };
+      }
+      
+      gameId = ensureResult.data!.gameId;
+    } else {
+      // Fallback: look up existing game by IGDB ID
+      const { data: gameRecord, error: gameError } = await supabase
+        .from('game')
+        .select('id, name')
+        .eq('igdb_id', igdbId)
+        .single();
 
-    console.log('🎮 Game lookup result:', { gameRecord, gameError });
+      console.log('🎮 Game lookup result:', { gameRecord, gameError });
 
-    if (gameError && gameError.code !== 'PGRST116') {
-      console.error('❌ Game lookup error:', gameError);
-      return { success: false, error: `Game lookup failed: ${gameError.message}` };
+      if (gameError && gameError.code !== 'PGRST116') {
+        console.error('❌ Game lookup error:', gameError);
+        return { success: false, error: `Game lookup failed: ${gameError.message}` };
+      }
+
+      if (!gameRecord) {
+        console.error('❌ Game not found in database for IGDB ID:', igdbId);
+        return { success: false, error: 'Game not found in database. Please provide game information.' };
+      }
+
+      gameId = gameRecord.id;
     }
 
-    if (!gameRecord) {
-      console.error('❌ Game not found in database for gameId:', gameId);
-      return { success: false, error: 'Game not found in database' };
-    }
-
-    console.log('✅ Found game in database:', gameRecord);
+    console.log('✅ Using game ID:', gameId);
 
     // Check if user has already reviewed this game
     const { data: existingReview, error: existingError } = await supabase
@@ -161,7 +213,8 @@ export const createReview = async (
     // Prepare review data with sanitization
     const reviewData = {
       user_id: userId,
-      game_id: gameId, // Already using database game ID
+      game_id: gameId, // Database game ID
+      igdb_id: igdbId, // Also store IGDB ID for reference
       rating: rating,
       review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
       post_date_time: new Date().toISOString(),
