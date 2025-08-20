@@ -421,11 +421,12 @@ export const ReviewFormPage: React.FC = () => {
           // Update game progress based on user selection (only if game not already completed)
           try {
             if (!gameAlreadyCompleted) {
+              const igdbId = selectedGame.igdb_id || parseInt(selectedGame.id);
               if (didFinishGame) {
-                await markGameCompleted(parseInt(selectedGame.id));
+                await markGameCompleted(igdbId);
                 console.log('✅ Game marked as completed');
               } else {
-                await markGameStarted(parseInt(selectedGame.id));
+                await markGameStarted(igdbId);
                 console.log('✅ Game marked as started');
               }
             }
@@ -443,27 +444,18 @@ export const ReviewFormPage: React.FC = () => {
         // Create new review
         console.log('Creating new review with platforms:', selectedPlatforms);
         
-        // First, ensure the game exists in the database
-        const ensureGameResult = await ensureGameExists(
-          parseInt(selectedGame.id),
-          selectedGame.title,
-          selectedGame.coverImage,
-          selectedGame.genre,
-          selectedGame.releaseDate
-        );
-
-        if (!ensureGameResult.success) {
-          console.error('Failed to ensure game exists:', ensureGameResult.error);
-          alert(`Failed to add game to database: ${ensureGameResult.error}`);
-          return;
-        }
-
-        // Then create the review
+        // Create the review with game information
         const result = await createReview(
-          parseInt(selectedGame.id), // Convert string ID to number
+          selectedGame.igdb_id || parseInt(selectedGame.id), // Use IGDB ID, fallback to regular ID
           rating,
           reviewText,
-          isRecommended
+          isRecommended,
+          {
+            title: selectedGame.title,
+            coverImage: selectedGame.coverImage,
+            genre: selectedGame.genre,
+            releaseDate: selectedGame.releaseDate
+          }
         );
 
         if (result.success) {
@@ -472,11 +464,12 @@ export const ReviewFormPage: React.FC = () => {
           // Update game progress based on user selection (only if game not already completed)
           try {
             if (!gameAlreadyCompleted) {
+              const igdbId = selectedGame.igdb_id || parseInt(selectedGame.id);
               if (didFinishGame) {
-                await markGameCompleted(parseInt(selectedGame.id));
+                await markGameCompleted(igdbId);
                 console.log('✅ Game marked as completed');
               } else {
-                await markGameStarted(parseInt(selectedGame.id));
+                await markGameStarted(igdbId);
                 console.log('✅ Game marked as started');
               }
             }
