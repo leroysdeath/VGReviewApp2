@@ -86,6 +86,14 @@ export const getCurrentAuthUser = async (): Promise<ServiceResponse<{ id: string
 export const getUserProfile = async (providerId: string): Promise<ServiceResponse<UserProfile>> => {
   try {
     console.log('🔍 Getting user profile for provider_id:', providerId);
+    
+    // Validate that providerId is a UUID format
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!isValidUUID.test(providerId)) {
+      console.error('❌ Invalid provider_id format - expected UUID, got:', providerId);
+      console.error('⚠️ This likely means a database ID (integer) was passed instead of auth UUID');
+      return { success: false, error: `Invalid provider ID format. Expected UUID but got: ${providerId}` };
+    }
 
     const { data: dbUser, error } = await supabase
       .from('user')
@@ -131,6 +139,13 @@ export const ensureUserProfileExists = async (
 ): Promise<ServiceResponse<UserProfile>> => {
   try {
     console.log('🔍 Ensuring user profile exists for provider_id:', providerId);
+    
+    // Validate that providerId is a UUID format
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!isValidUUID.test(providerId)) {
+      console.error('❌ Invalid provider_id format in ensureUserProfileExists - expected UUID, got:', providerId);
+      return { success: false, error: `Invalid provider ID format. Expected UUID but got: ${providerId}` };
+    }
     
     // Check if user profile already exists
     const existingProfileResult = await getUserProfile(providerId);
@@ -305,6 +320,13 @@ export const updateUserProfile = async (
       ...profileData,
       avatar: profileData.avatar ? `[${profileData.avatar.length} chars]` : undefined
     });
+    
+    // Validate that providerId is a UUID format
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!isValidUUID.test(providerId)) {
+      console.error('❌ Invalid provider_id format in updateUserProfile - expected UUID, got:', providerId);
+      return { success: false, error: `Invalid provider ID format. Expected UUID but got: ${providerId}` };
+    }
 
     // Ensure user profile exists
     const userResult = await ensureUserProfileExists(providerId);

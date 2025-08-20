@@ -336,7 +336,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
           <UserSettingsModal 
             isOpen={isSettingsModalOpen}
             onClose={() => setIsSettingsModalOpen(false)}
-            userId={user.id}
+            userId={authUser?.id || ''}
           />
         </Suspense>
       </div>
@@ -538,7 +538,7 @@ export const ResponsiveUserPageLayout: React.FC<ResponsiveUserPageLayoutProps> =
         <UserSettingsModal 
           isOpen={isSettingsModalOpen}
           onClose={() => setIsSettingsModalOpen(false)}
-          userId={user.id}
+          userId={authUser?.id || ''}
         />
       </Suspense>
 
