@@ -40,11 +40,7 @@ for = "/*.css"
 [headers.values]
 Cache-Control = "public, max-age=31536000, immutable"
 
-# Function redirects first (before SPA fallback)
-[[redirects]]
-from = "/.netlify/functions/*"
-to = "/.netlify/functions/:splat"
-status = 200
+# Function redirects removed - invalid .netlify path
 
 # API redirects for backwards compatibility
 [[redirects]]

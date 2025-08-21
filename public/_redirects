@@ -1,6 +1,3 @@
-# Netlify Functions
-/.netlify/functions/* /.netlify/functions/:splat 200
-
 # API endpoints
 /api/* /.netlify/functions/:splat 200
 
