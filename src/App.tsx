@@ -50,7 +50,8 @@ const NavigationDebugger: React.FC = () => {
   return null;
 };
 
-function App() {
+// Component that needs to be inside Router context
+const AppContent: React.FC = () => {
   const { loading } = useAuth();
 
   if (loading) {
@@ -65,16 +66,13 @@ function App() {
   console.log('🌐 App.tsx: Rendering routes for path:', window.location.pathname);
 
   return (
-    <HelmetProvider>
-      <ErrorBoundary>
-        <AuthModalProvider>
-            <Router>
-              <NavigationDebugger />
-              <div className="min-h-screen bg-gray-900 flex flex-col">
-                <SEOHead />
-                <ResponsiveNavbar />
-                <main className="flex-grow">
-                  <Routes>
+    <>
+      <NavigationDebugger />
+      <div className="min-h-screen bg-gray-900 flex flex-col">
+        <SEOHead />
+        <ResponsiveNavbar />
+        <main className="flex-grow">
+          <Routes>
                     <Route path="/" element={<ResponsiveLandingPage />} />
                     <Route path="/game/:id" element={<GamePage />} />
                     <Route path="/search" element={<SearchResultsPage />} />
@@ -156,11 +154,22 @@ function App() {
                       </>
                     } />
                   </Routes>
-                </main>
-                <Footer />
-                <AuthModal />
-              </div>
-            </Router>
+        </main>
+        <Footer />
+        <AuthModal />
+      </div>
+    </>
+  );
+};
+
+function App() {
+  return (
+    <HelmetProvider>
+      <ErrorBoundary>
+        <AuthModalProvider>
+          <Router>
+            <AppContent />
+          </Router>
         </AuthModalProvider>
       </ErrorBoundary>
     </HelmetProvider>
