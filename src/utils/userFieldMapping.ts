@@ -30,8 +30,8 @@ export const mapDatabaseUserToForm = (dbUser: any) => {
     location: dbUser.location || '',
     website: dbUser.website || '',
     platform: dbUser.platform || '',
-    // Handle both new avatar_url and legacy picurl fields
-    avatar: dbUser.avatar_url || dbUser.picurl || ''
+    // Use standardized avatar_url field
+    avatar: dbUser.avatar_url || ''
   };
 };
 
