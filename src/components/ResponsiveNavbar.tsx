@@ -57,7 +57,17 @@ export const ResponsiveNavbar: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
   const { user, isAuthenticated, signOut, loading } = useAuth();
-  const { userId: currentUserId } = useCurrentUserId();
+  const { userId: currentUserId, loading: userIdLoading } = useCurrentUserId();
+  
+  // Debug log for navbar user ID state
+  useEffect(() => {
+    console.log('🧭 ResponsiveNavbar: User ID state:', { 
+      currentUserId, 
+      userIdLoading, 
+      isAuthenticated,
+      hasAuthUser: !!user 
+    });
+  }, [currentUserId, userIdLoading, isAuthenticated, user]);
   const { openModal } = useAuthModal(); // USE GLOBAL AUTH MODAL
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userButtonRef = useRef<HTMLButtonElement>(null);
@@ -663,12 +673,19 @@ export const ResponsiveNavbar: React.FC = () => {
                   {isAuthenticated && (
                     <>
                       <Link
-                        to={currentUserId ? `/user/${currentUserId}` : "/profile"}
+                        to={currentUserId ? `/user/${currentUserId}` : (userIdLoading ? "#" : "/profile")}
                         className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                        onClick={() => setIsMenuOpen(false)}
+                        onClick={(e) => {
+                          if (userIdLoading) {
+                            e.preventDefault();
+                            console.log('⏳ ResponsiveNavbar: Profile click blocked - still loading user ID');
+                          } else {
+                            setIsMenuOpen(false);
+                          }
+                        }}
                       >
                         <User className="h-5 w-5" />
-                        <span>Profile</span>
+                        <span>Profile{userIdLoading ? ' (Loading...)' : ''}</span>
                       </Link>
                       <Link
                         to="/review"
@@ -1071,12 +1088,19 @@ export const ResponsiveNavbar: React.FC = () => {
                       className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50">
                       <div className="py-1">
                         <Link
-                          to={currentUserId ? `/user/${currentUserId}` : "/profile"}
+                          to={currentUserId ? `/user/${currentUserId}` : (userIdLoading ? "#" : "/profile")}
                           className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
-                          onClick={() => setIsUserMenuOpen(false)}
+                          onClick={(e) => {
+                            if (userIdLoading) {
+                              e.preventDefault();
+                              console.log('⏳ ResponsiveNavbar: Profile click blocked - still loading user ID');
+                            } else {
+                              setIsUserMenuOpen(false);
+                            }
+                          }}
                         >
                           <User className="h-4 w-4" />
-                          <span>Profile</span>
+                          <span>Profile{userIdLoading ? ' (Loading...)' : ''}</span>
                         </Link>
                         <Link
                           to="/review"
@@ -1163,11 +1187,18 @@ export const ResponsiveNavbar: React.FC = () => {
             {isAuthenticated ? (
               <>
                 <Link
-                  to={currentUserId ? `/user/${currentUserId}` : "/profile"}
+                  to={currentUserId ? `/user/${currentUserId}` : (userIdLoading ? "#" : "/profile")}
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={(e) => {
+                    if (userIdLoading) {
+                      e.preventDefault();
+                      console.log('⏳ ResponsiveNavbar: Profile click blocked - still loading user ID');
+                    } else {
+                      setIsMenuOpen(false);
+                    }
+                  }}
                 >
-                  Profile
+                  Profile{userIdLoading ? ' (Loading...)' : ''}
                 </Link>
                 <Link
                   to="/review"
