@@ -1,8 +1,9 @@
 -- =====================================================
--- Professional Full-Text Search Implementation
+-- Professional Full-Text Search Implementation (FIXED)
 -- =====================================================
 -- This migration completely eliminates SQL injection vulnerabilities
 -- by implementing PostgreSQL's native full-text search capabilities
+-- WITH proper policy conflict handling
 
 -- Step 1: Add full-text search columns to game table
 ALTER TABLE game 
@@ -211,28 +212,85 @@ GRANT EXECUTE ON FUNCTION search_games_secure(text, integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION search_games_phrase(text, integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION search_games_by_genre(text, integer) TO authenticated;
 
--- Step 10: Add RLS policies for search functions
--- Drop existing policies if they exist to avoid conflicts
+-- Step 10: Handle RLS policies with proper conflict resolution
 DO $$
+DECLARE
+    policy_exists boolean;
 BEGIN
-    -- Drop policies if they exist
-    IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow search_games_secure' AND tablename = 'game') THEN
-        DROP POLICY "Allow search_games_secure" ON game;
-    END IF;
+    -- Handle Allow search_games_secure_v2 policy (renamed to avoid conflicts)
+    SELECT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE policyname = 'Allow search_games_secure_v2' 
+        AND tablename = 'game' 
+        AND schemaname = current_schema()
+    ) INTO policy_exists;
     
-    IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow search_games_phrase' AND tablename = 'game') THEN
-        DROP POLICY "Allow search_games_phrase" ON game;
+    IF NOT policy_exists THEN
+        EXECUTE 'CREATE POLICY "Allow search_games_secure_v2" ON game FOR SELECT USING (true)';
+        RAISE NOTICE 'Created policy: Allow search_games_secure_v2';
+    ELSE
+        RAISE NOTICE 'Policy Allow search_games_secure_v2 already exists, skipping';
     END IF;
+
+    -- Handle Allow search_games_phrase_v2 policy
+    SELECT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE policyname = 'Allow search_games_phrase_v2' 
+        AND tablename = 'game' 
+        AND schemaname = current_schema()
+    ) INTO policy_exists;
     
-    IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow search_games_by_genre' AND tablename = 'game') THEN
-        DROP POLICY "Allow search_games_by_genre" ON game;
+    IF NOT policy_exists THEN
+        EXECUTE 'CREATE POLICY "Allow search_games_phrase_v2" ON game FOR SELECT USING (true)';
+        RAISE NOTICE 'Created policy: Allow search_games_phrase_v2';
+    ELSE
+        RAISE NOTICE 'Policy Allow search_games_phrase_v2 already exists, skipping';
+    END IF;
+
+    -- Handle Allow search_games_by_genre_v2 policy
+    SELECT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE policyname = 'Allow search_games_by_genre_v2' 
+        AND tablename = 'game' 
+        AND schemaname = current_schema()
+    ) INTO policy_exists;
+    
+    IF NOT policy_exists THEN
+        EXECUTE 'CREATE POLICY "Allow search_games_by_genre_v2" ON game FOR SELECT USING (true)';
+        RAISE NOTICE 'Created policy: Allow search_games_by_genre_v2';
+    ELSE
+        RAISE NOTICE 'Policy Allow search_games_by_genre_v2 already exists, skipping';
     END IF;
 END $$;
 
--- Create new policies
-CREATE POLICY "Allow search_games_secure" ON game FOR SELECT USING (true);
-CREATE POLICY "Allow search_games_phrase" ON game FOR SELECT USING (true);
-CREATE POLICY "Allow search_games_by_genre" ON game FOR SELECT USING (true);
+-- Step 11: Clean up old conflicting policies if they exist
+DO $$
+BEGIN
+    -- Try to drop old policies that might conflict (ignore errors if they don't exist)
+    BEGIN
+        DROP POLICY IF EXISTS "Allow search_games_secure" ON game;
+        RAISE NOTICE 'Dropped old policy: Allow search_games_secure';
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE NOTICE 'Old policy Allow search_games_secure not found or could not be dropped';
+    END;
+    
+    BEGIN
+        DROP POLICY IF EXISTS "Allow search_games_phrase" ON game;
+        RAISE NOTICE 'Dropped old policy: Allow search_games_phrase';
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE NOTICE 'Old policy Allow search_games_phrase not found or could not be dropped';
+    END;
+    
+    BEGIN
+        DROP POLICY IF EXISTS "Allow search_games_by_genre" ON game;
+        RAISE NOTICE 'Dropped old policy: Allow search_games_by_genre';
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE NOTICE 'Old policy Allow search_games_by_genre not found or could not be dropped';
+    END;
+END $$;
 
 -- Log completion
 DO $$
@@ -240,4 +298,6 @@ BEGIN
     RAISE NOTICE 'Full-text search implementation completed successfully';
     RAISE NOTICE 'Created secure search functions with SQL injection immunity';
     RAISE NOTICE 'Created GIN index for optimal performance';
+    RAISE NOTICE 'Handled policy conflicts with v2 naming convention';
+    RAISE NOTICE 'Search functions: search_games_secure, search_games_phrase, search_games_by_genre';
 END $$;

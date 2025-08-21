@@ -17,6 +17,7 @@ import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { DebugAuthPage } from './pages/DebugAuthPage';
 
 
 // Lazy load legal pages for better performance
@@ -50,6 +51,7 @@ function App() {
                     <Route path="/search-results" element={<SearchResultsPage />} />
                     <Route path="/user/:id" element={<UserPage />} />
                     <Route path="/users" element={<UserSearchPage />} />
+                    <Route path="/debug-auth" element={<DebugAuthPage />} />
                     <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route 
                       path="/review/:gameId?" 

@@ -28,10 +28,8 @@ export const useAuth = () => {
           };
           setUser(authUser);
           
-          // Get or create database user ID (non-blocking)
-          getOrCreateDbUserId(session).catch(error => {
-            console.error('Background user ID creation failed:', error);
-          });
+          // Get or create database user ID (blocking - required for navigation)
+          await getOrCreateDbUserId(session);
         } else {
           setUser(null);
           setDbUserId(null);
@@ -62,10 +60,8 @@ export const useAuth = () => {
           };
           setUser(authUser);
           
-          // Get or create database user ID (non-blocking)
-          getOrCreateDbUserId(session).catch(error => {
-            console.error('Background user ID creation failed:', error);
-          });
+          // Get or create database user ID (blocking - required for navigation)
+          await getOrCreateDbUserId(session);
         } else {
           setUser(null);
           setDbUserId(null);
