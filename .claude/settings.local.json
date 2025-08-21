@@ -30,7 +30,8 @@
       "mcp__supabase__list_migrations",
       "mcp__supabase__get_advisors",
       "Bash(netlify dev:*)",
-      "Bash(netlify dev:*)"
+      "Bash(netlify dev:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }
