@@ -26,7 +26,10 @@ export const UserPage: React.FC = () => {
       
       // Parse ID to integer for database queries
       const numericId = parseInt(id);
+      console.log('🔢 UserPage: Parsing ID:', { originalId: id, numericId, isValid: !isNaN(numericId) });
+      
       if (isNaN(numericId)) {
+        console.error('❌ UserPage: Invalid user ID, redirecting to /users');
         setError('Invalid user ID');
         setLoading(false);
         return;
@@ -34,7 +37,7 @@ export const UserPage: React.FC = () => {
       
       try {
         setLoading(true);
-        console.log('🔍 Loading user data with real follower/following counts...');
+        console.log('🔍 UserPage: Loading user data for ID:', numericId);
         
         // Fetch user data
         const { data: userData, error: userError } = await supabase
@@ -43,7 +46,15 @@ export const UserPage: React.FC = () => {
           .eq('id', numericId)
           .single();
           
-        if (userError) throw userError;
+        console.log('💾 UserPage: Database user query result:', { 
+          userData: userData ? { id: userData.id, name: userData.name } : null, 
+          userError: userError?.message 
+        });
+        
+        if (userError) {
+          console.error('❌ UserPage: User query failed, will redirect to /users:', userError);
+          throw userError;
+        }
         
         // Check if this is the current user's own profile
         if (isAuthenticated && authUser?.id) {
@@ -139,7 +150,7 @@ export const UserPage: React.FC = () => {
         setUserReviews(validReviewsData);
         setGames(gamesData);
       } catch (err) {
-        console.error('💥 Error fetching user data:', err);
+        console.error('💥 UserPage: Error fetching user data, redirecting to /users:', err);
         setError('Failed to load user data');
       } finally {
         setLoading(false);
@@ -153,7 +164,13 @@ export const UserPage: React.FC = () => {
     return <LoadingSpinner size="lg" text="Loading user profile..." />;
   }
   
-  if (error || !user) {
+  if (error) {
+    console.log('🔀 UserPage: Redirecting to home due to error:', error);
+    return <Navigate to="/" replace />;
+  }
+  
+  if (!user) {
+    console.log('🔀 UserPage: User not found, redirecting to users page');
     return <Navigate to="/users" replace />;
   }
   

@@ -13,7 +13,6 @@ import { UserPage } from './pages/UserPage';
 import { UserSearchPage } from './pages/UserSearchPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ReviewPage } from './pages/ReviewPage';
-import { ProfileRedirect } from './components/ProfileRedirect';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
@@ -61,14 +60,6 @@ function App() {
                       } 
                     />
                     <Route path="/review/:userId/:gameId" element={<ReviewPage />} />
-                    <Route 
-                      path="/profile" 
-                      element={
-                        <ProtectedRoute showModal={true}>
-                          <ProfileRedirect />
-                        </ProtectedRoute>
-                      } 
-                    />
                     <Route 
                       path="/contact" 
                       element={

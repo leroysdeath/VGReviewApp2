@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, Menu, X, Gamepad2, Home, Users, MessageSquare, Bell, LogOut, Settings, Clock, TrendingUp, Database, Loader2, Star, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useCurrentUserId } from '../hooks/useCurrentUserId';
 import { useAuthModal } from '../context/AuthModalContext'; // NEW IMPORT
 import { useResponsive } from '../hooks/useResponsive';
 import { NotificationBadge } from './NotificationBadge';
@@ -56,18 +55,7 @@ export const ResponsiveNavbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
-  const { user, isAuthenticated, signOut, loading } = useAuth();
-  const { userId: currentUserId, loading: userIdLoading } = useCurrentUserId();
-  
-  // Debug log for navbar user ID state
-  useEffect(() => {
-    console.log('🧭 ResponsiveNavbar: User ID state:', { 
-      currentUserId, 
-      userIdLoading, 
-      isAuthenticated,
-      hasAuthUser: !!user 
-    });
-  }, [currentUserId, userIdLoading, isAuthenticated, user]);
+  const { user, isAuthenticated, signOut, loading, dbUserId } = useAuth();
   const { openModal } = useAuthModal(); // USE GLOBAL AUTH MODAL
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userButtonRef = useRef<HTMLButtonElement>(null);
@@ -673,19 +661,18 @@ export const ResponsiveNavbar: React.FC = () => {
                   {isAuthenticated && (
                     <>
                       <Link
-                        to={currentUserId ? `/user/${currentUserId}` : (userIdLoading ? "#" : "/profile")}
+                        to={dbUserId ? `/user/${dbUserId}` : "#"}
                         className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                         onClick={(e) => {
-                          if (userIdLoading) {
+                          if (!dbUserId) {
                             e.preventDefault();
-                            console.log('⏳ ResponsiveNavbar: Profile click blocked - still loading user ID');
                           } else {
                             setIsMenuOpen(false);
                           }
                         }}
                       >
                         <User className="h-5 w-5" />
-                        <span>Profile{userIdLoading ? ' (Loading...)' : ''}</span>
+                        <span>Profile</span>
                       </Link>
                       <Link
                         to="/review"
@@ -1088,19 +1075,18 @@ export const ResponsiveNavbar: React.FC = () => {
                       className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50">
                       <div className="py-1">
                         <Link
-                          to={currentUserId ? `/user/${currentUserId}` : (userIdLoading ? "#" : "/profile")}
+                          to={dbUserId ? `/user/${dbUserId}` : "#"}
                           className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
                           onClick={(e) => {
-                            if (userIdLoading) {
+                            if (!dbUserId) {
                               e.preventDefault();
-                              console.log('⏳ ResponsiveNavbar: Profile click blocked - still loading user ID');
                             } else {
                               setIsUserMenuOpen(false);
                             }
                           }}
                         >
                           <User className="h-4 w-4" />
-                          <span>Profile{userIdLoading ? ' (Loading...)' : ''}</span>
+                          <span>Profile</span>
                         </Link>
                         <Link
                           to="/review"
@@ -1187,18 +1173,17 @@ export const ResponsiveNavbar: React.FC = () => {
             {isAuthenticated ? (
               <>
                 <Link
-                  to={currentUserId ? `/user/${currentUserId}` : (userIdLoading ? "#" : "/profile")}
+                  to={dbUserId ? `/user/${dbUserId}` : "#"}
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                   onClick={(e) => {
-                    if (userIdLoading) {
+                    if (!dbUserId) {
                       e.preventDefault();
-                      console.log('⏳ ResponsiveNavbar: Profile click blocked - still loading user ID');
                     } else {
                       setIsMenuOpen(false);
                     }
                   }}
                 >
-                  Profile{userIdLoading ? ' (Loading...)' : ''}
+                  Profile
                 </Link>
                 <Link
                   to="/review"
