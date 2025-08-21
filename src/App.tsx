@@ -52,16 +52,6 @@ const NavigationDebugger: React.FC = () => {
 
 // Component that needs to be inside Router context
 const AppContent: React.FC = () => {
-  const { loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    );
-  }
-
   // Debug navigation
   console.log('🌐 App.tsx: Rendering routes for path:', window.location.pathname);
 
