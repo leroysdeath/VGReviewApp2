@@ -254,7 +254,7 @@ export const createReview = async (
       user: data.user ? {
         id: data.user.id,
         name: data.user.username || data.user.name,
-        picurl: data.user.picurl
+        avatar_url: data.user.avatar_url
       } : undefined,
       game: data.game ? {
         id: data.game.id,
@@ -299,7 +299,7 @@ export interface Review {
   user?: {
     id: number;
     name: string;
-    picurl?: string;
+    avatar_url?: string;
   };
   game?: {
     id: number;
@@ -324,7 +324,7 @@ export interface Comment {
   user?: {
     id: number;
     name: string;
-    picurl?: string;
+    avatar_url?: string;
   };
 }
 
@@ -395,7 +395,7 @@ export const getUserReviewForGame = async (gameId: number): Promise<ServiceRespo
       user: data.user ? {
         id: data.user.id,
         name: data.user.username || data.user.name,
-        picurl: data.user.picurl
+        avatar_url: data.user.avatar_url
       } : undefined,
       game: data.game ? {
         id: data.game.id,
@@ -482,7 +482,7 @@ export const updateReview = async (
       user: data.user ? {
         id: data.user.id,
         name: data.user.username || data.user.name,
-        picurl: data.user.picurl
+        avatar_url: data.user.avatar_url
       } : undefined,
       game: data.game ? {
         id: data.game.id,
@@ -538,7 +538,7 @@ export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
       user: item.user ? {
         id: item.user.id,
         name: item.user.name,
-        picurl: item.user.picurl
+        avatar_url: item.user.avatar_url
       } : undefined,
       game: item.game ? {
         id: item.game.id,
@@ -609,7 +609,7 @@ export const getReview = async (
       user: data.user ? {
         id: data.user.id,
         name: data.user.username || data.user.name,
-        picurl: data.user.picurl
+        avatar_url: data.user.avatar_url
       } : undefined,
       game: data.game ? {
         id: data.game.id,
@@ -799,7 +799,7 @@ export const getCommentsForReview = async (
       .from('review_comment')
       .select(`
         *,
-        user:user_id(id, username, name, picurl)
+        user:user_id(id, username, name, avatar_url)
       `, { count: 'exact' })
       .eq('review_id', reviewId)
       .order('created_at', { ascending: false })
@@ -825,7 +825,7 @@ export const getCommentsForReview = async (
         user: item.user ? {
           id: item.user.id,
           name: item.user.username || item.user.name,
-          picurl: item.user.picurl
+          avatar_url: item.user.avatar_url
         } : undefined
       };
 
@@ -921,7 +921,7 @@ export const addComment = async (
       })
       .select(`
         *,
-        user:user_id(id, username, name, picurl)
+        user:user_id(id, username, name, avatar_url)
       `)
       .single();
 
@@ -940,7 +940,7 @@ export const addComment = async (
       user: data.user ? {
         id: data.user.id,
         name: data.user.username || data.user.name,
-        picurl: data.user.picurl
+        avatar_url: data.user.avatar_url
       } : undefined
     };
 
@@ -993,7 +993,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       user: item.user ? {
         id: item.user.id,
         name: item.user.name,
-        picurl: item.user.picurl
+        avatar_url: item.user.avatar_url
       } : undefined,
       game: item.game ? {
         id: item.game.id,
