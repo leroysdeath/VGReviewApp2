@@ -13,7 +13,7 @@ import {
   Bell,
   Settings
 } from 'lucide-react';
-import { useCurrentUserId } from '../hooks/useCurrentUserId';
+import { useAuth } from '../hooks/useAuth';
 
 interface ModernNavbarProps {
   onLoginClick?: () => void;
@@ -29,7 +29,7 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
   isAuthenticated = false,
   user
 }) => {
-  const { userId: currentUserId, loading: userIdLoading } = useCurrentUserId();
+  const { dbUserId } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -171,10 +171,10 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                       ref={dropdownRef}
                       className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1 z-50">
                       <Link
-                        to={currentUserId ? `/user/${currentUserId}` : (userIdLoading ? "#" : "/profile")}
+                        to={dbUserId ? `/user/${dbUserId}` : "#"}
                         className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                         onClick={(e) => {
-                          if (userIdLoading) {
+                          if (!dbUserId) {
                             e.preventDefault();
                           } else {
                             setIsUserMenuOpen(false);
@@ -182,7 +182,7 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                         }}
                       >
                         <User className="h-4 w-4 mr-3" />
-                        Profile{userIdLoading ? ' (Loading...)' : ''}
+                        Profile
                       </Link>
                       <Link
                         to="/settings"
@@ -280,10 +280,10 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                       </div>
                     </div>
                     <Link
-                      to={currentUserId ? `/user/${currentUserId}` : (userIdLoading ? "#" : "/profile")}
+                      to={dbUserId ? `/user/${dbUserId}` : "#"}
                       className="flex items-center space-x-3 px-3 py-3 text-gray-300 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors"
                       onClick={(e) => {
-                        if (userIdLoading) {
+                        if (!dbUserId) {
                           e.preventDefault();
                         } else {
                           setIsMenuOpen(false);
@@ -291,7 +291,7 @@ export const ModernNavbar: React.FC<ModernNavbarProps> = ({
                       }}
                     >
                       <User className="h-5 w-5" />
-                      <span>Profile{userIdLoading ? ' (Loading...)' : ''}</span>
+                      <span>Profile</span>
                     </Link>
                     <Link
                       to="/settings"

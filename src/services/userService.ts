@@ -29,8 +29,10 @@ export class UserService {
   private cacheTimestamps = new Map<string, number>();
 
   constructor() {
-    // Set up cache cleanup interval
-    setInterval(() => this.cleanupCache(), 60000); // Every minute
+    // Set up cache cleanup interval only in browser environment
+    if (typeof window !== 'undefined') {
+      setInterval(() => this.cleanupCache(), 60000); // Every minute
+    }
   }
 
   /**

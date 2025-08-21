@@ -14,50 +14,69 @@ export const useAuth = () => {
   useEffect(() => {
     // Get initial session and database user ID
     const getInitialSession = async () => {
-      const session = await authService.getCurrentSession();
-      setSession(session);
-      if (session?.user) {
-        // Convert Supabase user to our AuthUser format
-        const authUser = {
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
-          avatar: session.user.user_metadata?.avatar_url,
-          created_at: session.user.created_at
-        };
-        setUser(authUser);
-        
-        // Get or create database user ID
-        await getOrCreateDbUserId(session);
-      } else {
+      try {
+        const session = await authService.getCurrentSession();
+        setSession(session);
+        if (session?.user) {
+          // Convert Supabase user to our AuthUser format
+          const authUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
+            avatar: session.user.user_metadata?.avatar_url,
+            created_at: session.user.created_at
+          };
+          setUser(authUser);
+          
+          // Get or create database user ID (non-blocking)
+          getOrCreateDbUserId(session).catch(error => {
+            console.error('Background user ID creation failed:', error);
+          });
+        } else {
+          setUser(null);
+          setDbUserId(null);
+        }
+      } catch (error) {
+        console.error('Error in getInitialSession:', error);
         setUser(null);
+        setSession(null);
         setDbUserId(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     getInitialSession();
 
     // Listen for auth changes
     const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      if (session?.user) {
-        const authUser = {
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
-          avatar: session.user.user_metadata?.avatar_url,
-          created_at: session.user.created_at
-        };
-        setUser(authUser);
-        
-        // Get or create database user ID
-        await getOrCreateDbUserId(session);
-      } else {
+      try {
+        setSession(session);
+        if (session?.user) {
+          const authUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
+            avatar: session.user.user_metadata?.avatar_url,
+            created_at: session.user.created_at
+          };
+          setUser(authUser);
+          
+          // Get or create database user ID (non-blocking)
+          getOrCreateDbUserId(session).catch(error => {
+            console.error('Background user ID creation failed:', error);
+          });
+        } else {
+          setUser(null);
+          setDbUserId(null);
+        }
+      } catch (error) {
+        console.error('Error in auth state change:', error);
         setUser(null);
         setDbUserId(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
