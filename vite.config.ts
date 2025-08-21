@@ -12,7 +12,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: true,
-    minify: 'terser',
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -20,12 +20,6 @@ export default defineConfig({
           supabase: ['@supabase/supabase-js'],
           ui: ['lucide-react']
         }
-      }
-    },
-    terserOptions: {
-      compress: {
-        drop_console: false,  // Keep console logs for debugging
-        drop_debugger: true
       }
     }
   },
