@@ -212,6 +212,24 @@ GRANT EXECUTE ON FUNCTION search_games_phrase(text, integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION search_games_by_genre(text, integer) TO authenticated;
 
 -- Step 10: Add RLS policies for search functions
+-- Drop existing policies if they exist to avoid conflicts
+DO $$
+BEGIN
+    -- Drop policies if they exist
+    IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow search_games_secure' AND tablename = 'game') THEN
+        DROP POLICY "Allow search_games_secure" ON game;
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow search_games_phrase' AND tablename = 'game') THEN
+        DROP POLICY "Allow search_games_phrase" ON game;
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow search_games_by_genre' AND tablename = 'game') THEN
+        DROP POLICY "Allow search_games_by_genre" ON game;
+    END IF;
+END $$;
+
+-- Create new policies
 CREATE POLICY "Allow search_games_secure" ON game FOR SELECT USING (true);
 CREATE POLICY "Allow search_games_phrase" ON game FOR SELECT USING (true);
 CREATE POLICY "Allow search_games_by_genre" ON game FOR SELECT USING (true);
