@@ -54,26 +54,65 @@ export const supabaseHelpers = {
   },
 
   async searchGames(query: string, limit = 20) {
-    // Sanitize search query to prevent SQL injection
-    const sanitizedQuery = sanitizeSearchTerm(query);
-    
-    if (!sanitizedQuery) {
+    // CRITICAL SECURITY FIX: Comprehensive input validation
+    if (!query || typeof query !== 'string') {
       return [];
     }
     
-    const { data, error } = await supabase
-      .from('game')
-      .select(`
-        *,
-        platform_games(
-          platform(*)
-        )
-      `)
-      .or(`name.ilike.*${sanitizedQuery}*,description.ilike.*${sanitizedQuery}*,genre.ilike.*${sanitizedQuery}*`)
-      .limit(Math.min(limit, 100)); // Also limit the max results for safety
+    const trimmedQuery = query.trim();
     
-    if (error) throw error;
-    return data;
+    // Validate query length and content
+    if (trimmedQuery.length < 2 || trimmedQuery.length > 100) {
+      return [];
+    }
+    
+    // Block potentially malicious patterns
+    const dangerousPatterns = [
+      /['"`;\\]/g,           // SQL injection characters
+      /--/g,                 // SQL comments
+      /\/\*/g,               // Block comments
+      /\*\//g,               // Block comment end
+      /union\s+select/gi,    // Union injection
+      /drop\s+table/gi,      // Drop table
+      /delete\s+from/gi,     // Delete injection
+      /insert\s+into/gi,     // Insert injection
+      /update\s+set/gi       // Update injection
+    ];
+    
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(trimmedQuery)) {
+        console.warn('Blocked potentially malicious search query:', trimmedQuery);
+        return [];
+      }
+    }
+    
+    // SECURITY FIX: Use proper escaping for LIKE wildcards and special chars
+    const escapedQuery = trimmedQuery
+      .replace(/[%_\\]/g, '\\$&')        // Escape LIKE wildcards
+      .replace(/[&<>"']/g, '');          // Remove HTML/JS injection chars
+    
+    try {
+      const { data, error } = await supabase
+        .from('game')
+        .select(`
+          *,
+          platform_games(
+            platform(*)
+          )
+        `)
+        .or(`name.ilike.%${escapedQuery}%,description.ilike.%${escapedQuery}%,genre.ilike.%${escapedQuery}%`)
+        .limit(Math.min(limit, 100));
+      
+      if (error) {
+        console.error('Search query error:', error);
+        throw error;
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error('Game search failed:', error);
+      throw error;
+    }
   },
 
   async getPopularGames(limit = 20) {

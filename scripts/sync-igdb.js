@@ -225,7 +225,8 @@ class NodeIGDBSyncService {
   async addGameToDatabase(igdbGame) {
     try {
       const gameData = {
-        game_id: igdbGame.id.toString(),
+        // CRITICAL FIX: Don't set game_id - let database auto-increment the primary key
+        // game_id: igdbGame.id.toString(), // REMOVED - this was causing orphaned records
         igdb_id: igdbGame.id,
         name: igdbGame.name,
         slug: igdbGame.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),

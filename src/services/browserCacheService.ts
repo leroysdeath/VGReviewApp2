@@ -108,7 +108,131 @@ class BrowserCacheService {
 
 export const browserCache = new BrowserCacheService();
 
-// Auto cleanup every 5 minutes
-setInterval(() => {
-  browserCache.cleanup();
-}, 5 * 60 * 1000);
+// MEMORY LEAK FIX: Properly managed cleanup interval with enhanced lifecycle management
+class BrowserCacheManager {
+  private cleanupInterval: NodeJS.Timeout | null = null;
+  private isDestroyed: boolean = false;
+  private readonly CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+  
+  constructor() {
+    if (typeof window !== 'undefined') {
+      // Only initialize in browser environment
+      this.startCleanupInterval();
+      this.setupEventListeners();
+    }
+  }
+  
+  private setupEventListeners() {
+    if (typeof window === 'undefined') return;
+    
+    // Clean up on page unload
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
+    
+    // Clean up on page hide (mobile/tab switching)
+    window.addEventListener('pagehide', this.handleBeforeUnload);
+    
+    // Cleanup on visibility change (tab switching)
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
+  }
+  
+  private handleBeforeUnload = () => {
+    this.destroy();
+  };
+  
+  private handleVisibilityChange = () => {
+    if (document.hidden) {
+      // Page is hidden, stop cleanup to save resources
+      this.stopCleanupInterval();
+    } else if (!this.isDestroyed) {
+      // Page is visible again, restart cleanup
+      this.startCleanupInterval();
+    }
+  };
+  
+  private startCleanupInterval() {
+    if (this.isDestroyed) return;
+    
+    // Clear any existing interval
+    this.stopCleanupInterval();
+    
+    try {
+      // Start new cleanup interval with error handling
+      this.cleanupInterval = setInterval(() => {
+        try {
+          if (!this.isDestroyed && browserCache) {
+            browserCache.cleanup();
+          }
+        } catch (error) {
+          console.error('Cache cleanup failed:', error);
+          // Don't stop the interval for this error, just log it
+        }
+      }, this.CLEANUP_INTERVAL_MS);
+      
+      console.log('✅ Cache cleanup interval started');
+    } catch (error) {
+      console.error('Failed to start cache cleanup interval:', error);
+    }
+  }
+  
+  private stopCleanupInterval() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+      console.log('🛑 Cache cleanup interval stopped');
+    }
+  }
+  
+  private removeEventListeners() {
+    if (typeof window === 'undefined') return;
+    
+    window.removeEventListener('beforeunload', this.handleBeforeUnload);
+    window.removeEventListener('pagehide', this.handleBeforeUnload);
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+  }
+  
+  public destroy() {
+    if (this.isDestroyed) return;
+    
+    console.log('🧹 Destroying cache manager...');
+    this.isDestroyed = true;
+    this.stopCleanupInterval();
+    this.removeEventListeners();
+    
+    // Perform final cleanup
+    try {
+      if (browserCache) {
+        browserCache.cleanup();
+      }
+    } catch (error) {
+      console.error('Final cache cleanup failed:', error);
+    }
+  }
+  
+  public restart() {
+    if (!this.isDestroyed) {
+      this.startCleanupInterval();
+    }
+  }
+  
+  public getStatus() {
+    return {
+      isActive: !!this.cleanupInterval,
+      isDestroyed: this.isDestroyed,
+      intervalMs: this.CLEANUP_INTERVAL_MS
+    };
+  }
+}
+
+// Initialize proper cleanup management with singleton pattern
+let cacheManager: BrowserCacheManager | null = null;
+
+// Only create manager in browser environment
+if (typeof window !== 'undefined') {
+  cacheManager = new BrowserCacheManager();
+  
+  // Export for debugging/testing
+  (window as any).__cacheManager = cacheManager;
+}
+
+// Export manager for testing purposes
+export { cacheManager };
