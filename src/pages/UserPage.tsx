@@ -202,17 +202,30 @@ export const UserPage: React.FC = () => {
     fetchUserData();
   }, [id, isAuthenticated, authUser]);
 
+  // Debug current state before any redirects
+  console.log('📊 UserPage: Current state before renders', {
+    loading,
+    error,
+    user: user ? { id: user.id, name: user.name } : null,
+    hasError: !!error,
+    hasUser: !!user,
+    timestamp: new Date().toISOString()
+  });
+
   if (loading) {
+    console.log('⏳ UserPage: Showing loading spinner');
     return <LoadingSpinner size="lg" text="Loading user profile..." />;
   }
   
   if (error) {
-    console.log('🔀 UserPage: Redirecting to home due to error:', error);
+    console.log('❌ UserPage: ERROR DETECTED - Redirecting to home due to error:', error);
+    console.log('❌ UserPage: This is why no further logs appear - early redirect!');
     return <Navigate to="/" replace />;
   }
   
   if (!user) {
-    console.log('🔀 UserPage: User not found, redirecting to users page');
+    console.log('👤 UserPage: NO USER FOUND - Redirecting to users page');
+    console.log('👤 UserPage: This is why no further logs appear - early redirect!');
     return <Navigate to="/users" replace />;
   }
   
