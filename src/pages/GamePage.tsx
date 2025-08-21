@@ -23,7 +23,7 @@ interface GameReview {
   user?: {
     id: number;
     name: string;
-    picurl?: string;
+    avatar_url?: string;
   };
 }
 
@@ -397,7 +397,7 @@ export const GamePage: React.FC = () => {
       likeCount: 0, // To be implemented with real data
       commentCount: 0, // To be implemented with real data
       author: review.user?.name || 'Anonymous',
-      authorAvatar: review.user?.picurl || '/default-avatar.png'
+      authorAvatar: review.user?.avatar_url || '/default-avatar.png'
     })),
     [validRatings, id, game?.name]
   );

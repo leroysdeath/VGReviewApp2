@@ -19,7 +19,7 @@ interface UserSearchResult {
   id: string;
   name: string;
   bio: string | null;
-  picurl: string | null;
+  avatar_url: string | null;
 }
 
 interface CachedQuickSearch {
@@ -181,7 +181,7 @@ export const ResponsiveNavbar: React.FC = () => {
       // Fetch users from Supabase
       const { data: users, error } = await supabase
         .from('user')
-        .select('id, name, bio, picurl')
+        .select('id, name, bio, avatar_url')
         .ilike('name', `%${query}%`)
         .limit(8);
 
@@ -577,9 +577,9 @@ export const ResponsiveNavbar: React.FC = () => {
                                 className="flex items-center w-full text-left p-2 hover:bg-gray-700 rounded transition-colors"
                               >
                                 <div className="w-10 h-10 bg-gray-700 rounded-full mr-3 flex-shrink-0 overflow-hidden">
-                                  {user.picurl ? (
+                                  {user.avatar_url ? (
                                     <img
-                                      src={user.picurl}
+                                      src={user.avatar_url}
                                       alt={user.username || user.name}
                                       className="w-full h-full object-cover"
                                       loading="lazy"
@@ -891,9 +891,9 @@ export const ResponsiveNavbar: React.FC = () => {
                             className="flex items-center w-full text-left p-2 hover:bg-gray-700 rounded group transition-colors"
                           >
                             <div className="w-10 h-10 bg-gray-700 rounded-full mr-3 flex-shrink-0 overflow-hidden">
-                              {user.picurl ? (
+                              {user.avatar_url ? (
                                 <img
-                                  src={user.picurl}
+                                  src={user.avatar_url}
                                   alt={user.name}
                                   className="w-full h-full object-cover"
                                   loading="lazy"

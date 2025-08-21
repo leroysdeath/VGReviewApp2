@@ -163,7 +163,7 @@ class GameDataService {
       user?: {
         id: number;
         name: string;
-        picurl?: string;
+        avatar_url?: string;
       };
     }>;
   }> {
@@ -250,7 +250,7 @@ class GameDataService {
           user:user_id(
             id,
             name,
-            picurl
+            avatar_url
           )
         `)
         .eq('game_id', gameData.id)  // Use game.id (database ID), not igdbId

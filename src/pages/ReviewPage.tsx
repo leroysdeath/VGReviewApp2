@@ -17,7 +17,7 @@ interface Review {
   user: {
     id: number;
     name: string;
-    picurl?: string;
+    avatar_url?: string;
   };
 }
 
@@ -32,7 +32,7 @@ interface Comment {
   user: {
     id: number;
     name: string;
-    picurl?: string;
+    avatar_url?: string;
   };
 }
 
@@ -91,7 +91,7 @@ export const ReviewPage: React.FC = () => {
             id,
             username,
             name,
-            picurl
+            avatar_url
           )
         `)
         .eq('user_id', userIdNum)
@@ -119,7 +119,7 @@ export const ReviewPage: React.FC = () => {
               id,
               username,
               name,
-              picurl
+              avatar_url
             ),
             game:game_id!inner(igdb_id)
           `)
@@ -194,7 +194,7 @@ export const ReviewPage: React.FC = () => {
             id,
             username,
             name,
-            picurl
+            avatar_url
           )
         `)
         .eq('review_id', reviewId)
@@ -344,7 +344,7 @@ export const ReviewPage: React.FC = () => {
                   <div className="bg-gray-700 rounded-lg p-4 mb-6">
                     <div className="flex items-center gap-3 mb-4">
                       <img
-                        src={review.user.picurl || '/default-avatar.png'}
+                        src={review.user.avatar_url || '/default-avatar.png'}
                         alt={review.user.username || review.user.name}
                         className="w-10 h-10 rounded-full object-cover"
                         onError={(e) => {
@@ -434,7 +434,7 @@ export const ReviewPage: React.FC = () => {
                 <div key={comment.id} className="bg-gray-800 rounded-lg p-4">
                   <div className="flex items-start gap-3">
                     <img
-                      src={comment.user.picurl || '/default-avatar.png'}
+                      src={comment.user.avatar_url || '/default-avatar.png'}
                       alt={comment.user.username || comment.user.name}
                       className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                       onError={(e) => {
@@ -517,7 +517,7 @@ export const ReviewPage: React.FC = () => {
             <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <img
-                  src={review.user.picurl || '/default-avatar.png'}
+                  src={review.user.avatar_url || '/default-avatar.png'}
                   alt={review.user.name}
                   className="w-10 h-10 rounded-full object-cover"
                 />

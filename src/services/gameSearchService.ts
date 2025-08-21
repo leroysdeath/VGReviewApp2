@@ -74,12 +74,27 @@ class GameSearchService {
           avg_rating:rating(rating.avg())
         `, { count: 'exact' })
 
-      // Apply search query filter
+      // Apply search query filter using secure full-text search
       if (query && query.trim()) {
-        const searchTerm = `%${query.trim()}%`
-        baseQuery = baseQuery.or(
-          `name.ilike.${searchTerm},description.ilike.${searchTerm},summary.ilike.${searchTerm}`
-        )
+        // Use secure RPC function instead of vulnerable ILIKE
+        const { data: searchResults, error: searchError } = await supabase
+          .rpc('search_games_secure', {
+            search_query: query.trim(),
+            limit_count: 1000 // Get all matching for further filtering
+          });
+          
+        if (searchError) {
+          console.error('Search RPC error:', searchError);
+          throw searchError;
+        }
+        
+        if (searchResults && searchResults.length > 0) {
+          const matchingIds = searchResults.map(r => r.id);
+          baseQuery = baseQuery.in('id', matchingIds);
+        } else {
+          // No search results, return empty
+          return { data: [], count: 0, error: null };
+        }
       }
 
       // Apply release date filters
@@ -90,12 +105,33 @@ class GameSearchService {
         baseQuery = baseQuery.lte('release_date', releaseDateEnd.toISOString().split('T')[0])
       }
 
-      // Apply genre filters
+      // Apply genre filters using secure function
       if (genres && genres.length > 0) {
-        const genreFilters = genres.map(genre => 
-          `genre.ilike.%${genre}%,genres.cs.{${genre}}`
-        ).join(',')
-        baseQuery = baseQuery.or(genreFilters)
+        const genreMatchingIds = new Set<number>();
+        
+        for (const genre of genres) {
+          const { data: genreResults, error: genreError } = await supabase
+            .rpc('search_games_by_genre', {
+              genre_name: genre,
+              limit_count: 1000
+            });
+            
+          if (genreError) {
+            console.error('Genre search error:', genreError);
+            continue; // Skip this genre but continue with others
+          }
+          
+          if (genreResults) {
+            genreResults.forEach(result => genreMatchingIds.add(result.id));
+          }
+        }
+        
+        if (genreMatchingIds.size > 0) {
+          baseQuery = baseQuery.in('id', Array.from(genreMatchingIds));
+        } else {
+          // No genre matches found
+          return { data: [], count: 0, error: null };
+        }
       }
 
       // Execute the base query

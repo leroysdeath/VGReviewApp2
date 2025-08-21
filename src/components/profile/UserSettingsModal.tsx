@@ -100,7 +100,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
             console.log('  📝 website field:', data.website);
             console.log('  📝 platform field:', data.platform);
             console.log('  📝 avatar_url field:', data.avatar_url);
-            console.log('  📝 picurl field:', data.picurl);
+            console.log('  📝 avatar_url field (standard):', data.avatar_url);
             console.log('  📧 email field:', data.email);
             
             console.log('🔄 Using standardized field mapping utility...');

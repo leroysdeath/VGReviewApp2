@@ -70,7 +70,7 @@ export const ResponsiveLandingPage: React.FC = () => {
       date: review.postDateTime,
       hasText: !!review.review && review.review.trim().length > 0,
       author: review.user?.name || 'Anonymous',
-      authorAvatar: review.user?.picurl || '',
+      authorAvatar: review.user?.avatar_url || '',
       likeCount: review.likeCount || 0,
       commentCount: review.commentCount || 0,
       theme

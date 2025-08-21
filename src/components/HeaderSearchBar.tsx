@@ -13,7 +13,7 @@ interface User {
   id: string;
   name: string;
   bio: string | null;
-  picurl: string | null;
+  avatar_url: string | null;
 }
 
 interface HeaderSearchBarProps {
@@ -187,7 +187,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
       // Fetch users from Supabase
       const { data: users, error } = await supabase
         .from('user')
-        .select('id, name, bio, picurl')
+        .select('id, name, bio, avatar_url')
         .ilike('name', `%${query}%`)
         .limit(maxSuggestions);
 
@@ -588,9 +588,9 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
                   >
                     {/* User Avatar */}
                     <div className="w-10 h-10 bg-gray-700 rounded-full mr-3 flex-shrink-0 overflow-hidden">
-                      {user.picurl ? (
+                      {user.avatar_url ? (
                         <img
-                          src={user.picurl}
+                          src={user.avatar_url}
                           alt={user.username || user.name}
                           className="w-full h-full object-cover"
                           loading="lazy"

@@ -15,7 +15,7 @@ export interface Activity {
   user?: {
     id: number;
     name: string;
-    picurl?: string;
+    avatar_url?: string;
   };
   game?: {
     id: number;
@@ -69,7 +69,7 @@ export const getUserActivities = async (
       .from('user_activity_view')
       .select(`
         *,
-        user:user_id(id, name, picurl),
+        user:user_id(id, name, avatar_url),
         game:game_id(id, name, pic_url),
         review:review_id(id, rating, review),
         comment:comment_id(id, content)
@@ -426,7 +426,7 @@ export const addComment = async (
       })
       .select(`
         *,
-        user:user_id(id, name, picurl)
+        user:user_id(id, name, avatar_url)
       `)
       .single();
 
@@ -473,11 +473,11 @@ export const getCommentsForReview = async (
       .from('comment')
       .select(`
         *,
-        user:user_id(id, name, picurl),
+        user:user_id(id, name, avatar_url),
         likes:comment_id(count),
         replies:comment!parent_id(
           *,
-          user:user_id(id, name, picurl),
+          user:user_id(id, name, avatar_url),
           likes:comment_id(count)
         )
       `, { count: 'exact' })
