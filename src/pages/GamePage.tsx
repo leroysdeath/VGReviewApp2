@@ -15,6 +15,7 @@ import { DLCSection } from '../components/DLCSection';
 import { ParentGameSection } from '../components/ParentGameSection';
 import { ModSection } from '../components/ModSection';
 import { dlcService } from '../services/dlcService';
+import { OptimizedImage } from '../components/OptimizedImage';
 
 // Interface for review data from database
 interface GameReview {
@@ -607,13 +608,17 @@ export const GamePage: React.FC = () => {
             <div className="bg-gray-800 rounded-lg overflow-hidden">
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
-                  <img
-                    src={game.cover_url || '/placeholder-game.jpg'}
+                  <OptimizedImage
+                    src={game.cover?.url ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}` : (game.cover_url || '/placeholder-game.jpg')}
                     alt={game.name}
                     className="h-64 w-full object-cover md:h-80 md:w-64"
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder-game.jpg';
+                    optimization={{
+                      width: 640,
+                      height: 960,
+                      quality: 95,
+                      format: 'webp'
                     }}
+                    fallback="/placeholder-game.jpg"
                   />
                 </div>
                 <div className="p-8">

@@ -28,6 +28,7 @@ export interface Game {
   developer?: string;
   publisher?: string;
   igdb_rating?: number;
+  category?: number;
   created_at: string;
   updated_at: string;
 }

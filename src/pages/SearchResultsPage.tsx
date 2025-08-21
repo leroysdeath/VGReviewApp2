@@ -1,10 +1,12 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useGameSearch } from '../hooks/useGameSearch';
 import { OptimizedImage } from '../components/OptimizedImage';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { shouldShowCategoryLabel, getCategoryLabel, getCategoryStyles } from '../utils/gameCategoryLabels';
+import { filterProtectedContent } from '../utils/contentProtectionFilter';
 
 interface Game {
   id: number;
@@ -23,6 +25,7 @@ interface Game {
   metacritic_score?: number;
   avg_user_rating?: number;
   user_rating_count?: number;
+  category?: number;
 }
 
 interface Platform {
@@ -164,7 +167,19 @@ export const SearchResultsPage: React.FC = () => {
     return game.cover_url || game.pic_url || '/placeholder-game.jpg';
   };
 
-  const totalPages = Math.ceil(searchState.totalResults / ITEMS_PER_PAGE);
+  // Filter out problematic fan-made content before display
+  const filteredGames = useMemo(() => {
+    const filtered = filterProtectedContent(searchState.games);
+    
+    // Log filtering stats in development
+    if (import.meta.env.DEV && searchState.games.length !== filtered.length) {
+      console.log(`🛡️ Content filter: ${searchState.games.length - filtered.length} items filtered from ${searchState.games.length} results`);
+    }
+    
+    return filtered;
+  }, [searchState.games]);
+
+  const totalPages = Math.ceil(filteredGames.length / ITEMS_PER_PAGE);
 
   // Generate year options for filter
   const currentYear = new Date().getFullYear();
@@ -344,7 +359,7 @@ export const SearchResultsPage: React.FC = () => {
           {/* Results Info */}
           <div className="flex justify-between items-center text-gray-400">
             <p>
-              Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, searchState.totalResults)} - {Math.min(currentPage * ITEMS_PER_PAGE, searchState.totalResults)} of {searchState.totalResults} games
+              Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredGames.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredGames.length)} of {filteredGames.length} games
             </p>
             <button
               onClick={performSearch}
@@ -373,12 +388,12 @@ export const SearchResultsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Games Grid/List */}
-        {!searchState.loading && !searchState.error && (
+        {/* Games Results */}
+        {!searchState.loading && !searchState.error && filteredGames.length > 0 && (
           <>
             {viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-                {searchState.games.map(game => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredGames.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(game => (
                   <div
                     key={game.id}
                     onClick={() => handleGameClick(game)}
@@ -392,6 +407,19 @@ export const SearchResultsPage: React.FC = () => {
                         optimization={{ width: 400, height: 600, quality: 85 }}
                         fallback="/placeholder-game.jpg"
                       />
+                      {shouldShowCategoryLabel(game.category) && (
+                        <div className="absolute top-2 left-2">
+                          {(() => {
+                            const label = getCategoryLabel(game.category);
+                            const styles = getCategoryStyles(game.category);
+                            return label && styles ? (
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles.text} ${styles.bg} border border-current/30`}>
+                                {label}
+                              </span>
+                            ) : null;
+                          })()}
+                        </div>
+                      )}
                       {game.avg_user_rating && (
                         <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
                           <Star className="h-4 w-4 text-yellow-400 fill-current" />
@@ -413,15 +441,15 @@ export const SearchResultsPage: React.FC = () => {
                         </p>
                       )}
                       {game.genre && (
-                        <p className="text-sm text-purple-400 mt-2">{game.genre}</p>
+                        <p className="text-sm mt-2 text-gray-400">{game.genre}</p>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="space-y-4 mb-8">
-                {searchState.games.map(game => (
+              <div className="space-y-4">
+                {filteredGames.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(game => (
                   <div
                     key={game.id}
                     onClick={() => handleGameClick(game)}
@@ -437,7 +465,20 @@ export const SearchResultsPage: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-semibold text-xl mb-2">{game.name}</h3>
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold text-xl">{game.name}</h3>
+                            {shouldShowCategoryLabel(game.category) && (
+                              (() => {
+                                const label = getCategoryLabel(game.category);
+                                const styles = getCategoryStyles(game.category);
+                                return label && styles ? (
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles.text} ${styles.bg} border border-current/30`}>
+                                    {label}
+                                  </span>
+                                ) : null;
+                              })()
+                            )}
+                          </div>
                           <p className="text-gray-400 text-sm mb-2 line-clamp-2">
                             {game.summary || game.description || 'No description available'}
                           </p>
@@ -452,7 +493,7 @@ export const SearchResultsPage: React.FC = () => {
                               <span>by {game.developer}</span>
                             )}
                             {game.genre && (
-                              <span className="text-purple-400">{game.genre}</span>
+                              <span>{game.genre}</span>
                             )}
                           </div>
                         </div>
@@ -478,7 +519,7 @@ export const SearchResultsPage: React.FC = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2">
+              <div className="flex justify-center items-center gap-2 mt-8">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
@@ -530,9 +571,18 @@ export const SearchResultsPage: React.FC = () => {
         )}
 
         {/* No Results */}
-        {!searchState.loading && !searchState.error && searchState.games.length === 0 && (
+        {!searchState.loading && !searchState.error && filteredGames.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-gray-400 text-lg mb-4">No games found matching your criteria</p>
+            {searchState.games.length > 0 ? (
+              <>
+                <p className="text-gray-400 text-lg mb-2">Search results were filtered for content protection</p>
+                <p className="text-gray-500 text-sm mb-4">
+                  {searchState.games.length} result{searchState.games.length !== 1 ? 's were' : ' was'} filtered out to avoid potentially problematic fan-made content
+                </p>
+              </>
+            ) : (
+              <p className="text-gray-400 text-lg mb-4">No games found matching your criteria</p>
+            )}
             <button
               onClick={() => {
                 setFilters({

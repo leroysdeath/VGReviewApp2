@@ -1,10 +1,13 @@
 // IGDB API Service
+import { filterProtectedContent, getFilterStats } from '../utils/contentProtectionFilter';
+
 interface IGDBGame {
   id: number;
   name: string;
   summary?: string;
   first_release_date?: number;
   rating?: number;
+  category?: number;
   cover?: {
     id: number;
     url: string;
@@ -65,7 +68,22 @@ class IGDBService {
       }
 
       console.log('✅ IGDB search results:', data.games?.length || 0, 'games found');
-      return data.games || [];
+      
+      // Apply content protection filter
+      const rawGames = data.games || [];
+      const transformedGames = rawGames.map(game => this.transformGameForFilter(game));
+      const filteredGames = filterProtectedContent(transformedGames);
+      
+      // Log filter statistics for debugging
+      const filterStats = getFilterStats(transformedGames);
+      if (filterStats.filtered > 0) {
+        console.log('🛡️ Content protection filter:', filterStats);
+      }
+      
+      // Convert back to IGDB format
+      const filteredIGDBGames = filteredGames.map(game => rawGames.find(raw => raw.id === game.id)!);
+      
+      return filteredIGDBGames;
 
     } catch (error) {
       console.error('IGDB search failed:', error);
@@ -109,6 +127,20 @@ class IGDBService {
     }
   }
 
+  // Transform IGDB game for content filter (simplified format)
+  private transformGameForFilter(igdbGame: IGDBGame): any {
+    return {
+      id: igdbGame.id,
+      name: igdbGame.name,
+      developer: igdbGame.involved_companies?.[0]?.company?.name,
+      publisher: igdbGame.involved_companies?.[0]?.company?.name,
+      summary: igdbGame.summary,
+      description: igdbGame.summary,
+      category: igdbGame.category,
+      genres: igdbGame.genres?.map(g => g.name) || [],
+    };
+  }
+
   // Transform IGDB game to our app's format
   transformGame(igdbGame: IGDBGame): any {
     return {
@@ -121,6 +153,7 @@ class IGDBService {
       release_date: igdbGame.first_release_date ? new Date(igdbGame.first_release_date * 1000).toISOString() : undefined,
       rating: igdbGame.rating,
       igdb_rating: igdbGame.rating,
+      category: igdbGame.category,
       cover: igdbGame.cover,
       cover_url: igdbGame.cover?.url ? this.transformImageUrl(igdbGame.cover.url) : undefined,
       pic_url: igdbGame.cover?.url ? this.transformImageUrl(igdbGame.cover.url) : undefined,

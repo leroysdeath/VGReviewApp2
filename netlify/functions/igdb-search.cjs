@@ -127,7 +127,7 @@ exports.handler = async (event, context) => {
           })
         };
       }
-      requestBody = `fields name, summary, first_release_date, rating, cover.url, genres.name, platforms.name, involved_companies.company.name; where id = ${gameId};`;
+      requestBody = `fields name, summary, first_release_date, rating, category, cover.url, genres.name, platforms.name, involved_companies.company.name; where id = ${gameId};`;
     } else {
       // Search request
       if (!query || query.trim().length === 0) {
@@ -142,7 +142,7 @@ exports.handler = async (event, context) => {
       }
 
       // Build IGDB query for game search
-      requestBody = `fields name, summary, first_release_date, rating, cover.url, genres.name, platforms.name, involved_companies.company.name; search "${query.trim()}"; limit ${limit};`;
+      requestBody = `fields name, summary, first_release_date, rating, category, cover.url, genres.name, platforms.name, involved_companies.company.name; search "${query.trim()}"; limit ${limit};`;
     }
 
     console.log('IGDB Request Body:', requestBody);
