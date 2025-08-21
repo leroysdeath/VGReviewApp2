@@ -35,6 +35,9 @@ function App() {
     );
   }
 
+  // Debug navigation
+  console.log('🌐 App.tsx: Rendering routes for path:', window.location.pathname);
+
   return (
     <HelmetProvider>
       <ErrorBoundary>
@@ -49,7 +52,12 @@ function App() {
                     <Route path="/game/:id" element={<GamePage />} />
                     <Route path="/search" element={<SearchResultsPage />} />
                     <Route path="/search-results" element={<SearchResultsPage />} />
-                    <Route path="/user/:id" element={<UserPage />} />
+                    <Route path="/user/:id" element={
+                      <>
+                        {console.log('🚨 App.tsx: UserPage route matched for path:', window.location.pathname, 'useParams would be:', window.location.pathname.split('/')[2])}
+                        <UserPage />
+                      </>
+                    } />
                     <Route path="/users" element={<UserSearchPage />} />
                     <Route path="/debug-auth" element={<DebugAuthPage />} />
                     <Route path="/reset-password" element={<ResetPasswordPage />} />

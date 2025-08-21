@@ -20,9 +20,30 @@ export const UserPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
 
+  // Component lifecycle debugging
+  console.log('🎯 UserPage: Component mounted/re-rendered', { 
+    id, 
+    isAuthenticated, 
+    authUserId: authUser?.id,
+    currentUrl: window.location.pathname,
+    urlParams: useParams(),
+    timestamp: new Date().toISOString()
+  });
+  
+  // Check if component is being rendered at all
+  console.log('🔍 UserPage: Component is rendering - this should appear in console');
+  
+  // Check useEffect dependencies
+  console.log('🔗 UserPage: Dependencies for useEffect:', { id, isAuthenticated, authUser: !!authUser });
+
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!id) return;
+      console.log('🚀 UserPage: Starting fetchUserData', { id, isAuthenticated, authUser: authUser?.id });
+      
+      if (!id) {
+        console.log('❌ UserPage: No ID provided');
+        return;
+      }
       
       // Parse ID to integer for database queries
       const numericId = parseInt(id);
@@ -57,14 +78,35 @@ export const UserPage: React.FC = () => {
         }
         
         // Check if this is the current user's own profile
-        if (isAuthenticated && authUser?.id) {
-          const { data: currentUserData } = await supabase
-            .from('user')
-            .select('id')
-            .eq('provider_id', authUser.id)
-            .single();
-          
-          setIsOwnProfile(currentUserData?.id === numericId);
+        try {
+          if (isAuthenticated && authUser?.id) {
+            console.log('🔍 UserPage: Checking if own profile for auth user:', authUser.id);
+            const { data: currentUserData, error: currentUserError } = await supabase
+              .from('user')
+              .select('id')
+              .eq('provider_id', authUser.id)
+              .single();
+            
+            console.log('👤 UserPage: Current user lookup result:', { currentUserData, currentUserError });
+            
+            if (!currentUserError && currentUserData) {
+              setIsOwnProfile(currentUserData.id === numericId);
+              console.log('✅ UserPage: Own profile check:', { 
+                currentUserId: currentUserData.id, 
+                viewingUserId: numericId, 
+                isOwnProfile: currentUserData.id === numericId 
+              });
+            } else {
+              console.log('⚠️ UserPage: Could not determine if own profile, defaulting to false');
+              setIsOwnProfile(false);
+            }
+          } else {
+            console.log('ℹ️ UserPage: Not authenticated, not own profile');
+            setIsOwnProfile(false);
+          }
+        } catch (ownProfileError) {
+          console.error('❌ UserPage: Error checking own profile:', ownProfileError);
+          setIsOwnProfile(false);
         }
         
         // Fetch user reviews (only those with valid ratings)
