@@ -1,5 +1,5 @@
-import React, { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ResponsiveNavbar } from './components/ResponsiveNavbar';
@@ -24,6 +24,32 @@ import { DebugAuthPage } from './pages/DebugAuthPage';
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 
+// Navigation debugging component
+const NavigationDebugger: React.FC = () => {
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
+  
+  useEffect(() => {
+    console.log('🧭 NavigationDebugger: Route changed', {
+      pathname: location.pathname,
+      search: location.search,
+      isAuthenticated,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Specifically track user page navigation
+    if (location.pathname.startsWith('/user/')) {
+      console.log('👤 NavigationDebugger: User page navigation detected', {
+        path: location.pathname,
+        userId: location.pathname.split('/')[2],
+        isAuthenticated
+      });
+    }
+  }, [location, isAuthenticated]);
+  
+  return null;
+};
+
 function App() {
   const { loading } = useAuth();
 
@@ -43,6 +69,7 @@ function App() {
       <ErrorBoundary>
         <AuthModalProvider>
             <Router>
+              <NavigationDebugger />
               <div className="min-h-screen bg-gray-900 flex flex-col">
                 <SEOHead />
                 <ResponsiveNavbar />
@@ -116,6 +143,18 @@ function App() {
                         </Suspense>
                       } 
                     />
+                    {/* Catch-all route for debugging */}
+                    <Route path="*" element={
+                      <>
+                        {console.log('🔍 App.tsx: Catch-all route hit for path:', window.location.pathname)}
+                        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                          <div className="text-white text-center">
+                            <h1 className="text-3xl font-bold mb-4">Page Not Found</h1>
+                            <p>Path: {window.location.pathname}</p>
+                          </div>
+                        </div>
+                      </>
+                    } />
                   </Routes>
                 </main>
                 <Footer />

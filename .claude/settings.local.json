@@ -19,7 +19,18 @@
       "Bash(npm run sync-igdb:*)",
       "Bash(node:*)",
       "Bash(echo $VITE_SUPABASE_URL)",
-      "Bash(npx netlify dev:*)"
+      "Bash(npx netlify dev:*)",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__apply_migration",
+      "Bash(true)",
+      "mcp__supabase__list_branches",
+      "mcp__supabase__list_extensions",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__get_advisors",
+      "Bash(netlify dev:*)",
+      "Bash(netlify dev:*)"
     ],
     "deny": []
   }
