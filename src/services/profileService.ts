@@ -1,46 +1,24 @@
 import { supabase } from './supabase';
 import { sanitizeStrict, sanitizeBasic, sanitizeURL } from '../utils/sanitize';
+import { 
+  DatabaseUser, 
+  ClientUser, 
+  ProfileUpdateData,
+  ServiceResponse,
+  dbUserToClientUser,
+  clientUpdateToDbUpdate,
+  authIdUtils,
+  isDatabaseUser
+} from '../types/user';
 
 /**
- * Interface for standardized response
+ * DEPRECATED: Use types from src/types/user.ts instead
+ * These are kept for backwards compatibility only
  */
-interface ServiceResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+export type UserProfile = DatabaseUser;
 
-/**
- * Interface for user profile data
- */
-export interface UserProfile {
-  id: number;
-  provider_id: string;
-  username: string;
-  name: string;
-  display_name?: string;
-  email: string;
-  bio?: string;
-  location?: string;
-  website?: string;
-  platform?: string;
-  avatar_url?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Interface for profile update data
- */
-export interface ProfileUpdateData {
-  username?: string;
-  displayName?: string;
-  bio?: string;
-  location?: string;
-  website?: string;
-  platform?: string;
-  avatar?: string; // Base64 data URL for new uploads
-}
+// Re-export the standardized types for backwards compatibility
+export type { ProfileUpdateData, ServiceResponse } from '../types/user';
 
 /**
  * Get database user ID from auth user
@@ -81,14 +59,14 @@ export const getCurrentAuthUser = async (): Promise<ServiceResponse<{ id: string
 
 /**
  * Get database user profile by provider_id (auth.uid)
+ * UPDATED: Uses standardized type validation
  */
-export const getUserProfile = async (providerId: string): Promise<ServiceResponse<UserProfile>> => {
+export const getUserProfile = async (providerId: string): Promise<ServiceResponse<DatabaseUser>> => {
   try {
     console.log('🔍 Getting user profile for provider_id:', providerId);
     
-    // Validate that providerId is a UUID format
-    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!isValidUUID.test(providerId)) {
+    // Use standardized UUID validation
+    if (!authIdUtils.isValidAuthId(providerId)) {
       console.error('❌ Invalid provider_id format - expected UUID, got:', providerId);
       console.error('⚠️ This likely means a database ID (integer) was passed instead of auth UUID');
       return { success: false, error: `Invalid provider ID format. Expected UUID but got: ${providerId}` };
@@ -117,8 +95,14 @@ export const getUserProfile = async (providerId: string): Promise<ServiceRespons
       return { success: false, error: 'User profile not found' };
     }
 
+    // Validate the returned data structure
+    if (!isDatabaseUser(dbUser)) {
+      console.error('❌ Invalid user data structure returned from database:', dbUser);
+      return { success: false, error: 'Invalid user data structure' };
+    }
+
     console.log('✅ Found user profile:', dbUser);
-    return { success: true, data: dbUser as UserProfile };
+    return { success: true, data: dbUser };
   } catch (error) {
     console.error('💥 Unexpected error in getUserProfile:', error);
     return { 
@@ -312,7 +296,7 @@ const handleAvatarUpload = async (providerId: string, avatarData: string): Promi
 export const updateUserProfile = async (
   providerId: string,
   profileData: ProfileUpdateData
-): Promise<ServiceResponse<UserProfile>> => {
+): Promise<ServiceResponse<DatabaseUser>> => {
   try {
     console.log('🔄 Updating user profile for provider_id:', providerId);
     console.log('📥 Profile data received:', {
@@ -320,9 +304,8 @@ export const updateUserProfile = async (
       avatar: profileData.avatar ? `[${profileData.avatar.length} chars]` : undefined
     });
     
-    // Validate that providerId is a UUID format
-    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!isValidUUID.test(providerId)) {
+    // Use standardized UUID validation
+    if (!authIdUtils.isValidAuthId(providerId)) {
       console.error('❌ Invalid provider_id format in updateUserProfile - expected UUID, got:', providerId);
       return { success: false, error: `Invalid provider ID format. Expected UUID but got: ${providerId}` };
     }
@@ -335,48 +318,55 @@ export const updateUserProfile = async (
 
     console.log('✅ User profile exists, proceeding with update');
 
-    // Prepare update data - only include changed fields
+    // Use standardized field mapping with enhanced sanitization
+    console.log('🔄 Starting standardized field mapping...');
+    
+    // Convert client updates to database format
+    const baseUpdateData = clientUpdateToDbUpdate(profileData);
+    
+    // Apply sanitization to each field
     const updateData: any = {};
     
-    console.log('🔄 Starting field mapping (camelCase -> snake_case)...');
-    
-    // Map form fields to database columns with sanitization
-    if ('username' in profileData) {
-      // Sanitize username - strict mode (no HTML)
-      const sanitizedUsername = sanitizeStrict(profileData.username);
-      updateData.username = sanitizedUsername;
-      updateData.name = sanitizedUsername; // Also update name field for backwards compatibility
-      console.log('  ✅ username sanitized & mapped:', profileData.username, '-> username & name');
+    if (baseUpdateData.username) {
+      const sanitizedUsername = sanitizeStrict(baseUpdateData.username);
+      if (sanitizedUsername.length >= 3 && sanitizedUsername.length <= 50) {
+        updateData.username = sanitizedUsername;
+        updateData.name = sanitizedUsername; // Backwards compatibility
+        console.log('  ✅ username sanitized & validated:', sanitizedUsername);
+      } else {
+        return { success: false, error: 'Username must be 3-50 characters long' };
+      }
     }
     
-    if ('displayName' in profileData) {
-      // Sanitize display name - strict mode (no HTML)
-      updateData.display_name = sanitizeStrict(profileData.displayName);
-      console.log('  ✅ displayName sanitized & mapped:', profileData.displayName, '-> display_name');
+    if (baseUpdateData.display_name !== undefined) {
+      updateData.display_name = sanitizeStrict(baseUpdateData.display_name || '');
+      console.log('  ✅ display_name sanitized:', updateData.display_name);
     }
     
-    if ('bio' in profileData) {
-      // Sanitize bio - basic mode (allows basic formatting)
-      updateData.bio = sanitizeBasic(profileData.bio);
-      console.log('  ✅ bio sanitized & mapped:', profileData.bio, '-> bio');
+    if (baseUpdateData.bio !== undefined) {
+      const sanitizedBio = sanitizeBasic(baseUpdateData.bio || '');
+      if (sanitizedBio.length <= 500) {
+        updateData.bio = sanitizedBio;
+        console.log('  ✅ bio sanitized & validated');
+      } else {
+        return { success: false, error: 'Bio must be 500 characters or less' };
+      }
     }
     
-    if ('location' in profileData) {
-      // Sanitize location - basic mode
-      updateData.location = sanitizeBasic(profileData.location);
-      console.log('  ✅ location sanitized & mapped:', profileData.location, '-> location');
+    if (baseUpdateData.location !== undefined) {
+      updateData.location = sanitizeBasic(baseUpdateData.location || '');
+      console.log('  ✅ location sanitized');
     }
     
-    if ('website' in profileData) {
-      // Sanitize website - URL mode (validates and sanitizes URLs)
-      updateData.website = sanitizeURL(profileData.website);
-      console.log('  ✅ website sanitized & mapped:', profileData.website, '-> website');
+    if (baseUpdateData.website !== undefined) {
+      const sanitizedWebsite = sanitizeURL(baseUpdateData.website || '');
+      updateData.website = sanitizedWebsite;
+      console.log('  ✅ website sanitized & validated');
     }
     
-    if ('platform' in profileData) {
-      // Sanitize platform - strict mode
-      updateData.platform = sanitizeStrict(profileData.platform);
-      console.log('  ✅ platform sanitized & mapped:', profileData.platform, '-> platform');
+    if (baseUpdateData.platform !== undefined) {
+      updateData.platform = sanitizeStrict(baseUpdateData.platform || '');
+      console.log('  ✅ platform sanitized');
     }
 
     // Handle avatar upload if provided
@@ -472,8 +462,14 @@ export const updateUserProfile = async (
       return { success: true, data: retryUpdate as UserProfile };
     }
 
+    // Validate the updated user data
+    if (!isDatabaseUser(updatedUser)) {
+      console.error('❌ Invalid updated user data structure:', updatedUser);
+      return { success: false, error: 'Invalid updated user data structure' };
+    }
+
     console.log('✅ Profile updated successfully:', updatedUser);
-    return { success: true, data: updatedUser as UserProfile };
+    return { success: true, data: updatedUser };
   } catch (error) {
     console.error('💥 Unexpected error updating user profile:', error);
     
@@ -522,8 +518,9 @@ export const updateUserProfile = async (
 
 /**
  * Get user profile with auth check and ensure profile exists
+ * UPDATED: Uses standardized types and validation
  */
-export const getCurrentUserProfile = async (): Promise<ServiceResponse<UserProfile>> => {
+export const getCurrentUserProfile = async (): Promise<ServiceResponse<DatabaseUser>> => {
   try {
     console.log('🔍 Getting current user profile...');
     
