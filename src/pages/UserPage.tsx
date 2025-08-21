@@ -24,6 +24,14 @@ export const UserPage: React.FC = () => {
     const fetchUserData = async () => {
       if (!id) return;
       
+      // Parse ID to integer for database queries
+      const numericId = parseInt(id);
+      if (isNaN(numericId)) {
+        setError('Invalid user ID');
+        setLoading(false);
+        return;
+      }
+      
       try {
         setLoading(true);
         console.log('🔍 Loading user data with real follower/following counts...');
@@ -32,7 +40,7 @@ export const UserPage: React.FC = () => {
         const { data: userData, error: userError } = await supabase
           .from('user')
           .select('*')
-          .eq('id', id)
+          .eq('id', numericId)
           .single();
           
         if (userError) throw userError;
@@ -45,7 +53,7 @@ export const UserPage: React.FC = () => {
             .eq('provider_id', authUser.id)
             .single();
           
-          setIsOwnProfile(currentUserData?.id === parseInt(id));
+          setIsOwnProfile(currentUserData?.id === numericId);
         }
         
         // Fetch user reviews (only those with valid ratings)
@@ -55,7 +63,7 @@ export const UserPage: React.FC = () => {
             *,
             game:game_id(*)
           `)
-          .eq('user_id', id)
+          .eq('user_id', numericId)
           .not('rating', 'is', null);
           
         if (reviewsError) throw reviewsError;
@@ -71,7 +79,7 @@ export const UserPage: React.FC = () => {
         const { data: startedGamesData, error: startedGamesError } = await supabase
           .from('game_progress')
           .select('game_id')
-          .eq('user_id', id)
+          .eq('user_id', numericId)
           .eq('started', true);
           
         if (startedGamesError) throw startedGamesError;
@@ -97,7 +105,7 @@ export const UserPage: React.FC = () => {
         const { count: followerCount, error: followerError } = await supabase
           .from('user_follow')
           .select('*', { count: 'exact', head: true })
-          .eq('following_id', id);
+          .eq('following_id', numericId);
           
         if (followerError) {
           console.error('❌ Error fetching follower count:', followerError);
@@ -107,7 +115,7 @@ export const UserPage: React.FC = () => {
         const { count: followingCount, error: followingError } = await supabase
           .from('user_follow')
           .select('*', { count: 'exact', head: true })
-          .eq('follower_id', id);
+          .eq('follower_id', numericId);
           
         if (followingError) {
           console.error('❌ Error fetching following count:', followingError);
@@ -139,7 +147,7 @@ export const UserPage: React.FC = () => {
     };
     
     fetchUserData();
-  }, [id]);
+  }, [id, isAuthenticated, authUser]);
 
   if (loading) {
     return <LoadingSpinner size="lg" text="Loading user profile..." />;
@@ -189,23 +197,26 @@ export const UserPage: React.FC = () => {
   });
 
   return (
-    <UserPageLayout
-      user={transformedUser}
-      stats={stats}
-      activeTab={activeTab}
-      onTabChange={(tab) => setActiveTab(tab as any)}
-      isDummy={false}
-    >
-      <UserPageContent
+    <>
+      <UserPageLayout
+        user={transformedUser}
+        stats={stats}
         activeTab={activeTab}
-        sortedReviews={sortedReviews}
-        allGames={games}
-        reviewFilter={reviewFilter}
-        onReviewFilterChange={setReviewFilter}
+        onTabChange={(tab) => setActiveTab(tab as any)}
         isDummy={false}
-        userId={id}
-        isOwnProfile={isOwnProfile}
-      />
-    </UserPageLayout>
+      >
+        <UserPageContent
+          activeTab={activeTab}
+          sortedReviews={sortedReviews}
+          allGames={games}
+          reviewFilter={reviewFilter}
+          onReviewFilterChange={setReviewFilter}
+          isDummy={false}
+          userId={id}
+          isOwnProfile={isOwnProfile}
+        />
+      </UserPageLayout>
+
+    </>
   );
 };

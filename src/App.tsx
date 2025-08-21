@@ -13,7 +13,7 @@ import { UserPage } from './pages/UserPage';
 import { UserSearchPage } from './pages/UserSearchPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ReviewPage } from './pages/ReviewPage';
-import ProfilePage from './pages/ProfilePage'; // Changed to default import
+import { ProfileRedirect } from './components/ProfileRedirect';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
@@ -65,15 +65,7 @@ function App() {
                       path="/profile" 
                       element={
                         <ProtectedRoute showModal={true}>
-                          <ProfilePage />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
-                      path="/settings" 
-                      element={
-                        <ProtectedRoute showModal={true}>
-                          <ProfilePage />
+                          <ProfileRedirect />
                         </ProtectedRoute>
                       } 
                     />
