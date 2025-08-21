@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
 import { useAuth } from '../hooks/useAuth';
-import { useCurrentUserId } from '../hooks/useCurrentUserId';
 
 interface User {
   id: string;
@@ -36,8 +35,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   const [followingUsers, setFollowingUsers] = useState<string[]>([]);
   
   const { toggleFollow, loading: followLoading } = useFollow();
-  const { isAuthenticated } = useAuth();
-  const { userId: currentDbUserId } = useCurrentUserId();
+  const { isAuthenticated, dbUserId: currentDbUserId } = useAuth();
 
   // Update active tab when initialTab changes
   useEffect(() => {
