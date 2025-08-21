@@ -1,0 +1,8 @@
+# Netlify Functions
+/.netlify/functions/* /.netlify/functions/:splat 200
+
+# API endpoints
+/api/* /.netlify/functions/:splat 200
+
+# SPA fallback - serve React app for all other routes
+/* /index.html 200
