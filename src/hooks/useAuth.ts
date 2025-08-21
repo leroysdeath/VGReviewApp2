@@ -435,14 +435,12 @@ export const useAuth = (): UseAuthReturn => {
     return result;
   };
 
-  const isAuthenticated = !!user;
-
   return {
     // Core authentication state
     user,
     session,
     dbUserId,
-    isAuthenticated,
+    isAuthenticated: !!user,
     loading,
     dbUserIdLoading,
     
