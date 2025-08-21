@@ -111,6 +111,12 @@ export class UserService {
    */
   private async tryDatabaseFunction(authUser: Session['user']): Promise<UserServiceResult> {
     try {
+      console.log('🔄 Calling get_or_create_user function with:', {
+        auth_id: authUser.id,
+        user_email: authUser.email || '',
+        user_name: authUser.user_metadata?.name || authUser.user_metadata?.username || 'User'
+      });
+      
       const { data: functionResult, error: functionError } = await supabase
         .rpc('get_or_create_user', {
           auth_id: authUser.id,
@@ -119,12 +125,16 @@ export class UserService {
           user_provider: 'supabase'
         });
 
+      console.log('📊 Database function result:', { functionResult, functionError });
+
       if (!functionError && functionResult) {
         return { success: true, userId: functionResult };
       }
 
+      console.error('❌ Database function failed:', functionError);
       return { success: false, error: functionError?.message || 'Database function failed' };
     } catch (error) {
+      console.error('💥 Database function exception:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Database function error'

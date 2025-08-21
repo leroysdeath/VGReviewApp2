@@ -55,7 +55,7 @@ export const ResponsiveNavbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
-  const { user, isAuthenticated, signOut, loading, dbUserId } = useAuth();
+  const { user, isAuthenticated, signOut, loading, dbUserId, dbUserIdLoading } = useAuth();
   const { openModal } = useAuthModal(); // USE GLOBAL AUTH MODAL
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userButtonRef = useRef<HTMLButtonElement>(null);
@@ -666,6 +666,9 @@ export const ResponsiveNavbar: React.FC = () => {
                         onClick={(e) => {
                           if (!dbUserId) {
                             e.preventDefault();
+                            if (!dbUserIdLoading) {
+                              console.error('Database user ID not available');
+                            }
                           } else {
                             setIsMenuOpen(false);
                           }
@@ -673,6 +676,9 @@ export const ResponsiveNavbar: React.FC = () => {
                       >
                         <User className="h-5 w-5" />
                         <span>Profile</span>
+                        {dbUserIdLoading && (
+                          <Loader2 className="h-3 w-3 animate-spin ml-1" />
+                        )}
                       </Link>
                       <Link
                         to="/review"

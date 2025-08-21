@@ -4,9 +4,10 @@ import { supabase } from '../services/supabase';
 import { useState, useEffect } from 'react';
 
 export const DebugAuthPage: React.FC = () => {
-  const { user, session, dbUserId, isAuthenticated, loading } = useAuth();
+  const { user, session, dbUserId, isAuthenticated, loading, dbUserIdLoading } = useAuth();
   const [debugInfo, setDebugInfo] = useState<any>({});
   const [dbUserInfo, setDbUserInfo] = useState<any>(null);
+  const [functionTest, setFunctionTest] = useState<any>(null);
 
   useEffect(() => {
     const fetchDebugInfo = async () => {
@@ -27,11 +28,34 @@ export const DebugAuthPage: React.FC = () => {
         authEmail: authUser.email,
         authMetadata: authUser.user_metadata,
         dbUserId: dbUserId,
+        dbUserIdLoading: dbUserIdLoading,
         dbUserFound: !!dbUser,
         dbUserError: dbError?.message
       });
 
       setDbUserInfo(dbUser);
+      
+      // Test the database function directly
+      try {
+        const { data: funcResult, error: funcError } = await supabase
+          .rpc('get_or_create_user', {
+            auth_id: authUser.id,
+            user_email: authUser.email || '',
+            user_name: authUser.user_metadata?.name || 'User',
+            user_provider: 'supabase'
+          });
+        
+        setFunctionTest({
+          success: !funcError,
+          result: funcResult,
+          error: funcError
+        });
+      } catch (e) {
+        setFunctionTest({
+          success: false,
+          error: e
+        });
+      }
     };
 
     fetchDebugInfo();
@@ -54,10 +78,20 @@ export const DebugAuthPage: React.FC = () => {
               hasUser: !!user,
               hasSession: !!session,
               dbUserId,
+              dbUserIdLoading,
               loading
             }, null, 2)}
           </pre>
         </div>
+        
+        {functionTest && (
+          <div className={`p-4 rounded ${functionTest.success ? 'bg-green-900' : 'bg-red-900'}`}>
+            <h2 className="text-xl font-bold mb-2">Database Function Test</h2>
+            <pre className="text-sm overflow-auto">
+              {JSON.stringify(functionTest, null, 2)}
+            </pre>
+          </div>
+        )}
 
         {user && (
           <div className="bg-gray-800 p-4 rounded">

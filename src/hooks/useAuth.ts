@@ -10,6 +10,7 @@ export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [dbUserId, setDbUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dbUserIdLoading, setDbUserIdLoading] = useState(false);
 
   useEffect(() => {
     // Get initial session and database user ID
@@ -28,8 +29,11 @@ export const useAuth = () => {
           };
           setUser(authUser);
           
-          // Get or create database user ID (blocking - required for navigation)
-          await getOrCreateDbUserId(session);
+          // Get or create database user ID (non-blocking with separate loading state)
+          setDbUserIdLoading(true);
+          getOrCreateDbUserId(session).finally(() => {
+            setDbUserIdLoading(false);
+          });
         } else {
           setUser(null);
           setDbUserId(null);
@@ -60,8 +64,11 @@ export const useAuth = () => {
           };
           setUser(authUser);
           
-          // Get or create database user ID (blocking - required for navigation)
-          await getOrCreateDbUserId(session);
+          // Get or create database user ID (non-blocking with separate loading state)
+          setDbUserIdLoading(true);
+          getOrCreateDbUserId(session).finally(() => {
+            setDbUserIdLoading(false);
+          });
         } else {
           setUser(null);
           setDbUserId(null);
@@ -70,8 +77,6 @@ export const useAuth = () => {
         console.error('Error in auth state change:', error);
         setUser(null);
         setDbUserId(null);
-      } finally {
-        setLoading(false);
       }
     });
 
@@ -81,9 +86,19 @@ export const useAuth = () => {
   // Helper function to get or create database user ID using modular user service
   const getOrCreateDbUserId = async (session: Session) => {
     try {
-      const result = await userService.getOrCreateDatabaseUser(session.user);
+      // Add timeout to prevent infinite hanging
+      const timeoutPromise = new Promise<{ success: false, error: string }>((resolve) => {
+        setTimeout(() => resolve({ success: false, error: 'Database operation timeout' }), 5000);
+      });
+      
+      const result = await Promise.race([
+        userService.getOrCreateDatabaseUser(session.user),
+        timeoutPromise
+      ]);
+      
       if (result.success && result.userId) {
         setDbUserId(result.userId);
+        console.log('✅ Database user ID set:', result.userId);
       } else {
         console.error('Failed to get/create database user:', result.error);
         setDbUserId(null);
@@ -188,6 +203,7 @@ export const useAuth = () => {
     session,
     dbUserId,
     loading,
+    dbUserIdLoading,
     isAuthenticated: !!user,
     signUp,
     signIn,
