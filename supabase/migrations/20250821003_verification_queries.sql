@@ -37,7 +37,8 @@ SELECT
 FROM information_schema.table_constraints 
 WHERE constraint_type = 'FOREIGN KEY' 
 AND table_schema = 'public'
-AND table_name IN ('rating', 'game_progress');
+AND table_name IN ('rating', 'game_progress')
+AND constraint_name IN ('fk_rating_game_id', 'fk_rating_user_id', 'fk_game_progress_game_id', 'fk_game_progress_user_id');
 
 -- 4. Verify data integrity - all rating records should have valid references
 SELECT 
@@ -82,16 +83,30 @@ JOIN game g ON r.game_id = g.id
 WHERE g.igdb_id IN (116, 222095, 305152, 338616)
 LIMIT 5;
 
--- 7. Final summary report
+-- 7. Verify user_game_list constraints specifically
+SELECT 
+  'USER_GAME_LIST CONSTRAINTS' as check_type,
+  COUNT(*) as constraint_count,
+  CASE 
+    WHEN COUNT(*) >= 2 THEN '✅ PASS - user_game_list FK constraints added'
+    ELSE '❌ FAIL - Missing user_game_list FK constraints'
+  END as status
+FROM information_schema.table_constraints 
+WHERE constraint_type = 'FOREIGN KEY' 
+AND table_schema = 'public'
+AND table_name = 'user_game_list'
+AND constraint_name IN ('fk_user_game_list_game_id', 'fk_user_game_list_user_id');
+
+-- 8. Final summary report
 SELECT 
   'FINAL SUMMARY' as check_type,
   (SELECT COUNT(*) FROM rating WHERE NOT EXISTS (SELECT 1 FROM game WHERE id = rating.game_id)) as orphaned_ratings,
   (SELECT COUNT(*) FROM game_progress WHERE NOT EXISTS (SELECT 1 FROM game WHERE id = game_progress.game_id)) as orphaned_progress,
-  (SELECT COUNT(*) FROM information_schema.table_constraints WHERE constraint_type = 'FOREIGN KEY' AND table_schema = 'public' AND table_name IN ('rating', 'game_progress')) as fk_constraints,
+  (SELECT COUNT(*) FROM information_schema.table_constraints WHERE constraint_type = 'FOREIGN KEY' AND table_schema = 'public' AND table_name IN ('rating', 'game_progress', 'user_game_list')) as fk_constraints,
   CASE 
     WHEN (SELECT COUNT(*) FROM rating WHERE NOT EXISTS (SELECT 1 FROM game WHERE id = rating.game_id)) = 0
     AND (SELECT COUNT(*) FROM game_progress WHERE NOT EXISTS (SELECT 1 FROM game WHERE id = game_progress.game_id)) = 0
-    AND (SELECT COUNT(*) FROM information_schema.table_constraints WHERE constraint_type = 'FOREIGN KEY' AND table_schema = 'public' AND table_name IN ('rating', 'game_progress')) >= 4
+    AND (SELECT COUNT(*) FROM information_schema.table_constraints WHERE constraint_type = 'FOREIGN KEY' AND table_schema = 'public' AND table_name IN ('rating', 'game_progress', 'user_game_list')) >= 6
     THEN '🎉 ALL ISSUES RESOLVED - Database integrity restored!'
     ELSE '⚠️ ISSUES REMAIN - Check individual queries above'
   END as overall_status;
