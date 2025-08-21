@@ -110,11 +110,12 @@ export const UserPage: React.FC = () => {
         }
         
         // Fetch user reviews (only those with valid ratings)
+        // Use explicit relationship name to avoid ambiguity
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('rating')
           .select(`
             *,
-            game:game_id(*)
+            game:game!rating_game_id_fkey(*)
           `)
           .eq('user_id', numericId)
           .not('rating', 'is', null);
