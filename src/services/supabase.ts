@@ -84,7 +84,7 @@ export const supabaseHelpers = {
         platform_games(
           platform(*)
         ),
-        ratings:rating(rating)
+        ratings:rating!rating_game_id_fkey(rating)
       `)
       .limit(limit);
     

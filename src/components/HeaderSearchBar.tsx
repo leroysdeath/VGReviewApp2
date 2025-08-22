@@ -3,9 +3,11 @@ import { Search, X, Clock, TrendingUp, Database, Loader2, Star, Gamepad2, User a
 import { useNavigate } from 'react-router-dom';
 import { useGameSearch } from '../hooks/useGameSearch';
 import { igdbService } from '../services/igdbService';
+import { enhancedSearchService } from '../services/enhancedSearchService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
+import { filterProtectedContent } from '../utils/contentProtectionFilter';
 
 // Using GameWithCalculatedFields from database types
 
@@ -101,7 +103,9 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
         const cached = browserCache.get(cacheKey) as CachedQuickSearch;
         
         if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) { // 5 minutes
-          setSuggestions(cached.results.slice(0, maxSuggestions));
+          // Apply filtering to cached results too
+          const filteredCachedResults = filterProtectedContent(cached.results);
+          setSuggestions(filteredCachedResults.slice(0, maxSuggestions));
           setIsFromCache(true);
           setCacheStatus('cached');
           setShowSuggestions(true);
@@ -113,12 +117,15 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
         }
       }
 
-      // Fetch fresh results using IGDB API
-      const igdbResults = await igdbService.searchGames(query, maxSuggestions);
-      const results = igdbResults.map(game => igdbService.transformGame(game));
+      // Use IGDB API directly for header search (faster, more stable)
+      const igdbResults = await igdbService.searchGames(query, maxSuggestions * 2); // Fetch extra to account for filtering
+      const transformedResults = igdbResults.map(game => igdbService.transformGame(game));
+      
+      // Filter out protected content
+      const filteredResults = filterProtectedContent(transformedResults);
 
-      if (results && Array.isArray(results)) {
-        const limitedResults = results.slice(0, maxSuggestions);
+      if (filteredResults && Array.isArray(filteredResults)) {
+        const limitedResults = filteredResults.slice(0, maxSuggestions);
         setSuggestions(limitedResults);
         setIsFromCache(false);
         setCacheStatus('fresh');
@@ -136,7 +143,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
         }
 
         if (import.meta.env.DEV) {
-          console.log('🌐 Game search fresh fetch:', query, limitedResults.length, 'results');
+          console.log('🌐 Game search (IGDB):', query, limitedResults.length, 'results');
         }
       } else {
         setSuggestions([]);

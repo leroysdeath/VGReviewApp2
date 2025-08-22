@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Star, Save, X } from 'lucide-react';
 import { StarRating } from './StarRating';
-import { useSupabaseRatings } from '../hooks/useSupabase';
+import { supabaseHelpers } from '../services/supabase';
 
 interface SupabaseRatingFormProps {
   gameId: number;
@@ -26,8 +26,7 @@ export const SupabaseRatingForm: React.FC<SupabaseRatingFormProps> = ({
   const [rating, setRating] = useState(existingRating?.rating || 0);
   const [review, setReview] = useState(existingRating?.review || '');
   const [finished, setFinished] = useState(existingRating?.finished || false);
-  
-  const { createRating, updateRating, loading } = useSupabaseRatings();
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,15 +36,16 @@ export const SupabaseRatingForm: React.FC<SupabaseRatingFormProps> = ({
       return;
     }
 
+    setLoading(true);
     try {
       if (existingRating) {
-        await updateRating(existingRating.id, {
+        await supabaseHelpers.updateRating(existingRating.id, {
           rating,
           review: review.trim() || undefined,
           finished
         });
       } else {
-        await createRating({
+        await supabaseHelpers.createRating({
           user_id: userId,
           game_id: gameId,
           rating,
@@ -58,6 +58,8 @@ export const SupabaseRatingForm: React.FC<SupabaseRatingFormProps> = ({
     } catch (error) {
       console.error('Failed to save rating:', error);
       alert('Failed to save rating. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 

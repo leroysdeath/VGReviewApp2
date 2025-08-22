@@ -72,12 +72,36 @@ class IGDBService {
       // Apply content protection filter
       const rawGames = data.games || [];
       const transformedGames = rawGames.map(game => this.transformGameForFilter(game));
+      
+      // Debug: Log some raw games to see what we're getting from IGDB
+      if (query.toLowerCase().includes('final fantasy')) {
+        console.log('🔍 Final Fantasy search - Raw IGDB results:', rawGames.slice(0, 3));
+        console.log('🔍 Final Fantasy search - Transformed games:', transformedGames.slice(0, 3));
+      }
+      
+      if (query.toLowerCase().includes('mega man') || query.toLowerCase().includes('megaman')) {
+        console.log('🔍 Mega Man search - Raw IGDB results:', rawGames.slice(0, 3));
+        console.log('🔍 Mega Man search - Transformed games:', transformedGames.slice(0, 3));
+      }
+      
       const filteredGames = filterProtectedContent(transformedGames);
       
       // Log filter statistics for debugging
       const filterStats = getFilterStats(transformedGames);
       if (filterStats.filtered > 0) {
         console.log('🛡️ Content protection filter:', filterStats);
+        
+        // Extra debug for Final Fantasy
+        if (query.toLowerCase().includes('final fantasy')) {
+          console.log('🔍 Final Fantasy search - Filter stats:', filterStats);
+          console.log('🔍 Final Fantasy search - Examples filtered:', filterStats.examples);
+        }
+        
+        // Extra debug for Mega Man
+        if (query.toLowerCase().includes('mega man') || query.toLowerCase().includes('megaman')) {
+          console.log('🔍 Mega Man search - Filter stats:', filterStats);
+          console.log('🔍 Mega Man search - Examples filtered:', filterStats.examples);
+        }
       }
       
       // Convert back to IGDB format

@@ -70,8 +70,8 @@ class GameSearchService {
         .from('game')
         .select(`
           *,
-          rating_stats:rating(game_id).count(),
-          avg_rating:rating(rating.avg())
+          rating_stats:rating!rating_game_id_fkey(game_id).count(),
+          avg_rating:rating!rating_game_id_fkey(rating.avg())
         `, { count: 'exact' })
 
       // Apply search query filter

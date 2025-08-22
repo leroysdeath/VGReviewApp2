@@ -25,7 +25,11 @@
       "Bash(claude mcp:*)",
       "WebFetch(domain:supabase.com)",
       "Bash(npm run build:*)",
-      "Bash(timeout 10 npm run preview)"
+      "Bash(timeout 10 npm run preview)",
+      "Bash(npm run lint)",
+      "Bash(taskkill:*)",
+      "Bash(powershell:*)",
+      "Bash(npx supabase db push:*)"
     ],
     "deny": []
   }

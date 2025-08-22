@@ -72,7 +72,7 @@ class GameQueryService {
         .from('games')
         .select(`
           *,
-          ratings:rating(rating)
+          ratings:rating!rating_game_id_fkey(rating)
         `)
         .ilike('name', `%${query}%`)
 
@@ -151,7 +151,7 @@ class GameQueryService {
         .from('games')
         .select(`
           *,
-          ratings:rating(rating)
+          ratings:rating!rating_game_id_fkey(rating)
         `)
         .limit(limit * 3) // Get more to filter
 
@@ -214,7 +214,7 @@ class GameQueryService {
         .from('games')
         .select(`
           *,
-          ratings:rating(rating)
+          ratings:rating!rating_game_id_fkey(rating)
         `)
         .limit(limit * 5) // Get more to filter
 
@@ -326,7 +326,7 @@ class GameQueryService {
         .from('games')
         .select(`
           *,
-          ratings:rating(rating)
+          ratings:rating!rating_game_id_fkey(rating)
         `)
         .neq('id', gameId)
         .limit(limit * 5) // Get more to filter
@@ -410,7 +410,7 @@ class GameQueryService {
         .from('games')
         .select(`
           *,
-          ratings:rating(rating)
+          ratings:rating!rating_game_id_fkey(rating)
         `)
         .eq('id', gameId)
         .single()

@@ -54,6 +54,7 @@ export const SearchResultsPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchStarted, setSearchStarted] = useState(false);
   
   const [filters, setFilters] = useState<SearchFilters>({
     searchTerm: '',
@@ -119,7 +120,9 @@ export const SearchResultsPage: React.FC = () => {
     if (!filters.searchTerm?.trim()) return;
     
     try {
+      setSearchStarted(true);
       console.log('🔍 SearchResultsPage: Performing search for:', filters.searchTerm);
+      
       await searchGames(filters.searchTerm, {
         genres: filters.platformId ? [filters.platformId.toString()] : undefined,
         minRating: filters.minRating,
@@ -128,6 +131,7 @@ export const SearchResultsPage: React.FC = () => {
                filters.sortBy === 'avg_rating' ? 'rating' : 'popularity',
         sortOrder: filters.sortOrder
       });
+      
       console.log('✅ SearchResultsPage: Search completed, results:', searchState.games.length);
     } catch (err) {
       console.error('❌ SearchResultsPage: Search failed:', err);
@@ -358,9 +362,30 @@ export const SearchResultsPage: React.FC = () => {
 
           {/* Results Info */}
           <div className="flex justify-between items-center text-gray-400">
-            <p>
-              Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredGames.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredGames.length)} of {filteredGames.length} games
-            </p>
+            <div className="flex items-center gap-4">
+              <p>
+                Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredGames.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredGames.length)} of {filteredGames.length} games
+              </p>
+              {searchState.source && (
+                <div className="flex items-center gap-2 text-xs">
+                  <div className={`
+                    px-2 py-1 rounded-full text-xs font-medium
+                    ${searchState.source === 'database' ? 'bg-green-900/30 text-green-400' :
+                      searchState.source === 'igdb' ? 'bg-blue-900/30 text-blue-400' :
+                      'bg-purple-900/30 text-purple-400'}
+                  `}>
+                    {searchState.source === 'database' ? 'Database' :
+                     searchState.source === 'igdb' ? 'IGDB API' :
+                     'Mixed Sources'}
+                  </div>
+                  {searchState.source === 'igdb' && (
+                    <span className="text-gray-500 text-xs">
+                      High-quality game data
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             <button
               onClick={performSearch}
               className="flex items-center gap-2 hover:text-white transition-colors"
@@ -371,8 +396,8 @@ export const SearchResultsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Loading State */}
-        {searchState.loading && (
+        {/* Loading State - only show after user has started searching and if we have no results yet */}
+        {searchState.loading && searchStarted && filteredGames.length === 0 && (
           <div className="flex justify-center items-center py-20">
             <Loader className="h-8 w-8 animate-spin text-purple-500" />
           </div>
@@ -389,8 +414,8 @@ export const SearchResultsPage: React.FC = () => {
         )}
 
         {/* Games Results */}
-        {!searchState.loading && !searchState.error && filteredGames.length > 0 && (
-          <>
+        {!searchState.error && filteredGames.length > 0 && (
+          <div className="transition-opacity duration-300 ease-in-out">
             {viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredGames.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(game => (
@@ -567,11 +592,11 @@ export const SearchResultsPage: React.FC = () => {
                 </button>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {/* No Results */}
-        {!searchState.loading && !searchState.error && filteredGames.length === 0 && (
+        {!searchState.loading && !searchState.error && filteredGames.length === 0 && searchStarted && (
           <div className="text-center py-20">
             {searchState.games.length > 0 ? (
               <>

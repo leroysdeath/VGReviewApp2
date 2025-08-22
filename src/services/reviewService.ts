@@ -175,8 +175,8 @@ export const createReview = async (
       .insert(reviewData)
       .select(`
         *,
-        user:user_id(*),
-        game:game_id(*)
+        user!rating_user_id_fkey(*),
+        game!rating_game_id_fkey(*)
       `)
       .single();
 
@@ -311,8 +311,8 @@ export const getUserReviewForGame = async (gameId: number): Promise<ServiceRespo
       .from('rating')
       .select(`
         *,
-        user:user_id(*),
-        game:game_id(*)
+        user!rating_user_id_fkey(*),
+        game!rating_game_id_fkey(*)
       `)
       .eq('user_id', userId)
       .eq('game_id', gameId)
@@ -405,8 +405,8 @@ export const updateReview = async (
       .eq('id', reviewId)
       .select(`
         *,
-        user:user_id(*),
-        game:game_id(*)
+        user!rating_user_id_fkey(*),
+        game!rating_game_id_fkey(*)
       `)
       .single();
 
@@ -464,8 +464,8 @@ export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
       .from('rating')
       .select(`
         *,
-        user:user_id(*),
-        game:game_id(*)
+        user!rating_user_id_fkey(*),
+        game!rating_game_id_fkey(*)
       `, { count: 'exact' })
       .eq('user_id', userId)
       .order('post_date_time', { ascending: false });
@@ -521,8 +521,8 @@ export const getReview = async (
       .from('rating')
       .select(`
         *,
-        user:user_id(*),
-        game:game_id(*)
+        user!rating_user_id_fkey(*),
+        game!rating_game_id_fkey(*)
       `)
       .eq('id', reviewId)
       .single();
@@ -746,7 +746,7 @@ export const getCommentsForReview = async (
       .from('review_comment')
       .select(`
         *,
-        user:user_id(id, username, name, picurl)
+        user!rating_user_id_fkey(id, username, name, picurl)
       `, { count: 'exact' })
       .eq('review_id', reviewId)
       .order('created_at', { ascending: false })
@@ -868,7 +868,7 @@ export const addComment = async (
       })
       .select(`
         *,
-        user:user_id(id, username, name, picurl)
+        user!rating_user_id_fkey(id, username, name, picurl)
       `)
       .single();
 
@@ -915,8 +915,8 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       .from('rating')
       .select(`
         *,
-        user:user_id(*),
-        game:game_id(id, name, pic_url, cover_url, game_id, igdb_id)
+        user!rating_user_id_fkey(*),
+        game!rating_game_id_fkey(id, name, pic_url, cover_url, game_id, igdb_id)
       `, { count: 'exact' })
       .order('post_date_time', { ascending: false })
       .limit(limit);
