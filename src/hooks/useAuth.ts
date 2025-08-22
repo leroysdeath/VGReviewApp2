@@ -205,7 +205,7 @@ export const useAuth = (): UseAuthReturn => {
 
   // User ID utilities (from useCurrentUserId)
   const getCurrentUserIdAsync = useCallback(async (): Promise<number | null> => {
-    if (!isAuthenticated || !user) {
+    if (!user) {
       return null;
     }
     
@@ -225,7 +225,7 @@ export const useAuth = (): UseAuthReturn => {
       console.error('Error fetching user database ID:', error);
       return null;
     }
-  }, [isAuthenticated, user, dbUserId]);
+  }, [user, dbUserId]);
 
   const refreshDbUserId = useCallback(async () => {
     if (!session) return;
@@ -238,6 +238,7 @@ export const useAuth = (): UseAuthReturn => {
   // Auth guards and permission checks (from useAuthGuard)
   const checkAuthGuard = useCallback((options: AuthGuardOptions = {}): boolean => {
     const { requireAuth = true } = options;
+    const isAuthenticated = !!user;
     
     if (!loading && requireAuth && !isAuthenticated) {
       if (options.showModal) {
@@ -250,19 +251,19 @@ export const useAuth = (): UseAuthReturn => {
       return false;
     }
     
-    return isAuthenticated;
-  }, [loading, isAuthenticated, navigate, location, openAuthModalFromContext]);
+    return !!user;
+  }, [loading, user, navigate, location, openAuthModalFromContext]);
 
   const hasPermission = useCallback((resourceOwnerId?: string | number): boolean => {
-    if (!isAuthenticated || !user) return false;
+    if (!user) return false;
     if (!resourceOwnerId) return true; // No owner specified, just check auth
     return String(user.id) === String(resourceOwnerId);
-  }, [isAuthenticated, user]);
+  }, [user]);
 
   const isOwner = useCallback((resourceOwnerId?: string | number): boolean => {
-    if (!isAuthenticated || !dbUserId || !resourceOwnerId) return false;
+    if (!user || !dbUserId || !resourceOwnerId) return false;
     return String(dbUserId) === String(resourceOwnerId);
-  }, [isAuthenticated, dbUserId]);
+  }, [user, dbUserId]);
 
   // Protected action execution (from useAuthenticatedAction)
   const executeAction = useCallback(<T extends any[], R>(
@@ -270,7 +271,7 @@ export const useAuth = (): UseAuthReturn => {
     options: ExecuteActionOptions = {}
   ) => {
     return async (...args: T): Promise<R | undefined> => {
-      if (!isAuthenticated) {
+      if (!user) {
         if (options.onUnauthenticated) {
           options.onUnauthenticated();
         }
@@ -290,14 +291,14 @@ export const useAuth = (): UseAuthReturn => {
         throw error;
       }
     };
-  }, [isAuthenticated, openAuthModalFromContext]);
+  }, [user, openAuthModalFromContext]);
 
   const guardAction = useCallback(<T extends any[], R>(
     action: (...args: T) => R,
     options: GuardActionOptions = {}
   ) => {
     return (...args: T): R | undefined => {
-      if (!isAuthenticated) {
+      if (!user) {
         options?.onAuthRequired?.();
         
         if (options?.showModalOnFail !== false) {
@@ -307,14 +308,14 @@ export const useAuth = (): UseAuthReturn => {
       }
       return action(...args);
     };
-  }, [isAuthenticated, openAuthModalFromContext]);
+  }, [user, openAuthModalFromContext]);
 
   // Require auth helper
   const requireAuth = useCallback(async (
     action: () => void | Promise<void>,
     options: RequireAuthOptions = {}
   ) => {
-    if (!isAuthenticated) {
+    if (!user) {
       if (options.onUnauthenticated) {
         options.onUnauthenticated();
       }
@@ -330,7 +331,7 @@ export const useAuth = (): UseAuthReturn => {
     }
     
     await action();
-  }, [isAuthenticated, openAuthModalFromContext, navigate, location]);
+  }, [user, openAuthModalFromContext, navigate, location]);
 
   // Auth modal control
   const openAuthModal = useCallback((mode?: 'login' | 'signup' | 'reset') => {
@@ -338,12 +339,12 @@ export const useAuth = (): UseAuthReturn => {
   }, [openAuthModalFromContext]);
 
   const requestAuth = useCallback((mode?: 'login' | 'signup' | 'reset'): boolean => {
-    if (!isAuthenticated) {
+    if (!user) {
       openAuthModalFromContext(mode || 'login');
       return false;
     }
     return true;
-  }, [isAuthenticated, openAuthModalFromContext]);
+  }, [user, openAuthModalFromContext]);
 
   // Authentication actions
   const signUp = async (email: string, password: string, username: string) => {
