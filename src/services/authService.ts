@@ -84,17 +84,38 @@ class AuthService {
   }
 
 
-  async resetPassword(email: string): Promise<{ error: any }> {
+  async resetPassword(email: string, customRedirectUrl?: string): Promise<{ error: any }> {
     try {
-      // Use current origin for development and production
-      // This will work correctly whether running on localhost:5173, localhost:8888, or production
-      const redirectUrl = `${window.location.origin}/reset-password`;
+      // Determine the appropriate redirect URL based on environment
+      let redirectUrl: string;
+      
+      if (customRedirectUrl) {
+        redirectUrl = customRedirectUrl;
+      } else {
+        // Auto-detect based on current environment
+        const currentOrigin = window.location.origin;
+        
+        // For all environments, use the current origin unless specifically overridden
+        redirectUrl = `${currentOrigin}/reset-password`;
+        
+        // Log for debugging
+        console.log('Password reset redirect URL:', redirectUrl);
+        console.log('Current origin:', currentOrigin);
+      }
         
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl
       });
+      
+      if (error) {
+        console.error('Password reset email error:', error);
+      } else {
+        console.log('Password reset email sent successfully');
+      }
+      
       return { error };
     } catch (error) {
+      console.error('Password reset error:', error);
       return { error };
     }
   }
