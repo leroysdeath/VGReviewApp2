@@ -219,3 +219,58 @@ Currently, the project does not have a test suite implemented. When adding tests
 - Prioritize streamlined, non-redundant file structure
 - Don't provide code that changes styling or color scheme or other aesthetics without explicit permission
 - Do not recommend creating new pages, files, routes, or functions when one already exists that serves the same or similar function
+
+## Debugging Production Issues - Critical Lessons
+
+### 1. Make Errors Readable First
+**Before attempting any fix**, ensure you can see the actual error:
+- **Enable source maps immediately**: Set `sourcemap: true` in build config
+- **Disable minification temporarily**: Set `minify: false` to see real variable names
+- **Test production builds locally**: Run `npm run build && npm run preview` before deployment
+
+### 2. Understand Build vs Runtime Differences
+Production errors often stem from build optimizations, not logic bugs:
+- **Variable scoping issues**: Minifiers can expose temporal dead zones and closure problems
+- **Module resolution differences**: Dev server uses different loading strategies than production
+- **Dead code elimination**: Unused exports might work in dev but break in production
+
+### 3. Search Comprehensively Before Changing
+When refactoring variables or functions:
+- **Find ALL usages first**: `grep -n "variableName" src/**/*.ts` before removing anything
+- **Check dependency arrays**: React hooks capture variables in closures
+- **Look for indirect references**: Callbacks, event handlers, and computed properties
+
+### 4. Fix Systematically, Not Randomly
+- **One variable at a time**: Don't do global find/replace without understanding context
+- **Test incrementally**: Build after each significant change
+- **Keep rollback points**: Commit working states before major refactors
+
+### 5. Common Production-Only Error Patterns
+
+#### Lexical Declaration Errors ("can't access X before initialization")
+- **Cause**: Variable hoisting issues or circular dependencies
+- **Fix**: Compute values inline or ensure proper initialization order
+
+#### Undefined Variable Errors ("X is not defined")  
+- **Cause**: Variable removed but still referenced in closures
+- **Fix**: Update all references, especially in callback functions and dependency arrays
+
+#### Hydration Mismatches (React SSR)
+- **Cause**: Client/server render differences
+- **Fix**: Ensure consistent initial state and avoid browser-only APIs during initial render
+
+### 6. Establish a Debugging Protocol
+1. **Reproduce locally** with production build
+2. **Make errors readable** (source maps, no minification)
+3. **Identify the actual issue** (not just symptoms)
+4. **Search for all occurrences** of the problematic code
+5. **Fix systematically** with understanding
+6. **Test the production build** before deploying
+
+### 7. Prevent Future Issues
+- **TypeScript strict mode**: Catches many issues at compile time
+- **ESLint rules**: Enable `no-unused-vars` and `no-undef`
+- **Pre-commit hooks**: Run build and type-check before commits
+- **CI/CD checks**: Automated production build testing
+
+Remember: If an error only appears in production, it's almost always about the build process, not the business logic. Focus on compilation, bundling, and optimization issues first.
