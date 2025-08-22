@@ -46,7 +46,7 @@ export const ResetPasswordPage: React.FC = () => {
       try {
         // Add timeout to prevent hanging
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Session check timeout')), 10000);
+          setTimeout(() => reject(new Error('Session check timeout')), 15000);
         });
 
         const checkPromise = (async () => {
@@ -67,7 +67,8 @@ export const ResetPasswordPage: React.FC = () => {
             type,
             error: errorParam,
             errorCode,
-            errorDescription
+            errorDescription,
+            fullHash: window.location.hash
           });
 
           // Handle errors from the URL
@@ -82,6 +83,7 @@ export const ResetPasswordPage: React.FC = () => {
               errorMessage = decodeURIComponent(errorDescription.replace(/\+/g, ' '));
             }
             
+            console.error('URL error detected:', errorMessage);
             setError(errorMessage);
             setIsValidSession(false);
             return;
@@ -89,18 +91,22 @@ export const ResetPasswordPage: React.FC = () => {
 
           // If we have URL parameters, set the session with Supabase
           if (accessToken && refreshToken && type === 'recovery') {
-            console.log('Setting session with tokens...');
+            console.log('Setting session with tokens from URL...');
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken
             });
             
             if (error) {
-              console.error('Session error:', error);
+              console.error('Session set error:', error);
               setError('Invalid or expired reset link. Please request a new password reset.');
               setIsValidSession(false);
             } else {
               console.log('Session set successfully:', data.session?.user?.email);
+              
+              // Clear the hash from URL for security
+              window.history.replaceState(null, '', window.location.pathname);
+              
               setError(null);
               setIsValidSession(true);
             }
@@ -109,11 +115,11 @@ export const ResetPasswordPage: React.FC = () => {
             console.log('Checking existing session...');
             const { data: { session }, error } = await supabase.auth.getSession();
             if (!session || error) {
-              console.log('No valid session found:', { session: !!session, error });
-              setError('Invalid or expired reset link. Please request a new password reset.');
+              console.log('No valid session found:', { hasSession: !!session, error });
+              setError('Invalid or expired reset link. Please request a new password reset link from the login page.');
               setIsValidSession(false);
             } else {
-              console.log('Valid session found:', session.user?.email);
+              console.log('Valid existing session found:', session.user?.email);
               setError(null);
               setIsValidSession(true);
             }
@@ -340,14 +346,17 @@ export const ResetPasswordPage: React.FC = () => {
           >
             Back to Home
           </button>
-          {error && (
-            <button
-              onClick={() => navigate('/')}
-              className="text-sm text-green-400 hover:text-green-300 block mx-auto"
-              disabled={isLoading}
-            >
-              Request New Password Reset
-            </button>
+          {(error || !isValidSession) && (
+            <p className="text-sm text-gray-400">
+              Need a new reset link?{' '}
+              <button
+                onClick={() => navigate('/', { state: { openAuthModal: true, authMode: 'reset' } })}
+                className="text-green-400 hover:text-green-300 underline"
+                disabled={isLoading}
+              >
+                Request Password Reset
+              </button>
+            </p>
           )}
         </div>
       </div>

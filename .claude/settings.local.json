@@ -18,6 +18,8 @@
       "Bash(grep:*)",
       "Bash(npm run sync-igdb:*)",
       "Bash(node:*)",
+      "Bash(netlify dev:*)",
+      "Bash(curl:*)",
       "Bash(echo $VITE_SUPABASE_URL)",
       "Bash(npx netlify dev:*)",
       "mcp__supabase__execute_sql",
