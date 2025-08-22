@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { userService } from './userService';
 import { sanitizeStrict, sanitizeBasic, sanitizeURL } from '../utils/sanitize';
 import { 
   DatabaseUser, 
@@ -59,7 +60,7 @@ export const getCurrentAuthUser = async (): Promise<ServiceResponse<{ id: string
 
 /**
  * Get database user profile by provider_id (auth.uid)
- * UPDATED: Uses standardized type validation
+ * UPDATED: Delegates to userService for consistency
  */
 export const getUserProfile = async (providerId: string): Promise<ServiceResponse<DatabaseUser>> => {
   try {
@@ -72,6 +73,20 @@ export const getUserProfile = async (providerId: string): Promise<ServiceRespons
       return { success: false, error: `Invalid provider ID format. Expected UUID but got: ${providerId}` };
     }
 
+    // First try to get the user from userService (leverages caching)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id === providerId) {
+      // For current user, use userService which may have cached data
+      const result = await userService.getOrCreateDatabaseUser(session.user);
+      if (result.success && result.userId) {
+        const profile = await userService.getUserProfile(result.userId);
+        if (profile && isDatabaseUser(profile)) {
+          return { success: true, data: profile };
+        }
+      }
+    }
+
+    // Fallback to direct database query for other users
     const { data: dbUser, error } = await supabase
       .from('user')
       .select('*')
@@ -310,13 +325,19 @@ export const updateUserProfile = async (
       return { success: false, error: `Invalid provider ID format. Expected UUID but got: ${providerId}` };
     }
 
-    // Ensure user profile exists
-    const userResult = await ensureUserProfileExists(providerId);
-    if (!userResult.success) {
-      return userResult;
+    // Ensure user profile exists using userService
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user || session.user.id !== providerId) {
+      return { success: false, error: 'User not authenticated or provider ID mismatch' };
     }
-
-    console.log('✅ User profile exists, proceeding with update');
+    
+    const userResult = await userService.getOrCreateDatabaseUser(session.user);
+    if (!userResult.success || !userResult.userId) {
+      return { success: false, error: userResult.error || 'Failed to ensure user profile exists' };
+    }
+    
+    const dbUserId = userResult.userId;
+    console.log('✅ User profile exists with ID:', dbUserId, ', proceeding with update');
 
     // Use standardized field mapping with enhanced sanitization
     console.log('🔄 Starting standardized field mapping...');

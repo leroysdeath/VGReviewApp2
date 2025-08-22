@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useResponsive } from '../hooks/useResponsive';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
-import { useCurrentUserId } from '../hooks/useCurrentUserId';
+import { useAuth } from '../hooks/useAuth';
 import { sanitizeSearchTerm, sanitizeIdArray } from '../utils/sqlSecurity';
 
 interface User {
@@ -32,7 +32,7 @@ export const UserSearchPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { isMobile } = useResponsive();
   const { toggleFollow: dbToggleFollow, getFollowingList, loading: followLoading, canFollow } = useFollow();
-  const { userId: currentDbUserId } = useCurrentUserId();
+  const { dbUserId: currentDbUserId } = useAuth();
 
   // Load recent searches from localStorage
   const loadRecentSearches = () => {

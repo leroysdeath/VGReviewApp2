@@ -11,8 +11,8 @@ export default defineConfig({
     target: 'es2015',
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false,
-    minify: 'terser',
+    sourcemap: true,
+    minify: false,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -20,12 +20,6 @@ export default defineConfig({
           supabase: ['@supabase/supabase-js'],
           ui: ['lucide-react']
         }
-      }
-    },
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
       }
     }
   },

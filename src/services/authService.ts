@@ -1,5 +1,6 @@
 // Supabase Authentication Service
 import { supabase } from './supabase';
+import { userService } from './userService';
 import type { User, Session } from '@supabase/supabase-js';
 
 export interface AuthUser {
@@ -26,9 +27,12 @@ class AuthService {
 
       if (error) return { user: null, error };
 
-      // Create user profile in our database
+      // Create user profile in our database using userService
       if (data.user) {
-        await this.createUserProfile(data.user, username);
+        const result = await userService.getOrCreateDatabaseUser(data.user);
+        if (!result.success) {
+          console.error('Failed to create database user:', result.error);
+        }
       }
 
       return { user: data.user, error: null };
@@ -79,37 +83,6 @@ class AuthService {
     }
   }
 
-  async updateProfile(updates: { username?: string; avatar?: string }): Promise<{ error: any }> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return { error: 'No user found' };
-
-      // Update auth metadata
-      const { error: authError } = await supabase.auth.updateUser({
-        data: {
-          username: updates.username,
-          avatar_url: updates.avatar,
-          name: updates.username || user.user_metadata?.username
-        }
-      });
-
-      if (authError) return { error: authError };
-
-      // Update user profile in database
-      const { error: profileError } = await supabase
-        .from('user')
-        .update({
-          name: updates.username || user.user_metadata?.username,
-          avatar_url: updates.avatar,
-          updated_at: new Date().toISOString()
-        })
-        .eq('provider_id', user.id);
-
-      return { error: profileError };
-    } catch (error) {
-      return { error };
-    }
-  }
 
   async resetPassword(email: string, customRedirectUrl?: string): Promise<{ error: any }> {
     try {
@@ -177,28 +150,6 @@ class AuthService {
     return supabase.auth.onAuthStateChange(callback);
   }
 
-  // Create user profile in database after successful signup
-  private async createUserProfile(user: User, username: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('user')
-        .insert({
-          provider: 'supabase',
-          provider_id: user.id,
-          email: user.email || '',
-          name: username,
-          avatar_url: user.user_metadata?.avatar_url,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        console.error('Error creating user profile:', error);
-      }
-    } catch (error) {
-      console.error('Error creating user profile:', error);
-    }
-  }
 
   // Get user profile from database
   async getUserProfile(userId: string): Promise<{ data: any; error: any }> {
