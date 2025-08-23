@@ -103,7 +103,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           .filter(item => item.game)
           .map(item => ({
             id: item.game!.id.toString(),
-            igdb_id: item.game!.igdb_id,
+            igdb_id: item.game!.id.toString(), // Use game.id for navigation consistency
             title: item.game!.name || 'Unknown Game',
             coverImage: item.game!.pic_url || '/default-cover.png',
             genre: item.game!.genre || '',
@@ -122,7 +122,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
       const gamesData = (data || [])
         .map(item => ({
           id: item.game_id?.toString() || '',
-          igdb_id: item.igdb_id,
+          igdb_id: item.game_id?.toString() || '', // Use game.id for navigation consistency
           title: item.game_name || 'Unknown Game',
           coverImage: item.pic_url || '/default-cover.png',
           genre: item.genre || '',
@@ -191,7 +191,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         .filter(item => item.game)
         .map(item => ({
           id: item.game!.id.toString(),
-          igdb_id: item.game!.igdb_id,
+          igdb_id: item.game!.id.toString(), // Use game.id for navigation consistency
           title: item.game!.name || 'Unknown Game',
           coverImage: item.game!.pic_url || '/default-cover.png',
           genre: item.game!.genre || '',
@@ -258,7 +258,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         .filter(item => item.game)
         .map(item => ({
           id: item.game!.id.toString(),
-          igdb_id: item.game!.igdb_id,
+          igdb_id: item.game!.id.toString(), // Use game.id for navigation consistency
           title: item.game!.name || 'Unknown Game',
           coverImage: item.game!.pic_url || '/default-cover.png',
           genre: item.game!.genre || '',

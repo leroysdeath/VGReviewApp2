@@ -94,7 +94,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
           
           return {
             id: item.id.toString(),
-            gameId: gameData.igdb_id ? gameData.igdb_id.toString() : gameData.id.toString(),
+            gameId: gameData.id.toString(), // Use game.id for navigation consistency
             gameTitle: gameData.name || 'Unknown Game',
             gameCover: gameData.pic_url || '/default-cover.png',
             rating: item.rating || 0,
