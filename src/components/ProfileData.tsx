@@ -543,6 +543,20 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
               </div>
             </Link>
           ))}
+          {/* Show empty slots for remaining spots if less than 10 */}
+          {topGames.length < 10 && Array.from({ length: 10 - topGames.length }, (_, i) => (
+            <div
+              key={`empty-${i}`}
+              className="relative aspect-[3/4] bg-gray-700 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center"
+            >
+              <div className="text-center">
+                <Star className="h-6 w-6 text-gray-500 mx-auto mb-2" />
+                <span className="text-gray-500 text-xs">
+                  #{topGames.length + i + 1}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Mobile Version - List format */}
