@@ -78,16 +78,13 @@ GRANT EXECUTE ON FUNCTION process_activity_feed_refresh_queue() TO authenticated
 /*
 To set up periodic refresh of the activity feed, you can:
 
-1. Use pg_cron extension (if available):
-   SELECT cron.schedule('refresh-activity-feed', '*/5 * * * *', 'SELECT process_activity_feed_refresh_queue();');
-
-2. Use a background job service (recommended for Supabase):
+1. Use a background job service (recommended for Supabase):
    - Set up a serverless function that calls process_activity_feed_refresh_queue()
-   - Schedule it to run every 5-10 minutes
+   - Schedule it to run every 5-10 minutes using Supabase Edge Functions + cron
    
-3. Manual refresh when needed:
+2. Manual refresh when needed:
    SELECT refresh_activity_feed();
 
-The materialized view will be automatically refreshed whenever source data changes,
-but there might be a small delay due to the debouncing mechanism.
+The materialized view will be automatically refreshed whenever source data changes
+via the triggers, but you can also manually refresh or set up periodic jobs.
 */
