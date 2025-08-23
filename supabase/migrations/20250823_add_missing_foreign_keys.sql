@@ -73,24 +73,22 @@ ADD CONSTRAINT fk_content_like_comment
 FOREIGN KEY (comment_id) 
 REFERENCES comment(id) ON DELETE CASCADE;
 
--- Create indexes for the foreign key columns to improve JOIN performance
--- These indexes will make the foreign key joins much faster
+-- Create indexes for foreign key columns that don't already have them
+-- Note: Most indexes already exist, only creating missing ones
 
-CREATE INDEX IF NOT EXISTS idx_user_follow_follower_id ON user_follow(follower_id);
-CREATE INDEX IF NOT EXISTS idx_user_follow_following_id ON user_follow(following_id);
-
-CREATE INDEX IF NOT EXISTS idx_game_progress_user_id ON game_progress(user_id);
-CREATE INDEX IF NOT EXISTS idx_game_progress_game_id ON game_progress(game_id);
-
-CREATE INDEX IF NOT EXISTS idx_rating_user_id ON rating(user_id);
-CREATE INDEX IF NOT EXISTS idx_rating_game_id ON rating(game_id);
-
-CREATE INDEX IF NOT EXISTS idx_comment_user_id ON comment(user_id);
-CREATE INDEX IF NOT EXISTS idx_comment_rating_id ON comment(rating_id);
-
-CREATE INDEX IF NOT EXISTS idx_content_like_user_id ON content_like(user_id);
-CREATE INDEX IF NOT EXISTS idx_content_like_rating_id ON content_like(rating_id);
+-- content_like.comment_id is the only missing index needed
 CREATE INDEX IF NOT EXISTS idx_content_like_comment_id ON content_like(comment_id);
+
+-- All other indexes already exist:
+-- ✓ user_follow(follower_id) → idx_user_follow_follower  
+-- ✓ user_follow(following_id) → idx_user_follow_following
+-- ✓ game_progress(user_id) → idx_game_progress_user_id
+-- ✓ game_progress(game_id) → idx_game_progress_game_id  
+-- ✓ rating(user_id) → idx_rating_user_id
+-- ✓ rating(game_id) → idx_rating_game_id
+-- ✓ comment(user_id) → idx_comment_user_id
+-- ✓ content_like(user_id) → idx_content_like_user
+-- ✓ content_like(rating_id) → idx_content_like_rating
 
 -- Note: After applying this migration, the original Supabase foreign key syntax
 -- in the following components will work correctly:

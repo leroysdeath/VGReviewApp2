@@ -155,25 +155,9 @@ export const UserPage: React.FC = () => {
           gamesData = fetchedGames || [];
         }
         
-        // Fetch follower count (users who follow this user)
-        const { count: followerCount, error: followerError } = await supabase
-          .from('user_follow')
-          .select('*', { count: 'exact', head: true })
-          .eq('following_id', numericId);
-          
-        if (followerError) {
-          console.error('❌ Error fetching follower count:', followerError);
-        }
-        
-        // Fetch following count (users this user follows)
-        const { count: followingCount, error: followingError } = await supabase
-          .from('user_follow')
-          .select('*', { count: 'exact', head: true })
-          .eq('follower_id', numericId);
-          
-        if (followingError) {
-          console.error('❌ Error fetching following count:', followingError);
-        }
+        // Get follower/following counts from computed columns (much faster - no COUNT queries)
+        const followerCount = userData.follower_count || 0;
+        const followingCount = userData.following_count || 0;
         
         console.log('📊 User stats:', {
           userId: id,
