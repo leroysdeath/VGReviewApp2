@@ -1,20 +1,6 @@
 import React, { useState } from 'react';
-import { ResponsiveGameCard, CardTheme } from './ResponsiveGameCard';
+import { InteractiveGameCard, GameData, CardTheme } from './InteractiveGameCard';
 import { Filter, Grid, List, Search } from 'lucide-react';
-
-// Type alias for compatibility
-export type GameData = {
-  id: string;
-  title: string;
-  description: string;
-  genre: string;
-  rating: number;
-  reviewCount: number;
-  releaseDate: string;
-  imageUrl?: string;
-  developer: string;
-  platforms: string[];
-};
 
 interface GameCardGridProps {
   games: GameData[];
@@ -147,14 +133,11 @@ export const GameCardGrid: React.FC<GameCardGridProps> = ({
         }
       `}>
         {filteredAndSortedGames.map((game, index) => (
-          <ResponsiveGameCard
+          <InteractiveGameCard
             key={game.id}
             game={game}
-            variant="interactive"
             theme={getThemeForIndex(index)}
             onReviewClick={onReviewClick}
-            showQuickActions={true}
-            animateOnHover={true}
             className={viewMode === 'list' ? 'max-w-none' : ''}
           />
         ))}

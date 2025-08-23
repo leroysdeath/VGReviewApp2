@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ResponsiveGameCard } from './ResponsiveGameCard';
-import { AuthModal } from './auth/AuthModal';
-// Removed IGDB service - using Supabase data directly
-import { useAuth } from '../hooks/useAuth';
+// This is now a compatibility wrapper
 
 interface GameCardProps {
   game: {
@@ -37,31 +35,8 @@ export const GameCard: React.FC<GameCardProps> = ({
   showQuickActions = false,
   ...props
 }) => {
-  const { isAuthenticated } = useAuth();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-
-  // Prefetch game data on hover for faster navigation
-  const handleMouseEnter = () => {
-    if (enablePrefetch && game.id) {
-      const gameId = typeof game.id === 'string' ? parseInt(game.id) : game.id;
-      if (!isNaN(gameId)) {
-        // Prefetching removed - data already loaded from Supabase
-      }
-    }
-  };
-
-  // Enhanced click handler with prefetching
+  // Simplified wrapper - delegate to ResponsiveGameCard
   const handleClick = (clickedGame: any) => {
-    // Ensure game data is prefetched before navigation
-    if (enablePrefetch && game.id) {
-      const gameId = typeof game.id === 'string' ? parseInt(game.id) : game.id;
-      if (!isNaN(gameId)) {
-        // Prefetching removed - data already loaded from Supabase
-      }
-    }
-
-    // Call the appropriate click handler
     if (onClick) {
       onClick(clickedGame);
     } else if (onGameSelect) {
@@ -69,114 +44,15 @@ export const GameCard: React.FC<GameCardProps> = ({
     }
   };
 
-  // Handle auth-required actions
-  const handleAuthRequiredAction = (action: string, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent card click
-    
-    if (!isAuthenticated) {
-      setPendingAction(action);
-      setShowAuthModal(true);
-      return;
-    }
-    
-    executeAction(action);
-  };
-
-  const executeAction = (action: string) => {
-    switch (action) {
-      case 'add_to_wishlist':
-        console.log('Adding to wishlist:', game.name || game.title);
-        // Implement wishlist logic here
-        break;
-      case 'quick_rate':
-        console.log('Quick rating for:', game.name || game.title);
-        // Implement quick rating logic here
-        break;
-      case 'add_to_favorites':
-        console.log('Adding to favorites:', game.name || game.title);
-        // Implement favorites logic here
-        break;
-    }
-  };
-
-  const handleAuthSuccess = () => {
-    setShowAuthModal(false);
-    if (pendingAction) {
-      executeAction(pendingAction);
-      setPendingAction(null);
-    }
-  };
-
-  // Normalize game data for ResponsiveGameCard
-  const normalizedGame = {
-    ...game,
-    title: game.title || game.name || 'Unknown Game',
-    coverImage: game.coverImage || game.cover?.url || '/placeholder-game.jpg',
-    rating: game.rating || 0,
-    releaseDate: game.releaseDate || game.release_date || undefined,
-    genre: game.genre || (
-      Array.isArray(game.genres)
-        ? game.genres.map(g => g.name || g).join(', ')
-        : undefined
-    )
-  };
-
   return (
-    <div
-      onMouseEnter={handleMouseEnter}
-      className="relative group"
-    >
-      <ResponsiveGameCard
-        {...props}
-        game={normalizedGame}
-        onClick={handleClick}
-      />
-
-      {/* Quick Action Buttons (shown on hover) */}
-      {showQuickActions && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 space-y-1">
-          <button
-            onClick={(e) => handleAuthRequiredAction('add_to_wishlist', e)}
-            className="block w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center text-xs shadow-lg transition-colors"
-            title={isAuthenticated ? "Add to Wishlist" : "Sign in to add to wishlist"}
-          >
-            +
-          </button>
-          <button
-            onClick={(e) => handleAuthRequiredAction('quick_rate', e)}
-            className="block w-8 h-8 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full flex items-center justify-center text-xs shadow-lg transition-colors"
-            title={isAuthenticated ? "Quick Rate" : "Sign in to rate"}
-          >
-            ★
-          </button>
-          <button
-            onClick={(e) => handleAuthRequiredAction('add_to_favorites', e)}
-            className="block w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-xs shadow-lg transition-colors"
-            title={isAuthenticated ? "Add to Favorites" : "Sign in to add to favorites"}
-          >
-            ♥
-          </button>
-        </div>
-      )}
-
-      {/* Cache Info Badge (Development/Debug) */}
-      {cacheInfo && import.meta.env.DEV && (
-        <div className="absolute top-2 left-2 px-2 py-1 bg-black bg-opacity-75 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">
-          Prefetch Ready
-        </div>
-      )}
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => {
-          setShowAuthModal(false);
-          setPendingAction(null);
-        }}
-        onLoginSuccess={handleAuthSuccess}
-        onSignupSuccess={handleAuthSuccess}
-      />
-    </div>
+    <ResponsiveGameCard
+      {...props}
+      game={game}
+      onClick={handleClick}
+      enablePrefetch={enablePrefetch}
+      showCacheStatus={cacheInfo}
+      showQuickActions={showQuickActions}
+    />
   );
 };
 
@@ -190,21 +66,15 @@ export const CachedGameCard: React.FC<GameCardProps & {
   ...props
 }) => {
   return (
-    <div className="relative">
-      <GameCard {...props} cacheInfo={showCacheStatus} />
-
-      {/* Cache Status Indicator */}
-      {showCacheStatus && gameData && (
-        <div className="absolute top-2 right-2 flex gap-1">
-          {gameData.cached && (
-            <div className="w-2 h-2 bg-green-500 rounded-full" title="Cached" />
-          )}
-          {gameData.isStale && (
-            <div className="w-2 h-2 bg-yellow-500 rounded-full" title="Stale" />
-          )}
-        </div>
-      )}
-    </div>
+    <ResponsiveGameCard
+      {...props}
+      showCacheStatus={showCacheStatus}
+      cacheData={gameData ? {
+        cached: gameData.cached || false,
+        isStale: gameData.isStale || false,
+        timestamp: gameData.timestamp
+      } : undefined}
+    />
   );
 };
 
