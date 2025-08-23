@@ -46,12 +46,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
           rating,
           review,
           post_date_time,
-          game:game_id (
-            id,
-            igdb_id,
-            name,
-            pic_url
-          )
+          game_id
         `)
         .eq('user_id', parseInt(userId))
         .not('review', 'is', null)
@@ -73,21 +68,41 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
           break;
       }
 
-      const { data, error } = await query;
+      const { data: ratingsData, error: ratingsError } = await query;
 
-      if (error) throw error;
+      if (ratingsError) throw ratingsError;
 
-      const reviewsData = (data || [])
-        .filter(item => item.game && item.review)
-        .map(item => ({
-          id: item.id.toString(),
-          gameId: item.game.igdb_id ? item.game.igdb_id.toString() : item.game.id.toString(),
-          gameTitle: item.game.name || 'Unknown Game',
-          gameCover: item.game.pic_url || '/default-cover.png',
-          rating: item.rating || 0,
-          reviewText: item.review,
-          postDate: item.post_date_time
-        }));
+      // Get game details separately
+      const gameIds = (ratingsData || []).map(item => item.game_id);
+      if (gameIds.length === 0) {
+        setReviews([]);
+        return;
+      }
+
+      const { data: gamesData, error: gamesError } = await supabase
+        .from('game')
+        .select('id, igdb_id, name, pic_url')
+        .in('id', gameIds);
+
+      if (gamesError) throw gamesError;
+
+      // Combine the data
+      const reviewsData = (ratingsData || [])
+        .map(item => {
+          const gameData = (gamesData || []).find(g => g.id === item.game_id);
+          if (!gameData || !item.review) return null;
+          
+          return {
+            id: item.id.toString(),
+            gameId: gameData.igdb_id ? gameData.igdb_id.toString() : gameData.id.toString(),
+            gameTitle: gameData.name || 'Unknown Game',
+            gameCover: gameData.pic_url || '/default-cover.png',
+            rating: item.rating || 0,
+            reviewText: item.review,
+            postDate: item.post_date_time
+          };
+        })
+        .filter(Boolean) as Review[];
 
       setReviews(reviewsData);
     } catch (error) {

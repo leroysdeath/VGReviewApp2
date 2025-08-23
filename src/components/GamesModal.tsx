@@ -54,36 +54,79 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     setError(null);
     try {
       const { data, error } = await supabase
-        .from('game_progress')
-        .select(`
-          started,
-          started_date,
-          completed,
-          completed_date,
-          game:game_id (
-            id,
-            igdb_id,
-            name,
-            pic_url,
-            genre,
-            release_date
-          )
-        `)
-        .eq('user_id', parseInt(userId))
-        .or('started.eq.true,completed.eq.true')
-        .order('started_date', { ascending: false });
+        .rpc('get_user_games_progress', {
+          p_user_id: parseInt(userId),
+          p_filter_type: 'all'
+        });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback to manual query if RPC doesn't exist
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('game_progress')
+          .select(`
+            started,
+            started_date,
+            completed,
+            completed_date,
+            game_id
+          `)
+          .eq('user_id', parseInt(userId))
+          .or('started.eq.true,completed.eq.true')
+          .order('started_date', { ascending: false });
 
+        if (fallbackError) throw fallbackError;
+
+        // Get game details separately
+        const gameIds = (fallbackData || []).map(item => item.game_id);
+        if (gameIds.length === 0) {
+          setAllGames([]);
+          return;
+        }
+
+        const { data: gamesData, error: gamesError } = await supabase
+          .from('game')
+          .select('id, igdb_id, name, pic_url, genre, release_date')
+          .in('id', gameIds);
+
+        if (gamesError) throw gamesError;
+
+        // Combine the data
+        const combinedData = (fallbackData || []).map(progressItem => {
+          const gameData = (gamesData || []).find(g => g.id === progressItem.game_id);
+          return {
+            ...progressItem,
+            game: gameData
+          };
+        });
+
+        const processedGames = combinedData
+          .filter(item => item.game)
+          .map(item => ({
+            id: item.game!.id.toString(),
+            igdb_id: item.game!.igdb_id,
+            title: item.game!.name || 'Unknown Game',
+            coverImage: item.game!.pic_url || '/default-cover.png',
+            genre: item.game!.genre || '',
+            releaseDate: item.game!.release_date || '',
+            started: item.started,
+            completed: item.completed,
+            started_date: item.started_date,
+            completed_date: item.completed_date
+          }));
+
+        setAllGames(processedGames);
+        return;
+      }
+
+      // Process RPC response
       const gamesData = (data || [])
-        .filter(item => item.game)
         .map(item => ({
-          id: item.game.id.toString(),
-          igdb_id: item.game.igdb_id,
-          title: item.game.name || 'Unknown Game',
-          coverImage: item.game.pic_url || '/default-cover.png',
-          genre: item.game.genre || '',
-          releaseDate: item.game.release_date || '',
+          id: item.game_id?.toString() || '',
+          igdb_id: item.igdb_id,
+          title: item.game_name || 'Unknown Game',
+          coverImage: item.pic_url || '/default-cover.png',
+          genre: item.genre || '',
+          releaseDate: item.release_date || '',
           started: item.started,
           completed: item.completed,
           started_date: item.started_date,
@@ -105,45 +148,61 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     setLoadingStarted(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      const { data: progressData, error: progressError } = await supabase
         .from('game_progress')
         .select(`
           started,
           started_date,
           completed,
           completed_date,
-          game:game_id (
-            id,
-            igdb_id,
-            name,
-            pic_url,
-            genre,
-            release_date
-          )
+          game_id
         `)
         .eq('user_id', parseInt(userId))
         .eq('started', true)
         .eq('completed', false)
         .order('started_date', { ascending: false });
 
-      if (error) throw error;
+      if (progressError) throw progressError;
 
-      const gamesData = (data || [])
+      // Get game details separately
+      const gameIds = (progressData || []).map(item => item.game_id);
+      if (gameIds.length === 0) {
+        setStartedGames([]);
+        return;
+      }
+
+      const { data: gamesData, error: gamesError } = await supabase
+        .from('game')
+        .select('id, igdb_id, name, pic_url, genre, release_date')
+        .in('id', gameIds);
+
+      if (gamesError) throw gamesError;
+
+      // Combine the data
+      const combinedData = (progressData || []).map(progressItem => {
+        const gameData = (gamesData || []).find(g => g.id === progressItem.game_id);
+        return {
+          ...progressItem,
+          game: gameData
+        };
+      });
+
+      const processedGames = combinedData
         .filter(item => item.game)
         .map(item => ({
-          id: item.game.id.toString(),
-          igdb_id: item.game.igdb_id,
-          title: item.game.name || 'Unknown Game',
-          coverImage: item.game.pic_url || '/default-cover.png',
-          genre: item.game.genre || '',
-          releaseDate: item.game.release_date || '',
+          id: item.game!.id.toString(),
+          igdb_id: item.game!.igdb_id,
+          title: item.game!.name || 'Unknown Game',
+          coverImage: item.game!.pic_url || '/default-cover.png',
+          genre: item.game!.genre || '',
+          releaseDate: item.game!.release_date || '',
           started: item.started,
           completed: item.completed,
           started_date: item.started_date,
           completed_date: item.completed_date
         }));
 
-      setStartedGames(gamesData);
+      setStartedGames(processedGames);
     } catch (error) {
       console.error('Error loading started games:', error);
       setError('Failed to load started games');
@@ -158,42 +217,58 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     setLoadingFinished(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      const { data: progressData, error: progressError } = await supabase
         .from('game_progress')
         .select(`
           completed,
           completed_date,
           started_date,
-          game:game_id (
-            id,
-            igdb_id,
-            name,
-            pic_url,
-            genre,
-            release_date
-          )
+          game_id
         `)
         .eq('user_id', parseInt(userId))
         .eq('completed', true)
         .order('completed_date', { ascending: false });
 
-      if (error) throw error;
+      if (progressError) throw progressError;
 
-      const gamesData = (data || [])
+      // Get game details separately
+      const gameIds = (progressData || []).map(item => item.game_id);
+      if (gameIds.length === 0) {
+        setFinishedGames([]);
+        return;
+      }
+
+      const { data: gamesData, error: gamesError } = await supabase
+        .from('game')
+        .select('id, igdb_id, name, pic_url, genre, release_date')
+        .in('id', gameIds);
+
+      if (gamesError) throw gamesError;
+
+      // Combine the data
+      const combinedData = (progressData || []).map(progressItem => {
+        const gameData = (gamesData || []).find(g => g.id === progressItem.game_id);
+        return {
+          ...progressItem,
+          game: gameData
+        };
+      });
+
+      const processedGames = combinedData
         .filter(item => item.game)
         .map(item => ({
-          id: item.game.id.toString(),
-          igdb_id: item.game.igdb_id,
-          title: item.game.name || 'Unknown Game',
-          coverImage: item.game.pic_url || '/default-cover.png',
-          genre: item.game.genre || '',
-          releaseDate: item.game.release_date || '',
+          id: item.game!.id.toString(),
+          igdb_id: item.game!.igdb_id,
+          title: item.game!.name || 'Unknown Game',
+          coverImage: item.game!.pic_url || '/default-cover.png',
+          genre: item.game!.genre || '',
+          releaseDate: item.game!.release_date || '',
           completed: item.completed,
           started_date: item.started_date,
           completed_date: item.completed_date
         }));
 
-      setFinishedGames(gamesData);
+      setFinishedGames(processedGames);
     } catch (error) {
       console.error('Error loading finished games:', error);
       setError('Failed to load finished games');
