@@ -17,7 +17,7 @@ import {
   Users
 } from 'lucide-react';
 import { UserProfileCard, UserProfile } from './UserProfileCard';
-import { UserActivityFeed, ActivityItem } from './UserActivityFeed';
+import { UnifiedActivityFeed } from '../../features/activity/UnifiedActivityFeed';
 import { UserStatsPanel, UserStats } from './UserStatsPanel';
 
 interface Game {
@@ -34,7 +34,6 @@ interface Game {
 interface UserDashboardProps {
   profile: UserProfile;
   stats: UserStats;
-  recentActivity: ActivityItem[];
   recentGames: Game[];
   inProgressGames: Game[];
   completedGames: Game[];
@@ -47,7 +46,6 @@ interface UserDashboardProps {
 export const UserDashboard: React.FC<UserDashboardProps> = ({
   profile,
   stats,
-  recentActivity,
   recentGames,
   inProgressGames,
   completedGames,
@@ -172,7 +170,18 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                     View All
                   </Link>
                 </div>
-                <UserActivityFeed activities={recentActivity.slice(0, 5)} />
+                <div className="max-h-96 overflow-hidden">
+                  <UnifiedActivityFeed 
+                    userId={profile.id ? parseInt(profile.id) : undefined}
+                    variant="profile"
+                    type="user"
+                    initialLimit={5}
+                    enableVirtualization={false}
+                    enableRealTime={false}
+                    emptyMessage="No activities yet. Start rating games!"
+                    className="bg-transparent"
+                  />
+                </div>
               </div>
 
               {/* Stats Summary */}
