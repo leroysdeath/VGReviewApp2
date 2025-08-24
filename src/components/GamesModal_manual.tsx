@@ -6,7 +6,7 @@ import { useResponsive } from '../hooks/useResponsive';
 
 interface Game {
   id: string;
-  igdb_id?: string | number;
+  igdb_id?: string | number; // IGDB ID for navigation
   title: string;
   coverImage: string;
   releaseDate: string;
@@ -43,46 +43,90 @@ export const GamesModal: React.FC<GamesModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const { isMobile } = useResponsive();
 
+  // Update active tab when initialTab changes
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
 
-  // Load all games - optimized with foreign key syntax
+  // Load all games for the user (started or completed games from game_progress table)
   const loadAllGames = useCallback(async () => {
     setLoadingAll(true);
     setError(null);
     try {
       const { data, error } = await supabase
-        .from('game_progress')
-        .select(`
-          started,
-          started_date,
-          completed,
-          completed_date,
-          game:game_id (
-            id,
-            igdb_id,
-            name,
-            pic_url,
-            genre,
-            release_date
-          )
-        `)
-        .eq('user_id', parseInt(userId))
-        .or('started.eq.true,completed.eq.true')
-        .order('started_date', { ascending: false });
+        .rpc('get_user_games_progress', {
+          p_user_id: parseInt(userId),
+          p_filter_type: 'all'
+        });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback to manual query if RPC doesn't exist
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('game_progress')
+          .select(`
+            started,
+            started_date,
+            completed,
+            completed_date,
+            game_id
+          `)
+          .eq('user_id', parseInt(userId))
+          .or('started.eq.true,completed.eq.true')
+          .order('started_date', { ascending: false });
 
+        if (fallbackError) throw fallbackError;
+
+        // Get game details separately
+        const gameIds = (fallbackData || []).map(item => item.game_id);
+        if (gameIds.length === 0) {
+          setAllGames([]);
+          return;
+        }
+
+        const { data: gamesData, error: gamesError } = await supabase
+          .from('game')
+          .select('id, igdb_id, name, pic_url, genre, release_date')
+          .in('id', gameIds);
+
+        if (gamesError) throw gamesError;
+
+        // Combine the data
+        const combinedData = (fallbackData || []).map(progressItem => {
+          const gameData = (gamesData || []).find(g => g.id === progressItem.game_id);
+          return {
+            ...progressItem,
+            game: gameData
+          };
+        });
+
+        const processedGames = combinedData
+          .filter(item => item.game)
+          .map(item => ({
+            id: item.game!.id.toString(),
+            igdb_id: item.game!.id.toString(), // Use game.id for navigation consistency
+            title: item.game!.name || 'Unknown Game',
+            coverImage: item.game!.pic_url || '/default-cover.png',
+            genre: item.game!.genre || '',
+            releaseDate: item.game!.release_date || '',
+            started: item.started,
+            completed: item.completed,
+            started_date: item.started_date,
+            completed_date: item.completed_date
+          }));
+
+        setAllGames(processedGames);
+        return;
+      }
+
+      // Process RPC response
       const gamesData = (data || [])
-        .filter(item => item.game)
         .map(item => ({
-          id: item.game.id.toString(),
-          igdb_id: item.game.igdb_id,
-          title: item.game.name || 'Unknown Game',
-          coverImage: item.game.pic_url || '/default-cover.png',
-          genre: item.game.genre || '',
-          releaseDate: item.game.release_date || '',
+          id: item.game_id?.toString() || '',
+          igdb_id: item.game_id?.toString() || '', // Use game.id for navigation consistency
+          title: item.game_name || 'Unknown Game',
+          coverImage: item.pic_url || '/default-cover.png',
+          genre: item.genre || '',
+          releaseDate: item.release_date || '',
           started: item.started,
           completed: item.completed,
           started_date: item.started_date,
@@ -99,50 +143,66 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     }
   }, [userId]);
 
-  // Load started games - optimized
+  // Load started games
   const loadStartedGames = useCallback(async () => {
     setLoadingStarted(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      const { data: progressData, error: progressError } = await supabase
         .from('game_progress')
         .select(`
           started,
           started_date,
           completed,
           completed_date,
-          game:game_id (
-            id,
-            igdb_id,
-            name,
-            pic_url,
-            genre,
-            release_date
-          )
+          game_id
         `)
         .eq('user_id', parseInt(userId))
         .eq('started', true)
         .eq('completed', false)
         .order('started_date', { ascending: false });
 
-      if (error) throw error;
+      if (progressError) throw progressError;
 
-      const gamesData = (data || [])
+      // Get game details separately
+      const gameIds = (progressData || []).map(item => item.game_id);
+      if (gameIds.length === 0) {
+        setStartedGames([]);
+        return;
+      }
+
+      const { data: gamesData, error: gamesError } = await supabase
+        .from('game')
+        .select('id, igdb_id, name, pic_url, genre, release_date')
+        .in('id', gameIds);
+
+      if (gamesError) throw gamesError;
+
+      // Combine the data
+      const combinedData = (progressData || []).map(progressItem => {
+        const gameData = (gamesData || []).find(g => g.id === progressItem.game_id);
+        return {
+          ...progressItem,
+          game: gameData
+        };
+      });
+
+      const processedGames = combinedData
         .filter(item => item.game)
         .map(item => ({
-          id: item.game.id.toString(),
-          igdb_id: item.game.igdb_id,
-          title: item.game.name || 'Unknown Game',
-          coverImage: item.game.pic_url || '/default-cover.png',
-          genre: item.game.genre || '',
-          releaseDate: item.game.release_date || '',
+          id: item.game!.id.toString(),
+          igdb_id: item.game!.id.toString(), // Use game.id for navigation consistency
+          title: item.game!.name || 'Unknown Game',
+          coverImage: item.game!.pic_url || '/default-cover.png',
+          genre: item.game!.genre || '',
+          releaseDate: item.game!.release_date || '',
           started: item.started,
           completed: item.completed,
           started_date: item.started_date,
           completed_date: item.completed_date
         }));
 
-      setStartedGames(gamesData);
+      setStartedGames(processedGames);
     } catch (error) {
       console.error('Error loading started games:', error);
       setError('Failed to load started games');
@@ -152,47 +212,63 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     }
   }, [userId]);
 
-  // Load finished games - optimized
+  // Load finished games
   const loadFinishedGames = useCallback(async () => {
     setLoadingFinished(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      const { data: progressData, error: progressError } = await supabase
         .from('game_progress')
         .select(`
           completed,
           completed_date,
           started_date,
-          game:game_id (
-            id,
-            igdb_id,
-            name,
-            pic_url,
-            genre,
-            release_date
-          )
+          game_id
         `)
         .eq('user_id', parseInt(userId))
         .eq('completed', true)
         .order('completed_date', { ascending: false });
 
-      if (error) throw error;
+      if (progressError) throw progressError;
 
-      const gamesData = (data || [])
+      // Get game details separately
+      const gameIds = (progressData || []).map(item => item.game_id);
+      if (gameIds.length === 0) {
+        setFinishedGames([]);
+        return;
+      }
+
+      const { data: gamesData, error: gamesError } = await supabase
+        .from('game')
+        .select('id, igdb_id, name, pic_url, genre, release_date')
+        .in('id', gameIds);
+
+      if (gamesError) throw gamesError;
+
+      // Combine the data
+      const combinedData = (progressData || []).map(progressItem => {
+        const gameData = (gamesData || []).find(g => g.id === progressItem.game_id);
+        return {
+          ...progressItem,
+          game: gameData
+        };
+      });
+
+      const processedGames = combinedData
         .filter(item => item.game)
         .map(item => ({
-          id: item.game.id.toString(),
-          igdb_id: item.game.igdb_id,
-          title: item.game.name || 'Unknown Game',
-          coverImage: item.game.pic_url || '/default-cover.png',
-          genre: item.game.genre || '',
-          releaseDate: item.game.release_date || '',
+          id: item.game!.id.toString(),
+          igdb_id: item.game!.id.toString(), // Use game.id for navigation consistency
+          title: item.game!.name || 'Unknown Game',
+          coverImage: item.game!.pic_url || '/default-cover.png',
+          genre: item.game!.genre || '',
+          releaseDate: item.game!.release_date || '',
           completed: item.completed,
           started_date: item.started_date,
           completed_date: item.completed_date
         }));
 
-      setFinishedGames(gamesData);
+      setFinishedGames(processedGames);
     } catch (error) {
       console.error('Error loading finished games:', error);
       setError('Failed to load finished games');
@@ -362,7 +438,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
                         }}
                       />
                       
-                      {/* Progress indicators */}
+                      {/* Progress indicators for all tabs */}
                       {activeTab === 'all' && game.completed && (
                         <div className="absolute top-1 right-1 bg-green-600 text-white w-6 h-6 rounded-full flex items-center justify-center">
                           <CheckCircle className="h-3 w-3" />
@@ -416,7 +492,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
                         }}
                       />
                       
-                      {/* Progress indicators */}
+                      {/* Progress indicators for all tabs */}
                       {activeTab === 'all' && game.completed && (
                         <div className="absolute top-1 right-1 bg-green-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
                           <CheckCircle className="h-2.5 w-2.5" />

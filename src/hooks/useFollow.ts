@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from './useAuth';
-import { useCurrentUserId } from './useCurrentUserId';
 
 export interface FollowOperationResult {
   success: boolean;
@@ -10,8 +9,7 @@ export interface FollowOperationResult {
 }
 
 export const useFollow = () => {
-  const { isAuthenticated } = useAuth();
-  const { userId: currentDbUserId, loading: userIdLoading } = useCurrentUserId();
+  const { isAuthenticated, dbUserId: currentDbUserId, dbUserIdLoading: userIdLoading } = useAuth();
   const [operationLoading, setOperationLoading] = useState(false);
 
   /**

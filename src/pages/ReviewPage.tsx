@@ -205,16 +205,24 @@ export const ReviewPage: React.FC = () => {
         return;
       }
 
-      // Get heart counts and user heart status for each comment
+      // Get heart counts and user heart status for each comment - optimized with computed columns
       const commentsWithHearts = await Promise.all(
         (commentsData || []).map(async (comment) => {
-          const { data: heartsData } = await supabase
-            .from('comment_hearts')
-            .select('user_id')
-            .eq('comment_id', comment.id);
-
-          const heartsCount = heartsData?.length || 0;
-          const userHasHearted = isAuthenticated && heartsData?.some(heart => heart.user_id === user?.id) || false;
+          // Use computed like_count instead of manual counting
+          const heartsCount = comment.like_count || 0;
+          
+          // Still need to check if current user has liked this comment
+          let userHasHearted = false;
+          if (isAuthenticated && user?.id) {
+            const { data: userLikeData } = await supabase
+              .from('content_like')
+              .select('id')
+              .eq('comment_id', comment.id)
+              .eq('user_id', user.id)
+              .single();
+            
+            userHasHearted = !!userLikeData;
+          }
 
           return {
             ...comment,

@@ -583,17 +583,9 @@ export const getReview = async (
     if (error) throw error;
     if (!data) return { success: false, error: 'Review not found' };
 
-    // Get like count
-    const { count: likeCount } = await supabase
-      .from('content_like')
-      .select('*', { count: 'exact', head: true })
-      .eq('rating_id', reviewId);
-
-    // Get comment count
-    const { count: commentCount } = await supabase
-      .from('review_comment')
-      .select('*', { count: 'exact', head: true })
-      .eq('review_id', reviewId);
+    // Use computed columns for much faster performance (no JOINs or COUNT queries needed)
+    const likeCount = data.like_count || 0;
+    const commentCount = data.comment_count || 0;
 
     // Transform to our interface
     const review: Review = {
@@ -695,11 +687,14 @@ export const likeReview = async (
 
     // If like already exists, return early
     if (existingLike) {
-      // Get current like count
-      const { count: likeCount } = await supabase
-        .from('content_like')
-        .select('*', { count: 'exact', head: true })
-        .eq('rating_id', reviewId);
+      // Get current like count from computed column (much faster)
+      const { data: ratingData } = await supabase
+        .from('rating')
+        .select('like_count')
+        .eq('id', reviewId)
+        .single();
+      
+      const likeCount = ratingData?.like_count || 0;
 
       return {
         success: true,
@@ -718,11 +713,14 @@ export const likeReview = async (
 
     if (insertError) throw insertError;
 
-    // Get updated like count
-    const { count: likeCount } = await supabase
-      .from('content_like')
-      .select('*', { count: 'exact', head: true })
-      .eq('rating_id', reviewId);
+    // Get updated like count from computed column (much faster)
+    const { data: ratingData } = await supabase
+      .from('rating')
+      .select('like_count')
+      .eq('id', reviewId)
+      .single();
+    
+    const likeCount = ratingData?.like_count || 0;
 
     return {
       success: true,
@@ -762,11 +760,14 @@ export const unlikeReview = async (
 
     if (deleteError) throw deleteError;
 
-    // Get updated like count
-    const { count: likeCount } = await supabase
-      .from('content_like')
-      .select('*', { count: 'exact', head: true })
-      .eq('rating_id', reviewId);
+    // Get updated like count from computed column (much faster)
+    const { data: ratingData } = await supabase
+      .from('rating')
+      .select('like_count')
+      .eq('id', reviewId)
+      .single();
+    
+    const likeCount = ratingData?.like_count || 0;
 
     return {
       success: true,

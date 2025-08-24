@@ -215,27 +215,35 @@ export const supabaseHelpers = {
     return data;
   },
 
-  // Statistics
+  // Statistics - optimized with computed columns
   async getUserStats(userId: number) {
-    const { data: ratings, error } = await supabase
-      .from('rating')
-      .select('rating, finished')
-      .eq('user_id', userId);
+    const { data: userData, error } = await supabase
+      .from('user')
+      .select('total_reviews, completed_games_count, started_games_count')
+      .eq('id', userId)
+      .single();
     
     if (error) throw error;
 
+    // For average rating, we still need to calculate this from actual ratings
+    // since it's more complex than a simple count
+    const { data: ratings, error: ratingsError } = await supabase
+      .from('rating')
+      .select('rating')
+      .eq('user_id', userId);
+    
+    if (ratingsError) throw ratingsError;
+
     const totalGames = ratings.length;
-    const completedGames = ratings.filter(r => r.finished).length;
     const averageRating = totalGames > 0 
       ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalGames 
       : 0;
-    const totalReviews = ratings.filter(r => r.review && r.review.trim().length > 0).length;
 
     return {
       totalGames,
-      completedGames,
+      completedGames: userData.completed_games_count || 0,
       averageRating,
-      totalReviews
+      totalReviews: userData.total_reviews || 0
     };
   },
 
