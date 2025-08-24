@@ -29,21 +29,6 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Utility function to clear any stuck auth locks
-export const clearAuthLocks = async () => {
-  try {
-    // Clear any stuck NavigatorLock for auth tokens
-    if (typeof navigator !== 'undefined' && 'locks' in navigator) {
-      // Force clear any lingering locks by signing out and back in
-      await supabase.auth.signOut();
-      // Small delay to allow locks to clear
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-  } catch (error) {
-    console.warn('Could not clear auth locks:', error);
-  }
-};
-
 // Helper functions for common database operations
 export const supabaseHelpers = {
   // User operations

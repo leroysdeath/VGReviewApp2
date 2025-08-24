@@ -18,7 +18,6 @@ import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DebugAuthPage } from './pages/DebugAuthPage';
-import { handleLockManagerError } from './utils/lockManagerFix';
 
 
 // Lazy load legal pages for better performance
@@ -154,40 +153,6 @@ const AppContent: React.FC = () => {
 };
 
 function App() {
-  // Clear any lingering auth locks on app startup
-  useEffect(() => {
-    const clearStartupLocks = () => {
-      try {
-        // Check for LockManager related auth issues in localStorage
-        const authKeys = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (key.includes('supabase') || key.includes('auth'))) {
-            authKeys.push(key);
-          }
-        }
-        
-        // If we have auth data but the page seems to be having lock issues,
-        // we can detect this and clear it preemptively
-        if (authKeys.length > 0) {
-          console.log('Auth data found on startup:', authKeys);
-          
-          // Check for any previous LockManager errors in session
-          const hasLockIssues = sessionStorage.getItem('lockManagerError');
-          if (hasLockIssues) {
-            console.log('Previous LockManager issue detected, clearing auth data...');
-            authKeys.forEach(key => localStorage.removeItem(key));
-            sessionStorage.removeItem('lockManagerError');
-          }
-        }
-      } catch (error) {
-        console.warn('Error during startup lock check:', error);
-      }
-    };
-
-    clearStartupLocks();
-  }, []);
-
   return (
     <HelmetProvider>
       <ErrorBoundary>

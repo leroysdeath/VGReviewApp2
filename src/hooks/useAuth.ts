@@ -6,7 +6,6 @@ import { userService } from '../services/userService';
 import { getCurrentUserId } from '../services/reviewService';
 import { useAuthModal } from '../context/AuthModalContext';
 import { supabase } from '../services/supabase';
-import { handleLockManagerError, withLockManagerErrorHandling } from '../utils/lockManagerFix';
 import type { Session } from '@supabase/supabase-js';
 
 /**
@@ -113,9 +112,7 @@ export const useAuth = (): UseAuthReturn => {
   useEffect(() => {
     const getInitialSession = async () => {
       try {
-        const session = await withLockManagerErrorHandling(async () => {
-          return await authService.getCurrentSession();
-        });
+        const session = await authService.getCurrentSession();
         setSession(session);
         if (session?.user) {
           const authUser = {
@@ -138,14 +135,9 @@ export const useAuth = (): UseAuthReturn => {
         }
       } catch (error) {
         console.error('Error in getInitialSession:', error);
-        
-        // Handle LockManager specific errors
-        const wasHandled = handleLockManagerError(error);
-        if (!wasHandled) {
-          setUser(null);
-          setSession(null);
-          setDbUserId(null);
-        }
+        setUser(null);
+        setSession(null);
+        setDbUserId(null);
       } finally {
         setLoading(false);
       }
@@ -178,13 +170,8 @@ export const useAuth = (): UseAuthReturn => {
         }
       } catch (error) {
         console.error('Error in auth state change:', error);
-        
-        // Handle LockManager specific errors
-        const wasHandled = handleLockManagerError(error);
-        if (!wasHandled) {
-          setUser(null);
-          setDbUserId(null);
-        }
+        setUser(null);
+        setDbUserId(null);
       }
     });
 
