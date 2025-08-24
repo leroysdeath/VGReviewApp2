@@ -62,9 +62,9 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
       if (error) throw error;
 
       const followersData = (data || [])
-        .map(item => item.follower)
+        .map((item: any) => item.follower)
         .filter(Boolean)
-        .map(user => ({
+        .map((user: any) => ({
           id: user.id.toString(),
           username: user.username || user.name || 'Unknown User',
           avatar: user.avatar_url || '',
@@ -100,9 +100,9 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
       if (error) throw error;
 
       const followingData = (data || [])
-        .map(item => item.following)
+        .map((item: any) => item.following)
         .filter(Boolean)
-        .map(user => ({
+        .map((user: any) => ({
           id: user.id.toString(),
           username: user.username || user.name || 'Unknown User',
           avatar: user.avatar_url || '',

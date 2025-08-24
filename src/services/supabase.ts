@@ -9,7 +9,40 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    // Use a unique storage key to avoid conflicts
+    storageKey: 'vgreviewapp-auth-token'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'vgreviewapp-web'
+    }
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+});
+
+// Utility function to clear any stuck auth locks
+export const clearAuthLocks = async () => {
+  try {
+    // Clear any stuck NavigatorLock for auth tokens
+    if (typeof navigator !== 'undefined' && 'locks' in navigator) {
+      // Force clear any lingering locks by signing out and back in
+      await supabase.auth.signOut();
+      // Small delay to allow locks to clear
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  } catch (error) {
+    console.warn('Could not clear auth locks:', error);
+  }
+};
 
 // Helper functions for common database operations
 export const supabaseHelpers = {
