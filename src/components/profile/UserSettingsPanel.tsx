@@ -513,7 +513,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       console.log('🔐 Starting password change process...');
       
       // Import supabase here to avoid initialization issues
-      const { supabase } = await import('../../utils/supabaseClient');
+      const { supabase } = await import('../../services/supabase');
       
       // Verify current password by attempting to sign in
       const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -569,7 +569,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       console.log('📧 Starting email change process...');
       
       // Import supabase here to avoid initialization issues
-      const { supabase } = await import('../../utils/supabaseClient');
+      const { supabase } = await import('../../services/supabase');
       
       // Update email - this will send a verification email to the new address
       const { error: updateError } = await supabase.auth.updateUser({

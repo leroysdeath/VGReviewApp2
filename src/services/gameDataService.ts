@@ -27,7 +27,7 @@ class GameDataService {
         .from('game')
         .select(`
           *,
-          ratings:rating!rating_game_id_fkey(rating)
+          rating(rating)
         `)
         .eq('id', id)
         .single()
@@ -53,7 +53,7 @@ class GameDataService {
         .from('game')
         .select(`
           *,
-          ratings:rating!rating_game_id_fkey(rating)
+          rating(rating)
         `)
         .eq('igdb_id', igdbId)
         .single()
@@ -67,7 +67,7 @@ class GameDataService {
           .from('game')
           .select(`
             *,
-            ratings:rating!rating_game_id_fkey(rating)
+            rating(rating)
           `)
           .eq('game_id', igdbId.toString())
           .single()
@@ -100,6 +100,7 @@ class GameDataService {
             .from('game')
             .insert({
               igdb_id: transformedGame.igdb_id,
+              game_id: transformedGame.igdb_id.toString(),
               name: transformedGame.name,
               summary: transformedGame.summary,
               release_date: transformedGame.first_release_date 
@@ -116,7 +117,7 @@ class GameDataService {
             })
             .select(`
               *,
-              ratings:rating!rating_game_id_fkey(rating)
+              rating(rating)
             `)
             .single()
           
@@ -196,6 +197,7 @@ class GameDataService {
             .from('game')
             .insert({
               igdb_id: transformedGame.igdb_id,
+              game_id: transformedGame.igdb_id.toString(),
               name: transformedGame.name,
               summary: transformedGame.summary,
               release_date: transformedGame.first_release_date 
@@ -348,7 +350,7 @@ class GameDataService {
       .from('game')
       .select(`
         *,
-        ratings:rating!rating_game_id_fkey(rating)
+        rating(rating)
       `)
       .ilike('name', `%${query}%`)
       .limit(20)
@@ -401,7 +403,7 @@ class GameDataService {
         .from('game')
         .select(`
           *,
-          ratings:rating!rating_game_id_fkey(rating)
+          rating(rating)
         `)
         .limit(limit * 2) // Get more initially to filter by rating
 
@@ -442,7 +444,7 @@ class GameDataService {
         .from('game')
         .select(`
           *,
-          ratings:rating!rating_game_id_fkey(rating)
+          rating(rating)
         `)
         .order('created_at', { ascending: false })
         .limit(limit)
@@ -469,7 +471,7 @@ class GameDataService {
           .from('game')
           .select(`
             *,
-            ratings:rating!rating_game_id_fkey(rating)
+            rating(rating)
           `)
           .eq('id', gameId)
           .single(),
@@ -508,7 +510,7 @@ class GameDataService {
         .from('game')
         .select(`
           *,
-          ratings:rating!rating_game_id_fkey(rating)
+          rating(rating)
         `)
         .contains('genres', [genre])
         .limit(limit)
@@ -533,7 +535,7 @@ class GameDataService {
         .from('game')
         .select(`
           *,
-          ratings:rating!rating_game_id_fkey(rating)
+          rating(rating)
         `)
         .contains('platforms', [platform])
         .limit(limit)
@@ -553,15 +555,18 @@ class GameDataService {
   }
 
   private transformGameWithRatings(game: GameWithRating): GameWithCalculatedFields {
-    const { ratings, ...gameData } = game
+    const { rating, ratings, ...gameData } = game
+    
+    // Handle both old and new data structure for compatibility
+    const ratingData = rating || ratings || []
     
     // Calculate average rating and count
     let averageUserRating = 0
     let totalUserRatings = 0
     
-    if (ratings && ratings.length > 0) {
-      totalUserRatings = ratings.length
-      const sum = ratings.reduce((acc, r) => acc + r.rating, 0)
+    if (ratingData && ratingData.length > 0) {
+      totalUserRatings = ratingData.length
+      const sum = ratingData.reduce((acc, r) => acc + r.rating, 0)
       averageUserRating = sum / totalUserRatings
     }
 

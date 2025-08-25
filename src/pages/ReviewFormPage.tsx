@@ -141,6 +141,8 @@ export const ReviewFormPage: React.FC = () => {
           const game = await gameDataService.getGameByIGDBId(parseInt(gameId));
           if (game) {
             setSelectedGame(game);
+            console.log("ID:", gameId);
+            console.log('Loaded game from URL IGDB ID:', game);
           }
         } catch (error) {
           console.error('Failed to load game:', error);
@@ -307,7 +309,6 @@ export const ReviewFormPage: React.FC = () => {
     });
   }, [rating, reviewText, isRecommended, didFinishGame, selectedPlatforms, isEditMode, initialFormValues, isGameCompletionLocked]);
 
-<<<<<<< HEAD
   // Auto-select single platform when game changes
   useEffect(() => {
     if (selectedGame && selectedGame.platforms) {
@@ -323,12 +324,8 @@ export const ReviewFormPage: React.FC = () => {
     }
   }, [selectedGame]);
 
-  const handleGameSelect = (game: GameWithCalculatedFields) => {
-    setSelectedGame(game);
-=======
-  const handleGameSelect = (game: Game) => {
+  const handleGameSelect = (game: GameWithCalculatedFields | Game) => {
     setSelectedGame(game as GameWithCalculatedFields);
->>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
     setGameSearch('');
     setSearchTerm('');
     setShowSearchModal(false);
@@ -518,20 +515,28 @@ export const ReviewFormPage: React.FC = () => {
           // Update game progress based on user selection (only if game not already completed)
           try {
             if (!gameAlreadyCompleted) {
-              const igdbId = selectedGame.igdb_id || parseInt(selectedGame.id);
-              if (didFinishGame) {
-<<<<<<< HEAD
-                await markGameCompleted(selectedGame.igdb_id);
-                console.log('✅ Game marked as completed');
+              // Prioritize gameId from URL
+              let igdbId: number | undefined;
+              if (gameId) {
+                const parsedGameId = parseInt(gameId);
+                if (!isNaN(parsedGameId)) {
+                  igdbId = parsedGameId;
+                }
+              }
+              // Fallback to selectedGame.igdb_id
+              if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
+                igdbId = selectedGame.igdb_id;
+              }
+              if (igdbId !== undefined && igdbId !== null && !isNaN(igdbId)) {
+                if (didFinishGame) {
+                  await markGameCompleted(igdbId);
+                  console.log('✅ Game marked as completed');
+                } else {
+                  await markGameStarted(igdbId);
+                  console.log('✅ Game marked as started');
+                }
               } else {
-                await markGameStarted(selectedGame.igdb_id);
-=======
-                await markGameCompleted(igdbId);
-                console.log('✅ Game marked as completed');
-              } else {
-                await markGameStarted(igdbId);
->>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
-                console.log('✅ Game marked as started');
+                console.warn('⚠️ No IGDB ID available for game progress update');
               }
             }
           } catch (progressError) {
@@ -548,43 +553,52 @@ export const ReviewFormPage: React.FC = () => {
         // Create new review
         console.log('Creating new review with platforms:', selectedPlatforms);
         
-<<<<<<< HEAD
-        // First, ensure the game exists in the database
-        const ensureGameResult = await ensureGameExists({
-          id: selectedGame.id,
-          igdb_id: selectedGame.igdb_id,
-          name: selectedGame.name,
-          cover_url: selectedGame.cover_url,
-          genre: selectedGame.genres?.[0],
-          releaseDate: selectedGame.first_release_date
-        });
-
-        if (!ensureGameResult.success) {
-          console.error('Failed to ensure game exists:', ensureGameResult.error);
-          alert(`Failed to add game to database: ${ensureGameResult.error}`);
+        // First, prioritize the gameId from URL (this is the source of truth)
+        let igdbId: number | undefined;
+        
+        if (gameId) {
+          const parsedGameId = parseInt(gameId);
+          if (!isNaN(parsedGameId)) {
+            igdbId = parsedGameId;
+            console.log('Using gameId from URL as IGDB ID:', igdbId);
+            // Ensure selectedGame has the correct igdb_id
+            setSelectedGame(prev => prev ? { ...prev, igdb_id: parsedGameId } : null);
+          }
+        }
+        
+        // Fallback to selectedGame.igdb_id if URL parameter is not available
+        if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
+          igdbId = selectedGame.igdb_id;
+          console.log('Using selectedGame.igdb_id as fallback:', igdbId);
+        }
+        
+        // Final fallback: check if selectedGame has an 'id' property that could be the IGDB ID
+        if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
+          if (selectedGame.id && !isNaN(selectedGame.id)) {
+            igdbId = selectedGame.id;
+            console.log('Using selectedGame.id as IGDB ID:', igdbId);
+          }
+        }
+        
+        if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
+          console.error('No valid IGDB ID available for game:', selectedGame, 'gameId from URL:', gameId);
+          alert('Game data is missing IGDB ID. Please try selecting the game again.');
           return;
         }
+        
+        console.log('Using IGDB ID for review submission:', igdbId);
 
-        // Use the database game ID returned from ensureGameExists
-        const databaseGameId = ensureGameResult.data!.gameId;
-        console.log('Using database game ID for review:', databaseGameId);
-
-        // Then create the review
+        // Create the review - createReview will handle ensuring the game exists
         const result = await createReview(
-          databaseGameId, // Use the confirmed database ID
-=======
-        // Create the review with game information
-        const result = await createReview(
-          selectedGame.igdb_id || parseInt(selectedGame.id), // Use IGDB ID, fallback to regular ID
->>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
+          igdbId, // Pass the IGDB ID - createReview will handle the rest
           rating,
           reviewText,
           isRecommended,
           {
-            title: selectedGame.title,
-            coverImage: selectedGame.coverImage,
-            genre: selectedGame.genre,
-            releaseDate: selectedGame.releaseDate
+            title: selectedGame.name,
+            coverImage: selectedGame.cover_url,
+            genre: selectedGame.genres?.[0],
+            releaseDate: selectedGame.first_release_date ? new Date(selectedGame.first_release_date * 1000).toISOString().split('T')[0] : undefined
           }
         );
 
@@ -594,13 +608,28 @@ export const ReviewFormPage: React.FC = () => {
           // Update game progress based on user selection (only if game not already completed)
           try {
             if (!gameAlreadyCompleted) {
-              const igdbId = selectedGame.igdb_id || parseInt(selectedGame.id);
-              if (didFinishGame) {
-                await markGameCompleted(selectedGame.igdb_id);
-                console.log('✅ Game marked as completed');
+              // Prioritize gameId from URL
+              let igdbId: number | undefined;
+              if (gameId) {
+                const parsedGameId = parseInt(gameId);
+                if (!isNaN(parsedGameId)) {
+                  igdbId = parsedGameId;
+                }
+              }
+              // Fallback to selectedGame.igdb_id
+              if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
+                igdbId = selectedGame.igdb_id;
+              }
+              if (igdbId !== undefined && igdbId !== null && !isNaN(igdbId)) {
+                if (didFinishGame) {
+                  await markGameCompleted(igdbId);
+                  console.log('✅ Game marked as completed');
+                } else {
+                  await markGameStarted(igdbId);
+                  console.log('✅ Game marked as started');
+                }
               } else {
-                await markGameStarted(selectedGame.igdb_id);
-                console.log('✅ Game marked as started');
+                console.warn('⚠️ No IGDB ID available for game progress update');
               }
             }
           } catch (progressError) {
@@ -862,7 +891,6 @@ export const ReviewFormPage: React.FC = () => {
             )}
 
             {/* Platform(s) Played On */}
-<<<<<<< HEAD
             {selectedGame && (
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-4">
@@ -921,36 +949,6 @@ export const ReviewFormPage: React.FC = () => {
                 )}
               </div>
             )}
-=======
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-4">
-                Platform(s) Played On *
-              </label>
-              {availablePlatforms.length > 0 ? (
-                <div className="flex flex-wrap gap-4">
-                  {availablePlatforms.map((platform) => (
-                    <div key={platform} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={`platform-${platform}`}
-                        checked={selectedPlatforms.includes(platform)}
-                        onChange={() => handlePlatformToggle(platform)}
-                        className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
-                      />
-                      <label 
-                        htmlFor={`platform-${platform}`}
-                        className="ml-2 text-sm text-gray-300 cursor-pointer hover:text-purple-300 transition-colors"
-                      >
-                        {platform}
-                      </label>
-                    </div>
-                ))}
-                </div>
-              ) : (
-                <p className="text-gray-400 text-sm">No platform information available for this game</p>
-              )}
-            </div>
->>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
 
             {/* Review Text */}
             <div>
@@ -1194,7 +1192,7 @@ export const ReviewFormPage: React.FC = () => {
                   <div className="flex items-center justify-center py-12">
                     <Loader className="w-8 h-8 animate-spin text-purple-400" />
                     <span className="ml-3 text-gray-400">
-                      {isSearchCached ? 'Updating results...' : 'Searching for games...'}
+                      Searching for games...
                     </span>
                   </div>
                 )}
@@ -1205,7 +1203,7 @@ export const ReviewFormPage: React.FC = () => {
                     <div className="text-center">
                       <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                       <p className="text-red-400 font-semibold mb-2">Search Error</p>
-                      <p className="text-gray-400 mb-4">{searchError.message}</p>
+                      <p className="text-gray-400 mb-4">{searchError}</p>
                       <button
                         onClick={() => refetchSearch()}
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
@@ -1275,11 +1273,6 @@ export const ReviewFormPage: React.FC = () => {
                         <span className="text-gray-300 text-sm">
                           Showing {searchResults.length} results
                         </span>
-                        {isSearchCached && (
-                          <div className="flex items-center gap-1 text-green-400 text-sm">
-                            <span>Cached</span>
-                          </div>
-                        )}
                         {searchLoading && (
                           <div className="flex items-center gap-1 text-blue-400 text-sm">
                             <Loader className="h-3 w-3 animate-spin" />

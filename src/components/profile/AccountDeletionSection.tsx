@@ -45,7 +45,7 @@ export const AccountDeletionSection: React.FC<AccountDeletionSectionProps> = ({
       console.log('🚨 Initiating account deletion process...');
       
       // Import supabase here to avoid initialization issues
-      const { supabase } = await import('../../utils/supabaseClient');
+      const { supabase } = await import('../../services/supabase');
       
       // Get current user to verify email
       const { data: { user } } = await supabase.auth.getUser();
@@ -99,7 +99,7 @@ export const AccountDeletionSection: React.FC<AccountDeletionSectionProps> = ({
       console.log('🚨 Processing immediate account deletion...');
       
       // Import supabase here to avoid initialization issues
-      const { supabase } = await import('../../utils/supabaseClient');
+      const { supabase } = await import('../../services/supabase');
       
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();

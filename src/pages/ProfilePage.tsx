@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../services/supabase';
 import { getCurrentUserProfile, updateUserProfile, getCurrentAuthUser, ProfileUpdateData } from '../services/profileService';
 import { ProfileInfo } from '../components/ProfileInfo';
 import { ProfileDetails } from '../components/ProfileDetails';

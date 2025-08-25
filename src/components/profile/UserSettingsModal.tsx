@@ -39,10 +39,13 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshCounter, setRefreshCounter] = useState(0);
+  const [userData, setUserData] = useState<any>(null);
   const modalContentRef = useRef<HTMLDivElement>(null);
 
-  // Use provided user data or fallback to empty data
-  const userData = propUserData || {
+  // Use fetched user data or provided user data as fallback
+  const currentUserData = userData || propUserData || {
     username: '',
     displayName: '',
     email: '',
@@ -53,7 +56,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     avatar: ''
   };
 
-  console.log('🔄 Using user data for modal:', userData);
+  console.log('🔄 Using user data for modal:', currentUserData);
   // Fetch user data when modal opens - force refresh every time
   useEffect(() => {
     const fetchUserData = async () => {
@@ -266,18 +269,9 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                   userId: userId
                 })}
                 <UserSettingsPanel 
-                key={`${userId}-loaded-${userData?.username || 'empty'}`}
+                key={`${userId}-loaded-${currentUserData?.username || 'empty'}`}
                 userId={userId}
-                initialData={userData || {
-                  username: '',
-                  displayName: '',
-                  email: '',
-                  bio: '',
-                  location: '',
-                  website: '',
-                  platform: '',
-                  avatar: ''
-                }}
+                initialData={currentUserData}
                 onSave={onSave}
                 onSuccess={handleSuccess}
                 onFormChange={handleFormChange}

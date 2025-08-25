@@ -19,43 +19,8 @@ import {
  */
 export type UserProfile = DatabaseUser;
 
-<<<<<<< HEAD
-/**
- * Interface for user profile data
- */
-export interface UserProfile {
-  id: number;
-  provider_id: string;
-  username: string;
-  name: string;
-  display_name?: string;
-  email: string;
-  bio?: string;
-  location?: string;
-  website?: string;
-  platform?: string;
-  avatar_url?: string;
-  avatar_url?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Interface for profile update data
- */
-export interface ProfileUpdateData {
-  username?: string;
-  displayName?: string;
-  bio?: string;
-  location?: string;
-  website?: string;
-  platform?: string;
-  avatar?: string; // Base64 data URL for new uploads
-}
-=======
 // Re-export the standardized types for backwards compatibility
 export type { ProfileUpdateData, ServiceResponse } from '../types/user';
->>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
 
 /**
  * Get database user ID from auth user
@@ -436,10 +401,6 @@ export const updateUserProfile = async (
         return { success: false, error: avatarUploadResult.error };
       }
       
-<<<<<<< HEAD
-      updateData.avatar_url = avatarUploadResult.data;
-=======
->>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
       updateData.avatar_url = avatarUploadResult.data;
       console.log('🖼️ Avatar URLs added to updateData');
     }
@@ -530,15 +491,11 @@ export const updateUserProfile = async (
     }
 
     console.log('✅ Profile updated successfully:', updatedUser);
-<<<<<<< HEAD
     
     // Update cache with new data
     profileCache.update(providerId, updatedUser as UserProfile);
     
     return { success: true, data: updatedUser as UserProfile };
-=======
-    return { success: true, data: updatedUser };
->>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
   } catch (error) {
     console.error('💥 Unexpected error updating user profile:', error);
     
@@ -656,11 +613,7 @@ export const checkUsernameAvailability = async (
  * Get user profile with auth check and ensure profile exists
  * UPDATED: Uses standardized types and validation
  */
-<<<<<<< HEAD
 export const getCurrentUserProfile = async (forceRefresh = false): Promise<ServiceResponse<UserProfile>> => {
-=======
-export const getCurrentUserProfile = async (): Promise<ServiceResponse<DatabaseUser>> => {
->>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
   try {
     console.log('🔍 Getting current user profile...', forceRefresh ? '(force refresh)' : '');
     
