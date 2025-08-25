@@ -18,6 +18,7 @@ import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import UserSettingsPage from './pages/UserSettingsPage';
 
 
 // Lazy load legal pages for better performance
@@ -73,7 +74,7 @@ function App() {
                       path="/settings" 
                       element={
                         <ProtectedRoute showModal={true}>
-                          <ProfilePage />
+                          <UserSettingsPage />
                         </ProtectedRoute>
                       } 
                     />

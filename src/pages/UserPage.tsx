@@ -153,7 +153,7 @@ export const UserPage: React.FC = () => {
   const transformedUser = {
     id: user.id,
     username: user.username || user.name,
-    avatar: user.picurl || '', // No placeholder avatar, let UI handle default
+    avatar: user.avatar_url || '', // No placeholder avatar, let UI handle default
     bio: user.bio || '', // No placeholder bio, let UI handle empty state
     joinDate: new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }),
     location: user.location,

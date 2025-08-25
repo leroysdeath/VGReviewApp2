@@ -15,7 +15,8 @@ import { DLCSection } from '../components/DLCSection';
 import { ParentGameSection } from '../components/ParentGameSection';
 import { ModSection } from '../components/ModSection';
 import { dlcService } from '../services/dlcService';
-import { OptimizedImage } from '../components/OptimizedImage';
+import { SmartImage } from '../components/SmartImage';
+import { shouldHideFanContent } from '../utils/contentProtectionFilter';
 
 // Interface for review data from database
 interface GameReview {
@@ -28,7 +29,7 @@ interface GameReview {
   user?: {
     id: number;
     name: string;
-    picurl?: string;
+    avatar_url?: string;
   };
 }
 
@@ -464,7 +465,7 @@ export const GamePage: React.FC = () => {
       likeCount: 0, // To be implemented with real data
       commentCount: 0, // To be implemented with real data
       author: review.user?.name || 'Anonymous',
-      authorAvatar: review.user?.picurl || '/default-avatar.png'
+      authorAvatar: review.user?.avatar_url || '/default-avatar.png'
     })),
     [validRatings, id, game?.name]
   );
@@ -608,7 +609,7 @@ export const GamePage: React.FC = () => {
             <div className="bg-gray-800 rounded-lg overflow-hidden">
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
-                  <OptimizedImage
+                  <SmartImage
                     src={game.cover?.url ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}` : (game.cover_url || '/placeholder-game.jpg')}
                     alt={game.name}
                     className="h-64 w-full object-cover md:h-80 md:w-64"
@@ -792,8 +793,8 @@ export const GamePage: React.FC = () => {
               <DLCSection gameId={game.igdb_id} />
             )}
 
-            {/* Mod Section (for Main Games) */}
-            {game && !categoryLoading && (!gameCategory || gameCategory === 0) && (
+            {/* Mod Section (for Main Games) - Hidden for aggressive copyright companies */}
+            {game && !categoryLoading && (!gameCategory || gameCategory === 0) && !shouldHideFanContent(game) && (
               <ModSection gameId={game.igdb_id} />
             )}
           </div>

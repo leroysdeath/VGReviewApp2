@@ -100,7 +100,7 @@ class AuthService {
         .from('user')
         .update({
           name: updates.username || user.user_metadata?.username,
-          picurl: updates.avatar,
+          avatar_url: updates.avatar,
           updated_at: new Date().toISOString()
         })
         .eq('provider_id', user.id);
@@ -187,7 +187,7 @@ class AuthService {
           provider_id: user.id,
           email: user.email || '',
           name: username,
-          picurl: user.user_metadata?.avatar_url,
+          avatar_url: user.user_metadata?.avatar_url,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });

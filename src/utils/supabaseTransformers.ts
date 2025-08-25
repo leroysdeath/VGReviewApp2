@@ -34,7 +34,7 @@ export const transformSupabaseRatingToLegacy = (supabaseRating: RatingWithUser) 
     date: new Date(supabaseRating.post_date_time).toLocaleDateString(),
     hasText: !!supabaseRating.review,
     author: supabaseRating.user?.name || 'Unknown User',
-    authorAvatar: supabaseRating.user?.picurl || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
+    authorAvatar: supabaseRating.user?.avatar_url || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
   };
 };
 
@@ -43,7 +43,7 @@ export const transformSupabaseUserToLegacy = (supabaseUser: SupabaseUser) => {
   return {
     id: supabaseUser.id.toString(),
     username: supabaseUser.name,
-    avatar: supabaseUser.picurl || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
+    avatar: supabaseUser.avatar_url || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
     bio: 'Gaming enthusiast', // This would need to be added to the database schema
     joinDate: 'Unknown', // This would need to be added to the database schema
     reviewCount: 0, // This would need to be calculated

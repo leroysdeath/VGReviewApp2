@@ -164,7 +164,7 @@ class GameDataService {
       user?: {
         id: number;
         name: string;
-        picurl?: string;
+        avatar_url?: string;
       };
     }>;
   }> {
@@ -248,10 +248,10 @@ class GameDataService {
         .from('rating')
         .select(`
           *,
-          user:user_id(
+          user!rating_user_id_fkey(
             id,
             name,
-            picurl
+            avatar_url
           )
         `)
         .eq('game_id', gameData.id)  // Use game.id (database ID), not igdbId

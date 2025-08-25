@@ -29,8 +29,24 @@
       "Bash(npm run lint)",
       "Bash(taskkill:*)",
       "Bash(powershell:*)",
-      "Bash(npx supabase db push:*)"
+      "Bash(npx supabase db push:*)",
+      "Bash(timeout 15 netlify dev)",
+      "Bash(timeout 12 netlify dev)",
+      "Bash(tasklist:*)",
+      "Bash(cmd //c:*)",
+      "Bash(npx supabase db reset:*)",
+      "Bash(npx supabase db inspect:*)",
+      "Bash(VITE_SUPABASE_URL=\"https://cqufmmnguumyhbkhgwdc.supabase.co\" VITE_SUPABASE_ANON_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdWZtbW5ndXVteWhia2hnd2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MzU3MDUsImV4cCI6MjA2ODIxMTcwNX0.iP9jJM26Xa3-YeeB2YdYnqMK5JZyYcFY5_KXuLAZw-s\" node update_zelda_1022.js)",
+      "Bash(VITE_SUPABASE_URL=\"https://cqufmmnguumyhbkhgwdc.supabase.co\" VITE_SUPABASE_ANON_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdWZtbW5ndXVteWhia2hnd2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MzU3MDUsImV4cCI6MjA2ODIxMTcwNX0.iP9jJM26Xa3-YeeB2YdYnqMK5JZyYcFY5_KXuLAZw-s\" node -e \"\nimport { createClient } from ''@supabase/supabase-js'';\nconst supabase = createClient(''https://cqufmmnguumyhbkhgwdc.supabase.co'', ''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdWZtbW5ndXVteWhia2hnd2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MzU3MDUsImV4cCI6MjA2ODIxMTcwNX0.iP9jJM26Xa3-YeeB2YdYnqMK5JZyYcFY5_KXuLAZw-s'');\nconst { data } = await supabase.from(''game'').select(''*'').limit(1);\nconsole.log(''Game table columns:'', Object.keys(data[0] || {}));\n\")",
+      "Bash(VITE_SUPABASE_URL=\"https://cqufmmnguumyhbkhgwdc.supabase.co\" VITE_SUPABASE_ANON_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdWZtbW5ndXVteWhia2hnd2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MzU3MDUsImV4cCI6MjA2ODIxMTcwNX0.iP9jJM26Xa3-YeeB2YdYnqMK5JZyYcFY5_KXuLAZw-s\" node -e \"\nimport { createClient } from ''@supabase/supabase-js'';\nconst supabase = createClient(''https://cqufmmnguumyhbkhgwdc.supabase.co'', ''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdWZtbW5ndXVteWhia2hnd2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MzU3MDUsImV4cCI6MjA2ODIxMTcwNX0.iP9jJM26Xa3-YeeB2YdYnqMK5JZyYcFY5_KXuLAZw-s'');\nconst { data } = await supabase.from(''game'').select(''id, name, developer, publisher, summary'').eq(''id'', 1022).single();\nconsole.log(''Final verification - Game 1022:'', {\n  name: data.name,\n  developer: data.developer,\n  publisher: data.publisher,\n  summary: data.summary ? data.summary.substring(0, 100) + ''...'' : ''No summary''\n});\n\")",
+      "Bash(VITE_SUPABASE_URL=\"https://cqufmmnguumyhbkhgwdc.supabase.co\" VITE_SUPABASE_ANON_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdWZtbW5ndXVteWhia2hnd2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MzU3MDUsImV4cCI6MjA2ODIxMTcwNX0.iP9jJM26Xa3-YeeB2YdYnqMK5JZyYcFY5_KXuLAZw-s\" node -e \"\nimport { createClient } from ''@supabase/supabase-js'';\nconst supabase = createClient(''https://cqufmmnguumyhbkhgwdc.supabase.co'', ''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdWZtbW5ndXVteWhia2hnd2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MzU3MDUsImV4cCI6MjA2ODIxMTcwNX0.iP9jJM26Xa3-YeeB2YdYnqMK5JZyYcFY5_KXuLAZw-s'');\nconst { data } = await supabase.from(''user'').select(''*'').limit(1);\nconsole.log(''User table columns:'', Object.keys(data[0] || {}));\n\")",
+      "Bash(sed:*)",
+      "Bash(set VITE_SUPABASE_URL=https://cqufmmnguumyhbkhgwdc.supabase.co)",
+      "Bash(set:*)"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "C:\\c\\Users\\thoma\\Desktop"
+    ]
   }
 }

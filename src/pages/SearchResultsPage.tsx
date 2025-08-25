@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useGameSearch } from '../hooks/useGameSearch';
-import { OptimizedImage } from '../components/OptimizedImage';
+import { SmartImage } from '../components/SmartImage';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { shouldShowCategoryLabel, getCategoryLabel, getCategoryStyles } from '../utils/gameCategoryLabels';
@@ -425,7 +425,7 @@ export const SearchResultsPage: React.FC = () => {
                     className="bg-gray-800 rounded-lg overflow-hidden cursor-pointer hover:transform hover:scale-105 transition-all duration-200 hover:shadow-xl"
                   >
                     <div className="aspect-[3/4] relative bg-gray-700">
-                      <OptimizedImage
+                      <SmartImage
                         src={getCoverUrl(game)}
                         alt={game.name}
                         className="w-full h-full object-cover"
@@ -480,7 +480,7 @@ export const SearchResultsPage: React.FC = () => {
                     onClick={() => handleGameClick(game)}
                     className="bg-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-750 transition-colors flex gap-4"
                   >
-                    <OptimizedImage
+                    <SmartImage
                       src={getCoverUrl(game)}
                       alt={game.name}
                       className="w-24 h-32 object-cover rounded-lg"

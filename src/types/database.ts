@@ -6,7 +6,7 @@ export interface User {
   provider_id: string;
   email: string;
   name: string;
-  picurl?: string;
+  avatar_url?: string;
 }
 
 export interface Platform {

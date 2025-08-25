@@ -5,7 +5,7 @@ import { gameDataService } from '../services/gameDataService';
 import { gameSearchService } from '../services/gameSearchService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { GameSearch } from '../components/GameSearch';
-import { createReview, ensureGameExists, getUserReviewForGame, updateReview } from '../services/reviewService';
+import { createReview, ensureGameExists, getUserReviewForGameByIGDBId, updateReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
 import { useAuth } from '../hooks/useAuth';
 
@@ -161,7 +161,7 @@ export const ReviewFormPage: React.FC = () => {
 
       try {
         console.log('Checking for existing review for game IGDB ID:', gameId);
-        const result = await getUserReviewForGame(parseInt(gameId));
+        const result = await getUserReviewForGameByIGDBId(parseInt(gameId));
 
         if (result.success && result.data) {
           console.log('Found existing review, entering edit mode:', result.data);
@@ -243,7 +243,22 @@ export const ReviewFormPage: React.FC = () => {
     });
   }, [rating, reviewText, isRecommended, didFinishGame, selectedPlatforms, isEditMode, initialFormValues, isGameCompletionLocked]);
 
-  const handleGameSelect = (game: Game) => {
+  // Auto-select single platform when game changes
+  useEffect(() => {
+    if (selectedGame && selectedGame.platforms) {
+      if (selectedGame.platforms.length === 1) {
+        // Auto-select the single platform
+        setSelectedPlatforms([selectedGame.platforms[0]]);
+      } else if (selectedGame.platforms.length > 1) {
+        // Clear selection if multiple platforms and user hasn't made a choice
+        if (selectedPlatforms.length === 0 || !selectedPlatforms.every(p => selectedGame.platforms!.includes(p))) {
+          setSelectedPlatforms([]);
+        }
+      }
+    }
+  }, [selectedGame]);
+
+  const handleGameSelect = (game: GameWithCalculatedFields) => {
     setSelectedGame(game);
     setGameSearch('');
     setSearchTerm('');
@@ -289,16 +304,16 @@ export const ReviewFormPage: React.FC = () => {
   };
 
   // Game Card Component for Grid View
-  const GameCard: React.FC<{ game: Game }> = ({ game }) => (
+  const GameCard: React.FC<{ game: GameWithCalculatedFields }> = ({ game }) => (
     <div
       onClick={() => handleGameClick(game)}
       className="bg-gray-700 rounded-lg overflow-hidden hover:bg-gray-600 transition-all duration-200 cursor-pointer group hover:scale-105 relative"
     >
       <div className="aspect-[3/4] relative overflow-hidden">
-        {game.coverImage ? (
+        {game.cover_url ? (
           <img
-            src={game.coverImage}
-            alt={game.title}
+            src={game.cover_url}
+            alt={game.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
             loading="lazy"
           />
@@ -307,27 +322,27 @@ export const ReviewFormPage: React.FC = () => {
             <span className="text-gray-500 text-sm">No Image</span>
           </div>
         )}
-        {game.rating && (
+        {game.igdb_rating && (
           <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded-lg text-sm flex items-center">
             <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
-            {Math.round(game.rating / 10)}
+            {Math.round(game.igdb_rating / 10)}
           </div>
         )}
       </div>
       <div className="p-4">
         <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors line-clamp-2">
-          {game.title}
+          {game.name}
         </h3>
-        {game.releaseDate && (
+        {game.first_release_date && (
           <p className="text-gray-400 text-sm mt-1 flex items-center">
             <Calendar className="w-3 h-3 mr-1" />
-            {game.releaseDate}
+            {game.first_release_date}
           </p>
         )}
-        {game.genre && (
+        {game.genres && game.genres.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             <span className="bg-purple-600 bg-opacity-20 text-purple-300 px-2 py-1 rounded text-xs">
-              {game.genre}
+              {game.genres[0]}
             </span>
           </div>
         )}
@@ -336,16 +351,16 @@ export const ReviewFormPage: React.FC = () => {
   );
   
   // Game List Item Component for List View
-  const GameListItem: React.FC<{ game: Game }> = ({ game }) => (
+  const GameListItem: React.FC<{ game: GameWithCalculatedFields }> = ({ game }) => (
     <div
       onClick={() => handleGameClick(game)}
       className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer group flex gap-4 relative"
     >
       <div className="w-16 h-20 flex-shrink-0 overflow-hidden rounded">
-        {game.coverImage ? (
+        {game.cover_url ? (
           <img
-            src={game.coverImage}
-            alt={game.title}
+            src={game.cover_url}
+            alt={game.name}
             className="w-full h-full object-cover"
             loading="lazy"
           />
@@ -357,23 +372,23 @@ export const ReviewFormPage: React.FC = () => {
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors truncate">
-          {game.title}
+          {game.name}
         </h3>
-        {game.releaseDate && (
+        {game.first_release_date && (
           <p className="text-gray-400 text-sm mt-1 flex items-center">
             <Calendar className="w-3 h-3 mr-1" />
-            {game.releaseDate}
+            {game.first_release_date}
           </p>
         )}
-        {game.description && (
+        {game.summary && (
           <p className="text-gray-300 text-sm mt-2 line-clamp-2">
-            {game.description}
+            {game.summary}
           </p>
         )}
-        {game.genre && (
+        {game.genres && game.genres.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             <span className="bg-purple-600 bg-opacity-20 text-purple-300 px-2 py-1 rounded text-xs">
-              {game.genre}
+              {game.genres[0]}
             </span>
           </div>
         )}
@@ -383,7 +398,7 @@ export const ReviewFormPage: React.FC = () => {
           <div className="flex items-center text-yellow-400">
             <Star className="w-4 h-4 mr-1 fill-current" />
             <span className="text-white font-semibold">
-              {Math.round(game.rating / 10)}
+              {Math.round(game.igdb_rating / 10)}
             </span>
           </div>
         </div>
@@ -409,7 +424,7 @@ export const ReviewFormPage: React.FC = () => {
         
         const result = await updateReview(
           existingReviewId,
-          parseInt(selectedGame.id),
+          0, // gameId not used in update operation
           rating,
           reviewText,
           isRecommended
@@ -422,10 +437,10 @@ export const ReviewFormPage: React.FC = () => {
           try {
             if (!gameAlreadyCompleted) {
               if (didFinishGame) {
-                await markGameCompleted(parseInt(selectedGame.id));
+                await markGameCompleted(selectedGame.igdb_id);
                 console.log('✅ Game marked as completed');
               } else {
-                await markGameStarted(parseInt(selectedGame.id));
+                await markGameStarted(selectedGame.igdb_id);
                 console.log('✅ Game marked as started');
               }
             }
@@ -434,7 +449,7 @@ export const ReviewFormPage: React.FC = () => {
             // Don't prevent navigation if progress update fails
           }
           
-          navigate(`/game/${selectedGame.id}`);
+          navigate(`/game/${selectedGame.igdb_id}`);
         } else {
           console.error('Failed to update review:', result.error);
           alert(`Failed to update review: ${result.error}`);
@@ -444,13 +459,14 @@ export const ReviewFormPage: React.FC = () => {
         console.log('Creating new review with platforms:', selectedPlatforms);
         
         // First, ensure the game exists in the database
-        const ensureGameResult = await ensureGameExists(
-          parseInt(selectedGame.id),
-          selectedGame.title,
-          selectedGame.coverImage,
-          selectedGame.genre,
-          selectedGame.releaseDate
-        );
+        const ensureGameResult = await ensureGameExists({
+          id: selectedGame.id,
+          igdb_id: selectedGame.igdb_id,
+          name: selectedGame.name,
+          cover_url: selectedGame.cover_url,
+          genre: selectedGame.genres?.[0],
+          releaseDate: selectedGame.first_release_date
+        });
 
         if (!ensureGameResult.success) {
           console.error('Failed to ensure game exists:', ensureGameResult.error);
@@ -458,9 +474,13 @@ export const ReviewFormPage: React.FC = () => {
           return;
         }
 
+        // Use the database game ID returned from ensureGameExists
+        const databaseGameId = ensureGameResult.data!.gameId;
+        console.log('Using database game ID for review:', databaseGameId);
+
         // Then create the review
         const result = await createReview(
-          parseInt(selectedGame.id), // Convert string ID to number
+          databaseGameId, // Use the confirmed database ID
           rating,
           reviewText,
           isRecommended
@@ -473,10 +493,10 @@ export const ReviewFormPage: React.FC = () => {
           try {
             if (!gameAlreadyCompleted) {
               if (didFinishGame) {
-                await markGameCompleted(parseInt(selectedGame.id));
+                await markGameCompleted(selectedGame.igdb_id);
                 console.log('✅ Game marked as completed');
               } else {
-                await markGameStarted(parseInt(selectedGame.id));
+                await markGameStarted(selectedGame.igdb_id);
                 console.log('✅ Game marked as started');
               }
             }
@@ -485,7 +505,7 @@ export const ReviewFormPage: React.FC = () => {
             // Don't prevent navigation if progress update fails
           }
           
-          navigate(`/game/${selectedGame.id}`);
+          navigate(`/game/${selectedGame.igdb_id}`);
         } else {
           console.error('Failed to create review:', result.error);
           alert(`Failed to submit review: ${result.error}`);
@@ -503,7 +523,7 @@ export const ReviewFormPage: React.FC = () => {
         <div className="bg-gray-800 rounded-lg p-8">
           <h1 className="text-3xl font-bold text-white mb-8">
             {selectedGame 
-              ? (isEditMode ? `Edit Your Review: ${selectedGame.title}` : `Review: ${selectedGame.title}`)
+              ? (isEditMode ? `Edit Your Review: ${selectedGame.name}` : `Review: ${selectedGame.name}`)
               : (isEditMode ? 'Edit Your Review' : 'Write a Review')
             }
           </h1>
@@ -533,7 +553,7 @@ export const ReviewFormPage: React.FC = () => {
             {selectedGame && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-white">{selectedGame.title}</h3>
+                  <h3 className="text-xl font-semibold text-white">{selectedGame.name}</h3>
                   <button
                     type="button"
                     onClick={() => setSelectedGame(null)}
@@ -544,13 +564,13 @@ export const ReviewFormPage: React.FC = () => {
                 </div>
                 <div className="flex justify-center">
                   <img
-                    src={selectedGame.coverImage}
-                    alt={selectedGame.title}
+                    src={selectedGame.cover_url || '/placeholder-game.jpg'}
+                    alt={selectedGame.name}
                     className="w-48 h-64 object-cover rounded-lg shadow-lg"
                   />
                 </div>
-                {selectedGame.releaseDate && (
-                  <p className="text-center text-gray-400 text-sm">Released: {selectedGame.releaseDate}</p>
+                {selectedGame.first_release_date && (
+                  <p className="text-center text-gray-400 text-sm">Released: {selectedGame.first_release_date}</p>
                 )}
               </div>
             )}
@@ -739,30 +759,64 @@ export const ReviewFormPage: React.FC = () => {
             )}
 
             {/* Platform(s) Played On */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-4">
-                Platform(s) Played On *
-              </label>
-              <div className="flex justify-between gap-4">
-                {['PS5', 'Xbox Series X/S', 'Nintendo Switch', 'PC', 'Retro'].map((platform) => (
-                  <div key={platform} className="flex flex-col items-center">
-                    <input
-                      type="checkbox"
-                      id={`platform-${platform}`}
-                      checked={selectedPlatforms.includes(platform)}
-                      onChange={() => handlePlatformToggle(platform)}
-                      className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
-                    />
-                    <label 
-                      htmlFor={`platform-${platform}`}
-                      className="text-sm text-gray-300 mt-2 text-center cursor-pointer hover:text-purple-300 transition-colors"
-                    >
-                      {platform}
-                    </label>
+            {selectedGame && (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-4">
+                  Platform(s) Played On *
+                </label>
+                {selectedGame.platforms && selectedGame.platforms.length > 0 ? (
+                  selectedGame.platforms.length === 1 ? (
+                    // Single platform - just display the name
+                    <div className="bg-gray-700 border border-gray-600 rounded-lg p-4 text-center">
+                      <span className="text-lg font-medium text-white">{selectedGame.platforms[0]}</span>
+                      <p className="text-sm text-gray-400 mt-1">Available on this platform only</p>
+                    </div>
+                  ) : (
+                    // Multiple platforms - show checkboxes
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {selectedGame.platforms.map((platform) => (
+                        <div key={platform} className="flex flex-col items-center">
+                          <input
+                            type="checkbox"
+                            id={`platform-${platform}`}
+                            checked={selectedPlatforms.includes(platform)}
+                            onChange={() => handlePlatformToggle(platform)}
+                            className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
+                          />
+                          <label 
+                            htmlFor={`platform-${platform}`}
+                            className="text-sm text-gray-300 mt-2 text-center cursor-pointer hover:text-purple-300 transition-colors"
+                          >
+                            {platform}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  // No platform data available - show default options
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {['PS5', 'Xbox Series X/S', 'Nintendo Switch', 'PC', 'Retro'].map((platform) => (
+                      <div key={platform} className="flex flex-col items-center">
+                        <input
+                          type="checkbox"
+                          id={`platform-${platform}`}
+                          checked={selectedPlatforms.includes(platform)}
+                          onChange={() => handlePlatformToggle(platform)}
+                          className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
+                        />
+                        <label 
+                          htmlFor={`platform-${platform}`}
+                          className="text-sm text-gray-300 mt-2 text-center cursor-pointer hover:text-purple-300 transition-colors"
+                        >
+                          {platform}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            </div>
+            )}
 
             {/* Review Text */}
             <div>

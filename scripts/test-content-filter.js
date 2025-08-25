@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Test Content Filter with Official Game Whitelisting
-import { shouldFilterContent } from '../src/utils/contentProtectionFilter.js';
+import { shouldFilterContent } from '../src/utils/contentProtectionFilter.ts';
 
 // Test games based on the IGDB results we saw
 const testGames = [
@@ -36,6 +36,20 @@ const testGames = [
     publisher: "Nintendo",
     summary: "Official Super Mario World game"
   },
+  {
+    id: 2001,
+    name: "The Legend of Zelda: Breath of the Wild",
+    developer: "Nintendo EPD",
+    publisher: "Nintendo",
+    summary: "Official Zelda game"
+  },
+  {
+    id: 2002,
+    name: "Pokemon Sword",
+    developer: "Game Freak",
+    publisher: "The Pokemon Company",
+    summary: "Official Pokemon game"
+  },
   
   // Official Capcom games (should NOT be filtered) 
   {
@@ -60,6 +74,27 @@ const testGames = [
     developer: "Unknown",
     publisher: "Unknown", 
     summary: "A ROM hack of Super Mario World with new levels"
+  },
+  {
+    id: 3001,
+    name: "Super Mario Bros. X",
+    developer: "Fan Developer",
+    publisher: "Independent",
+    summary: "Fan-made Mario game with level editor"
+  },
+  {
+    id: 3002,
+    name: "Pokemon Uranium",
+    developer: "Pokemon Uranium Team",
+    publisher: "Independent",
+    summary: "Fan-made Pokemon game"
+  },
+  {
+    id: 3003,
+    name: "The Legend of Zelda: Parallel Worlds",
+    developer: "ROM Hacker",
+    publisher: "Homebrew",
+    summary: "Fan-made Zelda ROM hack"
   },
   {
     id: 102,

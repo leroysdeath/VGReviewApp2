@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabaseClient';
-import { getUserProfile, updateUserProfile, getCurrentAuthUser, ProfileUpdateData } from '../services/profileService';
+import { getCurrentUserProfile, updateUserProfile, getCurrentAuthUser, ProfileUpdateData } from '../services/profileService';
 import { ProfileInfo } from '../components/ProfileInfo';
 import { ProfileDetails } from '../components/ProfileDetails';
 import { ProfileData } from '../components/ProfileData';
@@ -40,8 +40,8 @@ const ProfilePage = () => {
       
       setCurrentUserId(user.id);
 
-      // Fetch profile from user table using profileService
-      const profileResponse = await getUserProfile(user.id);
+      // Fetch profile from user table using cached profileService
+      const profileResponse = await getCurrentUserProfile();
       const profileData = profileResponse.success ? profileResponse.data : null;
 
       // Set database user ID if profile exists
@@ -55,7 +55,7 @@ const ProfilePage = () => {
         username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
         display_name: user.user_metadata?.name || '',
         bio: '',
-        picurl: user.user_metadata?.avatar_url || null,
+        avatar_url: user.user_metadata?.avatar_url || null,
         created_at: new Date().toISOString(),
         location: '',
         website: '',
@@ -66,7 +66,7 @@ const ProfilePage = () => {
         id: user.id,
         username: profile.username || profile.name,
         displayName: profile.display_name || '',
-        avatar: profile.picurl || null,
+        avatar: profile.avatar_url || null,
         bio: profile.bio || '',
         joinDate: new Date(profile.created_at).toLocaleString('default', { month: 'long', year: 'numeric' }),
         location: profile.location || '',
@@ -157,7 +157,7 @@ const ProfilePage = () => {
       console.log('✅ Profile updated successfully via service layer');
       console.log('✅ Updated profile data:', updateResult.data);
       
-      // Refresh profile data to reflect changes
+      // Profile data is automatically cached, just refresh the local display
       await fetchProfileData();
       
     } catch (error) {

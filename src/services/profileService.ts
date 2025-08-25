@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { sanitizeStrict, sanitizeBasic, sanitizeURL } from '../utils/sanitize';
+import { profileCache } from './profileCache';
 
 /**
  * Interface for standardized response
@@ -24,7 +25,7 @@ export interface UserProfile {
   location?: string;
   website?: string;
   platform?: string;
-  picurl?: string;
+  avatar_url?: string;
   avatar_url?: string;
   created_at: string;
   updated_at: string;
@@ -368,7 +369,7 @@ export const updateUserProfile = async (
         return { success: false, error: avatarUploadResult.error };
       }
       
-      updateData.picurl = avatarUploadResult.data;
+      updateData.avatar_url = avatarUploadResult.data;
       updateData.avatar_url = avatarUploadResult.data;
       console.log('🖼️ Avatar URLs added to updateData');
     }
@@ -453,6 +454,10 @@ export const updateUserProfile = async (
     }
 
     console.log('✅ Profile updated successfully:', updatedUser);
+    
+    // Update cache with new data
+    profileCache.update(providerId, updatedUser as UserProfile);
+    
     return { success: true, data: updatedUser as UserProfile };
   } catch (error) {
     console.error('💥 Unexpected error updating user profile:', error);
@@ -501,11 +506,78 @@ export const updateUserProfile = async (
 };
 
 /**
+ * Check if username is available (not taken by another user)
+ */
+export const checkUsernameAvailability = async (
+  username: string,
+  currentProviderId?: string
+): Promise<ServiceResponse<{ available: boolean; message: string }>> => {
+  try {
+    console.log('🔍 Checking username availability:', username);
+    
+    if (!username || username.trim().length < 3) {
+      return {
+        success: true,
+        data: {
+          available: false,
+          message: 'Username must be at least 3 characters long'
+        }
+      };
+    }
+
+    const sanitizedUsername = username.trim().toLowerCase();
+    
+    // Check if username exists in database
+    let query = supabase
+      .from('user')
+      .select('provider_id')
+      .eq('username', sanitizedUsername);
+    
+    // If checking for current user, exclude their own record
+    if (currentProviderId) {
+      query = query.neq('provider_id', currentProviderId);
+    }
+    
+    const { data, error } = await query.maybeSingle();
+    
+    if (error) {
+      console.error('❌ Error checking username:', error);
+      return {
+        success: false,
+        error: `Database error: ${error.message}`
+      };
+    }
+    
+    const isAvailable = !data;
+    
+    console.log('✅ Username availability check:', {
+      username: sanitizedUsername,
+      available: isAvailable,
+      currentProviderId
+    });
+    
+    return {
+      success: true,
+      data: {
+        available: isAvailable,
+        message: isAvailable ? 'Username is available' : 'Username is already taken'
+      }
+    };
+  } catch (error) {
+    console.error('💥 Unexpected error checking username:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? `Unexpected error: ${error.message}` : 'Failed to check username availability'
+    };
+  }
+};
+
+/**
  * Get user profile with auth check and ensure profile exists
  */
-export const getCurrentUserProfile = async (): Promise<ServiceResponse<UserProfile>> => {
+export const getCurrentUserProfile = async (forceRefresh = false): Promise<ServiceResponse<UserProfile>> => {
   try {
-    console.log('🔍 Getting current user profile...');
+    console.log('🔍 Getting current user profile...', forceRefresh ? '(force refresh)' : '');
     
     // Get authenticated user
     const authResult = await getCurrentAuthUser();
@@ -515,8 +587,21 @@ export const getCurrentUserProfile = async (): Promise<ServiceResponse<UserProfi
 
     const { id: providerId, email } = authResult.data;
     
+    // Check cache first (unless force refresh)
+    if (!forceRefresh) {
+      const cachedProfile = profileCache.get(providerId);
+      if (cachedProfile) {
+        return { success: true, data: cachedProfile };
+      }
+    }
+    
     // Ensure profile exists and get it
     const profileResult = await ensureUserProfileExists(providerId, email);
+    
+    // Cache the result if successful
+    if (profileResult.success && profileResult.data) {
+      profileCache.set(providerId, profileResult.data);
+    }
     
     return profileResult;
   } catch (error) {

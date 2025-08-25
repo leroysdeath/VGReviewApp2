@@ -9,7 +9,7 @@ export interface Database {
           provider_id: string;
           email: string;
           name: string;
-          picurl: string | null;
+          avatar_url: string | null;
         };
         Insert: {
           id?: number;
@@ -17,7 +17,7 @@ export interface Database {
           provider_id: string;
           email: string;
           name: string;
-          picurl?: string | null;
+          avatar_url?: string | null;
         };
         Update: {
           id?: number;
@@ -25,7 +25,7 @@ export interface Database {
           provider_id?: string;
           email?: string;
           name?: string;
-          picurl?: string | null;
+          avatar_url?: string | null;
         };
       };
       platform: {

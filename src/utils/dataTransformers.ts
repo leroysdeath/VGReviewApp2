@@ -28,7 +28,7 @@ export const transformDatabaseRatingToLegacy = (dbRating: DatabaseRating, dbUser
     date: dbRating.post_date_time.toLocaleDateString(),
     hasText: !!dbRating.review,
     author: dbUser?.name || dbRating.user?.name || 'Unknown User',
-    authorAvatar: dbUser?.picurl || dbRating.user?.picurl || '/placeholder-avatar.jpg'
+    authorAvatar: dbUser?.avatar_url || dbRating.user?.avatar_url || '/placeholder-avatar.jpg'
   };
 };
 
@@ -37,7 +37,7 @@ export const transformDatabaseUserToLegacy = (dbUser: DatabaseUser) => {
   return {
     id: dbUser.id.toString(),
     username: dbUser.name,
-    avatar: dbUser.picurl || '/placeholder-avatar.jpg',
+    avatar: dbUser.avatar_url || '/placeholder-avatar.jpg',
     bio: 'Gaming enthusiast', // This would need to be added to the database schema
     joinDate: 'Unknown', // This would need to be added to the database schema
     reviewCount: 0, // This would need to be calculated

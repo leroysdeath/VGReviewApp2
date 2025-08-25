@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -20,7 +20,8 @@ import {
   Shield,
   Trash2
 } from 'lucide-react';
-import { ProfileUpdateData } from '../../services/profileService';
+import { ProfileUpdateData, checkUsernameAvailability } from '../../services/profileService';
+import { AccountDeletionSection } from './AccountDeletionSection';
 
 // Create schemas as functions to avoid initialization issues
 const getProfileSchema = () => z.object({
@@ -171,6 +172,9 @@ const getEmailSchema = () => z.object({
 
 type ProfileFormValues = z.infer<ReturnType<typeof getProfileSchema>>;
 
+// Move platform options outside component to prevent re-creation on every render
+const PLATFORM_OPTIONS = ['Nintendo', 'PlayStation', 'Xbox', 'PC', 'Retro'];
+
 interface UserSettingsPanelProps {
   userId?: string;  // Add this for compatibility
   initialData?: {   // Make this optional
@@ -218,8 +222,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   onSuccess,
   onFormChange
 }) => {
-  // Platform checkbox options
-  const platformOptions = ['Nintendo', 'PlayStation', 'Xbox', 'PC', 'Retro'];
   // Debug props at component level
   console.log('🟦 UserSettingsPanel component rendered with onSave:', {
     hasOnSave: !!onSave,
@@ -233,6 +235,11 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData.avatar || null);
+  const [usernameStatus, setUsernameStatus] = useState<{
+    checking: boolean;
+    available: boolean | null;
+    message: string;
+  }>({ checking: false, available: null, message: '' });
   const [originalValues, setOriginalValues] = useState<ProfileFormValues>({
     username: initialData.username,
     displayName: initialData.displayName || '',
@@ -248,7 +255,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     if (initialData.platform) {
       initialData.platform.split(',').forEach(p => {
         const trimmed = p.trim();
-        if (platformOptions.includes(trimmed)) {
+        if (PLATFORM_OPTIONS.includes(trimmed)) {
           platforms.add(trimmed);
         }
       });
@@ -281,7 +288,10 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     }
   }, [errors]);
 
-  // Reset form when initialData changes
+  // Reset form when initialData changes - use a ref to track if we should reset
+  const initialDataRef = useRef(initialData);
+  const hasInitialized = useRef(false);
+  
   useEffect(() => {
     const newValues = {
       username: initialData.username,
@@ -291,26 +301,78 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       website: initialData.website || '',
       platform: initialData.platform || ''
     };
-    setOriginalValues(newValues);
-    setAvatarPreview(initialData.avatar || null); // Reset avatar preview
     
-    // Reset selected platforms
-    const platforms = new Set<string>();
-    if (initialData.platform) {
-      initialData.platform.split(',').forEach(p => {
-        const trimmed = p.trim();
-        if (platformOptions.includes(trimmed)) {
-          platforms.add(trimmed);
-        }
-      });
+    // Only reset on initial load or if data actually changed from outside
+    const shouldReset = !hasInitialized.current || 
+      (initialDataRef.current.username !== initialData.username ||
+       initialDataRef.current.email !== initialData.email);
+    
+    if (shouldReset) {
+      setOriginalValues(newValues);
+      setAvatarPreview(initialData.avatar || null);
+      
+      // Reset selected platforms
+      const platforms = new Set<string>();
+      if (initialData.platform) {
+        initialData.platform.split(',').forEach(p => {
+          const trimmed = p.trim();
+          if (PLATFORM_OPTIONS.includes(trimmed)) {
+            platforms.add(trimmed);
+          }
+        });
+      }
+      setSelectedPlatforms(platforms);
+      
+      reset(newValues);
+      hasInitialized.current = true;
+      initialDataRef.current = initialData;
     }
-    setSelectedPlatforms(platforms);
-    
-    reset(newValues);
-  }, [initialData, reset, platformOptions]);
+  }, [initialData, reset]);
 
   // Watch all form values to track changes
   const watchedValues = watch();
+  const watchedUsername = watch('username');
+
+  // Username validation with debouncing
+  useEffect(() => {
+    const checkUsername = async () => {
+      if (!watchedUsername || watchedUsername === originalValues.username) {
+        setUsernameStatus({ checking: false, available: null, message: '' });
+        return;
+      }
+
+      if (watchedUsername.length < 3) {
+        setUsernameStatus({
+          checking: false,
+          available: false,
+          message: 'Username must be at least 3 characters'
+        });
+        return;
+      }
+
+      setUsernameStatus({ checking: true, available: null, message: 'Checking availability...' });
+
+      try {
+        const result = await checkUsernameAvailability(watchedUsername, userId);
+        if (result.success && result.data) {
+          setUsernameStatus({
+            checking: false,
+            available: result.data.available,
+            message: result.data.message
+          });
+        }
+      } catch (error) {
+        setUsernameStatus({
+          checking: false,
+          available: false,
+          message: 'Error checking username'
+        });
+      }
+    };
+
+    const debounceTimer = setTimeout(checkUsername, 500);
+    return () => clearTimeout(debounceTimer);
+  }, [watchedUsername, originalValues.username, userId]);
 
   // Simple tracking for debugging
   useEffect(() => {
@@ -448,9 +510,38 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     setSaveError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('Password change data:', data);
+      console.log('🔐 Starting password change process...');
+      
+      // Import supabase here to avoid initialization issues
+      const { supabase } = await import('../../utils/supabaseClient');
+      
+      // Verify current password by attempting to sign in
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser?.email) {
+        throw new Error('Current user not found');
+      }
+      
+      // Verify current password by attempting to sign in with it
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: currentUser.email,
+        password: data.currentPassword
+      });
+      
+      if (signInError) {
+        throw new Error('Current password is incorrect');
+      }
+      
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: data.newPassword
+      });
+      
+      if (updateError) {
+        console.error('🔴 Password update error:', updateError);
+        throw new Error(updateError.message);
+      }
+      
+      console.log('✅ Password updated successfully');
       
       // Reset form
       passwordForm.reset();
@@ -461,8 +552,9 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       setTimeout(() => {
         setSaveSuccess(false);
       }, 3000);
-    } catch (error) {
-      setSaveError('Failed to change password. Please try again.');
+    } catch (error: any) {
+      console.error('🔴 Password change error:', error);
+      setSaveError(error.message || 'Failed to change password. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -474,20 +566,36 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     setSaveError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('Email change data:', data);
+      console.log('📧 Starting email change process...');
+      
+      // Import supabase here to avoid initialization issues
+      const { supabase } = await import('../../utils/supabaseClient');
+      
+      // Update email - this will send a verification email to the new address
+      const { error: updateError } = await supabase.auth.updateUser({
+        email: data.newEmail
+      });
+      
+      if (updateError) {
+        console.error('🔴 Email update error:', updateError);
+        throw new Error(updateError.message);
+      }
+      
+      console.log('✅ Email change initiated - verification email sent');
       
       // Reset form
       emailForm.reset();
       setSaveSuccess(true);
+      setSaveError('Email change initiated! Please check your new email for a verification link.');
       
-      // Clear success message after 3 seconds
+      // Clear messages after 5 seconds
       setTimeout(() => {
         setSaveSuccess(false);
-      }, 3000);
-    } catch (error) {
-      setSaveError('Failed to change email. Please try again.');
+        setSaveError(null);
+      }, 5000);
+    } catch (error: any) {
+      console.error('🔴 Email change error:', error);
+      setSaveError(error.message || 'Failed to change email. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -588,16 +696,43 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   id="username"
                   type="text"
                   {...register('username')}
-                  className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                    errors.username ? 'border-red-500' : 'border-gray-600'
+                  className={`w-full pl-10 pr-10 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                    errors.username || (usernameStatus.available === false && watchedUsername !== originalValues.username) 
+                      ? 'border-red-500' 
+                      : usernameStatus.available === true 
+                        ? 'border-green-500' 
+                        : 'border-gray-600'
                   }`}
                   placeholder="GamerTag"
                   autoComplete="off"
                   disabled={isLoading}
                 />
+                {/* Username status indicator */}
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  {usernameStatus.checking && (
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                  )}
+                  {!usernameStatus.checking && usernameStatus.available === true && watchedUsername !== originalValues.username && (
+                    <Check className="h-5 w-5 text-green-400" />
+                  )}
+                  {!usernameStatus.checking && usernameStatus.available === false && watchedUsername !== originalValues.username && (
+                    <AlertCircle className="h-5 w-5 text-red-400" />
+                  )}
+                </div>
               </div>
               {errors.username && (
                 <p className="mt-1 text-sm text-red-400">{errors.username.message}</p>
+              )}
+              {!errors.username && usernameStatus.message && watchedUsername !== originalValues.username && (
+                <p className={`mt-1 text-sm ${
+                  usernameStatus.available === true 
+                    ? 'text-green-400' 
+                    : usernameStatus.available === false 
+                      ? 'text-red-400' 
+                      : 'text-gray-400'
+                }`}>
+                  {usernameStatus.message}
+                </p>
               )}
             </div>
 
@@ -654,7 +789,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                 </div>
               </label>
               <div className="flex flex-wrap gap-6">
-                {platformOptions.map((platform) => (
+                {PLATFORM_OPTIONS.map((platform) => (
                   <div key={platform} className="flex flex-col items-center">
                     <label className="cursor-pointer flex flex-col items-center gap-2 group">
                       <input
@@ -730,7 +865,13 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={isLoading || (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar)) || Object.keys(errors).length > 0}
+                disabled={
+                  isLoading || 
+                  (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar)) || 
+                  Object.keys(errors).length > 0 ||
+                  (usernameStatus.available === false && watchedUsername !== originalValues.username) ||
+                  usernameStatus.checking
+                }
                 onClick={() => {
                   console.log('🔴 BUTTON CLICKED!');
                   console.log('🔴 Button state:', {
@@ -741,7 +882,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                     errors,
                     isValid,
                     hasErrors: Object.keys(errors).length > 0,
-                    disabled: isLoading || (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar)) || Object.keys(errors).length > 0
+                    usernameStatus,
+                    disabled: isLoading || (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar)) || Object.keys(errors).length > 0 || (usernameStatus.available === false && watchedUsername !== originalValues.username) || usernameStatus.checking
                   });
                 }}
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
@@ -943,14 +1085,11 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               <p className="text-gray-300 mb-4">
                 Once you delete your account, there is no going back. Please be certain.
               </p>
-              <button
-                type="button"
-                onClick={onDeleteAccount}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete Account
-              </button>
+              <AccountDeletionSection 
+                userId={userId}
+                onDeleteAccount={onDeleteAccount}
+                isLoading={isLoading}
+              />
             </div>
           </div>
         )}

@@ -1,5 +1,6 @@
 // DLC/Expansion Service - Handles fetching related content for games
 import type { IGDBGame } from './igdbService';
+import { shouldFilterContent } from '../utils/contentProtectionFilter';
 
 interface DLCGame {
   id: number;
@@ -12,6 +13,15 @@ interface DLCGame {
   };
   category: number;
   parent_game?: number;
+  developer?: string;
+  publisher?: string;
+  involved_companies?: Array<{
+    developer: boolean;
+    publisher: boolean;
+    company: {
+      name: string;
+    };
+  }>;
 }
 
 interface DLCResponse {
@@ -96,7 +106,7 @@ class DLCService {
           isBulkRequest: true,
           endpoint: 'games',
           // Search for content related to the main game that appears unofficial/mod-like
-          requestBody: `fields name, summary, first_release_date, cover.url, category, parent_game; where parent_game = ${gameId} & cover != null; sort first_release_date desc; limit 30;`
+          requestBody: `fields name, summary, first_release_date, cover.url, category, parent_game, involved_companies.company.name, involved_companies.developer, involved_companies.publisher; where parent_game = ${gameId} & cover != null; sort first_release_date desc; limit 30;`
         })
       });
 
@@ -112,8 +122,31 @@ class DLCService {
         return [];
       }
 
-      // Filter for potential mod/unofficial content
-      const modContent = (data.games || []).filter(game => {
+      // Process games to extract developer/publisher info from involved_companies
+      const processedGames = (data.games || []).map(game => {
+        let developer = '';
+        let publisher = '';
+        
+        if (game.involved_companies) {
+          for (const company of game.involved_companies) {
+            if (company.developer && company.company?.name) {
+              developer = company.company.name;
+            }
+            if (company.publisher && company.company?.name) {
+              publisher = company.company.name;
+            }
+          }
+        }
+        
+        return {
+          ...game,
+          developer,
+          publisher
+        };
+      });
+
+      // Filter for potential mod/unofficial content and apply copyright filtering
+      const modContent = processedGames.filter(game => {
         // Must have a cover image
         if (!game.cover?.url) return false;
         
@@ -131,7 +164,22 @@ class DLCService {
           // Exclude definitely official releases
           const officialTerms = ['goty', 'game of the year', 'complete', 'legendary', 'special edition'];
           const isOfficial = officialTerms.some(term => name.includes(term));
-          return !isOfficial;
+          if (isOfficial) return false;
+          
+          // Apply copyright protection filter - this will filter out Nintendo fan content
+          if (shouldFilterContent({
+            id: game.id,
+            name: game.name,
+            developer: game.developer,
+            publisher: game.publisher,
+            category: game.category,
+            summary: game.summary
+          })) {
+            console.log(`🛡️ Filtered mod content: "${game.name}" by ${game.developer || 'Unknown'}`);
+            return false;
+          }
+          
+          return true;
         }
         
         return false;

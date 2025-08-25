@@ -54,37 +54,73 @@ export const getCurrentUserId = async (): Promise<number | null> => {
 
 /**
  * Ensure game exists in database before creating review
- * This now expects the database game.id directly
+ * If game doesn't exist, it will be added using the IGDB ID and game details
  */
 export const ensureGameExists = async (
-  gameId: number
+  gameData: {
+    id: number;        // Database ID (could be negative for IGDB-only games)
+    igdb_id: number;   // IGDB ID
+    name: string;      // Game title
+    cover_url?: string;
+    genre?: string;
+    releaseDate?: string;
+  }
 ): Promise<ServiceResponse<{ gameId: number }>> => {
   try {
-    console.log('🎮 Checking if game exists:', { gameId });
+    console.log('🎮 Ensuring game exists:', gameData);
     
-    // Check if game exists by database ID
-    const { data: existingGame, error: checkError } = await supabase
+    // If we have a valid positive database ID, check if it exists
+    if (gameData.id > 0) {
+      const { data: existingGame, error: checkError } = await supabase
+        .from('game')
+        .select('id, name')
+        .eq('id', gameData.id)
+        .single();
+
+      if (!checkError && existingGame) {
+        console.log('✅ Game exists in database:', existingGame);
+        return { success: true, data: { gameId: existingGame.id } };
+      }
+    }
+
+    // If game doesn't exist (negative ID or not found), try to find by IGDB ID
+    console.log('🔍 Checking by IGDB ID:', gameData.igdb_id);
+    const { data: existingByIGDB, error: igdbError } = await supabase
       .from('game')
-      .select('id, name')
-      .eq('id', gameId)
+      .select('id, name, igdb_id')
+      .eq('igdb_id', gameData.igdb_id)
       .single();
 
-    console.log('🔍 Game existence check:', { existingGame, checkError });
-
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('❌ Error checking game existence:', checkError);
-      return { success: false, error: `Game existence check failed: ${checkError.message}` };
+    if (!igdbError && existingByIGDB) {
+      console.log('✅ Found game by IGDB ID:', existingByIGDB);
+      return { success: true, data: { gameId: existingByIGDB.id } };
     }
 
-    if (!existingGame) {
-      console.error('❌ Game not found in database');
-      return { success: false, error: 'Game not found in database' };
+    // Game doesn't exist in database, need to add it
+    console.log('💾 Adding game to database:', gameData.name);
+    const gameToInsert = {
+      igdb_id: gameData.igdb_id,
+      name: gameData.name,
+      cover_url: gameData.cover_url || null,
+      genres: gameData.genre ? [gameData.genre] : null,
+      first_release_date: gameData.releaseDate || null,
+    };
+
+    const { data: insertedGame, error: insertError } = await supabase
+      .from('game')
+      .insert(gameToInsert)
+      .select('id, name')
+      .single();
+
+    if (insertError) {
+      console.error('❌ Error inserting game:', insertError);
+      return { success: false, error: `Failed to add game to database: ${insertError.message}` };
     }
 
-    console.log('✅ Game exists in database:', existingGame);
-    return { success: true, data: { gameId: existingGame.id } };
+    console.log('✅ Game added to database:', insertedGame);
+    return { success: true, data: { gameId: insertedGame.id } };
   } catch (error) {
-    console.error('💥 Unexpected error checking game exists:', error);
+    console.error('💥 Unexpected error ensuring game exists:', error);
     
     if (error instanceof Error) {
       console.error('Error details:', { name: error.name, message: error.message, stack: error.stack });
@@ -92,7 +128,7 @@ export const ensureGameExists = async (
     
     return {
       success: false,
-      error: error instanceof Error ? `Unexpected error: ${error.message}` : 'Failed to check game exists due to unexpected error'
+      error: error instanceof Error ? `Unexpected error: ${error.message}` : 'Failed to ensure game exists due to unexpected error'
     };
   }
 };
@@ -173,11 +209,7 @@ export const createReview = async (
     const { data, error } = await supabase
       .from('rating')
       .insert(reviewData)
-      .select(`
-        *,
-        user!rating_user_id_fkey(*),
-        game!rating_game_id_fkey(*)
-      `)
+      .select()
       .single();
 
     console.log('💾 Insert result:', { data, error });
@@ -197,17 +229,8 @@ export const createReview = async (
       postDateTime: data.post_date_time,
       isRecommended: data.is_recommended,
       likeCount: 0,
-      commentCount: 0,
-      user: data.user ? {
-        id: data.user.id,
-        name: data.user.username || data.user.name,
-        picurl: data.user.picurl
-      } : undefined,
-      game: data.game ? {
-        id: data.game.id,
-        name: data.game.name,
-        pic_url: data.game.pic_url
-      } : undefined
+      commentCount: 0
+      // Note: user and game data will be fetched separately if needed
     };
 
     return { success: true, data: review };
@@ -246,7 +269,7 @@ export interface Review {
   user?: {
     id: number;
     name: string;
-    picurl?: string;
+    avatar_url?: string;
   };
   game?: {
     id: number;
@@ -271,7 +294,7 @@ export interface Comment {
   user?: {
     id: number;
     name: string;
-    picurl?: string;
+    avatar_url?: string;
   };
 }
 
@@ -294,6 +317,47 @@ interface ServiceResponse<T> {
 }
 
 /**
+ * Get user's review for a specific game by IGDB ID
+ * @param igdbId - The IGDB ID of the game
+ */
+export const getUserReviewForGameByIGDBId = async (igdbId: number): Promise<ServiceResponse<Review | null>> => {
+  try {
+    console.log('🔍 Getting user review for game IGDB ID:', igdbId);
+    
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // First find the database game ID by IGDB ID
+    const { data: gameData, error: gameError } = await supabase
+      .from('game')
+      .select('id')
+      .eq('igdb_id', igdbId)
+      .single();
+
+    if (gameError && gameError.code !== 'PGRST116') {
+      console.error('❌ Error finding game by IGDB ID:', gameError);
+      return { success: false, error: `Failed to find game: ${gameError.message}` };
+    }
+
+    if (!gameData) {
+      console.log('ℹ️ Game not found in database for IGDB ID:', igdbId);
+      return { success: true, data: null };
+    }
+
+    // Now get the user's review using the database game ID
+    return await getUserReviewForGame(gameData.id);
+  } catch (error) {
+    console.error('💥 Unexpected error getting user review by IGDB ID:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get user review'
+    };
+  }
+};
+
+/**
  * Get user's review for a specific game
  * @param gameId - The database game.id (not IGDB ID)
  */
@@ -309,11 +373,7 @@ export const getUserReviewForGame = async (gameId: number): Promise<ServiceRespo
     // Get the user's review for this game using database ID directly
     const { data, error } = await supabase
       .from('rating')
-      .select(`
-        *,
-        user!rating_user_id_fkey(*),
-        game!rating_game_id_fkey(*)
-      `)
+      .select('*')
       .eq('user_id', userId)
       .eq('game_id', gameId)
       .single();
@@ -338,17 +398,8 @@ export const getUserReviewForGame = async (gameId: number): Promise<ServiceRespo
       postDateTime: data.post_date_time,
       isRecommended: data.is_recommended,
       likeCount: 0,
-      commentCount: 0,
-      user: data.user ? {
-        id: data.user.id,
-        name: data.user.username || data.user.name,
-        picurl: data.user.picurl
-      } : undefined,
-      game: data.game ? {
-        id: data.game.id,
-        name: data.game.name,
-        pic_url: data.game.pic_url
-      } : undefined
+      commentCount: 0
+      // Note: user and game data will be fetched separately if needed
     };
 
     console.log('✅ Found user review:', review);
@@ -429,7 +480,7 @@ export const updateReview = async (
       user: data.user ? {
         id: data.user.id,
         name: data.user.username || data.user.name,
-        picurl: data.user.picurl
+        avatar_url: data.user.avatar_url
       } : undefined,
       game: data.game ? {
         id: data.game.id,
@@ -485,7 +536,7 @@ export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
       user: item.user ? {
         id: item.user.id,
         name: item.user.name,
-        picurl: item.user.picurl
+        avatar_url: item.user.avatar_url
       } : undefined,
       game: item.game ? {
         id: item.game.id,
@@ -556,7 +607,7 @@ export const getReview = async (
       user: data.user ? {
         id: data.user.id,
         name: data.user.username || data.user.name,
-        picurl: data.user.picurl
+        avatar_url: data.user.avatar_url
       } : undefined,
       game: data.game ? {
         id: data.game.id,
@@ -746,7 +797,7 @@ export const getCommentsForReview = async (
       .from('review_comment')
       .select(`
         *,
-        user!rating_user_id_fkey(id, username, name, picurl)
+        user!rating_user_id_fkey(id, username, name, avatar_url)
       `, { count: 'exact' })
       .eq('review_id', reviewId)
       .order('created_at', { ascending: false })
@@ -772,7 +823,7 @@ export const getCommentsForReview = async (
         user: item.user ? {
           id: item.user.id,
           name: item.user.username || item.user.name,
-          picurl: item.user.picurl
+          avatar_url: item.user.avatar_url
         } : undefined
       };
 
@@ -868,7 +919,7 @@ export const addComment = async (
       })
       .select(`
         *,
-        user!rating_user_id_fkey(id, username, name, picurl)
+        user!rating_user_id_fkey(id, username, name, avatar_url)
       `)
       .single();
 
@@ -887,7 +938,7 @@ export const addComment = async (
       user: data.user ? {
         id: data.user.id,
         name: data.user.username || data.user.name,
-        picurl: data.user.picurl
+        avatar_url: data.user.avatar_url
       } : undefined
     };
 
@@ -940,7 +991,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       user: item.user ? {
         id: item.user.id,
         name: item.user.name,
-        picurl: item.user.picurl
+        avatar_url: item.user.avatar_url
       } : undefined,
       game: item.game ? {
         id: item.game.id,

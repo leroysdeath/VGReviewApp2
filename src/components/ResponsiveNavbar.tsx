@@ -19,7 +19,7 @@ interface UserSearchResult {
   id: string;
   name: string;
   bio: string | null;
-  picurl: string | null;
+  avatar_url: string | null;
 }
 
 interface CachedQuickSearch {
@@ -181,7 +181,7 @@ export const ResponsiveNavbar: React.FC = () => {
       // Fetch users from Supabase
       const { data: users, error } = await supabase
         .from('user')
-        .select('id, name, bio, picurl')
+        .select('id, name, bio, avatar_url')
         .ilike('name', `%${query}%`)
         .limit(8);
 
@@ -577,9 +577,9 @@ export const ResponsiveNavbar: React.FC = () => {
                                 className="flex items-center w-full text-left p-2 hover:bg-gray-700 rounded transition-colors"
                               >
                                 <div className="w-10 h-10 bg-gray-700 rounded-full mr-3 flex-shrink-0 overflow-hidden">
-                                  {user.picurl ? (
+                                  {user.avatar_url ? (
                                     <img
-                                      src={user.picurl}
+                                      src={user.avatar_url}
                                       alt={user.username || user.name}
                                       className="w-full h-full object-cover"
                                       loading="lazy"
@@ -662,14 +662,28 @@ export const ResponsiveNavbar: React.FC = () => {
                   {/* Authenticated User Links */}
                   {isAuthenticated && (
                     <>
+                      <div className="border-t border-gray-700 pt-2 mt-2">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide px-3 py-1">Profile</p>
+                      </div>
                       <Link
                         to={currentUserId ? `/user/${currentUserId}` : "/profile"}
                         className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         <User className="h-5 w-5" />
-                        <span>Profile</span>
+                        <span>View Profile</span>
                       </Link>
+                      <Link
+                        to="/settings"
+                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Settings className="h-5 w-5" />
+                        <span>Edit Profile</span>
+                      </Link>
+                      <div className="border-t border-gray-700 pt-2 mt-2">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide px-3 py-1">User</p>
+                      </div>
                       <Link
                         to="/review"
                         className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
@@ -891,9 +905,9 @@ export const ResponsiveNavbar: React.FC = () => {
                             className="flex items-center w-full text-left p-2 hover:bg-gray-700 rounded group transition-colors"
                           >
                             <div className="w-10 h-10 bg-gray-700 rounded-full mr-3 flex-shrink-0 overflow-hidden">
-                              {user.picurl ? (
+                              {user.avatar_url ? (
                                 <img
-                                  src={user.picurl}
+                                  src={user.avatar_url}
                                   alt={user.name}
                                   className="w-full h-full object-cover"
                                   loading="lazy"
@@ -1070,14 +1084,29 @@ export const ResponsiveNavbar: React.FC = () => {
                       ref={dropdownRef}
                       className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50">
                       <div className="py-1">
+                        <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-700 mb-1">
+                          Profile
+                        </div>
                         <Link
                           to={currentUserId ? `/user/${currentUserId}` : "/profile"}
                           className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
                           onClick={() => setIsUserMenuOpen(false)}
                         >
                           <User className="h-4 w-4" />
-                          <span>Profile</span>
+                          <span>View Profile</span>
                         </Link>
+                        <Link
+                          to="/settings"
+                          className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          <Settings className="h-4 w-4" />
+                          <span>Edit Profile</span>
+                        </Link>
+                        <div className="border-t border-gray-700 my-1"></div>
+                        <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                          User
+                        </div>
                         <Link
                           to="/review"
                           className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -1162,13 +1191,26 @@ export const ResponsiveNavbar: React.FC = () => {
             
             {isAuthenticated ? (
               <>
+                <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider border-t border-gray-700 mt-2 pt-2">
+                  Profile
+                </div>
                 <Link
                   to={currentUserId ? `/user/${currentUserId}` : "/profile"}
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Profile
+                  View Profile
                 </Link>
+                <Link
+                  to="/settings"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Edit Profile
+                </Link>
+                <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider border-t border-gray-700 mt-2 pt-2">
+                  User
+                </div>
                 <Link
                   to="/review"
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"

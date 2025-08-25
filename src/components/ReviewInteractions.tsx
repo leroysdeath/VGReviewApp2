@@ -209,9 +209,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
       <div className="flex gap-3">
         {/* User Avatar */}
         <div className="flex-shrink-0">
-          {comment.user?.picurl ? (
+          {comment.user?.avatar_url ? (
             <img
-              src={comment.user.picurl}
+              src={comment.user.avatar_url}
               alt={`${comment.user.username || comment.user.name}'s avatar`}
               className="w-8 h-8 rounded-full object-cover"
             />

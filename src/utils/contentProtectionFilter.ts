@@ -1,5 +1,14 @@
-// Content Protection Filter
-// Filters out fan-made content for companies known to aggressively protect their IP
+// Content Protection Filter with Company-Specific Copyright Policies
+// Filters content based on individual company copyright aggression levels
+
+import { 
+  CopyrightLevel, 
+  getCompanyCopyrightLevel, 
+  hasSpecificFranchiseRestrictions,
+  getPolicyReason,
+  addAggressiveCompany,
+  blockCompanyCompletely
+} from './copyrightPolicies';
 
 interface Game {
   id: number;
@@ -262,42 +271,127 @@ function isProtectedFranchise(game: Game): boolean {
 }
 
 /**
- * Check if content should be filtered out due to IP protection concerns
+ * Get company names from a game
+ */
+function getGameCompanies(game: Game): string[] {
+  const companies: string[] = [];
+  if (game.developer) companies.push(game.developer);
+  if (game.publisher) companies.push(game.publisher);
+  return companies;
+}
+
+/**
+ * Check if content should be filtered out based on company-specific copyright policies
  */
 export function shouldFilterContent(game: Game): boolean {
-  // STEP 1: Never filter games from official companies
-  if (isOfficialCompany(game)) {
-    console.log(`✅ Official game allowed: "${game.name}" by ${game.developer || game.publisher}`);
-    return false;
-  }
-  
-  // STEP 2: Always filter games with explicit fan-made indicators
+  const companies = getGameCompanies(game);
   const searchText = [game.name, game.developer, game.publisher, game.summary, game.description]
     .filter(Boolean).join(' ').toLowerCase();
   
+  // Check if game has explicit fan-made indicators
   const hasExplicitFanIndicators = FAN_MADE_INDICATORS.some(indicator => 
     searchText.includes(indicator)
   );
   
-  if (hasExplicitFanIndicators) {
-    console.log(`🛡️ Fan-made content filtered: "${game.name}" - Contains: ${FAN_MADE_INDICATORS.find(i => searchText.includes(i))}`);
-    return true;
-  }
-  
-  // STEP 3: Filter unknown developers making protected franchise games
+  // Check if game uses protected franchises
   const hasProtectedFranchise = PROTECTED_FRANCHISES.some(franchise => 
     searchText.includes(franchise)
   );
   
-  if (hasProtectedFranchise) {
-    const developer = game.developer || 'Unknown';
-    const publisher = game.publisher || 'Unknown';
-    console.log(`⚠️ Protected franchise by unknown developer: "${game.name}" by ${developer}/${publisher}`);
-    return true;
+  // Check copyright level for each company involved
+  // Priority: BLOCK_ALL > AGGRESSIVE > MODERATE > MOD_FRIENDLY
+  let maxCopyrightLevel = CopyrightLevel.MODERATE; // Default
+  let responsibleCompany = '';
+  
+  for (const company of companies) {
+    if (!company) continue;
+    
+    const level = getCompanyCopyrightLevel(company);
+    
+    if (level === CopyrightLevel.BLOCK_ALL) {
+      maxCopyrightLevel = level;
+      responsibleCompany = company;
+    } else if (level === CopyrightLevel.AGGRESSIVE && maxCopyrightLevel !== CopyrightLevel.BLOCK_ALL) {
+      maxCopyrightLevel = level;
+      responsibleCompany = company;
+    } else if (level === CopyrightLevel.MOD_FRIENDLY && 
+               maxCopyrightLevel !== CopyrightLevel.BLOCK_ALL && 
+               maxCopyrightLevel !== CopyrightLevel.AGGRESSIVE) {
+      maxCopyrightLevel = level;
+      responsibleCompany = company;
+    } else if (!responsibleCompany) {
+      maxCopyrightLevel = level;
+      responsibleCompany = company;
+    }
   }
   
-  // STEP 4: Allow everything else
-  return false;
+  // Apply filtering based on copyright level
+  switch (maxCopyrightLevel) {
+    case CopyrightLevel.BLOCK_ALL:
+      // Block ALL content from this company (extremely rare)
+      console.log(`🔒 BLOCKED ALL: "${game.name}" - Company: ${responsibleCompany} (${getPolicyReason(responsibleCompany)})`);
+      return true;
+      
+    case CopyrightLevel.AGGRESSIVE:
+      // Official company games are allowed, fan content is blocked
+      if (isOfficialCompany(game)) {
+        console.log(`✅ Official game allowed despite aggressive company: "${game.name}" by ${responsibleCompany}`);
+        return false;
+      }
+      
+      // Block any fan-made content or protected franchise content by non-official developers
+      if (hasExplicitFanIndicators || hasProtectedFranchise) {
+        console.log(`🛡️ Aggressive filtering: "${game.name}" - ${hasExplicitFanIndicators ? 'Fan content' : 'Protected franchise'} by ${responsibleCompany}`);
+        return true;
+      }
+      
+      // Check for specific franchise restrictions
+      if (hasSpecificFranchiseRestrictions(responsibleCompany, game.name)) {
+        console.log(`⚠️ Franchise restriction: "${game.name}" - ${responsibleCompany} specific franchise policy`);
+        return true;
+      }
+      
+      return false;
+      
+    case CopyrightLevel.MODERATE:
+      // Only filter obvious fan-made content
+      if (hasExplicitFanIndicators) {
+        console.log(`🛡️ Moderate filtering: "${game.name}" - Explicit fan content indicators`);
+        return true;
+      }
+      
+      // Allow protected franchises if they're official
+      if (hasProtectedFranchise && !isOfficialCompany(game)) {
+        console.log(`⚠️ Moderate filtering: "${game.name}" - Protected franchise by non-official developer`);
+        return true;
+      }
+      
+      return false;
+      
+    case CopyrightLevel.MOD_FRIENDLY:
+      // Only filter extremely obvious fan content that could cause legal issues
+      if (hasExplicitFanIndicators && searchText.includes('commercial')) {
+        console.log(`🛡️ Mod-friendly filtering: "${game.name}" - Commercial fan content (rare)`);
+        return true;
+      }
+      
+      console.log(`✅ Mod-friendly: "${game.name}" - Company supports fan content: ${responsibleCompany}`);
+      return false;
+      
+    default:
+      // Default moderate filtering for unknown companies
+      if (hasExplicitFanIndicators) {
+        console.log(`🛡️ Default filtering: "${game.name}" - Fan content by unknown company policy`);
+        return true;
+      }
+      
+      if (hasProtectedFranchise && !isOfficialCompany(game)) {
+        console.log(`⚠️ Default filtering: "${game.name}" - Protected franchise by unknown company`);
+        return true;
+      }
+      
+      return false;
+  }
 }
 
 /**
@@ -406,6 +500,8 @@ export function debugGameFiltering(game: Game): {
   hasExplicitFanIndicators: boolean;
   hasProtectedFranchiseKeywords: boolean;
   filtered: boolean;
+  copyrightLevel: CopyrightLevel;
+  policyReason: string;
 } {
   const searchText = [
     game.name,
@@ -445,6 +541,22 @@ export function debugGameFiltering(game: Game): {
     developer.includes(company) || publisher.includes(company)
   );
   
+  // Get copyright level for the companies
+  const companies = getGameCompanies(game);
+  let maxCopyrightLevel = CopyrightLevel.MODERATE;
+  let responsibleCompany = '';
+  
+  for (const company of companies) {
+    if (!company) continue;
+    const level = getCompanyCopyrightLevel(company);
+    if (level === CopyrightLevel.BLOCK_ALL || 
+        (level === CopyrightLevel.AGGRESSIVE && maxCopyrightLevel !== CopyrightLevel.BLOCK_ALL) ||
+        (level === CopyrightLevel.MODERATE && maxCopyrightLevel === CopyrightLevel.MOD_FRIENDLY)) {
+      maxCopyrightLevel = level;
+      responsibleCompany = company;
+    }
+  }
+  
   return {
     game: game.name,
     developer: game.developer || 'N/A',
@@ -456,6 +568,149 @@ export function debugGameFiltering(game: Game): {
     isOfficialNintendo,
     hasExplicitFanIndicators,
     hasProtectedFranchiseKeywords,
-    filtered: shouldFilterContent(game)
+    filtered: shouldFilterContent(game),
+    copyrightLevel: maxCopyrightLevel,
+    policyReason: getPolicyReason(responsibleCompany)
+  };
+}
+
+// ===== QUICK DMCA RESPONSE FUNCTIONS =====
+
+/**
+ * Emergency response to DMCA - immediately add company to aggressive filtering
+ * Use this when you receive a DMCA takedown notice
+ */
+export function handleDMCARequest(
+  companyName: string, 
+  reason: string, 
+  franchises?: string[]
+): void {
+  console.log(`🚨 DMCA RESPONSE: Adding ${companyName} to aggressive filtering`);
+  addAggressiveCompany(companyName, reason, franchises);
+  
+  // Optionally clear any cached game data that might contain newly-filtered content
+  if (typeof window !== 'undefined' && window.localStorage) {
+    // Clear search cache to ensure filtered content doesn't show up
+    const cacheKeys = Object.keys(window.localStorage).filter(key => 
+      key.includes('game_search') || key.includes('igdb_cache')
+    );
+    cacheKeys.forEach(key => window.localStorage.removeItem(key));
+    console.log(`🧹 Cleared ${cacheKeys.length} cache entries`);
+  }
+}
+
+/**
+ * Emergency total block for extreme cases
+ * Use this only for companies that demand complete removal of all content
+ */
+export function handleEmergencyBlock(companyName: string, reason: string): void {
+  console.log(`🔒 EMERGENCY BLOCK: Completely blocking all content from ${companyName}`);
+  blockCompanyCompletely(companyName, reason);
+  
+  // Clear all caches more aggressively
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.clear();
+    console.log('🧹 Cleared all localStorage due to emergency block');
+  }
+}
+
+/**
+ * Test if a company name would trigger filtering
+ * Use this to preview what filtering a company would do before applying
+ */
+export function previewCompanyFiltering(companyName: string): {
+  currentLevel: CopyrightLevel;
+  currentReason: string;
+  wouldFilterFanContent: boolean;
+  wouldFilterOfficialContent: boolean;
+} {
+  const level = getCompanyCopyrightLevel(companyName);
+  const reason = getPolicyReason(companyName);
+  
+  return {
+    currentLevel: level,
+    currentReason: reason,
+    wouldFilterFanContent: level === CopyrightLevel.AGGRESSIVE || level === CopyrightLevel.BLOCK_ALL,
+    wouldFilterOfficialContent: level === CopyrightLevel.BLOCK_ALL
+  };
+}
+
+/**
+ * Check if fan content should be shown for a game based on its companies' copyright levels
+ * Returns true if fan content should be hidden (i.e., company has AGGRESSIVE or BLOCK_ALL policy)
+ */
+export function shouldHideFanContent(game: Game): boolean {
+  const companies = getGameCompanies(game);
+  
+  // Check copyright level for each company involved
+  for (const company of companies) {
+    if (!company) continue;
+    
+    const level = getCompanyCopyrightLevel(company);
+    
+    // Hide fan content if any company is AGGRESSIVE or BLOCK_ALL
+    if (level === CopyrightLevel.AGGRESSIVE || level === CopyrightLevel.BLOCK_ALL) {
+      console.log(`🛡️ Hiding fan content for "${game.name}" due to ${company} policy: ${level}`);
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Get current filtering status for all companies in a list of games
+ * Useful for understanding what companies are involved and their policies
+ */
+export function analyzeGameListFiltering(games: Game[]): {
+  companiesFound: Array<{
+    name: string;
+    level: CopyrightLevel;
+    reason: string;
+    gameCount: number;
+    games: string[];
+  }>;
+  totalFiltered: number;
+  totalAllowed: number;
+} {
+  const companyMap = new Map<string, { level: CopyrightLevel; reason: string; games: string[]; }>();
+  let totalFiltered = 0;
+  let totalAllowed = 0;
+  
+  games.forEach(game => {
+    const companies = getGameCompanies(game);
+    const filtered = shouldFilterContent(game);
+    
+    if (filtered) totalFiltered++;
+    else totalAllowed++;
+    
+    companies.forEach(company => {
+      if (!company) return;
+      
+      const normalized = company.toLowerCase();
+      if (!companyMap.has(normalized)) {
+        companyMap.set(normalized, {
+          level: getCompanyCopyrightLevel(company),
+          reason: getPolicyReason(company),
+          games: []
+        });
+      }
+      
+      companyMap.get(normalized)!.games.push(game.name);
+    });
+  });
+  
+  const companiesFound = Array.from(companyMap.entries()).map(([name, data]) => ({
+    name,
+    level: data.level,
+    reason: data.reason,
+    gameCount: data.games.length,
+    games: data.games.slice(0, 5) // Show first 5 games
+  }));
+  
+  return {
+    companiesFound,
+    totalFiltered,
+    totalAllowed
   };
 }
