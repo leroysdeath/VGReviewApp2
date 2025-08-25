@@ -33,7 +33,7 @@ interface UserTopGame {
   game: {
     id: number;
     name: string;
-    pic_url: string;
+    cover_url: string;
     genre?: string;
   } | null;
 }
@@ -246,7 +246,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
           game:game_id (
             id,
             name,
-            pic_url,
+            cover_url,
             genre
           )
         `)
@@ -344,7 +344,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
     // Update userTopGames state optimistically
     const updatedGames = userTopGames.map(item => 
       item.position === position 
-        ? { ...item, game: { id: parseInt(gameId), name: 'Loading...', pic_url: '' } } 
+        ? { ...item, game: { id: parseInt(gameId), name: 'Loading...', cover_url: '' } } 
         : item
     );
     
@@ -639,7 +639,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                           >
                             <div className="relative aspect-[3/4]">
                               <img
-                                src={gameData.game.pic_url}
+                                src={gameData.game.cover_url}
                                 alt={gameData.game.name}
                                 className="w-full h-full object-cover rounded-lg"
                               />
@@ -671,7 +671,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                         <Link to={`/game/${gameData.game.id}`}>
                           <div className="relative aspect-[3/4]">
                             <img
-                              src={gameData.game.pic_url}
+                              src={gameData.game.cover_url}
                               alt={gameData.game.name}
                               className="w-full h-full object-cover rounded-lg"
                             />
@@ -729,7 +729,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                   <Link to={`/game/${gameData.game.id}`} className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
                     <div className="relative flex-shrink-0">
                       <img
-                        src={gameData.game.pic_url}
+                        src={gameData.game.cover_url}
                         alt={gameData.game.name}
                         className="w-16 h-20 object-cover rounded"
                       />
