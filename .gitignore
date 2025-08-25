@@ -189,3 +189,5 @@ typings/
 .bolt/
 # Local Netlify folder
 .netlify
+
+settings.local.json

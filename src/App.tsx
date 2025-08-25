@@ -17,9 +17,8 @@ import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import UserSettingsPage from './pages/UserSettingsPage';
 import { DebugAuthPage } from './pages/DebugAuthPage';
-import ProfilePage from './pages/ProfilePage';
+import { Navigate } from 'react-router-dom';
 
 
 // Lazy load legal pages for better performance
@@ -50,6 +49,32 @@ const NavigationDebugger: React.FC = () => {
   }, [location, isAuthenticated]);
   
   return null;
+};
+
+// Profile redirect component
+const ProfileRedirect: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
+          <p className="text-gray-400">Please log in to view your profile.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // We need to get the database user ID to redirect properly
+  // For now, redirect to users page where they can find their profile
+  return <Navigate to="/users" replace />;
 };
 
 // Component that needs to be inside Router context
@@ -91,7 +116,7 @@ const AppContent: React.FC = () => {
                       path="/profile" 
                       element={
                         <ProtectedRoute showModal={true}>
-                          <ProfilePage />
+                          <ProfileRedirect />
                         </ProtectedRoute>
                       } 
                     />
@@ -99,7 +124,7 @@ const AppContent: React.FC = () => {
                       path="/settings" 
                       element={
                         <ProtectedRoute showModal={true}>
-                          <UserSettingsPage />
+                          <ProfileRedirect />
                         </ProtectedRoute>
                       } 
                     />
