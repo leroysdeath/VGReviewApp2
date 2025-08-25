@@ -9,7 +9,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    // Use a unique storage key to avoid conflicts
+    storageKey: 'vgreviewapp-auth-token'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'vgreviewapp-web'
+    }
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+});
 
 // Helper functions for common database operations
 export const supabaseHelpers = {
@@ -54,26 +72,58 @@ export const supabaseHelpers = {
   },
 
   async searchGames(query: string, limit = 20) {
-    // Sanitize search query to prevent SQL injection
-    const sanitizedQuery = sanitizeSearchTerm(query);
-    
-    if (!sanitizedQuery) {
+    // PROFESSIONAL SECURITY FIX: Use PostgreSQL full-text search with complete SQL injection immunity
+    if (!query || typeof query !== 'string') {
       return [];
     }
     
-    const { data, error } = await supabase
-      .from('game')
-      .select(`
-        *,
-        platform_games(
-          platform(*)
-        )
-      `)
-      .or(`name.ilike.*${sanitizedQuery}*,description.ilike.*${sanitizedQuery}*,genre.ilike.*${sanitizedQuery}*`)
-      .limit(Math.min(limit, 100)); // Also limit the max results for safety
+    const trimmedQuery = query.trim();
     
-    if (error) throw error;
-    return data;
+    // Basic validation - the database function handles all security
+    if (trimmedQuery.length < 2 || trimmedQuery.length > 100) {
+      return [];
+    }
+    
+    try {
+      // Use secure database function that's immune to SQL injection
+      const { data, error } = await supabase
+        .rpc('search_games_secure', {
+          search_query: trimmedQuery,
+          limit_count: Math.min(limit, 100)
+        });
+      
+      if (error) {
+        console.error('Secure search error:', error);
+        throw error;
+      }
+      
+      // Transform results to include platform data if needed
+      if (data && data.length > 0) {
+        const gameIds = data.map(game => game.id);
+        const { data: platformData, error: platformError } = await supabase
+          .from('platform_games')
+          .select(`
+            game_id,
+            platform(*)
+          `)
+          .in('game_id', gameIds);
+        
+        if (platformError) {
+          console.warn('Platform data fetch error:', platformError);
+        }
+        
+        // Merge platform data with search results
+        return data.map(game => ({
+          ...game,
+          platform_games: platformData?.filter(p => p.game_id === game.id) || []
+        }));
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error('Secure game search failed:', error);
+      throw error;
+    }
   },
 
   async getPopularGames(limit = 20) {
@@ -130,11 +180,13 @@ export const supabaseHelpers = {
     rating: number;
     review?: string;
     finished: boolean;
+    completion_status?: string;
   }) {
     const { data, error } = await supabase
       .from('rating')
       .insert({
         ...ratingData,
+        completion_status: ratingData.completion_status || 'started', // ✅ Explicitly set completion status
         post_date_time: new Date().toISOString()
       })
       .select()
@@ -181,27 +233,35 @@ export const supabaseHelpers = {
     return data;
   },
 
-  // Statistics
+  // Statistics - optimized with computed columns
   async getUserStats(userId: number) {
-    const { data: ratings, error } = await supabase
-      .from('rating')
-      .select('rating, finished')
-      .eq('user_id', userId);
+    const { data: userData, error } = await supabase
+      .from('user')
+      .select('total_reviews, completed_games_count, started_games_count')
+      .eq('id', userId)
+      .single();
     
     if (error) throw error;
 
+    // For average rating, we still need to calculate this from actual ratings
+    // since it's more complex than a simple count
+    const { data: ratings, error: ratingsError } = await supabase
+      .from('rating')
+      .select('rating')
+      .eq('user_id', userId);
+    
+    if (ratingsError) throw ratingsError;
+
     const totalGames = ratings.length;
-    const completedGames = ratings.filter(r => r.finished).length;
     const averageRating = totalGames > 0 
       ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalGames 
       : 0;
-    const totalReviews = ratings.filter(r => r.review && r.review.trim().length > 0).length;
 
     return {
       totalGames,
-      completedGames,
+      completedGames: userData.completed_games_count || 0,
       averageRating,
-      totalReviews
+      totalReviews: userData.total_reviews || 0
     };
   },
 

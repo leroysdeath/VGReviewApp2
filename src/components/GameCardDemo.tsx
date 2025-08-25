@@ -1,6 +1,5 @@
 import React from 'react';
-import { GameCardGrid } from './GameCardGrid';
-import { GameData } from './InteractiveGameCard';
+import { GameCardGrid, GameData } from './GameCardGrid';
 
 // Sample game data for demonstration
 const sampleGames: GameData[] = [

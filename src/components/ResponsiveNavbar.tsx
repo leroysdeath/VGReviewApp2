@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, User, Menu, X, Gamepad2, Home, Users, MessageSquare, Bell, LogOut, Settings, Clock, TrendingUp, Database, Loader2, Star, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useCurrentUserId } from '../hooks/useCurrentUserId';
 import { useAuthModal } from '../context/AuthModalContext'; // NEW IMPORT
 import { useResponsive } from '../hooks/useResponsive';
 import { NotificationBadge } from './NotificationBadge';
@@ -56,8 +55,7 @@ export const ResponsiveNavbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
-  const { user, isAuthenticated, signOut, loading } = useAuth();
-  const { userId: currentUserId } = useCurrentUserId();
+  const { user, isAuthenticated, signOut, loading, dbUserId, dbUserIdLoading } = useAuth();
   const { openModal } = useAuthModal(); // USE GLOBAL AUTH MODAL
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userButtonRef = useRef<HTMLButtonElement>(null);
@@ -332,9 +330,9 @@ export const ResponsiveNavbar: React.FC = () => {
     }
   };
 
-  const formatReleaseYear = (timestamp?: number) => {
-    if (!timestamp) return '';
-    return new Date(timestamp * 1000).getFullYear();
+  const formatReleaseYear = (dateString?: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).getFullYear();
   };
 
   const getCacheStatusColor = () => {
@@ -550,12 +548,12 @@ export const ResponsiveNavbar: React.FC = () => {
                                     {game.name}
                                   </div>
                                   <div className="flex items-center gap-2 text-xs text-gray-400">
-                                    {formatReleaseYear(game.first_release_date) && (
-                                      <span>{formatReleaseYear(game.first_release_date)}</span>
+                                    {game.release_date && (
+                                      <span>{formatReleaseYear(game.release_date)}</span>
                                     )}
                                     {game.averageUserRating && (
                                       <>
-                                        {formatReleaseYear(game.first_release_date) && <span>•</span>}
+                                        {game.release_date && <span>•</span>}
                                         <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                                         <span>{game.averageUserRating?.toFixed(1) || '0.0'}</span>
                                       </>
@@ -666,12 +664,24 @@ export const ResponsiveNavbar: React.FC = () => {
                         <p className="text-xs text-gray-500 uppercase tracking-wide px-3 py-1">Profile</p>
                       </div>
                       <Link
-                        to={currentUserId ? `/user/${currentUserId}` : "/profile"}
+                        to={dbUserId ? `/user/${dbUserId}` : "#"}
                         className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                        onClick={() => setIsMenuOpen(false)}
+                        onClick={(e) => {
+                          if (!dbUserId) {
+                            e.preventDefault();
+                            if (!dbUserIdLoading) {
+                              console.error('Database user ID not available');
+                            }
+                          } else {
+                            setIsMenuOpen(false);
+                          }
+                        }}
                       >
                         <User className="h-5 w-5" />
-                        <span>View Profile</span>
+                        <span>Profile</span>
+                        {dbUserIdLoading && (
+                          <Loader2 className="h-3 w-3 animate-spin ml-1" />
+                        )}
                       </Link>
                       <Link
                         to="/settings"
@@ -878,12 +888,12 @@ export const ResponsiveNavbar: React.FC = () => {
                                 {game.name}
                               </div>
                               <div className="flex items-center gap-2 text-xs text-gray-400">
-                                {formatReleaseYear(game.first_release_date) && (
-                                  <span>{formatReleaseYear(game.first_release_date)}</span>
+                                {game.release_date && (
+                                  <span>{formatReleaseYear(game.release_date)}</span>
                                 )}
                                 {game.averageUserRating && (
                                   <>
-                                    {formatReleaseYear(game.first_release_date) && <span>•</span>}
+                                    {game.release_date && <span>•</span>}
                                     <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                                     <span>{game.averageUserRating?.toFixed(1) || '0.0'}</span>
                                   </>
@@ -1088,9 +1098,15 @@ export const ResponsiveNavbar: React.FC = () => {
                           Profile
                         </div>
                         <Link
-                          to={currentUserId ? `/user/${currentUserId}` : "/profile"}
+                          to={dbUserId ? `/user/${dbUserId}` : "#"}
                           className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
-                          onClick={() => setIsUserMenuOpen(false)}
+                          onClick={(e) => {
+                            if (!dbUserId) {
+                              e.preventDefault();
+                            } else {
+                              setIsUserMenuOpen(false);
+                            }
+                          }}
                         >
                           <User className="h-4 w-4" />
                           <span>View Profile</span>
@@ -1195,22 +1211,18 @@ export const ResponsiveNavbar: React.FC = () => {
                   Profile
                 </div>
                 <Link
-                  to={currentUserId ? `/user/${currentUserId}` : "/profile"}
+                  to={dbUserId ? `/user/${dbUserId}` : "#"}
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={(e) => {
+                    if (!dbUserId) {
+                      e.preventDefault();
+                    } else {
+                      setIsMenuOpen(false);
+                    }
+                  }}
                 >
-                  View Profile
+                  Profile
                 </Link>
-                <Link
-                  to="/settings"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Edit Profile
-                </Link>
-                <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider border-t border-gray-700 mt-2 pt-2">
-                  User
-                </div>
                 <Link
                   to="/review"
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"

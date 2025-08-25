@@ -5,6 +5,7 @@ export interface GameProgress {
   id: number;
   user_id: number;
   game_id: number;
+  igdb_id: number;
   started: boolean;
   completed: boolean;
   started_date?: string;
@@ -37,7 +38,7 @@ export const getGameProgress = async (gameId: number): Promise<ServiceResponse<G
     const { data: gameRecord, error: gameError } = await supabase
       .from('game')
       .select('id')
-      .eq('game_id', gameId)
+      .eq('igdb_id', gameId)
       .single();
 
     if (gameError && gameError.code !== 'PGRST116') {
@@ -91,7 +92,7 @@ export const markGameStarted = async (gameId: number): Promise<ServiceResponse<G
     const { data: gameRecord, error: gameError } = await supabase
       .from('game')
       .select('id')
-      .eq('game_id', gameId)
+      .eq('igdb_id', gameId)
       .single();
 
     if (gameError && gameError.code !== 'PGRST116') {
@@ -136,6 +137,7 @@ export const markGameStarted = async (gameId: number): Promise<ServiceResponse<G
         .insert({
           user_id: userId,
           game_id: gameRecord.id,
+          igdb_id: gameId, // Store the IGDB ID for reference
           started: true,
           completed: false,
           started_date: now,
@@ -180,7 +182,7 @@ export const markGameCompleted = async (gameId: number): Promise<ServiceResponse
     const { data: gameRecord, error: gameError } = await supabase
       .from('game')
       .select('id')
-      .eq('game_id', gameId)
+      .eq('igdb_id', gameId)
       .single();
 
     if (gameError && gameError.code !== 'PGRST116') {
@@ -227,6 +229,7 @@ export const markGameCompleted = async (gameId: number): Promise<ServiceResponse
         .insert({
           user_id: userId,
           game_id: gameRecord.id,
+          igdb_id: gameId, // Store the IGDB ID for reference
           started: true,
           completed: true,
           started_date: now,

@@ -6,7 +6,7 @@ import { useResponsive } from '../hooks/useResponsive';
 
 interface Game {
   id: string;
-  igdb_id?: string | number; // IGDB ID for navigation
+  igdb_id?: string | number;
   title: string;
   coverImage: string;
   releaseDate: string;
@@ -43,12 +43,11 @@ export const GamesModal: React.FC<GamesModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const { isMobile } = useResponsive();
 
-  // Update active tab when initialTab changes
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
 
-  // Load all games for the user (started or completed games from game_progress table)
+  // Load all games - optimized with foreign key syntax
   const loadAllGames = useCallback(async () => {
     setLoadingAll(true);
     setError(null);
@@ -100,7 +99,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     }
   }, [userId]);
 
-  // Load started games
+  // Load started games - optimized
   const loadStartedGames = useCallback(async () => {
     setLoadingStarted(true);
     setError(null);
@@ -153,7 +152,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     }
   }, [userId]);
 
-  // Load finished games
+  // Load finished games - optimized
   const loadFinishedGames = useCallback(async () => {
     setLoadingFinished(true);
     setError(null);
@@ -363,7 +362,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
                         }}
                       />
                       
-                      {/* Progress indicators for all tabs */}
+                      {/* Progress indicators */}
                       {activeTab === 'all' && game.completed && (
                         <div className="absolute top-1 right-1 bg-green-600 text-white w-6 h-6 rounded-full flex items-center justify-center">
                           <CheckCircle className="h-3 w-3" />
@@ -417,7 +416,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
                         }}
                       />
                       
-                      {/* Progress indicators for all tabs */}
+                      {/* Progress indicators */}
                       {activeTab === 'all' && game.completed && (
                         <div className="absolute top-1 right-1 bg-green-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
                           <CheckCircle className="h-2.5 w-2.5" />

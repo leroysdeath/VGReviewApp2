@@ -431,6 +431,10 @@ export const SearchResultsPage: React.FC = () => {
                         className="w-full h-full object-cover"
                         optimization={{ width: 400, height: 600, quality: 85 }}
                         fallback="/placeholder-game.jpg"
+                        lazy={true}
+                        lazyStrategy="both"
+                        showLoadingSpinner={true}
+                        showLoadingSkeleton={false}
                       />
                       {shouldShowCategoryLabel(game.category) && (
                         <div className="absolute top-2 left-2">
@@ -486,6 +490,10 @@ export const SearchResultsPage: React.FC = () => {
                       className="w-24 h-32 object-cover rounded-lg"
                       optimization={{ width: 200, height: 300, quality: 85 }}
                       fallback="/placeholder-game.jpg"
+                      lazy={true}
+                      lazyStrategy="both"
+                      showLoadingSpinner={false}
+                      showLoadingSkeleton={true}
                     />
                     <div className="flex-1">
                       <div className="flex justify-between items-start">

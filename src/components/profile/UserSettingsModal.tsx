@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { UserSettingsPanel } from './UserSettingsPanel';
 import { getUserProfile, ProfileUpdateData } from '../../services/profileService';
+import { mapDatabaseUserToForm } from '../../utils/userFieldMapping';
 
 interface UserSettingsModalProps {
   isOpen: boolean;
@@ -53,6 +54,102 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   };
 
   console.log('🔄 Using user data for modal:', userData);
+  // Fetch user data when modal opens - force refresh every time
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!isOpen) {
+        // Reset loading state when modal is closed
+        setIsLoading(true);
+        return;
+      }
+      
+      if (isOpen && userId) {
+        // Validate userId is present and valid
+        if (!userId || userId === '') {
+          console.error('❌ No user ID available for settings modal');
+          console.error('⚠️ Modal will close due to missing user ID');
+          onClose();
+          return;
+        }
+        
+        // Force fresh data fetch every time modal opens
+        console.log('🔄 Modal opened - forcing fresh data fetch');
+        setIsLoading(true);
+        try {
+          console.log('🟢 UserSettingsModal - fetchUserData called');
+          console.log('👤 Fetching user data for userId:', userId);
+          
+          const response = await getUserProfile(userId);
+          const data = response.success ? response.data : null;
+          const error = response.success ? null : new Error(response.error || 'Failed to load profile');
+
+          console.log('💾 Profile service response:', { data, error });
+          console.log('🔍 Error details:', error ? {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          } : 'No error');
+
+          if (error) {
+            console.error('🔴 Error fetching user data:', error);
+            console.log('⚠️ Setting default user data due to error');
+            // Set default data if user not found using utility
+            const defaultData = mapDatabaseUserToForm(null);
+            console.log('📋 Default user data set:', defaultData);
+            setUserData(defaultData);
+          } else {
+            console.log('✅ Successfully fetched user data from database');
+            console.log('📥 Raw user data received:', data);
+            console.log('🔍 Field analysis:');
+            console.log('  📝 username field:', data.username);
+            console.log('  📝 name field:', data.name);
+            console.log('  📝 display_name field:', data.display_name);
+            console.log('  📝 bio field:', data.bio);
+            console.log('  📝 location field:', data.location);
+            console.log('  📝 website field:', data.website);
+            console.log('  📝 platform field:', data.platform);
+            console.log('  📝 avatar_url field:', data.avatar_url);
+            console.log('  📝 avatar_url field (standard):', data.avatar_url);
+            console.log('  📧 email field:', data.email);
+            
+            console.log('🔄 Using standardized field mapping utility...');
+            const processedUserData = mapDatabaseUserToForm(data);
+            
+            console.log('📤 Processed user data (for UserSettingsPanel):', processedUserData);
+            
+            setUserData(processedUserData);
+            console.log('🎯 UserData state updated with processed data');
+          }
+        } catch (error) {
+          console.error('💥 Unexpected error in fetchUserData:', error);
+          console.error('🔴 Error details:', {
+            name: error instanceof Error ? error.name : 'Unknown',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : 'No stack trace'
+          });
+          
+          console.log('⚠️ Setting default user data due to catch block');
+          // Set default data on error using utility
+          const errorDefaultData = mapDatabaseUserToForm(null);
+          console.log('📋 Error default data set:', errorDefaultData);
+          setUserData(errorDefaultData);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [isOpen, userId, refreshCounter]); // Re-fetch every time modal opens or refresh is triggered
+  
+  // Force refresh when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔄 Modal opened - incrementing refresh counter to force data fetch');
+      setRefreshCounter(prev => prev + 1);
+    }
+  }, [isOpen]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -126,7 +223,13 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     setShowConfirmDialog(false);
   };
 
+  // Validate that we have required props before rendering
   if (!isOpen) return null;
+  
+  if (!userId || userId === '') {
+    console.error('❌ UserSettingsModal cannot render without a valid userId');
+    return null;
+  }
 
   return (
     <>

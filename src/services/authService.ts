@@ -1,5 +1,6 @@
 // Supabase Authentication Service
 import { supabase } from './supabase';
+import { userService } from './userService';
 import type { User, Session } from '@supabase/supabase-js';
 
 export interface AuthUser {
@@ -26,9 +27,12 @@ class AuthService {
 
       if (error) return { user: null, error };
 
-      // Create user profile in our database
+      // Create user profile in our database using userService
       if (data.user) {
-        await this.createUserProfile(data.user, username);
+        const result = await userService.getOrCreateDatabaseUser(data.user);
+        if (!result.success) {
+          console.error('Failed to create database user:', result.error);
+        }
       }
 
       return { user: data.user, error: null };

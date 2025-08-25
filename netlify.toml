@@ -51,22 +51,19 @@ status = 200
 from = "/*"
 to = "/index.html"
 status = 200
+force = false
 
 # Environment-specific configurations
 [context.production.environment]
 NODE_ENV = "production"
 ENVIRONMENT = "production"
 
+# Development-specific configuration
+[context.deploy-preview]
 [context.deploy-preview.environment]
 NODE_ENV = "development"
 ENVIRONMENT = "staging"
 
-[context.branch-deploy.environment]
-NODE_ENV = "development"
-ENVIRONMENT = "development"
-
-# Development-specific CORS (more permissive for localhost)
-[context.deploy-preview]
 [[context.deploy-preview.headers]]
 for = "/api/*"
 [context.deploy-preview.headers.values]
@@ -77,6 +74,10 @@ Access-Control-Max-Age = "86400"
 Vary = "Origin"
 
 [context.branch-deploy]
+[context.branch-deploy.environment]
+NODE_ENV = "development"
+ENVIRONMENT = "development"
+
 [[context.branch-deploy.headers]]
 for = "/api/*"
 [context.branch-deploy.headers.values]

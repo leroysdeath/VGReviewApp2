@@ -69,7 +69,7 @@ export const getUserActivities = async (
       .from('user_activity_view')
       .select(`
         *,
-        user!rating_user_id_fkey(id, name, avatar_url),
+        user:user_id(id, name, picurl),
         game:game_id(id, name, pic_url),
         review:review_id(id, rating, review),
         comment:comment_id(id, content)
@@ -426,7 +426,7 @@ export const addComment = async (
       })
       .select(`
         *,
-        user!rating_user_id_fkey(id, name, avatar_url)
+        user:user_id(id, name, picurl)
       `)
       .single();
 
@@ -473,11 +473,11 @@ export const getCommentsForReview = async (
       .from('comment')
       .select(`
         *,
-        user!rating_user_id_fkey(id, name, avatar_url),
+        user:user_id(id, name, picurl),
         likes:comment_id(count),
         replies:comment!parent_id(
           *,
-          user!rating_user_id_fkey(id, name, avatar_url),
+          user:user_id(id, name, picurl),
           likes:comment_id(count)
         )
       `, { count: 'exact' })

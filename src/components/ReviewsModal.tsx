@@ -34,7 +34,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
   const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
   const { isMobile } = useResponsive();
 
-  // Load reviews based on active tab
+  // Load reviews based on active tab - optimized with foreign key syntax
   const loadReviews = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -106,7 +106,6 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
     }
   }, [isOpen, activeTab, loadReviews]);
 
-  // Toggle review expansion
   const toggleReviewExpansion = (reviewId: string) => {
     setExpandedReviews(prev => {
       const newSet = new Set(prev);
@@ -120,15 +119,6 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
   };
 
   if (!isOpen) return null;
-
-  const shouldTruncate = (text: string) => text.length > 200;
-
-  const getTruncatedText = (text: string, reviewId: string) => {
-    if (expandedReviews.has(reviewId) || !shouldTruncate(text)) {
-      return text;
-    }
-    return text.slice(0, 200) + '...';
-  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -150,54 +140,54 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
         <div className="flex border-b border-gray-700">
           <button
             onClick={() => setActiveTab('highest')}
-            className={`flex-1 py-3 px-4 text-center transition-colors ${
+            className={`flex-1 py-3 px-2 text-center transition-colors ${
               activeTab === 'highest'
                 ? 'border-b-2 border-purple-500 text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-1">
               <TrendingUp className="h-4 w-4" />
-              <span className={isMobile ? 'text-sm' : ''}>Highest Rating</span>
+              <span className={isMobile ? 'text-xs' : 'text-sm'}>Highest</span>
             </div>
           </button>
           <button
             onClick={() => setActiveTab('lowest')}
-            className={`flex-1 py-3 px-4 text-center transition-colors ${
+            className={`flex-1 py-3 px-2 text-center transition-colors ${
               activeTab === 'lowest'
                 ? 'border-b-2 border-purple-500 text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-1">
               <TrendingDown className="h-4 w-4" />
-              <span className={isMobile ? 'text-sm' : ''}>Lowest Rating</span>
+              <span className={isMobile ? 'text-xs' : 'text-sm'}>Lowest</span>
             </div>
           </button>
           <button
             onClick={() => setActiveTab('recent')}
-            className={`flex-1 py-3 px-4 text-center transition-colors ${
+            className={`flex-1 py-3 px-2 text-center transition-colors ${
               activeTab === 'recent'
                 ? 'border-b-2 border-purple-500 text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-1">
               <Clock className="h-4 w-4" />
-              <span className={isMobile ? 'text-sm' : ''}>Recent</span>
+              <span className={isMobile ? 'text-xs' : 'text-sm'}>Recent</span>
             </div>
           </button>
           <button
             onClick={() => setActiveTab('oldest')}
-            className={`flex-1 py-3 px-4 text-center transition-colors ${
+            className={`flex-1 py-3 px-2 text-center transition-colors ${
               activeTab === 'oldest'
                 ? 'border-b-2 border-purple-500 text-white'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-1">
               <History className="h-4 w-4" />
-              <span className={isMobile ? 'text-sm' : ''}>Oldest</span>
+              <span className={isMobile ? 'text-xs' : 'text-sm'}>Oldest</span>
             </div>
           </button>
         </div>
@@ -232,20 +222,14 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
               <p className="text-gray-400">No reviews found</p>
             </div>
           ) : (
-            /* Reviews Grid */
-            <div className={`grid gap-4 ${
-              isMobile ? 'grid-cols-1' : 'md:grid-cols-3'
-            }`}>
+            /* Reviews List */
+            <div className="space-y-4">
               {reviews.map((review) => (
-                <div
-                  key={review.id}
-                  className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors"
-                >
-                  <div className="flex gap-3">
-                    {/* Game Cover with Rating */}
+                <div key={review.id} className="bg-gray-700 rounded-lg p-4">
+                  <div className="flex items-start gap-4">
                     <Link
                       to={`/game/${review.gameId}`}
-                      className="relative flex-shrink-0"
+                      className="flex-shrink-0"
                       onClick={onClose}
                     >
                       <img
@@ -256,38 +240,56 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                           e.currentTarget.src = '/default-cover.png';
                         }}
                       />
-                      {/* Rating Bar */}
-                      <div className="absolute -top-2 -right-2 bg-gray-500 text-white px-2 py-1 rounded-full flex items-center justify-center min-w-[32px]">
-                        <span className="text-xs font-bold">{review.rating}</span>
-                      </div>
                     </Link>
-
-                    {/* Review Content */}
+                    
                     <div className="flex-1 min-w-0">
-                      <Link
-                        to={`/game/${review.gameId}`}
-                        onClick={onClose}
-                        className="text-white font-medium text-sm hover:text-purple-400 transition-colors block mb-2"
-                      >
-                        {review.gameTitle}
-                      </Link>
-                      
-                      <p className="text-gray-300 text-sm mb-2">
-                        {getTruncatedText(review.reviewText, review.id)}
-                      </p>
-                      
-                      {shouldTruncate(review.reviewText) && (
-                        <button
-                          onClick={() => toggleReviewExpansion(review.id)}
-                          className="text-purple-400 hover:text-purple-300 text-xs transition-colors"
+                      <div className="flex items-center justify-between mb-2">
+                        <Link
+                          to={`/game/${review.gameId}`}
+                          className="text-white font-medium hover:text-purple-400 transition-colors"
+                          onClick={onClose}
                         >
-                          {expandedReviews.has(review.id) ? 'see less' : 'see more'}
-                        </button>
-                      )}
+                          {review.gameTitle}
+                        </Link>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${
+                                i < review.rating 
+                                  ? 'text-yellow-400 fill-current' 
+                                  : 'text-gray-600'
+                              }`}
+                            />
+                          ))}
+                          <span className="text-sm text-gray-400 ml-2">
+                            {review.rating}/5
+                          </span>
+                        </div>
+                      </div>
                       
-                      <p className="text-gray-500 text-xs mt-2">
+                      <div className="text-gray-400 text-sm mb-2">
                         {new Date(review.postDate).toLocaleDateString()}
-                      </p>
+                      </div>
+                      
+                      <div className="text-gray-300 text-sm">
+                        {expandedReviews.has(review.id) || review.reviewText.length <= 150 ? (
+                          <p>{review.reviewText}</p>
+                        ) : (
+                          <p>
+                            {review.reviewText.slice(0, 150)}...
+                          </p>
+                        )}
+                        
+                        {review.reviewText.length > 150 && (
+                          <button
+                            onClick={() => toggleReviewExpansion(review.id)}
+                            className="text-purple-400 hover:text-purple-300 text-xs mt-1"
+                          >
+                            {expandedReviews.has(review.id) ? 'Show less' : 'Show more'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -20,42 +20,104 @@ export const UserPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
 
+  // Component lifecycle debugging
+  console.log('🎯 UserPage: Component mounted/re-rendered', { 
+    id, 
+    isAuthenticated, 
+    authUserId: authUser?.id,
+    currentUrl: window.location.pathname,
+    urlParams: useParams(),
+    timestamp: new Date().toISOString()
+  });
+  
+  // Check if component is being rendered at all
+  console.log('🔍 UserPage: Component is rendering - this should appear in console');
+  
+  // Check useEffect dependencies
+  console.log('🔗 UserPage: Dependencies for useEffect:', { id, isAuthenticated, authUser: !!authUser });
+
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!id) return;
+      console.log('🚀 UserPage: Starting fetchUserData', { id, isAuthenticated, authUser: authUser?.id });
+      
+      if (!id) {
+        console.log('❌ UserPage: No ID provided');
+        return;
+      }
+      
+      // Parse ID to integer for database queries
+      const numericId = parseInt(id);
+      console.log('🔢 UserPage: Parsing ID:', { originalId: id, numericId, isValid: !isNaN(numericId) });
+      
+      if (isNaN(numericId)) {
+        console.error('❌ UserPage: Invalid user ID, redirecting to /users');
+        setError('Invalid user ID');
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
-        console.log('🔍 Loading user data with real follower/following counts...');
+        console.log('🔍 UserPage: Loading user data for ID:', numericId);
         
         // Fetch user data
         const { data: userData, error: userError } = await supabase
           .from('user')
           .select('*')
-          .eq('id', id)
+          .eq('id', numericId)
           .single();
           
-        if (userError) throw userError;
+        console.log('💾 UserPage: Database user query result:', { 
+          userData: userData ? { id: userData.id, name: userData.name } : null, 
+          userError: userError?.message 
+        });
+        
+        if (userError) {
+          console.error('❌ UserPage: User query failed, will redirect to /users:', userError);
+          throw userError;
+        }
         
         // Check if this is the current user's own profile
-        if (isAuthenticated && authUser?.id) {
-          const { data: currentUserData } = await supabase
-            .from('user')
-            .select('id')
-            .eq('provider_id', authUser.id)
-            .single();
-          
-          setIsOwnProfile(currentUserData?.id === parseInt(id));
+        try {
+          if (isAuthenticated && authUser?.id) {
+            console.log('🔍 UserPage: Checking if own profile for auth user:', authUser.id);
+            const { data: currentUserData, error: currentUserError } = await supabase
+              .from('user')
+              .select('id')
+              .eq('provider_id', authUser.id)
+              .single();
+            
+            console.log('👤 UserPage: Current user lookup result:', { currentUserData, currentUserError });
+            
+            if (!currentUserError && currentUserData) {
+              setIsOwnProfile(currentUserData.id === numericId);
+              console.log('✅ UserPage: Own profile check:', { 
+                currentUserId: currentUserData.id, 
+                viewingUserId: numericId, 
+                isOwnProfile: currentUserData.id === numericId 
+              });
+            } else {
+              console.log('⚠️ UserPage: Could not determine if own profile, defaulting to false');
+              setIsOwnProfile(false);
+            }
+          } else {
+            console.log('ℹ️ UserPage: Not authenticated, not own profile');
+            setIsOwnProfile(false);
+          }
+        } catch (ownProfileError) {
+          console.error('❌ UserPage: Error checking own profile:', ownProfileError);
+          setIsOwnProfile(false);
         }
         
         // Fetch user reviews (only those with valid ratings)
+        // Use explicit relationship name to avoid ambiguity
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('rating')
           .select(`
             *,
             game:game_id(*)
           `)
-          .eq('user_id', id)
+          .eq('user_id', numericId)
           .not('rating', 'is', null);
           
         if (reviewsError) throw reviewsError;
@@ -71,7 +133,7 @@ export const UserPage: React.FC = () => {
         const { data: startedGamesData, error: startedGamesError } = await supabase
           .from('game_progress')
           .select('game_id')
-          .eq('user_id', id)
+          .eq('user_id', numericId)
           .eq('started', true);
           
         if (startedGamesError) throw startedGamesError;
@@ -93,25 +155,9 @@ export const UserPage: React.FC = () => {
           gamesData = fetchedGames || [];
         }
         
-        // Fetch follower count (users who follow this user)
-        const { count: followerCount, error: followerError } = await supabase
-          .from('user_follow')
-          .select('*', { count: 'exact', head: true })
-          .eq('following_id', id);
-          
-        if (followerError) {
-          console.error('❌ Error fetching follower count:', followerError);
-        }
-        
-        // Fetch following count (users this user follows)
-        const { count: followingCount, error: followingError } = await supabase
-          .from('user_follow')
-          .select('*', { count: 'exact', head: true })
-          .eq('follower_id', id);
-          
-        if (followingError) {
-          console.error('❌ Error fetching following count:', followingError);
-        }
+        // Get follower/following counts from computed columns (much faster - no COUNT queries)
+        const followerCount = userData.follower_count || 0;
+        const followingCount = userData.following_count || 0;
         
         console.log('📊 User stats:', {
           userId: id,
@@ -131,7 +177,7 @@ export const UserPage: React.FC = () => {
         setUserReviews(validReviewsData);
         setGames(gamesData);
       } catch (err) {
-        console.error('💥 Error fetching user data:', err);
+        console.error('💥 UserPage: Error fetching user data, redirecting to /users:', err);
         setError('Failed to load user data');
       } finally {
         setLoading(false);
@@ -139,13 +185,32 @@ export const UserPage: React.FC = () => {
     };
     
     fetchUserData();
-  }, [id]);
+  }, [id, isAuthenticated, authUser]);
+
+  // Debug current state before any redirects
+  console.log('📊 UserPage: Current state before renders', {
+    loading,
+    error,
+    user: user ? { id: user.id, name: user.name } : null,
+    hasError: !!error,
+    hasUser: !!user,
+    timestamp: new Date().toISOString()
+  });
 
   if (loading) {
+    console.log('⏳ UserPage: Showing loading spinner');
     return <LoadingSpinner size="lg" text="Loading user profile..." />;
   }
   
-  if (error || !user) {
+  if (error) {
+    console.log('❌ UserPage: ERROR DETECTED - Redirecting to home due to error:', error);
+    console.log('❌ UserPage: This is why no further logs appear - early redirect!');
+    return <Navigate to="/" replace />;
+  }
+  
+  if (!user) {
+    console.log('👤 UserPage: NO USER FOUND - Redirecting to users page');
+    console.log('👤 UserPage: This is why no further logs appear - early redirect!');
     return <Navigate to="/users" replace />;
   }
   
@@ -189,23 +254,26 @@ export const UserPage: React.FC = () => {
   });
 
   return (
-    <UserPageLayout
-      user={transformedUser}
-      stats={stats}
-      activeTab={activeTab}
-      onTabChange={(tab) => setActiveTab(tab as any)}
-      isDummy={false}
-    >
-      <UserPageContent
+    <>
+      <UserPageLayout
+        user={transformedUser}
+        stats={stats}
         activeTab={activeTab}
-        sortedReviews={sortedReviews}
-        allGames={games}
-        reviewFilter={reviewFilter}
-        onReviewFilterChange={setReviewFilter}
+        onTabChange={(tab) => setActiveTab(tab as any)}
         isDummy={false}
-        userId={id}
-        isOwnProfile={isOwnProfile}
-      />
-    </UserPageLayout>
+      >
+        <UserPageContent
+          activeTab={activeTab}
+          sortedReviews={sortedReviews}
+          allGames={games}
+          reviewFilter={reviewFilter}
+          onReviewFilterChange={setReviewFilter}
+          isDummy={false}
+          userId={id}
+          isOwnProfile={isOwnProfile}
+        />
+      </UserPageLayout>
+
+    </>
   );
 };

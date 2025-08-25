@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart } from 'lucide-react';
 import { gameDataService } from '../services/gameDataService';
 import { gameSearchService } from '../services/gameSearchService';
-import type { GameWithCalculatedFields } from '../types/database';
+import type { Game, GameWithCalculatedFields } from '../types/database';
 import { GameSearch } from '../components/GameSearch';
 import { createReview, ensureGameExists, getUserReviewForGameByIGDBId, updateReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
@@ -18,6 +18,45 @@ interface SearchFilters {
   sortOrder: 'asc' | 'desc';
 }
 
+// Platform name mapping utility
+const mapPlatformNames = (platforms: string[]): string[] => {
+  const platformMap: Record<string, string> = {
+    'PC (Microsoft Windows)': 'PC',
+    'Mac': 'Mac',
+    'Linux': 'Linux',
+    'PlayStation 5': 'PS5',
+    'PlayStation 4': 'PS4',
+    'PlayStation 3': 'PS3',
+    'PlayStation 2': 'PS2',
+    'PlayStation': 'PS1',
+    'PlayStation Portable': 'PSP',
+    'PlayStation Vita': 'PS Vita',
+    'Xbox Series X': 'Xbox Series X/S',
+    'Xbox Series S': 'Xbox Series X/S',
+    'Xbox One': 'Xbox One',
+    'Xbox 360': 'Xbox 360',
+    'Xbox': 'Xbox',
+    'Nintendo Switch': 'Switch',
+    'Nintendo 3DS': '3DS',
+    'Nintendo DS': 'DS',
+    'Nintendo Wii U': 'Wii U',
+    'Nintendo Wii': 'Wii',
+    'Nintendo GameCube': 'GameCube',
+    'Nintendo 64': 'N64',
+    'Android': 'Mobile',
+    'iOS': 'Mobile',
+    'Web browser': 'Browser',
+  };
+  
+  const mapped = new Set<string>();
+  platforms.forEach(p => {
+    const displayName = platformMap[p] || p;
+    mapped.add(displayName);
+  });
+  
+  return Array.from(mapped).sort();
+};
+
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
@@ -30,6 +69,8 @@ export const ReviewFormPage: React.FC = () => {
   const [gameAlreadyCompleted, setGameAlreadyCompleted] = useState(false);
   const [isGameCompletionLocked, setIsGameCompletionLocked] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [availablePlatforms, setAvailablePlatforms] = useState<string[]>([]);
+  const [platformsLoading, setPlatformsLoading] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   
   // Enhanced search state from SearchResultsPage
@@ -186,13 +227,36 @@ export const ReviewFormPage: React.FC = () => {
             console.log('Game progress data takes priority - didFinishGame remains:', didFinishGame);
           }
           
+          // Set up platforms for this game and handle existing review platforms
+          let currentAvailablePlatforms = availablePlatforms;
+          if (selectedGame.platforms && selectedGame.platforms.length > 0) {
+            const mappedPlatforms = mapPlatformNames(selectedGame.platforms);
+            setAvailablePlatforms(mappedPlatforms);
+            currentAvailablePlatforms = mappedPlatforms;
+          }
+          
+          // Handle existing review platforms - validate against available platforms
+          let validSelectedPlatforms: string[] = [];
+          if (result.data.platforms && Array.isArray(result.data.platforms)) {
+            if (currentAvailablePlatforms.length > 0) {
+              // Keep only platforms that are still available for the game
+              validSelectedPlatforms = result.data.platforms.filter(p => 
+                currentAvailablePlatforms.includes(p)
+              );
+            } else {
+              // No platform constraints, keep all
+              validSelectedPlatforms = result.data.platforms;
+            }
+          }
+          setSelectedPlatforms(validSelectedPlatforms);
+          
           // Store initial values for change detection
           const initialValues = {
             rating: result.data.rating,
             reviewText: result.data.review || '',
             isRecommended: result.data.isRecommended,
             didFinishGame: finalDidFinishGame,
-            selectedPlatforms: [] // Start with empty array for existing reviews
+            selectedPlatforms: validSelectedPlatforms
           };
           setInitialFormValues(initialValues);
           
@@ -243,6 +307,7 @@ export const ReviewFormPage: React.FC = () => {
     });
   }, [rating, reviewText, isRecommended, didFinishGame, selectedPlatforms, isEditMode, initialFormValues, isGameCompletionLocked]);
 
+<<<<<<< HEAD
   // Auto-select single platform when game changes
   useEffect(() => {
     if (selectedGame && selectedGame.platforms) {
@@ -260,9 +325,25 @@ export const ReviewFormPage: React.FC = () => {
 
   const handleGameSelect = (game: GameWithCalculatedFields) => {
     setSelectedGame(game);
+=======
+  const handleGameSelect = (game: Game) => {
+    setSelectedGame(game as GameWithCalculatedFields);
+>>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
     setGameSearch('');
     setSearchTerm('');
     setShowSearchModal(false);
+    
+    // Load available platforms for this game
+    if (game.platforms && game.platforms.length > 0) {
+      const mappedPlatforms = mapPlatformNames(game.platforms);
+      setAvailablePlatforms(mappedPlatforms);
+      // Reset selected platforms when changing games
+      setSelectedPlatforms([]);
+    } else {
+      // Fallback to common platforms if no data
+      setAvailablePlatforms(['PC', 'PS5', 'Xbox Series X/S', 'Switch']);
+      setSelectedPlatforms([]);
+    }
   };
   
   const handleGameClick = (game: GameWithCalculatedFields) => {
@@ -415,7 +496,8 @@ export const ReviewFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedGame || rating < 1 || (!gameAlreadyCompleted && didFinishGame === null) || selectedPlatforms.length === 0) return;
+    if (!selectedGame || rating < 1 || (!gameAlreadyCompleted && didFinishGame === null) || 
+        (availablePlatforms.length > 0 && selectedPlatforms.length === 0)) return;
 
     try {
       if (isEditMode && existingReviewId) {
@@ -436,11 +518,19 @@ export const ReviewFormPage: React.FC = () => {
           // Update game progress based on user selection (only if game not already completed)
           try {
             if (!gameAlreadyCompleted) {
+              const igdbId = selectedGame.igdb_id || parseInt(selectedGame.id);
               if (didFinishGame) {
+<<<<<<< HEAD
                 await markGameCompleted(selectedGame.igdb_id);
                 console.log('✅ Game marked as completed');
               } else {
                 await markGameStarted(selectedGame.igdb_id);
+=======
+                await markGameCompleted(igdbId);
+                console.log('✅ Game marked as completed');
+              } else {
+                await markGameStarted(igdbId);
+>>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
                 console.log('✅ Game marked as started');
               }
             }
@@ -458,6 +548,7 @@ export const ReviewFormPage: React.FC = () => {
         // Create new review
         console.log('Creating new review with platforms:', selectedPlatforms);
         
+<<<<<<< HEAD
         // First, ensure the game exists in the database
         const ensureGameResult = await ensureGameExists({
           id: selectedGame.id,
@@ -481,9 +572,20 @@ export const ReviewFormPage: React.FC = () => {
         // Then create the review
         const result = await createReview(
           databaseGameId, // Use the confirmed database ID
+=======
+        // Create the review with game information
+        const result = await createReview(
+          selectedGame.igdb_id || parseInt(selectedGame.id), // Use IGDB ID, fallback to regular ID
+>>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
           rating,
           reviewText,
-          isRecommended
+          isRecommended,
+          {
+            title: selectedGame.title,
+            coverImage: selectedGame.coverImage,
+            genre: selectedGame.genre,
+            releaseDate: selectedGame.releaseDate
+          }
         );
 
         if (result.success) {
@@ -492,6 +594,7 @@ export const ReviewFormPage: React.FC = () => {
           // Update game progress based on user selection (only if game not already completed)
           try {
             if (!gameAlreadyCompleted) {
+              const igdbId = selectedGame.igdb_id || parseInt(selectedGame.id);
               if (didFinishGame) {
                 await markGameCompleted(selectedGame.igdb_id);
                 console.log('✅ Game marked as completed');
@@ -759,6 +862,7 @@ export const ReviewFormPage: React.FC = () => {
             )}
 
             {/* Platform(s) Played On */}
+<<<<<<< HEAD
             {selectedGame && (
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-4">
@@ -817,6 +921,36 @@ export const ReviewFormPage: React.FC = () => {
                 )}
               </div>
             )}
+=======
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-4">
+                Platform(s) Played On *
+              </label>
+              {availablePlatforms.length > 0 ? (
+                <div className="flex flex-wrap gap-4">
+                  {availablePlatforms.map((platform) => (
+                    <div key={platform} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`platform-${platform}`}
+                        checked={selectedPlatforms.includes(platform)}
+                        onChange={() => handlePlatformToggle(platform)}
+                        className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
+                      />
+                      <label 
+                        htmlFor={`platform-${platform}`}
+                        className="ml-2 text-sm text-gray-300 cursor-pointer hover:text-purple-300 transition-colors"
+                      >
+                        {platform}
+                      </label>
+                    </div>
+                ))}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm">No platform information available for this game</p>
+              )}
+            </div>
+>>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
 
             {/* Review Text */}
             <div>
@@ -844,7 +978,7 @@ export const ReviewFormPage: React.FC = () => {
                   !selectedGame || 
                   rating < 1 || 
                   (!gameAlreadyCompleted && didFinishGame === null) ||
-                  selectedPlatforms.length === 0 ||
+                  (availablePlatforms.length > 0 && selectedPlatforms.length === 0) ||
                   (isEditMode && !hasFormChanges)
                 }
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
