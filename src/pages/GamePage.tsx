@@ -11,6 +11,12 @@ import { supabase } from '../services/supabase';
 import { getGameProgress, markGameStarted, markGameCompleted } from '../services/gameProgressService';
 import { ensureGameExists, getUserReviewForGame } from '../services/reviewService';
 import { generateRatingDistribution } from '../utils/dataTransformers';
+import { DLCSection } from '../components/DLCSection';
+import { ParentGameSection } from '../components/ParentGameSection';
+import { ModSection } from '../components/ModSection';
+import { dlcService } from '../services/dlcService';
+import { SmartImage } from '../components/SmartImage';
+import { shouldHideFanContent } from '../utils/contentProtectionFilter';
 
 // Interface for review data from database
 interface GameReview {
@@ -42,6 +48,8 @@ interface GamePageState {
   userReviewLoading: boolean;
   showAuthModal: boolean;
   pendingAction: string | null;
+  gameCategory: number | null;
+  categoryLoading: boolean;
 }
 
 // Action types for reducer
@@ -57,7 +65,8 @@ type GamePageAction =
   | { type: 'SET_USER_REVIEW_STATUS'; payload: { hasReviewed: boolean; loading: boolean } }
   | { type: 'SET_AUTH_MODAL'; payload: { show: boolean; pendingAction: string | null } }
   | { type: 'LOAD_GAME_SUCCESS'; payload: { game: GameWithCalculatedFields; reviews: GameReview[] } }
-  | { type: 'LOAD_GAME_ERROR'; payload: Error };
+  | { type: 'LOAD_GAME_ERROR'; payload: Error }
+  | { type: 'SET_GAME_CATEGORY'; payload: { category: number | null; loading: boolean } };
 
 // Reducer function
 function gamePageReducer(state: GamePageState, action: GamePageAction): GamePageState {
@@ -107,6 +116,12 @@ function gamePageReducer(state: GamePageState, action: GamePageAction): GamePage
         gameLoading: false,
         reviewsLoading: false
       };
+    case 'SET_GAME_CATEGORY':
+      return {
+        ...state,
+        gameCategory: action.payload.category,
+        categoryLoading: action.payload.loading
+      };
     default:
       return state;
   }
@@ -126,7 +141,9 @@ const initialState: GamePageState = {
   userHasReviewed: false,
   userReviewLoading: false,
   showAuthModal: false,
-  pendingAction: null
+  pendingAction: null,
+  gameCategory: null,
+  categoryLoading: false
 };
 
 export const GamePage: React.FC = () => {
@@ -151,7 +168,9 @@ export const GamePage: React.FC = () => {
     userHasReviewed,
     userReviewLoading,
     showAuthModal,
-    pendingAction
+    pendingAction,
+    gameCategory,
+    categoryLoading
   } = state;
 
   // Refetch function using the new consolidated service method
@@ -275,6 +294,55 @@ export const GamePage: React.FC = () => {
 
     checkUserReview();
   }, [game, id, isAuthenticated]);
+
+  // Fetch game category from IGDB for DLC/expansion detection
+  useEffect(() => {
+    const fetchGameCategory = async () => {
+      if (!game || !id) return;
+
+      dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: null, loading: true }});
+
+      try {
+        console.log('Fetching category for game IGDB ID:', id);
+        
+        const response = await fetch('/.netlify/functions/igdb-search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            isBulkRequest: true,
+            endpoint: 'games',
+            requestBody: `fields category, parent_game; where id = ${id};`
+          })
+        });
+
+        if (!response.ok) {
+          console.error('IGDB API response not ok:', response.status);
+          dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: null, loading: false }});
+          return;
+        }
+
+        const data = await response.json();
+        
+        if (!data.success) {
+          console.error('IGDB API returned error:', data.error);
+          dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: null, loading: false }});
+          return;
+        }
+
+        const categoryValue = data.games?.[0]?.category || null;
+        console.log('✅ Game category fetched:', categoryValue);
+        dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: categoryValue, loading: false }});
+
+      } catch (error) {
+        console.error('Category fetch failed:', error);
+        dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: null, loading: false }});
+      }
+    };
+
+    fetchGameCategory();
+  }, [game, id]);
 
   // Reviews are now loaded with game data in the main useEffect
   // This reduces redundant API calls and improves performance
@@ -553,13 +621,17 @@ export const GamePage: React.FC = () => {
             <div className="bg-gray-800 rounded-lg overflow-hidden">
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
-                  <img
-                    src={game.cover_url || '/placeholder-game.jpg'}
+                  <SmartImage
+                    src={game.cover?.url ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}` : (game.cover_url || '/placeholder-game.jpg')}
                     alt={game.name}
                     className="h-64 w-full object-cover md:h-80 md:w-64"
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder-game.jpg';
+                    optimization={{
+                      width: 640,
+                      height: 960,
+                      quality: 95,
+                      format: 'webp'
                     }}
+                    fallback="/placeholder-game.jpg"
                   />
                 </div>
                 <div className="p-8">
@@ -570,7 +642,7 @@ export const GamePage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {game.release_date ? new Date(game.release_date).getFullYear() : 'Unknown'}
+                        {game.first_release_date ? new Date(game.first_release_date).getFullYear() : 'Unknown'}
                       </span>
                     </div>
                     {game.platforms && game.platforms.length > 0 && (
@@ -722,6 +794,21 @@ export const GamePage: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Parent Game Section (for DLC/Expansions) */}
+            {game && !categoryLoading && gameCategory && dlcService.isDLC(gameCategory) && (
+              <ParentGameSection dlcId={game.igdb_id} />
+            )}
+
+            {/* DLC Section (for Main Games) */}
+            {game && !categoryLoading && (!gameCategory || gameCategory === 0) && (
+              <DLCSection gameId={game.igdb_id} />
+            )}
+
+            {/* Mod Section (for Main Games) - Hidden for aggressive copyright companies */}
+            {game && !categoryLoading && (!gameCategory || gameCategory === 0) && !shouldHideFanContent(game) && (
+              <ModSection gameId={game.igdb_id} />
+            )}
           </div>
         </div>
 

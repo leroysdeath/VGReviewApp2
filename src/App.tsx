@@ -17,7 +17,9 @@ import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import UserSettingsPage from './pages/UserSettingsPage';
 import { DebugAuthPage } from './pages/DebugAuthPage';
+import ProfilePage from './pages/ProfilePage';
 
 
 // Lazy load legal pages for better performance
@@ -85,6 +87,22 @@ const AppContent: React.FC = () => {
                       } 
                     />
                     <Route path="/review/:userId/:gameId" element={<ReviewPage />} />
+                    <Route 
+                      path="/profile" 
+                      element={
+                        <ProtectedRoute showModal={true}>
+                          <ProfilePage />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/settings" 
+                      element={
+                        <ProtectedRoute showModal={true}>
+                          <UserSettingsPage />
+                        </ProtectedRoute>
+                      } 
+                    />
                     <Route 
                       path="/contact" 
                       element={

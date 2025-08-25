@@ -6,6 +6,9 @@ export interface User {
   provider_id: string;
   email: string;
   name: string;
+<<<<<<< HEAD
+  avatar_url?: string;
+=======
   username?: string;
   avatar_url?: string;
   display_name?: string;
@@ -15,6 +18,7 @@ export interface User {
   platform?: string;
   created_at?: string;
   updated_at?: string;
+>>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
 }
 
 export interface Platform {
@@ -36,6 +40,7 @@ export interface Game {
   developer?: string;
   publisher?: string;
   igdb_rating?: number;
+  category?: number;
   created_at: string;
   updated_at: string;
 }

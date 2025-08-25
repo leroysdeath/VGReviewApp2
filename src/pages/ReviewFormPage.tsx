@@ -5,7 +5,7 @@ import { gameDataService } from '../services/gameDataService';
 import { gameSearchService } from '../services/gameSearchService';
 import type { Game, GameWithCalculatedFields } from '../types/database';
 import { GameSearch } from '../components/GameSearch';
-import { createReview, ensureGameExists, getUserReviewForGame, updateReview } from '../services/reviewService';
+import { createReview, ensureGameExists, getUserReviewForGameByIGDBId, updateReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
 import { useAuth } from '../hooks/useAuth';
 
@@ -141,6 +141,8 @@ export const ReviewFormPage: React.FC = () => {
           const game = await gameDataService.getGameByIGDBId(parseInt(gameId));
           if (game) {
             setSelectedGame(game);
+            console.log("ID:", gameId);
+            console.log('Loaded game from URL IGDB ID:', game);
           }
         } catch (error) {
           console.error('Failed to load game:', error);
@@ -202,7 +204,7 @@ export const ReviewFormPage: React.FC = () => {
 
       try {
         console.log('Checking for existing review for game IGDB ID:', gameId);
-        const result = await getUserReviewForGame(parseInt(gameId));
+        const result = await getUserReviewForGameByIGDBId(parseInt(gameId));
 
         if (result.success && result.data) {
           console.log('Found existing review, entering edit mode:', result.data);
@@ -307,7 +309,22 @@ export const ReviewFormPage: React.FC = () => {
     });
   }, [rating, reviewText, isRecommended, didFinishGame, selectedPlatforms, isEditMode, initialFormValues, isGameCompletionLocked]);
 
-  const handleGameSelect = (game: Game) => {
+  // Auto-select single platform when game changes
+  useEffect(() => {
+    if (selectedGame && selectedGame.platforms) {
+      if (selectedGame.platforms.length === 1) {
+        // Auto-select the single platform
+        setSelectedPlatforms([selectedGame.platforms[0]]);
+      } else if (selectedGame.platforms.length > 1) {
+        // Clear selection if multiple platforms and user hasn't made a choice
+        if (selectedPlatforms.length === 0 || !selectedPlatforms.every(p => selectedGame.platforms!.includes(p))) {
+          setSelectedPlatforms([]);
+        }
+      }
+    }
+  }, [selectedGame]);
+
+  const handleGameSelect = (game: GameWithCalculatedFields | Game) => {
     setSelectedGame(game as GameWithCalculatedFields);
     setGameSearch('');
     setSearchTerm('');
@@ -365,16 +382,16 @@ export const ReviewFormPage: React.FC = () => {
   };
 
   // Game Card Component for Grid View
-  const GameCard: React.FC<{ game: Game }> = ({ game }) => (
+  const GameCard: React.FC<{ game: GameWithCalculatedFields }> = ({ game }) => (
     <div
       onClick={() => handleGameClick(game)}
       className="bg-gray-700 rounded-lg overflow-hidden hover:bg-gray-600 transition-all duration-200 cursor-pointer group hover:scale-105 relative"
     >
       <div className="aspect-[3/4] relative overflow-hidden">
-        {game.coverImage ? (
+        {game.cover_url ? (
           <img
-            src={game.coverImage}
-            alt={game.title}
+            src={game.cover_url}
+            alt={game.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
             loading="lazy"
           />
@@ -383,27 +400,27 @@ export const ReviewFormPage: React.FC = () => {
             <span className="text-gray-500 text-sm">No Image</span>
           </div>
         )}
-        {game.rating && (
+        {game.igdb_rating && (
           <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded-lg text-sm flex items-center">
             <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
-            {Math.round(game.rating / 10)}
+            {Math.round(game.igdb_rating / 10)}
           </div>
         )}
       </div>
       <div className="p-4">
         <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors line-clamp-2">
-          {game.title}
+          {game.name}
         </h3>
-        {game.releaseDate && (
+        {game.first_release_date && (
           <p className="text-gray-400 text-sm mt-1 flex items-center">
             <Calendar className="w-3 h-3 mr-1" />
-            {game.releaseDate}
+            {game.first_release_date}
           </p>
         )}
-        {game.genre && (
+        {game.genres && game.genres.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             <span className="bg-purple-600 bg-opacity-20 text-purple-300 px-2 py-1 rounded text-xs">
-              {game.genre}
+              {game.genres[0]}
             </span>
           </div>
         )}
@@ -412,16 +429,16 @@ export const ReviewFormPage: React.FC = () => {
   );
   
   // Game List Item Component for List View
-  const GameListItem: React.FC<{ game: Game }> = ({ game }) => (
+  const GameListItem: React.FC<{ game: GameWithCalculatedFields }> = ({ game }) => (
     <div
       onClick={() => handleGameClick(game)}
       className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer group flex gap-4 relative"
     >
       <div className="w-16 h-20 flex-shrink-0 overflow-hidden rounded">
-        {game.coverImage ? (
+        {game.cover_url ? (
           <img
-            src={game.coverImage}
-            alt={game.title}
+            src={game.cover_url}
+            alt={game.name}
             className="w-full h-full object-cover"
             loading="lazy"
           />
@@ -433,23 +450,23 @@ export const ReviewFormPage: React.FC = () => {
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors truncate">
-          {game.title}
+          {game.name}
         </h3>
-        {game.releaseDate && (
+        {game.first_release_date && (
           <p className="text-gray-400 text-sm mt-1 flex items-center">
             <Calendar className="w-3 h-3 mr-1" />
-            {game.releaseDate}
+            {game.first_release_date}
           </p>
         )}
-        {game.description && (
+        {game.summary && (
           <p className="text-gray-300 text-sm mt-2 line-clamp-2">
-            {game.description}
+            {game.summary}
           </p>
         )}
-        {game.genre && (
+        {game.genres && game.genres.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             <span className="bg-purple-600 bg-opacity-20 text-purple-300 px-2 py-1 rounded text-xs">
-              {game.genre}
+              {game.genres[0]}
             </span>
           </div>
         )}
@@ -459,7 +476,7 @@ export const ReviewFormPage: React.FC = () => {
           <div className="flex items-center text-yellow-400">
             <Star className="w-4 h-4 mr-1 fill-current" />
             <span className="text-white font-semibold">
-              {Math.round(game.rating / 10)}
+              {Math.round(game.igdb_rating / 10)}
             </span>
           </div>
         </div>
@@ -486,7 +503,7 @@ export const ReviewFormPage: React.FC = () => {
         
         const result = await updateReview(
           existingReviewId,
-          parseInt(selectedGame.id),
+          0, // gameId not used in update operation
           rating,
           reviewText,
           isRecommended
@@ -498,13 +515,28 @@ export const ReviewFormPage: React.FC = () => {
           // Update game progress based on user selection (only if game not already completed)
           try {
             if (!gameAlreadyCompleted) {
-              const igdbId = selectedGame.igdb_id || parseInt(selectedGame.id);
-              if (didFinishGame) {
-                await markGameCompleted(igdbId);
-                console.log('✅ Game marked as completed');
+              // Prioritize gameId from URL
+              let igdbId: number | undefined;
+              if (gameId) {
+                const parsedGameId = parseInt(gameId);
+                if (!isNaN(parsedGameId)) {
+                  igdbId = parsedGameId;
+                }
+              }
+              // Fallback to selectedGame.igdb_id
+              if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
+                igdbId = selectedGame.igdb_id;
+              }
+              if (igdbId !== undefined && igdbId !== null && !isNaN(igdbId)) {
+                if (didFinishGame) {
+                  await markGameCompleted(igdbId);
+                  console.log('✅ Game marked as completed');
+                } else {
+                  await markGameStarted(igdbId);
+                  console.log('✅ Game marked as started');
+                }
               } else {
-                await markGameStarted(igdbId);
-                console.log('✅ Game marked as started');
+                console.warn('⚠️ No IGDB ID available for game progress update');
               }
             }
           } catch (progressError) {
@@ -512,7 +544,7 @@ export const ReviewFormPage: React.FC = () => {
             // Don't prevent navigation if progress update fails
           }
           
-          navigate(`/game/${selectedGame.id}`);
+          navigate(`/game/${selectedGame.igdb_id}`);
         } else {
           console.error('Failed to update review:', result.error);
           alert(`Failed to update review: ${result.error}`);
@@ -521,17 +553,52 @@ export const ReviewFormPage: React.FC = () => {
         // Create new review
         console.log('Creating new review with platforms:', selectedPlatforms);
         
-        // Create the review with game information
+        // First, prioritize the gameId from URL (this is the source of truth)
+        let igdbId: number | undefined;
+        
+        if (gameId) {
+          const parsedGameId = parseInt(gameId);
+          if (!isNaN(parsedGameId)) {
+            igdbId = parsedGameId;
+            console.log('Using gameId from URL as IGDB ID:', igdbId);
+            // Ensure selectedGame has the correct igdb_id
+            setSelectedGame(prev => prev ? { ...prev, igdb_id: parsedGameId } : null);
+          }
+        }
+        
+        // Fallback to selectedGame.igdb_id if URL parameter is not available
+        if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
+          igdbId = selectedGame.igdb_id;
+          console.log('Using selectedGame.igdb_id as fallback:', igdbId);
+        }
+        
+        // Final fallback: check if selectedGame has an 'id' property that could be the IGDB ID
+        if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
+          if (selectedGame.id && !isNaN(selectedGame.id)) {
+            igdbId = selectedGame.id;
+            console.log('Using selectedGame.id as IGDB ID:', igdbId);
+          }
+        }
+        
+        if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
+          console.error('No valid IGDB ID available for game:', selectedGame, 'gameId from URL:', gameId);
+          alert('Game data is missing IGDB ID. Please try selecting the game again.');
+          return;
+        }
+        
+        console.log('Using IGDB ID for review submission:', igdbId);
+
+        // Create the review - createReview will handle ensuring the game exists
         const result = await createReview(
-          selectedGame.igdb_id || parseInt(selectedGame.id), // Use IGDB ID, fallback to regular ID
+          igdbId, // Pass the IGDB ID - createReview will handle the rest
           rating,
           reviewText,
           isRecommended,
           {
-            title: selectedGame.title,
-            coverImage: selectedGame.coverImage,
-            genre: selectedGame.genre,
-            releaseDate: selectedGame.releaseDate
+            title: selectedGame.name,
+            coverImage: selectedGame.cover_url,
+            genre: selectedGame.genres?.[0],
+            releaseDate: selectedGame.first_release_date ? new Date(selectedGame.first_release_date * 1000).toISOString().split('T')[0] : undefined
           }
         );
 
@@ -541,13 +608,28 @@ export const ReviewFormPage: React.FC = () => {
           // Update game progress based on user selection (only if game not already completed)
           try {
             if (!gameAlreadyCompleted) {
-              const igdbId = selectedGame.igdb_id || parseInt(selectedGame.id);
-              if (didFinishGame) {
-                await markGameCompleted(igdbId);
-                console.log('✅ Game marked as completed');
+              // Prioritize gameId from URL
+              let igdbId: number | undefined;
+              if (gameId) {
+                const parsedGameId = parseInt(gameId);
+                if (!isNaN(parsedGameId)) {
+                  igdbId = parsedGameId;
+                }
+              }
+              // Fallback to selectedGame.igdb_id
+              if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
+                igdbId = selectedGame.igdb_id;
+              }
+              if (igdbId !== undefined && igdbId !== null && !isNaN(igdbId)) {
+                if (didFinishGame) {
+                  await markGameCompleted(igdbId);
+                  console.log('✅ Game marked as completed');
+                } else {
+                  await markGameStarted(igdbId);
+                  console.log('✅ Game marked as started');
+                }
               } else {
-                await markGameStarted(igdbId);
-                console.log('✅ Game marked as started');
+                console.warn('⚠️ No IGDB ID available for game progress update');
               }
             }
           } catch (progressError) {
@@ -555,7 +637,7 @@ export const ReviewFormPage: React.FC = () => {
             // Don't prevent navigation if progress update fails
           }
           
-          navigate(`/game/${selectedGame.id}`);
+          navigate(`/game/${selectedGame.igdb_id}`);
         } else {
           console.error('Failed to create review:', result.error);
           alert(`Failed to submit review: ${result.error}`);
@@ -573,7 +655,7 @@ export const ReviewFormPage: React.FC = () => {
         <div className="bg-gray-800 rounded-lg p-8">
           <h1 className="text-3xl font-bold text-white mb-8">
             {selectedGame 
-              ? (isEditMode ? `Edit Your Review: ${selectedGame.title}` : `Review: ${selectedGame.title}`)
+              ? (isEditMode ? `Edit Your Review: ${selectedGame.name}` : `Review: ${selectedGame.name}`)
               : (isEditMode ? 'Edit Your Review' : 'Write a Review')
             }
           </h1>
@@ -603,7 +685,7 @@ export const ReviewFormPage: React.FC = () => {
             {selectedGame && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-white">{selectedGame.title}</h3>
+                  <h3 className="text-xl font-semibold text-white">{selectedGame.name}</h3>
                   <button
                     type="button"
                     onClick={() => setSelectedGame(null)}
@@ -614,13 +696,13 @@ export const ReviewFormPage: React.FC = () => {
                 </div>
                 <div className="flex justify-center">
                   <img
-                    src={selectedGame.coverImage}
-                    alt={selectedGame.title}
+                    src={selectedGame.cover_url || '/placeholder-game.jpg'}
+                    alt={selectedGame.name}
                     className="w-48 h-64 object-cover rounded-lg shadow-lg"
                   />
                 </div>
-                {selectedGame.releaseDate && (
-                  <p className="text-center text-gray-400 text-sm">Released: {selectedGame.releaseDate}</p>
+                {selectedGame.first_release_date && (
+                  <p className="text-center text-gray-400 text-sm">Released: {selectedGame.first_release_date}</p>
                 )}
               </div>
             )}
@@ -809,34 +891,64 @@ export const ReviewFormPage: React.FC = () => {
             )}
 
             {/* Platform(s) Played On */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-4">
-                Platform(s) Played On *
-              </label>
-              {availablePlatforms.length > 0 ? (
-                <div className="flex flex-wrap gap-4">
-                  {availablePlatforms.map((platform) => (
-                    <div key={platform} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={`platform-${platform}`}
-                        checked={selectedPlatforms.includes(platform)}
-                        onChange={() => handlePlatformToggle(platform)}
-                        className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
-                      />
-                      <label 
-                        htmlFor={`platform-${platform}`}
-                        className="ml-2 text-sm text-gray-300 cursor-pointer hover:text-purple-300 transition-colors"
-                      >
-                        {platform}
-                      </label>
+            {selectedGame && (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-4">
+                  Platform(s) Played On *
+                </label>
+                {selectedGame.platforms && selectedGame.platforms.length > 0 ? (
+                  selectedGame.platforms.length === 1 ? (
+                    // Single platform - just display the name
+                    <div className="bg-gray-700 border border-gray-600 rounded-lg p-4 text-center">
+                      <span className="text-lg font-medium text-white">{selectedGame.platforms[0]}</span>
+                      <p className="text-sm text-gray-400 mt-1">Available on this platform only</p>
                     </div>
-                ))}
-                </div>
-              ) : (
-                <p className="text-gray-400 text-sm">No platform information available for this game</p>
-              )}
-            </div>
+                  ) : (
+                    // Multiple platforms - show checkboxes
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {selectedGame.platforms.map((platform) => (
+                        <div key={platform} className="flex flex-col items-center">
+                          <input
+                            type="checkbox"
+                            id={`platform-${platform}`}
+                            checked={selectedPlatforms.includes(platform)}
+                            onChange={() => handlePlatformToggle(platform)}
+                            className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
+                          />
+                          <label 
+                            htmlFor={`platform-${platform}`}
+                            className="text-sm text-gray-300 mt-2 text-center cursor-pointer hover:text-purple-300 transition-colors"
+                          >
+                            {platform}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  // No platform data available - show default options
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {['PS5', 'Xbox Series X/S', 'Nintendo Switch', 'PC', 'Retro'].map((platform) => (
+                      <div key={platform} className="flex flex-col items-center">
+                        <input
+                          type="checkbox"
+                          id={`platform-${platform}`}
+                          checked={selectedPlatforms.includes(platform)}
+                          onChange={() => handlePlatformToggle(platform)}
+                          className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
+                        />
+                        <label 
+                          htmlFor={`platform-${platform}`}
+                          className="text-sm text-gray-300 mt-2 text-center cursor-pointer hover:text-purple-300 transition-colors"
+                        >
+                          {platform}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Review Text */}
             <div>
@@ -1080,7 +1192,7 @@ export const ReviewFormPage: React.FC = () => {
                   <div className="flex items-center justify-center py-12">
                     <Loader className="w-8 h-8 animate-spin text-purple-400" />
                     <span className="ml-3 text-gray-400">
-                      {isSearchCached ? 'Updating results...' : 'Searching for games...'}
+                      Searching for games...
                     </span>
                   </div>
                 )}
@@ -1091,7 +1203,7 @@ export const ReviewFormPage: React.FC = () => {
                     <div className="text-center">
                       <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                       <p className="text-red-400 font-semibold mb-2">Search Error</p>
-                      <p className="text-gray-400 mb-4">{searchError.message}</p>
+                      <p className="text-gray-400 mb-4">{searchError}</p>
                       <button
                         onClick={() => refetchSearch()}
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
@@ -1161,11 +1273,6 @@ export const ReviewFormPage: React.FC = () => {
                         <span className="text-gray-300 text-sm">
                           Showing {searchResults.length} results
                         </span>
-                        {isSearchCached && (
-                          <div className="flex items-center gap-1 text-green-400 text-sm">
-                            <span>Cached</span>
-                          </div>
-                        )}
                         {searchLoading && (
                           <div className="flex items-center gap-1 text-blue-400 text-sm">
                             <Loader className="h-3 w-3 animate-spin" />

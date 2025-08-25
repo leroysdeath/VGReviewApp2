@@ -10,6 +10,7 @@ interface SearchResult {
   error: string | null;
   hasMore: boolean;
   totalResults: number;
+  source?: 'database' | 'igdb' | 'mixed';
 }
 
 interface SearchOptions {
@@ -30,7 +31,8 @@ export const useGameSearch = () => {
     loading: false,
     error: null,
     hasMore: true,
-    totalResults: 0
+    totalResults: 0,
+    source: undefined
   });
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,16 +68,15 @@ export const useGameSearch = () => {
       const searchParams = { ...searchOptions, ...options };
       const offset = append ? searchState.games.length : 0;
       
-      // Call IGDB API
+      // Use IGDB API directly for consistent, high-quality results
       const igdbResults = await igdbService.searchGames(query.trim(), searchParams.limit || 20);
-      const results = igdbResults.map(game => igdbService.transformGame(game));
+      const transformedResults = igdbResults.map(game => igdbService.transformGame(game));
 
-      // Note: Supabase doesn't support offset pagination the same way,
-      // so we'll handle pagination differently if needed
       const data = {
-        games: results,
-        hasMore: results.length === searchParams.limit,
-        total: results.length
+        games: transformedResults,
+        hasMore: transformedResults.length === searchParams.limit,
+        total: transformedResults.length,
+        source: 'igdb' as const
       };
       
       setSearchState(prev => ({
@@ -83,7 +84,8 @@ export const useGameSearch = () => {
         loading: false,
         error: null,
         hasMore: data.hasMore || data.games.length === searchParams.limit,
-        totalResults: data.total || data.games.length
+        totalResults: data.total || data.games.length,
+        source: data.source
       }));
 
       return data.games;
@@ -164,7 +166,8 @@ export const useGameSearch = () => {
       loading: false,
       error: null,
       hasMore: true,
-      totalResults: 0
+      totalResults: 0,
+      source: undefined
     });
     
     setSearchTerm('');
