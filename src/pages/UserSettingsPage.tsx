@@ -16,7 +16,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { getCurrentUserProfile, updateUserProfile, ProfileUpdateData } from '../services/profileService';
 import type { UserProfile } from '../services/profileService';
-import { UserSettingsModal } from '../components/profile/UserSettingsModal';
+import UserSettingsModal from '../components/profile/UserSettingsModal';
 
 const UserSettingsPage: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);

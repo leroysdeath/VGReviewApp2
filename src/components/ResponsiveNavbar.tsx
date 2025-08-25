@@ -678,18 +678,10 @@ export const ResponsiveNavbar: React.FC = () => {
                         }}
                       >
                         <User className="h-5 w-5" />
-                        <span>Profile</span>
+                        <span>My Profile</span>
                         {dbUserIdLoading && (
                           <Loader2 className="h-3 w-3 animate-spin ml-1" />
                         )}
-                      </Link>
-                      <Link
-                        to="/settings"
-                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <Settings className="h-5 w-5" />
-                        <span>Edit Profile</span>
                       </Link>
                       <div className="border-t border-gray-700 pt-2 mt-2">
                         <p className="text-xs text-gray-500 uppercase tracking-wide px-3 py-1">User</p>
@@ -1109,15 +1101,7 @@ export const ResponsiveNavbar: React.FC = () => {
                           }}
                         >
                           <User className="h-4 w-4" />
-                          <span>View Profile</span>
-                        </Link>
-                        <Link
-                          to="/settings"
-                          className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          <Settings className="h-4 w-4" />
-                          <span>Edit Profile</span>
+                          <span>My Profile</span>
                         </Link>
                         <div className="border-t border-gray-700 my-1"></div>
                         <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
@@ -1221,7 +1205,7 @@ export const ResponsiveNavbar: React.FC = () => {
                     }
                   }}
                 >
-                  Profile
+                  My Profile
                 </Link>
                 <Link
                   to="/review"

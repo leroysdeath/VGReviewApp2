@@ -21,7 +21,7 @@ interface UserSettingsModalProps {
   onSave?: (data: ProfileUpdateData) => Promise<void>;
 }
 
-export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ 
+const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ 
   isOpen, 
   onClose,
   userId,
@@ -324,3 +324,5 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     </>
   );
 };
+
+export default UserSettingsModal;

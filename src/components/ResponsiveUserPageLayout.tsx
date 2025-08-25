@@ -10,9 +10,7 @@ import { ReviewsModal } from './ReviewsModal';
 import { ProfileUpdateData, updateUserProfile, getCurrentAuthUser } from '../services/profileService';
 
 // Lazy load UserSettingsModal to avoid initialization issues
-const UserSettingsModal = lazy(() => import('./profile/UserSettingsModal').then(module => ({
-  default: module.UserSettingsModal
-})));
+const UserSettingsModal = lazy(() => import('./profile/UserSettingsModal'));
 
 interface UserStats {
   films: number;
