@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Platform } from '../types/database';
-import { usePlatforms } from '../hooks/useDatabase';
+import { databaseService } from '../services/databaseService';
 
 interface PlatformSelectorProps {
   selectedPlatforms: number[];
@@ -15,7 +15,27 @@ export const PlatformSelector: React.FC<PlatformSelectorProps> = ({
   multiple = true,
   className = ''
 }) => {
-  const { platforms, loading, error } = usePlatforms();
+  const [platforms, setPlatforms] = useState<Platform[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadPlatforms = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const platformData = await databaseService.getPlatforms();
+        setPlatforms(platformData);
+      } catch (err) {
+        setError('Failed to load platforms');
+        console.error('Load platforms error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPlatforms();
+  }, []);
 
   const handlePlatformToggle = (platformId: number) => {
     if (multiple) {

@@ -660,6 +660,9 @@ export const ResponsiveNavbar: React.FC = () => {
                   {/* Authenticated User Links */}
                   {isAuthenticated && (
                     <>
+                      <div className="border-t border-gray-700 pt-2 mt-2">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide px-3 py-1">Profile</p>
+                      </div>
                       <Link
                         to={dbUserId ? `/user/${dbUserId}` : "#"}
                         className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
@@ -675,11 +678,14 @@ export const ResponsiveNavbar: React.FC = () => {
                         }}
                       >
                         <User className="h-5 w-5" />
-                        <span>Profile</span>
+                        <span>My Profile</span>
                         {dbUserIdLoading && (
                           <Loader2 className="h-3 w-3 animate-spin ml-1" />
                         )}
                       </Link>
+                      <div className="border-t border-gray-700 pt-2 mt-2">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide px-3 py-1">User</p>
+                      </div>
                       <Link
                         to="/review"
                         className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
@@ -1080,6 +1086,9 @@ export const ResponsiveNavbar: React.FC = () => {
                       ref={dropdownRef}
                       className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50">
                       <div className="py-1">
+                        <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-700 mb-1">
+                          Profile
+                        </div>
                         <Link
                           to={dbUserId ? `/user/${dbUserId}` : "#"}
                           className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -1092,8 +1101,12 @@ export const ResponsiveNavbar: React.FC = () => {
                           }}
                         >
                           <User className="h-4 w-4" />
-                          <span>Profile</span>
+                          <span>My Profile</span>
                         </Link>
+                        <div className="border-t border-gray-700 my-1"></div>
+                        <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                          User
+                        </div>
                         <Link
                           to="/review"
                           className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -1178,6 +1191,9 @@ export const ResponsiveNavbar: React.FC = () => {
             
             {isAuthenticated ? (
               <>
+                <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider border-t border-gray-700 mt-2 pt-2">
+                  Profile
+                </div>
                 <Link
                   to={dbUserId ? `/user/${dbUserId}` : "#"}
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
@@ -1189,7 +1205,7 @@ export const ResponsiveNavbar: React.FC = () => {
                     }
                   }}
                 >
-                  Profile
+                  My Profile
                 </Link>
                 <Link
                   to="/review"

@@ -83,14 +83,7 @@ export class UserService {
     }
 
     try {
-      // Primary: Use database function for atomic operation
-      const functionResult = await this.tryDatabaseFunction(authUser);
-      if (functionResult.success) {
-        this.setCacheEntry(authUser.id, functionResult.userId!);
-        return functionResult;
-      }
-
-      // Fallback: Manual operation with transaction-like behavior
+      // Skip database function (has table reference issues) - go directly to manual operation
       const manualResult = await this.performManualUserOperation(authUser);
       if (manualResult.success) {
         this.setCacheEntry(authUser.id, manualResult.userId!);

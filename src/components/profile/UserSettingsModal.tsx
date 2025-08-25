@@ -8,13 +8,24 @@ interface UserSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  userData?: {
+    username: string;
+    displayName?: string;
+    email: string;
+    bio?: string;
+    location?: string;
+    website?: string;
+    platform?: string; 
+    avatar?: string;
+  };
   onSave?: (data: ProfileUpdateData) => Promise<void>;
 }
 
-export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ 
+const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ 
   isOpen, 
   onClose,
   userId,
+  userData: propUserData,
   onSave 
 }) => {
   // Debug props at component start
@@ -28,7 +39,13 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [userData, setUserData] = useState<any>({
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshCounter, setRefreshCounter] = useState(0);
+  const [userData, setUserData] = useState<any>(null);
+  const modalContentRef = useRef<HTMLDivElement>(null);
+
+  // Use fetched user data or provided user data as fallback
+  const currentUserData = userData || propUserData || {
     username: '',
     displayName: '',
     email: '',
@@ -37,13 +54,9 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     website: '',
     platform: '',
     avatar: ''
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const modalContentRef = useRef<HTMLDivElement>(null);
-  
-  // Add a refresh counter to force data refetch
-  const [refreshCounter, setRefreshCounter] = useState(0);
+  };
 
+  console.log('🔄 Using user data for modal:', currentUserData);
   // Fetch user data when modal opens - force refresh every time
   useEffect(() => {
     const fetchUserData = async () => {
@@ -250,37 +263,19 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           
           {/* Modal Content */}
           <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
-                <span className="ml-3 text-gray-400">Loading profile data...</span>
-              </div>
-            ) : (
-              <>
                 {console.log('UserSettingsModal props check:', {
                   hasOnSave: !!onSave,
                   onSaveType: typeof onSave,
                   userId: userId
                 })}
                 <UserSettingsPanel 
-                key={`${userId}-${isLoading ? 'loading' : 'loaded'}-${userData?.username || 'empty'}`}
+                key={`${userId}-loaded-${currentUserData?.username || 'empty'}`}
                 userId={userId}
-                initialData={userData || {
-                  username: '',
-                  displayName: '',
-                  email: '',
-                  bio: '',
-                  location: '',
-                  website: '',
-                  platform: '',
-                  avatar: ''
-                }}
+                initialData={currentUserData}
                 onSave={onSave}
                 onSuccess={handleSuccess}
                 onFormChange={handleFormChange}
               />
-              </>
-            )}
           </div>
         </div>
       </div>
@@ -329,3 +324,5 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     </>
   );
 };
+
+export default UserSettingsModal;

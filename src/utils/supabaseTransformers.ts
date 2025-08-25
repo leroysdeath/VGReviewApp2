@@ -75,7 +75,7 @@ export const generateRatingDistribution = (ratings: Array<{ rating: number }>) =
   ratings.forEach(rating => {
     // Group ratings by floor value (1.0-1.9 -> 1, 2.0-2.9 -> 2, etc)
     // Special case: 10.0 is its own segment (no 10.5 exists)
-    let ratingSegment = Math.floor(rating.rating);
+    const ratingSegment = Math.floor(rating.rating);
     
     // Ensure rating segment is within valid range (1-10)
     if (ratingSegment >= 1 && ratingSegment <= 10) {

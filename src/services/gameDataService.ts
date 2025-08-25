@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import { sanitizeSearchTerm } from '../utils/sqlSecurity'
 import type { Game, GameWithCalculatedFields } from '../types/database'
 import { igdbService } from './igdbService'
+import { enhancedSearchService } from './enhancedSearchService'
 
 interface SearchFilters {
   genres?: string[]
@@ -26,7 +27,7 @@ class GameDataService {
         .from('game')
         .select(`
           *,
-          ratings:rating(rating)
+          rating(rating)
         `)
         .eq('id', id)
         .single()
@@ -52,7 +53,7 @@ class GameDataService {
         .from('game')
         .select(`
           *,
-          ratings:rating(rating)
+          rating(rating)
         `)
         .eq('igdb_id', igdbId)
         .single()
@@ -66,7 +67,7 @@ class GameDataService {
           .from('game')
           .select(`
             *,
-            ratings:rating(rating)
+            rating(rating)
           `)
           .eq('game_id', igdbId.toString())
           .single()
@@ -99,6 +100,7 @@ class GameDataService {
             .from('game')
             .insert({
               igdb_id: transformedGame.igdb_id,
+              game_id: transformedGame.igdb_id.toString(),
               name: transformedGame.name,
               summary: transformedGame.summary,
               release_date: transformedGame.first_release_date 
@@ -115,7 +117,7 @@ class GameDataService {
             })
             .select(`
               *,
-              ratings:rating(rating)
+              rating(rating)
             `)
             .single()
           
@@ -195,6 +197,7 @@ class GameDataService {
             .from('game')
             .insert({
               igdb_id: transformedGame.igdb_id,
+              game_id: transformedGame.igdb_id.toString(),
               name: transformedGame.name,
               summary: transformedGame.summary,
               release_date: transformedGame.first_release_date 
@@ -247,7 +250,7 @@ class GameDataService {
         .from('rating')
         .select(`
           *,
-          user:user_id(
+          user!rating_user_id_fkey(
             id,
             name,
             avatar_url
@@ -347,7 +350,7 @@ class GameDataService {
       .from('game')
       .select(`
         *,
-        ratings:rating(rating)
+        rating(rating)
       `)
       .ilike('name', `%${query}%`)
       .limit(20)
@@ -400,7 +403,7 @@ class GameDataService {
         .from('game')
         .select(`
           *,
-          ratings:rating(rating)
+          rating(rating)
         `)
         .limit(limit * 2) // Get more initially to filter by rating
 
@@ -441,7 +444,7 @@ class GameDataService {
         .from('game')
         .select(`
           *,
-          ratings:rating(rating)
+          rating(rating)
         `)
         .order('created_at', { ascending: false })
         .limit(limit)
@@ -468,7 +471,7 @@ class GameDataService {
           .from('game')
           .select(`
             *,
-            ratings:rating(rating)
+            rating(rating)
           `)
           .eq('id', gameId)
           .single(),
@@ -507,7 +510,7 @@ class GameDataService {
         .from('game')
         .select(`
           *,
-          ratings:rating(rating)
+          rating(rating)
         `)
         .contains('genres', [genre])
         .limit(limit)
@@ -532,7 +535,7 @@ class GameDataService {
         .from('game')
         .select(`
           *,
-          ratings:rating(rating)
+          rating(rating)
         `)
         .contains('platforms', [platform])
         .limit(limit)
@@ -552,15 +555,18 @@ class GameDataService {
   }
 
   private transformGameWithRatings(game: GameWithRating): GameWithCalculatedFields {
-    const { ratings, ...gameData } = game
+    const { rating, ratings, ...gameData } = game
+    
+    // Handle both old and new data structure for compatibility
+    const ratingData = rating || ratings || []
     
     // Calculate average rating and count
     let averageUserRating = 0
     let totalUserRatings = 0
     
-    if (ratings && ratings.length > 0) {
-      totalUserRatings = ratings.length
-      const sum = ratings.reduce((acc, r) => acc + r.rating, 0)
+    if (ratingData && ratingData.length > 0) {
+      totalUserRatings = ratingData.length
+      const sum = ratingData.reduce((acc, r) => acc + r.rating, 0)
       averageUserRating = sum / totalUserRatings
     }
 
@@ -582,6 +588,105 @@ class GameDataService {
     
     // If it's an IGDB image ID, construct the URL
     return `https://images.igdb.com/igdb/image/upload/t_cover_${size}/${imageUrl}.jpg`
+  }
+
+  /**
+   * Get game by IGDB ID with API fallback - if not in database, fetch from IGDB and optionally add
+   */
+  async getGameByIGDBIdWithFallback(
+    igdbId: number, 
+    autoAdd: boolean = false
+  ): Promise<GameWithCalculatedFields | null> {
+    try {
+      // First try to get from database
+      const dbGame = await this.getGameByIGDBId(igdbId);
+      if (dbGame) {
+        return dbGame;
+      }
+
+      console.log(`🌐 Game ${igdbId} not in database, fetching from IGDB...`);
+
+      // Fetch from IGDB API
+      const igdbGame = await igdbService.getGameById(igdbId);
+      if (!igdbGame) {
+        return null;
+      }
+
+      // Transform to our format
+      const transformedGame = igdbService.transformGame(igdbGame);
+
+      if (autoAdd) {
+        console.log(`💾 Auto-adding game ${igdbGame.name} to database...`);
+        
+        try {
+          await enhancedSearchService.addMissingGamesToDatabase([igdbGame]);
+          
+          // Try to fetch the newly added game
+          const newDbGame = await this.getGameByIGDBId(igdbId);
+          if (newDbGame) {
+            return newDbGame;
+          }
+        } catch (addError) {
+          console.error('Failed to auto-add game to database:', addError);
+        }
+      }
+
+      // Return as temporary result (not in database)
+      return {
+        ...transformedGame,
+        averageUserRating: 0,
+        totalUserRatings: 0,
+        // Mark as temporary/external
+        id: -igdbId // Negative ID to indicate it's not in our database
+      } as GameWithCalculatedFields;
+
+    } catch (error) {
+      console.error('Error in getGameByIGDBIdWithFallback:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Search for games with enhanced fallback logic
+   */
+  async searchGamesEnhanced(
+    query: string,
+    options: {
+      limit?: number;
+      enableAPIFallback?: boolean;
+      autoAddMissing?: boolean;
+    } = {}
+  ): Promise<GameWithCalculatedFields[]> {
+    const { limit = 20, enableAPIFallback = true, autoAddMissing = false } = options;
+
+    try {
+      const searchResponse = await enhancedSearchService.searchWithFallback(
+        {
+          query,
+          enableAPIFallback,
+          fallbackThreshold: 3
+        },
+        { limit }
+      );
+
+      // If we got IGDB results and auto-add is enabled, add missing games
+      if (autoAddMissing && searchResponse.source !== 'database') {
+        const igdbGames = await igdbService.searchGames(query, 5);
+        if (igdbGames.length > 0) {
+          try {
+            await enhancedSearchService.addMissingGamesToDatabase(igdbGames);
+            console.log(`💾 Auto-added ${igdbGames.length} missing games to database`);
+          } catch (error) {
+            console.error('Failed to auto-add missing games:', error);
+          }
+        }
+      }
+
+      return searchResponse.games;
+    } catch (error) {
+      console.error('Enhanced search failed:', error);
+      return [];
+    }
   }
 }
 
