@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { StarRating } from './StarRating';
 import { Calendar, ListMusic, Star, Plus, X } from 'lucide-react';
 import { supabase } from '../services/supabase';
-import { imageOptimizer } from '../utils/imageOptimization';
 import { GamePickerModal } from './GamePickerModal';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
@@ -24,7 +23,7 @@ interface Game {
 interface TopGame {
   id: number;
   name: string;
-  pic_url: string;
+  cover_url: string;
   genre: string;
   rating: number;
 }
@@ -203,7 +202,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
           game:game_id (
             id,
             name,
-            pic_url,
+            cover_url,
             genre
           )
         `)
@@ -218,7 +217,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
         .map(item => ({
           id: item.game.id,
           name: item.game.name,
-          pic_url: item.game.pic_url || '/default-cover.png',
+          cover_url: item.game.cover_url || '/default-cover.png',
           genre: item.game.genre || '',
           rating: item.rating
         }));
@@ -605,9 +604,6 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
         {/* No Games State */}
         {!isLoadingUserGames && userTopGames.every(g => !g.game) && (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Star className="h-8 w-8 text-gray-500" />
-            </div>
             <h3 className="text-lg font-medium text-white mb-2">Create Your Top 5</h3>
             <p className="text-gray-400 mb-4">
               {isOwnProfile ? 'Review some games first to create your Top 5!' : 'This user hasn\'t created their Top 5 yet.'}
@@ -864,7 +860,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
               >
                 <div className="relative">
                   <img
-                    src={imageOptimizer.optimizeImage(game.pic_url, { width: 300, height: 400, quality: 85 })}
+                    src={game.cover_url}
                     alt={game.name}
                     className="w-full h-64 object-cover rounded-lg"
                     loading="eager"
@@ -891,7 +887,6 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                   <h3 className="text-white font-medium text-center group-hover:text-purple-400 transition-colors">
                     {game.name}
                   </h3>
-                  <p className="text-gray-400 text-sm text-center">{game.genre}</p>
                 </div>
               </Link>
             ))}
@@ -918,7 +913,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
               >
                 <div className="relative flex-shrink-0">
                   <img
-                    src={imageOptimizer.optimizeImage(game.pic_url, { width: 200, height: 300, quality: 85 })}
+                    src={game.cover_url}
                     alt={game.name}
                     className="w-16 h-20 object-cover rounded"
                     loading="eager"
@@ -945,7 +940,6 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                   <h3 className="text-white font-medium group-hover:text-purple-400 transition-colors">
                     {game.name}
                   </h3>
-                  <p className="text-gray-400 text-sm">{game.genre}</p>
                 </div>
               </Link>
             ))}
@@ -1010,7 +1004,6 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                 <h3 className="text-white font-medium text-center group-hover:text-purple-400 transition-colors">
                   {game.name}
                 </h3>
-                <p className="text-gray-400 text-sm text-center">{game.genre}</p>
               </div>
             </Link>
           ))}
@@ -1064,7 +1057,6 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                 <h3 className="text-white font-medium group-hover:text-purple-400 transition-colors">
                   {game.name}
                 </h3>
-                <p className="text-gray-400 text-sm">{game.genre}</p>
               </div>
             </Link>
           ))}
