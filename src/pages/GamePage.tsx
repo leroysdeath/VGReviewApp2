@@ -197,6 +197,7 @@ export const GamePage: React.FC = () => {
         if (gameData) {
           console.log('✅ Game loaded successfully:', gameData.name);
           console.log(`✅ Loaded ${reviewData.length} reviews`);
+          console.log('📊 Raw review data:', reviewData);
           dispatch({ type: 'LOAD_GAME_SUCCESS', payload: { game: gameData, reviews: reviewData } });
         } else {
           console.log('❌ Game not found for IGDB ID:', id);
@@ -433,8 +434,19 @@ export const GamePage: React.FC = () => {
     }
     
     try {
+      // Debug logging
+      console.log('📊 Bar Graph Debug:', {
+        reviews: reviews,
+        validRatings: validRatings,
+        validRatingsCount: validRatings.length,
+        reviewsCount: reviews.length,
+        sampleRating: validRatings[0]
+      });
+      
       // Get distribution already in ascending order (1-10)
-      return generateRatingDistribution(validRatings);
+      const distribution = generateRatingDistribution(validRatings);
+      console.log('📊 Generated distribution:', distribution);
+      return distribution;
     } catch (error) {
       console.error('Error generating rating distribution:', error);
       // Return default distribution on error
