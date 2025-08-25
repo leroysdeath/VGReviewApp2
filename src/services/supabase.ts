@@ -9,7 +9,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    // Use a unique storage key to avoid conflicts
+    storageKey: 'vgreviewapp-auth-token'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'vgreviewapp-web'
+    }
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+});
 
 // Helper functions for common database operations
 export const supabaseHelpers = {

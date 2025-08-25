@@ -115,7 +115,7 @@ export const UserPage: React.FC = () => {
           .from('rating')
           .select(`
             *,
-            game:game!rating_game_id_fkey(*)
+            game:game_id(*)
           `)
           .eq('user_id', numericId)
           .not('rating', 'is', null);

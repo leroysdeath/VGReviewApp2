@@ -6,72 +6,204 @@
 -- Add foreign key constraints for user_follow table
 -- This enables the following:following_id and follower:follower_id syntax
 
-ALTER TABLE user_follow 
-ADD CONSTRAINT fk_user_follow_follower 
-FOREIGN KEY (follower_id) 
-REFERENCES "user"(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_user_follow_follower' 
+        AND table_name = 'user_follow'
+    ) THEN
+        ALTER TABLE user_follow 
+        ADD CONSTRAINT fk_user_follow_follower 
+        FOREIGN KEY (follower_id) 
+        REFERENCES "user"(id) ON DELETE CASCADE;
+        RAISE NOTICE 'Created constraint: fk_user_follow_follower';
+    ELSE
+        RAISE NOTICE 'Constraint already exists: fk_user_follow_follower';
+    END IF;
+END $$;
 
-ALTER TABLE user_follow 
-ADD CONSTRAINT fk_user_follow_following 
-FOREIGN KEY (following_id) 
-REFERENCES "user"(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_user_follow_following' 
+        AND table_name = 'user_follow'
+    ) THEN
+        ALTER TABLE user_follow 
+        ADD CONSTRAINT fk_user_follow_following 
+        FOREIGN KEY (following_id) 
+        REFERENCES "user"(id) ON DELETE CASCADE;
+        RAISE NOTICE 'Created constraint: fk_user_follow_following';
+    ELSE
+        RAISE NOTICE 'Constraint already exists: fk_user_follow_following';
+    END IF;
+END $$;
 
 -- Add foreign key constraint for game_progress table
 -- This enables the game:game_id syntax
 
-ALTER TABLE game_progress 
-ADD CONSTRAINT fk_game_progress_user 
-FOREIGN KEY (user_id) 
-REFERENCES "user"(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_game_progress_user' 
+        AND table_name = 'game_progress'
+    ) THEN
+        ALTER TABLE game_progress 
+        ADD CONSTRAINT fk_game_progress_user 
+        FOREIGN KEY (user_id) 
+        REFERENCES "user"(id) ON DELETE CASCADE;
+        RAISE NOTICE 'Created constraint: fk_game_progress_user';
+    ELSE
+        RAISE NOTICE 'Constraint already exists: fk_game_progress_user';
+    END IF;
+END $$;
 
-ALTER TABLE game_progress 
-ADD CONSTRAINT fk_game_progress_game 
-FOREIGN KEY (game_id) 
-REFERENCES game(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_game_progress_game' 
+        AND table_name = 'game_progress'
+    ) THEN
+        ALTER TABLE game_progress 
+        ADD CONSTRAINT fk_game_progress_game 
+        FOREIGN KEY (game_id) 
+        REFERENCES game(id) ON DELETE CASCADE;
+        RAISE NOTICE 'Created constraint: fk_game_progress_game';
+    ELSE
+        RAISE NOTICE 'Constraint already exists: fk_game_progress_game';
+    END IF;
+END $$;
 
 -- Add foreign key constraint for rating table
 -- This enables the game:game_id syntax in reviews
 
-ALTER TABLE rating 
-ADD CONSTRAINT fk_rating_user 
-FOREIGN KEY (user_id) 
-REFERENCES "user"(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_rating_user' 
+        AND table_name = 'rating'
+    ) THEN
+        ALTER TABLE rating 
+        ADD CONSTRAINT fk_rating_user 
+        FOREIGN KEY (user_id) 
+        REFERENCES "user"(id) ON DELETE CASCADE;
+        RAISE NOTICE 'Created constraint: fk_rating_user';
+    ELSE
+        RAISE NOTICE 'Constraint already exists: fk_rating_user';
+    END IF;
+END $$;
 
-ALTER TABLE rating 
-ADD CONSTRAINT fk_rating_game 
-FOREIGN KEY (game_id) 
-REFERENCES game(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_rating_game' 
+        AND table_name = 'rating'
+    ) THEN
+        ALTER TABLE rating 
+        ADD CONSTRAINT fk_rating_game 
+        FOREIGN KEY (game_id) 
+        REFERENCES game(id) ON DELETE CASCADE;
+        RAISE NOTICE 'Created constraint: fk_rating_game';
+    ELSE
+        RAISE NOTICE 'Constraint already exists: fk_rating_game';
+    END IF;
+END $$;
 
 -- Add foreign key constraint for comment table
 -- This ensures referential integrity for comments
 
-ALTER TABLE comment 
-ADD CONSTRAINT fk_comment_user 
-FOREIGN KEY (user_id) 
-REFERENCES "user"(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_comment_user' 
+        AND table_name = 'comment'
+    ) THEN
+        ALTER TABLE comment 
+        ADD CONSTRAINT fk_comment_user 
+        FOREIGN KEY (user_id) 
+        REFERENCES "user"(id) ON DELETE CASCADE;
+        RAISE NOTICE 'Created constraint: fk_comment_user';
+    ELSE
+        RAISE NOTICE 'Constraint already exists: fk_comment_user';
+    END IF;
+END $$;
 
-ALTER TABLE comment 
-ADD CONSTRAINT fk_comment_rating 
-FOREIGN KEY (rating_id) 
-REFERENCES rating(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_comment_rating' 
+        AND table_name = 'comment'
+    ) THEN
+        ALTER TABLE comment 
+        ADD CONSTRAINT fk_comment_rating 
+        FOREIGN KEY (rating_id) 
+        REFERENCES rating(id) ON DELETE CASCADE;
+        RAISE NOTICE 'Created constraint: fk_comment_rating';
+    ELSE
+        RAISE NOTICE 'Constraint already exists: fk_comment_rating';
+    END IF;
+END $$;
 
 -- Add foreign key constraint for content_like table
 -- This ensures referential integrity for likes
 
-ALTER TABLE content_like 
-ADD CONSTRAINT fk_content_like_user 
-FOREIGN KEY (user_id) 
-REFERENCES "user"(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_content_like_user' 
+        AND table_name = 'content_like'
+    ) THEN
+        ALTER TABLE content_like 
+        ADD CONSTRAINT fk_content_like_user 
+        FOREIGN KEY (user_id) 
+        REFERENCES "user"(id) ON DELETE CASCADE;
+        RAISE NOTICE 'Created constraint: fk_content_like_user';
+    ELSE
+        RAISE NOTICE 'Constraint already exists: fk_content_like_user';
+    END IF;
+END $$;
 
-ALTER TABLE content_like 
-ADD CONSTRAINT fk_content_like_rating 
-FOREIGN KEY (rating_id) 
-REFERENCES rating(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_content_like_rating' 
+        AND table_name = 'content_like'
+    ) THEN
+        ALTER TABLE content_like 
+        ADD CONSTRAINT fk_content_like_rating 
+        FOREIGN KEY (rating_id) 
+        REFERENCES rating(id) ON DELETE CASCADE;
+        RAISE NOTICE 'Created constraint: fk_content_like_rating';
+    ELSE
+        RAISE NOTICE 'Constraint already exists: fk_content_like_rating';
+    END IF;
+END $$;
 
-ALTER TABLE content_like 
-ADD CONSTRAINT fk_content_like_comment 
-FOREIGN KEY (comment_id) 
-REFERENCES comment(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_content_like_comment' 
+        AND table_name = 'content_like'
+    ) THEN
+        ALTER TABLE content_like 
+        ADD CONSTRAINT fk_content_like_comment 
+        FOREIGN KEY (comment_id) 
+        REFERENCES comment(id) ON DELETE CASCADE;
+        RAISE NOTICE 'Created constraint: fk_content_like_comment';
+    ELSE
+        RAISE NOTICE 'Constraint already exists: fk_content_like_comment';
+    END IF;
+END $$;
 
 -- Create indexes for foreign key columns that don't already have them
 -- Note: Most indexes already exist, only creating missing ones
