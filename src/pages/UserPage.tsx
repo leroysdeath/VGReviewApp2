@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { ProfileInfo } from '../components/ProfileInfo';
 import { ProfileDetails } from '../components/ProfileDetails';
 import { TopGames } from '../components/profile/TopGames';
-import { ReviewsList } from '../components/profile/ReviewsList';
+import { PlaylistTabs } from '../components/profile/PlaylistTabs';
 import { ActivityFeed } from '../components/profile/ActivityFeed';
 import { FollowersFollowingModal } from '../components/FollowersFollowingModal';
 import { GamesModal } from '../components/GamesModal';
@@ -28,8 +28,7 @@ export const UserPage: React.FC = () => {
       return <Navigate to="/users" replace />;
     }
   }
-  const [activeTab, setActiveTab] = useState<'top5' | 'top10' | 'reviews' | 'activity'>('top5');
-  const [reviewFilter, setReviewFilter] = useState('recent');
+  const [activeTab, setActiveTab] = useState<'top5' | 'top10' | 'playlist' | 'activity'>('top5');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -237,10 +236,10 @@ export const UserPage: React.FC = () => {
             Top 10
           </button>
           <button
-            onClick={() => setActiveTab('reviews')}
-            className={`pb-2 ${activeTab === 'reviews' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
+            onClick={() => setActiveTab('playlist')}
+            className={`pb-2 ${activeTab === 'playlist' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
-            Reviews
+            Playlist
           </button>
           <button
             onClick={() => setActiveTab('activity')}
@@ -257,12 +256,8 @@ export const UserPage: React.FC = () => {
         {activeTab === 'top10' && (
           <TopGames userId={id} limit={10} />
         )}
-        {activeTab === 'reviews' && (
-          <ReviewsList 
-            userId={id} 
-            filter={reviewFilter}
-            onFilterChange={setReviewFilter}
-          />
+        {activeTab === 'playlist' && (
+          <PlaylistTabs userId={id!} isOwnProfile={isOwnProfile} />
         )}
         {activeTab === 'activity' && (
           <ActivityFeed userId={id} />
