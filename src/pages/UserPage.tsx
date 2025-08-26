@@ -42,48 +42,7 @@ export const UserPage: React.FC = () => {
   const [isGamesModalOpen, setIsGamesModalOpen] = useState(false);
   const [gamesModalInitialTab, setGamesModalInitialTab] = useState<'all' | 'started' | 'finished'>('all');
 
-  // Handle profile save using simplified userService
-  const handleSaveProfile = useCallback(async (profileData: UserUpdate) => {
-    try {
-      if (!id) {
-        throw new Error('No user ID available');
-      }
-
-      const updateResult = await userServiceSimple.updateUser(id, profileData);
-      
-      if (!updateResult.success) {
-        throw new Error(updateResult.error || 'Profile update failed');
-      }
-
-      // Refresh the user data after successful update
-      await fetchUserData();
-      
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      throw error;
-    }
-  }, [id, fetchUserData]);
-
-  // Modal handlers
-  const handleEditClick = () => {
-    setShowSettingsModal(true);
-  };
-
-  const handleFollowersClick = () => {
-    setModalInitialTab('followers');
-    setIsFollowersModalOpen(true);
-  };
-
-  const handleFollowingClick = () => {
-    setModalInitialTab('following');
-    setIsFollowersModalOpen(true);
-  };
-
-  const handleGamesClick = () => {
-    setGamesModalInitialTab('all');
-    setIsGamesModalOpen(true);
-  };
-
+  // Fetch user data - defined first to avoid temporal dead zone
   const fetchUserData = useCallback(async () => {
     // Parse ID to integer for database queries
     const numericId = parseInt(id);
@@ -164,6 +123,48 @@ export const UserPage: React.FC = () => {
       setLoading(false);
     }
   }, [id, isAuthenticated, authUser]);
+
+  // Handle profile save using simplified userService
+  const handleSaveProfile = useCallback(async (profileData: UserUpdate) => {
+    try {
+      if (!id) {
+        throw new Error('No user ID available');
+      }
+
+      const updateResult = await userServiceSimple.updateUser(id, profileData);
+      
+      if (!updateResult.success) {
+        throw new Error(updateResult.error || 'Profile update failed');
+      }
+
+      // Refresh the user data after successful update
+      await fetchUserData();
+      
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      throw error;
+    }
+  }, [id, fetchUserData]);
+
+  // Modal handlers
+  const handleEditClick = () => {
+    setShowSettingsModal(true);
+  };
+
+  const handleFollowersClick = () => {
+    setModalInitialTab('followers');
+    setIsFollowersModalOpen(true);
+  };
+
+  const handleFollowingClick = () => {
+    setModalInitialTab('following');
+    setIsFollowersModalOpen(true);
+  };
+
+  const handleGamesClick = () => {
+    setGamesModalInitialTab('all');
+    setIsGamesModalOpen(true);
+  };
   
   useEffect(() => {
     fetchUserData();
