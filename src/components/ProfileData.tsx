@@ -5,6 +5,7 @@ import { Calendar, ListMusic, Star, Plus, X } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { GamePickerModal } from './GamePickerModal';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { getGameUrl } from '../utils/gameUrls';
 
 interface Game {
   id: string;
@@ -22,6 +23,8 @@ interface Game {
 
 interface TopGame {
   id: number;
+  igdb_id?: number;
+  slug?: string;
   name: string;
   cover_url: string;
   genre: string;
@@ -32,6 +35,8 @@ interface UserTopGame {
   position: number;
   game: {
     id: number;
+    igdb_id?: number;
+    slug?: string;
     name: string;
     cover_url: string;
     genre?: string;
@@ -76,7 +81,7 @@ const GameCard: React.FC<{
   if (isDesktop) {
     return (
       <Link
-        to={`/game/${game.id}`}
+        to={getGameUrl(game)}
         className="group relative hover:scale-105 transition-transform"
       >
         <div className="relative">
@@ -120,7 +125,7 @@ const GameCard: React.FC<{
   // Mobile version
   return (
     <Link
-      to={`/game/${game.id}`}
+      to={getGameUrl(game)}
       className="group flex items-center gap-3 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
     >
       <div className="relative flex-shrink-0">
@@ -201,6 +206,8 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
           rating,
           game:game_id (
             id,
+            igdb_id,
+            slug,
             name,
             cover_url,
             genre
@@ -216,6 +223,8 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
         .filter(item => item.game)
         .map(item => ({
           id: item.game.id,
+          igdb_id: item.game.igdb_id,
+          slug: item.game.slug,
           name: item.game.name,
           cover_url: item.game.cover_url || '/default-cover.png',
           genre: item.game.genre || '',
@@ -245,6 +254,8 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
           position,
           game:game_id (
             id,
+            igdb_id,
+            slug,
             name,
             cover_url,
             genre
@@ -344,7 +355,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
     // Update userTopGames state optimistically
     const updatedGames = userTopGames.map(item => 
       item.position === position 
-        ? { ...item, game: { id: parseInt(gameId), name: 'Loading...', cover_url: '' } } 
+        ? { ...item, game: { id: parseInt(gameId), igdb_id: undefined, slug: undefined, name: 'Loading...', cover_url: '' } } 
         : item
     );
     
@@ -668,7 +679,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
                   if (gameData?.game && !isEditingTop5) {
                     return (
                       <div key={position} className="relative group">
-                        <Link to={`/game/${gameData.game.id}`}>
+                        <Link to={getGameUrl(gameData.game)}>
                           <div className="relative aspect-[3/4]">
                             <img
                               src={gameData.game.cover_url}
@@ -726,7 +737,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
             if (gameData?.game) {
               return (
                 <div key={position} className="relative group">
-                  <Link to={`/game/${gameData.game.id}`} className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
+                  <Link to={getGameUrl(gameData.game)} className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
                     <div className="relative flex-shrink-0">
                       <img
                         src={gameData.game.cover_url}
@@ -855,7 +866,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
             {topGames.map((game, index) => (
               <Link
                 key={game.id}
-                to={`/game/${game.id}`}
+                to={getGameUrl(game)}
                 className="group relative hover:scale-105 transition-transform"
               >
                 <div className="relative">
@@ -908,7 +919,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
             {topGames.map((game, index) => (
               <Link
                 key={game.id}
-                to={`/game/${game.id}`}
+                to={getGameUrl(game)}
                 className="group flex items-center gap-3 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
               >
                 <div className="relative flex-shrink-0">
@@ -972,7 +983,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
           {topGames.map((game, index) => (
             <Link
               key={game.id}
-              to={`/game/${game.id}`}
+              to={getGameUrl(game)}
               className="group relative hover:scale-105 transition-transform"
             >
               <div className="relative">
@@ -1025,7 +1036,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
           {topGames.map((game, index) => (
             <Link
               key={game.id}
-              to={`/game/${game.id}`}
+              to={getGameUrl(game)}
               className="group flex items-center gap-3 p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
             >
               <div className="relative flex-shrink-0">

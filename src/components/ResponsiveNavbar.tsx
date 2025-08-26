@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2, Home, Users, MessageSquare, Bell, LogOut, Settings, Clock, TrendingUp, Database, Loader2, Star, User as UserIcon } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2, Home, Users, MessageSquare, LogOut, Settings, Clock, TrendingUp, Database, Loader2, Star, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthModal } from '../context/AuthModalContext'; // NEW IMPORT
 import { useResponsive } from '../hooks/useResponsive';
-import { NotificationBadge } from './NotificationBadge';
-import { NotificationCenter } from './NotificationCenter';
 import { useGameSearch } from '../hooks/useGameSearch';
 import { igdbService } from '../services/igdbService';
 import type { GameWithCalculatedFields } from '../types/database';
@@ -37,7 +35,6 @@ type SearchTab = 'games' | 'users';
 
 export const ResponsiveNavbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('games');
@@ -399,9 +396,6 @@ export const ResponsiveNavbar: React.FC = () => {
 
               {/* User Avatar or Menu Button */}
               <div className="flex items-center space-x-2">
-                {isAuthenticated && (
-                  <NotificationBadge onClick={() => setIsNotificationCenterOpen(true)} />
-                )}
                 <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="p-2 text-gray-400 hover:text-white transition-colors"
@@ -660,12 +654,9 @@ export const ResponsiveNavbar: React.FC = () => {
                   {/* Authenticated User Links */}
                   {isAuthenticated && (
                     <>
-                      <div className="border-t border-gray-700 pt-2 mt-2">
-                        <p className="text-xs text-gray-500 uppercase tracking-wide px-3 py-1">Profile</p>
-                      </div>
                       <Link
                         to={dbUserId ? `/user/${dbUserId}` : "#"}
-                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors border-t border-gray-700 pt-2 mt-2"
                         onClick={(e) => {
                           if (!dbUserId) {
                             e.preventDefault();
@@ -678,14 +669,11 @@ export const ResponsiveNavbar: React.FC = () => {
                         }}
                       >
                         <User className="h-5 w-5" />
-                        <span>My Profile</span>
+                        <span>Profile</span>
                         {dbUserIdLoading && (
                           <Loader2 className="h-3 w-3 animate-spin ml-1" />
                         )}
                       </Link>
-                      <div className="border-t border-gray-700 pt-2 mt-2">
-                        <p className="text-xs text-gray-500 uppercase tracking-wide px-3 py-1">User</p>
-                      </div>
                       <Link
                         to="/review"
                         className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
@@ -740,11 +728,6 @@ export const ResponsiveNavbar: React.FC = () => {
           </div>
         )}
 
-        <NotificationCenter
-          userId={user?.id || ""}
-          isOpen={isNotificationCenterOpen}
-          onClose={() => setIsNotificationCenterOpen(false)}
-        />
       </>
     );
   }
@@ -1054,10 +1037,6 @@ export const ResponsiveNavbar: React.FC = () => {
           {/* Desktop User Menu */}
           <div className="hidden md:block">
             <div className="ml-4 flex items-center gap-2 md:ml-6">
-              {isAuthenticated && (
-                <NotificationBadge onClick={() => setIsNotificationCenterOpen(true)} />
-              )}
-              
               {/* User Menu */}
               {isAuthenticated ? (
                <div className="relative">
@@ -1086,9 +1065,6 @@ export const ResponsiveNavbar: React.FC = () => {
                       ref={dropdownRef}
                       className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50">
                       <div className="py-1">
-                        <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-700 mb-1">
-                          Profile
-                        </div>
                         <Link
                           to={dbUserId ? `/user/${dbUserId}` : "#"}
                           className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -1101,12 +1077,8 @@ export const ResponsiveNavbar: React.FC = () => {
                           }}
                         >
                           <User className="h-4 w-4" />
-                          <span>My Profile</span>
+                          <span>Profile</span>
                         </Link>
-                        <div className="border-t border-gray-700 my-1"></div>
-                        <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                          User
-                        </div>
                         <Link
                           to="/review"
                           className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -1191,12 +1163,9 @@ export const ResponsiveNavbar: React.FC = () => {
             
             {isAuthenticated ? (
               <>
-                <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider border-t border-gray-700 mt-2 pt-2">
-                  Profile
-                </div>
                 <Link
                   to={dbUserId ? `/user/${dbUserId}` : "#"}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors border-t border-gray-700 mt-2 pt-2"
                   onClick={(e) => {
                     if (!dbUserId) {
                       e.preventDefault();
@@ -1205,7 +1174,7 @@ export const ResponsiveNavbar: React.FC = () => {
                     }
                   }}
                 >
-                  My Profile
+                  Profile
                 </Link>
                 <Link
                   to="/review"
@@ -1232,13 +1201,6 @@ export const ResponsiveNavbar: React.FC = () => {
           </div>
         </div>
       )}
-      
-      {/* Notification Center */}
-      <NotificationCenter
-        userId={user?.id || ""}
-        isOpen={isNotificationCenterOpen}
-        onClose={() => setIsNotificationCenterOpen(false)}
-      />
     </nav>
   );
 };
