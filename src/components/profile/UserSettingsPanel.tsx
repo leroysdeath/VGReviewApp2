@@ -230,9 +230,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   });
   
   const [activeTab, setActiveTab] = useState<'profile' | 'account'>('profile');
-  const [isLoading, setIsLoading] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData.avatar || null);
   const [usernameStatus, setUsernameStatus] = useState<{
@@ -485,13 +484,22 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         throw new Error('onSave function is not provided');
       }
       
+      setIsUpdating(true);
+      setSaveSuccess(false);
+      
       await onSave(submitData as ProfileUpdateData);
       
-      setSaveSuccess(true);
+      // Show updating message briefly
       setTimeout(() => {
-        setSaveSuccess(false);
-        onSuccess?.();
-      }, 1500);
+        setIsUpdating(false);
+        setShowSuccessMessage(true);
+        
+        // Show success message then close modal
+        setTimeout(() => {
+          setShowSuccessMessage(false);
+          onSuccess?.();
+        }, 2000);
+      }, 500);
 
       // Update original values
       setOriginalValues(data);
@@ -499,6 +507,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     } catch (error) {
       console.error('Save error:', error);
       setSaveError('Failed to save changes. Please try again.');
+      setIsUpdating(false);
+      setShowSuccessMessage(false);
     } finally {
       setIsLoading(false);
     }
@@ -635,8 +645,24 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       )}
 
       <div className="p-6">
+        {/* Updating message */}
+        {false && (
+          <div className="mb-6 p-3 bg-blue-900/50 border border-blue-700 rounded-lg flex items-start gap-3">
+            <Loader2 className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5 animate-spin" />
+            <p className="text-blue-300 text-sm">Updating your profile...</p>
+          </div>
+        )}
+
         {/* Success message */}
-        {saveSuccess && (
+        {false && (
+          <div className="mb-6 p-3 bg-green-900/50 border border-green-700 rounded-lg flex items-start gap-3">
+            <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+            <p className="text-green-300 text-sm">Profile updated successfully!</p>
+          </div>
+        )}
+
+        {/* Legacy success message (fallback) */}
+        {false && !false && !false && (
           <div className="mb-6 p-3 bg-green-900/50 border border-green-700 rounded-lg flex items-start gap-3">
             <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
             <p className="text-green-300 text-sm">Changes saved successfully!</p>
@@ -644,10 +670,10 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         )}
 
         {/* Error message */}
-        {saveError && (
+        {submitError && (
           <div className="mb-6 p-3 bg-red-900/50 border border-red-700 rounded-lg flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-red-300 text-sm">{saveError}</p>
+            <p className="text-red-300 text-sm">{submitError}</p>
           </div>
         )}
 
@@ -680,7 +706,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                       accept="image/*"
                       className="hidden"
                       onChange={handleAvatarChange}
-                      disabled={isLoading}
+                      disabled={isSubmitting}
                     />
                   </label>
                   <p className="text-xs text-gray-400 mt-2">
@@ -710,7 +736,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   }`}
                   placeholder="GamerTag"
                   autoComplete="off"
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 />
                 {/* Username status indicator */}
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -752,7 +778,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                 {...register('displayName')}
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
                 placeholder="Your public display name"
-                disabled={isLoading}
+                disabled={isSubmitting}
               />
               {errors.displayName && (
                 <p className="mt-1 text-sm text-red-400">{errors.displayName.message}</p>
@@ -778,7 +804,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   errors.bio ? 'border-red-500' : 'border-gray-600'
                 }`}
                 placeholder="Tell us about yourself"
-                disabled={isLoading}
+                disabled={isSubmitting}
               />
               {errors.bio && (
                 <p className="mt-1 text-sm text-red-400">{errors.bio.message}</p>
@@ -801,7 +827,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                         type="checkbox"
                         checked={selectedPlatforms.has(platform)}
                         onChange={() => handlePlatformToggle(platform)}
-                        disabled={isLoading}
+                        disabled={isSubmitting}
                         className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
                       />
                       <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
@@ -835,7 +861,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   {...register('location')}
                   className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
                   placeholder="City, Country"
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 />
               </div>
               {errors.location && (
@@ -858,7 +884,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                     errors.website ? 'border-red-500' : 'border-gray-600'
                   }`}
                   placeholder="example.com or https://example.com"
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 />
               </div>
               {errors.website && (
@@ -871,7 +897,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               <button
                 type="submit"
                 disabled={
-                  isLoading || 
+                  isSubmitting || 
                   (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar)) || 
                   Object.keys(errors).length > 0 ||
                   (usernameStatus.available === false && watchedUsername !== originalValues.username) ||
@@ -880,7 +906,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                 onClick={() => {
                   console.log('🔴 BUTTON CLICKED!');
                   console.log('🔴 Button state:', {
-                    isLoading,
+                    isSubmitting,
                     isDirty,
                     dirtyFields,
                     avatarChanged: avatarPreview !== (originalValues.avatar || initialData.avatar),
@@ -888,12 +914,12 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                     isValid,
                     hasErrors: Object.keys(errors).length > 0,
                     usernameStatus,
-                    disabled: isLoading || (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar)) || Object.keys(errors).length > 0 || (usernameStatus.available === false && watchedUsername !== originalValues.username) || usernameStatus.checking
+                    disabled: isSubmitting || (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar)) || Object.keys(errors).length > 0 || (usernameStatus.available === false && watchedUsername !== originalValues.username) || usernameStatus.checking
                   });
                 }}
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
               >
-                {isLoading ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
                     Saving...
@@ -931,7 +957,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                         passwordForm.formState.errors.currentPassword ? 'border-red-500' : 'border-gray-600'
                       }`}
                       placeholder="••••••••"
-                      disabled={isLoading}
+                      disabled={isSubmitting}
                     />
                     <button
                       type="button"
@@ -962,7 +988,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                         passwordForm.formState.errors.newPassword ? 'border-red-500' : 'border-gray-600'
                       }`}
                       placeholder="••••••••"
-                      disabled={isLoading}
+                      disabled={isSubmitting}
                     />
                   </div>
                   {passwordForm.formState.errors.newPassword && (
@@ -985,7 +1011,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                         passwordForm.formState.errors.confirmPassword ? 'border-red-500' : 'border-gray-600'
                       }`}
                       placeholder="••••••••"
-                      disabled={isLoading}
+                      disabled={isSubmitting}
                     />
                   </div>
                   {passwordForm.formState.errors.confirmPassword && (
@@ -997,10 +1023,10 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isSubmitting}
                     className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
                   >
-                    {isLoading ? (
+                    {isSubmitting ? (
                       <>
                         <Loader2 className="h-5 w-5 animate-spin" />
                         Updating...
@@ -1033,7 +1059,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                         emailForm.formState.errors.newEmail ? 'border-red-500' : 'border-gray-600'
                       }`}
                       placeholder="your.new@example.com"
-                      disabled={isLoading}
+                      disabled={isSubmitting}
                     />
                   </div>
                   {emailForm.formState.errors.newEmail && (
@@ -1056,7 +1082,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                         emailForm.formState.errors.confirmEmail ? 'border-red-500' : 'border-gray-600'
                       }`}
                       placeholder="your.new@example.com"
-                      disabled={isLoading}
+                      disabled={isSubmitting}
                     />
                   </div>
                   {emailForm.formState.errors.confirmEmail && (
@@ -1068,10 +1094,10 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isSubmitting}
                     className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
                   >
-                    {isLoading ? (
+                    {isSubmitting ? (
                       <>
                         <Loader2 className="h-5 w-5 animate-spin" />
                         Updating...
@@ -1093,7 +1119,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               <AccountDeletionSection 
                 userId={userId}
                 onDeleteAccount={onDeleteAccount}
-                isLoading={isLoading}
+                isSubmitting={isSubmitting}
               />
             </div>
           </div>
