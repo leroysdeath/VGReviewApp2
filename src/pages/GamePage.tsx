@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText } from 'lucide-react';
+import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { AuthModal } from '../components/auth/AuthModal';
@@ -152,6 +152,11 @@ export const GamePage: React.FC = () => {
 
   // Validate IGDB ID parameter
   const isValidId = id && !isNaN(parseInt(id)) && parseInt(id) > 0;
+  
+  // State for text expansion
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+  const [isDeveloperExpanded, setIsDeveloperExpanded] = useState(false);
+  const [isPublisherExpanded, setIsPublisherExpanded] = useState(false);
   
   // Use reducer for centralized state management
   const [state, dispatch] = useReducer(gamePageReducer, initialState);
@@ -530,6 +535,39 @@ export const GamePage: React.FC = () => {
   const totalRatings = validRatings.length;
   const totalReviews = reviewsWithText.length;
 
+  // Helper function to format date to full month name
+  const formatFullDate = (date: Date | string | number | undefined): string => {
+    if (!date) return 'Unknown';
+    
+    try {
+      const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+      
+      if (isNaN(dateObj.getTime())) {
+        return 'Unknown';
+      }
+      
+      const options: Intl.DateTimeFormatOptions = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      };
+      return dateObj.toLocaleDateString('en-US', options);
+    } catch {
+      return 'Unknown';
+    }
+  };
+
+  // Helper to check if text needs truncation (for developers/publishers)
+  const needsTruncation = (text: string | undefined, maxLength: number = 30): boolean => {
+    return text ? text.length > maxLength : false;
+  };
+  
+  // Helper to truncate text
+  const truncateText = (text: string | undefined, maxLength: number = 30): string => {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  };
+
   if (gameLoading) {
     return (
       <div className="min-h-screen bg-gray-900 py-8">
@@ -642,22 +680,78 @@ export const GamePage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {game.first_release_date ? new Date(game.first_release_date).getFullYear() : 'Unknown'}
+                        {formatFullDate(game.first_release_date)}
                       </span>
                     </div>
                     {game.platforms && game.platforms.length > 0 && (
                       <div><strong>Platforms:</strong> {game.platforms.join(', ')}</div>
                     )}
                     {game.developer && (
-                      <div><strong>Developer:</strong> {game.developer}</div>
+                      <div className="flex items-center gap-2">
+                        <strong>Developer:</strong> 
+                        <span className="truncate">
+                          {isDeveloperExpanded || !needsTruncation(game.developer) 
+                            ? game.developer 
+                            : truncateText(game.developer)}
+                        </span>
+                        {needsTruncation(game.developer) && (
+                          <button
+                            onClick={() => setIsDeveloperExpanded(!isDeveloperExpanded)}
+                            className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap"
+                          >
+                            {isDeveloperExpanded ? 'See less' : 'See more'}
+                          </button>
+                        )}
+                      </div>
                     )}
                     {game.publisher && (
-                      <div><strong>Publisher:</strong> {game.publisher}</div>
+                      <div className="flex items-center gap-2">
+                        <strong>Publisher:</strong> 
+                        <span className="truncate">
+                          {isPublisherExpanded || !needsTruncation(game.publisher) 
+                            ? game.publisher 
+                            : truncateText(game.publisher)}
+                        </span>
+                        {needsTruncation(game.publisher) && (
+                          <button
+                            onClick={() => setIsPublisherExpanded(!isPublisherExpanded)}
+                            className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap"
+                          >
+                            {isPublisherExpanded ? 'See less' : 'See more'}
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
-                  <p className="text-gray-300 mb-6 leading-relaxed">
-                    {game.summary || 'No description available.'}
-                  </p>
+                  <div className="mb-6">
+                    <p 
+                      className="text-gray-300 leading-relaxed transition-all duration-300"
+                      style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: !isSummaryExpanded ? 3 : 'unset',
+                        WebkitBoxOrient: 'vertical',
+                        overflow: !isSummaryExpanded ? 'hidden' : 'visible'
+                      }}
+                    >
+                      {game.summary || 'No description available.'}
+                    </p>
+                    {game.summary && game.summary.length > 200 && (
+                      <button
+                        onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                        className="text-purple-400 hover:text-purple-300 text-sm mt-2 flex items-center gap-1"
+                      >
+                        {isSummaryExpanded ? (
+                          <>
+                            See less <ChevronUp className="h-4 w-4" />
+                          </>
+                        ) : (
+                          <>
+                            See more <ChevronDown className="h-4 w-4" />
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -709,34 +803,25 @@ export const GamePage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 ml-4">
+                <div className="ml-auto">
                   {isAuthenticated ? (
-                    <div className="flex items-center gap-3">
-                      <Link
-                        to={`/review/${game.igdb_id}`}
-                        className="relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible bg-purple-600 border-purple-500 hover:bg-purple-700 cursor-pointer"
-                      >
-                        <ScrollText className="h-4 w-4 text-white" />
-                      </Link>
-                      <Link
-                        to={`/review/${game.igdb_id}`}
-                        className={`text-sm ${userHasReviewed ? 'text-purple-400' : 'text-gray-300'} hover:text-purple-400 transition-colors`}
-                      >
+                    <Link
+                      to={`/review/${game.igdb_id}`}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      <ScrollText className="h-4 w-4" />
+                      <span className="text-sm font-medium">
                         {userReviewLoading ? 'Loading...' : userHasReviewed ? 'Edit Review' : 'Write a Review'}
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleAuthRequiredAction('write_review')}
-                        className="relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible bg-purple-600 border-purple-500 hover:bg-purple-700 cursor-pointer"
-                      >
-                        <ScrollText className="h-4 w-4 text-white" />
-                      </button>
-                      <span className="text-sm text-gray-300">
-                        Write a Review
                       </span>
-                    </div>
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => handleAuthRequiredAction('write_review')}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      <ScrollText className="h-4 w-4" />
+                      <span className="text-sm font-medium">Write a Review</span>
+                    </button>
                   )}
                 </div>
               </div>
