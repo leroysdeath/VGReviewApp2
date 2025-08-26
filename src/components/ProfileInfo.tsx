@@ -84,11 +84,6 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false,
             📍 {escapeHtml(user.location)}
           </div>
         )}
-        {user.joinDate && (
-          <div className="text-gray-400 text-sm mt-1">
-            📅 Joined {user.joinDate}
-          </div>
-        )}
       </div>
     </div>
   );
