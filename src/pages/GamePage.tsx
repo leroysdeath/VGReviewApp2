@@ -684,64 +684,62 @@ export const GamePage: React.FC = () => {
                       </span>
                     </div>
                     {game.platforms && game.platforms.length > 0 && (
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <strong className="whitespace-nowrap flex-shrink-0">Platforms:</strong>
                         {!isPlatformsExpanded ? (
                           // Collapsed view - single line
-                          <>
-                            <div className="flex items-center gap-2 truncate flex-1">
-                              <strong className="whitespace-nowrap">Platforms:</strong>
-                              <span className="truncate">
-                                {(() => {
-                                  const platformsText = game.platforms.join(', ');
-                                  return needsTruncation(platformsText, 50) 
-                                    ? truncateText(platformsText, 50)
-                                    : platformsText;
-                                })()}
-                              </span>
-                            </div>
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <span className="truncate">
+                              {(() => {
+                                const platformsText = game.platforms.join(', ');
+                                return needsTruncation(platformsText, 50) 
+                                  ? truncateText(platformsText, 50)
+                                  : platformsText;
+                              })()}
+                            </span>
                             {needsTruncation(game.platforms.join(', '), 50) && (
                               <button
                                 onClick={() => setIsPlatformsExpanded(true)}
-                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap"
+                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-1"
                               >
                                 See more
                               </button>
                             )}
-                          </>
+                          </div>
                         ) : (
                           // Expanded view - can wrap to multiple lines
-                          <>
-                            <div className="flex-1">
-                              <strong>Platforms:</strong> {game.platforms.join(', ')}
-                            </div>
+                          <div className="flex items-start gap-2 flex-1">
+                            <span className="flex-1">
+                              {game.platforms.join(', ')}
+                            </span>
                             <button
                               onClick={() => setIsPlatformsExpanded(false)}
-                              className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap"
+                              className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0"
                             >
                               See less
                             </button>
-                          </>
+                          </div>
                         )}
                       </div>
                     )}
                     {(game.developer || game.publisher) && (
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         {!isDevPubExpanded ? (
                           // Collapsed view - single line
                           <>
-                            <div className="flex items-center gap-2 truncate flex-1">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
                               {game.developer && (
                                 <>
-                                  <strong className="whitespace-nowrap">Developer:</strong>
+                                  <strong className="whitespace-nowrap flex-shrink-0">Developer:</strong>
                                   <span className="truncate">{truncateText(game.developer, 20)}</span>
                                 </>
                               )}
                               {game.developer && game.publisher && (
-                                <span className="text-gray-500">•</span>
+                                <span className="text-gray-500 flex-shrink-0">•</span>
                               )}
                               {game.publisher && (
                                 <>
-                                  <strong className="whitespace-nowrap">Publisher:</strong>
+                                  <strong className="whitespace-nowrap flex-shrink-0">Publisher:</strong>
                                   <span className="truncate">{truncateText(game.publisher, 20)}</span>
                                 </>
                               )}
@@ -749,7 +747,7 @@ export const GamePage: React.FC = () => {
                             {(needsTruncation(game.developer, 20) || needsTruncation(game.publisher, 20)) && (
                               <button
                                 onClick={() => setIsDevPubExpanded(true)}
-                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap"
+                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-1"
                               >
                                 See more
                               </button>
@@ -757,7 +755,7 @@ export const GamePage: React.FC = () => {
                           </>
                         ) : (
                           // Expanded view - can wrap to multiple lines
-                          <>
+                          <div className="flex items-start gap-2 flex-1">
                             <div className="flex-1">
                               {game.developer && (
                                 <div>
@@ -772,11 +770,11 @@ export const GamePage: React.FC = () => {
                             </div>
                             <button
                               onClick={() => setIsDevPubExpanded(false)}
-                              className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap"
+                              className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0"
                             >
                               See less
                             </button>
-                          </>
+                          </div>
                         )}
                       </div>
                     )}
