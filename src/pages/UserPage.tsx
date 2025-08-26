@@ -10,6 +10,7 @@ import { PlaylistTabs } from '../components/profile/PlaylistTabs';
 import { ActivityFeed } from '../components/profile/ActivityFeed';
 import { FollowersFollowingModal } from '../components/FollowersFollowingModal';
 import { GamesModal } from '../components/GamesModal';
+import { ReviewsModal } from '../components/ReviewsModal';
 import { userServiceSimple, UserUpdate } from '../services/userServiceSimple';
 
 // Lazy load UserSettingsModal to avoid initialization issues
@@ -40,6 +41,7 @@ export const UserPage: React.FC = () => {
   const [modalInitialTab, setModalInitialTab] = useState<'followers' | 'following'>('followers');
   const [isGamesModalOpen, setIsGamesModalOpen] = useState(false);
   const [gamesModalInitialTab, setGamesModalInitialTab] = useState<'all' | 'started' | 'finished'>('all');
+  const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
 
   // Fetch user data - defined first to avoid temporal dead zone
   const fetchUserData = useCallback(async () => {
@@ -164,6 +166,10 @@ export const UserPage: React.FC = () => {
     setGamesModalInitialTab('all');
     setIsGamesModalOpen(true);
   };
+
+  const handleReviewsClick = () => {
+    setIsReviewsModalOpen(true);
+  };
   
   useEffect(() => {
     fetchUserData();
@@ -218,6 +224,7 @@ export const UserPage: React.FC = () => {
             onFollowersClick={handleFollowersClick}
             onFollowingClick={handleFollowingClick}
             onGamesClick={handleGamesClick}
+            onReviewsClick={handleReviewsClick}
           />
         </div>
 
@@ -309,6 +316,14 @@ export const UserPage: React.FC = () => {
         userId={id!}
         userName={transformedUser.username}
         initialTab={gamesModalInitialTab}
+      />
+
+      {/* Reviews Modal */}
+      <ReviewsModal
+        isOpen={isReviewsModalOpen}
+        onClose={() => setIsReviewsModalOpen(false)}
+        userId={id!}
+        userName={transformedUser.username}
       />
     </div>
   );
