@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Star, Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { AuthModal } from '../components/auth/AuthModal';
@@ -993,10 +993,6 @@ export const GamePage: React.FC = () => {
                       {review.author ? review.author.charAt(0).toUpperCase() : '?'}
                     </div>
                     <span className="text-white font-medium">{review.author}</span>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="text-yellow-500">{review.rating}/10</span>
-                    </div>
                   </div>
                   {review.text && (
                     <p className="text-gray-300 text-sm">{review.text}</p>
