@@ -11,13 +11,15 @@ interface ProfileDetailsProps {
   onFollowersClick?: () => void;
   onFollowingClick?: () => void;
   onGamesClick?: () => void;
+  onReviewsClick?: () => void;
 }
 
 export const ProfileDetails: React.FC<ProfileDetailsProps> = ({ 
   stats, 
   onFollowersClick, 
   onFollowingClick,
-  onGamesClick 
+  onGamesClick,
+  onReviewsClick 
 }) => {
   return (
     <div className="flex-shrink-0 flex flex-col gap-4">
@@ -31,10 +33,14 @@ export const ProfileDetails: React.FC<ProfileDetailsProps> = ({
           <div className="text-xl font-bold text-white">{stats.films.toLocaleString()}</div>
           <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">GAMES</div>
         </button>
-        <div className="text-center">
+        <button
+          onClick={onReviewsClick}
+          className="text-center hover:bg-gray-700 rounded-lg p-2 transition-colors"
+          disabled={!onReviewsClick}
+        >
           <div className="text-xl font-bold text-white">{stats.thisYear}</div>
-          <div className="text-xs text-gray-400 uppercase tracking-wide">REVIEWS</div>
-        </div>
+          <div className="text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors">REVIEWS</div>
+        </button>
         <div className="text-center">
           <div className="text-xl font-bold text-white">{stats.lists}</div>
           <div className="text-xs text-gray-400 uppercase tracking-wide">LISTS</div>

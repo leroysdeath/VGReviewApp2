@@ -5,10 +5,13 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useAuth } from '../hooks/useAuth';
 import { ProfileInfo } from '../components/ProfileInfo';
 import { ProfileDetails } from '../components/ProfileDetails';
-import { ProfileData } from '../components/ProfileData';
+import { TopGames } from '../components/profile/TopGames';
+import { PlaylistTabs } from '../components/profile/PlaylistTabs';
+import { ActivityFeed } from '../components/profile/ActivityFeed';
 import { FollowersFollowingModal } from '../components/FollowersFollowingModal';
 import { GamesModal } from '../components/GamesModal';
-import { updateUserProfile, ProfileUpdateData } from '../services/profileService';
+import { ReviewsModal } from '../components/ReviewsModal';
+import { userServiceSimple, UserUpdate } from '../services/userServiceSimple';
 
 // Lazy load UserSettingsModal to avoid initialization issues
 const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsModal'));
@@ -16,11 +19,18 @@ const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsM
 export const UserPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user: authUser, isAuthenticated } = useAuth();
-  const [activeTab, setActiveTab] = useState<'top5' | 'top10' | 'reviews' | 'activity'>('top5');
-  const [reviewFilter, setReviewFilter] = useState('recent');
+
+  // Redirect if no ID provided - redirect to current user's profile
+  if (!id) {
+    if (isAuthenticated && authUser?.databaseId) {
+      return <Navigate to={`/user/${authUser.databaseId}`} replace />;
+    } else {
+      // If not authenticated or no database ID, redirect to users search
+      return <Navigate to="/users" replace />;
+    }
+  }
+  const [activeTab, setActiveTab] = useState<'top5' | 'top10' | 'playlist' | 'activity'>('top5');
   const [user, setUser] = useState<any>(null);
-  const [userReviews, setUserReviews] = useState<any[]>([]);
-  const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
@@ -31,54 +41,10 @@ export const UserPage: React.FC = () => {
   const [modalInitialTab, setModalInitialTab] = useState<'followers' | 'following'>('followers');
   const [isGamesModalOpen, setIsGamesModalOpen] = useState(false);
   const [gamesModalInitialTab, setGamesModalInitialTab] = useState<'all' | 'started' | 'finished'>('all');
+  const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
 
-  // Handle profile save using profileService
-  const handleSaveProfile = useCallback(async (profileData: ProfileUpdateData) => {
-    try {
-      if (!authUser?.id) {
-        throw new Error('User not authenticated');
-      }
-
-      const updateResult = await updateUserProfile(authUser.id, profileData);
-      
-      if (!updateResult.success) {
-        throw new Error(updateResult.error || 'Profile update failed');
-      }
-
-      // Refresh the user data after successful update
-      await fetchUserData();
-      
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      throw error;
-    }
-  }, [authUser?.id]);
-
-  // Modal handlers
-  const handleEditClick = () => {
-    setShowSettingsModal(true);
-  };
-
-  const handleFollowersClick = () => {
-    setModalInitialTab('followers');
-    setIsFollowersModalOpen(true);
-  };
-
-  const handleFollowingClick = () => {
-    setModalInitialTab('following');
-    setIsFollowersModalOpen(true);
-  };
-
-  const handleGamesClick = () => {
-    setGamesModalInitialTab('all');
-    setIsGamesModalOpen(true);
-  };
-
+  // Fetch user data - defined first to avoid temporal dead zone
   const fetchUserData = useCallback(async () => {
-    if (!id) {
-      return;
-    }
-    
     // Parse ID to integer for database queries
     const numericId = parseInt(id);
     
@@ -124,63 +90,33 @@ export const UserPage: React.FC = () => {
         setIsOwnProfile(false);
       }
       
-      // Fetch user reviews (only those with valid ratings)
-      const { data: reviewsData, error: reviewsError } = await supabase
-        .from('rating')
-        .select(`
-          *,
-          game:game_id(*)
-        `)
-        .eq('user_id', numericId)
-        .not('rating', 'is', null);
-        
-      if (reviewsError) throw reviewsError;
-      
-      // Filter out any reviews with invalid ratings as an extra safety measure
-      const validReviewsData = reviewsData?.filter(review => 
-        review.rating != null && 
-        !isNaN(review.rating) && 
-        typeof review.rating === 'number'
-      ) || [];
-      
-      // Query games marked as started from game_progress table
-      const { data: startedGamesData, error: startedGamesError } = await supabase
+      // Query basic stats for ProfileDetails
+      const { data: startedGamesData } = await supabase
         .from('game_progress')
         .select('game_id')
         .eq('user_id', numericId)
         .eq('started', true);
         
-      if (startedGamesError) throw startedGamesError;
+      const { data: reviewsData } = await supabase
+        .from('rating')
+        .select('id')
+        .eq('user_id', numericId)
+        .not('rating', 'is', null);
       
       const startedGamesCount = startedGamesData?.length || 0;
+      const reviewsCount = reviewsData?.length || 0;
       
-      // Get game IDs from valid reviews
-      const gameIds = validReviewsData.map(review => review.game_id);
-      
-      // Fetch games data (only if there are game IDs)
-      let gamesData = [];
-      if (gameIds.length > 0) {
-        const { data: fetchedGames, error: gamesError } = await supabase
-          .from('game')
-          .select('*')
-          .in('id', gameIds);
-          
-        if (gamesError) throw gamesError;
-        gamesData = fetchedGames || [];
-      }
-      
-      // Get follower/following counts from computed columns (much faster - no COUNT queries)
+      // Get follower/following counts from computed columns
       const followerCount = userData.follower_count || 0;
       const followingCount = userData.following_count || 0;
       
       // Store the counts for use in stats calculation
-      userData._followerCount = followerCount || 0;
-      userData._followingCount = followingCount || 0;
+      userData._followerCount = followerCount;
+      userData._followingCount = followingCount;
       userData._startedGamesCount = startedGamesCount;
+      userData._reviewsCount = reviewsCount;
       
       setUser(userData);
-      setUserReviews(validReviewsData);
-      setGames(gamesData);
     } catch (err) {
       console.error('Error fetching user data:', err);
       setError('Failed to load user data');
@@ -188,21 +124,56 @@ export const UserPage: React.FC = () => {
       setLoading(false);
     }
   }, [id, isAuthenticated, authUser]);
+
+  // Handle profile save using simplified userService
+  const handleSaveProfile = useCallback(async (profileData: UserUpdate) => {
+    try {
+      if (!id) {
+        throw new Error('No user ID available');
+      }
+
+      const updateResult = await userServiceSimple.updateUser(id, profileData);
+      
+      if (!updateResult.success) {
+        throw new Error(updateResult.error || 'Profile update failed');
+      }
+
+      // Refresh the user data after successful update
+      await fetchUserData();
+      
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      throw error;
+    }
+  }, [id, fetchUserData]);
+
+  // Modal handlers
+  const handleEditClick = () => {
+    setShowSettingsModal(true);
+  };
+
+  const handleFollowersClick = () => {
+    setModalInitialTab('followers');
+    setIsFollowersModalOpen(true);
+  };
+
+  const handleFollowingClick = () => {
+    setModalInitialTab('following');
+    setIsFollowersModalOpen(true);
+  };
+
+  const handleGamesClick = () => {
+    setGamesModalInitialTab('all');
+    setIsGamesModalOpen(true);
+  };
+
+  const handleReviewsClick = () => {
+    setIsReviewsModalOpen(true);
+  };
   
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
-
-  // Sort reviews based on filter
-  const sortedReviews = React.useMemo(() => {
-    const sorted = [...userReviews];
-    if (reviewFilter === 'recent') {
-      sorted.sort((a, b) => new Date(b.post_date_time).getTime() - new Date(a.post_date_time).getTime());
-    } else if (reviewFilter === 'rating') {
-      sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    }
-    return sorted;
-  }, [userReviews, reviewFilter]);
 
   if (loading) {
     return <LoadingSpinner size="lg" text="Loading user profile..." />;
@@ -231,24 +202,11 @@ export const UserPage: React.FC = () => {
   // Calculate user stats with real data
   const stats = {
     films: user._startedGamesCount || 0, // Total games marked as started
-    thisYear: userReviews.length, // Total reviews count
+    thisYear: user._reviewsCount || 0, // Total reviews count
     lists: 0, // To be implemented with real data when lists feature is added
     following: user._followingCount || 0, // Real following count from database
     followers: user._followerCount || 0 // Real follower count from database
   };
-
-  // Transform games to match expected format for ProfileData
-  const allGames = games.map(game => ({
-    id: game.id.toString(),
-    title: game.name || 'Unknown Game',
-    coverImage: game.pic_url || '/default-cover.png',
-    releaseDate: game.release_date || '',
-    genre: game.genre || '',
-    rating: 0, // This will be populated by ProfileData component
-    description: '',
-    developer: '',
-    publisher: ''
-  }));
 
   return (
     <div className="bg-gray-900 text-white p-6">
@@ -266,6 +224,7 @@ export const UserPage: React.FC = () => {
             onFollowersClick={handleFollowersClick}
             onFollowingClick={handleFollowingClick}
             onGamesClick={handleGamesClick}
+            onReviewsClick={handleReviewsClick}
           />
         </div>
 
@@ -284,10 +243,10 @@ export const UserPage: React.FC = () => {
             Top 10
           </button>
           <button
-            onClick={() => setActiveTab('reviews')}
-            className={`pb-2 ${activeTab === 'reviews' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
+            onClick={() => setActiveTab('playlist')}
+            className={`pb-2 ${activeTab === 'playlist' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
-            Reviews
+            Playlist
           </button>
           <button
             onClick={() => setActiveTab('activity')}
@@ -297,17 +256,19 @@ export const UserPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Profile Data */}
-        <ProfileData
-          activeTab={activeTab}
-          allGames={allGames}
-          sortedReviews={sortedReviews}
-          reviewFilter={reviewFilter}
-          onReviewFilterChange={setReviewFilter}
-          isDummy={false}
-          userId={id!}
-          isOwnProfile={isOwnProfile}
-        />
+        {/* Profile Content - Direct rendering with focused components */}
+        {activeTab === 'top5' && (
+          <TopGames userId={id} limit={5} editable={isOwnProfile} />
+        )}
+        {activeTab === 'top10' && (
+          <TopGames userId={id} limit={10} />
+        )}
+        {activeTab === 'playlist' && (
+          <PlaylistTabs userId={id!} isOwnProfile={isOwnProfile} />
+        )}
+        {activeTab === 'activity' && (
+          <ActivityFeed userId={id} />
+        )}
       </div>
 
       {/* User Settings Modal */}
@@ -355,6 +316,14 @@ export const UserPage: React.FC = () => {
         userId={id!}
         userName={transformedUser.username}
         initialTab={gamesModalInitialTab}
+      />
+
+      {/* Reviews Modal */}
+      <ReviewsModal
+        isOpen={isReviewsModalOpen}
+        onClose={() => setIsReviewsModalOpen(false)}
+        userId={id!}
+        userName={transformedUser.username}
       />
     </div>
   );
