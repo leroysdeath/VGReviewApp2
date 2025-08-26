@@ -572,6 +572,8 @@ class GameDataService {
 
     return {
       ...gameData,
+      // Map release_date to first_release_date for compatibility with GamePage
+      first_release_date: gameData.release_date,
       averageUserRating,
       totalUserRatings
     }

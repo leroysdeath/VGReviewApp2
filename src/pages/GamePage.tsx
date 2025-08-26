@@ -692,12 +692,12 @@ export const GamePage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {formatFullDate(game.first_release_date)}
+                        {formatFullDate(game.first_release_date || game.release_date)}
                       </span>
                     </div>
                     {game.platforms && game.platforms.length > 0 && (
                       <div>
-                        <div className="flex items-start gap-2">
+                        <div className="flex items-baseline gap-2">
                           <strong className="whitespace-nowrap flex-shrink-0">Platforms:</strong>
                           <div className="flex-1 min-w-0">
                             {!isPlatformsExpanded ? (
