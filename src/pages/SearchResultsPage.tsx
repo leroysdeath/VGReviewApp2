@@ -458,19 +458,22 @@ export const SearchResultsPage: React.FC = () => {
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold text-lg mb-2 line-clamp-2">{game.name}</h3>
-                      {game.release_date && (
+                      {(game.release_date || game.developer) && (
                         <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{new Date(game.release_date).getFullYear()}</span>
+                          {game.release_date && (
+                            <>
+                              <Calendar className="h-4 w-4" />
+                              <span>{new Date(game.release_date).getFullYear()}</span>
+                            </>
+                          )}
+                          {game.release_date && game.developer && <span>•</span>}
+                          {game.developer && <span>{game.developer}</span>}
                         </div>
                       )}
                       {game.user_rating_count > 0 && (
                         <p className="text-sm text-gray-400">
                           {game.user_rating_count} review{game.user_rating_count !== 1 ? 's' : ''}
                         </p>
-                      )}
-                      {game.developer && (
-                        <p className="text-sm mt-2 text-gray-400">{game.developer}</p>
                       )}
                     </div>
                   </div>
