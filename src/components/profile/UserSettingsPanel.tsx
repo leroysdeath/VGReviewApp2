@@ -231,7 +231,12 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   
   const [activeTab, setActiveTab] = useState<'profile' | 'account'>('profile');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initialData.avatar || null);
   const [usernameStatus, setUsernameStatus] = useState<{
