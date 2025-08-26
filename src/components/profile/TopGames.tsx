@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus, X } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { GamePickerModal } from '../GamePickerModal';
@@ -35,6 +35,7 @@ interface TopGamesProps {
 }
 
 export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = false }) => {
+  const navigate = useNavigate();
   const [topGames, setTopGames] = useState<TopGame[]>([]);
   const [userTopGames, setUserTopGames] = useState<UserTopGame[]>([]);
   const [loading, setLoading] = useState(true);
@@ -431,17 +432,29 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                 key={`empty-${position}`}
                 className="relative aspect-[3/4] bg-gray-800 rounded-lg border-2 border-dashed border-gray-700"
               >
-                <div className="absolute top-2 left-2 bg-gray-700 text-gray-400 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
-                  {position}
-                </div>
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-gray-500 text-xs text-center px-2">
-                    Rate more games
+                  <p className="text-gray-400 text-2xl font-bold">
+                    #{position}
                   </p>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+      
+      {/* Show "To complete your Top 10" section when there are less than 10 games */}
+      {limit === 10 && topGames.length > 0 && topGames.length < 10 && (
+        <div className="mt-8 text-center">
+          <h3 className="text-lg font-semibold text-gray-300 mb-4">
+            To complete your Top 10
+          </h3>
+          <button
+            onClick={() => navigate('/search')}
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+          >
+            Rate More Games
+          </button>
         </div>
       )}
     </div>
