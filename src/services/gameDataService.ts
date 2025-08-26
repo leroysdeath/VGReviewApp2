@@ -688,6 +688,114 @@ class GameDataService {
       return [];
     }
   }
+
+  /**
+   * Get game by slug with ratings
+   */
+  async getGameBySlug(slug: string): Promise<GameWithCalculatedFields | null> {
+    try {
+      console.log('🔍 gameDataService.getGameBySlug called with:', slug);
+      
+      // Validate slug input
+      if (!slug || typeof slug !== 'string' || slug.trim().length === 0) {
+        console.error('Invalid slug provided:', slug);
+        return null;
+      }
+      
+      const { data, error } = await supabase
+        .from('game')
+        .select(`
+          *,
+          rating(rating)
+        `)
+        .eq('slug', slug)
+        .single();
+      
+      if (error || !data) {
+        console.error('Game not found by slug:', slug, error);
+        return null;
+      }
+      
+      console.log('✅ Game found by slug:', data.name);
+      return this.transformGameWithRatings(data as GameWithRating);
+    } catch (error) {
+      console.error('Error in getGameBySlug:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get game with full reviews by slug
+   */
+  async getGameWithFullReviewsBySlug(slug: string): Promise<{
+    game: GameWithCalculatedFields | null;
+    reviews: Array<{
+      id: number;
+      user_id: number;
+      game_id: number;
+      rating: number;
+      review: string | null;
+      post_date_time: string;
+      user?: {
+        id: number;
+        name: string;
+        avatar_url?: string;
+      };
+    }>;
+  }> {
+    try {
+      // Validate slug input
+      if (!slug || typeof slug !== 'string' || slug.trim().length === 0) {
+        console.error('Invalid slug provided:', slug);
+        return { game: null, reviews: [] };
+      }
+      
+      // Get game by slug
+      const { data: gameData, error: gameError } = await supabase
+        .from('game')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+      if (gameError || !gameData) {
+        console.error('Game not found by slug:', slug, gameError);
+        return { game: null, reviews: [] };
+      }
+
+      // Get reviews using the game's database ID
+      const { data: reviewsData, error: reviewsError } = await supabase
+        .from('rating')
+        .select(`
+          *,
+          user!rating_user_id_fkey(
+            id,
+            name,
+            avatar_url
+          )
+        `)
+        .eq('game_id', gameData.id)
+        .order('post_date_time', { ascending: false });
+      
+      if (reviewsError) {
+        console.error('Error fetching reviews:', reviewsError);
+      }
+      
+      const reviews = reviewsData || [];
+      
+      // Transform game data for calculated fields
+      const game = this.transformGameWithRatings({
+        ...gameData,
+        rating: reviews.map((r: any) => ({ rating: r.rating }))
+      } as GameWithRating);
+
+      console.log(`✅ Loaded game "${game.name}" by slug with ${reviews.length} reviews`);
+
+      return { game, reviews };
+    } catch (error) {
+      console.error('Error in getGameWithFullReviewsBySlug:', error);
+      return { game: null, reviews: [] };
+    }
+  }
 }
 
 export const gameDataService = new GameDataService()
