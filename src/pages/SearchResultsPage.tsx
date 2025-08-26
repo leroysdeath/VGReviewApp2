@@ -469,8 +469,8 @@ export const SearchResultsPage: React.FC = () => {
                           {game.user_rating_count} review{game.user_rating_count !== 1 ? 's' : ''}
                         </p>
                       )}
-                      {game.genre && (
-                        <p className="text-sm mt-2 text-gray-400">{game.genre}</p>
+                      {game.developer && (
+                        <p className="text-sm mt-2 text-gray-400">{game.developer}</p>
                       )}
                     </div>
                   </div>
@@ -524,9 +524,6 @@ export const SearchResultsPage: React.FC = () => {
                             )}
                             {game.developer && (
                               <span>by {game.developer}</span>
-                            )}
-                            {game.genre && (
-                              <span>{game.genre}</span>
                             )}
                           </div>
                         </div>
