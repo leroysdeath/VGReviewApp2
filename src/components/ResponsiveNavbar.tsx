@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2, Home, Users, MessageSquare, Bell, LogOut, Settings, Clock, TrendingUp, Database, Loader2, Star, User as UserIcon } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2, Home, Users, MessageSquare, LogOut, Settings, Clock, TrendingUp, Database, Loader2, Star, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthModal } from '../context/AuthModalContext'; // NEW IMPORT
 import { useResponsive } from '../hooks/useResponsive';
-import { NotificationBadge } from './NotificationBadge';
-import { NotificationCenter } from './NotificationCenter';
 import { useGameSearch } from '../hooks/useGameSearch';
 import { igdbService } from '../services/igdbService';
 import type { GameWithCalculatedFields } from '../types/database';
@@ -37,7 +35,6 @@ type SearchTab = 'games' | 'users';
 
 export const ResponsiveNavbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('games');
@@ -399,9 +396,6 @@ export const ResponsiveNavbar: React.FC = () => {
 
               {/* User Avatar or Menu Button */}
               <div className="flex items-center space-x-2">
-                {isAuthenticated && (
-                  <NotificationBadge onClick={() => setIsNotificationCenterOpen(true)} />
-                )}
                 <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="p-2 text-gray-400 hover:text-white transition-colors"
@@ -740,11 +734,6 @@ export const ResponsiveNavbar: React.FC = () => {
           </div>
         )}
 
-        <NotificationCenter
-          userId={user?.id || ""}
-          isOpen={isNotificationCenterOpen}
-          onClose={() => setIsNotificationCenterOpen(false)}
-        />
       </>
     );
   }
@@ -1054,10 +1043,6 @@ export const ResponsiveNavbar: React.FC = () => {
           {/* Desktop User Menu */}
           <div className="hidden md:block">
             <div className="ml-4 flex items-center gap-2 md:ml-6">
-              {isAuthenticated && (
-                <NotificationBadge onClick={() => setIsNotificationCenterOpen(true)} />
-              )}
-              
               {/* User Menu */}
               {isAuthenticated ? (
                <div className="relative">
@@ -1232,13 +1217,6 @@ export const ResponsiveNavbar: React.FC = () => {
           </div>
         </div>
       )}
-      
-      {/* Notification Center */}
-      <NotificationCenter
-        userId={user?.id || ""}
-        isOpen={isNotificationCenterOpen}
-        onClose={() => setIsNotificationCenterOpen(false)}
-      />
     </nav>
   );
 };
