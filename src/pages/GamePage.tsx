@@ -382,8 +382,14 @@ export const GamePage: React.FC = () => {
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
-      // Game should already exist since it was loaded, but verify with database ID
-      const ensureResult = await ensureGameExists(game.id);
+      // Game should already exist since it was loaded, but verify with complete game data
+      const ensureResult = await ensureGameExists({
+        id: game.id,
+        igdb_id: game.igdb_id,
+        name: game.name,
+        cover_url: game.cover_url,
+        releaseDate: game.release_date || game.first_release_date
+      });
 
       if (!ensureResult.success) {
         console.error('Failed to ensure game exists:', ensureResult.error);
@@ -414,8 +420,14 @@ export const GamePage: React.FC = () => {
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
-      // Game should already exist since it was loaded, but verify with database ID
-      const ensureResult = await ensureGameExists(game.id);
+      // Game should already exist since it was loaded, but verify with complete game data
+      const ensureResult = await ensureGameExists({
+        id: game.id,
+        igdb_id: game.igdb_id,
+        name: game.name,
+        cover_url: game.cover_url,
+        releaseDate: game.release_date || game.first_release_date
+      });
 
       if (!ensureResult.success) {
         console.error('Failed to ensure game exists:', ensureResult.error);
@@ -993,6 +1005,7 @@ export const GamePage: React.FC = () => {
                       {review.author ? review.author.charAt(0).toUpperCase() : '?'}
                     </div>
                     <span className="text-white font-medium">{review.author}</span>
+                    <span className="text-yellow-500">{review.rating}/10</span>
                   </div>
                   {review.text && (
                     <p className="text-gray-300 text-sm">{review.text}</p>
