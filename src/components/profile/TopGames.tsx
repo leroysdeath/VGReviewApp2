@@ -389,34 +389,59 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
         </div>
       ) : (
         <div className="hidden md:grid grid-cols-5 gap-4">
-          {topGames.map((game, index) => (
-            <Link
-              key={game.id}
-              to={getGameUrl(game)}
-              className="group relative hover:scale-105 transition-transform"
-            >
-              <div className="relative">
-                <img
-                  src={game.cover_url}
-                  alt={game.name}
-                  className="w-full aspect-[3/4] object-cover rounded-lg"
-                  onError={(e) => {
-                    e.currentTarget.src = '/default-cover.png';
-                  }}
-                />
-                <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
-                  {index + 1}
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-gray-900 bg-opacity-75 px-2 py-1 rounded-b-lg">
-                  <div className="text-center">
-                    <span className="text-white text-sm font-bold">
-                      {game.rating === 10 ? '10' : game.rating.toFixed(1)}/10
-                    </span>
+          {Array.from({ length: limit }).map((_, index) => {
+            const game = topGames[index];
+            const position = index + 1;
+            
+            // If we have a game for this position, render it
+            if (game) {
+              return (
+                <Link
+                  key={game.id}
+                  to={getGameUrl(game)}
+                  className="group relative hover:scale-105 transition-transform"
+                >
+                  <div className="relative">
+                    <img
+                      src={game.cover_url}
+                      alt={game.name}
+                      className="w-full aspect-[3/4] object-cover rounded-lg"
+                      onError={(e) => {
+                        e.currentTarget.src = '/default-cover.png';
+                      }}
+                    />
+                    <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                      {position}
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gray-900 bg-opacity-75 px-2 py-1 rounded-b-lg">
+                      <div className="text-center">
+                        <span className="text-white text-sm font-bold">
+                          {game.rating === 10 ? '10' : game.rating.toFixed(1)}/10
+                        </span>
+                      </div>
+                    </div>
                   </div>
+                </Link>
+              );
+            }
+            
+            // Render empty placeholder card
+            return (
+              <div 
+                key={`empty-${position}`}
+                className="relative aspect-[3/4] bg-gray-800 rounded-lg border-2 border-dashed border-gray-700"
+              >
+                <div className="absolute top-2 left-2 bg-gray-700 text-gray-400 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                  {position}
+                </div>
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-500 text-xs text-center px-2">
+                    Rate more games
+                  </p>
                 </div>
               </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
