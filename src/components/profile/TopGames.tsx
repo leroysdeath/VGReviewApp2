@@ -443,12 +443,9 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
         </div>
       )}
       
-      {/* Show "To complete your Top 10" section when there are less than 10 games */}
+      {/* Show Rate More Games button when there are less than 10 games */}
       {limit === 10 && topGames.length > 0 && topGames.length < 10 && (
         <div className="mt-8 text-center">
-          <h3 className="text-lg font-semibold text-gray-300 mb-4">
-            To complete your Top 10
-          </h3>
           <button
             onClick={() => navigate('/search')}
             className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"

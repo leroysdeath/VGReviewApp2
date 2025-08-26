@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Star } from 'lucide-react';
+import { BookOpen, Gift } from 'lucide-react';
 
 interface PlaylistTabsProps {
   userId: string;
@@ -15,7 +15,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
   return (
     <div>
       {/* Sub-tab Navigation */}
-      <div className="flex gap-6 mb-6 border-b border-gray-700">
+      <div className="flex justify-center gap-6 mb-6 border-b border-gray-700">
         <button
           onClick={() => setActiveSubTab('collection')}
           className={`pb-3 px-1 transition-colors ${
@@ -54,7 +54,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
       {activeSubTab === 'wishlist' && (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Star className="h-8 w-8 text-gray-500" />
+            <Gift className="h-8 w-8 text-gray-500" />
           </div>
           <h3 className="text-lg font-medium text-white mb-2">Game Wishlist</h3>
           <p className="text-gray-400">
