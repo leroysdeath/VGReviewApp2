@@ -155,8 +155,8 @@ export const GamePage: React.FC = () => {
   
   // State for text expansion
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
-  const [isDeveloperExpanded, setIsDeveloperExpanded] = useState(false);
-  const [isPublisherExpanded, setIsPublisherExpanded] = useState(false);
+  const [isDevPubExpanded, setIsDevPubExpanded] = useState(false);
+  const [isPlatformsExpanded, setIsPlatformsExpanded] = useState(false);
   
   // Use reducer for centralized state management
   const [state, dispatch] = useReducer(gamePageReducer, initialState);
@@ -684,41 +684,99 @@ export const GamePage: React.FC = () => {
                       </span>
                     </div>
                     {game.platforms && game.platforms.length > 0 && (
-                      <div><strong>Platforms:</strong> {game.platforms.join(', ')}</div>
-                    )}
-                    {game.developer && (
-                      <div className="flex items-center gap-2">
-                        <strong>Developer:</strong> 
-                        <span className="truncate">
-                          {isDeveloperExpanded || !needsTruncation(game.developer) 
-                            ? game.developer 
-                            : truncateText(game.developer)}
-                        </span>
-                        {needsTruncation(game.developer) && (
-                          <button
-                            onClick={() => setIsDeveloperExpanded(!isDeveloperExpanded)}
-                            className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap"
-                          >
-                            {isDeveloperExpanded ? 'See less' : 'See more'}
-                          </button>
+                      <div className="flex items-start gap-2">
+                        {!isPlatformsExpanded ? (
+                          // Collapsed view - single line
+                          <>
+                            <div className="flex items-center gap-2 truncate flex-1">
+                              <strong className="whitespace-nowrap">Platforms:</strong>
+                              <span className="truncate">
+                                {(() => {
+                                  const platformsText = game.platforms.join(', ');
+                                  return needsTruncation(platformsText, 50) 
+                                    ? truncateText(platformsText, 50)
+                                    : platformsText;
+                                })()}
+                              </span>
+                            </div>
+                            {needsTruncation(game.platforms.join(', '), 50) && (
+                              <button
+                                onClick={() => setIsPlatformsExpanded(true)}
+                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap"
+                              >
+                                See more
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          // Expanded view - can wrap to multiple lines
+                          <>
+                            <div className="flex-1">
+                              <strong>Platforms:</strong> {game.platforms.join(', ')}
+                            </div>
+                            <button
+                              onClick={() => setIsPlatformsExpanded(false)}
+                              className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap"
+                            >
+                              See less
+                            </button>
+                          </>
                         )}
                       </div>
                     )}
-                    {game.publisher && (
-                      <div className="flex items-center gap-2">
-                        <strong>Publisher:</strong> 
-                        <span className="truncate">
-                          {isPublisherExpanded || !needsTruncation(game.publisher) 
-                            ? game.publisher 
-                            : truncateText(game.publisher)}
-                        </span>
-                        {needsTruncation(game.publisher) && (
-                          <button
-                            onClick={() => setIsPublisherExpanded(!isPublisherExpanded)}
-                            className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap"
-                          >
-                            {isPublisherExpanded ? 'See less' : 'See more'}
-                          </button>
+                    {(game.developer || game.publisher) && (
+                      <div className="flex items-start gap-2">
+                        {!isDevPubExpanded ? (
+                          // Collapsed view - single line
+                          <>
+                            <div className="flex items-center gap-2 truncate flex-1">
+                              {game.developer && (
+                                <>
+                                  <strong className="whitespace-nowrap">Developer:</strong>
+                                  <span className="truncate">{truncateText(game.developer, 20)}</span>
+                                </>
+                              )}
+                              {game.developer && game.publisher && (
+                                <span className="text-gray-500">•</span>
+                              )}
+                              {game.publisher && (
+                                <>
+                                  <strong className="whitespace-nowrap">Publisher:</strong>
+                                  <span className="truncate">{truncateText(game.publisher, 20)}</span>
+                                </>
+                              )}
+                            </div>
+                            {(needsTruncation(game.developer, 20) || needsTruncation(game.publisher, 20)) && (
+                              <button
+                                onClick={() => setIsDevPubExpanded(true)}
+                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap"
+                              >
+                                See more
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          // Expanded view - can wrap to multiple lines
+                          <>
+                            <div className="flex-1">
+                              {game.developer && (
+                                <div>
+                                  <strong>Developer:</strong> {game.developer}
+                                </div>
+                              )}
+                              {game.publisher && (
+                                <div>
+                                  <strong>Publisher:</strong> {game.publisher}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => setIsDevPubExpanded(false)}
+                              className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap"
+                            >
+                              See less
+                            </button>
+                          </>
                         )}
                       </div>
                     )}
