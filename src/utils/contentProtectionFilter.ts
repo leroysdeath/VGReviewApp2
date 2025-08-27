@@ -7,8 +7,32 @@ import {
   hasSpecificFranchiseRestrictions,
   getPolicyReason,
   addAggressiveCompany,
-  blockCompanyCompletely
+  blockCompanyCompletely,
+  isAuthorizedPublisher,
+  findFranchiseOwner
 } from './copyrightPolicies';
+
+// Helper function for debug logging
+function getCategoryLabel(category?: number): string {
+  const labels: Record<number, string> = {
+    0: 'Main game',
+    1: 'DLC/Add-on',
+    2: 'Expansion',
+    3: 'Bundle',
+    4: 'Standalone expansion',
+    5: 'Mod',
+    6: 'Episode',
+    7: 'Season',
+    8: 'Remake',
+    9: 'Remaster',
+    10: 'Expanded game',
+    11: 'Port',
+    12: 'Fork',
+    13: 'Pack',
+    14: 'Update'
+  };
+  return category !== undefined ? labels[category] || `Unknown(${category})` : 'undefined';
+}
 
 interface Game {
   id: number;
@@ -118,6 +142,19 @@ const FAN_MADE_INDICATORS = [
   'romhack', 'rom hack', 'fan game', 'fan-made', 'fan made', 'fangame',
   'community', 'custom', 'parody', 'tribute', 'inspired by',
   'total conversion', 'overhaul', 'standalone mod'
+];
+
+// Enhanced mod patterns for aggressive copyright filtering
+const ENHANCED_MOD_PATTERNS = [
+  'mod:', 'mod ', ' mod', 'mod-', 'mod_', ':mod',
+  'the mod', 'a mod', 'this mod', 'fan mod', 'game mod',
+  'modification', 'modified', 'modded', 'modding',
+  'modpack', 'mod pack', 'total conversion', 'tc',
+  'overhaul mod', 'remix mod', 'hack mod', 'rom mod',
+  'unofficial mod', 'community mod', 'player mod',
+  'texture mod', 'graphics mod', 'gameplay mod', 'content mod',
+  'balance mod', 'difficulty mod', 'enhancement mod',
+  'expansion mod', 'addon mod', 'plugin mod'
 ];
 
 // Comprehensive official company whitelist - games from these companies should NEVER be filtered
@@ -271,6 +308,36 @@ function isProtectedFranchise(game: Game): boolean {
 }
 
 /**
+ * Enhanced mod detection specifically for aggressive copyright companies
+ * More sensitive to mod-related terms in titles and descriptions
+ */
+function hasEnhancedModIndicators(game: Game): boolean {
+  const searchText = [
+    game.name,
+    game.summary,
+    game.description
+  ].filter(Boolean).join(' ').toLowerCase();
+  
+  // Check enhanced mod patterns (more sensitive)
+  const hasModPattern = ENHANCED_MOD_PATTERNS.some(pattern => 
+    searchText.includes(pattern.toLowerCase())
+  );
+  
+  // Also check original fan-made indicators
+  const hasFanPattern = FAN_MADE_INDICATORS.some(indicator => 
+    searchText.includes(indicator.toLowerCase())
+  );
+  
+  const result = hasModPattern || hasFanPattern;
+  
+  if (result) {
+    console.log(`🔍 ENHANCED MOD DETECTION: "${game.name}" matches mod patterns`);
+  }
+  
+  return result;
+}
+
+/**
  * Get company names from a game
  */
 function getGameCompanies(game: Game): string[] {
@@ -288,6 +355,15 @@ export function shouldFilterContent(game: Game): boolean {
   const searchText = [game.name, game.developer, game.publisher, game.summary, game.description]
     .filter(Boolean).join(' ').toLowerCase();
   
+  // DEBUG: Log detailed game info for samus searches
+  if (searchText.includes('samus') || searchText.includes('metroid')) {
+    console.log(`🧪 SAMUS/METROID DEBUG: Analyzing "${game.name}"`);
+    console.log(`   Developer: ${game.developer || 'N/A'}`);
+    console.log(`   Publisher: ${game.publisher || 'N/A'}`);
+    console.log(`   Category: ${game.category} (${getCategoryLabel(game.category)})`);
+    console.log(`   Summary: ${game.summary || 'N/A'}`);
+  }
+  
   // Check if game has explicit fan-made indicators
   const hasExplicitFanIndicators = FAN_MADE_INDICATORS.some(indicator => 
     searchText.includes(indicator)
@@ -303,6 +379,7 @@ export function shouldFilterContent(game: Game): boolean {
   let maxCopyrightLevel = CopyrightLevel.MODERATE; // Default
   let responsibleCompany = '';
   
+  // First, check direct company copyright levels (developer/publisher)
   for (const company of companies) {
     if (!company) continue;
     
@@ -325,6 +402,22 @@ export function shouldFilterContent(game: Game): boolean {
     }
   }
   
+  // IMPORTANT: Also check franchise ownership for content protection
+  // This handles cases like "Metroid mod" where the developer is "Fan Developer"
+  // but the content relates to Nintendo's Metroid franchise
+  let franchiseOwner = findFranchiseOwner(game, searchText);
+  if (franchiseOwner) {
+    const franchiseLevel = getCompanyCopyrightLevel(franchiseOwner);
+    
+    // If franchise owner is more aggressive than current level, use franchise owner
+    if (franchiseLevel === CopyrightLevel.BLOCK_ALL ||
+        (franchiseLevel === CopyrightLevel.AGGRESSIVE && maxCopyrightLevel !== CopyrightLevel.BLOCK_ALL)) {
+      maxCopyrightLevel = franchiseLevel;
+      responsibleCompany = franchiseOwner;
+      console.log(`🎯 FRANCHISE OVERRIDE: "${game.name}" - Using ${franchiseOwner} copyright level (${franchiseLevel}) instead of developer/publisher`);
+    }
+  }
+  
   // Apply filtering based on copyright level
   switch (maxCopyrightLevel) {
     case CopyrightLevel.BLOCK_ALL:
@@ -333,10 +426,36 @@ export function shouldFilterContent(game: Game): boolean {
       return true;
       
     case CopyrightLevel.AGGRESSIVE:
-      // Official company games are allowed, fan content is blocked
+      // DEBUG: Extra logging for samus/metroid
+      if (searchText.includes('samus') || searchText.includes('metroid')) {
+        console.log(`🧪 AGGRESSIVE CASE: "${game.name}" - Company: ${responsibleCompany}, Level: ${maxCopyrightLevel}`);
+        console.log(`   Franchise Owner: ${franchiseOwner || 'none'}`);
+        console.log(`   Category Check: ${game.category} === 5? ${game.category === 5}`);
+      }
+      
+      // NEW: Block IGDB category 5 (Mod) for aggressive companies
+      if (game.category === 5) {
+        console.log(`🛡️ IGDB MOD CATEGORY FILTER: "${game.name}" - Category 5 (Mod) blocked for AGGRESSIVE company ${responsibleCompany}`);
+        return true;
+      }
+      
+      // Enhanced ownership validation for protected franchises
+      // (franchiseOwner already determined above in copyright level detection)
+      if (franchiseOwner && !isAuthorizedPublisher(game.developer || '', game.publisher || '', franchiseOwner)) {
+        console.log(`🛡️ OWNERSHIP FILTER: "${game.name}" - Unauthorized use of ${franchiseOwner} franchise by ${game.developer || game.publisher || 'unknown'}`);
+        return true;
+      }
+      
+      // Official company games are still allowed if they pass ownership check
       if (isOfficialCompany(game)) {
-        console.log(`✅ Official game allowed despite aggressive company: "${game.name}" by ${responsibleCompany}`);
+        console.log(`✅ Official game allowed: "${game.name}" by ${responsibleCompany}`);
         return false;
+      }
+      
+      // NEW: Enhanced mod detection for aggressive companies
+      if (hasEnhancedModIndicators(game)) {
+        console.log(`🛡️ ENHANCED MOD FILTER: "${game.name}" - Mod content blocked for ${responsibleCompany}`);
+        return true;
       }
       
       // Block any fan-made content or protected franchise content by non-official developers
@@ -392,6 +511,13 @@ export function shouldFilterContent(game: Game): boolean {
       
       return false;
   }
+  
+  // DEBUG: Log if samus/metroid game passes through all filters
+  if (searchText.includes('samus') || searchText.includes('metroid')) {
+    console.log(`✅ PASSED FILTER: "${game.name}" - Level: ${maxCopyrightLevel}, Company: ${responsibleCompany}`);
+  }
+  
+  return false;
 }
 
 /**
@@ -713,4 +839,159 @@ export function analyzeGameListFiltering(games: Game[]): {
     totalFiltered,
     totalAllowed
   };
+}
+
+/**
+ * Test enhanced AGGRESSIVE filtering with real-world examples
+ */
+export function testEnhancedAggressiveFiltering(): void {
+  console.log('🧪 Testing Enhanced AGGRESSIVE Filtering:');
+  
+  const testCases = [
+    // Nintendo franchise tests - IGDB Category 5 (Mod)
+    {
+      name: "Metroid mod: Samus Goes to the Fridge to Get a Glass of Milk",
+      developer: "Fan Developer",
+      publisher: "N/A",
+      summary: "A humorous mod for Metroid where Samus goes to get milk",
+      category: 5  // IGDB Category 5 = Mod
+    },
+    {
+      name: "Super Mario Bros. 3 Mix",
+      developer: "Community",
+      publisher: "Homebrew",
+      summary: "Modified version of SMB3 with new levels and mechanics",
+      category: 5  // IGDB Category 5 = Mod
+    },
+    {
+      name: "Pokemon Crystal Clear",
+      developer: "ShockSlayer",
+      publisher: "RomHack",
+      summary: "A ROM hack of Pokemon Crystal with open world gameplay",
+      category: 5  // IGDB Category 5 = Mod
+    },
+    {
+      name: "Super Mario Odyssey",
+      developer: "Nintendo EPD",
+      publisher: "Nintendo",
+      summary: "Official Nintendo platformer game",
+      category: 0  // IGDB Category 0 = Main Game
+    },
+    {
+      name: "Metroid Prime",
+      developer: "Retro Studios",
+      publisher: "Nintendo", 
+      summary: "Official Nintendo first-person adventure game"
+    },
+    {
+      name: "Pokemon Legends: Arceus",
+      developer: "Game Freak",
+      publisher: "Nintendo",
+      summary: "Official Pokemon game published by Nintendo"
+    },
+    
+    // Square Enix franchise tests
+    {
+      name: "Final Fantasy VII: Last Order",
+      developer: "Fan Studio",
+      publisher: "Independent",
+      summary: "Unofficial remake of Final Fantasy VII"
+    },
+    {
+      name: "Final Fantasy VII Remake",
+      developer: "Square Enix Creative Business Unit I",
+      publisher: "Square Enix",
+      summary: "Official remake by Square Enix"
+    },
+    
+    // Disney franchise tests  
+    {
+      name: "Star Wars: Fan Edit - The Phantom Hope",
+      developer: "Fan Creator",
+      publisher: "Unofficial",
+      summary: "Fan-made modification of Star Wars content"
+    },
+    {
+      name: "Star Wars Jedi: Survivor",
+      developer: "Respawn Entertainment",
+      publisher: "Electronic Arts",
+      summary: "Official Star Wars game - but EA not authorized for Star Wars!"
+    },
+    {
+      name: "Star Wars: Knights of the Old Republic",
+      developer: "BioWare",
+      publisher: "LucasArts",
+      summary: "Official Star Wars game by authorized publisher"
+    },
+    
+    // Mod-friendly company tests (should NOT be filtered)
+    {
+      name: "Skyrim: Thomas the Tank Engine Mod",
+      developer: "Community Modder",  
+      publisher: "Nexus Mods",
+      summary: "Popular Skyrim mod replacing dragons with Thomas",
+      category: 5  // IGDB Category 5 = Mod - but Bethesda is MOD_FRIENDLY
+    }
+  ];
+  
+  testCases.forEach((testGame, index) => {
+    console.log(`\n--- Test ${index + 1}: ${testGame.name} ---`);
+    
+    const game = {
+      id: index + 1,
+      name: testGame.name,
+      developer: testGame.developer,
+      publisher: testGame.publisher,
+      summary: testGame.summary
+    };
+    
+    // Test franchise detection
+    const franchiseOwner = findFranchiseOwner(game);
+    if (franchiseOwner) {
+      console.log(`🎯 Franchise Owner: ${franchiseOwner}`);
+      
+      // Test authorization
+      const isAuthorized = isAuthorizedPublisher(game.developer || '', game.publisher || '', franchiseOwner);
+      console.log(`🔐 Authorized Publisher: ${isAuthorized}`);
+    }
+    
+    // Test mod detection
+    const hasModIndicators = hasEnhancedModIndicators(game);
+    console.log(`🔧 Mod Detected: ${hasModIndicators}`);
+    
+    // Test final filtering decision
+    const isFiltered = shouldFilterContent(game);
+    console.log(`🛡️ FINAL RESULT: ${isFiltered ? '❌ FILTERED' : '✅ ALLOWED'}`);
+    
+    console.log('---');
+  });
+  
+  console.log('\n🏁 Enhanced AGGRESSIVE filtering test completed!');
+}
+
+/**
+ * Quick test for specific mod patterns
+ */
+export function testModDetectionPatterns(): void {
+  console.log('🧪 Testing Mod Detection Patterns:');
+  
+  const modTitles = [
+    "Metroid mod: Samus Goes to the Fridge",
+    "Super Mario Bros. 3 Mix", 
+    "Pokemon Crystal Clear ROM Hack",
+    "Zelda: Breath of the Wild Graphics Mod",
+    "Mario Kart 8 Custom Tracks",
+    "Skyrim: Enhanced Edition Overhaul",
+    "Final Fantasy VII - Cloud Mod",
+    // Should NOT be detected as mods:
+    "Super Mario Odyssey",
+    "The Elder Scrolls V: Skyrim",
+    "Metroid Prime Remastered"
+  ];
+  
+  modTitles.forEach(title => {
+    const testGame = { id: 1, name: title, developer: 'Test', publisher: 'Test' };
+    const isModDetected = hasEnhancedModIndicators(testGame);
+    console.log(`"${title}" → Mod Detected: ${isModDetected ? '✅' : '❌'}`);
+  });
 }

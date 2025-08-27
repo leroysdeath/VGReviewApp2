@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
 import { ReviewInteractions } from './ReviewInteractions';
 import { useReviewInteractions } from '../hooks/useReviewInteractions';
@@ -73,6 +73,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   className = '',
   currentUserId
 }) => {
+  const navigate = useNavigate();
   const theme = review.theme || 'purple';
   const themeStyles = themeConfig[theme];
   
@@ -177,11 +178,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       <div className="relative flex items-start gap-4">
         {/* User Avatar */}
         <div className="flex-shrink-0">
-          <Link 
-            to={`/user/${review.userId}`}
+          <div 
             className="group/avatar cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
+              navigate(`/user/${review.userId}`);
             }}
           >
             {review.authorAvatar ? (
@@ -207,7 +208,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                 {getUserInitial(review.author)}
               </div>
             )}
-          </Link>
+          </div>
         </div>
 
         {/* Review Content */}
@@ -240,8 +241,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 
           {/* Header with username and game title */}
           <div className="mb-3">
-            <Link
-              to={`/user/${review.userId}`}
+            <span
               className={`
                 font-semibold transition-colors duration-300 cursor-pointer
                 text-white hover:${themeStyles.accent.replace('text-', 'text-')}
@@ -249,10 +249,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               `}
               onClick={(e) => {
                 e.stopPropagation();
+                navigate(`/user/${review.userId}`);
               }}
             >
               {review.author}
-            </Link>
+            </span>
             
             {showGameTitle && review.gameTitle && (
               <div className={`${compact ? 'text-xs' : 'text-sm'} text-gray-400 mt-1`}>
