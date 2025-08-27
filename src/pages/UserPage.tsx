@@ -132,7 +132,11 @@ export const UserPage: React.FC = () => {
         throw new Error('No user ID available');
       }
 
-      const updateResult = await userServiceSimple.updateUser(id, profileData);
+      // Import and use the field mapping utility
+      const { mapFormToDatabase } = await import('../utils/userFieldMapping');
+      const mappedData = mapFormToDatabase(profileData);
+
+      const updateResult = await userServiceSimple.updateUser(id, mappedData);
       
       if (!updateResult.success) {
         throw new Error(updateResult.error || 'Profile update failed');
