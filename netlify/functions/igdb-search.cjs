@@ -127,7 +127,7 @@ exports.handler = async (event, context) => {
           })
         };
       }
-      requestBody = `fields name, summary, first_release_date, rating, category, cover.url, genres.name, platforms.name, involved_companies.company.name, alternative_names.name, collection.name, franchise.name, franchises.name, dlcs, expansions, similar_games; where id = ${gameId};`;
+      requestBody = `fields name, summary, first_release_date, rating, category, cover.url, genres.name, platforms.name, involved_companies.company.name, alternative_names.name, collection.name, franchise.name, franchises.name, dlcs, expansions, similar_games, hypes, follows, total_rating, total_rating_count, rating_count; where id = ${gameId};`;
     } else {
       // Search request
       if (!query || query.trim().length === 0) {
@@ -141,8 +141,8 @@ exports.handler = async (event, context) => {
         };
       }
 
-      // Build IGDB query for game search
-      requestBody = `fields name, summary, first_release_date, rating, category, cover.url, genres.name, platforms.name, involved_companies.company.name, alternative_names.name, collection.name, franchise.name, franchises.name, dlcs, expansions, similar_games; search "${query.trim()}"; limit ${limit};`;
+      // Build IGDB query for game search (using alternative engagement metrics)
+      requestBody = `fields name, summary, first_release_date, rating, category, cover.url, genres.name, platforms.name, involved_companies.company.name, alternative_names.name, collection.name, franchise.name, franchises.name, dlcs, expansions, similar_games, hypes, follows, total_rating, total_rating_count, rating_count; search "${query.trim()}"; limit ${limit};`;
     }
 
     console.log('IGDB Request Body:', requestBody);
