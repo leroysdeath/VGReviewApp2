@@ -463,6 +463,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     console.log('📋 Form data:', data);
     console.log('📊 Dirty fields:', dirtyFields);
     
+    setIsSubmitting(true);
     setIsLoading(true);
     setSaveError(null);
     setSaveSuccess(false);
@@ -515,12 +516,14 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       setIsUpdating(false);
       setShowSuccessMessage(false);
     } finally {
+      setIsSubmitting(false);
       setIsLoading(false);
     }
   };
 
   // Handle password change
   const handlePasswordChange = async (data: any) => {
+    setIsSubmitting(true);
     setIsLoading(true);
     setSaveError(null);
     
@@ -571,12 +574,14 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       console.error('🔴 Password change error:', error);
       setSaveError(error.message || 'Failed to change password. Please try again.');
     } finally {
+      setIsSubmitting(false);
       setIsLoading(false);
     }
   };
 
   // Handle email change
   const handleEmailChange = async (data: any) => {
+    setIsSubmitting(true);
     setIsLoading(true);
     setSaveError(null);
     
@@ -612,6 +617,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       console.error('🔴 Email change error:', error);
       setSaveError(error.message || 'Failed to change email. Please try again.');
     } finally {
+      setIsSubmitting(false);
       setIsLoading(false);
     }
   };
@@ -682,9 +688,28 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
           </div>
         )}
 
+        {/* Save error message */}
+        {saveError && (
+          <div className="mb-6 p-3 bg-red-900/50 border border-red-700 rounded-lg flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-red-300 text-sm">{saveError}</p>
+          </div>
+        )}
+
         {/* Profile Settings */}
         {activeTab === 'profile' && (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="relative">
+            {/* Loading overlay */}
+            {isSubmitting && (
+              <div className="absolute inset-0 bg-gray-900/75 backdrop-blur-sm rounded-lg z-10 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                  <p className="text-white font-medium">Saving changes...</p>
+                </div>
+              </div>
+            )}
+            
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Avatar */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -922,7 +947,11 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                     disabled: isSubmitting || (!isDirty && avatarPreview === (originalValues.avatar || initialData.avatar)) || Object.keys(errors).length > 0 || (usernameStatus.available === false && watchedUsername !== originalValues.username) || usernameStatus.checking
                   });
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 ${
+                  isSubmitting 
+                    ? 'bg-gray-600 text-gray-300 cursor-not-allowed' 
+                    : 'bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50'
+                }`}
               >
                 {isSubmitting ? (
                   <>
@@ -936,8 +965,28 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   </>
                 )}
               </button>
+              
+              {/* Validation help message */}
+              {Object.keys(errors).length > 0 && (
+                <p className="text-sm text-red-400 mt-2 text-center">
+                  Please fix the validation errors above before saving.
+                </p>
+              )}
+              
+              {usernameStatus.available === false && watchedUsername !== originalValues.username && (
+                <p className="text-sm text-red-400 mt-2 text-center">
+                  Username is not available. Please choose a different one.
+                </p>
+              )}
+              
+              {usernameStatus.checking && (
+                <p className="text-sm text-gray-400 mt-2 text-center">
+                  Checking username availability...
+                </p>
+              )}
             </div>
           </form>
+          </div>
         )}
 
         {/* Account Settings - temporarily hidden */}

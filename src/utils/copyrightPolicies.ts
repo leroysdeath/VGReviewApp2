@@ -356,3 +356,196 @@ export function blockCompanyCompletely(companyName: string, reason: string): voi
   
   console.log(`🔒 EMERGENCY: Completely blocked ${companyName} due to: ${reason}`);
 }
+
+/**
+ * First and Second Party Company Ownership Database
+ * Maps major copyright holders to their owned/controlled subsidiaries and authorized developers
+ */
+export const COMPANY_OWNERSHIP: Record<string, {
+  firstParty: string[];
+  secondParty: string[];
+  franchises: string[];
+}> = {
+  // Nintendo's First & Second Party Network
+  'nintendo': {
+    firstParty: [
+      'nintendo', 'nintendo co', 'nintendo co.', 'nintendo of america', 'nintendo of europe',
+      'nintendo ead', 'nintendo epd', 'nintendo entertainment planning & development',
+      'nintendo r&d1', 'nintendo r&d2', 'nintendo r&d3', 'nintendo r&d4',
+      'nintendo software planning & development', 'nintendo spd',
+      'nintendo software technology', 'nst'
+    ],
+    secondParty: [
+      'game freak', 'gamefreak', 'hal laboratory', 'hal lab',
+      'intelligent systems', 'retro studios', 'creatures inc', 'creatures',
+      'the pokémon company', 'pokemon company', 'camelot software planning',
+      'monolith soft', 'monolithsoft', 'brownie brown', '1-up studio',
+      'skip ltd', 'skip', 'nd cube', 'arika', 'grezzo',
+      'next level games', 'good-feel', 'tantalus media'
+    ],
+    franchises: [
+      'mario', 'super mario', 'zelda', 'legend of zelda', 'pokemon', 'pokémon',
+      'metroid', 'kirby', 'donkey kong', 'star fox', 'fire emblem',
+      'xenoblade', 'splatoon', 'animal crossing', 'pikmin', 'f-zero',
+      'earthbound', 'mother', 'smash bros', 'super smash bros', 'arms',
+      'nintendo land', 'wii sports', 'wii play', 'wii fit', 'mario kart',
+      'mario party', 'paper mario', 'luigi\'s mansion'
+    ]
+  },
+
+  // Square Enix Network
+  'square enix': {
+    firstParty: [
+      'square enix', 'square', 'enix', 'squaresoft', 'square soft',
+      'square enix holdings', 'square enix montreal', 'square enix europe',
+      'square enix inc', 'square enix ltd', 'square enix co', 'square enix co.',
+      'square co', 'square co.', 'enix corporation', 'enix corp',
+      'square enix business division', 'creative business unit',
+      'luminous productions'
+    ],
+    secondParty: [
+      'tri-ace', 'platinum games', 'artdink', 'h.a.n.d.',
+      'matrix software', 'acquire corp', 'acquire', 'media.vision',
+      'tose', 'think & feel', 'soleil', 'studio istolia'
+    ],
+    franchises: [
+      'final fantasy', 'ff', 'dragon quest', 'chrono trigger', 'chrono cross',
+      'secret of mana', 'seiken densetsu', 'kingdom hearts', 'nier', 'drakengard',
+      'tomb raider', 'just cause', 'deus ex', 'life is strange',
+      'the world ends with you', 'twewy', 'bravely default', 'octopath traveler',
+      'trials of mana', 'live a live', 'romancing saga', 'saga frontier',
+      'valkyrie profile', 'star ocean', 'front mission', 'vagrant story'
+    ]
+  },
+
+  // Disney's Network
+  'disney': {
+    firstParty: [
+      'disney', 'disney interactive', 'disney interactive studios',
+      'walt disney company', 'disney enterprises'
+    ],
+    secondParty: [
+      'lucasfilm', 'lucasfilm games', 'marvel entertainment', 'marvel games',
+      'pixar animation studios', 'pixar', '20th century games'
+    ],
+    franchises: [
+      'star wars', 'marvel', 'avengers', 'spider-man', 'x-men',
+      'mickey mouse', 'disney', 'frozen', 'pixar', 'toy story',
+      'cars', 'incredibles', 'finding nemo', 'monsters inc'
+    ]
+  },
+
+  // Capcom Network
+  'capcom': {
+    firstParty: [
+      'capcom', 'capcom co', 'capcom usa', 'capcom europe',
+      'capcom production studio 1', 'capcom production studio 2',
+      'capcom production studio 3', 'capcom production studio 4'
+    ],
+    secondParty: [
+      'clover studio', 'flagship', 'dimps corporation', 'dimps',
+      'inti creates', 'armature studio', 'beeline interactive',
+      'capcom vancouver', 'blue castle games'
+    ],
+    franchises: [
+      'street fighter', 'resident evil', 'biohazard', 'mega man', 'megaman',
+      'devil may cry', 'monster hunter', 'ace attorney', 'phoenix wright',
+      'dead rising', 'lost planet', 'viewtiful joe', 'okami',
+      'darkstalkers', 'vampire savior', 'breath of fire', 'final fight'
+    ]
+  },
+
+  // Take-Two/Rockstar Network
+  'take-two interactive': {
+    firstParty: [
+      'take-two interactive', 'take-two', 't2', 'rockstar games',
+      'rockstar north', 'rockstar san diego', 'rockstar toronto',
+      '2k games', '2k', 'private division'
+    ],
+    secondParty: [
+      'hangar 13', 'firaxis games', 'visual concepts', 'cat daddy games',
+      'cloud chamber', 'ghost story games'
+    ],
+    franchises: [
+      'grand theft auto', 'gta', 'red dead', 'max payne', 'manhunt',
+      'midnight club', 'bully', 'la noire', 'civilization', 'xcom',
+      'bioshock', 'borderlands', 'nba 2k', 'wwe 2k'
+    ]
+  },
+
+  // Konami Network  
+  'konami': {
+    firstParty: [
+      'konami', 'konami digital entertainment', 'konami computer entertainment',
+      'konami of america', 'konami europe', 'kojima productions'
+    ],
+    secondParty: [
+      'kcet', 'kcek', 'team silent', 'love-de-lic'
+    ],
+    franchises: [
+      'metal gear', 'silent hill', 'castlevania', 'contra',
+      'gradius', 'bomberman', 'dance dance revolution', 'ddr',
+      'yu-gi-oh', 'suikoden', 'zone of the enders'
+    ]
+  }
+};
+
+/**
+ * Check if a company is authorized to publish content for an aggressive copyright holder
+ */
+export function isAuthorizedPublisher(developer: string, publisher: string, franchiseOwner: string): boolean {
+  if (!franchiseOwner) return false;
+  
+  const ownershipData = COMPANY_OWNERSHIP[franchiseOwner.toLowerCase().trim()];
+  if (!ownershipData) return false;
+  
+  const devLower = (developer || '').toLowerCase().trim();
+  const pubLower = (publisher || '').toLowerCase().trim();
+  
+  // Check if developer is first/second party
+  const isAuthorizedDev = devLower && (
+    ownershipData.firstParty.some(company => devLower.includes(company.toLowerCase())) ||
+    ownershipData.secondParty.some(company => devLower.includes(company.toLowerCase()))
+  );
+  
+  // Check if publisher is first/second party  
+  const isAuthorizedPub = pubLower && (
+    ownershipData.firstParty.some(company => pubLower.includes(company.toLowerCase())) ||
+    ownershipData.secondParty.some(company => pubLower.includes(company.toLowerCase()))
+  );
+  
+  const result = isAuthorizedDev || isAuthorizedPub;
+  
+  if (!result && (devLower || pubLower)) {
+    console.log(`🔍 OWNERSHIP CHECK: "${developer || 'N/A'}" / "${publisher || 'N/A'}" not authorized for ${franchiseOwner}`);
+  }
+  
+  return result;
+}
+
+/**
+ * Find which franchise owner a game belongs to based on its content
+ */
+export function findFranchiseOwner(game: any, searchText?: string): string | null {
+  const text = searchText || [
+    game.name,
+    game.developer,
+    game.publisher,
+    game.summary,
+    game.description
+  ].filter(Boolean).join(' ').toLowerCase();
+  
+  // Check each company's franchises
+  for (const [company, data] of Object.entries(COMPANY_OWNERSHIP)) {
+    const matchesFranchise = data.franchises.some(franchise => 
+      text.includes(franchise.toLowerCase())
+    );
+    
+    if (matchesFranchise) {
+      console.log(`🎯 FRANCHISE DETECTED: "${game.name}" belongs to ${company} franchise`);
+      return company;
+    }
+  }
+  
+  return null;
+}
