@@ -703,18 +703,18 @@ export const GamePage: React.FC = () => {
                             {!isPlatformsExpanded ? (
                               // Collapsed view - single line
                               <div className="flex items-center gap-2">
-                                <span className="truncate flex-1">
+                                <span className="truncate" style={{ flexShrink: 1, minWidth: 0 }}>
                                   {(() => {
                                     const platformsText = game.platforms.join(', ');
                                     return needsTruncation(platformsText, 50) 
                                       ? truncateText(platformsText, 50)
                                       : platformsText;
-                                  })()}
+                                  })()} 
                                 </span>
                                 {needsTruncation(game.platforms.join(', '), 50) && (
                                   <button
                                     onClick={() => setIsPlatformsExpanded(true)}
-                                    className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0"
+                                    className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
                                   >
                                     See more
                                   </button>
@@ -743,7 +743,7 @@ export const GamePage: React.FC = () => {
                         {!isDevPubExpanded ? (
                           // Collapsed view - single line
                           <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 min-w-0" style={{ flex: '1 1 0%', maxWidth: 'calc(100% - 80px)' }}>
                               {game.developer && (
                                 <>
                                   <strong className="whitespace-nowrap flex-shrink-0">Developer:</strong>
@@ -763,7 +763,7 @@ export const GamePage: React.FC = () => {
                             {(needsTruncation(game.developer, 20) || needsTruncation(game.publisher, 20)) && (
                               <button
                                 onClick={() => setIsDevPubExpanded(true)}
-                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0"
+                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
                               >
                                 See more
                               </button>
