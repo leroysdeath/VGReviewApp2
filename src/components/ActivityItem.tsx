@@ -10,10 +10,9 @@ import {
 } from 'lucide-react';
 import { 
   ActivityType, 
-  formatRelativeTime, 
-  getActivityColor, 
-  truncateText 
+  formatRelativeTime
 } from '../utils/activityFormatters';
+import { getGameUrl } from '../utils/gameUrls';
 
 interface ActivityItemProps {
   id: string;
@@ -30,8 +29,9 @@ interface ActivityItemProps {
     name?: string;
   };
   game?: {
-    id: string;
+    id: string | number;
     igdb_id?: string | number; // IGDB ID for navigation
+    slug?: string | null;
     name: string;
     coverImage?: string;
   };
@@ -92,7 +92,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
             )}
             {' posted a review for '}
             <Link 
-              to={`/game/${game.igdb_id || game.id}`}
+              to={getGameUrl(game)}
               className="font-medium text-white hover:text-blue-400 transition-colors"
             >
               {game.name}
@@ -128,7 +128,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
             )}
             {' of '}
             <Link 
-              to={`/game/${game.igdb_id || game.id}`}
+              to={getGameUrl(game)}
               className="font-medium text-white hover:text-blue-400 transition-colors"
             >
               {game.name}
@@ -164,7 +164,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
             )}
             {' of '}
             <Link 
-              to={`/game/${game.igdb_id || game.id}`}
+              to={getGameUrl(game)}
               className="font-medium text-white hover:text-blue-400 transition-colors"
             >
               {game.name}
@@ -200,7 +200,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
             )}
             {' on '}
             <Link 
-              to={`/game/${game.igdb_id || game.id}`}
+              to={getGameUrl(game)}
               className="font-medium text-white hover:text-blue-400 transition-colors"
             >
               {game.name}
@@ -236,7 +236,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
             )}
             {' on '}
             <Link 
-              to={`/game/${game.igdb_id || game.id}`}
+              to={getGameUrl(game)}
               className="font-medium text-white hover:text-blue-400 transition-colors"
             >
               {game.name}

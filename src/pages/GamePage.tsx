@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
@@ -17,6 +17,7 @@ import { ModSection } from '../components/ModSection';
 import { dlcService } from '../services/dlcService';
 import { SmartImage } from '../components/SmartImage';
 import { shouldHideFanContent } from '../utils/contentProtectionFilter';
+import { isNumericIdentifier } from '../utils/gameUrls';
 
 // Interface for review data from database
 interface GameReview {
@@ -147,11 +148,10 @@ const initialState: GamePageState = {
 };
 
 export const GamePage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { identifier } = useParams<{ identifier: string }>();
+  const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
-  // Validate IGDB ID parameter
-  const isValidId = id && !isNaN(parseInt(id)) && parseInt(id) > 0;
   
   // State for text expansion
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
@@ -180,16 +180,29 @@ export const GamePage: React.FC = () => {
 
   // Refetch function using the new consolidated service method
   const refetchGame = async () => {
-    if (!isValidId) {
-      dispatch({ type: 'SET_GAME_ERROR', payload: new Error('Invalid game ID') });
+    if (!identifier) {
+      dispatch({ type: 'SET_GAME_ERROR', payload: new Error('Invalid game identifier') });
       return;
     }
     
     dispatch({ type: 'SET_GAME_LOADING', payload: true });
 
     try {
-      // Use the new consolidated method to fetch both game and reviews
-      const { game: gameData, reviews: reviewData } = await gameDataService.getGameWithFullReviews(parseInt(id));
+      let gameData = null;
+      let reviewData = [];
+
+      // Smart resolution: check if identifier is numeric (IGDB ID) or slug
+      if (isNumericIdentifier(identifier)) {
+        console.log('🔢 Treating as IGDB ID:', identifier);
+        const result = await gameDataService.getGameWithFullReviews(parseInt(identifier));
+        gameData = result.game;
+        reviewData = result.reviews;
+      } else {
+        console.log('🔤 Treating as slug:', identifier);
+        const result = await gameDataService.getGameWithFullReviewsBySlug(identifier);
+        gameData = result.game;
+        reviewData = result.reviews;
+      }
       
       if (gameData) {
         dispatch({ type: 'LOAD_GAME_SUCCESS', payload: { game: gameData, reviews: reviewData } });
@@ -204,8 +217,8 @@ export const GamePage: React.FC = () => {
   // Load game data and reviews in a single call
   useEffect(() => {
     const loadGameData = async () => {
-      if (!isValidId) {
-        dispatch({ type: 'SET_GAME_ERROR', payload: new Error('Invalid or missing game ID') });
+      if (!identifier) {
+        dispatch({ type: 'SET_GAME_ERROR', payload: new Error('Invalid or missing game identifier') });
         return;
       }
 
@@ -213,18 +226,32 @@ export const GamePage: React.FC = () => {
       dispatch({ type: 'SET_REVIEWS_LOADING', payload: true });
 
       try {
-        console.log('Loading game with IGDB ID:', id);
+        console.log('Loading game with identifier:', identifier);
         
-        // Use the consolidated method to fetch both game and reviews
-        const { game: gameData, reviews: reviewData } = await gameDataService.getGameWithFullReviews(parseInt(id));
+        // Smart resolution: check if identifier is numeric (IGDB ID) or slug
+        let result;
+        if (isNumericIdentifier(identifier)) {
+          console.log('Using IGDB ID lookup:', identifier);
+          result = await gameDataService.getGameWithFullReviews(parseInt(identifier));
+        } else {
+          console.log('Using slug lookup:', identifier);
+          result = await gameDataService.getGameWithFullReviewsBySlug(identifier);
+        }
+        
+        const { game: gameData, reviews: reviewData } = result;
         
         if (gameData) {
           console.log('✅ Game loaded successfully:', gameData.name);
           console.log(`✅ Loaded ${reviewData.length} reviews`);
           console.log('📊 Raw review data:', reviewData);
           dispatch({ type: 'LOAD_GAME_SUCCESS', payload: { game: gameData, reviews: reviewData } });
+          
+          // If loaded by IGDB ID but game has slug, redirect to canonical URL
+          if (isNumericIdentifier(identifier) && gameData.slug) {
+            navigate(`/game/${gameData.slug}`, { replace: true });
+          }
         } else {
-          console.log('❌ Game not found for IGDB ID:', id);
+          console.log('❌ Game not found for identifier:', identifier);
           dispatch({ type: 'LOAD_GAME_ERROR', payload: new Error('Game not found') });
         }
       } catch (error) {
@@ -234,17 +261,17 @@ export const GamePage: React.FC = () => {
     };
 
     loadGameData();
-  }, [id, isValidId]);
+  }, [identifier, navigate]);
 
   // Load game progress when user is authenticated and game is loaded
   useEffect(() => {
     const loadGameProgress = async () => {
-      if (!game || !id || !isAuthenticated) return;
+      if (!game || !game.igdb_id || !isAuthenticated) return;
 
       dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
       try {
-        console.log('Loading game progress for game ID:', id);
-        const result = await getGameProgress(parseInt(id));
+        console.log('Loading game progress for game ID:', game.igdb_id);
+        const result = await getGameProgress(game.igdb_id);
         
         if (result.success && result.data) {
           dispatch({ type: 'SET_PROGRESS', payload: { 
@@ -266,20 +293,20 @@ export const GamePage: React.FC = () => {
     };
 
     loadGameProgress();
-  }, [game, id, isAuthenticated]);
+  }, [game, isAuthenticated]);
 
   // Check if user has already reviewed this game
   useEffect(() => {
     const checkUserReview = async () => {
-      if (!game || !id || !isAuthenticated) {
+      if (!game || !game.igdb_id || !isAuthenticated) {
         dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: false }});
         return;
       }
 
       dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: true }});
       try {
-        console.log('Checking if user has reviewed game ID:', id);
-        const result = await getUserReviewForGame(parseInt(id));
+        console.log('Checking if user has reviewed game ID:', game.igdb_id);
+        const result = await getUserReviewForGame(game.igdb_id);
         
         if (result.success) {
           dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { 
@@ -298,17 +325,17 @@ export const GamePage: React.FC = () => {
     };
 
     checkUserReview();
-  }, [game, id, isAuthenticated]);
+  }, [game, isAuthenticated]);
 
   // Fetch game category from IGDB for DLC/expansion detection
   useEffect(() => {
     const fetchGameCategory = async () => {
-      if (!game || !id) return;
+      if (!game || !game.igdb_id) return;
 
       dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: null, loading: true }});
 
       try {
-        console.log('Fetching category for game IGDB ID:', id);
+        console.log('Fetching category for game IGDB ID:', game.igdb_id);
         
         const response = await fetch('/.netlify/functions/igdb-search', {
           method: 'POST',
@@ -318,7 +345,7 @@ export const GamePage: React.FC = () => {
           body: JSON.stringify({
             isBulkRequest: true,
             endpoint: 'games',
-            requestBody: `fields category, parent_game; where id = ${id};`
+            requestBody: `fields category, parent_game; where id = ${game.igdb_id};`
           })
         });
 
@@ -347,7 +374,7 @@ export const GamePage: React.FC = () => {
     };
 
     fetchGameCategory();
-  }, [game, id]);
+  }, [game]);
 
   // Reviews are now loaded with game data in the main useEffect
   // This reduces redundant API calls and improves performance
@@ -362,7 +389,7 @@ export const GamePage: React.FC = () => {
   };
 
   const executeAction = async (action: string) => {
-    if (!game || !id) return;
+    if (!game || !game.igdb_id) return;
 
     switch (action) {
       case 'mark_started':
@@ -378,7 +405,7 @@ export const GamePage: React.FC = () => {
   };
 
   const handleMarkStarted = async () => {
-    if (!game || !id || isStarted) return; // Don't allow if already started
+    if (!game || !game.igdb_id || isStarted) return; // Don't allow if already started
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
@@ -398,7 +425,7 @@ export const GamePage: React.FC = () => {
       }
 
       // Mark game as started using IGDB ID
-      const result = await markGameStarted(parseInt(id));
+      const result = await markGameStarted(game.igdb_id);
       
       if (result.success) {
         dispatch({ type: 'SET_PROGRESS', payload: { isStarted: true, isCompleted } });
@@ -416,7 +443,7 @@ export const GamePage: React.FC = () => {
   };
 
   const handleMarkCompleted = async () => {
-    if (!game || !id || isCompleted) return; // Don't allow if already completed
+    if (!game || !game.igdb_id || isCompleted) return; // Don't allow if already completed
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
@@ -436,7 +463,7 @@ export const GamePage: React.FC = () => {
       }
 
       // Mark game as completed using IGDB ID (this will also mark as started)
-      const result = await markGameCompleted(parseInt(id));
+      const result = await markGameCompleted(game.igdb_id);
       
       if (result.success) {
         dispatch({ type: 'SET_PROGRESS', payload: { isStarted: true, isCompleted: true } });
@@ -474,7 +501,7 @@ export const GamePage: React.FC = () => {
       id: review.id.toString(),
       userId: review.user_id.toString(),
       gameId: review.game_id.toString(),
-      igdbGameId: id, // Use the IGDB game_id from the URL parameter
+      igdbGameId: game?.igdb_id?.toString() || '', // Use the IGDB game_id from the game data
       gameTitle: game?.name || 'Unknown Game',
       rating: review.rating,
       text: review.review || '',
@@ -485,7 +512,7 @@ export const GamePage: React.FC = () => {
       author: review.user?.name || 'Anonymous',
       authorAvatar: review.user?.avatar_url || '/default-avatar.png'
     })),
-    [validRatings, id, game?.name]
+    [validRatings, game?.igdb_id, game?.name]
   );
 
   // Recommendation 6: Clarify terminology - separate reviews with text from ratings
@@ -637,7 +664,7 @@ export const GamePage: React.FC = () => {
               {gameError?.message || 'Game not found'}
             </h1>
             <p className="text-gray-400 mb-4">
-              Debug: Tried to load game with IGDB ID: {id}
+              Debug: Tried to load game with identifier: {identifier}
             </p>
             <div className="flex gap-4 justify-center">
               <button

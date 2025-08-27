@@ -3,12 +3,14 @@ import { X, Star, TrendingUp, TrendingDown, Clock, History } from 'lucide-react'
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useResponsive } from '../hooks/useResponsive';
+import { getGameUrl } from '../utils/gameUrls';
 
 interface Review {
   id: string;
   gameId: string;
   gameTitle: string;
   gameCover: string;
+  gameUrl: string;
   rating: number;
   reviewText: string;
   postDate: string;
@@ -50,7 +52,8 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
             id,
             igdb_id,
             name,
-            pic_url
+            pic_url,
+            slug
           )
         `)
         .eq('user_id', parseInt(userId))
@@ -84,6 +87,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
           gameId: item.game.igdb_id ? item.game.igdb_id.toString() : item.game.id.toString(),
           gameTitle: item.game.name || 'Unknown Game',
           gameCover: item.game.pic_url || '/default-cover.png',
+          gameUrl: getGameUrl(item.game),
           rating: item.rating || 0,
           reviewText: item.review,
           postDate: item.post_date_time
@@ -228,7 +232,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                 <div key={review.id} className="bg-gray-700 rounded-lg p-4">
                   <div className="flex items-start gap-4">
                     <Link
-                      to={`/game/${review.gameId}`}
+                      to={review.gameUrl}
                       className="flex-shrink-0"
                       onClick={onClose}
                     >
@@ -245,7 +249,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-2">
                         <Link
-                          to={`/game/${review.gameId}`}
+                          to={review.gameUrl}
                           className="text-white font-medium hover:text-purple-400 transition-colors"
                           onClick={onClose}
                         >

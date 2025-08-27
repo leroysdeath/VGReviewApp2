@@ -1,4 +1,6 @@
-// src/utils/gameUrls.ts
+// URL helper utilities for game page routing
+// Supports both slug-based URLs and IGDB ID fallbacks
+
 export const getGameUrl = (game: {
   slug?: string | null;
   igdb_id?: number;
