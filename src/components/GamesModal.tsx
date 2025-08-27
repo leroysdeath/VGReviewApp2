@@ -3,10 +3,12 @@ import { X, Gamepad2, Play, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useResponsive } from '../hooks/useResponsive';
+import { getGameUrl } from '../utils/gameUrls';
 
 interface Game {
   id: string;
   igdb_id?: string | number;
+  slug?: string | null;
   title: string;
   coverImage: string;
   releaseDate: string;
@@ -16,6 +18,7 @@ interface Game {
   completed?: boolean;
   started_date?: string;
   completed_date?: string;
+  gameUrl: string;
 }
 
 interface GamesModalProps {
@@ -62,6 +65,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           game:game_id (
             id,
             igdb_id,
+            slug,
             name,
             pic_url,
             genre,
@@ -79,6 +83,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         .map(item => ({
           id: item.game.id.toString(),
           igdb_id: item.game.igdb_id,
+          slug: item.game.slug,
           title: item.game.name || 'Unknown Game',
           coverImage: item.game.pic_url || '/default-cover.png',
           genre: item.game.genre || '',
@@ -86,7 +91,8 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           started: item.started,
           completed: item.completed,
           started_date: item.started_date,
-          completed_date: item.completed_date
+          completed_date: item.completed_date,
+          gameUrl: getGameUrl(item.game)
         }));
 
       setAllGames(gamesData);
@@ -114,6 +120,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           game:game_id (
             id,
             igdb_id,
+            slug,
             name,
             pic_url,
             genre,
@@ -132,6 +139,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         .map(item => ({
           id: item.game.id.toString(),
           igdb_id: item.game.igdb_id,
+          slug: item.game.slug,
           title: item.game.name || 'Unknown Game',
           coverImage: item.game.pic_url || '/default-cover.png',
           genre: item.game.genre || '',
@@ -139,7 +147,8 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           started: item.started,
           completed: item.completed,
           started_date: item.started_date,
-          completed_date: item.completed_date
+          completed_date: item.completed_date,
+          gameUrl: getGameUrl(item.game)
         }));
 
       setStartedGames(gamesData);
@@ -166,6 +175,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           game:game_id (
             id,
             igdb_id,
+            slug,
             name,
             pic_url,
             genre,
@@ -348,7 +358,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
                 {currentGames.map((game) => (
                   <Link
                     key={game.id}
-                    to={`/game/${game.igdb_id || game.id}`}
+                    to={game.gameUrl}
                     className="group relative hover:scale-105 transition-transform"
                     onClick={onClose}
                   >
@@ -402,7 +412,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
                 {currentGames.map((game) => (
                   <Link
                     key={game.id}
-                    to={`/game/${game.igdb_id || game.id}`}
+                    to={game.gameUrl}
                     className="group relative hover:scale-105 transition-transform"
                     onClick={onClose}
                   >

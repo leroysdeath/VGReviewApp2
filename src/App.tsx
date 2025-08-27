@@ -91,7 +91,7 @@ const AppContent: React.FC = () => {
         <main className="flex-grow">
           <Routes>
                     <Route path="/" element={<ResponsiveLandingPage />} />
-                    <Route path="/game/:id" element={<GamePage />} />
+                    <Route path="/game/:identifier" element={<GamePage />} />
                     <Route path="/search" element={<SearchResultsPage />} />
                     <Route path="/search-results" element={<SearchResultsPage />} />
                     <Route path="/user/:id" element={

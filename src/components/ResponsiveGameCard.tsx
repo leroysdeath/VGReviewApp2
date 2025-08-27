@@ -4,11 +4,13 @@ import { Calendar, Star, Database, Zap, AlertCircle, MessageSquare, Gamepad2, Lo
 import { StarRating } from './StarRating';
 import { useResponsive } from '../hooks/useResponsive';
 import { browserCache } from '../services/browserCacheService';
+import { getGameUrl } from '../utils/gameUrls';
 // Removed IGDB service - using Supabase data directly
 
 interface Game {
   id: string | number;
   igdb_id?: string | number; // IGDB ID for navigation
+  slug?: string | null;
   title: string;
   name?: string; // Alternative title field from IGDB
   coverImage: string;
@@ -304,7 +306,7 @@ export const ResponsiveGameCard: React.FC<ResponsiveGameCardProps> = ({
         onMouseEnter={handleMouseEnter}
       >
         <Link
-          to={`/game/${game.igdb_id || game.id}`}
+          to={getGameUrl(game)}
           onClick={handleClick}
           className="flex items-center gap-4 p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-all duration-200 hover:shadow-lg"
         >

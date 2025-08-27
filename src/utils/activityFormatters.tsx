@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { getGameUrl } from './gameUrls';
 
 // Activity types
 export type ActivityType = 'review' | 'review_like' | 'comment' | 'comment_like' | 'comment_reply';
@@ -18,8 +19,9 @@ export interface ActivityData {
     name?: string;
   };
   game?: {
-    id: string;
+    id: string | number;
     igdb_id?: string | number; // IGDB ID for navigation
+    slug?: string | null;
     name: string;
   };
   content?: string;
@@ -101,7 +103,7 @@ export const formatActivity = (activity: ActivityData, currentUserId?: string): 
               </>
             )}
             <Link 
-              to={`/game/${activity.game.igdb_id || activity.game.id}`}
+              to={getGameUrl(activity.game)}
               className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
             >
               {activity.game.name}
@@ -144,7 +146,7 @@ export const formatActivity = (activity: ActivityData, currentUserId?: string): 
             )}
             <> of </>
             <Link 
-              to={`/game/${activity.game.igdb_id || activity.game.id}`}
+              to={getGameUrl(activity.game)}
               className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
             >
               {activity.game.name}
@@ -187,7 +189,7 @@ export const formatActivity = (activity: ActivityData, currentUserId?: string): 
             )}
             <> of </>
             <Link 
-              to={`/game/${activity.game.igdb_id || activity.game.id}`}
+              to={getGameUrl(activity.game)}
               className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
             >
               {activity.game.name}
@@ -230,7 +232,7 @@ export const formatActivity = (activity: ActivityData, currentUserId?: string): 
             )}
             <> on </>
             <Link 
-              to={`/game/${activity.game.igdb_id || activity.game.id}`}
+              to={getGameUrl(activity.game)}
               className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
             >
               {activity.game.name}
@@ -273,7 +275,7 @@ export const formatActivity = (activity: ActivityData, currentUserId?: string): 
             )}
             <> on </>
             <Link 
-              to={`/game/${activity.game.igdb_id || activity.game.id}`}
+              to={getGameUrl(activity.game)}
               className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
             >
               {activity.game.name}
