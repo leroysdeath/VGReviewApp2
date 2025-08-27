@@ -216,25 +216,23 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           {showGameTitle && review.gameTitle && review.gameCoverUrl && (
             <div className={`
               float-right ml-4 mb-4 flex-shrink-0
-              ${compact ? 'w-16 h-20' : 'w-20 h-28'}
+              ${compact ? 'w-16' : 'w-20'}
             `}>
-              <div className="relative">
-                <img
-                  src={review.gameCoverUrl}
-                  alt={review.gameTitle}
-                  className={`
-                    w-full h-full object-cover rounded
-                    ${compact ? 'w-16 h-20' : 'w-20 h-28'}
-                  `}
-                  loading="lazy"
-                />
-                {/* Grey rating bar at bottom of image */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gray-500 px-1 py-0.5">
-                  <div className="text-center">
-                    <span className="text-white text-xs font-bold">
-                      {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-                    </span>
-                  </div>
+              <img
+                src={review.gameCoverUrl}
+                alt={review.gameTitle}
+                className={`
+                  w-full object-cover rounded
+                  ${compact ? 'w-16 h-20' : 'w-20 h-28'}
+                `}
+                loading="lazy"
+              />
+              {/* Grey rating bar below image */}
+              <div className="bg-gray-500 px-1 py-0.5">
+                <div className="text-center">
+                  <span className="text-white text-xs font-bold">
+                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                  </span>
                 </div>
               </div>
             </div>
@@ -259,20 +257,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
             {showGameTitle && review.gameTitle && (
               <div className={`${compact ? 'text-xs' : 'text-sm'} text-gray-400 mt-1`}>
                 reviewed{' '}
-                {(() => {
-                  const { firstPart, secondPart } = splitGameTitle(review.gameTitle);
-                  return (
-                    <span className="text-gray-300 font-medium">
-                      {firstPart}
-                      {secondPart && (
-                        <>
-                          <br />
-                          <span className="text-right block">{secondPart}</span>
-                        </>
-                      )}
-                    </span>
-                  );
-                })()}
+                <span className="text-gray-300 font-medium">
+                  {review.gameTitle}
+                </span>
                 
                 {/* Date - only show if no cover image (otherwise rating is on image) */}
                 {!review.gameCoverUrl && (
