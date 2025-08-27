@@ -938,14 +938,16 @@ export const GamePage: React.FC = () => {
                             height: item.count > 0 
                               ? `${(item.percentage / 100) * 80}px`
                               : '2px',
-                            backgroundColor: item.rating >= 8 ? '#4ade80' : '#374151'
+                            backgroundColor: '#6b7280'
                           }}
                         ></div>
                       ))}
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-green-500 text-xs" style={{ width: '24px', textAlign: 'center' }}>1</span>
-                      <span className="text-green-500 text-xs" style={{ width: '24px', textAlign: 'center' }}>10</span>
+                    <div className="border-t border-gray-700 pt-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400 text-xs" style={{ width: '24px', textAlign: 'center' }}>1</span>
+                        <span className="text-gray-400 text-xs" style={{ width: '24px', textAlign: 'center' }}>10</span>
+                      </div>
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-green-400">
