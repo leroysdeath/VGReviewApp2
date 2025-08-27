@@ -703,18 +703,18 @@ export const GamePage: React.FC = () => {
                             {!isPlatformsExpanded ? (
                               // Collapsed view - single line
                               <div className="flex items-center gap-2">
-                                <span className="truncate flex-1">
+                                <span className="truncate" style={{ flexShrink: 1, minWidth: 0 }}>
                                   {(() => {
                                     const platformsText = game.platforms.join(', ');
                                     return needsTruncation(platformsText, 50) 
                                       ? truncateText(platformsText, 50)
                                       : platformsText;
-                                  })()}
+                                  })()} 
                                 </span>
                                 {needsTruncation(game.platforms.join(', '), 50) && (
                                   <button
                                     onClick={() => setIsPlatformsExpanded(true)}
-                                    className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0"
+                                    className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
                                   >
                                     See more
                                   </button>
@@ -743,7 +743,7 @@ export const GamePage: React.FC = () => {
                         {!isDevPubExpanded ? (
                           // Collapsed view - single line
                           <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 min-w-0" style={{ flex: '1 1 0%', maxWidth: 'calc(100% - 80px)' }}>
                               {game.developer && (
                                 <>
                                   <strong className="whitespace-nowrap flex-shrink-0">Developer:</strong>
@@ -763,7 +763,7 @@ export const GamePage: React.FC = () => {
                             {(needsTruncation(game.developer, 20) || needsTruncation(game.publisher, 20)) && (
                               <button
                                 onClick={() => setIsDevPubExpanded(true)}
-                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0"
+                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
                               >
                                 See more
                               </button>
@@ -938,14 +938,16 @@ export const GamePage: React.FC = () => {
                             height: item.count > 0 
                               ? `${(item.percentage / 100) * 80}px`
                               : '2px',
-                            backgroundColor: item.rating >= 8 ? '#4ade80' : '#374151'
+                            backgroundColor: '#6b7280'
                           }}
                         ></div>
                       ))}
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-green-500 text-xs" style={{ width: '24px', textAlign: 'center' }}>1</span>
-                      <span className="text-green-500 text-xs" style={{ width: '24px', textAlign: 'center' }}>10</span>
+                    <div className="border-t border-gray-700 pt-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400 text-xs" style={{ width: '24px', textAlign: 'center' }}>1</span>
+                        <span className="text-gray-400 text-xs" style={{ width: '24px', textAlign: 'center' }}>10</span>
+                      </div>
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-green-400">
