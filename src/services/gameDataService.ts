@@ -250,7 +250,7 @@ class GameDataService {
         .from('rating')
         .select(`
           *,
-          user!rating_user_id_fkey(
+          user!fk_rating_user(
             id,
             name,
             avatar_url
@@ -346,7 +346,7 @@ class GameDataService {
         .from('rating')
         .select(`
           *,
-          user!rating_user_id_fkey(
+          user!fk_rating_user(
             id,
             name,
             avatar_url

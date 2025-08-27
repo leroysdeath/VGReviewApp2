@@ -149,7 +149,7 @@ export const supabaseHelpers = {
       .select(`
         *,
         game(*),
-        user!rating_user_id_fkey(*)
+        user!fk_rating_user(*)
       `)
       .eq('user_id', userId)
       .order('post_date_time', { ascending: false })
@@ -164,7 +164,7 @@ export const supabaseHelpers = {
       .from('rating')
       .select(`
         *,
-        user!rating_user_id_fkey(*)
+        user!fk_rating_user(*)
       `)
       .eq('game_id', gameId)
       .order('post_date_time', { ascending: false })
