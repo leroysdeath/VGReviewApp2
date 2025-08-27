@@ -9,7 +9,7 @@ import type { GameWithCalculatedFields } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 import { getGameProgress, markGameStarted, markGameCompleted } from '../services/gameProgressService';
-import { ensureGameExists, getUserReviewForGame } from '../services/reviewService';
+import { ensureGameExists, getUserReviewForGameByIGDBId } from '../services/reviewService';
 import { generateRatingDistribution } from '../utils/dataTransformers';
 import { DLCSection } from '../components/DLCSection';
 import { ParentGameSection } from '../components/ParentGameSection';
@@ -305,8 +305,8 @@ export const GamePage: React.FC = () => {
 
       dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: true }});
       try {
-        console.log('Checking if user has reviewed game ID:', game.igdb_id);
-        const result = await getUserReviewForGame(game.igdb_id);
+        console.log('Checking if user has reviewed game IGDB ID:', game.igdb_id);
+        const result = await getUserReviewForGameByIGDBId(game.igdb_id);
         
         if (result.success) {
           dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { 
