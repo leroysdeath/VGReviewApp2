@@ -152,8 +152,6 @@ export const GamePage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
-  // Validate identifier parameter (can be slug or IGDB ID)
-  const isValidIdentifier = identifier && identifier.length > 0;
   
   // State for text expansion
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
@@ -182,7 +180,7 @@ export const GamePage: React.FC = () => {
 
   // Refetch function using the new consolidated service method
   const refetchGame = async () => {
-    if (!isValidIdentifier) {
+    if (!identifier) {
       dispatch({ type: 'SET_GAME_ERROR', payload: new Error('Invalid game identifier') });
       return;
     }
@@ -295,20 +293,20 @@ export const GamePage: React.FC = () => {
     };
 
     loadGameProgress();
-  }, [game, id, isAuthenticated]);
+  }, [game, isAuthenticated]);
 
   // Check if user has already reviewed this game
   useEffect(() => {
     const checkUserReview = async () => {
-      if (!game || !id || !isAuthenticated) {
+      if (!game || !game.igdb_id || !isAuthenticated) {
         dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: false }});
         return;
       }
 
       dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: true }});
       try {
-        console.log('Checking if user has reviewed game ID:', id);
-        const result = await getUserReviewForGame(parseInt(id));
+        console.log('Checking if user has reviewed game ID:', game.igdb_id);
+        const result = await getUserReviewForGame(game.igdb_id);
         
         if (result.success) {
           dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { 
@@ -327,17 +325,17 @@ export const GamePage: React.FC = () => {
     };
 
     checkUserReview();
-  }, [game, id, isAuthenticated]);
+  }, [game, isAuthenticated]);
 
   // Fetch game category from IGDB for DLC/expansion detection
   useEffect(() => {
     const fetchGameCategory = async () => {
-      if (!game || !id) return;
+      if (!game || !game.igdb_id) return;
 
       dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: null, loading: true }});
 
       try {
-        console.log('Fetching category for game IGDB ID:', id);
+        console.log('Fetching category for game IGDB ID:', game.igdb_id);
         
         const response = await fetch('/.netlify/functions/igdb-search', {
           method: 'POST',
@@ -347,7 +345,7 @@ export const GamePage: React.FC = () => {
           body: JSON.stringify({
             isBulkRequest: true,
             endpoint: 'games',
-            requestBody: `fields category, parent_game; where id = ${id};`
+            requestBody: `fields category, parent_game; where id = ${game.igdb_id};`
           })
         });
 
@@ -376,7 +374,7 @@ export const GamePage: React.FC = () => {
     };
 
     fetchGameCategory();
-  }, [game, id]);
+  }, [game]);
 
   // Reviews are now loaded with game data in the main useEffect
   // This reduces redundant API calls and improves performance
@@ -391,7 +389,7 @@ export const GamePage: React.FC = () => {
   };
 
   const executeAction = async (action: string) => {
-    if (!game || !id) return;
+    if (!game || !game.igdb_id) return;
 
     switch (action) {
       case 'mark_started':
@@ -407,7 +405,7 @@ export const GamePage: React.FC = () => {
   };
 
   const handleMarkStarted = async () => {
-    if (!game || !id || isStarted) return; // Don't allow if already started
+    if (!game || !game.igdb_id || isStarted) return; // Don't allow if already started
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
@@ -427,7 +425,7 @@ export const GamePage: React.FC = () => {
       }
 
       // Mark game as started using IGDB ID
-      const result = await markGameStarted(parseInt(id));
+      const result = await markGameStarted(game.igdb_id);
       
       if (result.success) {
         dispatch({ type: 'SET_PROGRESS', payload: { isStarted: true, isCompleted } });
@@ -445,7 +443,7 @@ export const GamePage: React.FC = () => {
   };
 
   const handleMarkCompleted = async () => {
-    if (!game || !id || isCompleted) return; // Don't allow if already completed
+    if (!game || !game.igdb_id || isCompleted) return; // Don't allow if already completed
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
@@ -465,7 +463,7 @@ export const GamePage: React.FC = () => {
       }
 
       // Mark game as completed using IGDB ID (this will also mark as started)
-      const result = await markGameCompleted(parseInt(id));
+      const result = await markGameCompleted(game.igdb_id);
       
       if (result.success) {
         dispatch({ type: 'SET_PROGRESS', payload: { isStarted: true, isCompleted: true } });
@@ -503,7 +501,7 @@ export const GamePage: React.FC = () => {
       id: review.id.toString(),
       userId: review.user_id.toString(),
       gameId: review.game_id.toString(),
-      igdbGameId: id, // Use the IGDB game_id from the URL parameter
+      igdbGameId: game?.igdb_id?.toString() || '', // Use the IGDB game_id from the game data
       gameTitle: game?.name || 'Unknown Game',
       rating: review.rating,
       text: review.review || '',
@@ -514,7 +512,7 @@ export const GamePage: React.FC = () => {
       author: review.user?.name || 'Anonymous',
       authorAvatar: review.user?.avatar_url || '/default-avatar.png'
     })),
-    [validRatings, id, game?.name]
+    [validRatings, game?.igdb_id, game?.name]
   );
 
   // Recommendation 6: Clarify terminology - separate reviews with text from ratings
@@ -666,7 +664,7 @@ export const GamePage: React.FC = () => {
               {gameError?.message || 'Game not found'}
             </h1>
             <p className="text-gray-400 mb-4">
-              Debug: Tried to load game with IGDB ID: {id}
+              Debug: Tried to load game with identifier: {identifier}
             </p>
             <div className="flex gap-4 justify-center">
               <button
