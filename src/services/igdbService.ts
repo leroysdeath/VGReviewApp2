@@ -1,5 +1,395 @@
 // IGDB API Service
 import { filterProtectedContent, getFilterStats } from '../utils/contentProtectionFilter';
+import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization';
+import { generateFuzzyPatterns, rankByFuzzyMatch, fuzzyMatchScore } from '../utils/fuzzySearch';
+
+/**
+ * Calculate relevance score for search results with fuzzy matching
+ * Prevents unrelated games from appearing while allowing for title variations
+ */
+function calculateSearchRelevance(game: any, searchQuery: string): number {
+  if (!searchQuery || !searchQuery.trim()) return 1;
+
+  const query = searchQuery.toLowerCase().trim();
+  const gameName = (game.name || '').toLowerCase();
+  const developer = (game.developer || '').toLowerCase();
+  const publisher = (game.publisher || '').toLowerCase();
+  const summary = (game.summary || '').toLowerCase();
+  const genres = Array.isArray(game.genres) ? game.genres.join(' ').toLowerCase() : '';
+
+  let relevanceScore = 0;
+  let maxPossibleScore = 0;
+
+  // Fuzzy name match (highest relevance) - enhanced with fuzzy matching
+  maxPossibleScore += 100;
+  const fuzzyScore = fuzzyMatchScore(query, game.name || '');
+  if (fuzzyScore > 0.8) {
+    // High fuzzy match
+    relevanceScore += 100 * fuzzyScore;
+  } else if (gameName === query) {
+    relevanceScore += 100;
+  } else if (gameName.includes(query) || query.includes(gameName)) {
+    // Calculate how much of the name matches
+    const matchRatio = Math.min(query.length, gameName.length) / Math.max(query.length, gameName.length);
+    relevanceScore += 100 * matchRatio;
+  } else if (fuzzyScore > 0.3) {
+    // Lower fuzzy match still gets some points
+    relevanceScore += 100 * fuzzyScore * 0.7;
+  }
+
+  // Alternative names fuzzy matching (high relevance)
+  maxPossibleScore += 80;
+  if (game.alternative_names && Array.isArray(game.alternative_names)) {
+    let bestAltScore = 0;
+    for (const altName of game.alternative_names) {
+      const altFuzzyScore = fuzzyMatchScore(query, altName.name || '');
+      bestAltScore = Math.max(bestAltScore, altFuzzyScore);
+    }
+    if (bestAltScore > 0.3) {
+      relevanceScore += 80 * bestAltScore;
+    }
+  }
+
+  // Query words in name (very high relevance) - enhanced for variations
+  maxPossibleScore += 60;
+  const queryWords = query.split(/\s+/);
+  const nameWords = gameName.split(/\s+/);
+  let nameWordMatches = 0;
+  queryWords.forEach(queryWord => {
+    if (nameWords.some(nameWord => {
+      // Exact match
+      if (nameWord.includes(queryWord) || queryWord.includes(nameWord)) return true;
+      // Fuzzy match for individual words
+      return fuzzyMatchScore(queryWord, nameWord) > 0.6;
+    })) {
+      nameWordMatches++;
+    }
+  });
+  if (queryWords.length > 0) {
+    relevanceScore += 60 * (nameWordMatches / queryWords.length);
+  }
+
+  // Developer/Publisher match (medium relevance)
+  maxPossibleScore += 30;
+  queryWords.forEach(queryWord => {
+    if (developer.includes(queryWord) || publisher.includes(queryWord)) {
+      relevanceScore += 30 / queryWords.length;
+    }
+  });
+
+  // Summary/Description match (lower relevance)
+  maxPossibleScore += 20;
+  queryWords.forEach(queryWord => {
+    if (summary.includes(queryWord)) {
+      relevanceScore += 20 / queryWords.length;
+    }
+  });
+
+  // Genre match (lowest relevance)
+  maxPossibleScore += 10;
+  queryWords.forEach(queryWord => {
+    if (genres.includes(queryWord)) {
+      relevanceScore += 10 / queryWords.length;
+    }
+  });
+
+  // Calculate final relevance as percentage
+  const finalRelevance = maxPossibleScore > 0 ? (relevanceScore / maxPossibleScore) : 0;
+  
+  // Lowered threshold to allow more fuzzy matches through
+  const RELEVANCE_THRESHOLD = 0.12;
+  return finalRelevance >= RELEVANCE_THRESHOLD ? finalRelevance : 0;
+}
+
+/**
+ * Filter out games with insufficient search relevance
+ */
+function filterByRelevance(games: any[], searchQuery?: string): any[] {
+  if (!searchQuery || !searchQuery.trim()) {
+    return games;
+  }
+
+  return games.filter(game => {
+    const relevance = calculateSearchRelevance(game, searchQuery);
+    if (relevance === 0) {
+      console.log(`🚫 FILTERED: "${game.name}" - insufficient relevance for query "${searchQuery}"`);
+      return false;
+    }
+    return true;
+  });
+}
+
+/**
+ * Filter out season games (IGDB category 7)
+ * Seasons are episodic content that doesn't represent complete games
+ */
+function filterSeasonGames(games: any[]): any[] {
+  return games.filter(game => {
+    if (game.category === 7) {
+      console.log(`🚫 SEASON FILTERED: "${game.name}" - category 7 (Season)`);
+      return false;
+    }
+    return true;
+  });
+}
+
+/**
+ * Filter out pack/bundle games (IGDB category 3)
+ * Packs/bundles are collections of games, not individual games
+ */
+function filterPackGames(games: any[]): any[] {
+  return games.filter(game => {
+    if (game.category === 3) {
+      console.log(`🚫 PACK FILTERED: "${game.name}" - category 3 (Bundle/Pack)`);
+      return false;
+    }
+    return true;
+  });
+}
+
+/**
+ * Filter out e-reader card content and micro-content
+ * E-reader cards are not full games but individual challenges/levels/cards
+ */
+function filterEReaderContent(games: any[]): any[] {
+  return games.filter(game => {
+    if (!game.name) return true;
+    
+    const gameName = game.name.toLowerCase();
+    
+    // Primary e-reader pattern: "-e - [content]" (main indicator)
+    if (/-e\s*-\s*.+/i.test(game.name)) {
+      console.log(`🚫 E-READER FILTERED: "${game.name}" - e-reader card pattern (-e -)`);
+      return false;
+    }
+    
+    // Secondary e-reader patterns
+    const eReaderPatterns = [
+      /-e\s+(card|challenge|level|game)/i,  // "-e card/challenge/level/game"
+      /\b\w+-e\b.*(?:challenge|level|card)/i,  // "Game-e" + micro-content
+      /level\s+\d+-\d+/i,  // "Level 1-1" style micro-content
+      /card\s+series/i,    // "Card Series"
+      /-e\s*\w+\s+(challenge|game|level)/i  // "-e [word] challenge/game/level"
+    ];
+    
+    for (const pattern of eReaderPatterns) {
+      if (pattern.test(game.name)) {
+        console.log(`🚫 E-READER FILTERED: "${game.name}" - e-reader micro-content pattern`);
+        return false;
+      }
+    }
+    
+    // Micro-content keyword detection (in combination with other indicators)
+    const microContentKeywords = [
+      'challenge', 'mini-game', 'minigame', 'demo', 'tutorial', 'bonus stage'
+    ];
+    
+    // Only filter if name contains 'e' context AND micro-content keywords
+    const hasEContext = gameName.includes('-e') || gameName.includes('e card') || gameName.includes('e-card');
+    if (hasEContext) {
+      for (const keyword of microContentKeywords) {
+        if (gameName.includes(keyword)) {
+          console.log(`🚫 E-READER FILTERED: "${game.name}" - e-context + micro-content (${keyword})`);
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  });
+}
+
+/**
+ * Enhanced sequel and series detection for search suggestions
+ */
+async function findSequelsAndSeries(baseQuery: string, primaryResults: IGDBGame[]): Promise<IGDBGame[]> {
+  try {
+    // Extract franchise information from primary results
+    const franchiseIds = new Set<number>();
+    const franchiseNames = new Set<string>();
+    
+    primaryResults.forEach(game => {
+      if (game.franchises) {
+        game.franchises.forEach(franchise => {
+          franchiseIds.add(franchise.id);
+          franchiseNames.add(franchise.name.toLowerCase());
+        });
+      }
+    });
+
+    // Enhanced fuzzy patterns to search for more comprehensive results
+    const fuzzyPatterns = generateFuzzyPatterns(baseQuery);
+    const sequelPatterns = generateSequelPatterns(baseQuery);
+    const allPatterns = [...new Set([...fuzzyPatterns, ...sequelPatterns])];
+    console.log(`🔍 Looking for games with ${allPatterns.length} patterns:`, allPatterns.slice(0, 5));
+
+    // Search for sequels using multiple approaches
+    const sequelSearches: Promise<IGDBGame[]>[] = [];
+
+    const endpoint = '/.netlify/functions/igdb-search'; // Use static endpoint
+    
+    // 1. Search using fuzzy and sequel patterns
+    for (const pattern of allPatterns.slice(0, 12)) { // Increased limit for better fuzzy coverage
+      sequelSearches.push(
+        fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ searchTerm: pattern, limit: 3 })
+        })
+        .then(res => res.json())
+        .then(data => data.success ? data.games || [] : [])
+        .catch(() => [])
+      );
+    }
+
+    // 2. If we have franchise info, search by franchise
+    if (franchiseIds.size > 0) {
+      const franchiseQuery = Array.from(franchiseNames).join(' ');
+      sequelSearches.push(
+        fetch(endpoint, {
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ searchTerm: franchiseQuery, limit: 10 })
+        })
+        .then(res => res.json())
+        .then(data => data.success ? data.games || [] : [])
+        .catch(() => [])
+      );
+    }
+
+    // Execute all searches in parallel
+    const allSequelResults = await Promise.all(sequelSearches);
+    const flatSequels = allSequelResults.flat();
+
+    // First deduplicate within sequel results (multiple patterns might find same game)
+    const deduplicatedSequels = deduplicateGames(flatSequels);
+    console.log(`🔧 Sequel deduplication: ${flatSequels.length} → ${deduplicatedSequels.length} sequels (removed ${flatSequels.length - deduplicatedSequels.length} duplicates)`);
+
+    // Filter out games already in primary results and check relevance
+    const existingIds = new Set(primaryResults.map(g => g.id));
+    const uniqueSequels = deduplicatedSequels.filter(game => 
+      !existingIds.has(game.id) && 
+      isRelevantSequel(game, baseQuery, franchiseNames)
+    );
+
+    // Apply season filtering to sequels
+    const seasonFilteredSequels = filterSeasonGames(uniqueSequels);
+    
+    // Apply pack filtering to sequels
+    const packFilteredSequels = filterPackGames(seasonFilteredSequels);
+    
+    // Apply e-reader filtering to sequels
+    const eReaderFilteredSequels = filterEReaderContent(packFilteredSequels);
+    
+    // Apply relevance filtering to sequels too
+    const relevantSequels = filterByRelevance(eReaderFilteredSequels, baseQuery);
+    
+    console.log(`🎯 Found ${relevantSequels.length} relevant sequels for "${baseQuery}"`);
+    return relevantSequels;
+
+  } catch (error) {
+    console.error('Error finding sequels:', error);
+    return [];
+  }
+}
+
+/**
+ * Generate sequel search patterns for a base query
+ */
+function generateSequelPatterns(baseQuery: string): string[] {
+  const patterns: string[] = [];
+  const query = baseQuery.toLowerCase().trim();
+
+  // Numbers 1-10 for numbered sequels
+  for (let i = 1; i <= 10; i++) {
+    patterns.push(`${query} ${i}`);
+    patterns.push(`${query} ${toRomanNumeral(i)}`);
+  }
+
+  // Common sequel naming patterns
+  const sequelWords = [
+    'world', 'bros', 'super', 'mega', 'ultra', 'x', 'zero', 
+    'advanced', 'dx', 'collection', 'legacy', 'anniversary',
+    'remastered', 'remake', 'hd', 'deluxe', 'special'
+  ];
+
+  sequelWords.forEach(word => {
+    patterns.push(`${query} ${word}`);
+    patterns.push(`${word} ${query}`);
+    patterns.push(`super ${query}`);
+  });
+
+  // Special patterns for common series
+  if (query.includes('mario')) {
+    patterns.push('super mario world', 'super mario bros', 'new super mario bros');
+  }
+  
+  if (query.includes('mega man') || query.includes('megaman')) {
+    patterns.push('mega man x', 'megaman x', 'rockman', 'mega man zero');
+  }
+
+  if (query.includes('zelda')) {
+    patterns.push('legend of zelda', 'ocarina of time', 'breath of the wild', 'tears of the kingdom');
+  }
+
+  return patterns;
+}
+
+/**
+ * Convert number to Roman numeral
+ */
+function toRomanNumeral(num: number): string {
+  const romanNumerals = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+  return romanNumerals[num] || num.toString();
+}
+
+/**
+ * Check if a game is a relevant sequel to the base query
+ */
+function isRelevantSequel(game: IGDBGame, baseQuery: string, franchiseNames: Set<string>): boolean {
+  const gameName = game.name.toLowerCase();
+  const query = baseQuery.toLowerCase();
+
+  // Check if game belongs to same franchise
+  if (game.franchises) {
+    const gameHasFranchise = game.franchises.some(franchise => 
+      franchiseNames.has(franchise.name.toLowerCase())
+    );
+    if (gameHasFranchise) return true;
+  }
+
+  // Check for common sequel indicators
+  const sequelIndicators = [
+    /\d+/,  // Contains numbers
+    /\b(ii|iii|iv|v|vi|vii|viii|ix|x)\b/i,  // Roman numerals
+    /\b(world|bros|super|mega|ultra|zero|x)\b/i,  // Common sequel words
+    /\b(collection|legacy|remastered|hd|dx)\b/i  // Compilation indicators
+  ];
+
+  // Game should contain base query terms and sequel indicators
+  const queryWords = query.split(/\s+/);
+  const hasQueryWord = queryWords.some(word => gameName.includes(word));
+  const hasSequelIndicator = sequelIndicators.some(pattern => pattern.test(gameName));
+
+  return hasQueryWord && hasSequelIndicator;
+}
+
+/**
+ * Deduplicate games array by ID, preserving first occurrence and priority
+ */
+function deduplicateGames(games: IGDBGame[]): IGDBGame[] {
+  const seenIds = new Set<number>();
+  const uniqueGames: IGDBGame[] = [];
+
+  for (const game of games) {
+    if (!seenIds.has(game.id)) {
+      seenIds.add(game.id);
+      uniqueGames.push(game);
+    }
+  }
+
+  return uniqueGames;
+}
 
 interface IGDBGame {
   id: number;
@@ -126,22 +516,111 @@ class IGDBService {
       // Convert back to IGDB format
       let filteredIGDBGames = filteredGames.map(game => rawGames.find(raw => raw.id === game.id)!);
       
+      // Apply season filtering to remove seasonal content
+      console.log(`🎮 Pre-season filter: ${filteredIGDBGames.length} games`);
+      filteredIGDBGames = filterSeasonGames(filteredIGDBGames);
+      console.log(`🎮 Post-season filter: ${filteredIGDBGames.length} games`);
+      
+      // Apply pack filtering to remove bundle/pack games
+      console.log(`📦 Pre-pack filter: ${filteredIGDBGames.length} games`);
+      filteredIGDBGames = filterPackGames(filteredIGDBGames);
+      console.log(`📦 Post-pack filter: ${filteredIGDBGames.length} games`);
+      
+      // Apply e-reader filtering to remove micro-content
+      console.log(`📱 Pre-e-reader filter: ${filteredIGDBGames.length} games`);
+      filteredIGDBGames = filterEReaderContent(filteredIGDBGames);
+      console.log(`📱 Post-e-reader filter: ${filteredIGDBGames.length} games`);
+      
+      // Apply strict relevance filtering to prevent unrelated games
+      console.log(`🎯 Pre-relevance filter: ${filteredIGDBGames.length} games`);
+      filteredIGDBGames = filterByRelevance(filteredIGDBGames, query);
+      console.log(`🎯 Post-relevance filter: ${filteredIGDBGames.length} games`);
+      
+      // Apply fuzzy ranking before prioritization for better title matching
+      if (filteredIGDBGames.length > 1) {
+        console.log(`🔧 Applying fuzzy ranking to improve title matching...`);
+        filteredIGDBGames = rankByFuzzyMatch(filteredIGDBGames, query);
+      }
+      
+      // Apply intelligent prioritization system (5-tier: Famous → Sequels → Main → DLC → Community)
+      if (filteredIGDBGames.length > 1) {
+        console.log(`🏆 Applying 5-tier prioritization system...`);
+        filteredIGDBGames = sortGamesByPriority(filteredIGDBGames);
+        
+        // Log priority analysis for first few games
+        filteredIGDBGames.slice(0, 3).forEach((game, index) => {
+          const priority = calculateGamePriority(game);
+          const fuzzyScore = (game as any)._fuzzyScore;
+          console.log(`${index + 1}. "${game.name}" - Priority: ${priority.score}, Fuzzy: ${fuzzyScore?.toFixed(2) || 'N/A'} - ${priority.reasons[0] || 'Standard'}`);
+        });
+      }
+      
       // Fetch related games (sequels, DLCs, expansions) if we have space in our results
       if (filteredIGDBGames.length < limit && filteredIGDBGames.length > 0) {
         try {
           const relatedGames = await this.fetchRelatedGames(filteredIGDBGames, limit - filteredIGDBGames.length);
-          filteredIGDBGames = [...filteredIGDBGames, ...relatedGames];
+          // Apply same filtering to related games
+          const filteredRelatedGames = filterByRelevance(relatedGames, query);
+          filteredIGDBGames = [...filteredIGDBGames, ...filteredRelatedGames];
         } catch (error) {
           console.log('⚠️ Failed to fetch related games:', error);
           // Continue with original results if related games fetch fails
         }
       }
       
+      console.log(`✅ Final results: ${filteredIGDBGames.length} games after all filtering and prioritization`);
       return filteredIGDBGames;
 
     } catch (error) {
       console.error('IGDB search failed:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Enhanced search with sequel and series detection for top search bar
+   */
+  async searchWithSequels(query: string, limit: number = 8): Promise<IGDBGame[]> {
+    try {
+      if (!query.trim()) {
+        return [];
+      }
+
+      console.log('🎯 Enhanced search with sequels for:', query);
+
+      // First, get primary search results
+      const primaryResults = await this.searchGames(query, Math.ceil(limit / 2));
+      
+      if (primaryResults.length === 0) {
+        return [];
+      }
+
+      // Find sequels and related games
+      const sequelResults = await findSequelsAndSeries(query, primaryResults);
+      
+      // Combine results: primary first, then sequels
+      const combinedResults = [...primaryResults, ...sequelResults];
+      
+      // Deduplicate by game ID to prevent duplicates (e.g., same game found through multiple patterns)
+      const uniqueResults = deduplicateGames(combinedResults);
+      console.log(`🔧 Deduplication: ${combinedResults.length} → ${uniqueResults.length} games (removed ${combinedResults.length - uniqueResults.length} duplicates)`);
+      
+      // Apply fuzzy ranking to improve title matching for combined results
+      console.log(`🔧 Applying fuzzy ranking to combined results...`);
+      const fuzzyRankedResults = rankByFuzzyMatch(uniqueResults, query);
+      
+      // Apply final prioritization and limit  
+      const prioritizedResults = sortGamesByPriority(fuzzyRankedResults);
+      const finalResults = prioritizedResults.slice(0, limit);
+      
+      console.log(`🎮 Enhanced search complete: ${finalResults.length} results (${primaryResults.length} primary + ${sequelResults.length} sequels)`);
+      
+      return finalResults;
+
+    } catch (error) {
+      console.error('Enhanced search failed, falling back to basic search:', error);
+      // Fallback to basic search if enhanced search fails
+      return this.searchGames(query, limit);
     }
   }
 
@@ -243,10 +722,21 @@ class IGDBService {
       const transformedRelated = relatedGames.map((game: IGDBGame) => this.transformGameForFilter(game));
       const filteredRelated = filterProtectedContent(transformedRelated);
       
-      // Convert back to IGDB format and limit results
-      const filteredIGDBRelated = filteredRelated
-        .map(game => relatedGames.find((raw: IGDBGame) => raw.id === game.id)!)
-        .slice(0, maxResults);
+      // Convert back to IGDB format
+      let filteredIGDBRelated = filteredRelated
+        .map(game => relatedGames.find((raw: IGDBGame) => raw.id === game.id)!);
+      
+      // Apply season filtering to related games
+      filteredIGDBRelated = filterSeasonGames(filteredIGDBRelated);
+      
+      // Apply pack filtering to related games
+      filteredIGDBRelated = filterPackGames(filteredIGDBRelated);
+      
+      // Apply e-reader filtering to related games
+      filteredIGDBRelated = filterEReaderContent(filteredIGDBRelated);
+      
+      // Limit results
+      filteredIGDBRelated = filteredIGDBRelated.slice(0, maxResults);
       
       return filteredIGDBRelated;
 

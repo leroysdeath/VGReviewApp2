@@ -1,6 +1,8 @@
 // Content Protection Filter with Company-Specific Copyright Policies
 // Filters content based on individual company copyright aggression levels
 
+console.log('🚀 CONTENT FILTER MODULE LOADED - Version with debug logging');
+
 import { 
   CopyrightLevel, 
   getCompanyCopyrightLevel, 
@@ -351,6 +353,9 @@ function getGameCompanies(game: Game): string[] {
  * Check if content should be filtered out based on company-specific copyright policies
  */
 export function shouldFilterContent(game: Game): boolean {
+  // IMMEDIATE DEBUG - This should always show for any filtering attempt
+  console.log(`🔍 FILTER CHECK: "${game.name}"`);
+  
   const companies = getGameCompanies(game);
   const searchText = [game.name, game.developer, game.publisher, game.summary, game.description]
     .filter(Boolean).join(' ').toLowerCase();
@@ -524,7 +529,13 @@ export function shouldFilterContent(game: Game): boolean {
  * Filter out problematic fan-made content from a list of games
  */
 export function filterProtectedContent(games: Game[]): Game[] {
-  return games.filter(game => !shouldFilterContent(game));
+  console.log(`🛡️ FILTERING ${games.length} games for protected content...`);
+  
+  const filtered = games.filter(game => !shouldFilterContent(game));
+  
+  console.log(`🛡️ FILTERING RESULT: ${games.length - filtered.length} games filtered out, ${filtered.length} remaining`);
+  
+  return filtered;
 }
 
 /**

@@ -117,8 +117,8 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
         }
       }
 
-      // Use IGDB API directly for header search (faster, more stable)
-      const igdbResults = await igdbService.searchGames(query, maxSuggestions * 2); // Fetch extra to account for filtering
+      // Use enhanced IGDB search with sequel detection for header search
+      const igdbResults = await igdbService.searchWithSequels(query, maxSuggestions * 2); // Fetch extra to account for filtering
       const transformedResults = igdbResults.map(game => igdbService.transformGame(game));
       
       // Filter out protected content

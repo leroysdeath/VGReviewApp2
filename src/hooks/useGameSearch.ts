@@ -68,8 +68,8 @@ export const useGameSearch = () => {
       const searchParams = { ...searchOptions, ...options };
       const offset = append ? searchState.games.length : 0;
       
-      // Use IGDB API directly for consistent, high-quality results
-      const igdbResults = await igdbService.searchGames(query.trim(), searchParams.limit || 20);
+      // Use enhanced IGDB search with sequel detection for comprehensive results
+      const igdbResults = await igdbService.searchWithSequels(query.trim(), searchParams.limit || 20);
       const transformedResults = igdbResults.map(game => igdbService.transformGame(game));
 
       const data = {
@@ -109,7 +109,7 @@ export const useGameSearch = () => {
     if (query.trim().length < 2) return [];
     
     try {
-      const igdbResults = await igdbService.searchGames(query.trim(), 5);
+      const igdbResults = await igdbService.searchWithSequels(query.trim(), 5);
       const results = igdbResults.map(game => igdbService.transformGame(game));
       return results; // Already limited to 5 results for quick search
     } catch (error) {
