@@ -1,10 +1,11 @@
 // IGDB API Service
 import { filterProtectedContent, getFilterStats } from '../utils/contentProtectionFilter';
 import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization';
+import { generateFuzzyPatterns, rankByFuzzyMatch, fuzzyMatchScore } from '../utils/fuzzySearch';
 
 /**
- * Calculate relevance score for search results
- * Prevents unrelated games from appearing (like Mario in Zelda searches)
+ * Calculate relevance score for search results with fuzzy matching
+ * Prevents unrelated games from appearing while allowing for title variations
  */
 function calculateSearchRelevance(game: any, searchQuery: string): number {
   if (!searchQuery || !searchQuery.trim()) return 1;
@@ -19,28 +20,53 @@ function calculateSearchRelevance(game: any, searchQuery: string): number {
   let relevanceScore = 0;
   let maxPossibleScore = 0;
 
-  // Exact name match (highest relevance)
+  // Fuzzy name match (highest relevance) - enhanced with fuzzy matching
   maxPossibleScore += 100;
-  if (gameName === query) {
+  const fuzzyScore = fuzzyMatchScore(query, game.name || '');
+  if (fuzzyScore > 0.8) {
+    // High fuzzy match
+    relevanceScore += 100 * fuzzyScore;
+  } else if (gameName === query) {
     relevanceScore += 100;
   } else if (gameName.includes(query) || query.includes(gameName)) {
     // Calculate how much of the name matches
     const matchRatio = Math.min(query.length, gameName.length) / Math.max(query.length, gameName.length);
     relevanceScore += 100 * matchRatio;
+  } else if (fuzzyScore > 0.3) {
+    // Lower fuzzy match still gets some points
+    relevanceScore += 100 * fuzzyScore * 0.7;
   }
 
-  // Query words in name (very high relevance)
+  // Alternative names fuzzy matching (high relevance)
   maxPossibleScore += 80;
+  if (game.alternative_names && Array.isArray(game.alternative_names)) {
+    let bestAltScore = 0;
+    for (const altName of game.alternative_names) {
+      const altFuzzyScore = fuzzyMatchScore(query, altName.name || '');
+      bestAltScore = Math.max(bestAltScore, altFuzzyScore);
+    }
+    if (bestAltScore > 0.3) {
+      relevanceScore += 80 * bestAltScore;
+    }
+  }
+
+  // Query words in name (very high relevance) - enhanced for variations
+  maxPossibleScore += 60;
   const queryWords = query.split(/\s+/);
   const nameWords = gameName.split(/\s+/);
   let nameWordMatches = 0;
   queryWords.forEach(queryWord => {
-    if (nameWords.some(nameWord => nameWord.includes(queryWord) || queryWord.includes(nameWord))) {
+    if (nameWords.some(nameWord => {
+      // Exact match
+      if (nameWord.includes(queryWord) || queryWord.includes(nameWord)) return true;
+      // Fuzzy match for individual words
+      return fuzzyMatchScore(queryWord, nameWord) > 0.6;
+    })) {
       nameWordMatches++;
     }
   });
   if (queryWords.length > 0) {
-    relevanceScore += 80 * (nameWordMatches / queryWords.length);
+    relevanceScore += 60 * (nameWordMatches / queryWords.length);
   }
 
   // Developer/Publisher match (medium relevance)
@@ -70,8 +96,8 @@ function calculateSearchRelevance(game: any, searchQuery: string): number {
   // Calculate final relevance as percentage
   const finalRelevance = maxPossibleScore > 0 ? (relevanceScore / maxPossibleScore) : 0;
   
-  // Apply strict threshold - games below 15% relevance are considered unrelated
-  const RELEVANCE_THRESHOLD = 0.15;
+  // Lowered threshold to allow more fuzzy matches through
+  const RELEVANCE_THRESHOLD = 0.12;
   return finalRelevance >= RELEVANCE_THRESHOLD ? finalRelevance : 0;
 }
 
@@ -139,17 +165,19 @@ async function findSequelsAndSeries(baseQuery: string, primaryResults: IGDBGame[
       }
     });
 
-    // Common sequel patterns to search for
+    // Enhanced fuzzy patterns to search for more comprehensive results
+    const fuzzyPatterns = generateFuzzyPatterns(baseQuery);
     const sequelPatterns = generateSequelPatterns(baseQuery);
-    console.log(`🔍 Looking for sequels with patterns:`, sequelPatterns.slice(0, 5));
+    const allPatterns = [...new Set([...fuzzyPatterns, ...sequelPatterns])];
+    console.log(`🔍 Looking for games with ${allPatterns.length} patterns:`, allPatterns.slice(0, 5));
 
     // Search for sequels using multiple approaches
     const sequelSearches: Promise<IGDBGame[]>[] = [];
 
     const endpoint = '/.netlify/functions/igdb-search'; // Use static endpoint
     
-    // 1. Search numbered sequels (Mario 2, Mega Man 3, etc.)
-    for (const pattern of sequelPatterns.slice(0, 8)) { // Limit to prevent too many requests
+    // 1. Search using fuzzy and sequel patterns
+    for (const pattern of allPatterns.slice(0, 12)) { // Increased limit for better fuzzy coverage
       sequelSearches.push(
         fetch(endpoint, {
           method: 'POST',
@@ -448,6 +476,12 @@ class IGDBService {
       filteredIGDBGames = filterByRelevance(filteredIGDBGames, query);
       console.log(`🎯 Post-relevance filter: ${filteredIGDBGames.length} games`);
       
+      // Apply fuzzy ranking before prioritization for better title matching
+      if (filteredIGDBGames.length > 1) {
+        console.log(`🔧 Applying fuzzy ranking to improve title matching...`);
+        filteredIGDBGames = rankByFuzzyMatch(filteredIGDBGames, query);
+      }
+      
       // Apply intelligent prioritization system (5-tier: Famous → Sequels → Main → DLC → Community)
       if (filteredIGDBGames.length > 1) {
         console.log(`🏆 Applying 5-tier prioritization system...`);
@@ -456,7 +490,8 @@ class IGDBService {
         // Log priority analysis for first few games
         filteredIGDBGames.slice(0, 3).forEach((game, index) => {
           const priority = calculateGamePriority(game);
-          console.log(`${index + 1}. "${game.name}" - Score: ${priority.score} - ${priority.reasons[0] || 'Standard'}`);
+          const fuzzyScore = (game as any)._fuzzyScore;
+          console.log(`${index + 1}. "${game.name}" - Priority: ${priority.score}, Fuzzy: ${fuzzyScore?.toFixed(2) || 'N/A'} - ${priority.reasons[0] || 'Standard'}`);
         });
       }
       
@@ -510,8 +545,12 @@ class IGDBService {
       const uniqueResults = deduplicateGames(combinedResults);
       console.log(`🔧 Deduplication: ${combinedResults.length} → ${uniqueResults.length} games (removed ${combinedResults.length - uniqueResults.length} duplicates)`);
       
-      // Apply final prioritization and limit
-      const prioritizedResults = sortGamesByPriority(uniqueResults);
+      // Apply fuzzy ranking to improve title matching for combined results
+      console.log(`🔧 Applying fuzzy ranking to combined results...`);
+      const fuzzyRankedResults = rankByFuzzyMatch(uniqueResults, query);
+      
+      // Apply final prioritization and limit  
+      const prioritizedResults = sortGamesByPriority(fuzzyRankedResults);
       const finalResults = prioritizedResults.slice(0, limit);
       
       console.log(`🎮 Enhanced search complete: ${finalResults.length} results (${primaryResults.length} primary + ${sequelResults.length} sequels)`);
