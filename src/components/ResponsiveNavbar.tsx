@@ -107,8 +107,8 @@ export const ResponsiveNavbar: React.FC = () => {
         return;
       }
 
-      // Fetch fresh results using IGDB API
-      const igdbResults = await igdbService.searchGames(query, 8);
+      // Fetch fresh results using enhanced IGDB search with sequel detection
+      const igdbResults = await igdbService.searchWithSequels(query, 8);
       const results = igdbResults.map(game => igdbService.transformGame(game));
 
       if (results && Array.isArray(results)) {

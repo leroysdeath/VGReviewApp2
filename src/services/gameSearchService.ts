@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization'
 
 export interface SearchFilters {
   query?: string
@@ -37,12 +38,108 @@ export interface GameSearchResult {
   avg_user_rating?: number
   user_rating_count?: number
   screenshots?: string[]
+  total_rating?: number
+  total_rating_count?: number
+  rating_count?: number
+  follows?: number
+  hypes?: number
 }
 
 export interface SearchResponse {
   games: GameSearchResult[]
   totalCount: number
   hasMore: boolean
+}
+
+/**
+ * Calculate relevance score for search results
+ * Prevents unrelated games from appearing (like Mario in Zelda searches)
+ */
+function calculateSearchRelevance(game: any, searchQuery: string): number {
+  if (!searchQuery || !searchQuery.trim()) return 1;
+
+  const query = searchQuery.toLowerCase().trim();
+  const gameName = (game.name || '').toLowerCase();
+  const developer = (game.developer || '').toLowerCase();
+  const publisher = (game.publisher || '').toLowerCase();
+  const summary = (game.summary || '').toLowerCase();
+  const genres = Array.isArray(game.genres) ? game.genres.join(' ').toLowerCase() : (game.genre || '').toLowerCase();
+
+  let relevanceScore = 0;
+  let maxPossibleScore = 0;
+
+  // Exact name match (highest relevance)
+  maxPossibleScore += 100;
+  if (gameName === query) {
+    relevanceScore += 100;
+  } else if (gameName.includes(query) || query.includes(gameName)) {
+    // Calculate how much of the name matches
+    const matchRatio = Math.min(query.length, gameName.length) / Math.max(query.length, gameName.length);
+    relevanceScore += 100 * matchRatio;
+  }
+
+  // Query words in name (very high relevance)
+  maxPossibleScore += 80;
+  const queryWords = query.split(/\s+/);
+  const nameWords = gameName.split(/\s+/);
+  let nameWordMatches = 0;
+  queryWords.forEach(queryWord => {
+    if (nameWords.some(nameWord => nameWord.includes(queryWord) || queryWord.includes(nameWord))) {
+      nameWordMatches++;
+    }
+  });
+  if (queryWords.length > 0) {
+    relevanceScore += 80 * (nameWordMatches / queryWords.length);
+  }
+
+  // Developer/Publisher match (medium relevance)
+  maxPossibleScore += 30;
+  queryWords.forEach(queryWord => {
+    if (developer.includes(queryWord) || publisher.includes(queryWord)) {
+      relevanceScore += 30 / queryWords.length;
+    }
+  });
+
+  // Summary/Description match (lower relevance)
+  maxPossibleScore += 20;
+  queryWords.forEach(queryWord => {
+    if (summary.includes(queryWord)) {
+      relevanceScore += 20 / queryWords.length;
+    }
+  });
+
+  // Genre match (lowest relevance)
+  maxPossibleScore += 10;
+  queryWords.forEach(queryWord => {
+    if (genres.includes(queryWord)) {
+      relevanceScore += 10 / queryWords.length;
+    }
+  });
+
+  // Calculate final relevance as percentage
+  const finalRelevance = maxPossibleScore > 0 ? (relevanceScore / maxPossibleScore) : 0;
+  
+  // Apply strict threshold - games below 15% relevance are considered unrelated
+  const RELEVANCE_THRESHOLD = 0.15;
+  return finalRelevance >= RELEVANCE_THRESHOLD ? finalRelevance : 0;
+}
+
+/**
+ * Filter out games with insufficient search relevance
+ */
+function filterByRelevance(games: any[], searchQuery?: string): any[] {
+  if (!searchQuery || !searchQuery.trim()) {
+    return games;
+  }
+
+  return games.filter(game => {
+    const relevance = calculateSearchRelevance(game, searchQuery);
+    if (relevance === 0) {
+      console.log(`🚫 FILTERED: "${game.name}" - insufficient relevance for query "${searchQuery}"`);
+      return false;
+    }
+    return true;
+  });
 }
 
 class GameSearchService {
@@ -209,8 +306,19 @@ class GameSearchService {
         }
       }
 
-      // Sort the results
-      filteredGames = this.sortGames(filteredGames, orderBy, orderDirection, query)
+      // Apply strict relevance filtering to prevent unrelated games
+      if (query && query.trim()) {
+        filteredGames = filterByRelevance(filteredGames, query.trim());
+      }
+
+      // Sort the results using the intelligent priority system
+      if (orderBy === 'relevance') {
+        // Use the advanced prioritization system for relevance sorting
+        filteredGames = sortGamesByPriority(filteredGames);
+      } else {
+        // Use traditional sorting for other sort options
+        filteredGames = this.sortGames(filteredGames, orderBy, orderDirection, query);
+      }
 
       // Get platforms for the final games
       if (filteredGames.length > 0) {
@@ -263,7 +371,12 @@ class GameSearchService {
         metacritic_score: game.metacritic_score,
         avg_user_rating: game.avg_user_rating,
         user_rating_count: game.user_rating_count,
-        screenshots: game.screenshots
+        screenshots: game.screenshots,
+        total_rating: game.total_rating,
+        total_rating_count: game.total_rating_count,
+        rating_count: game.rating_count,
+        follows: game.follows,
+        hypes: game.hypes
       }))
 
       return {
