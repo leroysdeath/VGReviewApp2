@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Bookmark } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { AuthModal } from '../components/auth/AuthModal';
@@ -18,6 +18,7 @@ import { dlcService } from '../services/dlcService';
 import { SmartImage } from '../components/SmartImage';
 import { shouldHideFanContent } from '../utils/contentProtectionFilter';
 import { isNumericIdentifier } from '../utils/gameUrls';
+import { collectionWishlistService } from '../services/collectionWishlistService';
 
 // Interface for review data from database
 interface GameReview {
@@ -157,6 +158,11 @@ export const GamePage: React.FC = () => {
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
   const [isDevPubExpanded, setIsDevPubExpanded] = useState(false);
   const [isPlatformsExpanded, setIsPlatformsExpanded] = useState(false);
+  
+  // State for collection and wishlist
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isInCollection, setIsInCollection] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
   
   // Use reducer for centralized state management
   const [state, dispatch] = useReducer(gamePageReducer, initialState);
@@ -327,6 +333,28 @@ export const GamePage: React.FC = () => {
     checkUserReview();
   }, [game, isAuthenticated]);
 
+  // Check collection and wishlist status
+  useEffect(() => {
+    const checkCollectionWishlistStatus = async () => {
+      if (!game || !game.igdb_id || !isAuthenticated) {
+        setIsInCollection(false);
+        setIsInWishlist(false);
+        return;
+      }
+
+      try {
+        const status = await collectionWishlistService.checkBothStatuses(game.igdb_id);
+        setIsInCollection(status.inCollection);
+        setIsInWishlist(status.inWishlist);
+        console.log('Collection/Wishlist status:', status);
+      } catch (error) {
+        console.error('Error checking collection/wishlist status:', error);
+      }
+    };
+
+    checkCollectionWishlistStatus();
+  }, [game, isAuthenticated]);
+
   // Fetch game category from IGDB for DLC/expansion detection
   useEffect(() => {
     const fetchGameCategory = async () => {
@@ -480,10 +508,50 @@ export const GamePage: React.FC = () => {
     }
   };
 
+  const handleToggleWishlist = async () => {
+    if (!game || !game.igdb_id) return;
+
+    if (!isAuthenticated) {
+      dispatch({ type: 'SET_AUTH_MODAL', payload: { show: true, pendingAction: 'toggle_wishlist' }});
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      const gameData = {
+        igdb_id: game.igdb_id,
+        name: game.name,
+        pic_url: game.pic_url,
+        cover_url: game.cover_url,
+        genre: game.genre,
+        release_date: game.release_date
+      };
+
+      const result = await collectionWishlistService.toggleWishlist(game.igdb_id, gameData);
+      
+      if (result.success) {
+        setIsInWishlist(result.data || false);
+        console.log(result.data ? '✅ Added to wishlist' : '✅ Removed from wishlist');
+      } else {
+        console.error('Failed to toggle wishlist:', result.error);
+        alert(`Failed to update wishlist: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      alert('Failed to update wishlist. Please try again.');
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+
   const handleAuthSuccess = () => {
     dispatch({ type: 'SET_AUTH_MODAL', payload: { show: false, pendingAction: null }});
     if (pendingAction) {
-      executeAction(pendingAction);
+      if (pendingAction === 'toggle_wishlist') {
+        handleToggleWishlist();
+      } else {
+        executeAction(pendingAction);
+      }
     }
   };
 
@@ -857,8 +925,28 @@ export const GamePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* User Actions - Checkboxes and Write Review */}
+              {/* User Actions - Wishlist, Checkboxes and Write Review */}
               <div className="flex items-center gap-4 p-6 border-t border-gray-700">
+                {/* Wishlist Button */}
+                <button
+                  onClick={handleToggleWishlist}
+                  disabled={wishlistLoading}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    isInWishlist
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'border border-blue-600 text-blue-400 hover:bg-blue-600/10'
+                  } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {wishlistLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : (
+                    <Bookmark className={`h-4 w-4 ${isInWishlist ? 'fill-current' : ''}`} />
+                  )}
+                  <span className="text-sm font-medium">
+                    {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
+                  </span>
+                </button>
+
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleAuthRequiredAction('mark_started')}
