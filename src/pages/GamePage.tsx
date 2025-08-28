@@ -942,37 +942,40 @@ export const GamePage: React.FC = () => {
                     {(game.developer || game.publisher) && (
                       <div>
                         {!isDevPubExpanded ? (
-                          // Collapsed view - single line
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-2 min-w-0" style={{ flex: '1 1 0%', maxWidth: 'calc(100% - 80px)' }}>
-                              {game.developer && (
-                                <>
-                                  <strong className="whitespace-nowrap flex-shrink-0">Developer:</strong>
-                                  <span className="truncate">{truncateText(game.developer, 20)}</span>
-                                </>
-                              )}
-                              {game.developer && game.publisher && (
-                                <span className="text-gray-500 flex-shrink-0">•</span>
-                              )}
-                              {game.publisher && (
-                                <>
-                                  <strong className="whitespace-nowrap flex-shrink-0">Publisher:</strong>
-                                  <span className="truncate">{truncateText(game.publisher, 20)}</span>
-                                </>
-                              )}
-                            </div>
-                            {(needsTruncation(game.developer, 20) || needsTruncation(game.publisher, 20)) && (
-                              <button
-                                onClick={() => setIsDevPubExpanded(true)}
-                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
-                              >
-                                See more
-                              </button>
+                          // Collapsed view - separate lines
+                          <div className="space-y-1">
+                            {game.developer && (
+                              <div className="flex items-center gap-2">
+                                <strong className="whitespace-nowrap flex-shrink-0">Developer:</strong>
+                                <span className="truncate">{truncateText(game.developer, 30)}</span>
+                                {needsTruncation(game.developer, 30) && (
+                                  <button
+                                    onClick={() => setIsDevPubExpanded(true)}
+                                    className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
+                                  >
+                                    See more
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                            {game.publisher && (
+                              <div className="flex items-center gap-2">
+                                <strong className="whitespace-nowrap flex-shrink-0">Publisher:</strong>
+                                <span className="truncate">{truncateText(game.publisher, 30)}</span>
+                                {needsTruncation(game.publisher, 30) && (
+                                  <button
+                                    onClick={() => setIsDevPubExpanded(true)}
+                                    className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
+                                  >
+                                    See more
+                                  </button>
+                                )}
+                              </div>
                             )}
                           </div>
                         ) : (
-                          // Expanded view - can wrap to multiple lines
-                          <div>
+                          // Expanded view - full text
+                          <div className="space-y-1">
                             {game.developer && (
                               <div>
                                 <strong>Developer:</strong> {game.developer}

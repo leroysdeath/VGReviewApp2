@@ -47,16 +47,11 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [searchMode, setSearchMode] = useState<'user-games' | 'igdb'>(
-    mode === 'top-games' ? 'user-games' : 'igdb'
-  );
+  // Force IGDB search mode for collection/wishlist
+  const searchMode = mode === 'top-games' ? 'user-games' : 'igdb';
   const [addingGameId, setAddingGameId] = useState<number | null>(null);
   const [startedFinishedGames, setStartedFinishedGames] = useState<Set<number>>(new Set());
 
-  // Reset search mode when modal mode changes
-  useEffect(() => {
-    setSearchMode(mode === 'top-games' ? 'user-games' : 'igdb');
-  }, [mode]);
 
   // Fetch user's reviewed games (for top-games mode or when in user-games search mode)
   useEffect(() => {
@@ -305,30 +300,6 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
         {/* Search Bar */}
         <div className="p-4 border-b border-gray-700">
-          {mode !== 'top-games' && (
-            <div className="flex gap-2 mb-3">
-              <button
-                onClick={() => setSearchMode('igdb')}
-                className={`px-3 py-1 rounded text-sm transition-colors ${
-                  searchMode === 'igdb' 
-                    ? 'bg-purple-600 text-white' 
-                    : 'bg-gray-700 text-gray-400 hover:text-white'
-                }`}
-              >
-                Search All Games
-              </button>
-              <button
-                onClick={() => setSearchMode('user-games')}
-                className={`px-3 py-1 rounded text-sm transition-colors ${
-                  searchMode === 'user-games' 
-                    ? 'bg-purple-600 text-white' 
-                    : 'bg-gray-700 text-gray-400 hover:text-white'
-                }`}
-              >
-                My Reviewed Games
-              </button>
-            </div>
-          )}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
@@ -336,9 +307,9 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={
-                searchMode === 'igdb' 
-                  ? 'Search for any game...'
-                  : 'Search by game title or genre...'
+                mode === 'top-games'
+                  ? 'Search by game title or genre...'
+                  : 'Search for any game...'
               }
               className="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
@@ -430,18 +401,17 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
             <div className="text-center py-12">
               <Gamepad2 className="h-12 w-12 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-400">
-                {searchMode === 'igdb' && searchQuery
-                  ? 'No eligible games found. Try a different search.'
-                  : searchQuery 
+                {mode === 'top-games' ? (
+                  searchQuery 
                     ? 'No games found matching your search'
                     : games.length === 0 
-                      ? mode === 'top-games' 
-                        ? 'No reviewed games available to select'
-                        : mode === 'collection' || mode === 'wishlist'
-                          ? 'Search for games to add (already started/finished games are excluded)'
-                          : 'Search for games to add'
+                      ? 'No reviewed games available to select'
                       : 'All your reviewed games are already in your Top 5'
-                }
+                ) : (
+                  searchQuery
+                    ? 'No eligible games found. Try a different search.'
+                    : 'Search for games to add (already started/finished games are excluded)'
+                )}
               </p>
               {(mode === 'collection' || mode === 'wishlist') && startedFinishedGames.size > 0 && (
                 <p className="text-xs text-gray-500 mt-2">
