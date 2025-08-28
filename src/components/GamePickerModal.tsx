@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Search, Star, Gamepad2, BookOpen, Gift } from 'lucide-react';
+import { X, Search, Star, Gamepad2, BookOpen, Gift, AlertCircle } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { igdbService } from '../services/igdbService';
 import { collectionWishlistService } from '../services/collectionWishlistService';
@@ -9,6 +9,7 @@ interface Game {
   name: string;
   pic_url: string;
   genre: string;
+  igdb_id?: number;
 }
 
 interface RatedGame {
@@ -50,6 +51,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
     mode === 'top-games' ? 'user-games' : 'igdb'
   );
   const [addingGameId, setAddingGameId] = useState<number | null>(null);
+  const [startedFinishedGames, setStartedFinishedGames] = useState<Set<number>>(new Set());
 
   // Reset search mode when modal mode changes
   useEffect(() => {
@@ -67,12 +69,32 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
       setError(null);
       
       try {
+        // If in collection/wishlist mode, fetch started/finished games to exclude them
+        let excludedIgdbIds = new Set<number>();
+        if (mode === 'collection' || mode === 'wishlist') {
+          const { data: progressData } = await supabase
+            .from('game_progress')
+            .select('game:game_id(igdb_id)')
+            .eq('user_id', parseInt(userId))
+            .or('started.eq.true,completed.eq.true');
+          
+          if (progressData) {
+            progressData.forEach(item => {
+              if (item.game?.igdb_id) {
+                excludedIgdbIds.add(item.game.igdb_id);
+              }
+            });
+            setStartedFinishedGames(excludedIgdbIds);
+          }
+        }
+        
         // Build the query
         let query = supabase
           .from('rating')
           .select(`
             game:game_id (
               id,
+              igdb_id,
               name,
               pic_url,
               genre
@@ -92,12 +114,20 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
         if (error) throw error;
 
-        // Filter out any entries without game data
+        // Filter out any entries without game data and started/finished games
         const validGames = (data || [])
-          .filter(item => item.game)
+          .filter(item => {
+            if (!item.game) return false;
+            // For collection/wishlist mode, exclude started/finished games
+            if ((mode === 'collection' || mode === 'wishlist') && item.game.igdb_id) {
+              return !excludedIgdbIds.has(item.game.igdb_id);
+            }
+            return true;
+          })
           .map(item => ({
             game: {
               id: item.game.id.toString(),
+              igdb_id: item.game.igdb_id,
               name: item.game.name || 'Unknown Game',
               pic_url: item.game.pic_url || '/default-cover.png',
               genre: item.game.genre || ''
@@ -127,7 +157,33 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
     const searchIGDB = async () => {
       setLoading(true);
       try {
-        const results = await igdbService.searchGames(searchQuery, 20);
+        let results = await igdbService.searchGames(searchQuery, 20);
+        
+        // Filter out started/finished games if in collection/wishlist mode
+        if (mode === 'collection' || mode === 'wishlist') {
+          // Fetch started/finished games if not already loaded
+          if (startedFinishedGames.size === 0) {
+            const { data: progressData } = await supabase
+              .from('game_progress')
+              .select('game:game_id(igdb_id)')
+              .eq('user_id', parseInt(userId))
+              .or('started.eq.true,completed.eq.true');
+            
+            if (progressData) {
+              const excludedIds = new Set<number>();
+              progressData.forEach(item => {
+                if (item.game?.igdb_id) {
+                  excludedIds.add(item.game.igdb_id);
+                }
+              });
+              setStartedFinishedGames(excludedIds);
+              results = results.filter(game => !excludedIds.has(game.id));
+            }
+          } else {
+            results = results.filter(game => !startedFinishedGames.has(game.id));
+          }
+        }
+        
         setIgdbGames(results);
       } catch (err) {
         console.error('IGDB search error:', err);
@@ -163,6 +219,12 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
   // Handle adding game to collection/wishlist
   const handleAddGame = async (igdbId: number, gameData?: any) => {
+    // Check if game is started/finished
+    if (startedFinishedGames.has(igdbId)) {
+      alert('This game has already been started or finished and cannot be added to collection or wishlist.');
+      return;
+    }
+    
     setAddingGameId(igdbId);
     try {
       const gameInfo = gameData ? {
@@ -285,6 +347,15 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
+          {/* Info message for collection/wishlist mode */}
+          {(mode === 'collection' || mode === 'wishlist') && startedFinishedGames.size > 0 && (
+            <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-700 rounded-lg flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-yellow-300">
+                Games you've already started or finished are not shown. They cannot be added to {mode === 'collection' ? 'your collection' : 'your wishlist'}.
+              </p>
+            </div>
+          )}
           {error && (
             <div className="mb-4 bg-red-900/50 border border-red-700 rounded-lg p-3">
               <p className="text-red-300 text-sm">{error}</p>
@@ -360,16 +431,23 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
               <Gamepad2 className="h-12 w-12 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-400">
                 {searchMode === 'igdb' && searchQuery
-                  ? 'No games found. Try a different search.'
+                  ? 'No eligible games found. Try a different search.'
                   : searchQuery 
                     ? 'No games found matching your search'
                     : games.length === 0 
                       ? mode === 'top-games' 
                         ? 'No reviewed games available to select'
-                        : 'Search for games to add'
+                        : mode === 'collection' || mode === 'wishlist'
+                          ? 'Search for games to add (already started/finished games are excluded)'
+                          : 'Search for games to add'
                       : 'All your reviewed games are already in your Top 5'
                 }
               </p>
+              {(mode === 'collection' || mode === 'wishlist') && startedFinishedGames.size > 0 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {startedFinishedGames.size} game{startedFinishedGames.size !== 1 ? 's' : ''} hidden (already started/finished)
+                </p>
+              )}
             </div>
           ) : searchMode === 'user-games' && filteredGames.length > 0 ? (
             /* User's Reviewed Games Grid */
@@ -409,7 +487,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                           handleSelect(game.id);
                         } else {
                           // For collection/wishlist mode with user games
-                          const igdbId = parseInt(game.id); // Assuming game.id maps to igdb_id for user games
+                          const igdbId = game.igdb_id || parseInt(game.id);
                           handleAddGame(igdbId);
                         }
                       }}
