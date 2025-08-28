@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Bookmark, BookOpen } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { AuthModal } from '../components/auth/AuthModal';
@@ -9,7 +9,7 @@ import type { GameWithCalculatedFields } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 import { getGameProgress, markGameStarted, markGameCompleted } from '../services/gameProgressService';
-import { ensureGameExists, getUserReviewForGame } from '../services/reviewService';
+import { ensureGameExists, getUserReviewForGameByIGDBId } from '../services/reviewService';
 import { generateRatingDistribution } from '../utils/dataTransformers';
 import { DLCSection } from '../components/DLCSection';
 import { ParentGameSection } from '../components/ParentGameSection';
@@ -17,6 +17,8 @@ import { ModSection } from '../components/ModSection';
 import { dlcService } from '../services/dlcService';
 import { SmartImage } from '../components/SmartImage';
 import { shouldHideFanContent } from '../utils/contentProtectionFilter';
+import { isNumericIdentifier } from '../utils/gameUrls';
+import { collectionWishlistService } from '../services/collectionWishlistService';
 
 // Interface for review data from database
 interface GameReview {
@@ -147,16 +149,21 @@ const initialState: GamePageState = {
 };
 
 export const GamePage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { identifier } = useParams<{ identifier: string }>();
+  const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
-  // Validate IGDB ID parameter
-  const isValidId = id && !isNaN(parseInt(id)) && parseInt(id) > 0;
   
   // State for text expansion
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
   const [isDevPubExpanded, setIsDevPubExpanded] = useState(false);
   const [isPlatformsExpanded, setIsPlatformsExpanded] = useState(false);
+  
+  // State for collection and wishlist
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isInCollection, setIsInCollection] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [collectionLoading, setCollectionLoading] = useState(false);
   
   // Use reducer for centralized state management
   const [state, dispatch] = useReducer(gamePageReducer, initialState);
@@ -180,16 +187,29 @@ export const GamePage: React.FC = () => {
 
   // Refetch function using the new consolidated service method
   const refetchGame = async () => {
-    if (!isValidId) {
-      dispatch({ type: 'SET_GAME_ERROR', payload: new Error('Invalid game ID') });
+    if (!identifier) {
+      dispatch({ type: 'SET_GAME_ERROR', payload: new Error('Invalid game identifier') });
       return;
     }
     
     dispatch({ type: 'SET_GAME_LOADING', payload: true });
 
     try {
-      // Use the new consolidated method to fetch both game and reviews
-      const { game: gameData, reviews: reviewData } = await gameDataService.getGameWithFullReviews(parseInt(id));
+      let gameData = null;
+      let reviewData = [];
+
+      // Smart resolution: check if identifier is numeric (IGDB ID) or slug
+      if (isNumericIdentifier(identifier)) {
+        console.log('🔢 Treating as IGDB ID:', identifier);
+        const result = await gameDataService.getGameWithFullReviews(parseInt(identifier));
+        gameData = result.game;
+        reviewData = result.reviews;
+      } else {
+        console.log('🔤 Treating as slug:', identifier);
+        const result = await gameDataService.getGameWithFullReviewsBySlug(identifier);
+        gameData = result.game;
+        reviewData = result.reviews;
+      }
       
       if (gameData) {
         dispatch({ type: 'LOAD_GAME_SUCCESS', payload: { game: gameData, reviews: reviewData } });
@@ -204,8 +224,8 @@ export const GamePage: React.FC = () => {
   // Load game data and reviews in a single call
   useEffect(() => {
     const loadGameData = async () => {
-      if (!isValidId) {
-        dispatch({ type: 'SET_GAME_ERROR', payload: new Error('Invalid or missing game ID') });
+      if (!identifier) {
+        dispatch({ type: 'SET_GAME_ERROR', payload: new Error('Invalid or missing game identifier') });
         return;
       }
 
@@ -213,18 +233,32 @@ export const GamePage: React.FC = () => {
       dispatch({ type: 'SET_REVIEWS_LOADING', payload: true });
 
       try {
-        console.log('Loading game with IGDB ID:', id);
+        console.log('Loading game with identifier:', identifier);
         
-        // Use the consolidated method to fetch both game and reviews
-        const { game: gameData, reviews: reviewData } = await gameDataService.getGameWithFullReviews(parseInt(id));
+        // Smart resolution: check if identifier is numeric (IGDB ID) or slug
+        let result;
+        if (isNumericIdentifier(identifier)) {
+          console.log('Using IGDB ID lookup:', identifier);
+          result = await gameDataService.getGameWithFullReviews(parseInt(identifier));
+        } else {
+          console.log('Using slug lookup:', identifier);
+          result = await gameDataService.getGameWithFullReviewsBySlug(identifier);
+        }
+        
+        const { game: gameData, reviews: reviewData } = result;
         
         if (gameData) {
           console.log('✅ Game loaded successfully:', gameData.name);
           console.log(`✅ Loaded ${reviewData.length} reviews`);
           console.log('📊 Raw review data:', reviewData);
           dispatch({ type: 'LOAD_GAME_SUCCESS', payload: { game: gameData, reviews: reviewData } });
+          
+          // If loaded by IGDB ID but game has slug, redirect to canonical URL
+          if (isNumericIdentifier(identifier) && gameData.slug) {
+            navigate(`/game/${gameData.slug}`, { replace: true });
+          }
         } else {
-          console.log('❌ Game not found for IGDB ID:', id);
+          console.log('❌ Game not found for identifier:', identifier);
           dispatch({ type: 'LOAD_GAME_ERROR', payload: new Error('Game not found') });
         }
       } catch (error) {
@@ -234,17 +268,17 @@ export const GamePage: React.FC = () => {
     };
 
     loadGameData();
-  }, [id, isValidId]);
+  }, [identifier, navigate]);
 
   // Load game progress when user is authenticated and game is loaded
   useEffect(() => {
     const loadGameProgress = async () => {
-      if (!game || !id || !isAuthenticated) return;
+      if (!game || !game.igdb_id || !isAuthenticated) return;
 
       dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
       try {
-        console.log('Loading game progress for game ID:', id);
-        const result = await getGameProgress(parseInt(id));
+        console.log('Loading game progress for game ID:', game.igdb_id);
+        const result = await getGameProgress(game.igdb_id);
         
         if (result.success && result.data) {
           dispatch({ type: 'SET_PROGRESS', payload: { 
@@ -266,20 +300,20 @@ export const GamePage: React.FC = () => {
     };
 
     loadGameProgress();
-  }, [game, id, isAuthenticated]);
+  }, [game, isAuthenticated]);
 
   // Check if user has already reviewed this game
   useEffect(() => {
     const checkUserReview = async () => {
-      if (!game || !id || !isAuthenticated) {
+      if (!game || !game.igdb_id || !isAuthenticated) {
         dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: false }});
         return;
       }
 
       dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: true }});
       try {
-        console.log('Checking if user has reviewed game ID:', id);
-        const result = await getUserReviewForGame(parseInt(id));
+        console.log('Checking if user has reviewed game IGDB ID:', game.igdb_id);
+        const result = await getUserReviewForGameByIGDBId(game.igdb_id);
         
         if (result.success) {
           dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { 
@@ -298,17 +332,54 @@ export const GamePage: React.FC = () => {
     };
 
     checkUserReview();
-  }, [game, id, isAuthenticated]);
+  }, [game, isAuthenticated]);
+
+  // Check collection and wishlist status
+  useEffect(() => {
+    const checkCollectionWishlistStatus = async () => {
+      if (!game || !game.igdb_id || !isAuthenticated) {
+        setIsInCollection(false);
+        setIsInWishlist(false);
+        return;
+      }
+
+      try {
+        const status = await collectionWishlistService.checkBothStatuses(game.igdb_id);
+        
+        // If game is started/finished, don't show wishlist/collection status
+        const progress = await getGameProgress();
+        if (progress?.started || progress?.completed) {
+          setIsInWishlist(false);
+          setIsInCollection(false);
+          // Clean up any stale wishlist/collection entries
+          if (status.inWishlist) {
+            await collectionWishlistService.removeFromWishlist(game.igdb_id);
+          }
+          if (status.inCollection) {
+            await collectionWishlistService.removeFromCollection(game.igdb_id);
+          }
+        } else {
+          setIsInCollection(status.inCollection);
+          setIsInWishlist(status.inWishlist);
+        }
+        console.log('Collection/Wishlist status:', status);
+      } catch (error) {
+        console.error('Error checking collection/wishlist status:', error);
+      }
+    };
+
+    checkCollectionWishlistStatus();
+  }, [game, isAuthenticated]);
 
   // Fetch game category from IGDB for DLC/expansion detection
   useEffect(() => {
     const fetchGameCategory = async () => {
-      if (!game || !id) return;
+      if (!game || !game.igdb_id) return;
 
       dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: null, loading: true }});
 
       try {
-        console.log('Fetching category for game IGDB ID:', id);
+        console.log('Fetching category for game IGDB ID:', game.igdb_id);
         
         const response = await fetch('/.netlify/functions/igdb-search', {
           method: 'POST',
@@ -318,7 +389,7 @@ export const GamePage: React.FC = () => {
           body: JSON.stringify({
             isBulkRequest: true,
             endpoint: 'games',
-            requestBody: `fields category, parent_game; where id = ${id};`
+            requestBody: `fields category, parent_game; where id = ${game.igdb_id};`
           })
         });
 
@@ -347,7 +418,7 @@ export const GamePage: React.FC = () => {
     };
 
     fetchGameCategory();
-  }, [game, id]);
+  }, [game]);
 
   // Reviews are now loaded with game data in the main useEffect
   // This reduces redundant API calls and improves performance
@@ -362,7 +433,7 @@ export const GamePage: React.FC = () => {
   };
 
   const executeAction = async (action: string) => {
-    if (!game || !id) return;
+    if (!game || !game.igdb_id) return;
 
     switch (action) {
       case 'mark_started':
@@ -378,12 +449,31 @@ export const GamePage: React.FC = () => {
   };
 
   const handleMarkStarted = async () => {
-    if (!game || !id || isStarted) return; // Don't allow if already started
+    if (!game || !game.igdb_id || isStarted) return; // Don't allow if already started
+    
+    // Automatically move from wishlist/collection when marking as started
+    if (isInWishlist || isInCollection) {
+      console.log('Moving game from wishlist/collection to started');
+      if (isInWishlist) {
+        await collectionWishlistService.removeFromWishlist(game.igdb_id);
+        setIsInWishlist(false);
+      }
+      if (isInCollection) {
+        await collectionWishlistService.removeFromCollection(game.igdb_id);
+        setIsInCollection(false);
+      }
+    }
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
-      // Game should already exist since it was loaded, but verify with database ID
-      const ensureResult = await ensureGameExists(game.id);
+      // Game should already exist since it was loaded, but verify with complete game data
+      const ensureResult = await ensureGameExists({
+        id: game.id,
+        igdb_id: game.igdb_id,
+        name: game.name,
+        cover_url: game.cover_url,
+        releaseDate: game.release_date || game.first_release_date
+      });
 
       if (!ensureResult.success) {
         console.error('Failed to ensure game exists:', ensureResult.error);
@@ -392,7 +482,7 @@ export const GamePage: React.FC = () => {
       }
 
       // Mark game as started using IGDB ID
-      const result = await markGameStarted(parseInt(id));
+      const result = await markGameStarted(game.igdb_id);
       
       if (result.success) {
         dispatch({ type: 'SET_PROGRESS', payload: { isStarted: true, isCompleted } });
@@ -410,12 +500,31 @@ export const GamePage: React.FC = () => {
   };
 
   const handleMarkCompleted = async () => {
-    if (!game || !id || isCompleted) return; // Don't allow if already completed
+    if (!game || !game.igdb_id || isCompleted) return; // Don't allow if already completed
+    
+    // Automatically move from wishlist/collection when marking as completed
+    if (isInWishlist || isInCollection) {
+      console.log('Moving game from wishlist/collection to completed');
+      if (isInWishlist) {
+        await collectionWishlistService.removeFromWishlist(game.igdb_id);
+        setIsInWishlist(false);
+      }
+      if (isInCollection) {
+        await collectionWishlistService.removeFromCollection(game.igdb_id);
+        setIsInCollection(false);
+      }
+    }
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
-      // Game should already exist since it was loaded, but verify with database ID
-      const ensureResult = await ensureGameExists(game.id);
+      // Game should already exist since it was loaded, but verify with complete game data
+      const ensureResult = await ensureGameExists({
+        id: game.id,
+        igdb_id: game.igdb_id,
+        name: game.name,
+        cover_url: game.cover_url,
+        releaseDate: game.release_date || game.first_release_date
+      });
 
       if (!ensureResult.success) {
         console.error('Failed to ensure game exists:', ensureResult.error);
@@ -424,7 +533,7 @@ export const GamePage: React.FC = () => {
       }
 
       // Mark game as completed using IGDB ID (this will also mark as started)
-      const result = await markGameCompleted(parseInt(id));
+      const result = await markGameCompleted(game.igdb_id);
       
       if (result.success) {
         dispatch({ type: 'SET_PROGRESS', payload: { isStarted: true, isCompleted: true } });
@@ -441,10 +550,114 @@ export const GamePage: React.FC = () => {
     }
   };
 
+  const handleToggleWishlist = async () => {
+    if (!game || !game.igdb_id) return;
+    
+    // Prevent wishlist if game is in collection or started/finished
+    if (isInCollection || isStarted || isCompleted) {
+      console.warn('Cannot add to wishlist: game is already in collection or started/finished');
+      return;
+    }
+
+    if (!isAuthenticated) {
+      dispatch({ type: 'SET_AUTH_MODAL', payload: { show: true, pendingAction: 'toggle_wishlist' }});
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      const gameData = {
+        igdb_id: game.igdb_id,
+        name: game.name,
+        pic_url: game.pic_url,
+        cover_url: game.cover_url,
+        genre: game.genre,
+        release_date: game.release_date
+      };
+
+      const result = await collectionWishlistService.toggleWishlist(game.igdb_id, gameData);
+      
+      if (result.success) {
+        setIsInWishlist(result.data || false);
+        console.log(result.data ? '✅ Added to wishlist' : '✅ Removed from wishlist');
+      } else {
+        console.error('Failed to toggle wishlist:', result.error);
+        alert(`Failed to update wishlist: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      alert('Failed to update wishlist. Please try again.');
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+
+  const handleToggleCollection = async () => {
+    if (!game || !game.igdb_id) return;
+    
+    // Prevent going back to wishlist from collection
+    if (isInCollection && !isStarted && !isCompleted) {
+      // Can only remove from collection, not move back to wishlist
+      const confirmRemove = window.confirm('Remove from collection? (This will not move it back to wishlist)');
+      if (!confirmRemove) return;
+    }
+
+    if (!isAuthenticated) {
+      dispatch({ type: 'SET_AUTH_MODAL', payload: { show: true, pendingAction: 'toggle_collection' }});
+      return;
+    }
+
+    setCollectionLoading(true);
+    try {
+      const gameData = {
+        igdb_id: game.igdb_id,
+        name: game.name,
+        pic_url: game.pic_url,
+        cover_url: game.cover_url,
+        genre: game.genre,
+        release_date: game.release_date
+      };
+
+      // If in wishlist, move to collection (remove from wishlist, add to collection)
+      if (isInWishlist) {
+        const result = await collectionWishlistService.moveFromWishlistToCollection(game.igdb_id, gameData);
+        if (result.success) {
+          setIsInWishlist(false);
+          setIsInCollection(true);
+          console.log('✅ Moved from wishlist to collection');
+        } else {
+          console.error('Failed to move to collection:', result.error);
+          alert(`Failed to move to collection: ${result.error}`);
+        }
+      } else {
+        // Toggle collection status
+        const result = await collectionWishlistService.toggleCollection(game.igdb_id, gameData);
+        if (result.success) {
+          setIsInCollection(result.data || false);
+          console.log(result.data ? '✅ Added to collection' : '✅ Removed from collection');
+        } else {
+          console.error('Failed to toggle collection:', result.error);
+          alert(`Failed to update collection: ${result.error}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling collection:', error);
+      alert('Failed to update collection. Please try again.');
+    } finally {
+      setCollectionLoading(false);
+    }
+  };
+
   const handleAuthSuccess = () => {
     dispatch({ type: 'SET_AUTH_MODAL', payload: { show: false, pendingAction: null }});
     if (pendingAction) {
-      executeAction(pendingAction);
+      if (pendingAction === 'toggle_wishlist') {
+        handleToggleWishlist();
+      } else if (pendingAction === 'toggle_collection') {
+        handleToggleCollection();
+      } else {
+        executeAction(pendingAction);
+      }
     }
   };
 
@@ -462,7 +675,7 @@ export const GamePage: React.FC = () => {
       id: review.id.toString(),
       userId: review.user_id.toString(),
       gameId: review.game_id.toString(),
-      igdbGameId: id, // Use the IGDB game_id from the URL parameter
+      igdbGameId: game?.igdb_id?.toString() || '', // Use the IGDB game_id from the game data
       gameTitle: game?.name || 'Unknown Game',
       rating: review.rating,
       text: review.review || '',
@@ -473,7 +686,7 @@ export const GamePage: React.FC = () => {
       author: review.user?.name || 'Anonymous',
       authorAvatar: review.user?.avatar_url || '/default-avatar.png'
     })),
-    [validRatings, id, game?.name]
+    [validRatings, game?.igdb_id, game?.name]
   );
 
   // Recommendation 6: Clarify terminology - separate reviews with text from ratings
@@ -625,7 +838,7 @@ export const GamePage: React.FC = () => {
               {gameError?.message || 'Game not found'}
             </h1>
             <p className="text-gray-400 mb-4">
-              Debug: Tried to load game with IGDB ID: {id}
+              Debug: Tried to load game with identifier: {identifier}
             </p>
             <div className="flex gap-4 justify-center">
               <button
@@ -680,97 +893,102 @@ export const GamePage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {formatFullDate(game.first_release_date)}
+                        {formatFullDate(game.first_release_date || game.release_date)}
                       </span>
                     </div>
                     {game.platforms && game.platforms.length > 0 && (
-                      <div className="flex items-center gap-2 min-w-0">
-                        <strong className="whitespace-nowrap flex-shrink-0">Platforms:</strong>
-                        {!isPlatformsExpanded ? (
-                          // Collapsed view - single line
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <span className="truncate">
-                              {(() => {
-                                const platformsText = game.platforms.join(', ');
-                                return needsTruncation(platformsText, 50) 
-                                  ? truncateText(platformsText, 50)
-                                  : platformsText;
-                              })()}
-                            </span>
-                            {needsTruncation(game.platforms.join(', '), 50) && (
-                              <button
-                                onClick={() => setIsPlatformsExpanded(true)}
-                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-1"
-                              >
-                                See more
-                              </button>
+                      <div>
+                        <div className="flex items-baseline gap-2">
+                          <strong className="whitespace-nowrap flex-shrink-0">Platforms:</strong>
+                          <div className="flex-1 min-w-0">
+                            {!isPlatformsExpanded ? (
+                              // Collapsed view - single line
+                              <div className="flex items-center gap-2">
+                                <span className="truncate" style={{ flexShrink: 1, minWidth: 0 }}>
+                                  {(() => {
+                                    const platformsText = game.platforms.join(', ');
+                                    return needsTruncation(platformsText, 50) 
+                                      ? truncateText(platformsText, 50)
+                                      : platformsText;
+                                  })()} 
+                                </span>
+                                {needsTruncation(game.platforms.join(', '), 50) && (
+                                  <button
+                                    onClick={() => setIsPlatformsExpanded(true)}
+                                    className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
+                                  >
+                                    See more
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              // Expanded view - can wrap to multiple lines
+                              <div>
+                                <span className="block mb-1">
+                                  {game.platforms.join(', ')}
+                                </span>
+                                <button
+                                  onClick={() => setIsPlatformsExpanded(false)}
+                                  className="text-purple-400 hover:text-purple-300 text-sm"
+                                >
+                                  See less
+                                </button>
+                              </div>
                             )}
                           </div>
-                        ) : (
-                          // Expanded view - can wrap to multiple lines
-                          <div className="flex items-start gap-2 flex-1">
-                            <span className="flex-1">
-                              {game.platforms.join(', ')}
-                            </span>
-                            <button
-                              onClick={() => setIsPlatformsExpanded(false)}
-                              className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0"
-                            >
-                              See less
-                            </button>
-                          </div>
-                        )}
+                        </div>
                       </div>
                     )}
                     {(game.developer || game.publisher) && (
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div>
                         {!isDevPubExpanded ? (
-                          // Collapsed view - single line
-                          <>
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              {game.developer && (
-                                <>
-                                  <strong className="whitespace-nowrap flex-shrink-0">Developer:</strong>
-                                  <span className="truncate">{truncateText(game.developer, 20)}</span>
-                                </>
-                              )}
-                              {game.developer && game.publisher && (
-                                <span className="text-gray-500 flex-shrink-0">•</span>
-                              )}
-                              {game.publisher && (
-                                <>
-                                  <strong className="whitespace-nowrap flex-shrink-0">Publisher:</strong>
-                                  <span className="truncate">{truncateText(game.publisher, 20)}</span>
-                                </>
-                              )}
-                            </div>
-                            {(needsTruncation(game.developer, 20) || needsTruncation(game.publisher, 20)) && (
-                              <button
-                                onClick={() => setIsDevPubExpanded(true)}
-                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-1"
-                              >
-                                See more
-                              </button>
+                          // Collapsed view - separate lines
+                          <div className="space-y-1">
+                            {game.developer && (
+                              <div className="flex items-center gap-2">
+                                <strong className="whitespace-nowrap flex-shrink-0">Developer:</strong>
+                                <span className="truncate">{truncateText(game.developer, 30)}</span>
+                                {needsTruncation(game.developer, 30) && (
+                                  <button
+                                    onClick={() => setIsDevPubExpanded(true)}
+                                    className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
+                                  >
+                                    See more
+                                  </button>
+                                )}
+                              </div>
                             )}
-                          </>
+                            {game.publisher && (
+                              <div className="flex items-center gap-2">
+                                <strong className="whitespace-nowrap flex-shrink-0">Publisher:</strong>
+                                <span className="truncate">{truncateText(game.publisher, 30)}</span>
+                                {needsTruncation(game.publisher, 30) && (
+                                  <button
+                                    onClick={() => setIsDevPubExpanded(true)}
+                                    className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
+                                  >
+                                    See more
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         ) : (
-                          // Expanded view - can wrap to multiple lines
-                          <div className="flex items-start gap-2 flex-1">
-                            <div className="flex-1">
-                              {game.developer && (
-                                <div>
-                                  <strong>Developer:</strong> {game.developer}
-                                </div>
-                              )}
-                              {game.publisher && (
-                                <div>
-                                  <strong>Publisher:</strong> {game.publisher}
-                                </div>
-                              )}
-                            </div>
+                          // Expanded view - full text
+                          <div className="space-y-1">
+                            {game.developer && (
+                              <div>
+                                <strong>Developer:</strong> {game.developer}
+                              </div>
+                            )}
+                            {game.publisher && (
+                              <div>
+                                <strong>Publisher:</strong> {game.publisher}
+                              </div>
+                            )}
                             <button
                               onClick={() => setIsDevPubExpanded(false)}
-                              className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0"
+                              className="text-purple-400 hover:text-purple-300 text-sm mt-1"
                             >
                               See less
                             </button>
@@ -780,21 +998,26 @@ export const GamePage: React.FC = () => {
                     )}
                   </div>
                   <div className="mb-6">
-                    <p 
-                      className="text-gray-300 leading-relaxed transition-all duration-300"
-                      style={{
-                        display: '-webkit-box',
-                        WebkitLineClamp: !isSummaryExpanded ? 3 : 'unset',
-                        WebkitBoxOrient: 'vertical',
-                        overflow: !isSummaryExpanded ? 'hidden' : 'visible'
-                      }}
-                    >
-                      {game.summary || 'No description available.'}
-                    </p>
+                    <div className="relative">
+                      <p 
+                        className={`text-gray-300 leading-relaxed transition-all duration-300 ${
+                          !isSummaryExpanded ? 'line-clamp-3' : ''
+                        }`}
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: !isSummaryExpanded ? 3 : 'unset',
+                          WebkitBoxOrient: 'vertical',
+                          overflow: !isSummaryExpanded ? 'hidden' : 'visible',
+                          textOverflow: 'ellipsis'
+                        }}
+                      >
+                        {game.summary || 'No description available.'}
+                      </p>
+                    </div>
                     {game.summary && game.summary.length > 200 && (
                       <button
                         onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
-                        className="text-purple-400 hover:text-purple-300 text-sm mt-2 flex items-center gap-1"
+                        className="text-purple-400 hover:text-purple-300 text-sm mt-2 inline-flex items-center gap-1"
                       >
                         {isSummaryExpanded ? (
                           <>
@@ -811,8 +1034,52 @@ export const GamePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* User Actions - Checkboxes and Write Review */}
+              {/* User Actions - Wishlist, Collection, Checkboxes and Write Review */}
               <div className="flex items-center gap-4 p-6 border-t border-gray-700">
+                {/* Wishlist Button - Only show if not in collection and not started/finished */}
+                {!isInCollection && !isStarted && !isCompleted && (
+                  <button
+                    onClick={handleToggleWishlist}
+                    disabled={wishlistLoading}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isInWishlist
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'border border-blue-600 text-blue-400 hover:bg-blue-600/10'
+                    } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {wishlistLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <Bookmark className={`h-4 w-4 ${isInWishlist ? 'fill-current' : ''}`} />
+                    )}
+                    <span className="text-sm font-medium">
+                      {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
+                    </span>
+                  </button>
+                )}
+
+                {/* Collection Button - Show if in wishlist OR if not started/finished */}
+                {(isInWishlist || (!isStarted && !isCompleted && !isInCollection)) && (
+                  <button
+                    onClick={handleToggleCollection}
+                    disabled={collectionLoading}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isInCollection
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : 'border border-green-600 text-green-400 hover:bg-green-600/10'
+                    } ${collectionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {collectionLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <BookOpen className={`h-4 w-4 ${isInCollection ? 'fill-current' : ''}`} />
+                    )}
+                    <span className="text-sm font-medium">
+                      {isInCollection ? 'In Collection' : isInWishlist ? 'Move to Collection' : 'Add to Collection'}
+                    </span>
+                  </button>
+                )}
+
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleAuthRequiredAction('mark_started')}
@@ -919,14 +1186,16 @@ export const GamePage: React.FC = () => {
                             height: item.count > 0 
                               ? `${(item.percentage / 100) * 80}px`
                               : '2px',
-                            backgroundColor: item.rating >= 8 ? '#4ade80' : '#374151'
+                            backgroundColor: '#6b7280'
                           }}
                         ></div>
                       ))}
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-green-500 text-xs" style={{ width: '24px', textAlign: 'center' }}>1</span>
-                      <span className="text-green-500 text-xs" style={{ width: '24px', textAlign: 'center' }}>10</span>
+                    <div className="border-t border-gray-700 pt-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400 text-xs" style={{ width: '24px', textAlign: 'center' }}>1</span>
+                        <span className="text-gray-400 text-xs" style={{ width: '24px', textAlign: 'center' }}>10</span>
+                      </div>
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-green-400">
@@ -993,6 +1262,7 @@ export const GamePage: React.FC = () => {
                       {review.author ? review.author.charAt(0).toUpperCase() : '?'}
                     </div>
                     <span className="text-white font-medium">{review.author}</span>
+                    <span className="text-yellow-500">{review.rating}/10</span>
                   </div>
                   {review.text && (
                     <p className="text-gray-300 text-sm">{review.text}</p>

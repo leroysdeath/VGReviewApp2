@@ -143,12 +143,12 @@ GameVault may contain links to third-party websites. We are not responsible for 
 ## 13. Contact Information
 
 For privacy-related questions or concerns:
-- **Email**: privacy@gamevault.com
-- **Data Protection Officer**: dpo@gamevault.com
+- **Email**: gamevaultsite@gmail.com
+- **Data Protection Officer**: gamevaultsite@gmail.com
 - **Address**: GameVault LLC
 
-For GDPR inquiries (EU residents): gdpr@gamevault.com
-For CCPA inquiries (California residents): ccpa@gamevault.com
+For GDPR inquiries (EU residents): gamevaultsite@gmail.com
+For CCPA inquiries (California residents): gamevaultsite@gmail.com
 
 ## 14. Data Protection Framework
 
@@ -453,8 +453,8 @@ const PrivacyPage: React.FC = React.memo(() => {
             <div className="mt-12 pt-8 border-t border-gray-700">
               <p className="text-gray-400 text-sm">
                 For privacy-related questions, please contact us at{' '}
-                <a href="mailto:privacy@gamevault.com" className="text-purple-400 hover:text-purple-300">
-                  privacy@gamevault.com
+                <a href="mailto:gamevaultsite@gmail.com" className="text-purple-400 hover:text-purple-300">
+                  gamevaultsite@gmail.com
                 </a>
               </p>
             </div>

@@ -117,7 +117,7 @@ We reserve the right to modify these Terms at any time. We will notify users of 
 ## 13. Contact Information
 
 If you have any questions about these Terms of Service, please contact us at:
-- Email: legal@gamevault.com
+- Email: gamevaultsite@gmail.com
 - Address: GameVault LLC
 
 ## 14. Severability
@@ -419,8 +419,8 @@ const TermsPage: React.FC = React.memo(() => {
             <div className="mt-12 pt-8 border-t border-gray-700">
               <p className="text-gray-400 text-sm">
                 If you have any questions about these Terms of Service, please contact us at{' '}
-                <a href="mailto:legal@gamevault.com" className="text-purple-400 hover:text-purple-300">
-                  legal@gamevault.com
+                <a href="mailto:gamevaultsite@gmail.com" className="text-purple-400 hover:text-purple-300">
+                  gamevaultsite@gmail.com
                 </a>
               </p>
             </div>

@@ -269,7 +269,7 @@ export const createReview = async (
       .insert(reviewData)
       .select(`
         *,
-        user!rating_user_id_fkey(*),
+        user!fk_rating_user(*),
         game(*)
       `)
       .single();
@@ -446,7 +446,7 @@ export const getUserReviewForGame = async (gameId: number): Promise<ServiceRespo
       .from('rating')
       .select(`
         *,
-        user!rating_user_id_fkey(*),
+        user!fk_rating_user(*),
         game(*)
       `)
       .eq('user_id', userId)
@@ -540,7 +540,7 @@ export const updateReview = async (
       .eq('id', reviewId)
       .select(`
         *,
-        user!rating_user_id_fkey(*),
+        user!fk_rating_user(*),
         game(*)
       `)
       .single();
@@ -599,7 +599,7 @@ export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
       .from('rating')
       .select(`
         *,
-        user!rating_user_id_fkey(*),
+        user!fk_rating_user(*),
         game(*)
       `, { count: 'exact' })
       .eq('user_id', userId)
@@ -656,7 +656,7 @@ export const getReview = async (
       .from('rating')
       .select(`
         *,
-        user!rating_user_id_fkey(*),
+        user!fk_rating_user(*),
         game(*)
       `)
       .eq('id', reviewId)
@@ -1051,7 +1051,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       .from('rating')
       .select(`
         *,
-        user!rating_user_id_fkey(*),
+        user!fk_rating_user(*),
         game(id, name, pic_url, cover_url, game_id, igdb_id)
       `, { count: 'exact' })
       .order('post_date_time', { ascending: false })
