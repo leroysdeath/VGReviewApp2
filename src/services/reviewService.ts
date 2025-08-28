@@ -170,17 +170,15 @@ export const ensureGameExists = async (
  * @param rating - The rating score
  * @param reviewText - The review text (optional)
  * @param isRecommended - Whether the game is recommended
- * @param gameInfo - Game information for creating the game record if needed
  */
 export const createReview = async (
   igdbId: number, 
   rating: number, 
   reviewText?: string, 
-  isRecommended?: boolean,
-  gameInfo?: { title: string; coverImage?: string; genre?: string; releaseDate?: string }
+  isRecommended?: boolean
 ): Promise<ServiceResponse<Review>> => {
   try {
-    console.log('🔍 Creating review with params:', { igdbId, rating, reviewText, isRecommended, gameInfo });
+    console.log('🔍 Creating review with params:', { igdbId, rating, reviewText, isRecommended });
     
     const userId = await getCurrentUserId();
     console.log('👤 Current user ID:', userId);
@@ -189,45 +187,26 @@ export const createReview = async (
       return { success: false, error: 'User not authenticated or not found in database' };
     }
 
-    // Ensure game exists in database (create if needed)
-    let gameId: number;
-    if (gameInfo) {
-      const ensureResult = await ensureGameExists({
-        id: -igdbId, // Negative ID indicates it's from IGDB
-        igdb_id: igdbId,
-        name: gameInfo.title,
-        cover_url: gameInfo.coverImage,
-        genre: gameInfo.genre,
-        releaseDate: gameInfo.releaseDate
-      });
-      
-      if (!ensureResult.success) {
-        return { success: false, error: ensureResult.error };
-      }
-      
-      gameId = ensureResult.data!.gameId;
-    } else {
-      // Fallback: look up existing game by IGDB ID
-      const { data: gameRecord, error: gameError } = await supabase
-        .from('game')
-        .select('id, name')
-        .eq('igdb_id', igdbId)
-        .single();
+    // Look up existing game by IGDB ID
+    const { data: gameRecord, error: gameError } = await supabase
+      .from('game')
+      .select('id, name')
+      .eq('igdb_id', igdbId)
+      .single();
 
-      console.log('🎮 Game lookup result:', { gameRecord, gameError });
+    console.log('🎮 Game lookup result:', { gameRecord, gameError });
 
-      if (gameError && gameError.code !== 'PGRST116') {
-        console.error('❌ Game lookup error:', gameError);
-        return { success: false, error: `Game lookup failed: ${gameError.message}` };
-      }
-
-      if (!gameRecord) {
-        console.error('❌ Game not found in database for IGDB ID:', igdbId);
-        return { success: false, error: 'Game not found in database. Please provide game information.' };
-      }
-
-      gameId = gameRecord.id;
+    if (gameError && gameError.code !== 'PGRST116') {
+      console.error('❌ Game lookup error:', gameError);
+      return { success: false, error: `Game lookup failed: ${gameError.message}` };
     }
+
+    if (!gameRecord) {
+      console.error('❌ Game not found in database for IGDB ID:', igdbId);
+      return { success: false, error: 'Game not found in database. Please select a game from the search results.' };
+    }
+
+    const gameId = gameRecord.id;
 
     console.log('✅ Using game ID:', gameId);
 
@@ -879,12 +858,12 @@ export const getCommentsForReview = async (
 
     // Fetch all comments for the review
     const { data, error, count } = await supabase
-      .from('review_comment')
+      .from('comment')
       .select(`
         *,
         user:user_id(id, username, name, avatar_url)
       `, { count: 'exact' })
-      .eq('review_id', reviewId)
+      .eq('rating_id', reviewId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -899,9 +878,9 @@ export const getCommentsForReview = async (
       const comment: Comment = {
         id: item.id,
         userId: item.user_id,
-        reviewId: item.review_id,
+        reviewId: item.rating_id,
         content: item.content,
-        parentId: item.parent_id || undefined,
+        parentId: item.parent_comment_id || undefined,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
         replies: [],
@@ -983,7 +962,7 @@ export const addComment = async (
     // Validate parent comment if provided
     if (parentId) {
       const { data: parentComment, error: parentError } = await supabase
-        .from('review_comment')
+        .from('comment')
         .select('id')
         .eq('id', parentId)
         .single();
@@ -995,12 +974,13 @@ export const addComment = async (
 
     // Insert comment
     const { data, error } = await supabase
-      .from('review_comment')
+      .from('comment')
       .insert({
         user_id: userId,
-        review_id: reviewId,
+        rating_id: reviewId,
         content: sanitizedContent,
-        parent_id: parentId || null
+        parent_comment_id: parentId || null,
+        is_published: true
       })
       .select(`
         *,
@@ -1014,9 +994,9 @@ export const addComment = async (
     const comment: Comment = {
       id: data.id,
       userId: data.user_id,
-      reviewId: data.review_id,
+      reviewId: data.rating_id,
       content: data.content,
-      parentId: data.parent_id || undefined,
+      parentId: data.parent_comment_id || undefined,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       replies: [],

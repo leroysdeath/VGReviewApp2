@@ -5,7 +5,7 @@ import { gameDataService } from '../services/gameDataService';
 import { gameSearchService } from '../services/gameSearchService';
 import type { Game, GameWithCalculatedFields } from '../types/database';
 import { GameSearch } from '../components/GameSearch';
-import { createReview, ensureGameExists, getUserReviewForGameByIGDBId, updateReview } from '../services/reviewService';
+import { createReview, getUserReviewForGameByIGDBId, updateReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
 import { useAuth } from '../hooks/useAuth';
 
@@ -593,13 +593,7 @@ export const ReviewFormPage: React.FC = () => {
           igdbId, // Pass the IGDB ID - createReview will handle the rest
           rating,
           reviewText,
-          isRecommended,
-          {
-            title: selectedGame.name,
-            coverImage: selectedGame.cover_url,
-            genre: selectedGame.genres?.[0],
-            releaseDate: selectedGame.first_release_date ? new Date(selectedGame.first_release_date * 1000).toISOString().split('T')[0] : undefined
-          }
+          isRecommended
         );
 
         if (result.success) {

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Star, Calendar, User, MessageCircle, Heart, X } from 'lucide-react';
-import { StarRating } from '../components/StarRating';
+import { Star, X } from 'lucide-react';
 import { gameDataService } from '../services/gameDataService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
+import { ReviewInteractions } from '../components/ReviewInteractions';
 
 interface Review {
   id: string;
@@ -14,27 +14,15 @@ interface Review {
   rating: number;
   review: string;
   post_date_time: string;
+  platform_id?: number;
   user: {
     id: number;
     name: string;
+    username?: string;
     avatar_url?: string;
   };
 }
 
-interface Comment {
-  id: string;
-  review_id: string;
-  user_id: number;
-  comment: string;
-  post_date_time: string;
-  hearts_count: number;
-  user_has_hearted: boolean;
-  user: {
-    id: number;
-    name: string;
-    avatar_url?: string;
-  };
-}
 
 export const ReviewPage: React.FC = () => {
   const { userId, gameId } = useParams<{ userId: string; gameId: string }>();
@@ -42,7 +30,6 @@ export const ReviewPage: React.FC = () => {
   
   const [game, setGame] = useState<GameWithCalculatedFields | null>(null);
   const [review, setReview] = useState<Review | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFullReview, setShowFullReview] = useState(false);
@@ -87,6 +74,7 @@ export const ReviewPage: React.FC = () => {
           rating,
           review,
           post_date_time,
+          platform_id,
           user!fk_rating_user(
             id,
             username,
@@ -115,6 +103,7 @@ export const ReviewPage: React.FC = () => {
             rating,
             review,
             post_date_time,
+            platform_id,
             user!fk_rating_user(
               id,
               username,
@@ -170,8 +159,7 @@ export const ReviewPage: React.FC = () => {
         setGame(gameData);
       }
 
-      // Load comments for this review
-      await loadComments(reviewData.id);
+      // Comments will be loaded by ReviewInteractions component
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load review');
@@ -180,10 +168,11 @@ export const ReviewPage: React.FC = () => {
     }
   };
 
+  // Remove broken loadComments function - ReviewInteractions handles this
+  /*
   const loadComments = async (reviewId: string) => {
-    try {
-      const { data: commentsData, error: commentsError } = await supabase
-        .from('review_comments')
+    // This function was using non-existent tables
+    // Now handled by ReviewInteractions component
         .select(`
           id,
           review_id,
@@ -238,38 +227,8 @@ export const ReviewPage: React.FC = () => {
     }
   };
 
-  const handleHeartComment = async (commentId: string) => {
-    if (!isAuthenticated || !user?.id) return;
-
-    const comment = comments.find(c => c.id === commentId);
-    if (!comment) return;
-
-    try {
-      if (comment.user_has_hearted) {
-        // Remove heart
-        await supabase
-          .from('comment_hearts')
-          .delete()
-          .eq('comment_id', commentId)
-          .eq('user_id', user.id);
-      } else {
-        // Add heart
-        await supabase
-          .from('comment_hearts')
-          .insert({
-            comment_id: commentId,
-            user_id: user.id
-          });
-      }
-
-      // Reload comments to update heart counts
-      if (review) {
-        await loadComments(review.id);
-      }
-    } catch (err) {
-      console.error('Error toggling heart:', err);
-    }
-  };
+  // Remove broken handleHeartComment - ReviewInteractions handles this
+  */
 
   if (loading) {
     return (
@@ -329,76 +288,50 @@ export const ReviewPage: React.FC = () => {
                 <div className="p-8">
                   <Link 
                     to={`/game/${gameId}`}
-                    className="text-3xl font-bold text-white mb-4 hover:text-purple-400 transition-colors"
+                    className="text-3xl font-bold text-white mb-2 hover:text-purple-400 transition-colors block"
                   >
                     {game.name}
                   </Link>
-                  <div className="space-y-2 text-gray-400 mb-6">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        {game.release_date ? new Date(game.release_date).getFullYear() : 'Unknown'}
-                      </span>
-                    </div>
-                    {game.genres && game.genres.length > 0 && (
-                      <div><strong>Genre:</strong> {game.genres.join(', ')}</div>
-                    )}
-                    {game.platforms && game.platforms.length > 0 && (
-                      <div><strong>Platforms:</strong> {game.platforms.join(', ')}</div>
+                  
+                  {/* Review Info */}
+                  <div className="text-gray-400 mb-1">
+                    Review by{' '}
+                    <Link
+                      to={`/user/${review.user.id}`}
+                      className="text-white font-medium hover:text-purple-400 transition-colors"
+                    >
+                      {review.user.username || review.user.name}
+                    </Link>
+                  </div>
+                  
+                  <div className="text-sm text-gray-400 mb-4">
+                    {new Date(review.post_date_time).toLocaleDateString()}
+                    {review.platform_id && (
+                      <>
+                        {' • '}
+                        <span>Platform {review.platform_id}</span>
+                      </>
                     )}
                   </div>
                   
-                  {/* Review Content */}
-                  <div className="bg-gray-700 rounded-lg p-4 mb-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <img
-                        src={review.user.avatar_url || '/default-avatar.png'}
-                        alt={review.user.username || review.user.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          target.style.display = 'none';
-                          const fallback = target.nextElementSibling;
-                          if (fallback) fallback.style.display = 'flex';
-                        }}
-                      />
-                      <div 
-                        className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm"
-                        style={{ display: 'none' }}
-                      >
-                        {(review.user.username || review.user.name) ? (review.user.username || review.user.name).charAt(0).toUpperCase() : '?'}
-                      </div>
-                      <div>
-                        <Link
-                          to={`/user/${review.user.id}`}
-                          className="text-white font-medium hover:text-purple-400 transition-colors"
-                        >
-                          {review.user.username || review.user.name}
-                        </Link>
-                        <div className="text-sm text-gray-400">
-                          {new Date(review.post_date_time).toLocaleDateString()}
-                        </div>
-                      </div>
+                  {/* Review Text */}
+                  {reviewText && (
+                    <div className="text-gray-300 leading-relaxed mt-4">
+                      {isLongReview && !reviewExpanded ? (
+                        <>
+                          <p>{reviewText.substring(0, 500)}...</p>
+                          <button
+                            onClick={() => setShowFullReview(true)}
+                            className="mt-2 text-purple-400 hover:text-purple-300 transition-colors text-sm"
+                          >
+                            more
+                          </button>
+                        </>
+                      ) : (
+                        <p>{reviewText}</p>
+                      )}
                     </div>
-                    
-                    {reviewText && (
-                      <div className="text-gray-300 leading-relaxed">
-                        {isLongReview && !reviewExpanded ? (
-                          <>
-                            <p>{reviewText.substring(0, 500)}...</p>
-                            <button
-                              onClick={() => setShowFullReview(true)}
-                              className="mt-2 text-purple-400 hover:text-purple-300 transition-colors text-sm"
-                            >
-                              more
-                            </button>
-                          </>
-                        ) : (
-                          <p>{reviewText}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -418,8 +351,14 @@ export const ReviewPage: React.FC = () => {
                 <div className="text-4xl font-bold text-green-400 mb-2">
                   {review.rating.toFixed(1)}
                 </div>
-                <div className="flex justify-center mb-2">
-                  <StarRating rating={review.rating} />
+                <div className="mb-2">
+                  {/* Progress bar */}
+                  <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                    <div 
+                      className="bg-green-400 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${(review.rating / 10) * 100}%` }}
+                    />
+                  </div>
                 </div>
                 <div className="text-sm text-gray-400">
                   out of 10
@@ -429,84 +368,17 @@ export const ReviewPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Comments Section */}
-        <div>
-          <div className="border-b border-gray-700 mb-6"></div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Comments</h2>
+        {/* Comments Section - Using the working ReviewInteractions component */}
+        {review && (
+          <div>
+            <div className="border-b border-gray-700 mb-6"></div>
+            <ReviewInteractions
+              reviewId={parseInt(review.id)}
+              initialComments={[]}
+              showCommentForm={true}
+            />
           </div>
-
-          <div className="space-y-4">
-            {comments.length > 0 ? (
-              comments.map(comment => (
-                <div key={comment.id} className="bg-gray-800 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <img
-                      src={comment.user.avatar_url || '/default-avatar.png'}
-                      alt={comment.user.username || comment.user.name}
-                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        target.style.display = 'none';
-                        const fallback = target.nextElementSibling;
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
-                    />
-                    <div 
-                      className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                      style={{ display: 'none' }}
-                    >
-                      {(comment.user.username || comment.user.name) ? (comment.user.username || comment.user.name).charAt(0).toUpperCase() : '?'}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Link
-                          to={`/user/${comment.user.id}`}
-                          className="text-white font-medium hover:text-purple-400 transition-colors"
-                        >
-                          {comment.user.username || comment.user.name}
-                        </Link>
-                        <span className="text-gray-400 text-sm">
-                          {new Date(comment.post_date_time).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="text-gray-300 text-sm mb-2">{comment.comment}</p>
-                      
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleHeartComment(comment.id)}
-                          disabled={!isAuthenticated}
-                          className={`flex items-center gap-1 text-sm transition-colors ${
-                            comment.user_has_hearted 
-                              ? 'text-red-400' 
-                              : 'text-gray-400 hover:text-red-400'
-                          } ${!isAuthenticated ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                        >
-                          <Heart 
-                            className={`h-4 w-4 ${
-                              comment.user_has_hearted ? 'fill-current' : ''
-                            }`} 
-                          />
-                          {comment.hearts_count > 0 && (
-                            <span className="text-green-400 font-medium">
-                              {comment.hearts_count}
-                            </span>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-600" />
-                <p>No comments yet. Be the first to comment on this review!</p>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Full Review Modal */}
