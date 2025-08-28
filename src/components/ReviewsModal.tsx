@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Star, TrendingUp, TrendingDown, Clock, History } from 'lucide-react';
+import { X, TrendingUp, TrendingDown, Clock, History } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useResponsive } from '../hooks/useResponsive';
@@ -222,18 +222,20 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
           ) : reviews.length === 0 ? (
             /* Empty State */
             <div className="text-center py-12">
-              <Star className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+              <div className="h-12 w-12 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-gray-500 text-lg">0</span>
+              </div>
               <p className="text-gray-400">No reviews found</p>
             </div>
           ) : (
             /* Reviews List */
             <div className="space-y-4">
               {reviews.map((review) => (
-                <div key={review.id} className="bg-gray-700 rounded-lg p-4">
+                <div key={review.id} className="bg-gray-700 rounded-lg p-4 pb-4">
                   <div className="flex items-start gap-4">
                     <Link
                       to={review.gameUrl}
-                      className="flex-shrink-0"
+                      className="flex-shrink-0 mt-4"
                       onClick={onClose}
                     >
                       <img
@@ -246,34 +248,17 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                       />
                     </Link>
                     
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <Link
-                          to={review.gameUrl}
-                          className="text-white font-medium hover:text-purple-400 transition-colors"
-                          onClick={onClose}
-                        >
-                          {review.gameTitle}
-                        </Link>
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < review.rating 
-                                  ? 'text-yellow-400 fill-current' 
-                                  : 'text-gray-600'
-                              }`}
-                            />
-                          ))}
-                          <span className="text-sm text-gray-400 ml-2">
-                            {review.rating}/5
-                          </span>
-                        </div>
-                      </div>
+                    <div className="flex-1 min-w-0 mt-4">
+                      <Link
+                        to={review.gameUrl}
+                        className="text-white font-medium hover:text-purple-400 transition-colors block mb-2"
+                        onClick={onClose}
+                      >
+                        {review.gameTitle}
+                      </Link>
                       
                       <div className="text-gray-400 text-sm mb-2">
-                        {new Date(review.postDate).toLocaleDateString()}
+                        {new Date(review.postDate).toLocaleDateString()} <span className="text-yellow-400">{review.rating % 1 === 0 ? `${review.rating}/10` : `${review.rating.toFixed(1)}/10`}</span>
                       </div>
                       
                       <div className="text-gray-300 text-sm">

@@ -87,7 +87,7 @@ export const ReviewPage: React.FC = () => {
           rating,
           review,
           post_date_time,
-          user(
+          user!fk_rating_user(
             id,
             username,
             name,
@@ -115,7 +115,7 @@ export const ReviewPage: React.FC = () => {
             rating,
             review,
             post_date_time,
-            user(
+            user!fk_rating_user(
               id,
               username,
               name,

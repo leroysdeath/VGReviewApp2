@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Bookmark, BookOpen } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { AuthModal } from '../components/auth/AuthModal';
@@ -9,7 +9,7 @@ import type { GameWithCalculatedFields } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 import { getGameProgress, markGameStarted, markGameCompleted } from '../services/gameProgressService';
-import { ensureGameExists, getUserReviewForGame } from '../services/reviewService';
+import { ensureGameExists, getUserReviewForGameByIGDBId } from '../services/reviewService';
 import { generateRatingDistribution } from '../utils/dataTransformers';
 import { DLCSection } from '../components/DLCSection';
 import { ParentGameSection } from '../components/ParentGameSection';
@@ -18,6 +18,7 @@ import { dlcService } from '../services/dlcService';
 import { SmartImage } from '../components/SmartImage';
 import { shouldHideFanContent } from '../utils/contentProtectionFilter';
 import { isNumericIdentifier } from '../utils/gameUrls';
+import { collectionWishlistService } from '../services/collectionWishlistService';
 
 // Interface for review data from database
 interface GameReview {
@@ -157,6 +158,12 @@ export const GamePage: React.FC = () => {
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
   const [isDevPubExpanded, setIsDevPubExpanded] = useState(false);
   const [isPlatformsExpanded, setIsPlatformsExpanded] = useState(false);
+  
+  // State for collection and wishlist
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isInCollection, setIsInCollection] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [collectionLoading, setCollectionLoading] = useState(false);
   
   // Use reducer for centralized state management
   const [state, dispatch] = useReducer(gamePageReducer, initialState);
@@ -305,8 +312,8 @@ export const GamePage: React.FC = () => {
 
       dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: true }});
       try {
-        console.log('Checking if user has reviewed game ID:', game.igdb_id);
-        const result = await getUserReviewForGame(game.igdb_id);
+        console.log('Checking if user has reviewed game IGDB ID:', game.igdb_id);
+        const result = await getUserReviewForGameByIGDBId(game.igdb_id);
         
         if (result.success) {
           dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { 
@@ -325,6 +332,43 @@ export const GamePage: React.FC = () => {
     };
 
     checkUserReview();
+  }, [game, isAuthenticated]);
+
+  // Check collection and wishlist status
+  useEffect(() => {
+    const checkCollectionWishlistStatus = async () => {
+      if (!game || !game.igdb_id || !isAuthenticated) {
+        setIsInCollection(false);
+        setIsInWishlist(false);
+        return;
+      }
+
+      try {
+        const status = await collectionWishlistService.checkBothStatuses(game.igdb_id);
+        
+        // If game is started/finished, don't show wishlist/collection status
+        const progress = await getGameProgress();
+        if (progress?.started || progress?.completed) {
+          setIsInWishlist(false);
+          setIsInCollection(false);
+          // Clean up any stale wishlist/collection entries
+          if (status.inWishlist) {
+            await collectionWishlistService.removeFromWishlist(game.igdb_id);
+          }
+          if (status.inCollection) {
+            await collectionWishlistService.removeFromCollection(game.igdb_id);
+          }
+        } else {
+          setIsInCollection(status.inCollection);
+          setIsInWishlist(status.inWishlist);
+        }
+        console.log('Collection/Wishlist status:', status);
+      } catch (error) {
+        console.error('Error checking collection/wishlist status:', error);
+      }
+    };
+
+    checkCollectionWishlistStatus();
   }, [game, isAuthenticated]);
 
   // Fetch game category from IGDB for DLC/expansion detection
@@ -406,6 +450,19 @@ export const GamePage: React.FC = () => {
 
   const handleMarkStarted = async () => {
     if (!game || !game.igdb_id || isStarted) return; // Don't allow if already started
+    
+    // Automatically move from wishlist/collection when marking as started
+    if (isInWishlist || isInCollection) {
+      console.log('Moving game from wishlist/collection to started');
+      if (isInWishlist) {
+        await collectionWishlistService.removeFromWishlist(game.igdb_id);
+        setIsInWishlist(false);
+      }
+      if (isInCollection) {
+        await collectionWishlistService.removeFromCollection(game.igdb_id);
+        setIsInCollection(false);
+      }
+    }
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
@@ -444,6 +501,19 @@ export const GamePage: React.FC = () => {
 
   const handleMarkCompleted = async () => {
     if (!game || !game.igdb_id || isCompleted) return; // Don't allow if already completed
+    
+    // Automatically move from wishlist/collection when marking as completed
+    if (isInWishlist || isInCollection) {
+      console.log('Moving game from wishlist/collection to completed');
+      if (isInWishlist) {
+        await collectionWishlistService.removeFromWishlist(game.igdb_id);
+        setIsInWishlist(false);
+      }
+      if (isInCollection) {
+        await collectionWishlistService.removeFromCollection(game.igdb_id);
+        setIsInCollection(false);
+      }
+    }
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
@@ -480,10 +550,114 @@ export const GamePage: React.FC = () => {
     }
   };
 
+  const handleToggleWishlist = async () => {
+    if (!game || !game.igdb_id) return;
+    
+    // Prevent wishlist if game is in collection or started/finished
+    if (isInCollection || isStarted || isCompleted) {
+      console.warn('Cannot add to wishlist: game is already in collection or started/finished');
+      return;
+    }
+
+    if (!isAuthenticated) {
+      dispatch({ type: 'SET_AUTH_MODAL', payload: { show: true, pendingAction: 'toggle_wishlist' }});
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      const gameData = {
+        igdb_id: game.igdb_id,
+        name: game.name,
+        pic_url: game.pic_url,
+        cover_url: game.cover_url,
+        genre: game.genre,
+        release_date: game.release_date
+      };
+
+      const result = await collectionWishlistService.toggleWishlist(game.igdb_id, gameData);
+      
+      if (result.success) {
+        setIsInWishlist(result.data || false);
+        console.log(result.data ? '✅ Added to wishlist' : '✅ Removed from wishlist');
+      } else {
+        console.error('Failed to toggle wishlist:', result.error);
+        alert(`Failed to update wishlist: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      alert('Failed to update wishlist. Please try again.');
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+
+  const handleToggleCollection = async () => {
+    if (!game || !game.igdb_id) return;
+    
+    // Prevent going back to wishlist from collection
+    if (isInCollection && !isStarted && !isCompleted) {
+      // Can only remove from collection, not move back to wishlist
+      const confirmRemove = window.confirm('Remove from collection? (This will not move it back to wishlist)');
+      if (!confirmRemove) return;
+    }
+
+    if (!isAuthenticated) {
+      dispatch({ type: 'SET_AUTH_MODAL', payload: { show: true, pendingAction: 'toggle_collection' }});
+      return;
+    }
+
+    setCollectionLoading(true);
+    try {
+      const gameData = {
+        igdb_id: game.igdb_id,
+        name: game.name,
+        pic_url: game.pic_url,
+        cover_url: game.cover_url,
+        genre: game.genre,
+        release_date: game.release_date
+      };
+
+      // If in wishlist, move to collection (remove from wishlist, add to collection)
+      if (isInWishlist) {
+        const result = await collectionWishlistService.moveFromWishlistToCollection(game.igdb_id, gameData);
+        if (result.success) {
+          setIsInWishlist(false);
+          setIsInCollection(true);
+          console.log('✅ Moved from wishlist to collection');
+        } else {
+          console.error('Failed to move to collection:', result.error);
+          alert(`Failed to move to collection: ${result.error}`);
+        }
+      } else {
+        // Toggle collection status
+        const result = await collectionWishlistService.toggleCollection(game.igdb_id, gameData);
+        if (result.success) {
+          setIsInCollection(result.data || false);
+          console.log(result.data ? '✅ Added to collection' : '✅ Removed from collection');
+        } else {
+          console.error('Failed to toggle collection:', result.error);
+          alert(`Failed to update collection: ${result.error}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling collection:', error);
+      alert('Failed to update collection. Please try again.');
+    } finally {
+      setCollectionLoading(false);
+    }
+  };
+
   const handleAuthSuccess = () => {
     dispatch({ type: 'SET_AUTH_MODAL', payload: { show: false, pendingAction: null }});
     if (pendingAction) {
-      executeAction(pendingAction);
+      if (pendingAction === 'toggle_wishlist') {
+        handleToggleWishlist();
+      } else if (pendingAction === 'toggle_collection') {
+        handleToggleCollection();
+      } else {
+        executeAction(pendingAction);
+      }
     }
   };
 
@@ -768,37 +942,40 @@ export const GamePage: React.FC = () => {
                     {(game.developer || game.publisher) && (
                       <div>
                         {!isDevPubExpanded ? (
-                          // Collapsed view - single line
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-2 min-w-0" style={{ flex: '1 1 0%', maxWidth: 'calc(100% - 80px)' }}>
-                              {game.developer && (
-                                <>
-                                  <strong className="whitespace-nowrap flex-shrink-0">Developer:</strong>
-                                  <span className="truncate">{truncateText(game.developer, 20)}</span>
-                                </>
-                              )}
-                              {game.developer && game.publisher && (
-                                <span className="text-gray-500 flex-shrink-0">•</span>
-                              )}
-                              {game.publisher && (
-                                <>
-                                  <strong className="whitespace-nowrap flex-shrink-0">Publisher:</strong>
-                                  <span className="truncate">{truncateText(game.publisher, 20)}</span>
-                                </>
-                              )}
-                            </div>
-                            {(needsTruncation(game.developer, 20) || needsTruncation(game.publisher, 20)) && (
-                              <button
-                                onClick={() => setIsDevPubExpanded(true)}
-                                className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
-                              >
-                                See more
-                              </button>
+                          // Collapsed view - separate lines
+                          <div className="space-y-1">
+                            {game.developer && (
+                              <div className="flex items-center gap-2">
+                                <strong className="whitespace-nowrap flex-shrink-0">Developer:</strong>
+                                <span className="truncate">{truncateText(game.developer, 30)}</span>
+                                {needsTruncation(game.developer, 30) && (
+                                  <button
+                                    onClick={() => setIsDevPubExpanded(true)}
+                                    className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
+                                  >
+                                    See more
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                            {game.publisher && (
+                              <div className="flex items-center gap-2">
+                                <strong className="whitespace-nowrap flex-shrink-0">Publisher:</strong>
+                                <span className="truncate">{truncateText(game.publisher, 30)}</span>
+                                {needsTruncation(game.publisher, 30) && (
+                                  <button
+                                    onClick={() => setIsDevPubExpanded(true)}
+                                    className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
+                                  >
+                                    See more
+                                  </button>
+                                )}
+                              </div>
                             )}
                           </div>
                         ) : (
-                          // Expanded view - can wrap to multiple lines
-                          <div>
+                          // Expanded view - full text
+                          <div className="space-y-1">
                             {game.developer && (
                               <div>
                                 <strong>Developer:</strong> {game.developer}
@@ -857,8 +1034,52 @@ export const GamePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* User Actions - Checkboxes and Write Review */}
+              {/* User Actions - Wishlist, Collection, Checkboxes and Write Review */}
               <div className="flex items-center gap-4 p-6 border-t border-gray-700">
+                {/* Wishlist Button - Only show if not in collection and not started/finished */}
+                {!isInCollection && !isStarted && !isCompleted && (
+                  <button
+                    onClick={handleToggleWishlist}
+                    disabled={wishlistLoading}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isInWishlist
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'border border-blue-600 text-blue-400 hover:bg-blue-600/10'
+                    } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {wishlistLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <Bookmark className={`h-4 w-4 ${isInWishlist ? 'fill-current' : ''}`} />
+                    )}
+                    <span className="text-sm font-medium">
+                      {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
+                    </span>
+                  </button>
+                )}
+
+                {/* Collection Button - Show if in wishlist OR if not started/finished */}
+                {(isInWishlist || (!isStarted && !isCompleted && !isInCollection)) && (
+                  <button
+                    onClick={handleToggleCollection}
+                    disabled={collectionLoading}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isInCollection
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : 'border border-green-600 text-green-400 hover:bg-green-600/10'
+                    } ${collectionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {collectionLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <BookOpen className={`h-4 w-4 ${isInCollection ? 'fill-current' : ''}`} />
+                    )}
+                    <span className="text-sm font-medium">
+                      {isInCollection ? 'In Collection' : isInWishlist ? 'Move to Collection' : 'Add to Collection'}
+                    </span>
+                  </button>
+                )}
+
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleAuthRequiredAction('mark_started')}
