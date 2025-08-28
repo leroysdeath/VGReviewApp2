@@ -378,8 +378,11 @@ export const COMPANY_OWNERSHIP: Record<string, {
     secondParty: [
       'game freak', 'gamefreak', 'hal laboratory', 'hal lab',
       'intelligent systems', 'retro studios', 'creatures inc', 'creatures',
-      'the pokémon company', 'pokemon company', 'camelot software planning',
-      'monolith soft', 'monolithsoft', 'brownie brown', '1-up studio',
+      'the pokémon company', 'pokemon company', 'the pokemon company',
+      'pokémon company', 'pokemon company international', 'the pokémon company international',
+      'the pokemon company international', 'pokémon company international',
+      'nintendo/the pokemon company', 'nintendo/the pokémon company',
+      'camelot software planning', 'monolith soft', 'monolithsoft', 'brownie brown', '1-up studio',
       'skip ltd', 'skip', 'nd cube', 'arika', 'grezzo',
       'next level games', 'good-feel', 'tantalus media'
     ],
@@ -491,6 +494,62 @@ export const COMPANY_OWNERSHIP: Record<string, {
 };
 
 /**
+ * Normalize company name for better matching
+ */
+function normalizeCompanyName(name: string): string {
+  if (!name) return '';
+  
+  return name
+    .toLowerCase()
+    .trim()
+    // Remove accent marks (é -> e, etc.)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    // Handle common abbreviations and variations
+    .replace(/\bco\.\b/g, 'co')
+    .replace(/\binc\.\b/g, 'inc')
+    .replace(/\bltd\.\b/g, 'ltd')
+    .replace(/\bcorp\.\b/g, 'corp')
+    .replace(/\b&\b/g, 'and')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Enhanced company matching with fuzzy logic for publisher variations
+ */
+function isCompanyMatch(gameCompany: string, authorizedCompany: string): boolean {
+  if (!gameCompany || !authorizedCompany) return false;
+  
+  const normalizedGame = normalizeCompanyName(gameCompany);
+  const normalizedAuth = normalizeCompanyName(authorizedCompany);
+  
+  // Direct inclusion check (existing behavior)
+  if (normalizedGame.includes(normalizedAuth) || normalizedAuth.includes(normalizedGame)) {
+    return true;
+  }
+  
+  // Check for partial word matches for complex company names
+  const gameWords = normalizedGame.split(' ').filter(w => w.length > 2);
+  const authWords = normalizedAuth.split(' ').filter(w => w.length > 2);
+  
+  // If most significant words match, consider it a match
+  if (gameWords.length > 0 && authWords.length > 0) {
+    const matchingWords = gameWords.filter(gw => 
+      authWords.some(aw => gw.includes(aw) || aw.includes(gw))
+    );
+    
+    // If more than half the words match, consider it authorized
+    const matchRatio = matchingWords.length / Math.min(gameWords.length, authWords.length);
+    if (matchRatio > 0.5) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
  * Check if a company is authorized to publish content for an aggressive copyright holder
  */
 export function isAuthorizedPublisher(developer: string, publisher: string, franchiseOwner: string): boolean {
@@ -502,22 +561,25 @@ export function isAuthorizedPublisher(developer: string, publisher: string, fran
   const devLower = (developer || '').toLowerCase().trim();
   const pubLower = (publisher || '').toLowerCase().trim();
   
+  // Enhanced matching with fuzzy logic
   // Check if developer is first/second party
   const isAuthorizedDev = devLower && (
-    ownershipData.firstParty.some(company => devLower.includes(company.toLowerCase())) ||
-    ownershipData.secondParty.some(company => devLower.includes(company.toLowerCase()))
+    ownershipData.firstParty.some(company => isCompanyMatch(devLower, company)) ||
+    ownershipData.secondParty.some(company => isCompanyMatch(devLower, company))
   );
   
   // Check if publisher is first/second party  
   const isAuthorizedPub = pubLower && (
-    ownershipData.firstParty.some(company => pubLower.includes(company.toLowerCase())) ||
-    ownershipData.secondParty.some(company => pubLower.includes(company.toLowerCase()))
+    ownershipData.firstParty.some(company => isCompanyMatch(pubLower, company)) ||
+    ownershipData.secondParty.some(company => isCompanyMatch(pubLower, company))
   );
   
   const result = isAuthorizedDev || isAuthorizedPub;
   
   if (!result && (devLower || pubLower)) {
     console.log(`🔍 OWNERSHIP CHECK: "${developer || 'N/A'}" / "${publisher || 'N/A'}" not authorized for ${franchiseOwner}`);
+  } else if (result) {
+    console.log(`✅ AUTHORIZED: "${developer || 'N/A'}" / "${publisher || 'N/A'}" authorized for ${franchiseOwner}`);
   }
   
   return result;

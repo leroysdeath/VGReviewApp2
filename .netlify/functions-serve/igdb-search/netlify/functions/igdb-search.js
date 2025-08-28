@@ -120,6 +120,8 @@ exports.handler = async (event, context) => {
       requestBody = `fields name, summary, first_release_date, rating, category, cover.url, genres.name, platforms.name, involved_companies.company.name, alternative_names.name, collection.name, franchise.name, franchises.name, dlcs, expansions, similar_games, hypes, follows, total_rating, total_rating_count, rating_count; search "${query.trim()}"; limit ${limit};`;
     }
     console.log("IGDB Request Body:", requestBody);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1e4);
     const response = await fetch(igdbUrl, {
       method: "POST",
       headers: {
@@ -127,8 +129,10 @@ exports.handler = async (event, context) => {
         "Authorization": `Bearer ${accessToken}`,
         "Content-Type": "text/plain"
       },
-      body: requestBody
+      body: requestBody,
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     console.log("IGDB Response Status:", response.status);
     if (!response.ok) {
       const errorText = await response.text();
@@ -157,6 +161,17 @@ exports.handler = async (event, context) => {
     };
   } catch (error) {
     console.error("Function error:", error);
+    if (error.name === "AbortError") {
+      return {
+        statusCode: 408,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          error: "Request timeout - IGDB API took too long to respond",
+          details: "Request aborted after 10 seconds"
+        })
+      };
+    }
     return {
       statusCode: 500,
       headers,

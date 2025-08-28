@@ -148,6 +148,58 @@ function filterPackGames(games: any[]): any[] {
 }
 
 /**
+ * Filter out e-reader card content and micro-content
+ * E-reader cards are not full games but individual challenges/levels/cards
+ */
+function filterEReaderContent(games: any[]): any[] {
+  return games.filter(game => {
+    if (!game.name) return true;
+    
+    const gameName = game.name.toLowerCase();
+    
+    // Primary e-reader pattern: "-e - [content]" (main indicator)
+    if (/-e\s*-\s*.+/i.test(game.name)) {
+      console.log(`🚫 E-READER FILTERED: "${game.name}" - e-reader card pattern (-e -)`);
+      return false;
+    }
+    
+    // Secondary e-reader patterns
+    const eReaderPatterns = [
+      /-e\s+(card|challenge|level|game)/i,  // "-e card/challenge/level/game"
+      /\b\w+-e\b.*(?:challenge|level|card)/i,  // "Game-e" + micro-content
+      /level\s+\d+-\d+/i,  // "Level 1-1" style micro-content
+      /card\s+series/i,    // "Card Series"
+      /-e\s*\w+\s+(challenge|game|level)/i  // "-e [word] challenge/game/level"
+    ];
+    
+    for (const pattern of eReaderPatterns) {
+      if (pattern.test(game.name)) {
+        console.log(`🚫 E-READER FILTERED: "${game.name}" - e-reader micro-content pattern`);
+        return false;
+      }
+    }
+    
+    // Micro-content keyword detection (in combination with other indicators)
+    const microContentKeywords = [
+      'challenge', 'mini-game', 'minigame', 'demo', 'tutorial', 'bonus stage'
+    ];
+    
+    // Only filter if name contains 'e' context AND micro-content keywords
+    const hasEContext = gameName.includes('-e') || gameName.includes('e card') || gameName.includes('e-card');
+    if (hasEContext) {
+      for (const keyword of microContentKeywords) {
+        if (gameName.includes(keyword)) {
+          console.log(`🚫 E-READER FILTERED: "${game.name}" - e-context + micro-content (${keyword})`);
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  });
+}
+
+/**
  * Enhanced sequel and series detection for search suggestions
  */
 async function findSequelsAndSeries(baseQuery: string, primaryResults: IGDBGame[]): Promise<IGDBGame[]> {
@@ -226,8 +278,11 @@ async function findSequelsAndSeries(baseQuery: string, primaryResults: IGDBGame[
     // Apply pack filtering to sequels
     const packFilteredSequels = filterPackGames(seasonFilteredSequels);
     
+    // Apply e-reader filtering to sequels
+    const eReaderFilteredSequels = filterEReaderContent(packFilteredSequels);
+    
     // Apply relevance filtering to sequels too
-    const relevantSequels = filterByRelevance(packFilteredSequels, baseQuery);
+    const relevantSequels = filterByRelevance(eReaderFilteredSequels, baseQuery);
     
     console.log(`🎯 Found ${relevantSequels.length} relevant sequels for "${baseQuery}"`);
     return relevantSequels;
@@ -471,6 +526,11 @@ class IGDBService {
       filteredIGDBGames = filterPackGames(filteredIGDBGames);
       console.log(`📦 Post-pack filter: ${filteredIGDBGames.length} games`);
       
+      // Apply e-reader filtering to remove micro-content
+      console.log(`📱 Pre-e-reader filter: ${filteredIGDBGames.length} games`);
+      filteredIGDBGames = filterEReaderContent(filteredIGDBGames);
+      console.log(`📱 Post-e-reader filter: ${filteredIGDBGames.length} games`);
+      
       // Apply strict relevance filtering to prevent unrelated games
       console.log(`🎯 Pre-relevance filter: ${filteredIGDBGames.length} games`);
       filteredIGDBGames = filterByRelevance(filteredIGDBGames, query);
@@ -671,6 +731,9 @@ class IGDBService {
       
       // Apply pack filtering to related games
       filteredIGDBRelated = filterPackGames(filteredIGDBRelated);
+      
+      // Apply e-reader filtering to related games
+      filteredIGDBRelated = filterEReaderContent(filteredIGDBRelated);
       
       // Limit results
       filteredIGDBRelated = filteredIGDBRelated.slice(0, maxResults);
