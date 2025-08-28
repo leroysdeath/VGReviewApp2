@@ -56,9 +56,11 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
     setSearchMode(mode === 'top-games' ? 'user-games' : 'igdb');
   }, [mode]);
 
-  // Fetch user's reviewed games (for top-games mode)
+  // Fetch user's reviewed games (for top-games mode or when in user-games search mode)
   useEffect(() => {
-    if (!isOpen || !userId || mode !== 'top-games') return;
+    if (!isOpen || !userId) return;
+    // Only fetch if in top-games mode or if in user-games search mode for collection/wishlist
+    if (mode !== 'top-games' && searchMode !== 'user-games') return;
 
     const fetchGames = async () => {
       setLoading(true);
@@ -113,7 +115,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
     };
 
     fetchGames();
-  }, [isOpen, userId, excludeGameIds]);
+  }, [isOpen, userId, excludeGameIds, mode, searchMode]);
 
   // Search IGDB when in collection/wishlist mode
   useEffect(() => {
