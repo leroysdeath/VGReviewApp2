@@ -127,7 +127,7 @@ exports.handler = async (event, context) => {
           })
         };
       }
-      requestBody = `fields name, summary, first_release_date, rating, category, cover.url, genres.name, platforms.name, involved_companies.company.name, alternative_names.name, collection.name, franchise.name, franchises.name, dlcs, expansions, similar_games; where id = ${gameId};`;
+      requestBody = `fields name, summary, first_release_date, rating, category, cover.url, genres.name, platforms.name, involved_companies.company.name, alternative_names.name, collection.name, franchise.name, franchises.name, dlcs, expansions, similar_games, hypes, follows, total_rating, total_rating_count, rating_count; where id = ${gameId};`;
     } else {
       // Search request
       if (!query || query.trim().length === 0) {
@@ -141,13 +141,16 @@ exports.handler = async (event, context) => {
         };
       }
 
-      // Build IGDB query for game search
-      requestBody = `fields name, summary, first_release_date, rating, category, cover.url, genres.name, platforms.name, involved_companies.company.name, alternative_names.name, collection.name, franchise.name, franchises.name, dlcs, expansions, similar_games; search "${query.trim()}"; limit ${limit};`;
+      // Build IGDB query for game search (using alternative engagement metrics)
+      requestBody = `fields name, summary, first_release_date, rating, category, cover.url, genres.name, platforms.name, involved_companies.company.name, alternative_names.name, collection.name, franchise.name, franchises.name, dlcs, expansions, similar_games, hypes, follows, total_rating, total_rating_count, rating_count; search "${query.trim()}"; limit ${limit};`;
     }
 
     console.log('IGDB Request Body:', requestBody);
 
-    // Make request to IGDB API
+    // Make request to IGDB API with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch(igdbUrl, {
       method: 'POST',
       headers: {
@@ -155,8 +158,11 @@ exports.handler = async (event, context) => {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'text/plain'
       },
-      body: requestBody
+      body: requestBody,
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
 
     console.log('IGDB Response Status:', response.status);
 
@@ -190,6 +196,20 @@ exports.handler = async (event, context) => {
 
   } catch (error) {
     console.error('Function error:', error);
+    
+    // Handle timeout specifically
+    if (error.name === 'AbortError') {
+      return {
+        statusCode: 408,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          error: 'Request timeout - IGDB API took too long to respond',
+          details: 'Request aborted after 10 seconds'
+        })
+      };
+    }
+    
     return {
       statusCode: 500,
       headers,
