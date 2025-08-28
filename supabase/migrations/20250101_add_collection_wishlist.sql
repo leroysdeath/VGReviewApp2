@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS user_collection (
   game_id INTEGER REFERENCES game(id) ON DELETE CASCADE,
   igdb_id INTEGER NOT NULL,
   added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  CONSTRAINT fk_collection_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_collection_user FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
   CONSTRAINT unique_user_collection UNIQUE(user_id, igdb_id)
 );
 
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS user_wishlist (
   added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   priority INTEGER DEFAULT 0,
   notes TEXT,
-  CONSTRAINT fk_wishlist_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_wishlist_user FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
   CONSTRAINT unique_user_wishlist UNIQUE(user_id, igdb_id)
 );
 
