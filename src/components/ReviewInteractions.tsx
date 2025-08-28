@@ -15,6 +15,8 @@ interface ReviewInteractionsProps {
   isLoadingLike: boolean;
   error?: string;
   className?: string;
+  reviewAuthorId?: number;
+  currentUserId?: number;
 }
 
 export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
@@ -29,7 +31,9 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   isLoadingComments,
   isLoadingLike,
   error,
-  className = ''
+  className = '',
+  reviewAuthorId,
+  currentUserId
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -73,6 +77,9 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
     setShowComments(!showComments);
   };
   
+  // Check if current user is the review author
+  const isReviewAuthor = currentUserId && reviewAuthorId && currentUserId === reviewAuthorId;
+  
   // Format relative time for comments
   const formatRelativeTime = (date: string): string => {
     const now = new Date();
@@ -98,17 +105,27 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
     <div className={`space-y-4 ${className}`}>
       {/* Like and Comment Buttons */}
       <div className="flex items-center gap-6 text-gray-400">
-        <button
-          onClick={handleLikeToggle}
-          disabled={isLoadingLike}
-          className={`flex items-center gap-2 transition-colors ${
-            isLiked ? 'text-red-500 hover:text-red-600' : 'hover:text-white'
-          }`}
-          aria-label={isLiked ? 'Unlike review' : 'Like review'}
-        >
-          <Heart className={`h-5 w-5 transition-transform ${isLiked ? 'fill-current scale-110' : 'scale-100'}`} />
-          <span>{initialLikeCount}</span>
-        </button>
+        {isReviewAuthor ? (
+          /* Show like count only for review authors, hide if 0 */
+          initialLikeCount > 0 ? (
+            <div className="flex items-center gap-2">
+              <Heart className="h-5 w-5" />
+              <span>{initialLikeCount} {initialLikeCount === 1 ? 'like' : 'likes'}</span>
+            </div>
+          ) : null
+        ) : (
+          <button
+            onClick={handleLikeToggle}
+            disabled={isLoadingLike}
+            className={`flex items-center gap-2 transition-colors ${
+              isLiked ? 'text-red-500 hover:text-red-600' : 'hover:text-white'
+            }`}
+            aria-label={isLiked ? 'Unlike review' : 'Like review'}
+          >
+            <Heart className={`h-5 w-5 transition-transform ${isLiked ? 'fill-current scale-110' : 'scale-100'}`} />
+            <span>{initialLikeCount}</span>
+          </button>
+        )}
         
         <button
           onClick={toggleComments}

@@ -170,12 +170,14 @@ export const ensureGameExists = async (
  * @param rating - The rating score
  * @param reviewText - The review text (optional)
  * @param isRecommended - Whether the game is recommended
+ * @param platformName - The platform name (required)
  */
 export const createReview = async (
   igdbId: number, 
   rating: number, 
   reviewText?: string, 
-  isRecommended?: boolean
+  isRecommended?: boolean,
+  platformName: string
 ): Promise<ServiceResponse<Review>> => {
   try {
     console.log('🔍 Creating review with params:', { igdbId, rating, reviewText, isRecommended });
@@ -210,6 +212,21 @@ export const createReview = async (
 
     console.log('✅ Using game ID:', gameId);
 
+    // Map platform name to platform_id
+    const { data: platformData, error: platformError } = await supabase
+      .from('platform')
+      .select('id')
+      .eq('name', platformName)
+      .single();
+
+    if (platformError || !platformData) {
+      console.error('❌ Platform lookup error:', platformError, 'for platform:', platformName);
+      return { success: false, error: `Platform "${platformName}" not found in database` };
+    }
+
+    const platformId = platformData.id;
+    console.log('✅ Using platform ID:', platformId, 'for platform:', platformName);
+
     // Check if user has already reviewed this game
     const { data: existingReview, error: existingError } = await supabase
       .from('rating')
@@ -238,7 +255,8 @@ export const createReview = async (
       rating: rating,
       review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
       post_date_time: new Date().toISOString(),
-      is_recommended: isRecommended
+      is_recommended: isRecommended,
+      platform_id: platformId // Add platform ID
     };
 
     console.log('📝 Inserting review data:', reviewData);
@@ -484,7 +502,8 @@ export const updateReview = async (
   gameId: number,
   rating: number,
   reviewText?: string,
-  isRecommended?: boolean
+  isRecommended?: boolean,
+  platformName?: string
 ): Promise<ServiceResponse<Review>> => {
   try {
     console.log('🔄 Updating review:', { reviewId, gameId, rating, reviewText, isRecommended });
@@ -507,15 +526,40 @@ export const updateReview = async (
       return { success: false, error: 'Review not found or you do not have permission to edit it' };
     }
 
+    // Handle platform mapping if provided
+    let platformId: number | undefined;
+    if (platformName) {
+      const { data: platformData, error: platformError } = await supabase
+        .from('platform')
+        .select('id')
+        .eq('name', platformName)
+        .single();
+
+      if (platformError || !platformData) {
+        console.error('❌ Platform lookup error:', platformError, 'for platform:', platformName);
+        return { success: false, error: `Platform "${platformName}" not found in database` };
+      }
+
+      platformId = platformData.id;
+      console.log('✅ Using platform ID:', platformId, 'for platform:', platformName);
+    }
+
     // Update the review with sanitization
+    const updateData: any = {
+      rating: rating,
+      review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
+      is_recommended: isRecommended,
+      updated_at: new Date().toISOString()
+    };
+
+    // Add platform_id if provided
+    if (platformId !== undefined) {
+      updateData.platform_id = platformId;
+    }
+
     const { data, error } = await supabase
       .from('rating')
-      .update({
-        rating: rating,
-        review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
-        is_recommended: isRecommended,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', reviewId)
       .select(`
         *,

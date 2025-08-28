@@ -151,7 +151,6 @@ export const ReviewPage: React.FC = () => {
         throw new Error(detailedError);
       }
 
-      console.log('🎮 ReviewPage - Review data loaded:', reviewData);
       setReview(reviewData);
 
       // Now load game data using IGDB ID
@@ -325,9 +324,7 @@ export const ReviewPage: React.FC = () => {
                   </div>
                   
                   <div className="text-sm text-gray-400 mb-4">
-                    <span>
-                      {review.post_date_time ? new Date(review.post_date_time).toLocaleDateString() : 'No date'}
-                    </span>
+                    {new Date(review.post_date_time).toLocaleDateString()}
                     {review.platform_id && (
                       <>
                         {' • '}
@@ -405,6 +402,8 @@ export const ReviewPage: React.FC = () => {
               onAddComment={postComment}
               isLoadingComments={isLoadingComments}
               isLoadingLike={isLoadingLike}
+              reviewAuthorId={review.user_id}
+              currentUserId={currentUserId}
             />
           </div>
         )}

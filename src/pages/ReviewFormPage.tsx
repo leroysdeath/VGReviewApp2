@@ -360,17 +360,8 @@ export const ReviewFormPage: React.FC = () => {
   };
 
   const handlePlatformToggle = (platform: string) => {
-    setSelectedPlatforms(prev => {
-      if (prev.includes(platform)) {
-        // Don't allow removing if it's the only selected platform
-        if (prev.length === 1) {
-          return prev;
-        }
-        return prev.filter(p => p !== platform);
-      } else {
-        return [...prev, platform];
-      }
-    });
+    // Single platform selection only
+    setSelectedPlatforms([platform]);
   };
   
   const formatDate = (timestamp: number) => {
@@ -499,14 +490,18 @@ export const ReviewFormPage: React.FC = () => {
     try {
       if (isEditMode && existingReviewId) {
         // Update existing review
-        console.log('Updating existing review:', existingReviewId, 'with platforms:', selectedPlatforms);
+        console.log('Updating existing review:', existingReviewId, 'with platform:', selectedPlatforms[0]);
+        
+        // Use selected platform
+        const platformName = selectedPlatforms.length > 0 ? selectedPlatforms[0] : undefined;
         
         const result = await updateReview(
           existingReviewId,
           0, // gameId not used in update operation
           rating,
           reviewText,
-          isRecommended
+          isRecommended,
+          platformName
         );
 
         if (result.success) {
@@ -551,7 +546,7 @@ export const ReviewFormPage: React.FC = () => {
         }
       } else {
         // Create new review
-        console.log('Creating new review with platforms:', selectedPlatforms);
+        console.log('Creating new review with platform:', selectedPlatforms[0]);
         
         // First, prioritize the gameId from URL (this is the source of truth)
         let igdbId: number | undefined;
@@ -589,11 +584,15 @@ export const ReviewFormPage: React.FC = () => {
         console.log('Using IGDB ID for review submission:', igdbId);
 
         // Create the review - createReview will handle ensuring the game exists
+        // Use selected platform
+        const platformName = selectedPlatforms[0];
+        
         const result = await createReview(
           igdbId, // Pass the IGDB ID - createReview will handle the rest
           rating,
           reviewText,
-          isRecommended
+          isRecommended,
+          platformName
         );
 
         if (result.success) {
@@ -884,11 +883,11 @@ export const ReviewFormPage: React.FC = () => {
               </div>
             )}
 
-            {/* Platform(s) Played On */}
+            {/* Platform Played On */}
             {selectedGame && (
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-4">
-                  Platform(s) Played On *
+                  Platform Played On *
                 </label>
                 {selectedGame.platforms && selectedGame.platforms.length > 0 ? (
                   selectedGame.platforms.length === 1 ? (
@@ -898,16 +897,17 @@ export const ReviewFormPage: React.FC = () => {
                       <p className="text-sm text-gray-400 mt-1">Available on this platform only</p>
                     </div>
                   ) : (
-                    // Multiple platforms - show checkboxes
+                    // Multiple platforms - show radio buttons for single selection
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {selectedGame.platforms.map((platform) => (
                         <div key={platform} className="flex flex-col items-center">
                           <input
-                            type="checkbox"
+                            type="radio"
                             id={`platform-${platform}`}
+                            name="platform-selection"
                             checked={selectedPlatforms.includes(platform)}
                             onChange={() => handlePlatformToggle(platform)}
-                            className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
+                            className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded-full text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
                           />
                           <label 
                             htmlFor={`platform-${platform}`}
@@ -920,16 +920,17 @@ export const ReviewFormPage: React.FC = () => {
                     </div>
                   )
                 ) : (
-                  // No platform data available - show default options
+                  // No platform data available - show default options with radio buttons
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {['PS5', 'Xbox Series X/S', 'Nintendo Switch', 'PC', 'Retro'].map((platform) => (
                       <div key={platform} className="flex flex-col items-center">
                         <input
-                          type="checkbox"
+                          type="radio"
                           id={`platform-${platform}`}
+                          name="platform-selection-default"
                           checked={selectedPlatforms.includes(platform)}
                           onChange={() => handlePlatformToggle(platform)}
-                          className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
+                          className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded-full text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
                         />
                         <label 
                           htmlFor={`platform-${platform}`}
