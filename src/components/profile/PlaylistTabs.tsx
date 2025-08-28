@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { BookOpen, Gift, Plus, X } from 'lucide-react';
 import { collectionWishlistService } from '../../services/collectionWishlistService';
 import { Link } from 'react-router-dom';
-import { OptimizedImage } from '../OptimizedImage';
 import { GamePickerModal } from '../GamePickerModal';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -152,11 +151,14 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
                 className="block"
               >
                 <div className="aspect-[3/4] bg-gray-800 rounded-lg overflow-hidden">
-                  <OptimizedImage
+                  <img
                     src={coverUrl}
                     alt={gameName}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
                     loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.src = '/default-cover.png';
+                    }}
                   />
                 </div>
                 <h3 className="mt-2 text-sm text-gray-300 line-clamp-2">
