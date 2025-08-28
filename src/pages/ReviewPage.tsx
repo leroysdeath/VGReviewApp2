@@ -6,6 +6,7 @@ import type { GameWithCalculatedFields } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 import { ReviewInteractions } from '../components/ReviewInteractions';
+import { useReviewInteractions } from '../hooks/useReviewInteractions';
 
 interface Review {
   id: string;
@@ -34,6 +35,24 @@ export const ReviewPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showFullReview, setShowFullReview] = useState(false);
   const [reviewExpanded, setReviewExpanded] = useState(false);
+
+  // Get current user ID for review interactions
+  const currentUserId = user?.id ? parseInt(user.id.toString()) : undefined;
+  
+  // Use review interactions hook
+  const {
+    likeCount,
+    commentCount,
+    isLiked,
+    comments,
+    isLoadingComments,
+    isLoadingLike,
+    toggleLike,
+    postComment
+  } = useReviewInteractions({
+    reviewId: review ? parseInt(review.id) : 0,
+    userId: currentUserId
+  });
 
   useEffect(() => {
     if (userId && gameId) {
@@ -132,6 +151,7 @@ export const ReviewPage: React.FC = () => {
         throw new Error(detailedError);
       }
 
+      console.log('🎮 ReviewPage - Review data loaded:', reviewData);
       setReview(reviewData);
 
       // Now load game data using IGDB ID
@@ -305,7 +325,9 @@ export const ReviewPage: React.FC = () => {
                   </div>
                   
                   <div className="text-sm text-gray-400 mb-4">
-                    {new Date(review.post_date_time).toLocaleDateString()}
+                    <span>
+                      {review.post_date_time ? new Date(review.post_date_time).toLocaleDateString() : 'No date'}
+                    </span>
                     {review.platform_id && (
                       <>
                         {' • '}
@@ -373,9 +395,16 @@ export const ReviewPage: React.FC = () => {
           <div>
             <div className="border-b border-gray-700 mb-6"></div>
             <ReviewInteractions
-              reviewId={parseInt(review.id)}
-              initialComments={[]}
-              showCommentForm={true}
+              reviewId={review.id}
+              initialLikeCount={likeCount}
+              initialCommentCount={commentCount}
+              isLiked={isLiked}
+              onLike={toggleLike}
+              onUnlike={toggleLike}
+              comments={comments || []}
+              onAddComment={postComment}
+              isLoadingComments={isLoadingComments}
+              isLoadingLike={isLoadingLike}
             />
           </div>
         )}

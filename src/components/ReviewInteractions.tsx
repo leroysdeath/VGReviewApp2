@@ -170,7 +170,7 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
             <div className="py-4 text-center text-gray-400">
               Loading comments...
             </div>
-          ) : comments.length > 0 ? (
+          ) : comments && comments.length > 0 ? (
             <div className="space-y-4">
               {comments.map((comment) => (
                 <CommentItem 
