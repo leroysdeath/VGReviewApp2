@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS user_collection (
   game_id INTEGER REFERENCES game(id) ON DELETE CASCADE,
   igdb_id INTEGER NOT NULL,
   added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  CONSTRAINT fk_collection_user FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
+  CONSTRAINT fk_collection_user FOREIGN KEY (user_id) REFERENCES public.user(id) ON DELETE CASCADE,
   CONSTRAINT unique_user_collection UNIQUE(user_id, igdb_id)
 );
 
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS user_wishlist (
   added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   priority INTEGER DEFAULT 0,
   notes TEXT,
-  CONSTRAINT fk_wishlist_user FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
+  CONSTRAINT fk_wishlist_user FOREIGN KEY (user_id) REFERENCES public.user(id) ON DELETE CASCADE,
   CONSTRAINT unique_user_wishlist UNIQUE(user_id, igdb_id)
 );
 
@@ -50,15 +50,15 @@ CREATE POLICY "Anyone can view collections"
 
 CREATE POLICY "Users can insert own collection items" 
   ON user_collection FOR INSERT 
-  WITH CHECK (auth.uid()::integer = user_id);
+  WITH CHECK (auth.uid() = (SELECT provider_id FROM public.user WHERE id = user_id));
 
 CREATE POLICY "Users can update own collection items" 
   ON user_collection FOR UPDATE 
-  USING (auth.uid()::integer = user_id);
+  USING (auth.uid() = (SELECT provider_id FROM public.user WHERE id = user_id));
 
 CREATE POLICY "Users can delete own collection items" 
   ON user_collection FOR DELETE 
-  USING (auth.uid()::integer = user_id);
+  USING (auth.uid() = (SELECT provider_id FROM public.user WHERE id = user_id));
 
 -- RLS Policies for user_wishlist
 CREATE POLICY "Anyone can view wishlists" 
@@ -67,15 +67,15 @@ CREATE POLICY "Anyone can view wishlists"
 
 CREATE POLICY "Users can insert own wishlist items" 
   ON user_wishlist FOR INSERT 
-  WITH CHECK (auth.uid()::integer = user_id);
+  WITH CHECK (auth.uid() = (SELECT provider_id FROM public.user WHERE id = user_id));
 
 CREATE POLICY "Users can update own wishlist items" 
   ON user_wishlist FOR UPDATE 
-  USING (auth.uid()::integer = user_id);
+  USING (auth.uid() = (SELECT provider_id FROM public.user WHERE id = user_id));
 
 CREATE POLICY "Users can delete own wishlist items" 
   ON user_wishlist FOR DELETE 
-  USING (auth.uid()::integer = user_id);
+  USING (auth.uid() = (SELECT provider_id FROM public.user WHERE id = user_id));
 
 -- Add helpful comments
 COMMENT ON TABLE user_collection IS 'Stores games that users own in their collection';
