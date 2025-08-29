@@ -19,6 +19,7 @@ import { SmartImage } from '../components/SmartImage';
 import { shouldHideFanContent } from '../utils/contentProtectionFilter';
 import { isNumericIdentifier } from '../utils/gameUrls';
 import { collectionWishlistService } from '../services/collectionWishlistService';
+import { mapPlatformNames } from '../utils/platformMapping';
 
 // Interface for review data from database
 interface GameReview {
@@ -901,40 +902,9 @@ export const GamePage: React.FC = () => {
                         <div className="flex items-baseline gap-2">
                           <strong className="whitespace-nowrap flex-shrink-0">Platforms:</strong>
                           <div className="flex-1 min-w-0">
-                            {!isPlatformsExpanded ? (
-                              // Collapsed view - single line
-                              <div className="flex items-center gap-2">
-                                <span className="truncate" style={{ flexShrink: 1, minWidth: 0 }}>
-                                  {(() => {
-                                    const platformsText = game.platforms.join(', ');
-                                    return needsTruncation(platformsText, 50) 
-                                      ? truncateText(platformsText, 50)
-                                      : platformsText;
-                                  })()} 
-                                </span>
-                                {needsTruncation(game.platforms.join(', '), 50) && (
-                                  <button
-                                    onClick={() => setIsPlatformsExpanded(true)}
-                                    className="text-purple-400 hover:text-purple-300 text-sm whitespace-nowrap flex-shrink-0 ml-2"
-                                  >
-                                    See more
-                                  </button>
-                                )}
-                              </div>
-                            ) : (
-                              // Expanded view - can wrap to multiple lines
-                              <div>
-                                <span className="block mb-1">
-                                  {game.platforms.join(', ')}
-                                </span>
-                                <button
-                                  onClick={() => setIsPlatformsExpanded(false)}
-                                  className="text-purple-400 hover:text-purple-300 text-sm"
-                                >
-                                  See less
-                                </button>
-                              </div>
-                            )}
+                            <span>
+                              {mapPlatformNames(game.platforms).join(', ')}
+                            </span>
                           </div>
                         </div>
                       </div>
