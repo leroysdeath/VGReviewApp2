@@ -605,7 +605,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
 
         {/* Loading State */}
         {isLoadingUserGames && (
-          <div className="hidden md:grid grid-cols-5 gap-4 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4">
             {[1, 2, 3, 4, 5].map((position) => (
               <SkeletonCard key={position} />
             ))}
@@ -628,7 +628,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
           <Droppable droppableId="top5" direction="horizontal">
             {(provided) => (
               <div
-                className="hidden md:grid grid-cols-5 gap-4"
+                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4"
                 {...provided.droppableProps}
                 ref={provided.innerRef}
               >
@@ -862,7 +862,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
           </h2>
           
           {/* Desktop Version - Grid Layout */}
-          <div className="hidden md:grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
             {topGames.map((game, index) => (
               <Link
                 key={game.id}
@@ -979,7 +979,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
         <h2 className="text-xl font-semibold text-white mb-6">Top 10 Highest Ranked</h2>
         
         {/* Desktop Version - Grid Layout */}
-        <div className="hidden md:grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
           {topGames.map((game, index) => (
             <Link
               key={game.id}

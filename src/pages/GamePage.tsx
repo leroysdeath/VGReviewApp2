@@ -787,7 +787,7 @@ export const GamePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
             <div className="lg:col-span-2">
               <div className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
                 <div className="md:flex">
@@ -947,7 +947,7 @@ export const GamePage: React.FC = () => {
 
 
           {/* Game Header */}
-        <div className="grid lg:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
           {/* Game Cover and Info */}
           <div className="lg:col-span-2">
             <div className="bg-gray-800 rounded-lg overflow-hidden">

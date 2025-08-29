@@ -146,7 +146,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div 
           ref={modalContentRef}
-          className="bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl pointer-events-auto transform-gpu will-change-contents"
+          className="bg-gray-800 rounded-xl max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl pointer-events-auto transform-gpu will-change-contents"
           style={{ backfaceVisibility: 'hidden' }}
           onClick={(e) => e.stopPropagation()}
         >

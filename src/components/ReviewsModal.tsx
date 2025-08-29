@@ -126,9 +126,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className={`bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col ${
-        isMobile ? 'max-w-sm' : 'max-w-4xl'
-      }`}>
+      <div className="bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}'s Reviews</h2>

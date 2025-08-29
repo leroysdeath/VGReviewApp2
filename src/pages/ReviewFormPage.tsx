@@ -629,7 +629,7 @@ export const ReviewFormPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 py-8">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gray-800 rounded-lg p-8">
+        <div className="bg-gray-800 rounded-lg p-4 sm:p-6 md:p-8">
           <h1 className="text-3xl font-bold text-white mb-8">
             {selectedGame 
               ? (isEditMode ? `Edit Your Review: ${selectedGame.name}` : `Review: ${selectedGame.name}`)
@@ -882,7 +882,7 @@ export const ReviewFormPage: React.FC = () => {
                     </div>
                   ) : (
                     // Multiple platforms - show radio buttons for single selection
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                       {availablePlatforms.map((platform) => (
                         <div key={platform} className="flex flex-col items-center">
                           <input
@@ -905,7 +905,7 @@ export const ReviewFormPage: React.FC = () => {
                   )
                 ) : (
                   // No platform data available - show default options with radio buttons
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                     {['PS5', 'Xbox Series X/S', 'Nintendo Switch', 'PC', 'Retro'].map((platform) => (
                       <div key={platform} className="flex flex-col items-center">
                         <input
@@ -1268,7 +1268,7 @@ export const ReviewFormPage: React.FC = () => {
                 {searchResults && searchResults.length > 0 && (
                   <>
                     {viewMode === 'grid' ? (
-                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                         {searchResults.map((game) => (
                           <GameCard key={game.id} game={game} />
                         ))}
