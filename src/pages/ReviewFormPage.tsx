@@ -64,6 +64,7 @@ export const ReviewFormPage: React.FC = () => {
   const [gameSearch, setGameSearch] = useState('');
   const [rating, setRating] = useState(5); // Default to 5
   const [reviewText, setReviewText] = useState('');
+  const [playtimeHours, setPlaytimeHours] = useState<number | null>(null);
   const [isRecommended, setIsRecommended] = useState<boolean | null>(null);
   const [didFinishGame, setDidFinishGame] = useState<boolean | null>(null);
   const [gameAlreadyCompleted, setGameAlreadyCompleted] = useState(false);
@@ -127,6 +128,7 @@ export const ReviewFormPage: React.FC = () => {
   const [initialFormValues, setInitialFormValues] = useState<{
     rating: number;
     reviewText: string;
+    playtimeHours: number | null;
     isRecommended: boolean | null;
     didFinishGame: boolean | null;
     selectedPlatforms: string[];
@@ -214,6 +216,7 @@ export const ReviewFormPage: React.FC = () => {
           setExistingReviewId(result.data.id);
           setRating(result.data.rating);
           setReviewText(result.data.review || '');
+          setPlaytimeHours(result.data.playtimeHours || null);
           setIsRecommended(result.data.isRecommended);
           
           // CRITICAL FIX: didFinishGame is already set by game progress check
@@ -256,6 +259,7 @@ export const ReviewFormPage: React.FC = () => {
           const initialValues = {
             rating: result.data.rating,
             reviewText: result.data.review || '',
+            playtimeHours: result.data.playtimeHours || null,
             isRecommended: result.data.isRecommended,
             didFinishGame: finalDidFinishGame,
             selectedPlatforms: validSelectedPlatforms
@@ -288,6 +292,7 @@ export const ReviewFormPage: React.FC = () => {
     const currentValues = {
       rating,
       reviewText,
+      playtimeHours,
       isRecommended,
       didFinishGame,
       selectedPlatforms
@@ -296,6 +301,7 @@ export const ReviewFormPage: React.FC = () => {
     const hasChanges = 
       currentValues.rating !== initialFormValues.rating ||
       currentValues.reviewText !== initialFormValues.reviewText ||
+      currentValues.playtimeHours !== initialFormValues.playtimeHours ||
       currentValues.isRecommended !== initialFormValues.isRecommended ||
       (!isGameCompletionLocked && currentValues.didFinishGame !== initialFormValues.didFinishGame) ||
       JSON.stringify(currentValues.selectedPlatforms.sort()) !== JSON.stringify(initialFormValues.selectedPlatforms.sort());
@@ -307,7 +313,7 @@ export const ReviewFormPage: React.FC = () => {
       isGameCompletionLocked,
       hasChanges
     });
-  }, [rating, reviewText, isRecommended, didFinishGame, selectedPlatforms, isEditMode, initialFormValues, isGameCompletionLocked]);
+  }, [rating, reviewText, playtimeHours, isRecommended, didFinishGame, selectedPlatforms, isEditMode, initialFormValues, isGameCompletionLocked]);
 
   // Auto-select single platform when game changes
   useEffect(() => {
@@ -501,7 +507,8 @@ export const ReviewFormPage: React.FC = () => {
           rating,
           reviewText,
           isRecommended,
-          platformName
+          platformName,
+          playtimeHours
         );
 
         if (result.success) {
@@ -592,7 +599,8 @@ export const ReviewFormPage: React.FC = () => {
           rating,
           reviewText,
           isRecommended,
-          platformName
+          platformName,
+          playtimeHours
         );
 
         if (result.success) {
@@ -959,6 +967,41 @@ export const ReviewFormPage: React.FC = () => {
               />
               <div className="mt-1 text-sm text-gray-400">
                 {reviewText.length} characters
+              </div>
+            </div>
+
+            {/* Playtime */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Playtime (Optional)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={playtimeHours || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setPlaytimeHours(null);
+                    } else {
+                      const num = parseInt(value);
+                      if (!isNaN(num) && num >= 1 && num <= 99999) {
+                        setPlaytimeHours(num);
+                      }
+                    }
+                  }}
+                  onKeyPress={(e) => {
+                    // Only allow digits
+                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
+                      e.preventDefault();
+                    }
+                  }}
+                  min="1"
+                  max="99999"
+                  className="w-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  placeholder="0"
+                />
+                <span className="text-gray-400">hours</span>
               </div>
             </div>
 

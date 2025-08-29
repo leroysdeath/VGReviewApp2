@@ -177,7 +177,8 @@ export const createReview = async (
   rating: number, 
   reviewText?: string, 
   isRecommended?: boolean,
-  platformName: string
+  platformName: string,
+  playtimeHours?: number | null
 ): Promise<ServiceResponse<Review>> => {
   try {
     console.log('🔍 Creating review with params:', { igdbId, rating, reviewText, isRecommended });
@@ -256,7 +257,8 @@ export const createReview = async (
       review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
       post_date_time: new Date().toISOString(),
       is_recommended: isRecommended,
-      platform_id: platformId // Add platform ID
+      platform_id: platformId, // Add platform ID
+      playtime_hours: playtimeHours || null // Add playtime
     };
 
     console.log('📝 Inserting review data:', reviewData);
@@ -286,6 +288,7 @@ export const createReview = async (
       rating: data.rating,
       review: data.review,
       postDateTime: data.post_date_time,
+      playtimeHours: data.playtime_hours,
       isRecommended: data.is_recommended,
       likeCount: 0,
       commentCount: 0,
@@ -330,6 +333,7 @@ export interface Review {
   rating: number;
   review: string | null;
   postDateTime: string;
+  playtimeHours?: number | null;
   isRecommended: boolean | null;
   likeCount?: number;
   commentCount?: number;
@@ -468,6 +472,7 @@ export const getUserReviewForGame = async (gameId: number): Promise<ServiceRespo
       rating: data.rating,
       review: data.review,
       postDateTime: data.post_date_time,
+      playtimeHours: data.playtime_hours,
       isRecommended: data.is_recommended,
       likeCount: 0,
       commentCount: 0,
@@ -503,7 +508,8 @@ export const updateReview = async (
   rating: number,
   reviewText?: string,
   isRecommended?: boolean,
-  platformName?: string
+  platformName?: string,
+  playtimeHours?: number | null
 ): Promise<ServiceResponse<Review>> => {
   try {
     console.log('🔄 Updating review:', { reviewId, gameId, rating, reviewText, isRecommended });
@@ -549,7 +555,8 @@ export const updateReview = async (
       rating: rating,
       review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
       is_recommended: isRecommended,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      playtime_hours: playtimeHours || null // Add playtime
     };
 
     // Add platform_id if provided
@@ -581,6 +588,7 @@ export const updateReview = async (
       rating: data.rating,
       review: data.review,
       postDateTime: data.post_date_time,
+      playtimeHours: data.playtime_hours,
       isRecommended: data.is_recommended,
       likeCount: 0,
       commentCount: 0,
@@ -637,6 +645,7 @@ export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
       rating: item.rating,
       review: item.review,
       postDateTime: item.post_date_time,
+      playtimeHours: item.playtime_hours,
       isRecommended: item.is_recommended,
       likeCount: 0, // Will be populated by separate query if needed
       commentCount: 0, // Will be populated by separate query if needed
@@ -700,6 +709,7 @@ export const getReview = async (
       rating: data.rating,
       review: data.review,
       postDateTime: data.post_date_time,
+      playtimeHours: data.playtime_hours,
       isRecommended: data.is_recommended,
       likeCount: likeCount || 0,
       commentCount: commentCount || 0,
@@ -1094,6 +1104,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       rating: item.rating,
       review: item.review,
       postDateTime: item.post_date_time,
+      playtimeHours: item.playtime_hours,
       isRecommended: item.is_recommended,
       likeCount: 0, // Will be populated by separate query if needed
       commentCount: 0, // Will be populated by separate query if needed

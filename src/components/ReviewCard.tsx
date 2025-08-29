@@ -336,6 +336,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               isLoadingLike={isLoadingLike}
               error={error || undefined}
               className="mt-3"
+              reviewAuthorId={parseInt(review.userId)}
+              currentUserId={currentUserId}
             />
           )}
         </div>
