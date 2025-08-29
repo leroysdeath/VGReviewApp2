@@ -5,9 +5,10 @@ import { gameDataService } from '../services/gameDataService';
 import { gameSearchService } from '../services/gameSearchService';
 import type { Game, GameWithCalculatedFields } from '../types/database';
 import { GameSearch } from '../components/GameSearch';
-import { createReview, ensureGameExists, getUserReviewForGameByIGDBId, updateReview } from '../services/reviewService';
+import { createReview, getUserReviewForGameByIGDBId, updateReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
 import { useAuth } from '../hooks/useAuth';
+import { mapPlatformNames } from '../utils/platformMapping';
 
 // Search filters interface from SearchResultsPage
 interface SearchFilters {
@@ -18,45 +19,6 @@ interface SearchFilters {
   sortOrder: 'asc' | 'desc';
 }
 
-// Platform name mapping utility
-const mapPlatformNames = (platforms: string[]): string[] => {
-  const platformMap: Record<string, string> = {
-    'PC (Microsoft Windows)': 'PC',
-    'Mac': 'Mac',
-    'Linux': 'Linux',
-    'PlayStation 5': 'PS5',
-    'PlayStation 4': 'PS4',
-    'PlayStation 3': 'PS3',
-    'PlayStation 2': 'PS2',
-    'PlayStation': 'PS1',
-    'PlayStation Portable': 'PSP',
-    'PlayStation Vita': 'PS Vita',
-    'Xbox Series X': 'Xbox Series X/S',
-    'Xbox Series S': 'Xbox Series X/S',
-    'Xbox One': 'Xbox One',
-    'Xbox 360': 'Xbox 360',
-    'Xbox': 'Xbox',
-    'Nintendo Switch': 'Switch',
-    'Nintendo 3DS': '3DS',
-    'Nintendo DS': 'DS',
-    'Nintendo Wii U': 'Wii U',
-    'Nintendo Wii': 'Wii',
-    'Nintendo GameCube': 'GameCube',
-    'Nintendo 64': 'N64',
-    'Android': 'Mobile',
-    'iOS': 'Mobile',
-    'Web browser': 'Browser',
-  };
-  
-  const mapped = new Set<string>();
-  platforms.forEach(p => {
-    const displayName = platformMap[p] || p;
-    mapped.add(displayName);
-  });
-  
-  return Array.from(mapped).sort();
-};
-
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
@@ -64,6 +26,7 @@ export const ReviewFormPage: React.FC = () => {
   const [gameSearch, setGameSearch] = useState('');
   const [rating, setRating] = useState(5); // Default to 5
   const [reviewText, setReviewText] = useState('');
+  const [playtimeHours, setPlaytimeHours] = useState<number | null>(null);
   const [isRecommended, setIsRecommended] = useState<boolean | null>(null);
   const [didFinishGame, setDidFinishGame] = useState<boolean | null>(null);
   const [gameAlreadyCompleted, setGameAlreadyCompleted] = useState(false);
@@ -127,6 +90,7 @@ export const ReviewFormPage: React.FC = () => {
   const [initialFormValues, setInitialFormValues] = useState<{
     rating: number;
     reviewText: string;
+    playtimeHours: number | null;
     isRecommended: boolean | null;
     didFinishGame: boolean | null;
     selectedPlatforms: string[];
@@ -143,6 +107,20 @@ export const ReviewFormPage: React.FC = () => {
             setSelectedGame(game);
             console.log("ID:", gameId);
             console.log('Loaded game from URL IGDB ID:', game);
+            
+            // Set up available platforms for this game
+            if (game.platforms && game.platforms.length > 0) {
+              const mappedPlatforms = mapPlatformNames(game.platforms);
+              setAvailablePlatforms(mappedPlatforms);
+              console.log('Set available platforms from URL game load:', mappedPlatforms);
+              // Reset selected platforms when changing games
+              setSelectedPlatforms([]);
+            } else {
+              // Fallback to common platforms if no data
+              setAvailablePlatforms(['PC', 'PS5', 'Xbox Series X/S', 'Switch']);
+              console.log('No platform data, using fallback platforms');
+              setSelectedPlatforms([]);
+            }
           }
         } catch (error) {
           console.error('Failed to load game:', error);
@@ -214,6 +192,7 @@ export const ReviewFormPage: React.FC = () => {
           setExistingReviewId(result.data.id);
           setRating(result.data.rating);
           setReviewText(result.data.review || '');
+          setPlaytimeHours(result.data.playtimeHours || null);
           setIsRecommended(result.data.isRecommended);
           
           // CRITICAL FIX: didFinishGame is already set by game progress check
@@ -256,6 +235,7 @@ export const ReviewFormPage: React.FC = () => {
           const initialValues = {
             rating: result.data.rating,
             reviewText: result.data.review || '',
+            playtimeHours: result.data.playtimeHours || null,
             isRecommended: result.data.isRecommended,
             didFinishGame: finalDidFinishGame,
             selectedPlatforms: validSelectedPlatforms
@@ -288,6 +268,7 @@ export const ReviewFormPage: React.FC = () => {
     const currentValues = {
       rating,
       reviewText,
+      playtimeHours,
       isRecommended,
       didFinishGame,
       selectedPlatforms
@@ -296,6 +277,7 @@ export const ReviewFormPage: React.FC = () => {
     const hasChanges = 
       currentValues.rating !== initialFormValues.rating ||
       currentValues.reviewText !== initialFormValues.reviewText ||
+      currentValues.playtimeHours !== initialFormValues.playtimeHours ||
       currentValues.isRecommended !== initialFormValues.isRecommended ||
       (!isGameCompletionLocked && currentValues.didFinishGame !== initialFormValues.didFinishGame) ||
       JSON.stringify(currentValues.selectedPlatforms.sort()) !== JSON.stringify(initialFormValues.selectedPlatforms.sort());
@@ -307,22 +289,22 @@ export const ReviewFormPage: React.FC = () => {
       isGameCompletionLocked,
       hasChanges
     });
-  }, [rating, reviewText, isRecommended, didFinishGame, selectedPlatforms, isEditMode, initialFormValues, isGameCompletionLocked]);
+  }, [rating, reviewText, playtimeHours, isRecommended, didFinishGame, selectedPlatforms, isEditMode, initialFormValues, isGameCompletionLocked]);
 
   // Auto-select single platform when game changes
   useEffect(() => {
-    if (selectedGame && selectedGame.platforms) {
-      if (selectedGame.platforms.length === 1) {
-        // Auto-select the single platform
-        setSelectedPlatforms([selectedGame.platforms[0]]);
-      } else if (selectedGame.platforms.length > 1) {
+    if (selectedGame && selectedGame.platforms && availablePlatforms.length > 0) {
+      if (availablePlatforms.length === 1) {
+        // Auto-select the single mapped platform
+        setSelectedPlatforms([availablePlatforms[0]]);
+      } else if (availablePlatforms.length > 1) {
         // Clear selection if multiple platforms and user hasn't made a choice
-        if (selectedPlatforms.length === 0 || !selectedPlatforms.every(p => selectedGame.platforms!.includes(p))) {
+        if (selectedPlatforms.length === 0 || !selectedPlatforms.every(p => availablePlatforms.includes(p))) {
           setSelectedPlatforms([]);
         }
       }
     }
-  }, [selectedGame]);
+  }, [selectedGame, availablePlatforms]);
 
   const handleGameSelect = (game: GameWithCalculatedFields | Game) => {
     setSelectedGame(game as GameWithCalculatedFields);
@@ -360,17 +342,8 @@ export const ReviewFormPage: React.FC = () => {
   };
 
   const handlePlatformToggle = (platform: string) => {
-    setSelectedPlatforms(prev => {
-      if (prev.includes(platform)) {
-        // Don't allow removing if it's the only selected platform
-        if (prev.length === 1) {
-          return prev;
-        }
-        return prev.filter(p => p !== platform);
-      } else {
-        return [...prev, platform];
-      }
-    });
+    // Single platform selection only
+    setSelectedPlatforms([platform]);
   };
   
   const formatDate = (timestamp: number) => {
@@ -499,14 +472,19 @@ export const ReviewFormPage: React.FC = () => {
     try {
       if (isEditMode && existingReviewId) {
         // Update existing review
-        console.log('Updating existing review:', existingReviewId, 'with platforms:', selectedPlatforms);
+        console.log('Updating existing review:', existingReviewId, 'with platform:', selectedPlatforms[0]);
+        
+        // Use selected platform
+        const platformName = selectedPlatforms.length > 0 ? selectedPlatforms[0] : undefined;
         
         const result = await updateReview(
           existingReviewId,
           0, // gameId not used in update operation
           rating,
           reviewText,
-          isRecommended
+          isRecommended,
+          platformName,
+          playtimeHours
         );
 
         if (result.success) {
@@ -551,7 +529,7 @@ export const ReviewFormPage: React.FC = () => {
         }
       } else {
         // Create new review
-        console.log('Creating new review with platforms:', selectedPlatforms);
+        console.log('Creating new review with platform:', selectedPlatforms[0]);
         
         // First, prioritize the gameId from URL (this is the source of truth)
         let igdbId: number | undefined;
@@ -589,17 +567,16 @@ export const ReviewFormPage: React.FC = () => {
         console.log('Using IGDB ID for review submission:', igdbId);
 
         // Create the review - createReview will handle ensuring the game exists
+        // Use selected platform
+        const platformName = selectedPlatforms[0];
+        
         const result = await createReview(
           igdbId, // Pass the IGDB ID - createReview will handle the rest
           rating,
           reviewText,
           isRecommended,
-          {
-            title: selectedGame.name,
-            coverImage: selectedGame.cover_url,
-            genre: selectedGame.genres?.[0],
-            releaseDate: selectedGame.first_release_date ? new Date(selectedGame.first_release_date * 1000).toISOString().split('T')[0] : undefined
-          }
+          platformName,
+          playtimeHours
         );
 
         if (result.success) {
@@ -890,30 +867,31 @@ export const ReviewFormPage: React.FC = () => {
               </div>
             )}
 
-            {/* Platform(s) Played On */}
+            {/* Platform Played On */}
             {selectedGame && (
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-4">
-                  Platform(s) Played On *
+                  Platform Played On *
                 </label>
-                {selectedGame.platforms && selectedGame.platforms.length > 0 ? (
-                  selectedGame.platforms.length === 1 ? (
+                {availablePlatforms && availablePlatforms.length > 0 ? (
+                  availablePlatforms.length === 1 ? (
                     // Single platform - just display the name
                     <div className="bg-gray-700 border border-gray-600 rounded-lg p-4 text-center">
-                      <span className="text-lg font-medium text-white">{selectedGame.platforms[0]}</span>
+                      <span className="text-lg font-medium text-white">{availablePlatforms[0]}</span>
                       <p className="text-sm text-gray-400 mt-1">Available on this platform only</p>
                     </div>
                   ) : (
-                    // Multiple platforms - show checkboxes
+                    // Multiple platforms - show radio buttons for single selection
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {selectedGame.platforms.map((platform) => (
+                      {availablePlatforms.map((platform) => (
                         <div key={platform} className="flex flex-col items-center">
                           <input
-                            type="checkbox"
+                            type="radio"
                             id={`platform-${platform}`}
+                            name="platform-selection"
                             checked={selectedPlatforms.includes(platform)}
                             onChange={() => handlePlatformToggle(platform)}
-                            className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
+                            className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded-full text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
                           />
                           <label 
                             htmlFor={`platform-${platform}`}
@@ -926,16 +904,17 @@ export const ReviewFormPage: React.FC = () => {
                     </div>
                   )
                 ) : (
-                  // No platform data available - show default options
+                  // No platform data available - show default options with radio buttons
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {['PS5', 'Xbox Series X/S', 'Nintendo Switch', 'PC', 'Retro'].map((platform) => (
                       <div key={platform} className="flex flex-col items-center">
                         <input
-                          type="checkbox"
+                          type="radio"
                           id={`platform-${platform}`}
+                          name="platform-selection-default"
                           checked={selectedPlatforms.includes(platform)}
                           onChange={() => handlePlatformToggle(platform)}
-                          className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
+                          className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded-full text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
                         />
                         <label 
                           htmlFor={`platform-${platform}`}
@@ -964,6 +943,41 @@ export const ReviewFormPage: React.FC = () => {
               />
               <div className="mt-1 text-sm text-gray-400">
                 {reviewText.length} characters
+              </div>
+            </div>
+
+            {/* Playtime */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Playtime (Optional)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={playtimeHours || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setPlaytimeHours(null);
+                    } else {
+                      const num = parseInt(value);
+                      if (!isNaN(num) && num >= 1 && num <= 99999) {
+                        setPlaytimeHours(num);
+                      }
+                    }
+                  }}
+                  onKeyPress={(e) => {
+                    // Only allow digits
+                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
+                      e.preventDefault();
+                    }
+                  }}
+                  min="1"
+                  max="99999"
+                  className="w-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  placeholder="0"
+                />
+                <span className="text-gray-400">hours</span>
               </div>
             </div>
 

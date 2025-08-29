@@ -170,17 +170,18 @@ export const ensureGameExists = async (
  * @param rating - The rating score
  * @param reviewText - The review text (optional)
  * @param isRecommended - Whether the game is recommended
- * @param gameInfo - Game information for creating the game record if needed
+ * @param platformName - The platform name (required)
  */
 export const createReview = async (
   igdbId: number, 
   rating: number, 
   reviewText?: string, 
   isRecommended?: boolean,
-  gameInfo?: { title: string; coverImage?: string; genre?: string; releaseDate?: string }
+  platformName: string,
+  playtimeHours?: number | null
 ): Promise<ServiceResponse<Review>> => {
   try {
-    console.log('🔍 Creating review with params:', { igdbId, rating, reviewText, isRecommended, gameInfo });
+    console.log('🔍 Creating review with params:', { igdbId, rating, reviewText, isRecommended });
     
     const userId = await getCurrentUserId();
     console.log('👤 Current user ID:', userId);
@@ -189,47 +190,43 @@ export const createReview = async (
       return { success: false, error: 'User not authenticated or not found in database' };
     }
 
-    // Ensure game exists in database (create if needed)
-    let gameId: number;
-    if (gameInfo) {
-      const ensureResult = await ensureGameExists({
-        id: -igdbId, // Negative ID indicates it's from IGDB
-        igdb_id: igdbId,
-        name: gameInfo.title,
-        cover_url: gameInfo.coverImage,
-        genre: gameInfo.genre,
-        releaseDate: gameInfo.releaseDate
-      });
-      
-      if (!ensureResult.success) {
-        return { success: false, error: ensureResult.error };
-      }
-      
-      gameId = ensureResult.data!.gameId;
-    } else {
-      // Fallback: look up existing game by IGDB ID
-      const { data: gameRecord, error: gameError } = await supabase
-        .from('game')
-        .select('id, name')
-        .eq('igdb_id', igdbId)
-        .single();
+    // Look up existing game by IGDB ID
+    const { data: gameRecord, error: gameError } = await supabase
+      .from('game')
+      .select('id, name')
+      .eq('igdb_id', igdbId)
+      .single();
 
-      console.log('🎮 Game lookup result:', { gameRecord, gameError });
+    console.log('🎮 Game lookup result:', { gameRecord, gameError });
 
-      if (gameError && gameError.code !== 'PGRST116') {
-        console.error('❌ Game lookup error:', gameError);
-        return { success: false, error: `Game lookup failed: ${gameError.message}` };
-      }
-
-      if (!gameRecord) {
-        console.error('❌ Game not found in database for IGDB ID:', igdbId);
-        return { success: false, error: 'Game not found in database. Please provide game information.' };
-      }
-
-      gameId = gameRecord.id;
+    if (gameError && gameError.code !== 'PGRST116') {
+      console.error('❌ Game lookup error:', gameError);
+      return { success: false, error: `Game lookup failed: ${gameError.message}` };
     }
 
+    if (!gameRecord) {
+      console.error('❌ Game not found in database for IGDB ID:', igdbId);
+      return { success: false, error: 'Game not found in database. Please select a game from the search results.' };
+    }
+
+    const gameId = gameRecord.id;
+
     console.log('✅ Using game ID:', gameId);
+
+    // Map platform name to platform_id
+    const { data: platformData, error: platformError } = await supabase
+      .from('platform')
+      .select('id')
+      .eq('name', platformName)
+      .single();
+
+    if (platformError || !platformData) {
+      console.error('❌ Platform lookup error:', platformError, 'for platform:', platformName);
+      return { success: false, error: `Platform "${platformName}" not found in database` };
+    }
+
+    const platformId = platformData.id;
+    console.log('✅ Using platform ID:', platformId, 'for platform:', platformName);
 
     // Check if user has already reviewed this game
     const { data: existingReview, error: existingError } = await supabase
@@ -259,7 +256,9 @@ export const createReview = async (
       rating: rating,
       review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
       post_date_time: new Date().toISOString(),
-      is_recommended: isRecommended
+      is_recommended: isRecommended,
+      platform_id: platformId, // Add platform ID
+      playtime_hours: playtimeHours || null // Add playtime
     };
 
     console.log('📝 Inserting review data:', reviewData);
@@ -289,6 +288,7 @@ export const createReview = async (
       rating: data.rating,
       review: data.review,
       postDateTime: data.post_date_time,
+      playtimeHours: data.playtime_hours,
       isRecommended: data.is_recommended,
       likeCount: 0,
       commentCount: 0,
@@ -333,6 +333,7 @@ export interface Review {
   rating: number;
   review: string | null;
   postDateTime: string;
+  playtimeHours?: number | null;
   isRecommended: boolean | null;
   likeCount?: number;
   commentCount?: number;
@@ -471,6 +472,7 @@ export const getUserReviewForGame = async (gameId: number): Promise<ServiceRespo
       rating: data.rating,
       review: data.review,
       postDateTime: data.post_date_time,
+      playtimeHours: data.playtime_hours,
       isRecommended: data.is_recommended,
       likeCount: 0,
       commentCount: 0,
@@ -505,7 +507,9 @@ export const updateReview = async (
   gameId: number,
   rating: number,
   reviewText?: string,
-  isRecommended?: boolean
+  isRecommended?: boolean,
+  platformName?: string,
+  playtimeHours?: number | null
 ): Promise<ServiceResponse<Review>> => {
   try {
     console.log('🔄 Updating review:', { reviewId, gameId, rating, reviewText, isRecommended });
@@ -528,15 +532,41 @@ export const updateReview = async (
       return { success: false, error: 'Review not found or you do not have permission to edit it' };
     }
 
+    // Handle platform mapping if provided
+    let platformId: number | undefined;
+    if (platformName) {
+      const { data: platformData, error: platformError } = await supabase
+        .from('platform')
+        .select('id')
+        .eq('name', platformName)
+        .single();
+
+      if (platformError || !platformData) {
+        console.error('❌ Platform lookup error:', platformError, 'for platform:', platformName);
+        return { success: false, error: `Platform "${platformName}" not found in database` };
+      }
+
+      platformId = platformData.id;
+      console.log('✅ Using platform ID:', platformId, 'for platform:', platformName);
+    }
+
     // Update the review with sanitization
+    const updateData: any = {
+      rating: rating,
+      review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
+      is_recommended: isRecommended,
+      updated_at: new Date().toISOString(),
+      playtime_hours: playtimeHours || null // Add playtime
+    };
+
+    // Add platform_id if provided
+    if (platformId !== undefined) {
+      updateData.platform_id = platformId;
+    }
+
     const { data, error } = await supabase
       .from('rating')
-      .update({
-        rating: rating,
-        review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
-        is_recommended: isRecommended,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', reviewId)
       .select(`
         *,
@@ -558,6 +588,7 @@ export const updateReview = async (
       rating: data.rating,
       review: data.review,
       postDateTime: data.post_date_time,
+      playtimeHours: data.playtime_hours,
       isRecommended: data.is_recommended,
       likeCount: 0,
       commentCount: 0,
@@ -614,6 +645,7 @@ export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
       rating: item.rating,
       review: item.review,
       postDateTime: item.post_date_time,
+      playtimeHours: item.playtime_hours,
       isRecommended: item.is_recommended,
       likeCount: 0, // Will be populated by separate query if needed
       commentCount: 0, // Will be populated by separate query if needed
@@ -677,6 +709,7 @@ export const getReview = async (
       rating: data.rating,
       review: data.review,
       postDateTime: data.post_date_time,
+      playtimeHours: data.playtime_hours,
       isRecommended: data.is_recommended,
       likeCount: likeCount || 0,
       commentCount: commentCount || 0,
@@ -879,12 +912,12 @@ export const getCommentsForReview = async (
 
     // Fetch all comments for the review
     const { data, error, count } = await supabase
-      .from('review_comment')
+      .from('comment')
       .select(`
         *,
         user:user_id(id, username, name, avatar_url)
       `, { count: 'exact' })
-      .eq('review_id', reviewId)
+      .eq('rating_id', reviewId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -899,9 +932,9 @@ export const getCommentsForReview = async (
       const comment: Comment = {
         id: item.id,
         userId: item.user_id,
-        reviewId: item.review_id,
+        reviewId: item.rating_id,
         content: item.content,
-        parentId: item.parent_id || undefined,
+        parentId: item.parent_comment_id || undefined,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
         replies: [],
@@ -983,7 +1016,7 @@ export const addComment = async (
     // Validate parent comment if provided
     if (parentId) {
       const { data: parentComment, error: parentError } = await supabase
-        .from('review_comment')
+        .from('comment')
         .select('id')
         .eq('id', parentId)
         .single();
@@ -995,12 +1028,13 @@ export const addComment = async (
 
     // Insert comment
     const { data, error } = await supabase
-      .from('review_comment')
+      .from('comment')
       .insert({
         user_id: userId,
-        review_id: reviewId,
+        rating_id: reviewId,
         content: sanitizedContent,
-        parent_id: parentId || null
+        parent_comment_id: parentId || null,
+        is_published: true
       })
       .select(`
         *,
@@ -1014,9 +1048,9 @@ export const addComment = async (
     const comment: Comment = {
       id: data.id,
       userId: data.user_id,
-      reviewId: data.review_id,
+      reviewId: data.rating_id,
       content: data.content,
-      parentId: data.parent_id || undefined,
+      parentId: data.parent_comment_id || undefined,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       replies: [],
@@ -1070,6 +1104,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       rating: item.rating,
       review: item.review,
       postDateTime: item.post_date_time,
+      playtimeHours: item.playtime_hours,
       isRecommended: item.is_recommended,
       likeCount: 0, // Will be populated by separate query if needed
       commentCount: 0, // Will be populated by separate query if needed
