@@ -107,6 +107,20 @@ export const ReviewFormPage: React.FC = () => {
             setSelectedGame(game);
             console.log("ID:", gameId);
             console.log('Loaded game from URL IGDB ID:', game);
+            
+            // Set up available platforms for this game
+            if (game.platforms && game.platforms.length > 0) {
+              const mappedPlatforms = mapPlatformNames(game.platforms);
+              setAvailablePlatforms(mappedPlatforms);
+              console.log('Set available platforms from URL game load:', mappedPlatforms);
+              // Reset selected platforms when changing games
+              setSelectedPlatforms([]);
+            } else {
+              // Fallback to common platforms if no data
+              setAvailablePlatforms(['PC', 'PS5', 'Xbox Series X/S', 'Switch']);
+              console.log('No platform data, using fallback platforms');
+              setSelectedPlatforms([]);
+            }
           }
         } catch (error) {
           console.error('Failed to load game:', error);
