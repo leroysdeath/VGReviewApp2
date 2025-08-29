@@ -19,58 +19,24 @@ export default defineConfig({
     reportCompressedSize: true,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
-      // Tree-shaking configuration
-      treeshake: {
-        moduleSideEffects: false,
-        propertyReadSideEffects: false,
-        tryCatchDeoptimization: false
-      },
       output: {
-        // Improved chunk splitting strategy
-        manualChunks: (id) => {
-          // Core vendor chunk (rarely changes, cached longer)
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'react-vendor';
-            }
-            if (id.includes('@supabase')) {
-              return 'supabase';
-            }
-            if (id.includes('lucide-react') || id.includes('react-icons')) {
-              return 'icons';
-            }
-            if (id.includes('zustand') || id.includes('immer')) {
-              return 'state';
-            }
-            if (id.includes('swr') || id.includes('@tanstack')) {
-              return 'data-fetching';
-            }
-            if (id.includes('react-hook-form') || id.includes('zod')) {
-              return 'forms';
-            }
-            // All other node_modules in vendor chunk
-            return 'vendor';
-          }
-          
-          // Feature-based chunks for application code
-          if (id.includes('src/components/profile') || id.includes('src/pages/Profile') || id.includes('src/pages/User')) {
-            return 'profile';
-          }
-          if (id.includes('src/components/Game') || id.includes('src/pages/Game')) {
-            return 'games';
-          }
-          if (id.includes('src/components/Review') || id.includes('src/pages/Review')) {
-            return 'reviews';
-          }
-          if (id.includes('src/services')) {
-            return 'services';
-          }
+        // Simplified and working chunk splitting strategy
+        manualChunks: {
+          // React core (always needed)
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          // Supabase SDK
+          'supabase': ['@supabase/supabase-js'],
+          // UI libraries
+          'ui-vendor': ['lucide-react', 'react-icons'],
+          // State management
+          'state': ['zustand', 'immer'],
+          // Forms and validation
+          'forms': ['react-hook-form', 'zod'],
+          // Data fetching
+          'data': ['swr']
         },
         // Optimize chunk names for caching
-        chunkFileNames: (chunkInfo) => {
-          const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
-          return `assets/[name]-${facadeModuleId}-[hash].js`;
-        },
+        chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
         // Optimize entry file name
         entryFileNames: 'assets/[name]-[hash].js'
