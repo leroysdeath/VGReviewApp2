@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useGameSearch } from '../hooks/useGameSearch';
@@ -55,6 +55,7 @@ export const SearchResultsPage: React.FC = () => {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchStarted, setSearchStarted] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout>();
   
   const [filters, setFilters] = useState<SearchFilters>({
     searchTerm: '',
@@ -95,12 +96,31 @@ export const SearchResultsPage: React.FC = () => {
     setCurrentPage(page ? parseInt(page) : 1);
   }, [searchParams]);
 
-  // Trigger search when filters change
+  // Debounced search when search term changes
   useEffect(() => {
-    if (filters.searchTerm) {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    if (filters.searchTerm?.trim()) {
+      debounceRef.current = setTimeout(() => {
+        performSearch();
+      }, 500); // 500ms delay
+    }
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [filters.searchTerm]);
+
+  // Immediate search for non-search-term filter changes
+  useEffect(() => {
+    if (filters.searchTerm?.trim() && searchStarted) {
       performSearch();
     }
-  }, [filters]);
+  }, [filters.platformId, filters.releaseYear, filters.minRating, filters.maxRating, filters.sortBy, filters.sortOrder]);
 
   const loadPlatforms = async () => {
     try {
@@ -135,6 +155,17 @@ export const SearchResultsPage: React.FC = () => {
       console.log('✅ SearchResultsPage: Search completed, results:', searchState.games.length);
     } catch (err) {
       console.error('❌ SearchResultsPage: Search failed:', err);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && filters.searchTerm?.trim()) {
+      // Clear any pending debounced search
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      // Execute search immediately
+      performSearch();
     }
   };
 
@@ -205,6 +236,7 @@ export const SearchResultsPage: React.FC = () => {
                 placeholder="Search games..."
                 value={filters.searchTerm}
                 onChange={(e) => handleFilterChange({ searchTerm: e.target.value })}
+                onKeyDown={handleKeyPress}
                 className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
@@ -396,7 +428,15 @@ export const SearchResultsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Loading State - only show after user has started searching and if we have no results yet */}
+        {/* Loading State */}
+        {searchState.loading && searchStarted && (
+          <div className="flex justify-center items-center gap-3 mb-6 p-4 bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700">
+            <Loader className="h-5 w-5 animate-spin text-purple-500" />
+            <span className="text-gray-300">Searching for "{filters.searchTerm}"...</span>
+          </div>
+        )}
+
+        {/* Initial Loading State - show when no results yet */}
         {searchState.loading && searchStarted && filteredGames.length === 0 && (
           <div className="flex justify-center items-center py-20">
             <Loader className="h-8 w-8 animate-spin text-purple-500" />
