@@ -916,7 +916,7 @@ class IGDBService {
       name: igdbGame.name,
       summary: igdbGame.summary,
       description: igdbGame.summary,
-      first_release_date: igdbGame.first_release_date,
+      first_release_date: igdbGame.first_release_date ? new Date(igdbGame.first_release_date * 1000) : undefined,
       release_date: igdbGame.first_release_date ? new Date(igdbGame.first_release_date * 1000).toISOString() : undefined,
       rating: igdbGame.rating,
       igdb_rating: igdbGame.rating,

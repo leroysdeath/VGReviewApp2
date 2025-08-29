@@ -16,6 +16,7 @@ export const PLATFORM_MAP: Record<string, string> = {
   'PlayStation Vita': 'PS Vita',
   'Xbox Series X': 'Xbox Series X/S',
   'Xbox Series S': 'Xbox Series X/S',
+  'Xbox Series X|S': 'Xbox Series X/S',
   'Xbox One': 'Xbox One',
   'Xbox 360': 'Xbox 360',
   'Xbox': 'Xbox',
