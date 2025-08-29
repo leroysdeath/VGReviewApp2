@@ -1,7 +1,16 @@
-// IGDB API Service
+// IGDB API Service with Enhanced Iconic Game Support
 import { filterProtectedContent, getFilterStats } from '../utils/contentProtectionFilter';
 import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization';
 import { generateFuzzyPatterns, rankByFuzzyMatch, fuzzyMatchScore } from '../utils/fuzzySearch';
+import { 
+  detectFranchiseSearch, 
+  generateFlagshipSearchPatterns,
+  getFlagshipGames 
+} from '../utils/flagshipGames';
+import { 
+  applyIconicBoost,
+  calculateIconicScore 
+} from '../utils/iconicGameDetection';
 
 /**
  * Calculate relevance score for search results with fuzzy matching
@@ -96,25 +105,44 @@ function calculateSearchRelevance(game: any, searchQuery: string): number {
   // Calculate final relevance as percentage
   const finalRelevance = maxPossibleScore > 0 ? (relevanceScore / maxPossibleScore) : 0;
   
-  // Lowered threshold to allow more fuzzy matches through
-  const RELEVANCE_THRESHOLD = 0.12;
-  return finalRelevance >= RELEVANCE_THRESHOLD ? finalRelevance : 0;
+  return finalRelevance;
 }
 
 /**
- * Filter out games with insufficient search relevance
+ * Get dynamic relevance threshold based on search context
+ */
+function getRelevanceThreshold(searchQuery: string): number {
+  const franchise = detectFranchiseSearch(searchQuery);
+  
+  // Lower threshold for franchise searches (more permissive for iconic games)
+  if (franchise) {
+    console.log(`🎯 Franchise search detected: "${franchise}" - Using lower relevance threshold`);
+    return 0.08; // More permissive for franchise searches
+  }
+  
+  // Standard threshold for general searches
+  return 0.12;
+}
+
+/**
+ * Filter out games with insufficient search relevance (with dynamic thresholds)
  */
 function filterByRelevance(games: any[], searchQuery?: string): any[] {
   if (!searchQuery || !searchQuery.trim()) {
     return games;
   }
 
+  const threshold = getRelevanceThreshold(searchQuery);
+  
   return games.filter(game => {
     const relevance = calculateSearchRelevance(game, searchQuery);
-    if (relevance === 0) {
-      console.log(`🚫 FILTERED: "${game.name}" - insufficient relevance for query "${searchQuery}"`);
+    
+    // Apply dynamic threshold
+    if (relevance < threshold) {
+      console.log(`🚫 FILTERED: "${game.name}" - relevance ${relevance.toFixed(3)} below threshold ${threshold.toFixed(3)}`);
       return false;
     }
+    
     return true;
   });
 }
@@ -445,41 +473,96 @@ interface IGDBSearchResponse {
 class IGDBService {
   private readonly endpoint = '/.netlify/functions/igdb-search';
 
+  /**
+   * Multi-strategy search with iconic game fallback
+   * If primary search yields insufficient results, searches for flagship games
+   */
+  private async searchWithFlagshipFallback(query: string, limit: number): Promise<IGDBGame[]> {
+    // Step 1: Primary search
+    const primaryResults = await this.performBasicSearch(query, limit);
+    
+    // Step 2: Check if we need flagship fallback
+    const franchise = detectFranchiseSearch(query);
+    const needsFallback = primaryResults.length < Math.min(3, limit) && franchise;
+    
+    if (!needsFallback) {
+      console.log(`🎯 Primary search sufficient: ${primaryResults.length} results`);
+      return primaryResults;
+    }
+    
+    console.log(`🚀 Applying flagship fallback for "${franchise}" - Primary results: ${primaryResults.length}`);
+    
+    // Step 3: Search for flagship games in the franchise
+    const flagshipPatterns = generateFlagshipSearchPatterns(franchise);
+    const flagshipSearches: Promise<IGDBGame[]>[] = [];
+    
+    // Search for each flagship pattern
+    for (const pattern of flagshipPatterns.slice(0, 8)) { // Limit patterns to avoid too many requests
+      flagshipSearches.push(
+        this.performBasicSearch(pattern, 3)
+          .catch(error => {
+            console.log(`⚠️ Flagship search failed for "${pattern}":`, error);
+            return [];
+          })
+      );
+    }
+    
+    // Execute flagship searches in parallel
+    const flagshipResults = await Promise.all(flagshipSearches);
+    const flatFlagshipResults = flagshipResults.flat();
+    
+    // Combine and deduplicate results
+    const existingIds = new Set(primaryResults.map(g => g.id));
+    const uniqueFlagshipResults = flatFlagshipResults.filter(game => !existingIds.has(game.id));
+    
+    const combinedResults = [...primaryResults, ...uniqueFlagshipResults];
+    
+    console.log(`✅ Flagship fallback complete: ${primaryResults.length} primary + ${uniqueFlagshipResults.length} flagship = ${combinedResults.length} total`);
+    
+    return combinedResults.slice(0, limit);
+  }
+  
+  /**
+   * Perform basic IGDB search without fallback logic
+   */
+  private async performBasicSearch(query: string, limit: number): Promise<IGDBGame[]> {
+    const response = await fetch(this.endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        searchTerm: query.trim(),
+        limit: limit
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`IGDB API error: ${response.status}`);
+    }
+
+    const data: IGDBSearchResponse = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'IGDB API error');
+    }
+
+    return data.games || [];
+  }
+
   async searchGames(query: string, limit: number = 20): Promise<IGDBGame[]> {
     try {
       if (!query.trim()) {
         return [];
       }
 
-      console.log('🔍 Searching IGDB for:', query);
+      console.log('🔍 Enhanced multi-strategy search for:', query);
 
-      const response = await fetch(this.endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          searchTerm: query.trim(),
-          limit: limit
-        })
-      });
-
-      if (!response.ok) {
-        console.error('IGDB API response not ok:', response.status, response.statusText);
-        throw new Error(`IGDB API error: ${response.status}`);
-      }
-
-      const data: IGDBSearchResponse = await response.json();
-      
-      if (!data.success) {
-        console.error('IGDB API returned error:', data.error);
-        throw new Error(data.error || 'IGDB API error');
-      }
-
-      console.log('✅ IGDB search results:', data.games?.length || 0, 'games found');
+      // Get primary search results
+      const rawGames = await this.performBasicSearch(query, limit);
+      console.log('✅ Primary search results:', rawGames.length, 'games found');
       
       // Apply content protection filter
-      const rawGames = data.games || [];
       const transformedGames = rawGames.map(game => this.transformGameForFilter(game));
       
       // Debug: Log some raw games to see what we're getting from IGDB
@@ -536,22 +619,78 @@ class IGDBService {
       filteredIGDBGames = filterByRelevance(filteredIGDBGames, query);
       console.log(`🎯 Post-relevance filter: ${filteredIGDBGames.length} games`);
       
+      // Check if we need flagship fallback after all filtering
+      const franchise = detectFranchiseSearch(query);
+      const needsFlagshipFallback = filteredIGDBGames.length < Math.min(3, limit) && franchise;
+      
+      if (needsFlagshipFallback) {
+        console.log(`🚀 Triggering flagship fallback for "${franchise}" - Current results: ${filteredIGDBGames.length}`);
+        
+        // Search for flagship games
+        const flagshipPatterns = generateFlagshipSearchPatterns(franchise);
+        const flagshipSearches: Promise<IGDBGame[]>[] = [];
+        
+        // Search for each flagship pattern
+        for (const pattern of flagshipPatterns.slice(0, 8)) {
+          flagshipSearches.push(
+            this.performBasicSearch(pattern, 3)
+              .catch(error => {
+                console.log(`⚠️ Flagship search failed for "${pattern}":`, error);
+                return [];
+              })
+          );
+        }
+        
+        const flagshipResults = await Promise.all(flagshipSearches);
+        const allFlagshipResults = flagshipResults.flat();
+        
+        // Apply same filtering to flagship results
+        const transformedFlagshipGames = allFlagshipResults.map(game => this.transformGameForFilter(game));
+        const filteredFlagshipGames = filterProtectedContent(transformedFlagshipGames);
+        let finalFlagshipGames = filteredFlagshipGames.map(game => allFlagshipResults.find(raw => raw.id === game.id)!);
+        
+        // Apply same additional filtering
+        finalFlagshipGames = filterSeasonGames(finalFlagshipGames);
+        finalFlagshipGames = filterPackGames(finalFlagshipGames);
+        finalFlagshipGames = filterEReaderContent(finalFlagshipGames);
+        finalFlagshipGames = filterByRelevance(finalFlagshipGames, query);
+        
+        // Combine with existing results, flagship first
+        const existingIds = new Set(filteredIGDBGames.map(g => g.id));
+        const uniqueFlagshipGames = finalFlagshipGames.filter(game => !existingIds.has(game.id));
+        
+        console.log(`🎯 Flagship fallback found ${uniqueFlagshipGames.length} additional games`);
+        filteredIGDBGames = [...uniqueFlagshipGames, ...filteredIGDBGames];
+      }
+      
       // Apply fuzzy ranking before prioritization for better title matching
       if (filteredIGDBGames.length > 1) {
         console.log(`🔧 Applying fuzzy ranking to improve title matching...`);
         filteredIGDBGames = rankByFuzzyMatch(filteredIGDBGames, query);
       }
       
-      // Apply intelligent prioritization system (5-tier: Famous → Sequels → Main → DLC → Community)
+      // Apply iconic boost before prioritization
+      console.log(`🎯 Applying iconic game boost...`);
+      filteredIGDBGames = applyIconicBoost(filteredIGDBGames, query);
+      
+      // Apply intelligent prioritization system (6-tier: Flagship → Famous → Sequels → Main → DLC → Community)
       if (filteredIGDBGames.length > 1) {
-        console.log(`🏆 Applying 5-tier prioritization system...`);
+        console.log(`🏆 Applying 6-tier prioritization system...`);
         filteredIGDBGames = sortGamesByPriority(filteredIGDBGames);
         
         // Log priority analysis for first few games
-        filteredIGDBGames.slice(0, 3).forEach((game, index) => {
+        filteredIGDBGames.slice(0, 5).forEach((game, index) => {
           const priority = calculateGamePriority(game);
           const fuzzyScore = (game as any)._fuzzyScore;
-          console.log(`${index + 1}. "${game.name}" - Priority: ${priority.score}, Fuzzy: ${fuzzyScore?.toFixed(2) || 'N/A'} - ${priority.reasons[0] || 'Standard'}`);
+          const iconicBoost = (game as any)._iconicBoost;
+          const isFlagship = (game as any)._isFlagship;
+          
+          let details = `Priority: ${priority.score}`;
+          if (fuzzyScore) details += `, Fuzzy: ${fuzzyScore.toFixed(2)}`;
+          if (iconicBoost) details += `, Iconic: +${Math.round(iconicBoost)}`;
+          if (isFlagship) details += ` 🏆`;
+          
+          console.log(`${index + 1}. "${game.name}" - ${details} - ${priority.reasons[0] || 'Standard'}`);
         });
       }
       

@@ -1,5 +1,5 @@
-// Intelligent Game Prioritization System
-// Ensures high-quality, official games appear first in search results
+// Enhanced Game Prioritization System with Flagship Support
+// Ensures high-quality, official, and iconic games appear first in search results
 
 import { 
   CopyrightLevel, 
@@ -8,6 +8,12 @@ import {
   findFranchiseOwner,
   COMPANY_OWNERSHIP
 } from './copyrightPolicies';
+
+import { 
+  calculateIconicScore, 
+  isIconicGame,
+  type IconicGameScore 
+} from './iconicGameDetection';
 
 interface Game {
   id: number;
@@ -31,12 +37,13 @@ interface Game {
 }
 
 export enum GamePriority {
-  FAMOUS_TIER = 1200,   // Famous/iconic games that shaped gaming
-  SEQUEL_TIER = 1000,   // Sequels to famous games or acclaimed series
-  MAIN_TIER = 800,      // Main official games from major publishers
-  DLC_TIER = 400,       // Official DLC/expansions
-  COMMUNITY_TIER = 200, // Community content from mod-friendly companies
-  LOW_TIER = 100        // Everything else
+  FLAGSHIP_TIER = 1500, // Flagship/iconic games that defined gaming (NEW Tier 0)
+  FAMOUS_TIER = 1200,   // Famous/iconic games that shaped gaming (Tier 1)
+  SEQUEL_TIER = 1000,   // Sequels to famous games or acclaimed series (Tier 2)
+  MAIN_TIER = 800,      // Main official games from major publishers (Tier 3)
+  DLC_TIER = 400,       // Official DLC/expansions (Tier 4)
+  COMMUNITY_TIER = 200, // Community content from mod-friendly companies (Tier 5)
+  LOW_TIER = 100        // Everything else (Tier 6)
 }
 
 interface PriorityResult {
@@ -203,10 +210,31 @@ export function calculateGamePriority(game: Game): PriorityResult {
   const searchText = [game.name, game.developer, game.publisher, game.summary, game.description]
     .filter(Boolean).join(' ').toLowerCase();
 
-  // === 5-TIER FAMOUS GAME SYSTEM ===
+  // === 6-TIER ENHANCED GAME SYSTEM ===
 
-  // Tier 1: FAMOUS - Iconic games that shaped gaming
-  if (isFamousGame(game.name)) {
+  // Tier 0: FLAGSHIP - Flagship/iconic games that defined gaming (NEW!)
+  const iconicScore = calculateIconicScore({
+    id: game.id,
+    name: game.name,
+    rating: game.rating || game.igdb_rating,
+    user_rating_count: game.user_rating_count,
+    follows: game.follows,
+    hypes: game.hypes,
+    first_release_date: game.first_release_date,
+    category: game.category,
+    genres: game.genres,
+    franchise: findFranchiseOwner(game, searchText)
+  });
+
+  if (iconicScore.isFlagship || iconicScore.score >= 100) {
+    basePriority = GamePriority.FLAGSHIP_TIER;
+    reasons.push(`FLAGSHIP TIER: ${iconicScore.flagshipData?.reason || 'Iconic game that defined gaming'}`);
+    boosts.push(`Flagship/iconic game (+${Math.round(iconicScore.score)})`);
+    score = GamePriority.FLAGSHIP_TIER + Math.round(iconicScore.score);
+  }
+  
+  // Tier 1: FAMOUS - Iconic games that shaped gaming  
+  else if (isFamousGame(game.name)) {
     basePriority = GamePriority.FAMOUS_TIER;
     reasons.push(`FAMOUS TIER: Iconic game that shaped gaming history`);
     boosts.push('Famous game (+300)');
@@ -277,7 +305,7 @@ export function calculateGamePriority(game: Game): PriorityResult {
       break;
     case 1: // DLC
     case 2: // Expansion
-      if (basePriority >= GamePriority.HIGH_TIER) {
+      if (basePriority >= GamePriority.MAIN_TIER) {
         basePriority = GamePriority.DLC_TIER;
         reasons.push('DLC TIER: Official expansion content');
       }
