@@ -8,6 +8,7 @@ import { GameSearch } from '../components/GameSearch';
 import { createReview, getUserReviewForGameByIGDBId, updateReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
 import { useAuth } from '../hooks/useAuth';
+import { mapPlatformNames } from '../utils/platformMapping';
 
 // Search filters interface from SearchResultsPage
 interface SearchFilters {
@@ -17,45 +18,6 @@ interface SearchFilters {
   sortBy: 'popularity' | 'rating' | 'release_date' | 'name';
   sortOrder: 'asc' | 'desc';
 }
-
-// Platform name mapping utility
-const mapPlatformNames = (platforms: string[]): string[] => {
-  const platformMap: Record<string, string> = {
-    'PC (Microsoft Windows)': 'PC',
-    'Mac': 'Mac',
-    'Linux': 'Linux',
-    'PlayStation 5': 'PS5',
-    'PlayStation 4': 'PS4',
-    'PlayStation 3': 'PS3',
-    'PlayStation 2': 'PS2',
-    'PlayStation': 'PS1',
-    'PlayStation Portable': 'PSP',
-    'PlayStation Vita': 'PS Vita',
-    'Xbox Series X': 'Xbox Series X/S',
-    'Xbox Series S': 'Xbox Series X/S',
-    'Xbox One': 'Xbox One',
-    'Xbox 360': 'Xbox 360',
-    'Xbox': 'Xbox',
-    'Nintendo Switch': 'Switch',
-    'Nintendo 3DS': '3DS',
-    'Nintendo DS': 'DS',
-    'Nintendo Wii U': 'Wii U',
-    'Nintendo Wii': 'Wii',
-    'Nintendo GameCube': 'GameCube',
-    'Nintendo 64': 'N64',
-    'Android': 'Mobile',
-    'iOS': 'Mobile',
-    'Web browser': 'Browser',
-  };
-  
-  const mapped = new Set<string>();
-  platforms.forEach(p => {
-    const displayName = platformMap[p] || p;
-    mapped.add(displayName);
-  });
-  
-  return Array.from(mapped).sort();
-};
 
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -317,18 +279,18 @@ export const ReviewFormPage: React.FC = () => {
 
   // Auto-select single platform when game changes
   useEffect(() => {
-    if (selectedGame && selectedGame.platforms) {
-      if (selectedGame.platforms.length === 1) {
-        // Auto-select the single platform
-        setSelectedPlatforms([selectedGame.platforms[0]]);
-      } else if (selectedGame.platforms.length > 1) {
+    if (selectedGame && selectedGame.platforms && availablePlatforms.length > 0) {
+      if (availablePlatforms.length === 1) {
+        // Auto-select the single mapped platform
+        setSelectedPlatforms([availablePlatforms[0]]);
+      } else if (availablePlatforms.length > 1) {
         // Clear selection if multiple platforms and user hasn't made a choice
-        if (selectedPlatforms.length === 0 || !selectedPlatforms.every(p => selectedGame.platforms!.includes(p))) {
+        if (selectedPlatforms.length === 0 || !selectedPlatforms.every(p => availablePlatforms.includes(p))) {
           setSelectedPlatforms([]);
         }
       }
     }
-  }, [selectedGame]);
+  }, [selectedGame, availablePlatforms]);
 
   const handleGameSelect = (game: GameWithCalculatedFields | Game) => {
     setSelectedGame(game as GameWithCalculatedFields);
@@ -897,17 +859,17 @@ export const ReviewFormPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-300 mb-4">
                   Platform Played On *
                 </label>
-                {selectedGame.platforms && selectedGame.platforms.length > 0 ? (
-                  selectedGame.platforms.length === 1 ? (
+                {availablePlatforms && availablePlatforms.length > 0 ? (
+                  availablePlatforms.length === 1 ? (
                     // Single platform - just display the name
                     <div className="bg-gray-700 border border-gray-600 rounded-lg p-4 text-center">
-                      <span className="text-lg font-medium text-white">{selectedGame.platforms[0]}</span>
+                      <span className="text-lg font-medium text-white">{availablePlatforms[0]}</span>
                       <p className="text-sm text-gray-400 mt-1">Available on this platform only</p>
                     </div>
                   ) : (
                     // Multiple platforms - show radio buttons for single selection
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {selectedGame.platforms.map((platform) => (
+                      {availablePlatforms.map((platform) => (
                         <div key={platform} className="flex flex-col items-center">
                           <input
                             type="radio"

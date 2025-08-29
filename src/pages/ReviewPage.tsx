@@ -16,6 +16,10 @@ interface Review {
   review: string;
   post_date_time: string;
   platform_id?: number;
+  platform?: {
+    id: number;
+    name: string;
+  };
   user: {
     id: number;
     name: string;
@@ -94,6 +98,10 @@ export const ReviewPage: React.FC = () => {
           review,
           post_date_time,
           platform_id,
+          platform:platform_id(
+            id,
+            name
+          ),
           user!fk_rating_user(
             id,
             username,
@@ -123,6 +131,10 @@ export const ReviewPage: React.FC = () => {
             review,
             post_date_time,
             platform_id,
+            platform:platform_id(
+              id,
+              name
+            ),
             user!fk_rating_user(
               id,
               username,
@@ -325,10 +337,10 @@ export const ReviewPage: React.FC = () => {
                   
                   <div className="text-sm text-gray-400 mb-4">
                     {new Date(review.post_date_time).toLocaleDateString()}
-                    {review.platform_id && (
+                    {review.platform && review.platform.name && (
                       <>
                         {' • '}
-                        <span>Platform {review.platform_id}</span>
+                        <span>{review.platform.name}</span>
                       </>
                     )}
                   </div>
