@@ -204,6 +204,7 @@ const OFFICIAL_COMPANIES = [
   'microsoft game studios', 'microsoft studios', 'xbox game studios',
   'turn 10 studios', 'the coalition', 'rare', '343 industries',
   'mojang', 'obsidian entertainment', 'inxile entertainment',
+  'playground games', 'undead labs', 'compulsion games', 'ninja theory',
   
   // Other major official publishers
   'electronic arts', 'ea games', 'ea sports', 'bioware', 'dice',
@@ -216,7 +217,19 @@ const OFFICIAL_COMPANIES = [
   'cd projekt red', 'cd projekt', 'epic games', 'bungie',
   'from software', 'fromsoftware', 'arc system works', 'snk',
   'nintendo of america', 'nintendo of europe', 'gradiente', 'ique',
-  'eidos interactive'
+  'eidos interactive',
+  
+  // Fighting game publishers
+  'netherrealm studios', 'wb games', 'warner bros games', 'warner bros entertainment',
+  'midway games', 'acclaim entertainment', 'arc system works',
+  
+  // Modern indie and AA publishers
+  'devolver digital', 'annapurna interactive', 'coffee stain studios',
+  'team17', 'focus home interactive', 'focus entertainment',
+  'private division', 'paradox interactive', 'paradox entertainment',
+  
+  // Additional racing/sports publishers
+  'codemasters', 'slightly mad studios', 'milestone', 'kylotonn'
 ];
 
 // Legacy company lists (kept for backward compatibility)

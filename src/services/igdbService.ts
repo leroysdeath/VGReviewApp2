@@ -168,59 +168,44 @@ function filterSeasonGames(games: any[]): any[] {
 function filterPackGames(games: any[]): any[] {
   return games.filter(game => {
     if (game.category === 3) {
-      console.log(`🚫 PACK FILTERED: "${game.name}" - category 3 (Bundle/Pack)`);
-      return false;
+      // Only filter actual bundles/collections, not regular editions
+      const name = game.name?.toLowerCase() || '';
+      
+      // Allow regular editions through even if they're categorized as bundle
+      const isRegularEdition = !name.includes('collector') && 
+                               !name.includes('bundle') && 
+                               !name.includes('collection') &&
+                               !name.includes('anthology') &&
+                               !name.includes('compilation') &&
+                               !name.includes('all-stars') &&
+                               !name.includes('complete edition') &&
+                               !name.includes('ultimate edition') &&
+                               !name.includes('definitive edition');
+      
+      if (isRegularEdition) {
+        console.log(`✅ PACK ALLOWED: "${game.name}" - regular edition despite category 3`);
+        return true; // Keep regular editions
+      }
+      
+      console.log(`🚫 PACK FILTERED: "${game.name}" - actual bundle/collection`);
+      return false; // Filter actual bundles
     }
     return true;
   });
 }
 
 /**
- * Filter out e-reader card content and micro-content
- * E-reader cards are not full games but individual challenges/levels/cards
+ * Filter out e-reader card content (simplified)
+ * Only catches the most obvious e-reader patterns
  */
 function filterEReaderContent(games: any[]): any[] {
   return games.filter(game => {
     if (!game.name) return true;
     
-    const gameName = game.name.toLowerCase();
-    
-    // Primary e-reader pattern: "-e - [content]" (main indicator)
+    // Only primary e-reader pattern - let IGDB categories handle the rest
     if (/-e\s*-\s*.+/i.test(game.name)) {
-      console.log(`🚫 E-READER FILTERED: "${game.name}" - e-reader card pattern (-e -)`);
+      console.log(`🚫 E-READER FILTERED: "${game.name}" - e-reader card pattern`);
       return false;
-    }
-    
-    // Secondary e-reader patterns
-    const eReaderPatterns = [
-      /-e\s+(card|challenge|level|game)/i,  // "-e card/challenge/level/game"
-      /\b\w+-e\b.*(?:challenge|level|card)/i,  // "Game-e" + micro-content
-      /level\s+\d+-\d+/i,  // "Level 1-1" style micro-content
-      /card\s+series/i,    // "Card Series"
-      /-e\s*\w+\s+(challenge|game|level)/i  // "-e [word] challenge/game/level"
-    ];
-    
-    for (const pattern of eReaderPatterns) {
-      if (pattern.test(game.name)) {
-        console.log(`🚫 E-READER FILTERED: "${game.name}" - e-reader micro-content pattern`);
-        return false;
-      }
-    }
-    
-    // Micro-content keyword detection (in combination with other indicators)
-    const microContentKeywords = [
-      'challenge', 'mini-game', 'minigame', 'demo', 'tutorial', 'bonus stage'
-    ];
-    
-    // Only filter if name contains 'e' context AND micro-content keywords
-    const hasEContext = gameName.includes('-e') || gameName.includes('e card') || gameName.includes('e-card');
-    if (hasEContext) {
-      for (const keyword of microContentKeywords) {
-        if (gameName.includes(keyword)) {
-          console.log(`🚫 E-READER FILTERED: "${game.name}" - e-context + micro-content (${keyword})`);
-          return false;
-        }
-      }
     }
     
     return true;
@@ -256,13 +241,13 @@ async function findSequelsAndSeries(baseQuery: string, primaryResults: IGDBGame[
 
     const endpoint = '/.netlify/functions/igdb-search'; // Use static endpoint
     
-    // 1. Search using fuzzy and sequel patterns
-    for (const pattern of allPatterns.slice(0, 12)) { // Increased limit for better fuzzy coverage
+    // 1. Search using top patterns only (reduced API calls)
+    for (const pattern of allPatterns.slice(0, 5)) { // Reduced from 12 to 5
       sequelSearches.push(
         fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ searchTerm: pattern, limit: 3 })
+          body: JSON.stringify({ searchTerm: pattern, limit: 5 })
         })
         .then(res => res.json())
         .then(data => data.success ? data.games || [] : [])
@@ -630,10 +615,10 @@ class IGDBService {
         const flagshipPatterns = generateFlagshipSearchPatterns(franchise);
         const flagshipSearches: Promise<IGDBGame[]>[] = [];
         
-        // Search for each flagship pattern
-        for (const pattern of flagshipPatterns.slice(0, 8)) {
+        // Reduced API calls: Search for top 3 flagship patterns only
+        for (const pattern of flagshipPatterns.slice(0, 3)) {
           flagshipSearches.push(
-            this.performBasicSearch(pattern, 3)
+            this.performBasicSearch(pattern, 5)
               .catch(error => {
                 console.log(`⚠️ Flagship search failed for "${pattern}":`, error);
                 return [];

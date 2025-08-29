@@ -179,43 +179,10 @@ export function generateFuzzyPatterns(query: string): string[] {
     }
   });
   
-  // Add common variations for specific series
-  const lowerQuery = query.toLowerCase();
-  
-  if (lowerQuery.includes('mario')) {
-    patterns.push(
-      'super mario', 'new super mario', 'mario bros', 
-      'super mario bros', 'super mario world', 'mario kart',
-      'paper mario', 'mario party', 'mario rpg'
-    );
-  }
-  
-  if (lowerQuery.includes('mega man') || lowerQuery.includes('megaman')) {
-    patterns.push(
-      'mega man', 'megaman', 'rockman', 
-      'mega man x', 'megaman x', 'mega man zero', 'mega man legends'
-    );
-  }
-  
-  if (lowerQuery.includes('baldur')) {
-    patterns.push(
-      'baldurs gate', 'baldur\'s gate', 'baldurs gate dark alliance',
-      'baldur\'s gate dark alliance', 'baldurs gate 3', 'bg3'
-    );
-  }
-  
-  if (lowerQuery.includes('zelda')) {
-    patterns.push(
-      'legend of zelda', 'zelda', 'ocarina of time', 'majora\'s mask',
-      'wind waker', 'twilight princess', 'breath of the wild', 'tears of the kingdom'
-    );
-  }
-  
-  if (lowerQuery.includes('final fantasy')) {
-    patterns.push(
-      'final fantasy', 'ff', 'final fantasy vii', 'final fantasy x',
-      'final fantasy tactics', 'final fantasy crystal'
-    );
+  // Simplified: Only add basic term variations, remove hardcoded series patterns
+  if (terms.length >= 2) {
+    // Add first two key terms combined for multi-word queries
+    patterns.push(`${terms[0]} ${terms[1]}`);
   }
   
   // Remove duplicates and empty patterns
