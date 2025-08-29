@@ -66,7 +66,7 @@ const themeConfig = {
   }
 };
 
-export const ReviewCard: React.FC<ReviewCardProps> = ({ 
+const ReviewCardComponent: React.FC<ReviewCardProps> = ({ 
   review, 
   compact = false, 
   showGameTitle = true,
@@ -352,3 +352,19 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     </Link>
   );
 };
+
+// Memoized version with custom comparison for performance
+export const ReviewCard = React.memo(ReviewCardComponent, (prevProps, nextProps) => {
+  // Only re-render if these specific props change
+  return (
+    prevProps.review.id === nextProps.review.id &&
+    prevProps.review.likeCount === nextProps.review.likeCount &&
+    prevProps.review.commentCount === nextProps.review.commentCount &&
+    prevProps.review.text === nextProps.review.text &&
+    prevProps.review.rating === nextProps.review.rating &&
+    prevProps.compact === nextProps.compact &&
+    prevProps.showGameTitle === nextProps.showGameTitle &&
+    prevProps.className === nextProps.className &&
+    prevProps.currentUserId === nextProps.currentUserId
+  );
+});

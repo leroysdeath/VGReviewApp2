@@ -119,7 +119,7 @@ interface ResponsiveGameCardProps {
   onDelete?: () => void;
 }
 
-export const ResponsiveGameCard: React.FC<ResponsiveGameCardProps> = ({ 
+const ResponsiveGameCardComponent: React.FC<ResponsiveGameCardProps> = ({ 
   game, 
   listView = false,
   onClick,
@@ -530,6 +530,27 @@ export const ResponsiveGameCard: React.FC<ResponsiveGameCardProps> = ({
     </div>
   );
 };
+
+// Memoized version with smart comparison for performance
+export const ResponsiveGameCard = React.memo(ResponsiveGameCardComponent, (prevProps, nextProps) => {
+  // Re-render only if critical props change
+  return (
+    prevProps.game.id === nextProps.game.id &&
+    prevProps.game.name === nextProps.game.name &&
+    prevProps.game.cover?.url === nextProps.game.cover?.url &&
+    prevProps.listView === nextProps.listView &&
+    prevProps.variant === nextProps.variant &&
+    prevProps.userRating === nextProps.userRating &&
+    prevProps.completionStatus === nextProps.completionStatus &&
+    prevProps.size === nextProps.size &&
+    prevProps.className === nextProps.className &&
+    prevProps.showCacheStatus === nextProps.showCacheStatus &&
+    prevProps.showQuickActions === nextProps.showQuickActions &&
+    // Compare function references (they should be stable with useCallback)
+    prevProps.onClick === nextProps.onClick &&
+    prevProps.onReviewClick === nextProps.onReviewClick
+  );
+});
 
 // Compatibility exports for easier migration
 export const GameCard = ResponsiveGameCard;
