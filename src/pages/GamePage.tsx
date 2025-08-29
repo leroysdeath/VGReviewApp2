@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Bookmark, BookOpen } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { AuthModal } from '../components/auth/AuthModal';
@@ -861,12 +862,91 @@ export const GamePage: React.FC = () => {
     );
   }
 
+  // Generate SEO meta data
+  const metaDescription = game.summary 
+    ? game.summary.substring(0, 160) 
+    : `${game.name} - Rating: ${averageRating.toFixed(1)}/10. ${totalRatings} player ratings. ${game.genres?.join(', ') || 'Game'} on ${game.platforms ? mapPlatformNames(game.platforms).join(', ') : 'multiple platforms'}.`;
+  
+  const canonicalUrl = game.slug 
+    ? `https://vgreviewapp.com/game/${game.slug}`
+    : `https://vgreviewapp.com/game/${game.igdb_id}`;
+  
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": game.name,
+    "description": game.summary || metaDescription,
+    "image": game.cover_url || game.cover?.url 
+      ? (game.cover?.url || game.cover_url).startsWith('http') 
+        ? (game.cover?.url || game.cover_url).replace('t_thumb', 't_cover_big')
+        : `https:${(game.cover?.url || game.cover_url).replace('t_thumb', 't_cover_big')}`
+      : undefined,
+    "aggregateRating": totalRatings > 0 ? {
+      "@type": "AggregateRating",
+      "ratingValue": averageRating.toFixed(1),
+      "bestRating": "10",
+      "worstRating": "1",
+      "ratingCount": totalRatings
+    } : undefined,
+    "genre": game.genres || [],
+    "gamePlatform": game.platforms || [],
+    "publisher": game.publisher,
+    "developer": game.developer,
+    "datePublished": game.first_release_date || game.release_date
+  };
+
   return (
-    <div className="min-h-screen bg-gray-900 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      <Helmet>
+        {/* Primary Meta Tags */}
+        <title>{game.name} - VGReviewApp</title>
+        <meta name="title" content={`${game.name} - VGReviewApp`} />
+        <meta name="description" content={metaDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={`${game.name} - VGReviewApp`} />
+        <meta property="og:description" content={metaDescription} />
+        {game.cover_url && (
+          <meta property="og:image" content={
+            game.cover_url.startsWith('http') 
+              ? game.cover_url.replace('t_thumb', 't_cover_big')
+              : `https:${game.cover_url.replace('t_thumb', 't_cover_big')}`
+          } />
+        )}
+        
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content={canonicalUrl} />
+        <meta property="twitter:title" content={`${game.name} - VGReviewApp`} />
+        <meta property="twitter:description" content={metaDescription} />
+        {game.cover_url && (
+          <meta property="twitter:image" content={
+            game.cover_url.startsWith('http') 
+              ? game.cover_url.replace('t_thumb', 't_cover_big')
+              : `https:${game.cover_url.replace('t_thumb', 't_cover_big')}`
+          } />
+        )}
+        
+        {/* Structured Data */}
+        <script type="application/ld+json">
+          {JSON.stringify(structuredData)}
+        </script>
+        
+        {/* Additional SEO Tags */}
+        <meta name="robots" content="index, follow" />
+        <meta name="language" content="English" />
+        <meta name="revisit-after" content="7 days" />
+        <meta name="author" content="VGReviewApp" />
+      </Helmet>
+      
+      <div className="min-h-screen bg-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
 
-        {/* Game Header */}
+          {/* Game Header */}
         <div className="grid lg:grid-cols-3 gap-8 mb-12">
           {/* Game Cover and Info */}
           <div className="lg:col-span-2">
@@ -1265,6 +1345,7 @@ export const GamePage: React.FC = () => {
         onLoginSuccess={handleAuthSuccess}
         onSignupSuccess={handleAuthSuccess}
       />
-    </div>
+      </div>
+    </>
   );
 };
