@@ -1021,7 +1021,7 @@ export const GamePage: React.FC = () => {
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
                   <SmartImage
-                    src={game.cover?.url ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}` : (game.cover_url || '/placeholder-game.jpg')}
+                    src={game.cover?.url ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}` : (game.cover_url ? (game.cover_url.startsWith('http') ? game.cover_url.replace('t_thumb', 't_cover_big') : `https:${game.cover_url.replace('t_thumb', 't_cover_big')}`) : '/placeholder-game.jpg')}
                     alt={game.name}
                     className="h-64 w-full object-cover md:h-80 md:w-64"
                     optimization={{
