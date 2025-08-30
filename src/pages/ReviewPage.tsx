@@ -336,7 +336,7 @@ export const ReviewPage: React.FC = () => {
                   </div>
                   
                   <div className="text-sm text-gray-400 mb-4">
-                    {new Date(review.post_date_time).toLocaleDateString()}
+                    {review.post_date_time ? new Date(review.post_date_time).toLocaleDateString() : 'Unknown date'}
                     {review.platform && review.platform.name && (
                       <>
                         {' • '}
@@ -444,7 +444,7 @@ export const ReviewPage: React.FC = () => {
                 <div>
                   <div className="text-white font-medium">{review.user.username || review.user.name}</div>
                   <div className="text-sm text-gray-400">
-                    {new Date(review.post_date_time).toLocaleDateString()}
+                    {review.post_date_time ? new Date(review.post_date_time).toLocaleDateString() : 'Unknown date'}
                   </div>
                 </div>
                 <div className="ml-auto flex items-center gap-1">
