@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Star, TrendingUp, Users, Search, ArrowRight, Gamepad2 } from 'lucide-react';
+import { Star, TrendingUp, Users, User, Search, ArrowRight, Gamepad2 } from 'lucide-react';
 import { ReviewCard, ReviewData } from './ReviewCard';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
@@ -10,16 +10,61 @@ import { getReviews, Review } from '../services/reviewService';
 // Custom component for the spinning number animation
 const SpinningNumber: React.FC<{ isHovered: boolean }> = ({ isHovered }) => {
   return (
-    <div className="relative w-12 h-12 mx-auto mb-4 overflow-hidden">
+    <div className="relative w-12 h-12 mx-auto mb-4 overflow-hidden" style={{ perspective: '1000px' }}>
       <div 
-        className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ${isHovered ? '-translate-y-full rotate-180 opacity-0' : 'translate-y-0 rotate-0 opacity-100'}`}
+        className={`absolute inset-0 flex items-center justify-center transition-all duration-500 backface-hidden`}
+        style={{ 
+          transform: isHovered ? 'rotateY(180deg)' : 'rotateY(0deg)',
+          backfaceVisibility: 'hidden'
+        }}
       >
         <span className="text-4xl font-bold text-purple-400">1</span>
       </div>
       <div 
-        className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ${isHovered ? 'translate-y-0 rotate-0 opacity-100' : 'translate-y-full -rotate-180 opacity-0'}`}
+        className={`absolute inset-0 flex items-center justify-center transition-all duration-500 backface-hidden`}
+        style={{ 
+          transform: isHovered ? 'rotateY(360deg)' : 'rotateY(180deg)',
+          backfaceVisibility: 'hidden'
+        }}
       >
         <span className="text-4xl font-bold text-purple-400">10</span>
+      </div>
+    </div>
+  );
+};
+
+// Custom component for the splitting user icon animation
+const SplittingUsers: React.FC<{ isHovered: boolean; size?: 'small' | 'large' }> = ({ isHovered, size = 'large' }) => {
+  const iconSize = size === 'small' ? 'h-10 w-10' : 'h-12 w-12';
+  const containerHeight = size === 'small' ? 'h-10' : 'h-12';
+  const marginBottom = size === 'small' ? 'mb-3' : 'mb-4';
+  
+  return (
+    <div className={`relative ${containerHeight} w-24 mx-auto ${marginBottom} flex items-center justify-center`}>
+      {/* Single center user that fades out on hover */}
+      <div 
+        className={`absolute transition-all duration-500 ${isHovered ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}
+      >
+        <User className={`${iconSize} text-blue-400`} />
+      </div>
+      
+      {/* Three users that split apart on hover */}
+      <div 
+        className={`absolute transition-all duration-500 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+        style={{ transform: isHovered ? 'translateX(-24px)' : 'translateX(0)' }}
+      >
+        <User className={`${iconSize} text-blue-400 scale-90`} />
+      </div>
+      <div 
+        className={`absolute transition-all duration-500 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+      >
+        <User className={`${iconSize} text-blue-400`} />
+      </div>
+      <div 
+        className={`absolute transition-all duration-500 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+        style={{ transform: isHovered ? 'translateX(24px)' : 'translateX(0)' }}
+      >
+        <User className={`${iconSize} text-blue-400 scale-90`} />
       </div>
     </div>
   );
@@ -192,7 +237,7 @@ export const ResponsiveLandingPage: React.FC = () => {
         {/* Mobile Features Section */}
         <div className="px-4 py-12 bg-gray-800">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-3">Why GameVault?</h2>
+            <h2 className="text-2xl font-bold text-white mb-3">GameVault</h2>
             <p className="text-gray-400">The social gaming platform built for enthusiasts</p>
           </div>
           <div className="space-y-6">
@@ -220,7 +265,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-blue-600/10 to-blue-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="relative z-10">
                 <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
-                  <Users className={`h-10 w-10 text-blue-400 mx-auto mb-3 transition-all duration-300 ${hoveredCard === 'social-mobile' ? 'animate-bounce' : ''}`} />
+                  <SplittingUsers isHovered={hoveredCard === 'social-mobile'} size="small" />
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-blue-300">Social Discovery</h3>
                 <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
@@ -352,7 +397,7 @@ export const ResponsiveLandingPage: React.FC = () => {
       <div className="py-16 bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">Why GameVault?</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">GameVault</h2>
             <p className="text-gray-400 text-lg">The social gaming platform built for enthusiasts</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -406,7 +451,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               {/* Content */}
               <div className="relative z-10">
                 <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
-                  <Users className={`h-12 w-12 text-blue-400 mx-auto mb-4 transition-all duration-300 ${hoveredCard === 'social' ? 'animate-bounce' : ''}`} />
+                  <SplittingUsers isHovered={hoveredCard === 'social'} />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-blue-300">Social Discovery</h3>
                 <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
