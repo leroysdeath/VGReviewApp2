@@ -759,9 +759,9 @@ export const hasUserLikedReview = async (
       .select('id')
       .eq('user_id', userId)
       .eq('rating_id', reviewId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() to avoid 406 errors
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+    if (error) {
       throw error;
     }
 
@@ -797,9 +797,9 @@ export const likeReview = async (
       .select('id')
       .eq('user_id', userId)
       .eq('rating_id', reviewId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() to avoid 406 errors when no row exists
 
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+    if (checkError) {
       throw checkError;
     }
 
@@ -918,7 +918,7 @@ export const getCommentsForReview = async (
       .from('comment')
       .select(`
         *,
-        user:user_id(id, username, name, avatar_url)
+        user:comment_user_id_fkey(id, username, name, avatar_url)
       `, { count: 'exact' })
       .eq('rating_id', reviewId)
       .order('created_at', { ascending: false })
@@ -1041,7 +1041,7 @@ export const addComment = async (
       })
       .select(`
         *,
-        user:user_id(id, username, name, avatar_url)
+        user:comment_user_id_fkey(id, username, name, avatar_url)
       `)
       .single();
 
