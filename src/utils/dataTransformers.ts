@@ -6,7 +6,7 @@ export const transformDatabaseGameToLegacy = (dbGame: DatabaseGame) => {
   return {
     id: dbGame.id.toString(),
     title: dbGame.name,
-    coverImage: dbGame.pic_url || '/placeholder-game.jpg',
+    coverImage: dbGame.cover_url || '/placeholder-game.jpg',
     releaseDate: dbGame.release_date ? dbGame.release_date.toISOString().split('T')[0] : '',
     genre: dbGame.genre || 'Unknown',
     rating: 0, // This would need to be calculated from ratings

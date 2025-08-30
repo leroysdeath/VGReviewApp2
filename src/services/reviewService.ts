@@ -303,7 +303,7 @@ export const createReview = async (
       game: data.game ? {
         id: data.game.id,
         name: data.game.name,
-        pic_url: data.game.pic_url
+        cover_url: data.game.cover_url
       } : undefined
     };
 
@@ -349,7 +349,7 @@ export interface Review {
   game?: {
     id: number;
     name: string;
-    pic_url?: string;
+    cover_url?: string;
   };
 }
 
@@ -487,7 +487,7 @@ export const getUserReviewForGame = async (gameId: number): Promise<ServiceRespo
       game: data.game ? {
         id: data.game.id,
         name: data.game.name,
-        pic_url: data.game.pic_url
+        cover_url: data.game.cover_url
       } : undefined
     };
 
@@ -603,7 +603,7 @@ export const updateReview = async (
       game: data.game ? {
         id: data.game.id,
         name: data.game.name,
-        pic_url: data.game.pic_url
+        cover_url: data.game.cover_url
       } : undefined
     };
 
@@ -660,7 +660,7 @@ export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
       game: item.game ? {
         id: item.game.id,
         name: item.game.name,
-        pic_url: item.game.pic_url || item.game.cover_url
+        cover_url: item.game.cover_url
       } : undefined
     })) || [];
 
@@ -724,7 +724,7 @@ export const getReview = async (
       game: data.game ? {
         id: data.game.id,
         name: data.game.name,
-        pic_url: data.game.pic_url
+        cover_url: data.game.cover_url
       } : undefined
     };
 
@@ -1089,7 +1089,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       .select(`
         *,
         user!fk_rating_user(*),
-        game(id, name, pic_url, cover_url, game_id, igdb_id)
+        game(id, name, cover_url, game_id, igdb_id)
       `, { count: 'exact' })
       .not('review', 'is', null)  // Only fetch reviews that have written content
       .order('post_date_time', { ascending: false })
@@ -1120,7 +1120,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       game: item.game ? {
         id: item.game.id,
         name: item.game.name,
-        pic_url: item.game.pic_url || item.game.cover_url
+        cover_url: item.game.cover_url
       } : undefined
     })) || [];
 

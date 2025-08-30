@@ -373,7 +373,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
             setShowGamePicker(false);
             setSelectedPosition(null);
           }}
-          onSelectGame={(gameId) => {
+          onSelect={(gameId) => {
             if (selectedPosition) {
               handleAddGame(selectedPosition, gameId);
             }
@@ -381,6 +381,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
             setSelectedPosition(null);
           }}
           userId={userId}
+          mode="top-games"
         />
       </div>
     );

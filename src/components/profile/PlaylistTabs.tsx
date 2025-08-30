@@ -21,7 +21,7 @@ interface GameItem {
     igdb_id?: number;
     name?: string;
     cover_url?: string;
-    pic_url?: string;
+    cover_url?: string;
     slug?: string;
   };
 }
@@ -142,7 +142,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
         {items.map((item) => {
           const gameSlug = item.game?.slug || `game-${item.igdb_id}`;
           const gameName = item.game?.name || 'Unknown Game';
-          const coverUrl = item.game?.cover_url || item.game?.pic_url || '/default-cover.png';
+          const coverUrl = item.game?.cover_url || '/default-cover.png';
 
           return (
             <div key={item.id} className="relative group">

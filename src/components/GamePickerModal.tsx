@@ -7,7 +7,7 @@ import { collectionWishlistService } from '../services/collectionWishlistService
 interface Game {
   id: string;
   name: string;
-  pic_url: string;
+  cover_url: string;
   genre: string;
   igdb_id?: number;
 }
@@ -91,7 +91,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
               id,
               igdb_id,
               name,
-              pic_url,
+              cover_url,
               genre
             ),
             rating
@@ -124,7 +124,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
               id: item.game.id.toString(),
               igdb_id: item.game.igdb_id,
               name: item.game.name || 'Unknown Game',
-              pic_url: item.game.pic_url || '/default-cover.png',
+              cover_url: item.game.cover_url || '/default-cover.png',
               genre: item.game.genre || ''
             },
             rating: item.rating
@@ -407,7 +407,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                 >
                   <div className="relative aspect-[3/4]">
                     <img
-                      src={game.pic_url}
+                      src={game.cover_url}
                       alt={game.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {

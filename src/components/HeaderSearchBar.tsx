@@ -545,9 +545,9 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
                   >
                     {/* Game Cover */}
                     <div className="w-8 h-10 bg-gray-700 rounded mr-3 flex-shrink-0 overflow-hidden">
-                      {game.cover_url || game.pic_url ? (
+                      {game.cover_url ? (
                         <img
-                          src={game.cover_url || game.pic_url}
+                          src={game.cover_url}
                           alt={game.name}
                           className="w-full h-full object-cover"
                           loading="lazy"

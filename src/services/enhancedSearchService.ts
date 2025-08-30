@@ -133,8 +133,7 @@ class EnhancedSearchService {
         description: game.description || game.summary,
         summary: game.summary,
         release_date: game.release_date,
-        pic_url: game.pic_url || game.cover_url,
-        cover_url: game.cover_url || game.pic_url,
+        cover_url: game.cover_url,
         developer: game.developer,
         publisher: game.publisher,
         genre: game.genre,
@@ -192,9 +191,6 @@ class EnhancedSearchService {
               : null,
             igdb_rating: igdbGame.rating ? Math.round(parseFloat(igdbGame.rating.toString())) : null,
             cover_url: igdbGame.cover?.url 
-              ? igdbGame.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') 
-              : null,
-            pic_url: igdbGame.cover?.url 
               ? igdbGame.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') 
               : null,
             igdb_link: `https://www.igdb.com/games/${igdbGame.id}`,

@@ -988,7 +988,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
             >
               <div className="relative">
                 <img
-                  src={imageOptimizer.optimizeImage(game.pic_url, { width: 300, height: 400, quality: 85 })}
+                  src={imageOptimizer.optimizeImage(game.cover_url, { width: 300, height: 400, quality: 85 })}
                   alt={game.name}
                   className="w-full h-64 object-cover rounded-lg"
                   loading="eager"
@@ -1041,7 +1041,7 @@ export const ProfileData: React.FC<ProfileDataProps> = ({
             >
               <div className="relative flex-shrink-0">
                 <img
-                  src={imageOptimizer.optimizeImage(game.pic_url, { width: 200, height: 300, quality: 85 })}
+                  src={imageOptimizer.optimizeImage(game.cover_url, { width: 200, height: 300, quality: 85 })}
                   alt={game.name}
                   className="w-16 h-20 object-cover rounded"
                   loading="eager"

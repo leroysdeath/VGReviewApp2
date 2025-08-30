@@ -53,7 +53,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
             id,
             igdb_id,
             name,
-            pic_url,
+            cover_url,
             slug
           )
         `)
@@ -87,7 +87,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
           id: item.id.toString(),
           gameId: item.game.igdb_id ? item.game.igdb_id.toString() : item.game.id.toString(),
           gameTitle: item.game.name || 'Unknown Game',
-          gameCover: item.game.pic_url || '/default-cover.png',
+          gameCover: item.game.cover_url || '/default-cover.png',
           gameUrl: getGameUrl(item.game),
           rating: item.rating || 0,
           reviewText: item.review,

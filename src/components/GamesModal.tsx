@@ -67,7 +67,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
             igdb_id,
             slug,
             name,
-            pic_url,
+            cover_url,
             genre,
             release_date
           )
@@ -85,7 +85,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           igdb_id: item.game.igdb_id,
           slug: item.game.slug,
           title: item.game.name || 'Unknown Game',
-          coverImage: item.game.pic_url || '/default-cover.png',
+          coverImage: item.game.cover_url || '/default-cover.png',
           genre: item.game.genre || '',
           releaseDate: item.game.release_date || '',
           started: item.started,
@@ -122,7 +122,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
             igdb_id,
             slug,
             name,
-            pic_url,
+            cover_url,
             genre,
             release_date
           )
@@ -141,7 +141,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           igdb_id: item.game.igdb_id,
           slug: item.game.slug,
           title: item.game.name || 'Unknown Game',
-          coverImage: item.game.pic_url || '/default-cover.png',
+          coverImage: item.game.cover_url || '/default-cover.png',
           genre: item.game.genre || '',
           releaseDate: item.game.release_date || '',
           started: item.started,
@@ -177,7 +177,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
             igdb_id,
             slug,
             name,
-            pic_url,
+            cover_url,
             genre,
             release_date
           )
@@ -194,7 +194,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           id: item.game.id.toString(),
           igdb_id: item.game.igdb_id,
           title: item.game.name || 'Unknown Game',
-          coverImage: item.game.pic_url || '/default-cover.png',
+          coverImage: item.game.cover_url || '/default-cover.png',
           genre: item.game.genre || '',
           releaseDate: item.game.release_date || '',
           completed: item.completed,

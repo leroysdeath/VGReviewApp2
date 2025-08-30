@@ -49,7 +49,6 @@ class CollectionWishlistService {
         const ensureResult = await ensureGameExists({
           igdb_id: igdbId,
           name: gameData.name || '',
-          pic_url: gameData.pic_url,
           cover_url: gameData.cover_url,
           genre: gameData.genre,
           release_date: gameData.release_date
@@ -263,7 +262,6 @@ class CollectionWishlistService {
             id,
             igdb_id,
             name,
-            pic_url,
             cover_url,
             genre,
             release_date,
@@ -302,7 +300,6 @@ class CollectionWishlistService {
             id,
             igdb_id,
             name,
-            pic_url,
             cover_url,
             genre,
             release_date,

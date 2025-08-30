@@ -604,7 +604,6 @@ export const GamePage: React.FC = () => {
       const gameData = {
         igdb_id: game.igdb_id,
         name: game.name,
-        pic_url: game.pic_url,
         cover_url: game.cover_url,
         genre: game.genre,
         release_date: game.release_date
@@ -647,7 +646,6 @@ export const GamePage: React.FC = () => {
       const gameData = {
         igdb_id: game.igdb_id,
         name: game.name,
-        pic_url: game.pic_url,
         cover_url: game.cover_url,
         genre: game.genre,
         release_date: game.release_date

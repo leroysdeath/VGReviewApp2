@@ -65,7 +65,7 @@ export const ResponsiveLandingPage: React.FC = () => {
       // Use the game's igdb_id (integer) for proper navigation, fallback to game_id (string), then database id
       igdbGameId: igdbId,
       gameTitle: review.game?.name || 'Unknown Game',
-      gameCoverUrl: review.game?.pic_url,
+      gameCoverUrl: review.game?.cover_url,
       rating: review.rating,
       text: review.review || '',
       date: review.postDateTime,
