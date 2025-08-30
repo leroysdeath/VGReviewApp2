@@ -230,8 +230,8 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
             /* Reviews List */
             <div className="space-y-4">
               {reviews.map((review) => {
-                // Generate review URL (same logic as ReviewCard)
-                const reviewUrl = `/game/${review.gameId}?review=${review.id}`;
+                // Generate review URL (same logic as ReviewCard: /review/{userId}/{gameId})
+                const reviewUrl = `/review/${userId}/${review.gameId}`;
                 
                 return (
                   <Link
