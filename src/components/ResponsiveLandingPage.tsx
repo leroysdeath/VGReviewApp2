@@ -197,7 +197,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               </span>
             </h1>
             <p className="text-gray-300 mb-8 leading-relaxed">
-              Join the ultimate gaming community. Rate, review, and discover games through social gaming.
+              Rate, review, and discover games through the power of social gaming.
             </p>
             <div className="space-y-3">
               <Link
@@ -269,7 +269,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-blue-300">Social Discovery</h3>
                 <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  Follow with similar tastes. Or because they're funny.
+                  Follow gamers with similar tastes. Or because they're funny.
                 </p>
               </div>
             </div>
@@ -360,8 +360,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               </span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Join the ultimate gaming community. Rate, review, and discover games
-              through the power of social gaming. Your next favorite game is just a click away.
+              Rate, review, and discover games through the power of social gaming.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
@@ -428,7 +427,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 {/* Progressive disclosure - additional details on hover */}
                 <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'ratings' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
                   <p className="text-sm text-purple-300 border-t border-gray-600 pt-3">
-                    Half-point precision • Personal rating history • Compare with friends
+                    Personal rating history • Compare with friends
                   </p>
                 </div>
               </div>
@@ -455,13 +454,13 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-blue-300">Social Discovery</h3>
                 <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
-                  Follow with similar tastes. Or because they're funny.
+                  Follow gamers with similar tastes. Or because they're funny.
                 </p>
                 
                 {/* Progressive disclosure - additional details on hover */}
                 <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'social' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
                   <p className="text-sm text-blue-300 border-t border-gray-600 pt-3">
-                    Find your gaming tribe • Share recommendations • Build connections
+                    Build connections • Find recommendations
                   </p>
                 </div>
               </div>
@@ -494,7 +493,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 {/* Progressive disclosure - additional details on hover */}
                 <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'stats' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
                   <p className="text-sm text-green-300 border-t border-gray-600 pt-3">
-                    Gaming insights • Progress tracking • Year in review
+                    Gaming insights • Progress tracking
                   </p>
                 </div>
               </div>
