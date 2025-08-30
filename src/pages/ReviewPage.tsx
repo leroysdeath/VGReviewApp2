@@ -31,7 +31,7 @@ interface Review {
 
 export const ReviewPage: React.FC = () => {
   const { userId, gameId } = useParams<{ userId: string; gameId: string }>();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, dbUserId } = useAuth();
   
   const [game, setGame] = useState<GameWithCalculatedFields | null>(null);
   const [review, setReview] = useState<Review | null>(null);
@@ -41,7 +41,7 @@ export const ReviewPage: React.FC = () => {
   const [reviewExpanded, setReviewExpanded] = useState(false);
 
   // Get current user ID for review interactions
-  const currentUserId = user?.id ? parseInt(user.id.toString()) : undefined;
+  const currentUserId = dbUserId || undefined;
   
   // Use review interactions hook
   const {
