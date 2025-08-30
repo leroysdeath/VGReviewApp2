@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Star, TrendingUp, Users, User, Search, ArrowRight, Gamepad2 } from 'lucide-react';
+import { Star, TrendingUp, Users, User, Search, ArrowRight, Gamepad2, Square, CheckSquare } from 'lucide-react';
 import { ReviewCard, ReviewData } from './ReviewCard';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
@@ -66,6 +66,68 @@ const SplittingUsers: React.FC<{ isHovered: boolean; size?: 'small' | 'large' }>
       >
         <User className={`${iconSize} text-blue-400 scale-90`} />
       </div>
+    </div>
+  );
+};
+
+// Custom component for the cascading checkbox animation
+const CascadingCheckboxes: React.FC<{ isHovered: boolean; size?: 'small' | 'large' }> = ({ isHovered, size = 'large' }) => {
+  const iconSize = size === 'small' ? 'h-6 w-6' : 'h-7 w-7';
+  const containerSize = size === 'small' ? 'h-12 w-20' : 'h-14 w-24';
+  const marginBottom = size === 'small' ? 'mb-3' : 'mb-4';
+  const spacing = size === 'small' ? 28 : 32;
+  
+  // Grid positions for 3x2 layout (bottom-middle is origin)
+  // Layout:
+  // [5] [4] [3]
+  // [6] [1] [2]
+  const positions = [
+    { x: 0, y: 0, delay: 0 },      // 1: Center bottom (original)
+    { x: spacing, y: 0, delay: 200 },  // 2: Right bottom
+    { x: spacing, y: -spacing, delay: 400 },  // 3: Right top
+    { x: 0, y: -spacing, delay: 600 }, // 4: Center top
+    { x: -spacing, y: -spacing, delay: 800 }, // 5: Left top
+    { x: -spacing, y: 0, delay: 1000 }    // 6: Left bottom
+  ];
+  
+  return (
+    <div className={`relative ${containerSize} mx-auto ${marginBottom} flex items-center justify-center`}>
+      {/* Empty checkbox when not hovered */}
+      <div 
+        className={`absolute transition-all duration-300 ${!isHovered ? 'opacity-100' : 'opacity-0'}`}
+      >
+        <Square className={`${iconSize} text-green-400`} />
+      </div>
+      
+      {/* Animated checkboxes that appear on hover */}
+      {positions.map((pos, index) => (
+        <div
+          key={index}
+          className={`absolute transition-all ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+          style={{
+            transform: `translate(${pos.x}px, ${pos.y}px)`,
+            transitionDelay: isHovered ? `${pos.delay}ms` : '0ms',
+            transitionDuration: '300ms'
+          }}
+        >
+          {/* Empty checkbox that appears first */}
+          <Square 
+            className={`${iconSize} text-green-400 absolute transition-opacity duration-300`}
+            style={{
+              opacity: isHovered ? 1 : 0,
+              transitionDelay: isHovered ? `${pos.delay}ms` : '0ms'
+            }}
+          />
+          {/* Filled checkbox that appears after */}
+          <CheckSquare 
+            className={`${iconSize} text-green-400 absolute transition-opacity duration-300`}
+            style={{
+              opacity: isHovered ? 1 : 0,
+              transitionDelay: isHovered ? `${pos.delay + 150}ms` : '0ms'
+            }}
+          />
+        </div>
+      ))}
     </div>
   );
 };
@@ -281,7 +343,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-green-600/0 via-green-600/10 to-green-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="relative z-10">
                 <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
-                  <TrendingUp className={`h-10 w-10 text-green-400 mx-auto mb-3 transition-all duration-300 ${hoveredCard === 'stats-mobile' ? 'animate-bounce' : ''}`} />
+                  <CascadingCheckboxes isHovered={hoveredCard === 'stats-mobile'} size="small" />
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-green-300">Personal Stats</h3>
                 <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
@@ -483,7 +545,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               {/* Content */}
               <div className="relative z-10">
                 <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
-                  <TrendingUp className={`h-12 w-12 text-green-400 mx-auto mb-4 transition-all duration-300 ${hoveredCard === 'stats' ? 'animate-bounce' : ''}`} />
+                  <CascadingCheckboxes isHovered={hoveredCard === 'stats'} />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-green-300">Personal Stats</h3>
                 <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
