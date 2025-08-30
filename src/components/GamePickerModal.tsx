@@ -106,6 +106,10 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
         }
 
         const { data, error } = await query;
+        
+        console.log('[GamePickerModal] Raw API response:', data);
+        console.log('[GamePickerModal] ExcludeGameIds:', excludeGameIds);
+        console.log('[GamePickerModal] Mode:', mode);
 
         if (error) throw error;
 
@@ -130,6 +134,8 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
             rating: item.rating
           }));
 
+        console.log('[GamePickerModal] Valid games after filtering:', validGames);
+        console.log('[GamePickerModal] Valid games count:', validGames.length);
         setGames(validGames);
       } catch (err) {
         console.error('Error fetching games:', err);
@@ -194,6 +200,10 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
   // Filter games based on search query
   const filteredGames = useMemo(() => {
+    console.log('[GamePickerModal] Filtering - searchMode:', searchMode);
+    console.log('[GamePickerModal] Filtering - games array:', games);
+    console.log('[GamePickerModal] Filtering - searchQuery:', searchQuery);
+    
     // Only filter user's reviewed games when in user-games search mode
     if (searchMode !== 'user-games') return [];
     if (!searchQuery.trim()) return games;
@@ -319,6 +329,11 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
+          {/* Debug info - remove after fixing */}
+          {console.log('[GamePickerModal] Render - loading:', loading)}
+          {console.log('[GamePickerModal] Render - searchMode:', searchMode)}
+          {console.log('[GamePickerModal] Render - filteredGames:', filteredGames)}
+          {console.log('[GamePickerModal] Render - igdbGames:', igdbGames)}
           {/* Info message for collection/wishlist mode */}
           {(mode === 'collection' || mode === 'wishlist') && startedFinishedGames.size > 0 && (
             <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-700 rounded-lg flex items-start gap-2">
