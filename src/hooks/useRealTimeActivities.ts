@@ -20,6 +20,11 @@ interface UseRealTimeActivitiesResult {
   disconnect: () => void;
 }
 
+// Performance constants
+const MAX_ACTIVITIES = 500; // Maximum number of activities to keep
+const MAX_ACTIVITY_AGE_DAYS = 30; // Maximum age of activities in days
+const MAX_PENDING = 50; // Maximum pending activities before forced processing
+
 export const useRealTimeActivities = ({
   enabled = true,
   onNewActivity,
@@ -38,26 +43,43 @@ export const useRealTimeActivities = ({
   const batchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitializedRef = useRef(false);
   
-  // Process batched activities
+  // Process batched activities - O(n) complexity with Map
   const processBatchedActivities = useCallback(() => {
     if (pendingActivities.current.length === 0) return;
     
     setActivities(prev => {
-      // Combine existing and new activities
-      const combined = [...pendingActivities.current, ...prev];
+      // Use Map for O(1) lookups instead of O(n²) filter/findIndex
+      const activityMap = new Map<string, Activity>();
       
-      // Sort by timestamp (newest first)
-      combined.sort((a, b) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
+      // Calculate cutoff date (30 days ago)
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - MAX_ACTIVITY_AGE_DAYS);
+      const cutoffTime = cutoffDate.getTime();
       
-      // Remove duplicates (by id)
-      const uniqueActivities = combined.filter(
-        (activity, index, self) => 
-          index === self.findIndex(a => a.id === activity.id)
-      );
+      // Add existing activities that are within the time limit
+      prev.forEach(activity => {
+        const activityTime = new Date(activity.timestamp).getTime();
+        if (activityTime >= cutoffTime) {
+          activityMap.set(activity.id, activity);
+        }
+      });
       
-      return uniqueActivities;
+      // Add new activities (overwrites duplicates automatically)
+      pendingActivities.current.forEach(activity => {
+        const activityTime = new Date(activity.timestamp).getTime();
+        if (activityTime >= cutoffTime) {
+          activityMap.set(activity.id, activity);
+        }
+      });
+      
+      // Convert back to array and sort by timestamp (newest first)
+      const sortedActivities = Array.from(activityMap.values())
+        .sort((a, b) => 
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+      
+      // Apply maximum item limit
+      return sortedActivities.slice(0, MAX_ACTIVITIES);
     });
     
     // Update unread count
@@ -76,6 +98,16 @@ export const useRealTimeActivities = ({
       // Add to pending activities
       pendingActivities.current.push(activity);
       
+      // Force process if we hit the pending limit
+      if (pendingActivities.current.length >= MAX_PENDING) {
+        if (batchTimeoutRef.current) {
+          clearTimeout(batchTimeoutRef.current);
+          batchTimeoutRef.current = null;
+        }
+        processBatchedActivities();
+        return;
+      }
+      
       // Clear existing timeout
       if (batchTimeoutRef.current) {
         clearTimeout(batchTimeoutRef.current);
@@ -86,17 +118,33 @@ export const useRealTimeActivities = ({
         processBatchedActivities();
       }, batchInterval);
     } else {
-      // Update immediately
+      // Update immediately with O(n) approach
       setActivities(prev => {
-        const combined = [activity, ...prev];
+        const activityMap = new Map<string, Activity>();
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - MAX_ACTIVITY_AGE_DAYS);
+        const cutoffTime = cutoffDate.getTime();
         
-        // Remove duplicates (by id)
-        const uniqueActivities = combined.filter(
-          (a, index, self) => 
-            index === self.findIndex(item => item.id === a.id)
-        );
+        // Add new activity first (if within time limit)
+        const newActivityTime = new Date(activity.timestamp).getTime();
+        if (newActivityTime >= cutoffTime) {
+          activityMap.set(activity.id, activity);
+        }
         
-        return uniqueActivities;
+        // Add existing activities
+        prev.forEach(a => {
+          const activityTime = new Date(a.timestamp).getTime();
+          if (activityTime >= cutoffTime && !activityMap.has(a.id)) {
+            activityMap.set(a.id, a);
+          }
+        });
+        
+        // Convert to sorted array with limit
+        return Array.from(activityMap.values())
+          .sort((a, b) => 
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          )
+          .slice(0, MAX_ACTIVITIES);
       });
       
       // Update unread count

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Bookmark, BookOpen } from 'lucide-react';
+import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Gift, BookOpen } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
@@ -336,7 +336,7 @@ export const GamePage: React.FC = () => {
     checkUserReview();
   }, [game, isAuthenticated]);
 
-  // Check collection and wishlist status
+  // Check collection and wishlist status - with error recovery
   useEffect(() => {
     const checkCollectionWishlistStatus = async () => {
       if (!game || !game.igdb_id || !isAuthenticated) {
@@ -346,19 +346,33 @@ export const GamePage: React.FC = () => {
       }
 
       try {
-        const status = await collectionWishlistService.checkBothStatuses(game.igdb_id);
+        // Add timeout for mobile networks
+        const statusPromise = collectionWishlistService.checkBothStatuses(game.igdb_id);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 5000)
+        );
+        
+        const status = await Promise.race([statusPromise, timeoutPromise]).catch(() => ({
+          inWishlist: false,
+          inCollection: false
+        }));
         
         // If game is started/finished, don't show wishlist/collection status
-        const progress = await getGameProgress();
+        const progressPromise = getGameProgress(game.igdb_id);
+        const progress = await Promise.race([
+          progressPromise,
+          new Promise(resolve => setTimeout(() => resolve(null), 3000))
+        ]).catch(() => null);
+        
         if (progress?.started || progress?.completed) {
           setIsInWishlist(false);
           setIsInCollection(false);
-          // Clean up any stale wishlist/collection entries
+          // Clean up any stale wishlist/collection entries (non-blocking)
           if (status.inWishlist) {
-            await collectionWishlistService.removeFromWishlist(game.igdb_id);
+            collectionWishlistService.removeFromWishlist(game.igdb_id).catch(() => {});
           }
           if (status.inCollection) {
-            await collectionWishlistService.removeFromCollection(game.igdb_id);
+            collectionWishlistService.removeFromCollection(game.igdb_id).catch(() => {});
           }
         } else {
           setIsInCollection(status.inCollection);
@@ -367,18 +381,25 @@ export const GamePage: React.FC = () => {
         console.log('Collection/Wishlist status:', status);
       } catch (error) {
         console.error('Error checking collection/wishlist status:', error);
+        // Default to false on error
+        setIsInCollection(false);
+        setIsInWishlist(false);
       }
     };
 
     checkCollectionWishlistStatus();
   }, [game, isAuthenticated]);
 
-  // Fetch game category from IGDB for DLC/expansion detection
+  // Fetch game category from IGDB for DLC/expansion detection - with timeout for mobile
   useEffect(() => {
     const fetchGameCategory = async () => {
       if (!game || !game.igdb_id) return;
 
       dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: null, loading: true }});
+
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout for mobile
 
       try {
         console.log('Fetching category for game IGDB ID:', game.igdb_id);
@@ -392,8 +413,11 @@ export const GamePage: React.FC = () => {
             isBulkRequest: true,
             endpoint: 'games',
             requestBody: `fields category, parent_game; where id = ${game.igdb_id};`
-          })
+          }),
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           console.error('IGDB API response not ok:', response.status);
@@ -414,7 +438,16 @@ export const GamePage: React.FC = () => {
         dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: categoryValue, loading: false }});
 
       } catch (error) {
-        console.error('Category fetch failed:', error);
+        clearTimeout(timeoutId);
+        
+        // Handle timeout specifically
+        if (error.name === 'AbortError') {
+          console.warn('Category fetch timed out (mobile network issue)');
+        } else {
+          console.error('Category fetch failed:', error);
+        }
+        
+        // Still load the page even if category fetch fails
         dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: null, loading: false }});
       }
     };
@@ -750,24 +783,58 @@ export const GamePage: React.FC = () => {
   const totalRatings = validRatings.length;
   const totalReviews = reviewsWithText.length;
 
-  // Helper function to format date to full month name
+  // Helper function to format date to full month name - mobile-safe version
   const formatFullDate = (date: Date | string | number | undefined): string => {
     if (!date) return 'Unknown';
     
     try {
-      const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+      let dateObj: Date;
+      
+      // Handle Unix timestamp (number)
+      if (typeof date === 'number') {
+        // IGDB uses Unix timestamps
+        dateObj = new Date(date * 1000);
+      } else if (typeof date === 'string') {
+        // Try to parse ISO date strings safely
+        // Replace any timezone issues for mobile Safari
+        const cleanDateStr = date.replace(' ', 'T').replace(/\//, '-');
+        dateObj = new Date(cleanDateStr);
+        
+        // Fallback for Safari: try parsing with Date.parse
+        if (isNaN(dateObj.getTime())) {
+          const parsed = Date.parse(cleanDateStr);
+          if (!isNaN(parsed)) {
+            dateObj = new Date(parsed);
+          } else {
+            // Last resort: try to extract year, month, day
+            const match = date.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+            if (match) {
+              dateObj = new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+            } else {
+              return 'Unknown';
+            }
+          }
+        }
+      } else if (date instanceof Date) {
+        dateObj = date;
+      } else {
+        return 'Unknown';
+      }
       
       if (isNaN(dateObj.getTime())) {
         return 'Unknown';
       }
       
-      const options: Intl.DateTimeFormatOptions = { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      };
-      return dateObj.toLocaleDateString('en-US', options);
-    } catch {
+      // Use fallback formatting for better mobile compatibility
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                      'July', 'August', 'September', 'October', 'November', 'December'];
+      const month = months[dateObj.getMonth()];
+      const day = dateObj.getDate();
+      const year = dateObj.getFullYear();
+      
+      return `${month} ${day}, ${year}`;
+    } catch (error) {
+      console.error('Date formatting error:', error, 'for date:', date);
       return 'Unknown';
     }
   };
@@ -787,7 +854,7 @@ export const GamePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
             <div className="lg:col-span-2">
               <div className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
                 <div className="md:flex">
@@ -878,8 +945,8 @@ export const GamePage: React.FC = () => {
     "description": game.summary || metaDescription,
     "image": game.cover_url || game.cover?.url 
       ? (game.cover?.url || game.cover_url).startsWith('http') 
-        ? (game.cover?.url || game.cover_url).replace('t_thumb', 't_cover_big')
-        : `https:${(game.cover?.url || game.cover_url).replace('t_thumb', 't_cover_big')}`
+        ? (game.cover?.url || game.cover_url)
+        : `https:${(game.cover?.url || game.cover_url)}`
       : undefined,
     "aggregateRating": totalRatings > 0 ? {
       "@type": "AggregateRating",
@@ -912,8 +979,8 @@ export const GamePage: React.FC = () => {
         {game.cover_url && (
           <meta property="og:image" content={
             game.cover_url.startsWith('http') 
-              ? game.cover_url.replace('t_thumb', 't_cover_big')
-              : `https:${game.cover_url.replace('t_thumb', 't_cover_big')}`
+              ? game.cover_url
+              : `https:${game.cover_url}`
           } />
         )}
         
@@ -925,8 +992,8 @@ export const GamePage: React.FC = () => {
         {game.cover_url && (
           <meta property="twitter:image" content={
             game.cover_url.startsWith('http') 
-              ? game.cover_url.replace('t_thumb', 't_cover_big')
-              : `https:${game.cover_url.replace('t_thumb', 't_cover_big')}`
+              ? game.cover_url
+              : `https:${game.cover_url}`
           } />
         )}
         
@@ -947,20 +1014,20 @@ export const GamePage: React.FC = () => {
 
 
           {/* Game Header */}
-        <div className="grid lg:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
           {/* Game Cover and Info */}
           <div className="lg:col-span-2">
             <div className="bg-gray-800 rounded-lg overflow-hidden">
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
                   <SmartImage
-                    src={game.cover?.url ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}` : (game.cover_url || '/placeholder-game.jpg')}
+                    src={game.cover?.url ? `https:${game.cover.url}` : (game.cover_url || '/placeholder-game.jpg')}
                     alt={game.name}
                     className="h-64 w-full object-cover md:h-80 md:w-64"
                     optimization={{
-                      width: 640,
-                      height: 960,
-                      quality: 95,
+                      width: window.innerWidth < 768 ? 320 : 640,  // Smaller for mobile
+                      height: window.innerWidth < 768 ? 480 : 960, // Smaller for mobile
+                      quality: window.innerWidth < 768 ? 80 : 95,  // Lower quality for mobile
                       format: 'webp'
                     }}
                     fallback="/placeholder-game.jpg"
@@ -1100,7 +1167,7 @@ export const GamePage: React.FC = () => {
                     {wishlistLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <Bookmark className={`h-4 w-4 ${isInWishlist ? 'fill-current' : ''}`} />
+                      <Gift className={`h-4 w-4 ${isInWishlist ? 'fill-current' : ''}`} />
                     )}
                     <span className="text-sm font-medium">
                       {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}

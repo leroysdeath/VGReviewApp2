@@ -26,7 +26,7 @@ interface GameCardProps {
   showQuickActions?: boolean;
 }
 
-export const GameCard: React.FC<GameCardProps> = ({
+const GameCardComponent: React.FC<GameCardProps> = ({
   game,
   onClick,
   onGameSelect,
@@ -55,6 +55,9 @@ export const GameCard: React.FC<GameCardProps> = ({
     />
   );
 };
+
+// Memoized for performance - uses default shallow comparison since it's mostly a wrapper
+export const GameCard = React.memo(GameCardComponent);
 
 // Enhanced version with additional caching features
 export const CachedGameCard: React.FC<GameCardProps & {

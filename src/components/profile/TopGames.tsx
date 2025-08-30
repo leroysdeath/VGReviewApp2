@@ -247,7 +247,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
   // Loading state
   if (loading) {
     return (
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
         {Array.from({ length: limit }).map((_, index) => (
           <div key={index} className="aspect-[3/4] bg-gray-700 rounded-lg animate-pulse"></div>
         ))}
@@ -288,7 +288,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
         </div>
 
         {/* Games grid */}
-        <div className="hidden md:grid grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 md:mb-8">
           {Array.from({ length: 5 }).map((_, index) => {
             const position = index + 1;
             const gameData = userTopGames.find(g => g.position === position);
@@ -330,7 +330,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                     </div>
                     <button
                       onClick={() => handleRemoveGame(position)}
-                      className="absolute top-2 right-2 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 bg-red-600 text-white w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -389,7 +389,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
           </p>
         </div>
       ) : (
-        <div className="hidden md:grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
           {Array.from({ length: limit }).map((_, index) => {
             const game = topGames[index];
             const position = index + 1;

@@ -3,6 +3,7 @@ import { sanitizeSearchTerm } from '../utils/sqlSecurity'
 import type { Game, GameWithCalculatedFields } from '../types/database'
 import { igdbService } from './igdbService'
 import { enhancedSearchService } from './enhancedSearchService'
+import { generateSlug } from '../utils/gameUrls'
 
 interface SearchFilters {
   genres?: string[]
@@ -95,16 +96,19 @@ class GameDataService {
           // Transform IGDB game to our format
           const transformedGame = igdbService.transformGame(igdbGame)
 
-          // Add the game to database for future use
+          // Add the game to database for future use with generated slug
           const { data: insertedGame, error: insertError } = await supabase
             .from('game')
             .insert({
               igdb_id: transformedGame.igdb_id,
               game_id: transformedGame.igdb_id.toString(),
               name: transformedGame.name,
+              slug: generateSlug(transformedGame.name), // Generate slug from name
               summary: transformedGame.summary,
               release_date: transformedGame.first_release_date
-                ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
+                ? (typeof transformedGame.first_release_date === 'number' 
+                    ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
+                    : new Date(transformedGame.first_release_date).toISOString().split('T')[0])
                 : null,
               cover_url: transformedGame.cover_url,
               genres: transformedGame.genres || [],
@@ -192,16 +196,19 @@ class GameDataService {
           // Transform IGDB game to our format
           const transformedGame = igdbService.transformGame(igdbGame)
 
-          // Add the game to database for future use
+          // Add the game to database for future use with generated slug
           const { data: insertedGame, error: insertError } = await supabase
             .from('game')
             .insert({
               igdb_id: transformedGame.igdb_id,
               game_id: transformedGame.igdb_id.toString(),
               name: transformedGame.name,
+              slug: generateSlug(transformedGame.name), // Generate slug from name
               summary: transformedGame.summary,
               release_date: transformedGame.first_release_date
-                ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
+                ? (typeof transformedGame.first_release_date === 'number' 
+                    ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
+                    : new Date(transformedGame.first_release_date).toISOString().split('T')[0])
                 : null,
               cover_url: transformedGame.cover_url,
               genres: transformedGame.genres || [],
@@ -669,7 +676,8 @@ class GameDataService {
     return {
       ...gameData,
       // Map release_date to first_release_date for compatibility with GamePage
-      first_release_date: gameData.release_date,
+      // Convert date string back to Date object for proper formatting
+      first_release_date: gameData.release_date ? new Date(gameData.release_date) : undefined,
       averageUserRating,
       totalUserRatings
     }

@@ -346,12 +346,36 @@ export const ReviewFormPage: React.FC = () => {
     setSelectedPlatforms([platform]);
   };
   
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  const formatDate = (dateValue: any) => {
+    if (!dateValue) return 'Unknown date';
+    
+    // Handle already formatted strings
+    if (typeof dateValue === 'string') {
+      return dateValue;
+    }
+    
+    // Handle timestamps
+    if (typeof dateValue === 'number') {
+      const date = new Date(dateValue * 1000);
+      if (isNaN(date.getTime())) return 'Invalid date';
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+    
+    // Handle Date objects
+    if (dateValue instanceof Date) {
+      if (isNaN(dateValue.getTime())) return 'Invalid date';
+      return dateValue.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+    
+    return 'Unknown date';
   };
 
   // Game Card Component for Grid View
@@ -387,7 +411,7 @@ export const ReviewFormPage: React.FC = () => {
         {game.first_release_date && (
           <p className="text-gray-400 text-sm mt-1 flex items-center">
             <Calendar className="w-3 h-3 mr-1" />
-            {game.first_release_date}
+            {formatDate(game.first_release_date)}
           </p>
         )}
         {game.genres && game.genres.length > 0 && (
@@ -428,7 +452,7 @@ export const ReviewFormPage: React.FC = () => {
         {game.first_release_date && (
           <p className="text-gray-400 text-sm mt-1 flex items-center">
             <Calendar className="w-3 h-3 mr-1" />
-            {game.first_release_date}
+            {formatDate(game.first_release_date)}
           </p>
         )}
         {game.summary && (
@@ -629,7 +653,7 @@ export const ReviewFormPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 py-8">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gray-800 rounded-lg p-8">
+        <div className="bg-gray-800 rounded-lg p-4 sm:p-6 md:p-8">
           <h1 className="text-3xl font-bold text-white mb-8">
             {selectedGame 
               ? (isEditMode ? `Edit Your Review: ${selectedGame.name}` : `Review: ${selectedGame.name}`)
@@ -679,7 +703,7 @@ export const ReviewFormPage: React.FC = () => {
                   />
                 </div>
                 {selectedGame.first_release_date && (
-                  <p className="text-center text-gray-400 text-sm">Released: {selectedGame.first_release_date}</p>
+                  <p className="text-center text-gray-400 text-sm">Released: {formatDate(selectedGame.first_release_date)}</p>
                 )}
               </div>
             )}
@@ -882,7 +906,7 @@ export const ReviewFormPage: React.FC = () => {
                     </div>
                   ) : (
                     // Multiple platforms - show radio buttons for single selection
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                       {availablePlatforms.map((platform) => (
                         <div key={platform} className="flex flex-col items-center">
                           <input
@@ -905,7 +929,7 @@ export const ReviewFormPage: React.FC = () => {
                   )
                 ) : (
                   // No platform data available - show default options with radio buttons
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                     {['PS5', 'Xbox Series X/S', 'Nintendo Switch', 'PC', 'Retro'].map((platform) => (
                       <div key={platform} className="flex flex-col items-center">
                         <input
@@ -1268,7 +1292,7 @@ export const ReviewFormPage: React.FC = () => {
                 {searchResults && searchResults.length > 0 && (
                   <>
                     {viewMode === 'grid' ? (
-                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                         {searchResults.map((game) => (
                           <GameCard key={game.id} game={game} />
                         ))}

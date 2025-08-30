@@ -356,7 +356,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, type })
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div 
-          className="bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl pointer-events-auto border border-gray-700"
+          className="bg-gray-800 rounded-xl max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl pointer-events-auto border border-gray-700"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
