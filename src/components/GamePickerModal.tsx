@@ -141,6 +141,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
         console.error('Error fetching games:', err);
         setError('Failed to load games');
       } finally {
+        console.log('[GamePickerModal] Setting loading to false');
         setLoading(false);
       }
     };
@@ -354,7 +355,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
             </div>
-          ) : searchMode === 'igdb' && igdbGames.length > 0 ? (
+          ) : (console.log('[GamePickerModal] Check render - searchMode:', searchMode, 'igdbGames:', igdbGames.length), searchMode === 'igdb' && igdbGames.length > 0) ? (
             /* IGDB Games Grid */
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {igdbGames.map((game) => {
@@ -412,7 +413,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                 );
               })}
             </div>
-          ) : searchMode === 'user-games' && filteredGames.length > 0 ? (
+          ) : (console.log('[GamePickerModal] Check render - user-games check, searchMode:', searchMode, 'filteredGames:', filteredGames.length), searchMode === 'user-games' && filteredGames.length > 0) ? (
             /* User's Reviewed Games Grid */
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredGames.map(({ game, rating }) => (
