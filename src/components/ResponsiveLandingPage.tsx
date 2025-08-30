@@ -73,21 +73,26 @@ const SplittingUsers: React.FC<{ isHovered: boolean; size?: 'small' | 'large' }>
 // Custom component for the cascading checkbox animation
 const CascadingCheckboxes: React.FC<{ isHovered: boolean; size?: 'small' | 'large' }> = ({ isHovered, size = 'large' }) => {
   const iconSize = size === 'small' ? 'h-6 w-6' : 'h-7 w-7';
-  const containerSize = size === 'small' ? 'h-12 w-20' : 'h-14 w-24';
+  const containerSize = size === 'small' ? 'h-14 w-24' : 'h-16 w-28';
   const marginBottom = size === 'small' ? 'mb-3' : 'mb-4';
-  const spacing = size === 'small' ? 28 : 32;
+  const spacing = size === 'small' ? 24 : 28;
   
-  // Grid positions for 3x2 layout (bottom-middle is origin)
+  // Grid positions for 3x2 layout
+  // We offset everything so the final grid is centered
   // Layout:
   // [5] [4] [3]
   // [6] [1] [2]
+  // Checkbox 1 is at center-bottom of the grid, so we offset by half spacing to center the whole grid
+  const offsetX = -spacing / 2;
+  const offsetY = spacing / 2;
+  
   const positions = [
-    { x: 0, y: 0, delay: 0 },      // 1: Center bottom (original)
-    { x: spacing, y: 0, delay: 200 },  // 2: Right bottom
-    { x: spacing, y: -spacing, delay: 400 },  // 3: Right top
-    { x: 0, y: -spacing, delay: 600 }, // 4: Center top
-    { x: -spacing, y: -spacing, delay: 800 }, // 5: Left top
-    { x: -spacing, y: 0, delay: 1000 }    // 6: Left bottom
+    { x: offsetX, y: offsetY, delay: 0 },      // 1: Center bottom (original)
+    { x: offsetX + spacing, y: offsetY, delay: 200 },  // 2: Right bottom
+    { x: offsetX + spacing, y: offsetY - spacing, delay: 400 },  // 3: Right top
+    { x: offsetX, y: offsetY - spacing, delay: 600 }, // 4: Center top
+    { x: offsetX - spacing, y: offsetY - spacing, delay: 800 }, // 5: Left top
+    { x: offsetX - spacing, y: offsetY, delay: 1000 }    // 6: Left bottom
   ];
   
   return (
