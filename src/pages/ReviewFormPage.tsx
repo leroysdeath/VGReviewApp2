@@ -346,12 +346,36 @@ export const ReviewFormPage: React.FC = () => {
     setSelectedPlatforms([platform]);
   };
   
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  const formatDate = (dateValue: any) => {
+    if (!dateValue) return 'Unknown date';
+    
+    // Handle already formatted strings
+    if (typeof dateValue === 'string') {
+      return dateValue;
+    }
+    
+    // Handle timestamps
+    if (typeof dateValue === 'number') {
+      const date = new Date(dateValue * 1000);
+      if (isNaN(date.getTime())) return 'Invalid date';
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+    
+    // Handle Date objects
+    if (dateValue instanceof Date) {
+      if (isNaN(dateValue.getTime())) return 'Invalid date';
+      return dateValue.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+    
+    return 'Unknown date';
   };
 
   // Game Card Component for Grid View
@@ -387,7 +411,7 @@ export const ReviewFormPage: React.FC = () => {
         {game.first_release_date && (
           <p className="text-gray-400 text-sm mt-1 flex items-center">
             <Calendar className="w-3 h-3 mr-1" />
-            {game.first_release_date}
+            {formatDate(game.first_release_date)}
           </p>
         )}
         {game.genres && game.genres.length > 0 && (
@@ -428,7 +452,7 @@ export const ReviewFormPage: React.FC = () => {
         {game.first_release_date && (
           <p className="text-gray-400 text-sm mt-1 flex items-center">
             <Calendar className="w-3 h-3 mr-1" />
-            {game.first_release_date}
+            {formatDate(game.first_release_date)}
           </p>
         )}
         {game.summary && (
@@ -679,7 +703,7 @@ export const ReviewFormPage: React.FC = () => {
                   />
                 </div>
                 {selectedGame.first_release_date && (
-                  <p className="text-center text-gray-400 text-sm">Released: {selectedGame.first_release_date}</p>
+                  <p className="text-center text-gray-400 text-sm">Released: {formatDate(selectedGame.first_release_date)}</p>
                 )}
               </div>
             )}
