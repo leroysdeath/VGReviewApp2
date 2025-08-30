@@ -308,7 +308,7 @@ export const ReviewPage: React.FC = () => {
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
                   <img
-                    src={game.cover_url ? (game.cover_url.startsWith('http') ? game.cover_url.replace('t_thumb', 't_cover_big') : `https:${game.cover_url.replace('t_thumb', 't_cover_big')}`) : '/placeholder-game.jpg'}
+                    src={game.cover_url || '/placeholder-game.jpg'}
                     alt={game.name}
                     className="h-64 w-full object-cover md:h-80 md:w-64"
                     onError={(e) => {

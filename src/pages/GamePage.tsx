@@ -945,8 +945,8 @@ export const GamePage: React.FC = () => {
     "description": game.summary || metaDescription,
     "image": game.cover_url || game.cover?.url 
       ? (game.cover?.url || game.cover_url).startsWith('http') 
-        ? (game.cover?.url || game.cover_url).replace('t_thumb', 't_cover_big')
-        : `https:${(game.cover?.url || game.cover_url).replace('t_thumb', 't_cover_big')}`
+        ? (game.cover?.url || game.cover_url)
+        : `https:${(game.cover?.url || game.cover_url)}`
       : undefined,
     "aggregateRating": totalRatings > 0 ? {
       "@type": "AggregateRating",
@@ -979,8 +979,8 @@ export const GamePage: React.FC = () => {
         {game.cover_url && (
           <meta property="og:image" content={
             game.cover_url.startsWith('http') 
-              ? game.cover_url.replace('t_thumb', 't_cover_big')
-              : `https:${game.cover_url.replace('t_thumb', 't_cover_big')}`
+              ? game.cover_url
+              : `https:${game.cover_url}`
           } />
         )}
         
@@ -992,8 +992,8 @@ export const GamePage: React.FC = () => {
         {game.cover_url && (
           <meta property="twitter:image" content={
             game.cover_url.startsWith('http') 
-              ? game.cover_url.replace('t_thumb', 't_cover_big')
-              : `https:${game.cover_url.replace('t_thumb', 't_cover_big')}`
+              ? game.cover_url
+              : `https:${game.cover_url}`
           } />
         )}
         
@@ -1021,7 +1021,7 @@ export const GamePage: React.FC = () => {
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
                   <SmartImage
-                    src={game.cover?.url ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}` : (game.cover_url ? (game.cover_url.startsWith('http') ? game.cover_url.replace('t_thumb', 't_cover_big') : `https:${game.cover_url.replace('t_thumb', 't_cover_big')}`) : '/placeholder-game.jpg')}
+                    src={game.cover?.url ? `https:${game.cover.url}` : (game.cover_url || '/placeholder-game.jpg')}
                     alt={game.name}
                     className="h-64 w-full object-cover md:h-80 md:w-64"
                     optimization={{
