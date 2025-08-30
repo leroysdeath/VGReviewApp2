@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2, Home, Users, MessageSquare, LogOut, Settings, Clock, TrendingUp, Database, Loader2, Star, User as UserIcon } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2, Home, Users, ScrollText, LogOut, Settings, Clock, TrendingUp, Database, Loader2, Star, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthModal } from '../context/AuthModalContext'; // NEW IMPORT
 import { useResponsive } from '../hooks/useResponsive';
@@ -679,7 +679,7 @@ export const ResponsiveNavbar: React.FC = () => {
                         className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                         onClick={() => setIsMenuOpen(false)}
                       >
-                        <MessageSquare className="h-5 w-5" />
+                        <ScrollText className="h-5 w-5" />
                         <span>Write Review</span>
                       </Link>
                     </>
@@ -768,7 +768,7 @@ export const ResponsiveNavbar: React.FC = () => {
                         className="p-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
                         title="Write Review"
                       >
-                        <MessageSquare className="h-5 w-5 text-white" />
+                        <ScrollText className="h-5 w-5 text-white" />
                       </Link>
                     </>
                   )}
@@ -1084,7 +1084,7 @@ export const ResponsiveNavbar: React.FC = () => {
                           className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
                           onClick={() => setIsUserMenuOpen(false)}
                         >
-                          <MessageSquare className="h-4 w-4" />
+                          <ScrollText className="h-4 w-4" />
                           <span>Write Review</span>
                         </Link>
                         <div className="border-t border-gray-700 my-1"></div>

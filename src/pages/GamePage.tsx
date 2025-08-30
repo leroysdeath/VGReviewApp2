@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Bookmark, BookOpen } from 'lucide-react';
+import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Gift, BookOpen } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
@@ -1167,7 +1167,7 @@ export const GamePage: React.FC = () => {
                     {wishlistLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <Bookmark className={`h-4 w-4 ${isInWishlist ? 'fill-current' : ''}`} />
+                      <Gift className={`h-4 w-4 ${isInWishlist ? 'fill-current' : ''}`} />
                     )}
                     <span className="text-sm font-medium">
                       {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
