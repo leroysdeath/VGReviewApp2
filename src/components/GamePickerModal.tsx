@@ -55,11 +55,13 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
   // Fetch user's reviewed games (for top-games mode or when in user-games search mode)
   useEffect(() => {
+    console.log('[GamePickerModal] useEffect triggered - isOpen:', isOpen, 'userId:', userId, 'mode:', mode);
     if (!isOpen || !userId) return;
     // Only fetch if in top-games mode or if in user-games search mode for collection/wishlist
     if (mode !== 'top-games' && searchMode !== 'user-games') return;
 
     const fetchGames = async () => {
+      console.log('[GamePickerModal] fetchGames called - setting loading to true');
       setLoading(true);
       setError(null);
       
