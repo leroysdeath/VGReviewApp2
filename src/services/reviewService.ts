@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { sanitizeRich } from '../utils/sanitize';
+import { generateSlug } from '../utils/gameUrls';
 
 /**
  * Get database user ID from auth user
@@ -130,6 +131,7 @@ export const ensureGameExists = async (
       igdb_id: gameData.igdb_id,
       game_id: gameData.igdb_id.toString(), // Convert IGDB ID to string for game_id column
       name: gameData.name.trim(),
+      slug: generateSlug(gameData.name.trim()), // Generate slug for new game
       cover_url: gameData.cover_url || null,
       genres: gameData.genre ? [gameData.genre] : null,
       release_date: releaseDate,
@@ -190,10 +192,10 @@ export const createReview = async (
       return { success: false, error: 'User not authenticated or not found in database' };
     }
 
-    // Look up existing game by IGDB ID
+    // Look up existing game by IGDB ID (including slug)
     const { data: gameRecord, error: gameError } = await supabase
       .from('game')
-      .select('id, name')
+      .select('id, name, slug')
       .eq('igdb_id', igdbId)
       .single();
 
@@ -253,6 +255,7 @@ export const createReview = async (
       user_id: userId,
       game_id: gameId, // Database game ID
       igdb_id: igdbId, // Also store IGDB ID for reference
+      slug: gameRecord.slug || generateSlug(gameRecord.name), // Get slug from game or generate if missing
       rating: rating,
       review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
       post_date_time: new Date().toISOString(),
