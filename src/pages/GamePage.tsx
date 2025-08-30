@@ -358,7 +358,7 @@ export const GamePage: React.FC = () => {
         }));
         
         // If game is started/finished, don't show wishlist/collection status
-        const progressPromise = getGameProgress();
+        const progressPromise = getGameProgress(game.igdb_id);
         const progress = await Promise.race([
           progressPromise,
           new Promise(resolve => setTimeout(() => resolve(null), 3000))

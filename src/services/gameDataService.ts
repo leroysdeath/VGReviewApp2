@@ -3,6 +3,7 @@ import { sanitizeSearchTerm } from '../utils/sqlSecurity'
 import type { Game, GameWithCalculatedFields } from '../types/database'
 import { igdbService } from './igdbService'
 import { enhancedSearchService } from './enhancedSearchService'
+import { generateSlug } from '../utils/gameUrls'
 
 interface SearchFilters {
   genres?: string[]
@@ -95,13 +96,14 @@ class GameDataService {
           // Transform IGDB game to our format
           const transformedGame = igdbService.transformGame(igdbGame)
 
-          // Add the game to database for future use
+          // Add the game to database for future use with generated slug
           const { data: insertedGame, error: insertError } = await supabase
             .from('game')
             .insert({
               igdb_id: transformedGame.igdb_id,
               game_id: transformedGame.igdb_id.toString(),
               name: transformedGame.name,
+              slug: generateSlug(transformedGame.name), // Generate slug from name
               summary: transformedGame.summary,
               release_date: transformedGame.first_release_date
                 ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
@@ -192,13 +194,14 @@ class GameDataService {
           // Transform IGDB game to our format
           const transformedGame = igdbService.transformGame(igdbGame)
 
-          // Add the game to database for future use
+          // Add the game to database for future use with generated slug
           const { data: insertedGame, error: insertError } = await supabase
             .from('game')
             .insert({
               igdb_id: transformedGame.igdb_id,
               game_id: transformedGame.igdb_id.toString(),
               name: transformedGame.name,
+              slug: generateSlug(transformedGame.name), // Generate slug from name
               summary: transformedGame.summary,
               release_date: transformedGame.first_release_date
                 ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
