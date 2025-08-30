@@ -36,12 +36,14 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
   onClose,
   onSelect,
   userId,
-  excludeGameIds = [],
+  excludeGameIds,
   title,
   position,
   mode = 'top-games',
   onGameAdded
 }) => {
+  // Memoize the default excludeGameIds to prevent re-renders
+  const memoizedExcludeIds = useMemo(() => excludeGameIds || [], [excludeGameIds]);
   const [games, setGames] = useState<RatedGame[]>([]);
   const [igdbGames, setIgdbGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -103,14 +105,14 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
           .order('rating', { ascending: false });
 
         // Exclude already selected games if any
-        if (excludeGameIds.length > 0) {
-          query = query.not('game_id', 'in', `(${excludeGameIds.join(',')})`);
+        if (memoizedExcludeIds.length > 0) {
+          query = query.not('game_id', 'in', `(${memoizedExcludeIds.join(',')})`);
         }
 
         const { data, error } = await query;
         
         console.log('[GamePickerModal] Raw API response:', data);
-        console.log('[GamePickerModal] ExcludeGameIds:', excludeGameIds);
+        console.log('[GamePickerModal] ExcludeGameIds:', memoizedExcludeIds);
         console.log('[GamePickerModal] Mode:', mode);
 
         if (error) throw error;
@@ -149,7 +151,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
     };
 
     fetchGames();
-  }, [isOpen, userId, excludeGameIds, mode, searchMode]);
+  }, [isOpen, userId, memoizedExcludeIds, mode, searchMode]);
 
   // Search IGDB when in collection/wishlist mode
   useEffect(() => {
