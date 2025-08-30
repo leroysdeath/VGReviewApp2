@@ -106,7 +106,9 @@ class GameDataService {
               slug: generateSlug(transformedGame.name), // Generate slug from name
               summary: transformedGame.summary,
               release_date: transformedGame.first_release_date
-                ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
+                ? (typeof transformedGame.first_release_date === 'number' 
+                    ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
+                    : new Date(transformedGame.first_release_date).toISOString().split('T')[0])
                 : null,
               cover_url: transformedGame.cover_url,
               genres: transformedGame.genres || [],
@@ -204,7 +206,9 @@ class GameDataService {
               slug: generateSlug(transformedGame.name), // Generate slug from name
               summary: transformedGame.summary,
               release_date: transformedGame.first_release_date
-                ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
+                ? (typeof transformedGame.first_release_date === 'number' 
+                    ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
+                    : new Date(transformedGame.first_release_date).toISOString().split('T')[0])
                 : null,
               cover_url: transformedGame.cover_url,
               genres: transformedGame.genres || [],
