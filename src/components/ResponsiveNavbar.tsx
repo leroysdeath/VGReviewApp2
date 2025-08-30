@@ -290,6 +290,7 @@ export const ResponsiveNavbar: React.FC = () => {
     setIsSearchOpen(false);
     setShowSuggestions(false);
     setHasSearched(false);
+    setIsMenuOpen(false); // Close mobile menu when navigating
   };
 
   const handleUserClick = (user: UserSearchResult) => {
@@ -299,6 +300,7 @@ export const ResponsiveNavbar: React.FC = () => {
     setShowSuggestions(false);
     setSearchQuery('');
     setHasSearched(false);
+    setIsMenuOpen(false); // Close mobile menu when navigating
   };
 
   const handleTabChange = (tab: SearchTab) => {

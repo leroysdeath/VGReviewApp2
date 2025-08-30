@@ -194,13 +194,14 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
   // Filter games based on search query
   const filteredGames = useMemo(() => {
-    if (searchMode === 'igdb') return [];
+    // Only filter user's reviewed games when in user-games search mode
+    if (searchMode !== 'user-games') return [];
     if (!searchQuery.trim()) return games;
     
     const query = searchQuery.toLowerCase();
     return games.filter(({ game }) => 
       game.name.toLowerCase().includes(query) ||
-      game.genre.toLowerCase().includes(query)
+      (game.genre && game.genre.toLowerCase().includes(query))
     );
   }, [games, searchQuery, searchMode]);
 
@@ -396,29 +397,6 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                 );
               })}
             </div>
-          ) : (filteredGames.length === 0 && searchMode === 'user-games') || (searchMode === 'igdb' && igdbGames.length === 0) ? (
-            /* Empty State */
-            <div className="text-center py-12">
-              <Gamepad2 className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400">
-                {mode === 'top-games' ? (
-                  searchQuery 
-                    ? 'No games found matching your search'
-                    : games.length === 0 
-                      ? 'No reviewed games available to select'
-                      : 'All your reviewed games are already in your Top 5'
-                ) : (
-                  searchQuery
-                    ? 'No eligible games found. Try a different search.'
-                    : 'Search for games to add (already started/finished games are excluded)'
-                )}
-              </p>
-              {(mode === 'collection' || mode === 'wishlist') && startedFinishedGames.size > 0 && (
-                <p className="text-xs text-gray-500 mt-2">
-                  {startedFinishedGames.size} game{startedFinishedGames.size !== 1 ? 's' : ''} hidden (already started/finished)
-                </p>
-              )}
-            </div>
           ) : searchMode === 'user-games' && filteredGames.length > 0 ? (
             /* User's Reviewed Games Grid */
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -482,7 +460,30 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                 </div>
               ))}
             </div>
-          ) : null}
+          ) : (
+            /* Empty State */
+            <div className="text-center py-12">
+              <Gamepad2 className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400">
+                {mode === 'top-games' ? (
+                  searchQuery 
+                    ? 'No games found matching your search'
+                    : games.length === 0 
+                      ? 'No reviewed games available to select'
+                      : 'All your reviewed games are already in your Top 5'
+                ) : (
+                  searchQuery
+                    ? 'No eligible games found. Try a different search.'
+                    : 'Search for games to add (already started/finished games are excluded)'
+                )}
+              </p>
+              {(mode === 'collection' || mode === 'wishlist') && startedFinishedGames.size > 0 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {startedFinishedGames.size} game{startedFinishedGames.size !== 1 ? 's' : ''} hidden (already started/finished)
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

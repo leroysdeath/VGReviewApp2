@@ -1088,6 +1088,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
         user!fk_rating_user(*),
         game(id, name, pic_url, cover_url, game_id, igdb_id)
       `, { count: 'exact' })
+      .not('review', 'is', null)  // Only fetch reviews that have written content
       .order('post_date_time', { ascending: false })
       .limit(limit);
 
