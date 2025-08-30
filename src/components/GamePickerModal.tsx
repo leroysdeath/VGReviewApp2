@@ -350,6 +350,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
             </div>
           )}
 
+          {console.log('[GamePickerModal] RENDER CHECK - loading:', loading, 'searchMode:', searchMode, 'filteredGames.length:', filteredGames.length, 'igdbGames.length:', igdbGames.length)}
           {loading ? (
             /* Loading State */
             <div className="flex items-center justify-center py-12">
