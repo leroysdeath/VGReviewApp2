@@ -336,25 +336,23 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
 
     const previousState = [...userTopGames];
     
-    // Find the games being swapped
-    const activeGame = userTopGames.find(g => g.game?.id.toString() === active.id);
-    const overGame = userTopGames.find(g => g.game?.id.toString() === over.id);
+    // Get the current indices in the array
+    const activeIndex = userTopGames.findIndex(g => g.game?.id.toString() === active.id);
+    const overIndex = userTopGames.findIndex(g => g.game?.id.toString() === over.id);
     
-    if (!activeGame || !overGame) {
+    if (activeIndex === -1 || overIndex === -1) {
       setActiveId(null);
       return;
     }
 
-    // Create new array with swapped games
-    const updatedGames = userTopGames.map(item => {
-      if (item.position === activeGame.position) {
-        return { ...item, game: overGame.game };
-      }
-      if (item.position === overGame.position) {
-        return { ...item, game: activeGame.game };
-      }
-      return item;
-    });
+    // Use arrayMove to reorder - this shifts items, doesn't swap
+    const reordered = arrayMove(userTopGames, activeIndex, overIndex);
+    
+    // Update positions to match new order (1-5)
+    const updatedGames = reordered.map((item, index) => ({
+      ...item,
+      position: index + 1
+    }));
 
     // Update state optimistically
     setUserTopGames(updatedGames);
