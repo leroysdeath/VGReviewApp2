@@ -629,13 +629,6 @@ export const GamePage: React.FC = () => {
   const handleToggleCollection = async () => {
     if (!game || !game.igdb_id) return;
     
-    // Prevent going back to wishlist from collection
-    if (isInCollection && !isStarted && !isCompleted) {
-      // Can only remove from collection, not move back to wishlist
-      const confirmRemove = window.confirm('Remove from collection? (This will not move it back to wishlist)');
-      if (!confirmRemove) return;
-    }
-
     if (!isAuthenticated) {
       dispatch({ type: 'SET_AUTH_MODAL', payload: { show: true, pendingAction: 'toggle_collection' }});
       return;
@@ -1150,9 +1143,11 @@ export const GamePage: React.FC = () => {
               </div>
 
               {/* User Actions - Wishlist, Collection, Checkboxes and Write Review */}
-              <div className="flex items-center gap-4 p-6 border-t border-gray-700">
-                {/* Wishlist Button - Only show if not in collection and not started/finished */}
-                {!isInCollection && !isStarted && !isCompleted && (
+              <div className="flex items-center justify-between p-6 border-t border-gray-700">
+                {/* Left side: Wishlist and Collection buttons */}
+                <div className="flex items-center gap-4">
+                  {/* Wishlist Button - Only show if not in collection and not started/finished */}
+                  {!isInCollection && !isStarted && !isCompleted && (
                   <button
                     onClick={handleToggleWishlist}
                     disabled={wishlistLoading}
@@ -1193,9 +1188,12 @@ export const GamePage: React.FC = () => {
                       {isInCollection ? 'In Collection' : isInWishlist ? 'Move to Collection' : 'Add to Collection'}
                     </span>
                   </button>
-                )}
+                  )}
+                </div>
 
-                <div className="flex items-center gap-3">
+                {/* Right side: Checkboxes and Write Review button */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleAuthRequiredAction('mark_started')}
                     disabled={isStarted || progressLoading}
@@ -1239,9 +1237,9 @@ export const GamePage: React.FC = () => {
                   <span className={`text-sm ${isCompleted ? 'text-green-400' : 'text-gray-300'}`}>
                     {isCompleted ? 'Finished ✓' : 'Finished Game'}
                   </span>
-                </div>
+                  </div>
 
-                <div className="ml-auto">
+                  <div>
                   {isAuthenticated ? (
                     <Link
                       to={`/review/${game.igdb_id}`}
@@ -1261,6 +1259,7 @@ export const GamePage: React.FC = () => {
                       <span className="text-sm font-medium">Write a Review</span>
                     </button>
                   )}
+                  </div>
                 </div>
               </div>
             </div>
