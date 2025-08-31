@@ -37,8 +37,6 @@ interface SearchFilters {
   searchTerm?: string;
   platformId?: number;
   releaseYear?: number;
-  minRating?: number;
-  maxRating?: number;
   sortBy: 'name' | 'release_date' | 'avg_rating' | 'rating_count';
   sortOrder: 'asc' | 'desc';
 }
@@ -61,8 +59,6 @@ export const SearchResultsPage: React.FC = () => {
     searchTerm: '',
     platformId: undefined,
     releaseYear: undefined,
-    minRating: undefined,
-    maxRating: undefined,
     sortBy: 'name',
     sortOrder: 'asc'
   });
@@ -77,8 +73,6 @@ export const SearchResultsPage: React.FC = () => {
     const query = searchParams.get('q') || '';
     const platform = searchParams.get('platform');
     const year = searchParams.get('year');
-    const minRating = searchParams.get('minRating');
-    const maxRating = searchParams.get('maxRating');
     const sort = searchParams.get('sort') || 'name:asc';
     const page = searchParams.get('page');
     const [sortField, sortOrder] = sort.split(':');
@@ -87,8 +81,6 @@ export const SearchResultsPage: React.FC = () => {
       searchTerm: query,
       platformId: platform ? parseInt(platform) : undefined,
       releaseYear: year ? parseInt(year) : undefined,
-      minRating: minRating ? parseFloat(minRating) : undefined,
-      maxRating: maxRating ? parseFloat(maxRating) : undefined,
       sortBy: sortField as any || 'name',
       sortOrder: sortOrder as any || 'asc'
     });
@@ -120,7 +112,7 @@ export const SearchResultsPage: React.FC = () => {
     if (filters.searchTerm?.trim() && searchStarted) {
       performSearch();
     }
-  }, [filters.platformId, filters.releaseYear, filters.minRating, filters.maxRating, filters.sortBy, filters.sortOrder]);
+  }, [filters.platformId, filters.releaseYear, filters.sortBy, filters.sortOrder]);
 
   const loadPlatforms = async () => {
     try {
@@ -145,7 +137,6 @@ export const SearchResultsPage: React.FC = () => {
       
       await searchGames(filters.searchTerm, {
         genres: filters.platformId ? [filters.platformId.toString()] : undefined,
-        minRating: filters.minRating,
         sortBy: filters.sortBy === 'name' ? 'name' : 
                filters.sortBy === 'release_date' ? 'release_date' : 
                filters.sortBy === 'avg_rating' ? 'rating' : 'popularity',
@@ -179,8 +170,6 @@ export const SearchResultsPage: React.FC = () => {
     if (updatedFilters.searchTerm) params.set('q', updatedFilters.searchTerm);
     if (updatedFilters.platformId) params.set('platform', updatedFilters.platformId.toString());
     if (updatedFilters.releaseYear) params.set('year', updatedFilters.releaseYear.toString());
-    if (updatedFilters.minRating) params.set('minRating', updatedFilters.minRating.toString());
-    if (updatedFilters.maxRating) params.set('maxRating', updatedFilters.maxRating.toString());
     params.set('sort', `${updatedFilters.sortBy}:${updatedFilters.sortOrder}`);
     
     setSearchParams(params);
@@ -307,39 +296,6 @@ export const SearchResultsPage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Min Rating Filter */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Min Rating</label>
-                  <select
-                    value={filters.minRating || ''}
-                    onChange={(e) => handleFilterChange({ 
-                      minRating: e.target.value ? parseFloat(e.target.value) : undefined 
-                    })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="">No Minimum</option>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(rating => (
-                      <option key={rating} value={rating}>{rating}+</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Max Rating Filter */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Max Rating</label>
-                  <select
-                    value={filters.maxRating || ''}
-                    onChange={(e) => handleFilterChange({ 
-                      maxRating: e.target.value ? parseFloat(e.target.value) : undefined 
-                    })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="">No Maximum</option>
-                    {[2, 3, 4, 5, 6, 7, 8, 9, 10].map(rating => (
-                      <option key={rating} value={rating}>Up to {rating}</option>
-                    ))}
-                  </select>
-                </div>
 
                 {/* Sort By */}
                 <div>
@@ -377,8 +333,6 @@ export const SearchResultsPage: React.FC = () => {
                       searchTerm: '',
                       platformId: undefined,
                       releaseYear: undefined,
-                      minRating: undefined,
-                      maxRating: undefined,
                       sortBy: 'name',
                       sortOrder: 'asc'
                     });
@@ -662,8 +616,6 @@ export const SearchResultsPage: React.FC = () => {
                   searchTerm: '',
                   platformId: undefined,
                   releaseYear: undefined,
-                  minRating: undefined,
-                  maxRating: undefined,
                   sortBy: 'name',
                   sortOrder: 'asc'
                 });
