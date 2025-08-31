@@ -21,6 +21,7 @@ import { shouldHideFanContent } from '../utils/contentProtectionFilter';
 import { isNumericIdentifier } from '../utils/gameUrls';
 import { collectionWishlistService } from '../services/collectionWishlistService';
 import { mapPlatformNames } from '../utils/platformMapping';
+import { GameActionSheet } from '../components/GameActionSheet';
 
 // Interface for review data from database
 interface GameReview {
@@ -1143,9 +1144,35 @@ export const GamePage: React.FC = () => {
               </div>
 
               {/* User Actions - Wishlist, Collection, Started, Finished and Write Review */}
-              <div className="flex items-center justify-between p-6 border-t border-gray-700">
-                {/* All buttons with equal spacing */}
-                <div className="flex items-center gap-6 w-full">
+              <div className="p-6 border-t border-gray-700">
+                {/* Mobile Action Sheet - Only visible on mobile */}
+                <div className="md:hidden">
+                  <GameActionSheet
+                    isInWishlist={isInWishlist}
+                    isInCollection={isInCollection}
+                    isStarted={isStarted}
+                    isCompleted={isCompleted}
+                    userHasReviewed={userHasReviewed}
+                    wishlistLoading={wishlistLoading}
+                    collectionLoading={collectionLoading}
+                    progressLoading={progressLoading}
+                    userReviewLoading={userReviewLoading}
+                    onToggleWishlist={handleToggleWishlist}
+                    onToggleCollection={handleToggleCollection}
+                    onMarkStarted={() => handleAuthRequiredAction('mark_started')}
+                    onMarkCompleted={() => handleAuthRequiredAction('mark_completed')}
+                    onWriteReview={() => {
+                      if (isAuthenticated) {
+                        navigate(`/review/${game.igdb_id}`);
+                      } else {
+                        handleAuthRequiredAction('write_review');
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Desktop buttons - Hidden on mobile */}
+                <div className="hidden md:flex items-center gap-6 w-full">
                   {/* Wishlist Button - Use visibility to maintain position */}
                   <button
                     onClick={handleToggleWishlist}
