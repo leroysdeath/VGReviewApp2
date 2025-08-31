@@ -209,10 +209,11 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           if (timeDiff !== 0) return timeDiff;
           
           // If timestamps are equal, sort by activity type priority
-          // This ensures logical order: started → completed → rating → review
+          // Since we're showing newest first, reverse priority order so that
+          // later logical actions (review) appear before earlier ones (started)
           const priorityA = activityPriority[a.type] || 999;
           const priorityB = activityPriority[b.type] || 999;
-          return priorityA - priorityB;
+          return priorityB - priorityA;
         })
         .slice(0, 25); // Keep most recent 25 activities
 
