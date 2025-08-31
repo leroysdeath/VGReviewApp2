@@ -387,6 +387,37 @@ export function calculateGamePriority(game: Game): PriorityResult {
     }
   }
 
+  // Platform priority - Nintendo Switch gets priority for Nintendo games
+  const gameText = [game.name, game.developer, game.publisher].filter(Boolean).join(' ').toLowerCase();
+  const isNintendoGame = gameText.includes('nintendo') || 
+    gameText.includes('mario') || gameText.includes('zelda') || 
+    gameText.includes('pokemon') || gameText.includes('metroid') ||
+    gameText.includes('kirby') || gameText.includes('splatoon');
+  
+  if (game.platforms) {
+    const platformNames = Array.isArray(game.platforms) 
+      ? game.platforms.map(p => typeof p === 'string' ? p : p.name).filter(Boolean)
+      : [];
+    
+    const hasSwitch = platformNames.some(p => p.toLowerCase().includes('nintendo switch') || p.toLowerCase().includes('switch'));
+    const hasPS5 = platformNames.some(p => p.toLowerCase().includes('playstation 5') || p.toLowerCase().includes('ps5'));
+    const hasXbox = platformNames.some(p => p.toLowerCase().includes('xbox'));
+    
+    if (isNintendoGame && hasSwitch) {
+      boosts.push('Nintendo game on Switch (+100)');
+      score += 100;
+    } else if (hasSwitch && !isNintendoGame) {
+      boosts.push('Switch exclusive (+30)');
+      score += 30;
+    } else if (hasPS5) {
+      boosts.push('PS5 version (+20)');
+      score += 20;
+    } else if (hasXbox) {
+      boosts.push('Xbox current-gen (+15)');
+      score += 15;
+    }
+  }
+
   // Release date recency (newer games get slight boost)
   if (game.first_release_date) {
     const releaseDate = new Date(game.first_release_date * 1000);
