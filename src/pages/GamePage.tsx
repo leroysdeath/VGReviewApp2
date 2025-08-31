@@ -1163,7 +1163,12 @@ export const GamePage: React.FC = () => {
                       <Gift className={`h-4 w-4 ${isInWishlist ? 'fill-current' : ''}`} />
                     )}
                     <span className="text-sm font-medium">
-                      {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
+                      {isInWishlist ? (
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>In</span>
+                          <span>Wishlist</span>
+                        </span>
+                      ) : 'Add to Wishlist'}
                     </span>
                   </button>
                 )}
@@ -1185,7 +1190,12 @@ export const GamePage: React.FC = () => {
                       <BookOpen className={`h-4 w-4 ${isInCollection ? 'fill-current' : ''}`} />
                     )}
                     <span className="text-sm font-medium">
-                      {isInCollection ? 'In Collection' : isInWishlist ? 'Move to Collection' : 'Add to Collection'}
+                      {isInCollection ? (
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>In</span>
+                          <span>Collection</span>
+                        </span>
+                      ) : isInWishlist ? 'Move to Collection' : 'Add to Collection'}
                     </span>
                   </button>
                   )}
@@ -1247,7 +1257,7 @@ export const GamePage: React.FC = () => {
                     >
                       <ScrollText className="h-4 w-4" />
                       <span className="text-sm font-medium">
-                        {userReviewLoading ? 'Loading...' : userHasReviewed ? 'Edit Review' : 'Write a Review'}
+                        {userReviewLoading ? 'Loading...' : userHasReviewed ? 'Edit Review' : 'Write Review'}
                       </span>
                     </Link>
                   ) : (
@@ -1256,7 +1266,7 @@ export const GamePage: React.FC = () => {
                       className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                     >
                       <ScrollText className="h-4 w-4" />
-                      <span className="text-sm font-medium">Write a Review</span>
+                      <span className="text-sm font-medium">Write Review</span>
                     </button>
                   )}
                   </div>
