@@ -215,74 +215,121 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
           <div className="px-4 pb-6 space-y-2">
             {/* Write/Edit Review Button */}
             <button
-              onClick={() => {
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 onWriteReview();
                 handleClose();
               }}
-              className="w-full flex items-center justify-between px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                onWriteReview();
+                handleClose();
+              }}
+              className="w-full flex items-center justify-between px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors pointer-events-auto active:bg-purple-800"
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
+              <ScrollText className="h-5 w-5" />
               <span className="font-medium">
                 {userReviewLoading ? 'Loading...' : userHasReviewed ? 'Edit Review' : 'Write Review'}
               </span>
-              <ScrollText className="h-5 w-5" />
             </button>
 
             {/* Finished Button */}
             <button
-              onClick={() => {
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => {
+                if (isCompleted || progressLoading) return;
+                e.preventDefault();
+                e.stopPropagation();
+                onMarkCompleted();
+                if (!isCompleted) handleClose();
+              }}
+              onClick={(e) => {
+                if (isCompleted || progressLoading) return;
+                e.stopPropagation();
                 onMarkCompleted();
                 if (!isCompleted) handleClose();
               }}
               disabled={isCompleted || progressLoading}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors pointer-events-auto ${
                 isCompleted
                   ? 'bg-green-600 text-white cursor-not-allowed'
                   : progressLoading
                   ? 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
-                  : 'border border-green-500 text-green-400 hover:bg-green-600/10'
+                  : 'border border-green-500 text-green-400 hover:bg-green-600/10 active:bg-green-600/20'
               }`}
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
+              <CheckCircle className="h-5 w-5" />
               <span className="font-medium">
                 {isCompleted ? 'Finished' : 'Mark as Finished'}
               </span>
-              <CheckCircle className="h-5 w-5" />
             </button>
 
             {/* Started Button */}
             <button
-              onClick={() => {
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => {
+                if (isStarted || progressLoading) return;
+                e.preventDefault();
+                e.stopPropagation();
+                onMarkStarted();
+                if (!isStarted) handleClose();
+              }}
+              onClick={(e) => {
+                if (isStarted || progressLoading) return;
+                e.stopPropagation();
                 onMarkStarted();
                 if (!isStarted) handleClose();
               }}
               disabled={isStarted || progressLoading}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors pointer-events-auto ${
                 isStarted
                   ? 'bg-blue-600 text-white cursor-not-allowed'
                   : progressLoading
                   ? 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
-                  : 'border border-blue-500 text-blue-400 hover:bg-blue-600/10'
+                  : 'border border-blue-500 text-blue-400 hover:bg-blue-600/10 active:bg-blue-600/20'
               }`}
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
+              <Play className="h-5 w-5" />
               <span className="font-medium">
                 {isStarted ? 'Started' : 'Mark as Started'}
               </span>
-              <Play className="h-5 w-5" />
             </button>
 
             {/* Collection Button - Show if not started/finished */}
             {showCollection && (
               <button
-                onClick={() => {
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => {
+                  if (collectionLoading) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleCollection();
+                  if (!isInCollection) handleClose();
+                }}
+                onClick={(e) => {
+                  if (collectionLoading) return;
+                  e.stopPropagation();
                   onToggleCollection();
                   if (!isInCollection) handleClose();
                 }}
                 disabled={collectionLoading}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors pointer-events-auto ${
                   isInCollection
-                    ? 'bg-orange-600 text-white hover:bg-orange-700'
-                    : 'border border-orange-500 text-orange-400 hover:bg-orange-600/10'
+                    ? 'bg-orange-600 text-white hover:bg-orange-700 active:bg-orange-800'
+                    : 'border border-orange-500 text-orange-400 hover:bg-orange-600/10 active:bg-orange-600/20'
                 } ${collectionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
+                {collectionLoading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current" />
+                ) : (
+                  <BookOpen className="h-5 w-5" />
+                )}
                 <span className="font-medium">
                   {collectionLoading ? (
                     'Loading...'
@@ -294,43 +341,59 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
                     'Add to Collection'
                   )}
                 </span>
-                {collectionLoading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current" />
-                ) : (
-                  <BookOpen className="h-5 w-5" />
-                )}
               </button>
             )}
 
             {/* Wishlist Button - Show if not in collection and not started/finished */}
             {showWishlist && (
               <button
-                onClick={() => {
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => {
+                  if (wishlistLoading) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleWishlist();
+                  if (!isInWishlist) handleClose();
+                }}
+                onClick={(e) => {
+                  if (wishlistLoading) return;
+                  e.stopPropagation();
                   onToggleWishlist();
                   if (!isInWishlist) handleClose();
                 }}
                 disabled={wishlistLoading}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors pointer-events-auto ${
                   isInWishlist
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'border border-red-500 text-red-400 hover:bg-red-600/10'
+                    ? 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800'
+                    : 'border border-red-500 text-red-400 hover:bg-red-600/10 active:bg-red-600/20'
                 } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
               >
-                <span className="font-medium">
-                  {wishlistLoading ? 'Loading...' : isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
-                </span>
                 {wishlistLoading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current" />
                 ) : (
                   <Gift className="h-5 w-5" />
                 )}
+                <span className="font-medium">
+                  {wishlistLoading ? 'Loading...' : isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
+                </span>
               </button>
             )}
 
             {/* Cancel Button */}
             <button
-              onClick={handleClose}
-              className="w-full flex items-center justify-center px-4 py-3 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors"
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleClose();
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClose();
+              }}
+              className="w-full flex items-center justify-center px-4 py-3 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors pointer-events-auto active:bg-gray-900"
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
               <span className="font-medium">Cancel</span>
             </button>
