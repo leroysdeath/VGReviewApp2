@@ -8,6 +8,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -19,6 +20,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   rectSortingStrategy,
+  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { getGameUrl } from '../../utils/gameUrls';
 import { SortableGameCard } from './SortableGameCard';
@@ -63,14 +65,47 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const isTop5 = limit === 5;
 
-  // Configure drag and drop sensors
+  // Mobile detection and orientation handling
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+      // Reset drag state on resize/orientation change
+      if (isDragging) {
+        setIsDragging(false);
+        setActiveId(null);
+        document.body.style.overflow = '';
+        document.body.style.touchAction = '';
+      }
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    window.addEventListener('orientationchange', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
+      // Cleanup on unmount
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [isDragging]);
+
+  // Configure drag and drop sensors with mobile support
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // Require 8px drag before activating
+        distance: isMobile ? 10 : 8, // Slightly more distance on mobile
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // Press and hold for 250ms
+        tolerance: 5, // 5px movement tolerance
       },
     }),
     useSensor(KeyboardSensor, {
@@ -266,11 +301,33 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
 
   // Drag and drop handlers
   const handleDragStart = (event: DragStartEvent) => {
+    // Don't allow drag while saving
+    if (isSaving) return;
+    
     setActiveId(event.active.id as string);
+    setIsDragging(true);
+    
+    // Haptic feedback on mobile
+    if (isMobile && 'vibrate' in navigator) {
+      navigator.vibrate(10);
+    }
+    
+    // Prevent scrolling on mobile while dragging
+    if (isMobile) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    }
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    setIsDragging(false);
+    
+    // Re-enable scrolling
+    if (isMobile) {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
     
     if (!over || active.id === over.id) {
       setActiveId(null);
@@ -395,6 +452,13 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
           </div>
         )}
 
+        {/* Show hint for mobile users */}
+        {isEditingTop5 && isMobile && !isDragging && (
+          <div className="mb-4 p-3 bg-purple-900/20 border border-purple-700 rounded-lg text-purple-300 text-sm text-center">
+            Press and hold a game to drag and reorder
+          </div>
+        )}
+
         {/* Games grid with drag and drop */}
         <DndContext
           sensors={sensors}
@@ -402,8 +466,15 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <SortableContext items={sortableItems} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 md:mb-8">
+          <SortableContext 
+            items={sortableItems} 
+            strategy={isMobile ? verticalListSortingStrategy : rectSortingStrategy}
+          >
+            <div className={
+              isMobile
+                ? "flex flex-col items-center space-y-4 max-w-[200px] mx-auto transition-all duration-300"
+                : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 md:mb-8 transition-all duration-300"
+            }>
               {Array.from({ length: 5 }).map((_, index) => {
                 const position = index + 1;
                 const gameData = userTopGames.find(g => g.position === position);
@@ -442,6 +513,8 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                       isEditing={isEditingTop5}
                       onRemove={handleRemoveGame}
                       isDragging={activeId === gameData.game.id.toString()}
+                      isMobile={isMobile}
+                      isSaving={isSaving}
                     />
                   );
                 }
@@ -469,16 +542,28 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
           </SortableContext>
 
           {/* Drag overlay */}
-          <DragOverlay>
+          <DragOverlay
+            dropAnimation={{
+              duration: 200,
+              easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+            }}
+          >
             {activeGame && (
-              <div className="relative aspect-[3/4] cursor-grabbing">
+              <div 
+                className={`relative aspect-[3/4] cursor-grabbing ${
+                  isMobile ? 'w-[180px]' : 'w-full'
+                } transform scale-105 transition-transform`}
+              >
                 <img
                   src={activeGame.cover_url}
                   alt={activeGame.name}
                   className="w-full h-full object-cover rounded-lg shadow-2xl"
                   draggable={false}
                 />
-                <div className="absolute inset-0 bg-purple-600/20 rounded-lg" />
+                <div className="absolute inset-0 bg-purple-600/30 rounded-lg animate-pulse" />
+                <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-90 text-white px-2 py-1 rounded text-xs font-bold">
+                  Moving...
+                </div>
               </div>
             )}
           </DragOverlay>
