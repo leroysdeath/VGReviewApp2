@@ -317,7 +317,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                           e.currentTarget.src = '/default-cover.png';
                         }}
                       />
-                      <div className="absolute top-2 left-2 bg-purple-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                      <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
                         {position}
                       </div>
                     </div>
@@ -336,7 +336,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                       alt={gameData.game.name}
                       className="w-full h-full object-cover rounded-lg"
                     />
-                    <div className="absolute top-2 left-2 bg-purple-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                    <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
                       {position}
                     </div>
                     <button
@@ -382,6 +382,9 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
           }}
           userId={userId}
           mode="top-games"
+          excludeGameIds={userTopGames
+            .filter(item => item.game?.id)
+            .map(item => item.game!.id.toString())}
         />
       </div>
     );
