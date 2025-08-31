@@ -1232,7 +1232,7 @@ export const GamePage: React.FC = () => {
                     {progressLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <Play className={`h-4 w-4 ${isStarted ? 'fill-current' : ''}`} />
+                      <Play className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
                       {isStarted ? (
@@ -1261,7 +1261,7 @@ export const GamePage: React.FC = () => {
                     {progressLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <CheckCircle className={`h-4 w-4 ${isCompleted ? 'fill-current' : ''}`} />
+                      <CheckCircle className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
                       {isCompleted ? (
