@@ -12,12 +12,15 @@ CREATE TABLE IF NOT EXISTS game_state_history (
   from_state VARCHAR(20),
   to_state VARCHAR(20) NOT NULL,
   transition_reason TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  -- Index for quick lookups
-  INDEX idx_state_history_user_game (user_id, igdb_id),
-  INDEX idx_state_history_created (created_at DESC)
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Create indexes separately
+CREATE INDEX IF NOT EXISTS idx_state_history_user_game 
+ON game_state_history(user_id, igdb_id);
+
+CREATE INDEX IF NOT EXISTS idx_state_history_created 
+ON game_state_history(created_at DESC);
 
 -- Add comments
 COMMENT ON TABLE game_state_history IS 'Audit log of all game state transitions between wishlist, collection, and progress';
