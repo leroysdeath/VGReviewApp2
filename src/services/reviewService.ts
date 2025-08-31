@@ -782,12 +782,16 @@ export const likeReview = async (
   userId: number,
   reviewId: number
 ): Promise<ServiceResponse<{ likeCount: number }>> => {
+  console.log('👍 likeReview called with:', { userId, reviewId, userIdType: typeof userId });
+  
   try {
     // Validate input
     if (!userId || isNaN(userId)) {
+      console.error('❌ Invalid user ID in likeReview:', { userId, isNaN: isNaN(userId) });
       return { success: false, error: 'Invalid user ID' };
     }
     if (!reviewId || isNaN(reviewId)) {
+      console.error('❌ Invalid review ID in likeReview:', { reviewId });
       return { success: false, error: 'Invalid review ID' };
     }
 
@@ -822,6 +826,7 @@ export const likeReview = async (
     }
 
     // Insert new like
+    console.log('📤 Inserting like with:', { user_id: userId, rating_id: reviewId });
     const { error: insertError } = await supabase
       .from('content_like')
       .insert({
@@ -829,7 +834,11 @@ export const likeReview = async (
         rating_id: reviewId
       });
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error('❌ Error inserting like:', insertError);
+      throw insertError;
+    }
+    console.log('✅ Like inserted successfully');
 
     // Get updated like count from computed column (much faster)
     const { data: ratingData } = await supabase
@@ -998,12 +1007,16 @@ export const addComment = async (
   content: string,
   parentId?: number
 ): Promise<ServiceResponse<Comment>> => {
+  console.log('💬 addComment called with:', { userId, reviewId, contentLength: content.length, parentId });
+  
   try {
     // Validate input
     if (!userId || isNaN(userId)) {
+      console.error('❌ Invalid user ID in addComment:', { userId, isNaN: isNaN(userId) });
       return { success: false, error: 'Invalid user ID' };
     }
     if (!reviewId || isNaN(reviewId)) {
+      console.error('❌ Invalid review ID in addComment:', { reviewId });
       return { success: false, error: 'Invalid review ID' };
     }
     if (!content || content.trim().length === 0) {
@@ -1030,6 +1043,7 @@ export const addComment = async (
     }
 
     // Insert comment
+    console.log('📤 Inserting comment with:', { user_id: userId, rating_id: reviewId, contentLength: sanitizedContent.length });
     const { data, error } = await supabase
       .from('comment')
       .insert({
@@ -1045,7 +1059,11 @@ export const addComment = async (
       `)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error inserting comment:', error);
+      throw error;
+    }
+    console.log('✅ Comment inserted successfully:', { commentId: data.id });
 
     // Transform to our interface
     const comment: Comment = {

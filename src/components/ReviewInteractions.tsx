@@ -17,6 +17,7 @@ interface ReviewInteractionsProps {
   className?: string;
   reviewAuthorId?: number;
   currentUserId?: number;
+  disabled?: boolean;
 }
 
 export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
@@ -33,7 +34,8 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   error,
   className = '',
   reviewAuthorId,
-  currentUserId
+  currentUserId,
+  disabled = false
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -46,6 +48,10 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   const isOverLimit = remainingChars < 0;
   
   const handleLikeToggle = () => {
+    if (disabled) {
+      console.log('⚠️ Interactions disabled - waiting for user data to load');
+      return;
+    }
     if (isLiked) {
       onUnlike();
     } else {
@@ -55,6 +61,12 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (disabled) {
+      console.log('⚠️ Interactions disabled - waiting for user data to load');
+      setCommentError('Please wait for user data to load');
+      return;
+    }
     
     if (!commentText.trim() || isOverLimit) {
       return;
@@ -116,11 +128,13 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
         ) : (
           <button
             onClick={handleLikeToggle}
-            disabled={isLoadingLike}
+            disabled={isLoadingLike || disabled}
             className={`flex items-center gap-2 transition-colors ${
+              disabled ? 'opacity-50 cursor-not-allowed text-gray-500' :
               isLiked ? 'text-red-500 hover:text-red-600' : 'hover:text-white'
             }`}
             aria-label={isLiked ? 'Unlike review' : 'Like review'}
+            title={disabled ? 'Loading user data...' : ''}
           >
             <Heart className={`h-5 w-5 transition-transform ${isLiked ? 'fill-current scale-110' : 'scale-100'}`} />
             <span>{initialLikeCount}</span>
@@ -174,10 +188,11 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
             <div className="flex justify-end mt-2">
               <button
                 type="submit"
-                disabled={isSubmitting || !commentText.trim() || isOverLimit}
+                disabled={isSubmitting || !commentText.trim() || isOverLimit || disabled}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title={disabled ? 'Loading user data...' : ''}
               >
-                {isSubmitting ? 'Posting...' : 'Post Comment'}
+                {disabled ? 'Loading...' : isSubmitting ? 'Posting...' : 'Post Comment'}
               </button>
             </div>
           </form>

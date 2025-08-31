@@ -30,6 +30,7 @@ interface Review {
 
 
 export const ReviewPage: React.FC = () => {
+  console.log('📍 ReviewPage mounted');
   const { userId, gameId } = useParams<{ userId: string; gameId: string }>();
   const { isAuthenticated, user, dbUserId, dbUserIdLoading } = useAuth();
   
@@ -43,6 +44,18 @@ export const ReviewPage: React.FC = () => {
   // Get current user ID for review interactions
   // Only use dbUserId if it's loaded (not null)
   const currentUserId = dbUserId && dbUserId > 0 ? dbUserId : undefined;
+  
+  // Debug logging for user ID
+  useEffect(() => {
+    console.log('🎯 ReviewPage User ID Status:', {
+      isAuthenticated,
+      authUserId: user?.id,
+      dbUserId,
+      dbUserIdLoading,
+      currentUserId,
+      reviewId: review?.id
+    });
+  }, [isAuthenticated, user?.id, dbUserId, dbUserIdLoading, currentUserId, review?.id]);
   
   // Use review interactions hook
   const {

@@ -50,12 +50,16 @@ export const useReviewInteractions = ({
           setCommentCount(reviewResponse.data.commentCount || 0);
         }
 
-        // Check if user has liked the review
-        if (userId) {
+        // Check if user has liked the review - only if userId is defined
+        if (userId && userId > 0) {
+          console.log('🔍 Checking if user has liked review:', { userId, reviewId });
           const likeResponse = await hasUserLikedReview(userId, reviewId);
           if (likeResponse.success) {
             setIsLiked(likeResponse.data || false);
           }
+        } else {
+          console.log('⏳ User ID not yet loaded, skipping like check');
+          setIsLiked(false); // Default to not liked
         }
       } catch (err) {
         setError('Failed to load review data');
@@ -70,11 +74,13 @@ export const useReviewInteractions = ({
 
   // Toggle like status
   const toggleLike = useCallback(async () => {
-    if (!userId) {
+    if (!userId || userId <= 0) {
+      console.warn('⚠️ Cannot toggle like - userId is undefined or invalid:', userId);
       setError('You must be logged in to like reviews');
       return;
     }
 
+    console.log('👍 Toggling like:', { userId, reviewId, currentIsLiked: isLiked });
     setIsLoadingLike(true);
     setError(null);
 
@@ -134,10 +140,12 @@ export const useReviewInteractions = ({
 
   // Post a new comment
   const postComment = useCallback(async (content: string, parentId?: number) => {
-    if (!userId) {
+    if (!userId || userId <= 0) {
+      console.warn('⚠️ Cannot post comment - userId is undefined or invalid:', userId);
       throw new Error('You must be logged in to comment');
     }
 
+    console.log('💬 Posting comment:', { userId, reviewId, contentLength: content.length });
     setError(null);
 
     try {
