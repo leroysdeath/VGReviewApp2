@@ -98,7 +98,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
       const { data: wishlistData, error: wishlistError } = await supabase
         .from('user_wishlist')
         .select(`
-          created_at,
+          added_at,
           game:game_id (
             id,
             igdb_id,
@@ -108,7 +108,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           )
         `)
         .eq('user_id', parseInt(userId))
-        .order('created_at', { ascending: false })
+        .order('added_at', { ascending: false })
         .limit(20);
 
       if (wishlistError) throw wishlistError;
@@ -117,7 +117,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
       const { data: collectionData, error: collectionError } = await supabase
         .from('user_collection')
         .select(`
-          created_at,
+          added_at,
           game:game_id (
             id,
             igdb_id,
@@ -127,7 +127,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           )
         `)
         .eq('user_id', parseInt(userId))
-        .order('created_at', { ascending: false })
+        .order('added_at', { ascending: false })
         .limit(20);
 
       if (collectionError) throw collectionError;
@@ -183,7 +183,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         combinedActivities.push({
           id: `wishlist-${item.game.id}`,
           type: 'wishlist',
-          date: item.created_at,
+          date: item.added_at,
           game: item.game
         });
       });
@@ -195,7 +195,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         combinedActivities.push({
           id: `collection-${item.game.id}`,
           type: 'collection',
-          date: item.created_at,
+          date: item.added_at,
           game: item.game
         });
       });
