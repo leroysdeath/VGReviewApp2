@@ -1173,23 +1173,22 @@ export const GamePage: React.FC = () => {
 
                 {/* Desktop buttons - Hidden on mobile */}
                 <div className="hidden md:flex items-center gap-6 w-full">
-                  {/* Wishlist Button - Use visibility to maintain position */}
+                  {/* Wishlist Button - Gray out when unavailable */}
                   <button
                     onClick={handleToggleWishlist}
-                    disabled={wishlistLoading}
+                    disabled={wishlistLoading || isInCollection || isStarted || isCompleted}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isInWishlist
+                      isInCollection || isStarted || isCompleted
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
+                        : isInWishlist
                         ? 'bg-red-600 text-white hover:bg-red-700'
                         : 'border border-red-500 text-red-400 hover:bg-red-600/10'
-                    } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''} ${
-                      isInCollection || isStarted || isCompleted ? 'invisible' : ''
-                    }`}
-                    style={{ visibility: isInCollection || isStarted || isCompleted ? 'hidden' : 'visible' }}
+                    } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {wishlistLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <Gift className={`h-4 w-4 ${isInWishlist ? 'fill-current' : ''}`} />
+                      <Gift className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
                       {isInWishlist ? (
@@ -1206,23 +1205,22 @@ export const GamePage: React.FC = () => {
                     </span>
                   </button>
 
-                  {/* Collection Button - Use visibility to maintain position */}
+                  {/* Collection Button - Gray out when unavailable */}
                   <button
                     onClick={handleToggleCollection}
-                    disabled={collectionLoading}
+                    disabled={collectionLoading || isStarted || isCompleted}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isInCollection
+                      isStarted || isCompleted
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
+                        : isInCollection
                         ? 'bg-orange-600 text-white hover:bg-orange-700'
                         : 'border border-orange-500 text-orange-400 hover:bg-orange-600/10'
-                    } ${collectionLoading ? 'opacity-50 cursor-not-allowed' : ''} ${
-                      isStarted || isCompleted ? 'invisible' : ''
-                    }`}
-                    style={{ visibility: isStarted || isCompleted ? 'hidden' : 'visible' }}
+                    } ${collectionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {collectionLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <BookOpen className={`h-4 w-4 ${isInCollection ? 'fill-current' : ''}`} />
+                      <BookOpen className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
                       {isInCollection ? (
