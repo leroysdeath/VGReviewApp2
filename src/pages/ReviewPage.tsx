@@ -31,7 +31,7 @@ interface Review {
 
 export const ReviewPage: React.FC = () => {
   const { userId, gameId } = useParams<{ userId: string; gameId: string }>();
-  const { isAuthenticated, user, dbUserId } = useAuth();
+  const { isAuthenticated, user, dbUserId, dbUserIdLoading } = useAuth();
   
   const [game, setGame] = useState<GameWithCalculatedFields | null>(null);
   const [review, setReview] = useState<Review | null>(null);
@@ -41,7 +41,8 @@ export const ReviewPage: React.FC = () => {
   const [reviewExpanded, setReviewExpanded] = useState(false);
 
   // Get current user ID for review interactions
-  const currentUserId = dbUserId || undefined;
+  // Only use dbUserId if it's loaded (not null)
+  const currentUserId = dbUserId && dbUserId > 0 ? dbUserId : undefined;
   
   // Use review interactions hook
   const {
@@ -233,13 +234,13 @@ export const ReviewPage: React.FC = () => {
           
           // Still need to check if current user has liked this comment
           let userHasHearted = false;
-          if (isAuthenticated && user?.id) {
+          if (isAuthenticated && currentUserId) {
             const { data: userLikeData } = await supabase
               .from('content_like')
               .select('id')
               .eq('comment_id', comment.id)
-              .eq('user_id', user.id)
-              .single();
+              .eq('user_id', currentUserId)
+              .maybeSingle();
             
             userHasHearted = !!userLikeData;
           }
@@ -416,6 +417,8 @@ export const ReviewPage: React.FC = () => {
               isLoadingLike={isLoadingLike}
               reviewAuthorId={review.user_id}
               currentUserId={currentUserId}
+              // Disable interactions if authenticated but user ID not loaded
+              disabled={isAuthenticated && dbUserIdLoading}
             />
           </div>
         )}
