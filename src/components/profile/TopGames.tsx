@@ -445,7 +445,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                 className="relative aspect-[3/4] bg-gray-800 rounded-lg border-2 border-dashed border-gray-700"
               >
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-gray-400 text-2xl font-bold">
+                  <p className="text-gray-400 text-2xl font-normal">
                     #{position}
                   </p>
                 </div>

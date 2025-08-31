@@ -267,8 +267,18 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
     }
   };
 
-  // Render star rating
+  // Render rating
   const renderRating = (rating: number) => {
+    // For Top 5 mode, show as "X.X/10" format
+    if (mode === 'top-games') {
+      return (
+        <p className="text-yellow-500 text-sm font-medium">
+          {rating.toFixed(1)}/10
+        </p>
+      );
+    }
+    
+    // For collection/wishlist mode, keep the star rating
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
     
@@ -368,7 +378,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                 return (
                   <div
                     key={game.id}
-                    className="bg-gray-700 rounded-lg overflow-hidden hover:ring-2 hover:ring-purple-500 transition-all"
+                    className="bg-gray-700 rounded-lg overflow-hidden hover:ring-2 hover:ring-purple-500 transition-all flex flex-col"
                   >
                     <div className="relative aspect-[3/4]">
                       <img
@@ -381,22 +391,19 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                       />
                     </div>
                     
-                    <div className="p-3">
-                      <h3 className="text-white font-medium text-sm line-clamp-2 mb-1">
+                    <div className="p-3 flex flex-col flex-grow">
+                      <h3 className="text-white font-medium text-sm line-clamp-2 mb-2">
                         {game.name}
                       </h3>
                       
-                      <p className="text-gray-400 text-xs mb-2 line-clamp-1">
-                        {game.genres?.[0]?.name || 'Unknown Genre'}
-                      </p>
-                      
                       {game.first_release_date && (
-                        <p className="text-gray-500 text-xs mb-3">
+                        <p className="text-gray-400 text-xs mb-2">
                           {new Date(game.first_release_date * 1000).getFullYear()}
                         </p>
                       )}
                       
-                      <button
+                      <div className="mt-auto">
+                        <button
                         onClick={() => handleAddGame(game.id, game)}
                         disabled={addingGameId === game.id}
                         className="w-full py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -412,7 +419,8 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                             Add to {mode === 'collection' ? 'Collection' : 'Wishlist'}
                           </>
                         )}
-                      </button>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -424,7 +432,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
               {filteredGames.map(({ game, rating }) => (
                 <div
                   key={game.id}
-                  className="bg-gray-700 rounded-lg overflow-hidden hover:ring-2 hover:ring-purple-500 transition-all"
+                  className="bg-gray-700 rounded-lg overflow-hidden hover:ring-2 hover:ring-purple-500 transition-all flex flex-col"
                 >
                   <div className="relative aspect-[3/4]">
                     <img
@@ -437,46 +445,44 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                     />
                   </div>
                   
-                  <div className="p-3">
-                    <h3 className="text-white font-medium text-sm line-clamp-2 mb-1">
+                  <div className="p-3 flex flex-col flex-grow">
+                    <h3 className="text-white font-medium text-sm line-clamp-2 mb-2">
                       {game.name}
                     </h3>
                     
-                    <p className="text-gray-400 text-xs mb-2 line-clamp-1">
-                      {game.genre || 'Unknown Genre'}
-                    </p>
-                    
-                    <div className="mb-3">
+                    <div className="mb-2">
                       {renderRating(rating)}
                     </div>
                     
-                    <button
-                      onClick={() => {
-                        if (mode === 'top-games') {
-                          handleSelect(game.id);
-                        } else {
-                          // For collection/wishlist mode with user games
-                          const igdbId = game.igdb_id || parseInt(game.id);
-                          handleAddGame(igdbId);
-                        }
-                      }}
-                      disabled={mode !== 'top-games' && addingGameId === parseInt(game.id)}
-                      className="w-full py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {mode === 'top-games' ? (
-                        'Select'
-                      ) : addingGameId === parseInt(game.id) ? (
-                        <>
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                          Adding...
-                        </>
-                      ) : (
-                        <>
-                          {mode === 'collection' ? <BookOpen className="h-4 w-4" /> : <Gift className="h-4 w-4" />}
-                          Add to {mode === 'collection' ? 'Collection' : 'Wishlist'}
-                        </>
-                      )}
-                    </button>
+                    <div className="mt-auto">
+                      <button
+                        onClick={() => {
+                          if (mode === 'top-games') {
+                            handleSelect(game.id);
+                          } else {
+                            // For collection/wishlist mode with user games
+                            const igdbId = game.igdb_id || parseInt(game.id);
+                            handleAddGame(igdbId);
+                          }
+                        }}
+                        disabled={mode !== 'top-games' && addingGameId === parseInt(game.id)}
+                        className="w-full py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {mode === 'top-games' ? (
+                          'Select'
+                        ) : addingGameId === parseInt(game.id) ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                            Adding...
+                          </>
+                        ) : (
+                          <>
+                            {mode === 'collection' ? <BookOpen className="h-4 w-4" /> : <Gift className="h-4 w-4" />}
+                            Add to {mode === 'collection' ? 'Collection' : 'Wishlist'}
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
