@@ -1007,7 +1007,14 @@ export const ReviewFormPage: React.FC = () => {
 
 
             {/* Submit Buttons */}
-            <div className="flex gap-4 pt-6">
+            <div className="flex justify-end gap-4 pt-6">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
                 disabled={
@@ -1027,19 +1034,12 @@ export const ReviewFormPage: React.FC = () => {
                 <Save className="h-4 w-4" />
                 {isEditMode ? 'Update Review' : 'Publish Review'}
               </button>
-              {isEditMode && !hasFormChanges && (
-                <p className="text-sm text-gray-500 mt-2">
-                  Make changes to any field to enable the Update Review button
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={() => navigate(-1)}
-                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
             </div>
+            {isEditMode && !hasFormChanges && (
+              <p className="text-sm text-gray-500 text-right">
+                Make changes to any field to enable the Update Review button
+              </p>
+            )}
           </form>
         </div>
       </div>

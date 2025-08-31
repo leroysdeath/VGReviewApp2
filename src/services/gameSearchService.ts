@@ -26,7 +26,7 @@ export interface GameSearchResult {
   description?: string
   summary?: string
   release_date?: string
-  pic_url?: string
+  cover_url?: string
   cover_url?: string
   developer?: string
   publisher?: string
@@ -360,7 +360,6 @@ class GameSearchService {
         description: game.description,
         summary: game.summary,
         release_date: game.release_date,
-        pic_url: game.pic_url,
         cover_url: game.cover_url,
         developer: game.developer || game.dev,
         publisher: game.publisher,

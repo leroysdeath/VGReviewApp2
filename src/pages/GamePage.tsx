@@ -604,7 +604,6 @@ export const GamePage: React.FC = () => {
       const gameData = {
         igdb_id: game.igdb_id,
         name: game.name,
-        pic_url: game.pic_url,
         cover_url: game.cover_url,
         genre: game.genre,
         release_date: game.release_date
@@ -647,7 +646,6 @@ export const GamePage: React.FC = () => {
       const gameData = {
         igdb_id: game.igdb_id,
         name: game.name,
-        pic_url: game.pic_url,
         cover_url: game.cover_url,
         genre: game.genre,
         release_date: game.release_date
@@ -1160,8 +1158,8 @@ export const GamePage: React.FC = () => {
                     disabled={wishlistLoading}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       isInWishlist
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'border border-blue-600 text-blue-400 hover:bg-blue-600/10'
+                        ? 'bg-red-600 text-white hover:bg-red-700'
+                        : 'border border-red-500 text-red-400 hover:bg-red-600/10'
                     } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {wishlistLoading ? (
@@ -1182,8 +1180,8 @@ export const GamePage: React.FC = () => {
                     disabled={collectionLoading}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       isInCollection
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : 'border border-green-600 text-green-400 hover:bg-green-600/10'
+                        ? 'bg-orange-600 text-white hover:bg-orange-700'
+                        : 'border border-orange-500 text-orange-400 hover:bg-orange-600/10'
                     } ${collectionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {collectionLoading ? (

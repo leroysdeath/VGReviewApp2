@@ -217,9 +217,6 @@ class IGDBSyncService {
         cover_url: igdbGame.cover?.url 
           ? igdbGame.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') 
           : null,
-        pic_url: igdbGame.cover?.url 
-          ? igdbGame.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') 
-          : null,
         genre: igdbGame.genres?.[0]?.name || null,
         genres: igdbGame.genres?.map(g => g.name) || [],
         developer: igdbGame.involved_companies?.[0]?.company?.name || null,

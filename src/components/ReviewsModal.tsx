@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, TrendingUp, TrendingDown, Clock, History } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useResponsive } from '../hooks/useResponsive';
 import { getGameUrl } from '../utils/gameUrls';
@@ -35,6 +35,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
   const { isMobile } = useResponsive();
+  const navigate = useNavigate();
 
   // Load reviews based on active tab - optimized with foreign key syntax
   const loadReviews = useCallback(async () => {
@@ -52,7 +53,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
             id,
             igdb_id,
             name,
-            pic_url,
+            cover_url,
             slug
           )
         `)
@@ -86,7 +87,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
           id: item.id.toString(),
           gameId: item.game.igdb_id ? item.game.igdb_id.toString() : item.game.id.toString(),
           gameTitle: item.game.name || 'Unknown Game',
-          gameCover: item.game.pic_url || '/default-cover.png',
+          gameCover: item.game.cover_url || '/default-cover.png',
           gameUrl: getGameUrl(item.game),
           rating: item.rating || 0,
           reviewText: item.review,
@@ -228,59 +229,65 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
           ) : (
             /* Reviews List */
             <div className="space-y-4">
-              {reviews.map((review) => (
-                <div key={review.id} className="bg-gray-700 rounded-lg p-4 pb-4">
-                  <div className="flex items-start gap-4">
-                    <Link
-                      to={review.gameUrl}
-                      className="flex-shrink-0 mt-4"
-                      onClick={onClose}
-                    >
-                      <img
-                        src={review.gameCover}
-                        alt={review.gameTitle}
-                        className="w-16 h-20 object-cover rounded"
-                        onError={(e) => {
-                          e.currentTarget.src = '/default-cover.png';
-                        }}
-                      />
-                    </Link>
-                    
-                    <div className="flex-1 min-w-0 mt-4">
-                      <Link
-                        to={review.gameUrl}
-                        className="text-white font-medium hover:text-purple-400 transition-colors block mb-2"
-                        onClick={onClose}
-                      >
-                        {review.gameTitle}
-                      </Link>
-                      
-                      <div className="text-gray-400 text-sm mb-2">
-                        {new Date(review.postDate).toLocaleDateString()} <span className="text-yellow-400">{review.rating % 1 === 0 ? `${review.rating}/10` : `${review.rating.toFixed(1)}/10`}</span>
+              {reviews.map((review) => {
+                // Generate review URL (same logic as ReviewCard: /review/{userId}/{gameId})
+                const reviewUrl = `/review/${userId}/${review.gameId}`;
+                
+                return (
+                  <Link
+                    key={review.id}
+                    to={reviewUrl}
+                    onClick={onClose}
+                    className="block bg-gray-700 rounded-lg p-4 pb-4 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-900/50 hover:bg-gray-700/80"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 mt-4">
+                        <img
+                          src={review.gameCover}
+                          alt={review.gameTitle}
+                          className="w-16 h-20 object-cover rounded"
+                          onError={(e) => {
+                            e.currentTarget.src = '/default-cover.png';
+                          }}
+                        />
                       </div>
                       
-                      <div className="text-gray-300 text-sm">
-                        {expandedReviews.has(review.id) || review.reviewText.length <= 150 ? (
-                          <p>{review.reviewText}</p>
-                        ) : (
-                          <p>
-                            {review.reviewText.slice(0, 150)}...
-                          </p>
-                        )}
+                      <div className="flex-1 min-w-0 mt-4">
+                        <h3 className="text-white font-medium mb-2">
+                          {review.gameTitle}
+                        </h3>
                         
-                        {review.reviewText.length > 150 && (
-                          <button
-                            onClick={() => toggleReviewExpansion(review.id)}
-                            className="text-purple-400 hover:text-purple-300 text-xs mt-1"
-                          >
-                            {expandedReviews.has(review.id) ? 'Show less' : 'Show more'}
-                          </button>
-                        )}
+                        <div className="text-gray-400 text-sm mb-2">
+                          {new Date(review.postDate).toLocaleDateString()} <span className="text-yellow-400">{review.rating % 1 === 0 ? `${review.rating}/10` : `${review.rating.toFixed(1)}/10`}</span>
+                        </div>
+                        
+                        <div className="text-gray-300 text-sm">
+                          {expandedReviews.has(review.id) || review.reviewText.length <= 150 ? (
+                            <p>{review.reviewText}</p>
+                          ) : (
+                            <p>
+                              {review.reviewText.slice(0, 150)}...
+                            </p>
+                          )}
+                          
+                          {review.reviewText.length > 150 && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleReviewExpansion(review.id);
+                              }}
+                              className="text-purple-400 hover:text-purple-300 text-xs mt-1"
+                            >
+                              {expandedReviews.has(review.id) ? 'Show less' : 'Show more'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

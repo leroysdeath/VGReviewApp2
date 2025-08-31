@@ -29,6 +29,28 @@ interface CollectionWishlistStatus {
 
 class CollectionWishlistService {
   /**
+   * Check if game is already started or completed
+   */
+  async checkGameProgress(igdbId: number): Promise<boolean> {
+    try {
+      const userId = await getCurrentUserId();
+      if (!userId) return false;
+      
+      const { data } = await supabase
+        .from('game_progress')
+        .select('started, completed')
+        .eq('user_id', userId)
+        .eq('igdb_id', igdbId)
+        .single();
+      
+      return data && (data.started || data.completed);
+    } catch (error) {
+      console.error('Error checking game progress:', error);
+      return false;
+    }
+  }
+
+  /**
    * Private helper to add game to collection or wishlist
    */
   private async ensureGameAndAdd(
@@ -49,7 +71,6 @@ class CollectionWishlistService {
         const ensureResult = await ensureGameExists({
           igdb_id: igdbId,
           name: gameData.name || '',
-          pic_url: gameData.pic_url,
           cover_url: gameData.cover_url,
           genre: gameData.genre,
           release_date: gameData.release_date
@@ -145,6 +166,15 @@ class CollectionWishlistService {
    * Add game to user's collection
    */
   async addToCollection(igdbId: number, gameData?: Partial<Game>): Promise<ServiceResponse<CollectionItem>> {
+    // Check if already started/completed
+    const inProgress = await this.checkGameProgress(igdbId);
+    if (inProgress) {
+      return { 
+        success: false, 
+        error: 'Cannot add to collection: game already started or completed' 
+      };
+    }
+    
     return this.ensureGameAndAdd('user_collection', igdbId, gameData);
   }
 
@@ -164,6 +194,15 @@ class CollectionWishlistService {
     priority?: number,
     notes?: string
   ): Promise<ServiceResponse<WishlistItem>> {
+    // Check if already started/completed
+    const inProgress = await this.checkGameProgress(igdbId);
+    if (inProgress) {
+      return { 
+        success: false, 
+        error: 'Cannot add to wishlist: game already started or completed' 
+      };
+    }
+    
     return this.ensureGameAndAdd('user_wishlist', igdbId, gameData, { priority, notes });
   }
 
@@ -263,7 +302,6 @@ class CollectionWishlistService {
             id,
             igdb_id,
             name,
-            pic_url,
             cover_url,
             genre,
             release_date,
@@ -302,7 +340,6 @@ class CollectionWishlistService {
             id,
             igdb_id,
             name,
-            pic_url,
             cover_url,
             genre,
             release_date,
@@ -371,6 +408,15 @@ class CollectionWishlistService {
       const result = await this.removeFromCollection(igdbId);
       return { ...result, data: false };
     } else {
+      // Check if already started/completed before adding
+      const inProgress = await this.checkGameProgress(igdbId);
+      if (inProgress) {
+        return { 
+          success: false, 
+          error: 'Cannot add to collection: game already started or completed',
+          data: false
+        };
+      }
       const result = await this.addToCollection(igdbId, gameData);
       return { ...result, data: true };
     }
@@ -386,6 +432,15 @@ class CollectionWishlistService {
       const result = await this.removeFromWishlist(igdbId);
       return { ...result, data: false };
     } else {
+      // Check if already started/completed before adding
+      const inProgress = await this.checkGameProgress(igdbId);
+      if (inProgress) {
+        return { 
+          success: false, 
+          error: 'Cannot add to wishlist: game already started or completed',
+          data: false
+        };
+      }
       const result = await this.addToWishlist(igdbId, gameData);
       return { ...result, data: true };
     }
@@ -396,9 +451,53 @@ class CollectionWishlistService {
    */
   async moveFromWishlistToCollection(igdbId: number, gameData?: Partial<Game>): Promise<ServiceResponse<void>> {
     try {
+      // Check if already started/completed
+      const inProgress = await this.checkGameProgress(igdbId);
+      if (inProgress) {
+        return { 
+          success: false, 
+          error: 'Cannot move to collection: game already started or completed' 
+        };
+      }
+
       const [removeResult, addResult] = await Promise.all([
         this.removeFromWishlist(igdbId),
         this.addToCollection(igdbId, gameData)
+      ]);
+
+      if (!removeResult.success || !addResult.success) {
+        return {
+          success: false,
+          error: removeResult.error || addResult.error || 'Failed to move game'
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to move game'
+      };
+    }
+  }
+
+  /**
+   * Move game from collection to wishlist
+   */
+  async moveFromCollectionToWishlist(igdbId: number, gameData?: Partial<Game>): Promise<ServiceResponse<void>> {
+    try {
+      // Check if already started/completed
+      const inProgress = await this.checkGameProgress(igdbId);
+      if (inProgress) {
+        return { 
+          success: false, 
+          error: 'Cannot move to wishlist: game already started or completed' 
+        };
+      }
+
+      const [removeResult, addResult] = await Promise.all([
+        this.removeFromCollection(igdbId),
+        this.addToWishlist(igdbId, gameData)
       ]);
 
       if (!removeResult.success || !addResult.success) {

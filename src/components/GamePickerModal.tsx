@@ -7,7 +7,7 @@ import { collectionWishlistService } from '../services/collectionWishlistService
 interface Game {
   id: string;
   name: string;
-  pic_url: string;
+  cover_url: string;
   genre: string;
   igdb_id?: number;
 }
@@ -36,12 +36,14 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
   onClose,
   onSelect,
   userId,
-  excludeGameIds = [],
+  excludeGameIds,
   title,
   position,
   mode = 'top-games',
   onGameAdded
 }) => {
+  // Memoize the default excludeGameIds to prevent re-renders
+  const memoizedExcludeIds = useMemo(() => excludeGameIds || [], [excludeGameIds]);
   const [games, setGames] = useState<RatedGame[]>([]);
   const [igdbGames, setIgdbGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,11 +57,13 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
   // Fetch user's reviewed games (for top-games mode or when in user-games search mode)
   useEffect(() => {
+    console.log('[GamePickerModal] useEffect triggered - isOpen:', isOpen, 'userId:', userId, 'mode:', mode);
     if (!isOpen || !userId) return;
     // Only fetch if in top-games mode or if in user-games search mode for collection/wishlist
     if (mode !== 'top-games' && searchMode !== 'user-games') return;
 
     const fetchGames = async () => {
+      console.log('[GamePickerModal] fetchGames called - setting loading to true');
       setLoading(true);
       setError(null);
       
@@ -91,7 +95,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
               id,
               igdb_id,
               name,
-              pic_url,
+              cover_url,
               genre
             ),
             rating
@@ -101,11 +105,15 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
           .order('rating', { ascending: false });
 
         // Exclude already selected games if any
-        if (excludeGameIds.length > 0) {
-          query = query.not('game_id', 'in', `(${excludeGameIds.join(',')})`);
+        if (memoizedExcludeIds.length > 0) {
+          query = query.not('game_id', 'in', `(${memoizedExcludeIds.join(',')})`);
         }
 
         const { data, error } = await query;
+        
+        console.log('[GamePickerModal] Raw API response:', data);
+        console.log('[GamePickerModal] ExcludeGameIds:', memoizedExcludeIds);
+        console.log('[GamePickerModal] Mode:', mode);
 
         if (error) throw error;
 
@@ -124,23 +132,26 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
               id: item.game.id.toString(),
               igdb_id: item.game.igdb_id,
               name: item.game.name || 'Unknown Game',
-              pic_url: item.game.pic_url || '/default-cover.png',
+              cover_url: item.game.cover_url || '/default-cover.png',
               genre: item.game.genre || ''
             },
             rating: item.rating
           }));
 
+        console.log('[GamePickerModal] Valid games after filtering:', validGames);
+        console.log('[GamePickerModal] Valid games count:', validGames.length);
         setGames(validGames);
       } catch (err) {
         console.error('Error fetching games:', err);
         setError('Failed to load games');
       } finally {
+        console.log('[GamePickerModal] Setting loading to false');
         setLoading(false);
       }
     };
 
     fetchGames();
-  }, [isOpen, userId, excludeGameIds, mode, searchMode]);
+  }, [isOpen, userId, memoizedExcludeIds, mode, searchMode]);
 
   // Search IGDB when in collection/wishlist mode
   useEffect(() => {
@@ -194,13 +205,18 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
   // Filter games based on search query
   const filteredGames = useMemo(() => {
-    if (searchMode === 'igdb') return [];
+    console.log('[GamePickerModal] Filtering - searchMode:', searchMode);
+    console.log('[GamePickerModal] Filtering - games array:', games);
+    console.log('[GamePickerModal] Filtering - searchQuery:', searchQuery);
+    
+    // Only filter user's reviewed games when in user-games search mode
+    if (searchMode !== 'user-games') return [];
     if (!searchQuery.trim()) return games;
     
     const query = searchQuery.toLowerCase();
     return games.filter(({ game }) => 
       game.name.toLowerCase().includes(query) ||
-      game.genre.toLowerCase().includes(query)
+      (game.genre && game.genre.toLowerCase().includes(query))
     );
   }, [games, searchQuery, searchMode]);
 
@@ -318,6 +334,11 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
+          {/* Debug info - remove after fixing */}
+          {console.log('[GamePickerModal] Render - loading:', loading)}
+          {console.log('[GamePickerModal] Render - searchMode:', searchMode)}
+          {console.log('[GamePickerModal] Render - filteredGames:', filteredGames)}
+          {console.log('[GamePickerModal] Render - igdbGames:', igdbGames)}
           {/* Info message for collection/wishlist mode */}
           {(mode === 'collection' || mode === 'wishlist') && startedFinishedGames.size > 0 && (
             <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-700 rounded-lg flex items-start gap-2">
@@ -333,12 +354,13 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
             </div>
           )}
 
+          {console.log('[GamePickerModal] RENDER CHECK - loading:', loading, 'searchMode:', searchMode, 'filteredGames.length:', filteredGames.length, 'igdbGames.length:', igdbGames.length)}
           {loading ? (
             /* Loading State */
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
             </div>
-          ) : searchMode === 'igdb' && igdbGames.length > 0 ? (
+          ) : (console.log('[GamePickerModal] Check render - searchMode:', searchMode, 'igdbGames:', igdbGames.length), searchMode === 'igdb' && igdbGames.length > 0) ? (
             /* IGDB Games Grid */
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {igdbGames.map((game) => {
@@ -396,30 +418,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                 );
               })}
             </div>
-          ) : (filteredGames.length === 0 && searchMode === 'user-games') || (searchMode === 'igdb' && igdbGames.length === 0) ? (
-            /* Empty State */
-            <div className="text-center py-12">
-              <Gamepad2 className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400">
-                {mode === 'top-games' ? (
-                  searchQuery 
-                    ? 'No games found matching your search'
-                    : games.length === 0 
-                      ? 'No reviewed games available to select'
-                      : 'All your reviewed games are already in your Top 5'
-                ) : (
-                  searchQuery
-                    ? 'No eligible games found. Try a different search.'
-                    : 'Search for games to add (already started/finished games are excluded)'
-                )}
-              </p>
-              {(mode === 'collection' || mode === 'wishlist') && startedFinishedGames.size > 0 && (
-                <p className="text-xs text-gray-500 mt-2">
-                  {startedFinishedGames.size} game{startedFinishedGames.size !== 1 ? 's' : ''} hidden (already started/finished)
-                </p>
-              )}
-            </div>
-          ) : searchMode === 'user-games' && filteredGames.length > 0 ? (
+          ) : (console.log('[GamePickerModal] Check render - user-games check, searchMode:', searchMode, 'filteredGames:', filteredGames.length), searchMode === 'user-games' && filteredGames.length > 0) ? (
             /* User's Reviewed Games Grid */
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredGames.map(({ game, rating }) => (
@@ -429,7 +428,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                 >
                   <div className="relative aspect-[3/4]">
                     <img
-                      src={game.pic_url}
+                      src={game.cover_url}
                       alt={game.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -482,7 +481,30 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                 </div>
               ))}
             </div>
-          ) : null}
+          ) : (
+            /* Empty State */
+            <div className="text-center py-12">
+              <Gamepad2 className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400">
+                {mode === 'top-games' ? (
+                  searchQuery 
+                    ? 'No games found matching your search'
+                    : games.length === 0 
+                      ? 'No reviewed games available to select'
+                      : 'All your reviewed games are already in your Top 5'
+                ) : (
+                  searchQuery
+                    ? 'No eligible games found. Try a different search.'
+                    : 'Search for games to add (already started/finished games are excluded)'
+                )}
+              </p>
+              {(mode === 'collection' || mode === 'wishlist') && startedFinishedGames.size > 0 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {startedFinishedGames.size} game{startedFinishedGames.size !== 1 ? 's' : ''} hidden (already started/finished)
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

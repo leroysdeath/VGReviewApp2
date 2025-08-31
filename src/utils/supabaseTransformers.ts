@@ -12,7 +12,7 @@ export const transformSupabaseGameToLegacy = (supabaseGame: GameWithPlatforms) =
   return {
     id: supabaseGame.id.toString(),
     title: supabaseGame.name,
-    coverImage: supabaseGame.pic_url || 'https://images.pexels.com/photos/442576/pexels-photo-442576.jpeg?auto=compress&cs=tinysrgb&w=400',
+    coverImage: supabaseGame.cover_url || 'https://images.pexels.com/photos/442576/pexels-photo-442576.jpeg?auto=compress&cs=tinysrgb&w=400',
     releaseDate: supabaseGame.release_date || '',
     genre: supabaseGame.genre || 'Unknown',
     rating: 0, // This would need to be calculated from ratings

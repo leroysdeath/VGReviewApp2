@@ -21,7 +21,7 @@ interface GameItem {
     igdb_id?: number;
     name?: string;
     cover_url?: string;
-    pic_url?: string;
+    cover_url?: string;
     slug?: string;
   };
 }
@@ -127,7 +127,11 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
                 setPickerMode(type);
                 setShowGamePicker(true);
               }}
-              className="mt-4 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+              className={`mt-4 px-4 py-2 text-white rounded transition-colors ${
+                type === 'collection' 
+                  ? 'bg-orange-600 hover:bg-orange-700'
+                  : 'bg-red-600 hover:bg-red-700'
+              }`}
             >
               <Plus className="h-4 w-4 inline mr-2" />
               Add Games
@@ -142,7 +146,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
         {items.map((item) => {
           const gameSlug = item.game?.slug || `game-${item.igdb_id}`;
           const gameName = item.game?.name || 'Unknown Game';
-          const coverUrl = item.game?.cover_url || item.game?.pic_url || '/default-cover.png';
+          const coverUrl = item.game?.cover_url || '/default-cover.png';
 
           return (
             <div key={item.id} className="relative group">
@@ -194,11 +198,19 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
               setPickerMode(type);
               setShowGamePicker(true);
             }}
-            className="aspect-[3/4] bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 transition-colors cursor-pointer border-2 border-dashed border-gray-600"
+            className={`aspect-[3/4] bg-gray-800 rounded-lg flex items-center justify-center transition-colors cursor-pointer border-2 border-dashed ${
+              type === 'collection'
+                ? 'border-orange-600/50 hover:bg-orange-600/10'
+                : 'border-red-600/50 hover:bg-red-600/10'
+            }`}
           >
             <div className="text-center">
-              <Plus className="h-8 w-8 text-gray-500 mx-auto mb-2" />
-              <span className="text-sm text-gray-500">Add Games</span>
+              <Plus className={`h-8 w-8 mx-auto mb-2 ${
+                type === 'collection' ? 'text-orange-500' : 'text-red-500'
+              }`} />
+              <span className={`text-sm ${
+                type === 'collection' ? 'text-orange-500' : 'text-red-500'
+              }`}>Add Games</span>
             </div>
           </div>
         )}
@@ -214,7 +226,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
           onClick={() => setActiveSubTab('collection')}
           className={`pb-3 px-1 transition-colors ${
             activeSubTab === 'collection' 
-              ? 'border-b-2 border-purple-600 text-white' 
+              ? 'border-b-2 border-orange-600 text-white' 
               : 'text-gray-400 hover:text-gray-300'
           }`}
         >
@@ -224,7 +236,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
           onClick={() => setActiveSubTab('wishlist')}
           className={`pb-3 px-1 transition-colors ${
             activeSubTab === 'wishlist' 
-              ? 'border-b-2 border-purple-600 text-white' 
+              ? 'border-b-2 border-red-600 text-white' 
               : 'text-gray-400 hover:text-gray-300'
           }`}
         >

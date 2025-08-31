@@ -20,7 +20,7 @@ export interface Activity {
   game?: {
     id: number;
     name: string;
-    pic_url?: string;
+    cover_url?: string;
   };
   review?: {
     id: number;
@@ -70,7 +70,7 @@ export const getUserActivities = async (
       .select(`
         *,
         user:user_id(id, name, picurl),
-        game:game_id(id, name, pic_url),
+        game:game_id(id, name, cover_url),
         review:review_id(id, rating, review),
         comment:comment_id(id, content)
       `, { count: 'exact' })

@@ -73,7 +73,7 @@ export interface Database {
           name: string;
           release_date: string | null;
           description: string | null;
-          pic_url: string | null;
+          cover_url: string | null;
           dev: string | null;
           publisher: string | null;
           igdb_link: string | null;
@@ -85,7 +85,7 @@ export interface Database {
           name: string;
           release_date?: string | null;
           description?: string | null;
-          pic_url?: string | null;
+          cover_url?: string | null;
           dev?: string | null;
           publisher?: string | null;
           igdb_link?: string | null;
@@ -97,7 +97,7 @@ export interface Database {
           name?: string;
           release_date?: string | null;
           description?: string | null;
-          pic_url?: string | null;
+          cover_url?: string | null;
           dev?: string | null;
           publisher?: string | null;
           igdb_link?: string | null;

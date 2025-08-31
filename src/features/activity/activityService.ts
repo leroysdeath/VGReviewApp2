@@ -16,7 +16,7 @@ export interface Activity {
   gameId?: number;
   gameName?: string;
   gameCover?: string;
-  gamePicUrl?: string; // Handle both cover_url and pic_url
+  gameCoverUrl?: string; // Handle cover_url
   ratingId?: number;
   commentId?: number;
   followId?: number;
@@ -233,8 +233,8 @@ export class ActivityService {
       targetUserAvatar: row.target_user_avatar,
       gameId: row.game_id,
       gameName: row.game_name,
-      gameCover: row.game_cover || row.game_pic_url, // Handle both column names
-      gamePicUrl: row.game_pic_url,
+      gameCover: row.game_cover || row.game_cover_url, // Handle cover_url column
+      gameCoverUrl: row.game_cover_url,
       ratingId: row.rating_id,
       commentId: row.comment_id,
       followId: row.follow_id,

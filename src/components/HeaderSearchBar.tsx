@@ -442,7 +442,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
             onKeyDown={handleKeyDown}
             placeholder={getPlaceholder()}
             className={`
-              w-full pl-10 pr-16 py-2 bg-gray-800 border border-gray-700 rounded-lg
+              w-full pl-10 pr-16 py-2 bg-gray-900/80 backdrop-blur-lg border border-gray-700 rounded-lg
               text-white placeholder-gray-400 text-sm
               focus:outline-none focus:border-purple-500
               transition-all duration-200
@@ -486,14 +486,14 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
 
       {/* Dropdown Results */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-50 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-gray-900/80 backdrop-blur-lg border border-gray-700 rounded-lg shadow-2xl z-50 overflow-hidden">
           {/* Tabs */}
           <div className="flex border-b border-gray-700 bg-gray-900/50">
             <button
               onClick={() => handleTabChange('games')}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === 'games'
-                  ? 'text-purple-400 bg-gray-800 border-b-2 border-purple-400'
+                  ? 'text-purple-400 bg-gray-900/90 border-b-2 border-purple-400'
                   : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'
               }`}
             >
@@ -504,7 +504,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
               onClick={() => handleTabChange('users')}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === 'users'
-                  ? 'text-purple-400 bg-gray-800 border-b-2 border-purple-400'
+                  ? 'text-purple-400 bg-gray-900/90 border-b-2 border-purple-400'
                   : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'
               }`}
             >
@@ -545,9 +545,9 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
                   >
                     {/* Game Cover */}
                     <div className="w-8 h-10 bg-gray-700 rounded mr-3 flex-shrink-0 overflow-hidden">
-                      {game.cover_url || game.pic_url ? (
+                      {game.cover_url ? (
                         <img
-                          src={game.cover_url || game.pic_url}
+                          src={game.cover_url}
                           alt={game.name}
                           className="w-full h-full object-cover"
                           loading="lazy"

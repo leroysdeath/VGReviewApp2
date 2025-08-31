@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { sanitizeRich } from '../utils/sanitize';
+import { generateSlug } from '../utils/gameUrls';
 
 /**
  * Get database user ID from auth user
@@ -130,6 +131,7 @@ export const ensureGameExists = async (
       igdb_id: gameData.igdb_id,
       game_id: gameData.igdb_id.toString(), // Convert IGDB ID to string for game_id column
       name: gameData.name.trim(),
+      slug: generateSlug(gameData.name.trim()), // Generate slug for new game
       cover_url: gameData.cover_url || null,
       genres: gameData.genre ? [gameData.genre] : null,
       release_date: releaseDate,
@@ -190,10 +192,10 @@ export const createReview = async (
       return { success: false, error: 'User not authenticated or not found in database' };
     }
 
-    // Look up existing game by IGDB ID
+    // Look up existing game by IGDB ID (including slug)
     const { data: gameRecord, error: gameError } = await supabase
       .from('game')
-      .select('id, name')
+      .select('id, name, slug')
       .eq('igdb_id', igdbId)
       .single();
 
@@ -253,6 +255,7 @@ export const createReview = async (
       user_id: userId,
       game_id: gameId, // Database game ID
       igdb_id: igdbId, // Also store IGDB ID for reference
+      slug: gameRecord.slug || generateSlug(gameRecord.name), // Get slug from game or generate if missing
       rating: rating,
       review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
       post_date_time: new Date().toISOString(),
@@ -300,7 +303,7 @@ export const createReview = async (
       game: data.game ? {
         id: data.game.id,
         name: data.game.name,
-        pic_url: data.game.pic_url
+        cover_url: data.game.cover_url
       } : undefined
     };
 
@@ -346,7 +349,7 @@ export interface Review {
   game?: {
     id: number;
     name: string;
-    pic_url?: string;
+    cover_url?: string;
   };
 }
 
@@ -484,7 +487,7 @@ export const getUserReviewForGame = async (gameId: number): Promise<ServiceRespo
       game: data.game ? {
         id: data.game.id,
         name: data.game.name,
-        pic_url: data.game.pic_url
+        cover_url: data.game.cover_url
       } : undefined
     };
 
@@ -600,7 +603,7 @@ export const updateReview = async (
       game: data.game ? {
         id: data.game.id,
         name: data.game.name,
-        pic_url: data.game.pic_url
+        cover_url: data.game.cover_url
       } : undefined
     };
 
@@ -657,7 +660,7 @@ export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
       game: item.game ? {
         id: item.game.id,
         name: item.game.name,
-        pic_url: item.game.pic_url || item.game.cover_url
+        cover_url: item.game.cover_url
       } : undefined
     })) || [];
 
@@ -721,7 +724,7 @@ export const getReview = async (
       game: data.game ? {
         id: data.game.id,
         name: data.game.name,
-        pic_url: data.game.pic_url
+        cover_url: data.game.cover_url
       } : undefined
     };
 
@@ -756,9 +759,9 @@ export const hasUserLikedReview = async (
       .select('id')
       .eq('user_id', userId)
       .eq('rating_id', reviewId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() to avoid 406 errors
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+    if (error) {
       throw error;
     }
 
@@ -794,9 +797,9 @@ export const likeReview = async (
       .select('id')
       .eq('user_id', userId)
       .eq('rating_id', reviewId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() to avoid 406 errors when no row exists
 
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+    if (checkError) {
       throw checkError;
     }
 
@@ -915,7 +918,7 @@ export const getCommentsForReview = async (
       .from('comment')
       .select(`
         *,
-        user:user_id(id, username, name, avatar_url)
+        user:comment_user_id_fkey(id, username, name, avatar_url)
       `, { count: 'exact' })
       .eq('rating_id', reviewId)
       .order('created_at', { ascending: false })
@@ -1038,7 +1041,7 @@ export const addComment = async (
       })
       .select(`
         *,
-        user:user_id(id, username, name, avatar_url)
+        user:comment_user_id_fkey(id, username, name, avatar_url)
       `)
       .single();
 
@@ -1086,8 +1089,9 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       .select(`
         *,
         user!fk_rating_user(*),
-        game(id, name, pic_url, cover_url, game_id, igdb_id)
+        game(id, name, cover_url, game_id, igdb_id)
       `, { count: 'exact' })
+      .not('review', 'is', null)  // Only fetch reviews that have written content
       .order('post_date_time', { ascending: false })
       .limit(limit);
 
@@ -1116,7 +1120,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       game: item.game ? {
         id: item.game.id,
         name: item.game.name,
-        pic_url: item.game.pic_url || item.game.cover_url
+        cover_url: item.game.cover_url
       } : undefined
     })) || [];
 
