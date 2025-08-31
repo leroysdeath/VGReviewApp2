@@ -203,17 +203,29 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
       // Sort by date (most recent first), with secondary sort by activity type for same timestamps
       const sortedActivities = combinedActivities
         .sort((a, b) => {
-          const timeDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+          const timeA = new Date(a.date).getTime();
+          const timeB = new Date(b.date).getTime();
+          const timeDiff = timeB - timeA;
           
-          // If timestamps are different, sort by time (newest first)
-          if (timeDiff !== 0) return timeDiff;
+          // If timestamps are within 2 seconds of each other, treat as same time
+          // and sort by activity type priority instead
+          if (Math.abs(timeDiff) <= 2000) {
+            // Sort by priority in reverse (higher priority first) since we're showing newest first
+            // This ensures logical order: review → completed → started for "same time" activities
+            const priorityA = activityPriority[a.type] || 999;
+            const priorityB = activityPriority[b.type] || 999;
+            
+            // If priorities are different, sort by priority
+            if (priorityA !== priorityB) {
+              return priorityB - priorityA;
+            }
+            
+            // If same priority (same activity type), maintain chronological order
+            return timeDiff;
+          }
           
-          // If timestamps are equal, sort by activity type priority
-          // Since we're showing newest first, reverse priority order so that
-          // later logical actions (review) appear before earlier ones (started)
-          const priorityA = activityPriority[a.type] || 999;
-          const priorityB = activityPriority[b.type] || 999;
-          return priorityB - priorityA;
+          // Otherwise sort by time (newest first)
+          return timeDiff;
         })
         .slice(0, 25); // Keep most recent 25 activities
 
