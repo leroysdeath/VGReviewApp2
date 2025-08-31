@@ -166,6 +166,13 @@ export const FLAGSHIP_GAMES: FlagshipDatabase = {
         releaseYear: 2017,
         platforms: ['Nintendo Switch'],
         significance: 'modern'
+      },
+      {
+        names: ['The Legend of Zelda: Tears of the Kingdom', 'Tears of the Kingdom', 'TotK'],
+        reason: 'BotW sequel, building mechanics, Switch technical showcase',
+        releaseYear: 2023,
+        platforms: ['Nintendo Switch'],
+        significance: 'modern'
       }
     ]
   },
@@ -293,6 +300,121 @@ export const FLAGSHIP_GAMES: FlagshipDatabase = {
         names: ['Metroid Prime', 'Metroid Prime 1'],
         reason: '3D Metroid success, first-person exploration, GameCube showcase',
         releaseYear: 2002,
+        platforms: ['GameCube'],
+        significance: 'technical'
+      }
+    ]
+  },
+
+  forza: {
+    patterns: ['forza'],
+    flagships: [
+      {
+        names: ['Forza Motorsport', 'Forza Motorsport 1'],
+        reason: 'Racing simulation pioneer, Xbox exclusive flagship series',
+        releaseYear: 2005,
+        platforms: ['Xbox'],
+        significance: 'originator'
+      },
+      {
+        names: ['Forza Horizon', 'Forza Horizon 1'],
+        reason: 'Open-world racing innovation, festival atmosphere, arcade-sim hybrid',
+        releaseYear: 2012,
+        platforms: ['Xbox 360'],
+        significance: 'innovation'
+      },
+      {
+        names: ['Forza Horizon 4', 'FH4'],
+        reason: 'Peak Horizon game, seasons system, UK setting, Game Pass success',
+        releaseYear: 2018,
+        platforms: ['Xbox One'],
+        significance: 'peak'
+      }
+    ]
+  },
+
+  'mario party': {
+    patterns: ['mario party'],
+    flagships: [
+      {
+        names: ['Mario Party', 'Mario Party 1'],
+        reason: 'Party game originator, friendship destroyer, N64 classic',
+        releaseYear: 1998,
+        platforms: ['Nintendo 64'],
+        significance: 'originator'
+      },
+      {
+        names: ['Mario Party Superstars', 'Superstars'],
+        reason: 'Modern pinnacle, classic boards revival, online play',
+        releaseYear: 2021,
+        platforms: ['Nintendo Switch'],
+        significance: 'modern'
+      },
+      {
+        names: ['Super Mario Party', 'SMP'],
+        reason: 'Switch debut, motion controls, return to formula',
+        releaseYear: 2018,
+        platforms: ['Nintendo Switch'],
+        significance: 'modern'
+      }
+    ]
+  },
+
+  'mortal kombat': {
+    patterns: ['mortal kombat', 'mk'],
+    flagships: [
+      {
+        names: ['Mortal Kombat', 'MK1', 'Mortal Kombat 1'],
+        reason: 'Series originator, fatalities, ESRB creation catalyst',
+        releaseYear: 1992,
+        platforms: ['Arcade'],
+        significance: 'originator'
+      },
+      {
+        names: ['Mortal Kombat II', 'MK2', 'Mortal Kombat 2'],
+        reason: 'Peak arcade fighting, balanced roster, tournament classic',
+        releaseYear: 1993,
+        platforms: ['Arcade'],
+        significance: 'peak'
+      },
+      {
+        names: ['Mortal Kombat (2011)', 'MK9', 'Mortal Kombat 9'],
+        reason: 'Series revival, timeline reset, modern tournament standard',
+        releaseYear: 2011,
+        platforms: ['Multiple'],
+        significance: 'modern'
+      },
+      {
+        names: ['Mortal Kombat 11', 'MK11'],
+        reason: 'Modern pinnacle, Fatal Blow system, esports success',
+        releaseYear: 2019,
+        platforms: ['Multiple'],
+        significance: 'modern'
+      }
+    ]
+  },
+
+  'metal gear': {
+    patterns: ['metal gear'],
+    flagships: [
+      {
+        names: ['Metal Gear Solid', 'MGS', 'MGS1'],
+        reason: 'Stealth game revolution, cinematic storytelling, PlayStation classic',
+        releaseYear: 1998,
+        platforms: ['PlayStation'],
+        significance: 'technical'
+      },
+      {
+        names: ['Metal Gear Solid 3: Snake Eater', 'MGS3', 'Snake Eater'],
+        reason: 'Series peak, survival mechanics, emotional storytelling masterpiece',
+        releaseYear: 2004,
+        platforms: ['PlayStation 2'],
+        significance: 'peak'
+      },
+      {
+        names: ['Metal Gear Solid: Twin Snakes', 'Twin Snakes', 'MGS Twin Snakes'],
+        reason: 'GameCube remake, enhanced graphics, updated mechanics',
+        releaseYear: 2004,
         platforms: ['GameCube'],
         significance: 'technical'
       }
