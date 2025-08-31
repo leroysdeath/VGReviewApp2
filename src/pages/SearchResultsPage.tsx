@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useGameSearch } from '../hooks/useGameSearch';
 import { SmartImage } from '../components/SmartImage';
 import { supabase } from '../services/supabase';
@@ -47,6 +47,18 @@ export const SearchResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { searchState, searchGames, searchTerm, setSearchTerm } = useGameSearch();
+  
+  // Detect mobile and set default view mode accordingly
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [platforms, setPlatforms] = useState<Platform[]>([]);
@@ -61,6 +73,13 @@ export const SearchResultsPage: React.FC = () => {
     sortBy: 'name',
     sortOrder: 'asc'
   });
+
+  // Set view mode based on device type
+  useEffect(() => {
+    if (isMobile) {
+      setViewMode('list');
+    }
+  }, [isMobile]);
 
   // Load platforms for filter dropdown
   useEffect(() => {
@@ -228,12 +247,11 @@ export const SearchResultsPage: React.FC = () => {
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center gap-2 transition-colors"
+              className="px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <Filter className="h-5 w-5" />
               Filters
             </button>
-            <div className="flex gap-2">
+            <div className="hidden md:flex gap-2">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-3 rounded-lg transition-colors ${
