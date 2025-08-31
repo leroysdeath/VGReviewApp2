@@ -1275,9 +1275,6 @@ export const GamePage: React.FC = () => {
                     </span>
                   </button>
 
-                  {/* Spacer to push Write Review to the right */}
-                  <div className="flex-grow"></div>
-
                   {/* Write Review Button */}
                   {isAuthenticated ? (
                     <Link
