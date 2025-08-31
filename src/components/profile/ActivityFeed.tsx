@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Star, Play, CheckCircle, MessageSquare } from 'lucide-react';
+import { Calendar, Star, Play, CheckCircle, ScrollText } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { getGameUrl } from '../../utils/gameUrls';
 
@@ -28,6 +28,16 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Priority map for sorting activities with same timestamp
+  // Lower number = should appear first when timestamps are equal
+  const activityPriority: Record<Activity['type'], number> = {
+    'started': 1,      // Appears first (oldest)
+    'completed': 2,    // Appears second
+    'rating': 3,       // Appears third
+    'review': 4,       // Appears last (newest)
+    'comment': 5       // Comments (if any)
+  };
 
   const fetchActivities = async () => {
     if (!userId) return;
@@ -126,9 +136,20 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         }
       });
 
-      // Sort by date (most recent first)
+      // Sort by date (most recent first), with secondary sort by activity type for same timestamps
       const sortedActivities = combinedActivities
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .sort((a, b) => {
+          const timeDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+          
+          // If timestamps are different, sort by time (newest first)
+          if (timeDiff !== 0) return timeDiff;
+          
+          // If timestamps are equal, sort by activity type priority
+          // This ensures logical order: started → completed → rating → review
+          const priorityA = activityPriority[a.type] || 999;
+          const priorityB = activityPriority[b.type] || 999;
+          return priorityA - priorityB;
+        })
         .slice(0, 25); // Keep most recent 25 activities
 
       setActivities(sortedActivities);
@@ -159,7 +180,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
   const getActivityIcon = (type: Activity['type']) => {
     switch (type) {
       case 'review':
-        return <MessageSquare className="h-5 w-5 text-blue-400" />;
+        return <ScrollText className="h-5 w-5 text-purple-400" />;
       case 'rating':
         return <Star className="h-5 w-5 text-yellow-400" />;
       case 'started':
