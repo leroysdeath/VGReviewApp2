@@ -104,7 +104,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
 
     if (items.length === 0) {
       return (
-        <div className="text-center py-12">
+        <div className="text-center py-8 sm:py-12 px-4">
           <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             {type === 'collection' ? (
               <BookOpen className="h-8 w-8 text-gray-500" />
@@ -115,7 +115,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
           <h3 className="text-lg font-medium text-white mb-2">
             {type === 'collection' ? 'Game Collection' : 'Game Wishlist'}
           </h3>
-          <p className="text-gray-400">
+          <p className="text-gray-400 text-sm sm:text-base mb-4">
             {type === 'collection' 
               ? 'Your collected games will appear here'
               : 'Games you want to play will appear here'
@@ -127,14 +127,14 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
                 setPickerMode(type);
                 setShowGamePicker(true);
               }}
-              className={`mt-4 px-4 py-2 text-white rounded transition-colors ${
+              className={`inline-flex items-center justify-center px-6 py-3 text-white rounded-lg transition-colors font-medium ${
                 type === 'collection' 
-                  ? 'bg-orange-600 hover:bg-orange-700'
-                  : 'bg-red-600 hover:bg-red-700'
+                  ? 'bg-orange-600 hover:bg-orange-700 active:bg-orange-800'
+                  : 'bg-red-600 hover:bg-red-700 active:bg-red-800'
               }`}
             >
-              <Plus className="h-4 w-4 inline mr-2" />
-              Add Games
+              <Plus className="h-5 w-5 mr-2" />
+              <span>Add Games</span>
             </button>
           )}
         </div>

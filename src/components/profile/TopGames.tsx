@@ -391,7 +391,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
   return (
     <div>
       <h2 className="text-xl font-semibold text-white mb-6">
-        Top {limit} Highest Ranked
+        {limit === 5 ? 'Top 5 Favorites' : `Top ${limit} Highest Ranked`}
       </h2>
       
       {topGames.length === 0 ? (

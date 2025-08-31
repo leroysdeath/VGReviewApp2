@@ -57,12 +57,12 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false,
             </button>
           )}
         </div>
-        <p className="text-blue-400 text-sm mb-3">{escapeHtml(user.bio) || ''}</p>
+        <p className="text-white text-sm mb-3">{escapeHtml(user.bio) || ''}</p>
         {(user.platform || user.website) && (
           <div className="flex items-center gap-1 text-gray-400 text-sm mb-4">
             {user.platform && (
               <>
-                <span>🎮 {escapeHtml(user.platform)}</span>
+                <span>🎮 {escapeHtml(user.platform).replace(/,/g, ', ')}</span>
                 {user.website && <span className="mx-2">🔗</span>}
               </>
             )}
