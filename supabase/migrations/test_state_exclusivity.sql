@@ -6,12 +6,9 @@
 DO $$
 DECLARE
   test_user_id INTEGER;
-  test_auth_id UUID;
   test_igdb_id INTEGER := 999999; -- Use a high number unlikely to conflict
   test_game_id INTEGER;
 BEGIN
-  -- Create or get auth user first
-  test_auth_id := 'test-auth-' || gen_random_uuid();
   
   -- Check if test user already exists
   SELECT id INTO test_user_id FROM "user" WHERE email = 'test_exclusivity@example.com';
