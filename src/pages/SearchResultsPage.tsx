@@ -14,7 +14,6 @@ interface Game {
   description?: string;
   summary?: string;
   release_date?: string;
-  pic_url?: string;
   cover_url?: string;
   developer?: string;
   publisher?: string;
@@ -206,7 +205,7 @@ export const SearchResultsPage: React.FC = () => {
   };
 
   const getCoverUrl = (game: Game) => {
-    return game.cover_url || game.pic_url || '/placeholder-game.jpg';
+    return game.cover_url || '/placeholder-game.jpg';
   };
 
   // Use games directly from searchState (igdbService already applies filtering)
