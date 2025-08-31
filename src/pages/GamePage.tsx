@@ -1283,7 +1283,19 @@ export const GamePage: React.FC = () => {
                     >
                       <ScrollText className="h-4 w-4" />
                       <span className="text-sm font-medium">
-                        {userReviewLoading ? 'Loading...' : userHasReviewed ? 'Edit Review' : 'Write Review'}
+                        {userReviewLoading ? (
+                          'Loading...'
+                        ) : userHasReviewed ? (
+                          <span className="flex flex-col items-center leading-tight">
+                            <span>Edit</span>
+                            <span>Review</span>
+                          </span>
+                        ) : (
+                          <span className="flex flex-col items-center leading-tight">
+                            <span>Write</span>
+                            <span>Review</span>
+                          </span>
+                        )}
                       </span>
                     </Link>
                   ) : (
@@ -1292,7 +1304,12 @@ export const GamePage: React.FC = () => {
                       className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                     >
                       <ScrollText className="h-4 w-4" />
-                      <span className="text-sm font-medium">Write Review</span>
+                      <span className="text-sm font-medium">
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>Write</span>
+                          <span>Review</span>
+                        </span>
+                      </span>
                     </button>
                   )}
                 </div>
