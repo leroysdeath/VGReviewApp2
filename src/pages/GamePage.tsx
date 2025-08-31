@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Gift, BookOpen } from 'lucide-react';
+import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Gift, BookOpen, Play, CheckCircle } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
@@ -21,6 +21,7 @@ import { shouldHideFanContent } from '../utils/contentProtectionFilter';
 import { isNumericIdentifier } from '../utils/gameUrls';
 import { collectionWishlistService } from '../services/collectionWishlistService';
 import { mapPlatformNames } from '../utils/platformMapping';
+import { GameActionSheet } from '../components/GameActionSheet';
 
 // Interface for review data from database
 interface GameReview {
@@ -629,13 +630,6 @@ export const GamePage: React.FC = () => {
   const handleToggleCollection = async () => {
     if (!game || !game.igdb_id) return;
     
-    // Prevent going back to wishlist from collection
-    if (isInCollection && !isStarted && !isCompleted) {
-      // Can only remove from collection, not move back to wishlist
-      const confirmRemove = window.confirm('Remove from collection? (This will not move it back to wishlist)');
-      if (!confirmRemove) return;
-    }
-
     if (!isAuthenticated) {
       dispatch({ type: 'SET_AUTH_MODAL', payload: { show: true, pendingAction: 'toggle_collection' }});
       return;
@@ -1149,15 +1143,44 @@ export const GamePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* User Actions - Wishlist, Collection, Checkboxes and Write Review */}
-              <div className="flex items-center gap-4 p-6 border-t border-gray-700">
-                {/* Wishlist Button - Only show if not in collection and not started/finished */}
-                {!isInCollection && !isStarted && !isCompleted && (
+              {/* User Actions - Wishlist, Collection, Started, Finished and Write Review */}
+              <div className="p-6 border-t border-gray-700">
+                {/* Mobile Action Sheet - Only visible on mobile */}
+                <div className="md:hidden">
+                  <GameActionSheet
+                    isInWishlist={isInWishlist}
+                    isInCollection={isInCollection}
+                    isStarted={isStarted}
+                    isCompleted={isCompleted}
+                    userHasReviewed={userHasReviewed}
+                    wishlistLoading={wishlistLoading}
+                    collectionLoading={collectionLoading}
+                    progressLoading={progressLoading}
+                    userReviewLoading={userReviewLoading}
+                    onToggleWishlist={handleToggleWishlist}
+                    onToggleCollection={handleToggleCollection}
+                    onMarkStarted={() => handleAuthRequiredAction('mark_started')}
+                    onMarkCompleted={() => handleAuthRequiredAction('mark_completed')}
+                    onWriteReview={() => {
+                      if (isAuthenticated) {
+                        navigate(`/review/${game.igdb_id}`);
+                      } else {
+                        handleAuthRequiredAction('write_review');
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Desktop buttons - Hidden on mobile */}
+                <div className="hidden md:flex items-center gap-6 w-full">
+                  {/* Wishlist Button - Gray out when unavailable */}
                   <button
                     onClick={handleToggleWishlist}
-                    disabled={wishlistLoading}
+                    disabled={wishlistLoading || isInCollection || isStarted || isCompleted}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isInWishlist
+                      isInCollection || isStarted || isCompleted
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
+                        : isInWishlist
                         ? 'bg-red-600 text-white hover:bg-red-700'
                         : 'border border-red-500 text-red-400 hover:bg-red-600/10'
                     } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -1165,21 +1188,31 @@ export const GamePage: React.FC = () => {
                     {wishlistLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <Gift className={`h-4 w-4 ${isInWishlist ? 'fill-current' : ''}`} />
+                      <Gift className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
-                      {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
+                      {isInWishlist ? (
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>In</span>
+                          <span>Wishlist</span>
+                        </span>
+                      ) : (
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>Add to</span>
+                          <span>Wishlist</span>
+                        </span>
+                      )}
                     </span>
                   </button>
-                )}
 
-                {/* Collection Button - Show if in wishlist OR if not started/finished */}
-                {(isInWishlist || (!isStarted && !isCompleted && !isInCollection)) && (
+                  {/* Collection Button - Gray out when unavailable */}
                   <button
                     onClick={handleToggleCollection}
-                    disabled={collectionLoading}
+                    disabled={collectionLoading || isStarted || isCompleted}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isInCollection
+                      isStarted || isCompleted
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
+                        : isInCollection
                         ? 'bg-orange-600 text-white hover:bg-orange-700'
                         : 'border border-orange-500 text-orange-400 hover:bg-orange-600/10'
                     } ${collectionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -1187,61 +1220,87 @@ export const GamePage: React.FC = () => {
                     {collectionLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <BookOpen className={`h-4 w-4 ${isInCollection ? 'fill-current' : ''}`} />
+                      <BookOpen className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
-                      {isInCollection ? 'In Collection' : isInWishlist ? 'Move to Collection' : 'Add to Collection'}
+                      {isInCollection ? (
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>In</span>
+                          <span>Collection</span>
+                        </span>
+                      ) : isInWishlist ? (
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>Move to</span>
+                          <span>Collection</span>
+                        </span>
+                      ) : (
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>Add to</span>
+                          <span>Collection</span>
+                        </span>
+                      )}
                     </span>
                   </button>
-                )}
 
-                <div className="flex items-center gap-3">
+                  {/* Started Button */}
                   <button
                     onClick={() => handleAuthRequiredAction('mark_started')}
                     disabled={isStarted || progressLoading}
-                    className={`relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       isStarted
-                        ? 'bg-green-100 border-green-500 cursor-not-allowed'
+                        ? 'bg-blue-600 text-white cursor-not-allowed'
                         : progressLoading
-                        ? 'bg-gray-700 border-gray-500 cursor-not-allowed opacity-50'
-                        : 'border-gray-400 bg-gray-800 hover:bg-gray-700 cursor-pointer'
+                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
+                        : 'border border-blue-500 text-blue-400 hover:bg-blue-600/10'
                     }`}
                   >
                     {progressLoading ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
-                    ) : isStarted ? (
-                      <Check className="h-6 w-6 text-green-600 stroke-[2]" />
-                    ) : null}
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {isStarted ? (
+                        'Started'
+                      ) : (
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>Mark as</span>
+                          <span>Started</span>
+                        </span>
+                      )}
+                    </span>
                   </button>
-                  <span className={`text-sm ${isStarted ? 'text-green-400' : 'text-gray-300'}`}>
-                    {isStarted ? 'Started ✓' : 'Started Game'}
-                  </span>
-                </div>
 
-                <div className="flex items-center gap-3">
+                  {/* Finished Button */}
                   <button
                     onClick={() => handleAuthRequiredAction('mark_completed')}
                     disabled={isCompleted || progressLoading}
-                    className={`relative w-6 h-6 border-2 rounded transition-all duration-200 flex items-center justify-center overflow-visible ${
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       isCompleted
-                        ? 'bg-green-100 border-green-500 cursor-not-allowed'
+                        ? 'bg-green-600 text-white cursor-not-allowed'
                         : progressLoading
-                        ? 'bg-gray-700 border-gray-500 cursor-not-allowed opacity-50'
-                        : 'border-gray-400 bg-gray-800 hover:bg-gray-700 cursor-pointer'
+                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
+                        : 'border border-green-500 text-green-400 hover:bg-green-600/10'
                     }`}
                   >
                     {progressLoading ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
-                    ) : isCompleted ? (
-                      <Check className="h-6 w-6 text-green-600 stroke-[2]" />
-                    ) : null}
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <CheckCircle className="h-4 w-4" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {isCompleted ? (
+                        'Finished'
+                      ) : (
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>Mark as</span>
+                          <span>Finished</span>
+                        </span>
+                      )}
+                    </span>
                   </button>
-                  <span className={`text-sm ${isCompleted ? 'text-green-400' : 'text-gray-300'}`}>
-                    {isCompleted ? 'Finished ✓' : 'Finished Game'}
-                  </span>
-                </div>
 
-                <div className="ml-auto">
+                  {/* Write Review Button */}
                   {isAuthenticated ? (
                     <Link
                       to={`/review/${game.igdb_id}`}
@@ -1249,7 +1308,19 @@ export const GamePage: React.FC = () => {
                     >
                       <ScrollText className="h-4 w-4" />
                       <span className="text-sm font-medium">
-                        {userReviewLoading ? 'Loading...' : userHasReviewed ? 'Edit Review' : 'Write a Review'}
+                        {userReviewLoading ? (
+                          'Loading...'
+                        ) : userHasReviewed ? (
+                          <span className="flex flex-col items-center leading-tight">
+                            <span>Edit</span>
+                            <span>Review</span>
+                          </span>
+                        ) : (
+                          <span className="flex flex-col items-center leading-tight">
+                            <span>Write</span>
+                            <span>Review</span>
+                          </span>
+                        )}
                       </span>
                     </Link>
                   ) : (
@@ -1258,7 +1329,12 @@ export const GamePage: React.FC = () => {
                       className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                     >
                       <ScrollText className="h-4 w-4" />
-                      <span className="text-sm font-medium">Write a Review</span>
+                      <span className="text-sm font-medium">
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>Write</span>
+                          <span>Review</span>
+                        </span>
+                      </span>
                     </button>
                   )}
                 </div>
