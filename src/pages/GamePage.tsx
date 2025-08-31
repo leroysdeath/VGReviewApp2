@@ -1142,12 +1142,11 @@ export const GamePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* User Actions - Wishlist, Collection, Checkboxes and Write Review */}
+              {/* User Actions - Wishlist, Collection, Started, Finished and Write Review */}
               <div className="flex items-center justify-between p-6 border-t border-gray-700">
-                {/* Left side: Wishlist and Collection buttons */}
-                <div className="flex items-center gap-4 ml-auto">
-                  {/* Wishlist Button - Only show if not in collection and not started/finished */}
-                  {!isInCollection && !isStarted && !isCompleted && (
+                {/* All buttons with equal spacing */}
+                <div className="flex items-center gap-6 w-full">
+                  {/* Wishlist Button - Use visibility to maintain position */}
                   <button
                     onClick={handleToggleWishlist}
                     disabled={wishlistLoading}
@@ -1155,7 +1154,10 @@ export const GamePage: React.FC = () => {
                       isInWishlist
                         ? 'bg-red-600 text-white hover:bg-red-700'
                         : 'border border-red-500 text-red-400 hover:bg-red-600/10'
-                    } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''} ${
+                      isInCollection || isStarted || isCompleted ? 'invisible' : ''
+                    }`}
+                    style={{ visibility: isInCollection || isStarted || isCompleted ? 'hidden' : 'visible' }}
                   >
                     {wishlistLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
@@ -1176,10 +1178,8 @@ export const GamePage: React.FC = () => {
                       )}
                     </span>
                   </button>
-                )}
 
-                {/* Collection Button - Show if not started/finished */}
-                {!isStarted && !isCompleted && (
+                  {/* Collection Button - Use visibility to maintain position */}
                   <button
                     onClick={handleToggleCollection}
                     disabled={collectionLoading}
@@ -1187,7 +1187,10 @@ export const GamePage: React.FC = () => {
                       isInCollection
                         ? 'bg-orange-600 text-white hover:bg-orange-700'
                         : 'border border-orange-500 text-orange-400 hover:bg-orange-600/10'
-                    } ${collectionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    } ${collectionLoading ? 'opacity-50 cursor-not-allowed' : ''} ${
+                      isStarted || isCompleted ? 'invisible' : ''
+                    }`}
+                    style={{ visibility: isStarted || isCompleted ? 'hidden' : 'visible' }}
                   >
                     {collectionLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
@@ -1213,11 +1216,7 @@ export const GamePage: React.FC = () => {
                       )}
                     </span>
                   </button>
-                  )}
-                </div>
 
-                {/* Right side: Started/Finished buttons and Write Review button */}
-                <div className="flex items-center gap-4">
                   {/* Started Button */}
                   <button
                     onClick={() => handleAuthRequiredAction('mark_started')}
@@ -1276,7 +1275,10 @@ export const GamePage: React.FC = () => {
                     </span>
                   </button>
 
-                  <div>
+                  {/* Spacer to push Write Review to the right */}
+                  <div className="flex-grow"></div>
+
+                  {/* Write Review Button */}
                   {isAuthenticated ? (
                     <Link
                       to={`/review/${game.igdb_id}`}
@@ -1296,7 +1298,6 @@ export const GamePage: React.FC = () => {
                       <span className="text-sm font-medium">Write Review</span>
                     </button>
                   )}
-                  </div>
                 </div>
               </div>
             </div>
