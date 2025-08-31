@@ -182,7 +182,8 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
                   }}
                   disabled={removingId === item.igdb_id}
                   className="absolute top-2 right-2 p-1.5 bg-black bg-opacity-70 rounded-full 
-                           opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                           opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600
+                           flex items-center justify-center"
                   title={`Remove from ${type}`}
                 >
                   <X className="h-4 w-4 text-white" />

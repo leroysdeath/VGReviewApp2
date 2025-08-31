@@ -1173,8 +1173,8 @@ export const GamePage: React.FC = () => {
                   </button>
                 )}
 
-                {/* Collection Button - Show if in wishlist OR if not started/finished */}
-                {(isInWishlist || (!isStarted && !isCompleted && !isInCollection)) && (
+                {/* Collection Button - Show if not started/finished */}
+                {!isStarted && !isCompleted && (
                   <button
                     onClick={handleToggleCollection}
                     disabled={collectionLoading}
