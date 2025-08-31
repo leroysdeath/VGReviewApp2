@@ -1195,7 +1195,17 @@ export const GamePage: React.FC = () => {
                           <span>In</span>
                           <span>Collection</span>
                         </span>
-                      ) : isInWishlist ? 'Move to Collection' : 'Add to Collection'}
+                      ) : isInWishlist ? (
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>Move to</span>
+                          <span>Collection</span>
+                        </span>
+                      ) : (
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>Add to</span>
+                          <span>Collection</span>
+                        </span>
+                      )}
                     </span>
                   </button>
                   )}
