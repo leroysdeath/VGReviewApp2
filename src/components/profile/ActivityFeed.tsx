@@ -99,7 +99,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         .from('user_wishlist')
         .select(`
           created_at,
-          game:games (
+          game:game_id (
             id,
             igdb_id,
             slug,
@@ -118,7 +118,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         .from('user_collection')
         .select(`
           created_at,
-          game:games (
+          game:game_id (
             id,
             igdb_id,
             slug,
