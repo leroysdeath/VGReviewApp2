@@ -6,16 +6,25 @@
 DO $$
 DECLARE
   test_user_id INTEGER;
+  test_auth_id UUID;
   test_igdb_id INTEGER := 999999; -- Use a high number unlikely to conflict
   test_game_id INTEGER;
 BEGIN
-  -- Get or create a test user
+  -- Create or get auth user first
+  test_auth_id := 'test-auth-' || gen_random_uuid();
+  
+  -- Check if test user already exists
   SELECT id INTO test_user_id FROM "user" WHERE email = 'test_exclusivity@example.com';
   
   IF test_user_id IS NULL THEN
-    INSERT INTO "user" (provider, provider_id, email, name, username)
-    VALUES ('test', gen_random_uuid(), 'test_exclusivity@example.com', 'Test User', 'testexclusivity')
-    RETURNING id INTO test_user_id;
+    -- First create auth.users entry if using Supabase Auth
+    -- For testing, we'll use an existing user or skip user creation
+    -- Alternative: Use an existing user for testing
+    SELECT id INTO test_user_id FROM "user" LIMIT 1;
+    
+    IF test_user_id IS NULL THEN
+      RAISE EXCEPTION 'No users exist in the database. Please create at least one user through the application first.';
+    END IF;
   END IF;
   
   -- Get or create a test game
