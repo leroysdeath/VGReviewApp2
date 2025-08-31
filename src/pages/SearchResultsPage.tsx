@@ -6,7 +6,6 @@ import { SmartImage } from '../components/SmartImage';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { shouldShowCategoryLabel, getCategoryLabel, getCategoryStyles } from '../utils/gameCategoryLabels';
-import { filterProtectedContent } from '../utils/contentProtectionFilter';
 
 interface Game {
   id: number;
@@ -191,16 +190,14 @@ export const SearchResultsPage: React.FC = () => {
     return game.cover_url || game.pic_url || '/placeholder-game.jpg';
   };
 
-  // Filter out problematic fan-made content before display
+  // Use games directly from searchState (igdbService already applies filtering)
   const filteredGames = useMemo(() => {
-    const filtered = filterProtectedContent(searchState.games);
-    
-    // Log filtering stats in development
-    if (import.meta.env.DEV && searchState.games.length !== filtered.length) {
-      console.log(`🛡️ Content filter: ${searchState.games.length - filtered.length} items filtered from ${searchState.games.length} results`);
+    // Log search results in development
+    if (import.meta.env.DEV && searchState.games.length > 0) {
+      console.log(`📊 Search results: ${searchState.games.length} games from ${searchState.source}`);
     }
     
-    return filtered;
+    return searchState.games;
   }, [searchState.games]);
 
   const totalPages = Math.ceil(filteredGames.length / ITEMS_PER_PAGE);
