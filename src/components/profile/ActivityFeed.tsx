@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Star, Play, CheckCircle, ScrollText } from 'lucide-react';
+import { Calendar, Star, Play, CheckCircle, ScrollText, Gift, BookOpen } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { getGameUrl } from '../../utils/gameUrls';
 
 interface Activity {
   id: string;
-  type: 'review' | 'rating' | 'started' | 'completed' | 'comment';
+  type: 'review' | 'rating' | 'started' | 'completed' | 'comment' | 'wishlist' | 'collection';
   date: string;
   game?: {
     id: number;
@@ -32,11 +32,13 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
   // Priority map for sorting activities with same timestamp
   // Lower number = should appear first when timestamps are equal
   const activityPriority: Record<Activity['type'], number> = {
-    'started': 1,      // Appears first (oldest)
-    'completed': 2,    // Appears second
-    'rating': 3,       // Appears third
-    'review': 4,       // Appears last (newest)
-    'comment': 5       // Comments (if any)
+    'wishlist': 1,     // Planning stage (appears first)
+    'collection': 2,   // Ownership stage
+    'started': 3,      // Beginning play
+    'completed': 4,    // Finished play
+    'rating': 5,       // Quick score
+    'review': 6,       // Detailed thoughts (appears last)
+    'comment': 7       // Comments (if any)
   };
 
   const fetchActivities = async () => {
@@ -92,6 +94,44 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
 
       if (progressError) throw progressError;
 
+      // Fetch wishlist activities
+      const { data: wishlistData, error: wishlistError } = await supabase
+        .from('user_wishlist')
+        .select(`
+          created_at,
+          game:games (
+            id,
+            igdb_id,
+            slug,
+            name,
+            cover_url
+          )
+        `)
+        .eq('user_id', parseInt(userId))
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (wishlistError) throw wishlistError;
+
+      // Fetch collection activities
+      const { data: collectionData, error: collectionError } = await supabase
+        .from('user_collection')
+        .select(`
+          created_at,
+          game:games (
+            id,
+            igdb_id,
+            slug,
+            name,
+            cover_url
+          )
+        `)
+        .eq('user_id', parseInt(userId))
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (collectionError) throw collectionError;
+
       // Transform and combine activities
       const combinedActivities: Activity[] = [];
 
@@ -134,6 +174,30 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
             game: item.game
           });
         }
+      });
+
+      // Add wishlist activities
+      wishlistData?.forEach(item => {
+        if (!item.game) return;
+        
+        combinedActivities.push({
+          id: `wishlist-${item.game.id}`,
+          type: 'wishlist',
+          date: item.created_at,
+          game: item.game
+        });
+      });
+
+      // Add collection activities
+      collectionData?.forEach(item => {
+        if (!item.game) return;
+        
+        combinedActivities.push({
+          id: `collection-${item.game.id}`,
+          type: 'collection',
+          date: item.created_at,
+          game: item.game
+        });
       });
 
       // Sort by date (most recent first), with secondary sort by activity type for same timestamps
@@ -183,10 +247,14 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         return <ScrollText className="h-5 w-5 text-purple-400" />;
       case 'rating':
         return <Star className="h-5 w-5 text-yellow-400" />;
+      case 'wishlist':
+        return <Gift className="h-5 w-5 text-red-400" />;
+      case 'collection':
+        return <BookOpen className="h-5 w-5 text-orange-400" />;
       case 'started':
-        return <Play className="h-5 w-5 text-green-400" />;
+        return <Play className="h-5 w-5 text-blue-400" />;
       case 'completed':
-        return <CheckCircle className="h-5 w-5 text-purple-400" />;
+        return <CheckCircle className="h-5 w-5 text-green-400" />;
       default:
         return <Calendar className="h-5 w-5 text-gray-400" />;
     }
@@ -218,6 +286,26 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
             <span className="text-yellow-400 ml-2">
               {activity.rating === 10 ? '10' : activity.rating?.toFixed(1)}/10
             </span>
+          </span>
+        );
+      case 'wishlist':
+        return (
+          <span>
+            added{' '}
+            <Link to={getGameUrl(activity.game!)} className="text-purple-400 hover:text-purple-300">
+              {activity.game?.name}
+            </Link>
+            {' '}to wishlist
+          </span>
+        );
+      case 'collection':
+        return (
+          <span>
+            added{' '}
+            <Link to={getGameUrl(activity.game!)} className="text-purple-400 hover:text-purple-300">
+              {activity.game?.name}
+            </Link>
+            {' '}to collection
           </span>
         );
       case 'started':
