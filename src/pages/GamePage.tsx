@@ -1168,7 +1168,12 @@ export const GamePage: React.FC = () => {
                           <span>In</span>
                           <span>Wishlist</span>
                         </span>
-                      ) : 'Add to Wishlist'}
+                      ) : (
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>Add to</span>
+                          <span>Wishlist</span>
+                        </span>
+                      )}
                     </span>
                   </button>
                 )}
