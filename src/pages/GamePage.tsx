@@ -1145,7 +1145,7 @@ export const GamePage: React.FC = () => {
               {/* User Actions - Wishlist, Collection, Checkboxes and Write Review */}
               <div className="flex items-center justify-between p-6 border-t border-gray-700">
                 {/* Left side: Wishlist and Collection buttons */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 ml-auto">
                   {/* Wishlist Button - Only show if not in collection and not started/finished */}
                   {!isInCollection && !isStarted && !isCompleted && (
                   <button
