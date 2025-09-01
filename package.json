@@ -17,7 +17,11 @@
     "clean": "rm -rf dist node_modules/.vite",
     "sync-igdb": "node scripts/sync-igdb.js",
     "sync-igdb:dry": "node scripts/sync-igdb.js --dry-run",
-    "sync-igdb:help": "node scripts/sync-igdb.js --help"
+    "sync-igdb:help": "node scripts/sync-igdb.js --help",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
@@ -60,19 +64,28 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@faker-js/faker": "^9.9.0",
     "@netlify/functions": "^2.8.1",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/dompurify": "^3.2.0",
     "@types/lodash": "^4.17.13",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "@vitest/ui": "^2.1.9",
     "dotenv": "^17.2.1",
     "eslint": "^9.9.1",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.11",
     "globals": "^15.9.0",
+    "happy-dom": "^15.11.7",
+    "msw": "^2.11.1",
     "node-fetch": "^3.3.2",
     "terser": "^5.43.1",
     "typescript-eslint": "^8.3.0",
-    "vite-bundle-analyzer": "^0.7.0"
+    "vite-bundle-analyzer": "^0.7.0",
+    "vitest": "^2.1.9"
   }
 }
