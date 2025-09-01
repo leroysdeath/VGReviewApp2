@@ -82,6 +82,7 @@ export interface GameWithCalculatedFields extends Game {
   averageUserRating: number;
   totalUserRatings: number;
   userRating?: number; // Current user's rating if exists
+  fromIGDB?: boolean; // True if this came from IGDB API, false/undefined if from database
 }
 
 export interface GameWithRatings extends Game {
