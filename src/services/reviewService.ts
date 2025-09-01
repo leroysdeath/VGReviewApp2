@@ -825,13 +825,14 @@ export const likeReview = async (
       };
     }
 
-    // Insert new like
-    console.log('📤 Inserting like with:', { user_id: userId, rating_id: reviewId });
+    // Insert new like (include is_like field as it's required)
+    console.log('📤 Inserting like with:', { user_id: userId, rating_id: reviewId, is_like: true });
     const { error: insertError } = await supabase
       .from('content_like')
       .insert({
         user_id: userId,
-        rating_id: reviewId
+        rating_id: reviewId,
+        is_like: true  // Required field in content_like table
       });
 
     if (insertError) {
