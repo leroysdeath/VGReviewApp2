@@ -495,16 +495,16 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
           >
             {/* Container for different layouts */}
             {isPhonePortrait ? (
-              // Phone Portrait - Trapezoid Layout
+              // Phone Portrait - 1-4 Layout
               <div className="flex flex-col items-center gap-3 mb-4 transition-all duration-300">
-                {/* Top row - 2 games centered */}
+                {/* Top row - 1 game centered */}
                 <div className="flex justify-center gap-3">
-                  {[1, 2].map((position) => {
+                  {[1].map((position) => {
                     const gameData = userTopGames.find(g => g.position === position);
                     
                     if (gameData?.game && !isEditingTop5) {
                       return (
-                        <div key={position} className="relative group w-[150px]">
+                        <div key={position} className="relative group w-[180px]">
                           <Link to={getGameUrl(gameData.game)}>
                             <div className="relative aspect-[3/4]">
                               <img
@@ -526,7 +526,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                     
                     if (gameData?.game && isEditingTop5) {
                       return (
-                        <div key={gameData.game.id} className="w-[150px]">
+                        <div key={gameData.game.id} className="w-[180px]">
                           <SortableGameCard
                             id={gameData.game.id.toString()}
                             position={position}
@@ -542,7 +542,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                     }
                     
                     return (
-                      <div key={`empty-${position}`} className="relative aspect-[3/4] w-[150px] group">
+                      <div key={`empty-${position}`} className="relative aspect-[3/4] w-[180px] group">
                         <button
                           onClick={() => {
                             setSelectedPosition(position);
@@ -561,14 +561,14 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                   })}
                 </div>
                 
-                {/* Bottom row - 3 games */}
+                {/* Bottom row - 4 games */}
                 <div className="flex justify-center gap-3">
-                  {[3, 4, 5].map((position) => {
+                  {[2, 3, 4, 5].map((position) => {
                     const gameData = userTopGames.find(g => g.position === position);
                     
                     if (gameData?.game && !isEditingTop5) {
                       return (
-                        <div key={position} className="relative group w-[115px]">
+                        <div key={position} className="relative group w-[90px]">
                           <Link to={getGameUrl(gameData.game)}>
                             <div className="relative aspect-[3/4]">
                               <img
@@ -590,7 +590,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                     
                     if (gameData?.game && isEditingTop5) {
                       return (
-                        <div key={gameData.game.id} className="w-[115px]">
+                        <div key={gameData.game.id} className="w-[90px]">
                           <SortableGameCard
                             id={gameData.game.id.toString()}
                             position={position}
@@ -606,7 +606,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                     }
                     
                     return (
-                      <div key={`empty-${position}`} className="relative aspect-[3/4] w-[115px] group">
+                      <div key={`empty-${position}`} className="relative aspect-[3/4] w-[90px] group">
                         <button
                           onClick={() => {
                             setSelectedPosition(position);
@@ -783,7 +783,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
+        <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
           {Array.from({ length: limit }).map((_, index) => {
             const game = topGames[index];
             const position = index + 1;
