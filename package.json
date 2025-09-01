@@ -17,7 +17,11 @@
     "clean": "rm -rf dist node_modules/.vite",
     "sync-igdb": "node scripts/sync-igdb.js",
     "sync-igdb:dry": "node scripts/sync-igdb.js --dry-run",
-    "sync-igdb:help": "node scripts/sync-igdb.js --help"
+    "sync-igdb:help": "node scripts/sync-igdb.js --help",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:search": "vitest run src/tests/search.test.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
@@ -65,14 +69,17 @@
     "@types/lodash": "^4.17.13",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
+    "@vitest/ui": "^3.2.4",
     "dotenv": "^17.2.1",
     "eslint": "^9.9.1",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.11",
     "globals": "^15.9.0",
+    "jsdom": "^26.1.0",
     "node-fetch": "^3.3.2",
     "terser": "^5.43.1",
     "typescript-eslint": "^8.3.0",
-    "vite-bundle-analyzer": "^0.7.0"
+    "vite-bundle-analyzer": "^0.7.0",
+    "vitest": "^3.2.4"
   }
 }
