@@ -43,6 +43,28 @@ export const useReviewInteractions = ({
 
   // Load initial data with background comment loading
   useEffect(() => {
+    // Background loading function for comments - defined first to avoid temporal dead zone
+    const loadCommentsInBackground = async () => {
+      try {
+        console.log('📚 Loading comments in background for review:', reviewId);
+        setIsLoadingComments(true);
+        const response = await getCommentsForReview(reviewId);
+        
+        if (response.success) {
+          setComments(response.data || []);
+          setCommentCount(response.count || 0);
+          setCommentsLoaded(true);
+          console.log('✅ Comments loaded successfully:', response.count, 'comments');
+        } else {
+          console.warn('⚠️ Failed to load comments:', response.error);
+        }
+      } catch (err) {
+        console.error('Error loading comments in background:', err);
+      } finally {
+        setIsLoadingComments(false);
+      }
+    };
+
     const loadInitialData = async () => {
       try {
         // Get review data
@@ -70,28 +92,6 @@ export const useReviewInteractions = ({
       } catch (err) {
         setError('Failed to load review data');
         console.error('Error loading review data:', err);
-      }
-    };
-
-    // Background loading function for comments
-    const loadCommentsInBackground = async () => {
-      try {
-        console.log('📚 Loading comments in background for review:', reviewId);
-        setIsLoadingComments(true);
-        const response = await getCommentsForReview(reviewId);
-        
-        if (response.success) {
-          setComments(response.data || []);
-          setCommentCount(response.count || 0);
-          setCommentsLoaded(true);
-          console.log('✅ Comments loaded successfully:', response.count, 'comments');
-        } else {
-          console.warn('⚠️ Failed to load comments:', response.error);
-        }
-      } catch (err) {
-        console.error('Error loading comments in background:', err);
-      } finally {
-        setIsLoadingComments(false);
       }
     };
 
