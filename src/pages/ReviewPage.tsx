@@ -60,7 +60,10 @@ export const ReviewPage: React.FC = () => {
     });
   }, [isAuthenticated, user?.id, dbUserId, dbUserIdLoading, currentUserId, review?.id, commentsLoaded, comments?.length, isLoadingComments]);
   
-  // Use review interactions hook
+  // Use review interactions hook - only when review is loaded and valid
+  const reviewId = review?.id ? parseInt(review.id) : null;
+  const useInteractions = reviewId && reviewId > 0;
+  
   const {
     likeCount,
     commentCount,
@@ -72,7 +75,7 @@ export const ReviewPage: React.FC = () => {
     postComment,
     commentsLoaded
   } = useReviewInteractions({
-    reviewId: review ? parseInt(review.id) : 0,
+    reviewId: useInteractions ? reviewId : 0,
     userId: currentUserId
   });
 
