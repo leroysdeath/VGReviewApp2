@@ -349,8 +349,8 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           ) : (
             /* Games Grid */
             <div>
-              {/* Desktop/Tablet Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
+              {/* Desktop/Tablet Grid - Hidden on mobile */}
+              <div className="hidden md:grid md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
                 {currentGames.map((game) => (
                   <Link
                     key={game.id}
