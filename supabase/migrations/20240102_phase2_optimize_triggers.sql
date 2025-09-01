@@ -32,7 +32,6 @@ $$;
 CREATE TRIGGER update_rating_like_count_trigger
 AFTER INSERT OR DELETE ON content_like
 FOR EACH ROW
-WHEN (NEW.rating_id IS NOT NULL OR OLD.rating_id IS NOT NULL)
 EXECUTE FUNCTION update_rating_like_count();
 
 -- 3. Create function to recalculate like counts (for data consistency)
