@@ -503,7 +503,8 @@ class GameDataService {
       platforms: game.platforms?.map((p: any) => p.name) || [],
       summary: game.summary || null,
       averageUserRating: 0,
-      totalUserRatings: 0
+      totalUserRatings: 0,
+      fromIGDB: true // Track that this came from IGDB API
     }))
   }
 
@@ -769,7 +770,8 @@ class GameDataService {
       // Convert date string back to Date object for proper formatting
       first_release_date: gameData.release_date ? new Date(gameData.release_date) : undefined,
       averageUserRating,
-      totalUserRatings
+      totalUserRatings,
+      fromIGDB: false // Mark that this came from database
     }
   }
 
