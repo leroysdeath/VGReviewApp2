@@ -58,6 +58,8 @@ export const ReviewPage: React.FC = () => {
     isLoadingLike,
     toggleLike,
     postComment,
+    updateComment,
+    removeComment,
     commentsLoaded
   } = useReviewInteractions({
     reviewId: useInteractions ? reviewId : 0,
@@ -433,6 +435,8 @@ export const ReviewPage: React.FC = () => {
               onUnlike={toggleLike}
               comments={comments || []}
               onAddComment={postComment}
+              onEditComment={updateComment}
+              onDeleteComment={removeComment}
               isLoadingComments={isLoadingComments}
               isLoadingLike={isLoadingLike}
               reviewAuthorId={review.user_id}

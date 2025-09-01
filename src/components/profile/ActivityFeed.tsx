@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Star, Play, CheckCircle, ScrollText, Gift, BookOpen } from 'lucide-react';
+import { Calendar, Star, Play, CheckCircle, ScrollText, Gift, BookOpen, MessageCircle } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { getGameUrl } from '../../utils/gameUrls';
 
@@ -18,6 +18,11 @@ interface Activity {
   rating?: number;
   review?: string;
   is_recommended?: boolean;
+  // For comment activities
+  reviewAuthor?: {
+    id: number;
+    username: string;
+  };
 }
 
 interface ActivityFeedProps {
@@ -132,6 +137,34 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
 
       if (collectionError) throw collectionError;
 
+      // Fetch comment activities
+      const { data: commentData, error: commentError } = await supabase
+        .from('comment')
+        .select(`
+          id,
+          content,
+          created_at,
+          rating:rating_id (
+            user_id,
+            user:user_id (
+              id,
+              username
+            ),
+            game:game_id (
+              id,
+              igdb_id,
+              slug,
+              name,
+              cover_url
+            )
+          )
+        `)
+        .eq('user_id', parseInt(userId))
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (commentError) throw commentError;
+
       // Transform and combine activities
       const combinedActivities: Activity[] = [];
 
@@ -197,6 +230,22 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           type: 'collection',
           date: item.added_at,
           game: item.game
+        });
+      });
+
+      // Add comment activities
+      commentData?.forEach(item => {
+        if (!item.rating?.game || !item.rating?.user) return;
+        
+        combinedActivities.push({
+          id: `comment-${item.id}`,
+          type: 'comment',
+          date: item.created_at,
+          game: item.rating.game,
+          reviewAuthor: {
+            id: item.rating.user.id,
+            username: item.rating.user.username
+          }
         });
       });
 
@@ -268,6 +317,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         return <Play className="h-5 w-5 text-blue-400" />;
       case 'completed':
         return <CheckCircle className="h-5 w-5 text-green-400" />;
+      case 'comment':
+        return <MessageCircle className="h-5 w-5 text-blue-400" />;
       default:
         return <Calendar className="h-5 w-5 text-gray-400" />;
     }
@@ -334,6 +385,19 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         return (
           <span>
             completed{' '}
+            <Link to={getGameUrl(activity.game!)} className="text-purple-400 hover:text-purple-300">
+              {activity.game?.name}
+            </Link>
+          </span>
+        );
+      case 'comment':
+        return (
+          <span>
+            commented on{' '}
+            <Link to={`/user/${activity.reviewAuthor?.username}`} className="text-purple-400 hover:text-purple-300">
+              {activity.reviewAuthor?.username}
+            </Link>
+            's review of{' '}
             <Link to={getGameUrl(activity.game!)} className="text-purple-400 hover:text-purple-300">
               {activity.game?.name}
             </Link>

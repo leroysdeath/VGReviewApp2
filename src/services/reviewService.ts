@@ -1096,6 +1096,159 @@ export const addComment = async (
 };
 
 /**
+ * Edit a comment
+ */
+export const editComment = async (
+  commentId: number,
+  content: string
+): Promise<ServiceResponse<Comment>> => {
+  console.log('✏️ editComment called with:', { commentId, contentLength: content.length });
+  
+  try {
+    // Validate input
+    if (!commentId || isNaN(commentId)) {
+      return { success: false, error: 'Invalid comment ID' };
+    }
+    if (!content || content.trim().length === 0) {
+      return { success: false, error: 'Comment content cannot be empty' };
+    }
+    if (content.length > 500) {
+      return { success: false, error: 'Comment content exceeds maximum length (500 characters)' };
+    }
+
+    // Get current user ID to verify ownership
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // Verify the comment belongs to the current user
+    const { data: existingComment, error: verifyError } = await supabase
+      .from('comment')
+      .select('id, user_id')
+      .eq('id', commentId)
+      .eq('user_id', userId)
+      .single();
+
+    if (verifyError || !existingComment) {
+      console.error('❌ Comment not found or access denied:', verifyError);
+      return { success: false, error: 'Comment not found or you do not have permission to edit it' };
+    }
+
+    // Sanitize content to prevent XSS attacks
+    const sanitizedContent = sanitizeRich(content.trim());
+
+    // Update comment
+    console.log('📤 Updating comment:', { commentId, contentLength: sanitizedContent.length });
+    const { data, error } = await supabase
+      .from('comment')
+      .update({
+        content: sanitizedContent,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', commentId)
+      .select(`
+        *,
+        user:comment_user_id_fkey(id, username, name, avatar_url)
+      `)
+      .single();
+
+    if (error) {
+      console.error('❌ Error updating comment:', error);
+      throw error;
+    }
+    console.log('✅ Comment updated successfully:', { commentId: data.id });
+
+    // Transform to our interface
+    const comment: Comment = {
+      id: data.id,
+      userId: data.user_id,
+      reviewId: data.rating_id,
+      content: data.content,
+      parentId: data.parent_comment_id || undefined,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      replies: [],
+      user: data.user ? {
+        id: data.user.id,
+        name: data.user.username || data.user.name,
+        avatar_url: data.user.avatar_url
+      } : undefined
+    };
+
+    return {
+      success: true,
+      data: comment
+    };
+  } catch (error) {
+    console.error('Error editing comment:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to edit comment'
+    };
+  }
+};
+
+/**
+ * Delete a comment
+ */
+export const deleteComment = async (
+  commentId: number
+): Promise<ServiceResponse<boolean>> => {
+  console.log('🗑️ deleteComment called with:', { commentId });
+  
+  try {
+    // Validate input
+    if (!commentId || isNaN(commentId)) {
+      return { success: false, error: 'Invalid comment ID' };
+    }
+
+    // Get current user ID to verify ownership
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // Verify the comment belongs to the current user
+    const { data: existingComment, error: verifyError } = await supabase
+      .from('comment')
+      .select('id, user_id')
+      .eq('id', commentId)
+      .eq('user_id', userId)
+      .single();
+
+    if (verifyError || !existingComment) {
+      console.error('❌ Comment not found or access denied:', verifyError);
+      return { success: false, error: 'Comment not found or you do not have permission to delete it' };
+    }
+
+    // Delete comment
+    console.log('📤 Deleting comment:', { commentId });
+    const { error } = await supabase
+      .from('comment')
+      .delete()
+      .eq('id', commentId);
+
+    if (error) {
+      console.error('❌ Error deleting comment:', error);
+      throw error;
+    }
+    console.log('✅ Comment deleted successfully:', { commentId });
+
+    return {
+      success: true,
+      data: true
+    };
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete comment'
+    };
+  }
+};
+
+/**
  * Get recent reviews from all users (for landing page)
  */
 export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>> => {

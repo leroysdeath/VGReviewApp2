@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { Heart, MessageSquare, ChevronDown, ChevronUp, Edit2, Trash2, Check, X } from 'lucide-react';
 import { Comment } from '../services/reviewService';
 
 interface ReviewInteractionsProps {
@@ -11,6 +11,8 @@ interface ReviewInteractionsProps {
   onUnlike: () => void;
   comments: Comment[];
   onAddComment: (content: string, parentId?: number) => Promise<void>;
+  onEditComment: (commentId: number, content: string) => Promise<void>;
+  onDeleteComment: (commentId: number) => Promise<void>;
   isLoadingComments: boolean;
   isLoadingLike: boolean;
   error?: string;
@@ -29,6 +31,8 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   onUnlike,
   comments,
   onAddComment,
+  onEditComment,
+  onDeleteComment,
   isLoadingComments,
   isLoadingLike,
   error,
@@ -220,6 +224,9 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
                   key={comment.id} 
                   comment={comment} 
                   formatRelativeTime={formatRelativeTime}
+                  currentUserId={currentUserId}
+                  onEdit={onEditComment}
+                  onDelete={onDeleteComment}
                 />
               ))}
             </div>
@@ -237,15 +244,67 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
 interface CommentItemProps {
   comment: Comment;
   formatRelativeTime: (date: string) => string;
+  currentUserId?: number;
+  onEdit: (commentId: number, content: string) => Promise<void>;
+  onDelete: (commentId: number) => Promise<void>;
   level?: number;
 }
 
 const CommentItem: React.FC<CommentItemProps> = ({ 
   comment, 
   formatRelativeTime,
+  currentUserId,
+  onEdit,
+  onDelete,
   level = 0 
 }) => {
   const maxLevel = 5; // Maximum nesting level
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  
+  // Check if current user can edit/delete this comment
+  const canModify = currentUserId && comment.userId === currentUserId;
+  
+  const handleEdit = async () => {
+    if (!editContent.trim()) {
+      setEditError('Comment cannot be empty');
+      return;
+    }
+    if (editContent.length > 500) {
+      setEditError('Comment exceeds 500 characters');
+      return;
+    }
+    
+    try {
+      setEditError(null);
+      await onEdit(comment.id, editContent);
+      setIsEditing(false);
+    } catch (err) {
+      setEditError('Failed to update comment');
+    }
+  };
+  
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+    
+    try {
+      setIsDeleting(true);
+      await onDelete(comment.id);
+    } catch (err) {
+      setIsDeleting(false);
+      console.error('Failed to delete comment:', err);
+    }
+  };
+  
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditContent(comment.content);
+    setEditError(null);
+  };
   
   return (
     <div className="comment-item" style={{ marginLeft: level > 0 ? `${level * 24}px` : '0' }}>
@@ -270,14 +329,73 @@ const CommentItem: React.FC<CommentItemProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <span className="font-medium text-white">{comment.user?.name || 'Anonymous'}</span>
             <span className="text-gray-400 text-xs">{formatRelativeTime(comment.createdAt)}</span>
+            {comment.updatedAt && comment.updatedAt !== comment.createdAt && (
+              <span className="text-gray-500 text-xs italic">(edited)</span>
+            )}
           </div>
-          <p className="text-gray-300 text-sm mb-2">{comment.content}</p>
+          
+          {isEditing ? (
+            <div className="mb-2">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                rows={3}
+                maxLength={500}
+                autoFocus
+              />
+              <div className="flex items-center justify-between mt-1">
+                <span className={`text-xs ${editContent.length > 500 ? 'text-red-500' : 'text-gray-400'}`}>
+                  {500 - editContent.length} characters remaining
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleEdit}
+                    className="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                    disabled={!editContent.trim() || editContent.length > 500}
+                  >
+                    <Check className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="px-2 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+              {editError && (
+                <p className="text-red-500 text-xs mt-1">{editError}</p>
+              )}
+            </div>
+          ) : (
+            <p className="text-gray-300 text-sm mb-2">{comment.content}</p>
+          )}
           
           {/* Comment Actions */}
           <div className="flex items-center gap-4 text-xs text-gray-500">
             <button className="hover:text-white transition-colors">
               Reply
             </button>
+            {canModify && !isEditing && (
+              <>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="hover:text-white transition-colors flex items-center gap-1"
+                >
+                  <Edit2 className="h-3 w-3" />
+                  Edit
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="hover:text-red-400 transition-colors flex items-center gap-1"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </>
+            )}
           </div>
           
           {/* Nested Replies */}
@@ -288,6 +406,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   key={reply.id}
                   comment={reply}
                   formatRelativeTime={formatRelativeTime}
+                  currentUserId={currentUserId}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
                   level={level + 1}
                 />
               ))}

@@ -6,6 +6,8 @@ import {
   unlikeReview,
   getCommentsForReview,
   addComment,
+  editComment,
+  deleteComment,
   Comment
 } from '../services/reviewService';
 
@@ -25,6 +27,8 @@ interface UseReviewInteractionsReturn {
   toggleLike: () => Promise<void>;
   loadComments: () => Promise<void>;
   postComment: (content: string, parentId?: number) => Promise<void>;
+  updateComment: (commentId: number, content: string) => Promise<void>;
+  removeComment: (commentId: number) => Promise<void>;
   commentsLoaded: boolean;
 }
 
@@ -215,6 +219,89 @@ export const useReviewInteractions = ({
     }
   }, [userId, reviewId, loadComments]);
 
+  // Update a comment
+  const updateComment = useCallback(async (commentId: number, content: string) => {
+    if (!commentId || !content || content.trim().length === 0) {
+      throw new Error('Invalid comment data');
+    }
+
+    console.log('✏️ Updating comment:', { commentId, contentLength: content.length });
+    setError(null);
+
+    try {
+      const response = await editComment(commentId, content);
+      
+      if (!response.success) {
+        throw new Error(response.error);
+      }
+
+      // Update the comment in the local state
+      setComments(prevComments => {
+        const updateCommentInList = (commentList: Comment[]): Comment[] => {
+          return commentList.map(comment => {
+            if (comment.id === commentId && response.data) {
+              return { ...comment, content: response.data.content, updatedAt: response.data.updatedAt };
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              return { ...comment, replies: updateCommentInList(comment.replies) };
+            }
+            return comment;
+          });
+        };
+        return updateCommentInList(prevComments);
+      });
+
+      console.log('✅ Comment updated successfully in UI');
+    } catch (err) {
+      setError('Failed to update comment');
+      console.error('Error updating comment:', err);
+      throw err;
+    }
+  }, []);
+
+  // Delete a comment
+  const removeComment = useCallback(async (commentId: number) => {
+    if (!commentId) {
+      throw new Error('Invalid comment ID');
+    }
+
+    console.log('🗑️ Deleting comment:', { commentId });
+    setError(null);
+
+    try {
+      const response = await deleteComment(commentId);
+      
+      if (!response.success) {
+        throw new Error(response.error);
+      }
+
+      // Remove the comment from the local state
+      setComments(prevComments => {
+        const removeCommentFromList = (commentList: Comment[]): Comment[] => {
+          return commentList.filter(comment => {
+            if (comment.id === commentId) {
+              return false;
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              comment.replies = removeCommentFromList(comment.replies);
+            }
+            return true;
+          });
+        };
+        return removeCommentFromList(prevComments);
+      });
+
+      // Update comment count
+      setCommentCount(prev => Math.max(0, prev - 1));
+
+      console.log('✅ Comment deleted successfully from UI');
+    } catch (err) {
+      setError('Failed to delete comment');
+      console.error('Error deleting comment:', err);
+      throw err;
+    }
+  }, []);
+
   return {
     likeCount,
     commentCount,
@@ -226,6 +313,8 @@ export const useReviewInteractions = ({
     toggleLike,
     loadComments,
     postComment,
+    updateComment,
+    removeComment,
     commentsLoaded
   };
 };
