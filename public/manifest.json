@@ -1,12 +1,13 @@
 {
-  "name": "GameVault - Gaming Community Platform",
-  "short_name": "GameVault",
+  "name": "VGReviewApp - Gaming Community Platform",
+  "short_name": "VGReview",
   "description": "Discover, rate, and review games with the ultimate gaming community",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#111827",
   "theme_color": "#7c3aed",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "icons": [
     {
       "src": "/icon-192.png",
