@@ -144,7 +144,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           id,
           content,
           created_at,
-          rating:rating_id (
+          rating!comment_rating_id_fkey (
             user_id,
             user:user_id (
               id,

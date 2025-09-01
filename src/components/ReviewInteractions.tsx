@@ -351,14 +351,14 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 <div className="flex gap-2">
                   <button
                     onClick={handleEdit}
-                    className="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                    className="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors flex items-center justify-center"
                     disabled={!editContent.trim() || editContent.length > 500}
                   >
                     <Check className="h-3 w-3" />
                   </button>
                   <button
                     onClick={handleCancelEdit}
-                    className="px-2 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors"
+                    className="px-2 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors flex items-center justify-center"
                   >
                     <X className="h-3 w-3" />
                   </button>
