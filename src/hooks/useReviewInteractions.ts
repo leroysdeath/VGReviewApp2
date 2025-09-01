@@ -6,6 +6,8 @@ import {
   unlikeReview,
   getCommentsForReview,
   addComment,
+  editComment,
+  deleteComment,
   Comment
 } from '../services/reviewService';
 
@@ -25,6 +27,9 @@ interface UseReviewInteractionsReturn {
   toggleLike: () => Promise<void>;
   loadComments: () => Promise<void>;
   postComment: (content: string, parentId?: number) => Promise<void>;
+  updateComment: (commentId: number, content: string) => Promise<void>;
+  removeComment: (commentId: number) => Promise<void>;
+  commentsLoaded: boolean;
 }
 
 export const useReviewInteractions = ({ 
@@ -38,10 +43,13 @@ export const useReviewInteractions = ({
   const [isLoadingLike, setIsLoadingLike] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
 
-  // Load initial data
+  // Load initial review data and like status
   useEffect(() => {
     const loadInitialData = async () => {
+      if (!reviewId) return;
+      
       try {
         // Get review data
         const reviewResponse = await getReview(reviewId);
@@ -50,12 +58,16 @@ export const useReviewInteractions = ({
           setCommentCount(reviewResponse.data.commentCount || 0);
         }
 
-        // Check if user has liked the review
-        if (userId) {
+        // Check if user has liked the review - only if userId is defined
+        if (userId && userId > 0) {
+          console.log('🔍 Checking if user has liked review:', { userId, reviewId });
           const likeResponse = await hasUserLikedReview(userId, reviewId);
           if (likeResponse.success) {
             setIsLiked(likeResponse.data || false);
           }
+        } else {
+          console.log('⏳ User ID not yet loaded, skipping like check');
+          setIsLiked(false); // Default to not liked
         }
       } catch (err) {
         setError('Failed to load review data');
@@ -63,18 +75,57 @@ export const useReviewInteractions = ({
       }
     };
 
-    if (reviewId) {
-      loadInitialData();
-    }
+    loadInitialData();
   }, [reviewId, userId]);
+
+  // Load comments in background after initial data loads
+  useEffect(() => {
+    const loadCommentsInBackground = async () => {
+      if (!reviewId || commentsLoaded) return;
+      
+      try {
+        console.log('📚 Loading comments in background for review:', reviewId);
+        setIsLoadingComments(true);
+        const response = await getCommentsForReview(reviewId);
+        
+        if (response.success) {
+          setComments(response.data || []);
+          setCommentCount(response.count || 0);
+          setCommentsLoaded(true);
+          console.log('✅ Comments loaded successfully:', response.count, 'comments');
+        } else {
+          console.warn('⚠️ Failed to load comments:', response.error);
+        }
+      } catch (err) {
+        console.error('Error loading comments in background:', err);
+      } finally {
+        setIsLoadingComments(false);
+      }
+    };
+
+    // Small delay to let initial data load first
+    const timeoutId = setTimeout(loadCommentsInBackground, 100);
+    
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [reviewId, commentsLoaded]);
+
+  // Reset comments when reviewId changes
+  useEffect(() => {
+    setComments([]);
+    setCommentsLoaded(false);
+  }, [reviewId]);
 
   // Toggle like status
   const toggleLike = useCallback(async () => {
-    if (!userId) {
+    if (!userId || userId <= 0) {
+      console.warn('⚠️ Cannot toggle like - userId is undefined or invalid:', userId);
       setError('You must be logged in to like reviews');
       return;
     }
 
+    console.log('👍 Toggling like:', { userId, reviewId, currentIsLiked: isLiked });
     setIsLoadingLike(true);
     setError(null);
 
@@ -110,12 +161,19 @@ export const useReviewInteractions = ({
     }
   }, [userId, reviewId, isLiked, likeCount]);
 
-  // Load comments
+  // Load comments (used for manual refresh or if background loading failed)
   const loadComments = useCallback(async () => {
+    // Don't reload if already loading or recently loaded
+    if (isLoadingComments || commentsLoaded) {
+      console.log('📚 Comments already loaded or loading, skipping...');
+      return;
+    }
+
     setIsLoadingComments(true);
     setError(null);
 
     try {
+      console.log('🔄 Manually loading comments for review:', reviewId);
       const response = await getCommentsForReview(reviewId);
       
       if (!response.success) {
@@ -124,20 +182,24 @@ export const useReviewInteractions = ({
 
       setComments(response.data || []);
       setCommentCount(response.count || 0);
+      setCommentsLoaded(true);
+      console.log('✅ Comments loaded manually:', response.count, 'comments');
     } catch (err) {
       setError('Failed to load comments');
       console.error('Error loading comments:', err);
     } finally {
       setIsLoadingComments(false);
     }
-  }, [reviewId]);
+  }, [reviewId, isLoadingComments, commentsLoaded]);
 
   // Post a new comment
   const postComment = useCallback(async (content: string, parentId?: number) => {
-    if (!userId) {
+    if (!userId || userId <= 0) {
+      console.warn('⚠️ Cannot post comment - userId is undefined or invalid:', userId);
       throw new Error('You must be logged in to comment');
     }
 
+    console.log('💬 Posting comment:', { userId, reviewId, contentLength: content.length });
     setError(null);
 
     try {
@@ -147,7 +209,8 @@ export const useReviewInteractions = ({
         throw new Error(response.error);
       }
 
-      // Reload comments to get the updated list
+      // Force reload comments to get the updated list
+      setCommentsLoaded(false); // Reset to allow reload
       await loadComments();
     } catch (err) {
       setError('Failed to post comment');
@@ -155,6 +218,89 @@ export const useReviewInteractions = ({
       throw err;
     }
   }, [userId, reviewId, loadComments]);
+
+  // Update a comment
+  const updateComment = useCallback(async (commentId: number, content: string) => {
+    if (!commentId || !content || content.trim().length === 0) {
+      throw new Error('Invalid comment data');
+    }
+
+    console.log('✏️ Updating comment:', { commentId, contentLength: content.length });
+    setError(null);
+
+    try {
+      const response = await editComment(commentId, content);
+      
+      if (!response.success) {
+        throw new Error(response.error);
+      }
+
+      // Update the comment in the local state
+      setComments(prevComments => {
+        const updateCommentInList = (commentList: Comment[]): Comment[] => {
+          return commentList.map(comment => {
+            if (comment.id === commentId && response.data) {
+              return { ...comment, content: response.data.content, updatedAt: response.data.updatedAt };
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              return { ...comment, replies: updateCommentInList(comment.replies) };
+            }
+            return comment;
+          });
+        };
+        return updateCommentInList(prevComments);
+      });
+
+      console.log('✅ Comment updated successfully in UI');
+    } catch (err) {
+      setError('Failed to update comment');
+      console.error('Error updating comment:', err);
+      throw err;
+    }
+  }, []);
+
+  // Delete a comment
+  const removeComment = useCallback(async (commentId: number) => {
+    if (!commentId) {
+      throw new Error('Invalid comment ID');
+    }
+
+    console.log('🗑️ Deleting comment:', { commentId });
+    setError(null);
+
+    try {
+      const response = await deleteComment(commentId);
+      
+      if (!response.success) {
+        throw new Error(response.error);
+      }
+
+      // Remove the comment from the local state
+      setComments(prevComments => {
+        const removeCommentFromList = (commentList: Comment[]): Comment[] => {
+          return commentList.filter(comment => {
+            if (comment.id === commentId) {
+              return false;
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              comment.replies = removeCommentFromList(comment.replies);
+            }
+            return true;
+          });
+        };
+        return removeCommentFromList(prevComments);
+      });
+
+      // Update comment count
+      setCommentCount(prev => Math.max(0, prev - 1));
+
+      console.log('✅ Comment deleted successfully from UI');
+    } catch (err) {
+      setError('Failed to delete comment');
+      console.error('Error deleting comment:', err);
+      throw err;
+    }
+  }, []);
 
   return {
     likeCount,
@@ -166,6 +312,9 @@ export const useReviewInteractions = ({
     error,
     toggleLike,
     loadComments,
-    postComment
+    postComment,
+    updateComment,
+    removeComment,
+    commentsLoaded
   };
 };

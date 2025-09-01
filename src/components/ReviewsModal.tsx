@@ -58,8 +58,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
           )
         `)
         .eq('user_id', parseInt(userId))
-        .not('review', 'is', null)
-        .not('review', 'eq', '');
+        .not('rating', 'is', null);
 
       // Apply sorting based on active tab
       switch (activeTab) {
@@ -82,7 +81,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
       if (error) throw error;
 
       const reviewsData = (data || [])
-        .filter(item => item.game && item.review)
+        .filter(item => item.game && item.rating != null)
         .map(item => ({
           id: item.id.toString(),
           gameId: item.game.igdb_id ? item.game.igdb_id.toString() : item.game.id.toString(),
@@ -90,7 +89,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
           gameCover: item.game.cover_url || '/default-cover.png',
           gameUrl: getGameUrl(item.game),
           rating: item.rating || 0,
-          reviewText: item.review,
+          reviewText: item.review || '',
           postDate: item.post_date_time
         }));
 

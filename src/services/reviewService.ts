@@ -782,12 +782,16 @@ export const likeReview = async (
   userId: number,
   reviewId: number
 ): Promise<ServiceResponse<{ likeCount: number }>> => {
+  console.log('👍 likeReview called with:', { userId, reviewId, userIdType: typeof userId });
+  
   try {
     // Validate input
     if (!userId || isNaN(userId)) {
+      console.error('❌ Invalid user ID in likeReview:', { userId, isNaN: isNaN(userId) });
       return { success: false, error: 'Invalid user ID' };
     }
     if (!reviewId || isNaN(reviewId)) {
+      console.error('❌ Invalid review ID in likeReview:', { reviewId });
       return { success: false, error: 'Invalid review ID' };
     }
 
@@ -822,6 +826,7 @@ export const likeReview = async (
     }
 
     // Insert new like
+    console.log('📤 Inserting like with:', { user_id: userId, rating_id: reviewId });
     const { error: insertError } = await supabase
       .from('content_like')
       .insert({
@@ -829,7 +834,11 @@ export const likeReview = async (
         rating_id: reviewId
       });
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error('❌ Error inserting like:', insertError);
+      throw insertError;
+    }
+    console.log('✅ Like inserted successfully');
 
     // Get updated like count from computed column (much faster)
     const { data: ratingData } = await supabase
@@ -926,11 +935,12 @@ export const getCommentsForReview = async (
 
     if (error) throw error;
 
-    // Build nested structure
+    // Build 2-level structure (hybrid approach)
     const commentMap = new Map<number, Comment>();
     const topLevelComments: Comment[] = [];
+    const topLevelParentMap = new Map<number, number>(); // Maps comment ID to its top-level parent
 
-    // First pass: create all comment objects
+    // First pass: create all comment objects and identify top-level parents
     data?.forEach(item => {
       const comment: Comment = {
         id: item.id,
@@ -949,25 +959,64 @@ export const getCommentsForReview = async (
       };
 
       commentMap.set(comment.id, comment);
-    });
-
-    // Second pass: build the tree structure
-    commentMap.forEach(comment => {
-      if (comment.parentId) {
-        const parent = commentMap.get(comment.parentId);
-        if (parent) {
-          parent.replies?.push(comment);
-        } else {
-          // If parent doesn't exist, treat as top-level
-          topLevelComments.push(comment);
-        }
-      } else {
-        topLevelComments.push(comment);
+      
+      // Track top-level parent for each comment
+      if (!comment.parentId) {
+        topLevelParentMap.set(comment.id, comment.id);
       }
     });
 
-    // Sort replies by timestamp (oldest first)
+    // Second pass: find top-level parent for nested replies
     commentMap.forEach(comment => {
+      if (comment.parentId) {
+        // Find the top-level parent by traversing up the chain
+        let currentParentId = comment.parentId;
+        let topLevelParent = currentParentId;
+        let depth = 0;
+        const maxDepth = 10; // Prevent infinite loops
+        
+        while (currentParentId && depth < maxDepth) {
+          const parent = commentMap.get(currentParentId);
+          if (!parent || !parent.parentId) {
+            topLevelParent = currentParentId;
+            break;
+          }
+          currentParentId = parent.parentId;
+          depth++;
+        }
+        
+        topLevelParentMap.set(comment.id, topLevelParent);
+      }
+    });
+
+    // Third pass: build 2-level tree structure
+    commentMap.forEach(comment => {
+      if (!comment.parentId) {
+        // This is a top-level comment
+        topLevelComments.push(comment);
+      } else {
+        // This is a reply - attach it to its top-level parent
+        const topLevelParentId = topLevelParentMap.get(comment.id);
+        if (topLevelParentId && topLevelParentId !== comment.id) {
+          const topLevelParent = commentMap.get(topLevelParentId);
+          if (topLevelParent) {
+            // For 2-level structure, all replies go under the top-level comment
+            // Update the parentId to point to the top-level comment
+            comment.parentId = topLevelParentId;
+            topLevelParent.replies?.push(comment);
+          } else {
+            // Orphaned comment - add as top-level
+            topLevelComments.push(comment);
+          }
+        } else {
+          // No valid parent found - add as top-level
+          topLevelComments.push(comment);
+        }
+      }
+    });
+
+    // Sort replies by timestamp (oldest first) for better conversation flow
+    topLevelComments.forEach(comment => {
       if (comment.replies && comment.replies.length > 0) {
         comment.replies.sort((a, b) => 
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -998,12 +1047,16 @@ export const addComment = async (
   content: string,
   parentId?: number
 ): Promise<ServiceResponse<Comment>> => {
+  console.log('💬 addComment called with:', { userId, reviewId, contentLength: content.length, parentId });
+  
   try {
     // Validate input
     if (!userId || isNaN(userId)) {
+      console.error('❌ Invalid user ID in addComment:', { userId, isNaN: isNaN(userId) });
       return { success: false, error: 'Invalid user ID' };
     }
     if (!reviewId || isNaN(reviewId)) {
+      console.error('❌ Invalid review ID in addComment:', { reviewId });
       return { success: false, error: 'Invalid review ID' };
     }
     if (!content || content.trim().length === 0) {
@@ -1016,27 +1069,36 @@ export const addComment = async (
     // Sanitize content to prevent XSS attacks
     const sanitizedContent = sanitizeRich(content.trim());
 
-    // Validate parent comment if provided
+    // Validate parent comment and handle 2-level structure
+    let finalParentId = parentId;
     if (parentId) {
       const { data: parentComment, error: parentError } = await supabase
         .from('comment')
-        .select('id')
+        .select('id, parent_comment_id')
         .eq('id', parentId)
         .single();
 
-      if (parentError) {
+      if (parentError || !parentComment) {
         return { success: false, error: 'Parent comment not found' };
+      }
+      
+      // For 2-level structure: if replying to a reply, use the original parent's ID
+      if (parentComment.parent_comment_id) {
+        // This is a reply to a reply - use the top-level comment ID instead
+        finalParentId = parentComment.parent_comment_id;
+        console.log('📝 Reply to reply detected, using top-level parent:', finalParentId);
       }
     }
 
     // Insert comment
+    console.log('📤 Inserting comment with:', { user_id: userId, rating_id: reviewId, contentLength: sanitizedContent.length, parentId: finalParentId });
     const { data, error } = await supabase
       .from('comment')
       .insert({
         user_id: userId,
         rating_id: reviewId,
         content: sanitizedContent,
-        parent_comment_id: parentId || null,
+        parent_comment_id: finalParentId || null,
         is_published: true
       })
       .select(`
@@ -1045,7 +1107,11 @@ export const addComment = async (
       `)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error inserting comment:', error);
+      throw error;
+    }
+    console.log('✅ Comment inserted successfully:', { commentId: data.id });
 
     // Transform to our interface
     const comment: Comment = {
@@ -1073,6 +1139,159 @@ export const addComment = async (
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to add comment'
+    };
+  }
+};
+
+/**
+ * Edit a comment
+ */
+export const editComment = async (
+  commentId: number,
+  content: string
+): Promise<ServiceResponse<Comment>> => {
+  console.log('✏️ editComment called with:', { commentId, contentLength: content.length });
+  
+  try {
+    // Validate input
+    if (!commentId || isNaN(commentId)) {
+      return { success: false, error: 'Invalid comment ID' };
+    }
+    if (!content || content.trim().length === 0) {
+      return { success: false, error: 'Comment content cannot be empty' };
+    }
+    if (content.length > 500) {
+      return { success: false, error: 'Comment content exceeds maximum length (500 characters)' };
+    }
+
+    // Get current user ID to verify ownership
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // Verify the comment belongs to the current user
+    const { data: existingComment, error: verifyError } = await supabase
+      .from('comment')
+      .select('id, user_id')
+      .eq('id', commentId)
+      .eq('user_id', userId)
+      .single();
+
+    if (verifyError || !existingComment) {
+      console.error('❌ Comment not found or access denied:', verifyError);
+      return { success: false, error: 'Comment not found or you do not have permission to edit it' };
+    }
+
+    // Sanitize content to prevent XSS attacks
+    const sanitizedContent = sanitizeRich(content.trim());
+
+    // Update comment
+    console.log('📤 Updating comment:', { commentId, contentLength: sanitizedContent.length });
+    const { data, error } = await supabase
+      .from('comment')
+      .update({
+        content: sanitizedContent,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', commentId)
+      .select(`
+        *,
+        user:comment_user_id_fkey(id, username, name, avatar_url)
+      `)
+      .single();
+
+    if (error) {
+      console.error('❌ Error updating comment:', error);
+      throw error;
+    }
+    console.log('✅ Comment updated successfully:', { commentId: data.id });
+
+    // Transform to our interface
+    const comment: Comment = {
+      id: data.id,
+      userId: data.user_id,
+      reviewId: data.rating_id,
+      content: data.content,
+      parentId: data.parent_comment_id || undefined,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      replies: [],
+      user: data.user ? {
+        id: data.user.id,
+        name: data.user.username || data.user.name,
+        avatar_url: data.user.avatar_url
+      } : undefined
+    };
+
+    return {
+      success: true,
+      data: comment
+    };
+  } catch (error) {
+    console.error('Error editing comment:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to edit comment'
+    };
+  }
+};
+
+/**
+ * Delete a comment
+ */
+export const deleteComment = async (
+  commentId: number
+): Promise<ServiceResponse<boolean>> => {
+  console.log('🗑️ deleteComment called with:', { commentId });
+  
+  try {
+    // Validate input
+    if (!commentId || isNaN(commentId)) {
+      return { success: false, error: 'Invalid comment ID' };
+    }
+
+    // Get current user ID to verify ownership
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // Verify the comment belongs to the current user
+    const { data: existingComment, error: verifyError } = await supabase
+      .from('comment')
+      .select('id, user_id')
+      .eq('id', commentId)
+      .eq('user_id', userId)
+      .single();
+
+    if (verifyError || !existingComment) {
+      console.error('❌ Comment not found or access denied:', verifyError);
+      return { success: false, error: 'Comment not found or you do not have permission to delete it' };
+    }
+
+    // Delete comment
+    console.log('📤 Deleting comment:', { commentId });
+    const { error } = await supabase
+      .from('comment')
+      .delete()
+      .eq('id', commentId);
+
+    if (error) {
+      console.error('❌ Error deleting comment:', error);
+      throw error;
+    }
+    console.log('✅ Comment deleted successfully:', { commentId });
+
+    return {
+      success: true,
+      data: true
+    };
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete comment'
     };
   }
 };

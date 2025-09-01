@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Star, X } from 'lucide-react';
+import { Star, X, Edit } from 'lucide-react';
 import { gameDataService } from '../services/gameDataService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
@@ -30,8 +30,9 @@ interface Review {
 
 
 export const ReviewPage: React.FC = () => {
+  console.log('📍 ReviewPage mounted');
   const { userId, gameId } = useParams<{ userId: string; gameId: string }>();
-  const { isAuthenticated, user, dbUserId } = useAuth();
+  const { isAuthenticated, user, dbUserId, dbUserIdLoading } = useAuth();
   
   const [game, setGame] = useState<GameWithCalculatedFields | null>(null);
   const [review, setReview] = useState<Review | null>(null);
@@ -41,9 +42,13 @@ export const ReviewPage: React.FC = () => {
   const [reviewExpanded, setReviewExpanded] = useState(false);
 
   // Get current user ID for review interactions
-  const currentUserId = dbUserId || undefined;
+  // Only use dbUserId if it's loaded (not null)
+  const currentUserId = dbUserId && dbUserId > 0 ? dbUserId : undefined;
   
-  // Use review interactions hook
+  // Use review interactions hook - only when review is loaded and valid
+  const reviewId = review?.id ? parseInt(review.id) : null;
+  const useInteractions = reviewId && reviewId > 0;
+  
   const {
     likeCount,
     commentCount,
@@ -52,11 +57,29 @@ export const ReviewPage: React.FC = () => {
     isLoadingComments,
     isLoadingLike,
     toggleLike,
-    postComment
+    postComment,
+    updateComment,
+    removeComment,
+    commentsLoaded
   } = useReviewInteractions({
-    reviewId: review ? parseInt(review.id) : 0,
+    reviewId: useInteractions ? reviewId : 0,
     userId: currentUserId
   });
+
+  // Debug logging for user ID and comments - moved after hook call
+  useEffect(() => {
+    console.log('🎯 ReviewPage Status:', {
+      isAuthenticated,
+      authUserId: user?.id,
+      dbUserId,
+      dbUserIdLoading,
+      currentUserId,
+      reviewId: review?.id,
+      commentsLoaded,
+      commentsCount: comments?.length || 0,
+      isLoadingComments
+    });
+  }, [isAuthenticated, user?.id, dbUserId, dbUserIdLoading, currentUserId, review?.id, commentsLoaded, comments?.length, isLoadingComments]);
 
   useEffect(() => {
     if (userId && gameId) {
@@ -233,13 +256,13 @@ export const ReviewPage: React.FC = () => {
           
           // Still need to check if current user has liked this comment
           let userHasHearted = false;
-          if (isAuthenticated && user?.id) {
+          if (isAuthenticated && currentUserId) {
             const { data: userLikeData } = await supabase
               .from('content_like')
               .select('id')
               .eq('comment_id', comment.id)
-              .eq('user_id', user.id)
-              .single();
+              .eq('user_id', currentUserId)
+              .maybeSingle();
             
             userHasHearted = !!userLikeData;
           }
@@ -325,14 +348,26 @@ export const ReviewPage: React.FC = () => {
                   </Link>
                   
                   {/* Review Info */}
-                  <div className="text-gray-400 mb-1">
-                    Review by{' '}
-                    <Link
-                      to={`/user/${review.user.id}`}
-                      className="text-white font-medium hover:text-purple-400 transition-colors"
-                    >
-                      {review.user.username || review.user.name}
-                    </Link>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-gray-400">
+                      Review by{' '}
+                      <Link
+                        to={`/user/${review.user.id}`}
+                        className="text-white font-medium hover:text-purple-400 transition-colors"
+                      >
+                        {review.user.username || review.user.name}
+                      </Link>
+                    </div>
+                    {/* Edit Review Button - Show only if current user is the review owner */}
+                    {isAuthenticated && dbUserId === review.user_id && (
+                      <Link
+                        to={`/review/${game?.igdb_id || gameId}`}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                        <span>Edit Review</span>
+                      </Link>
+                    )}
                   </div>
                   
                   <div className="text-sm text-gray-400 mb-4">
@@ -380,7 +415,7 @@ export const ReviewPage: React.FC = () => {
               
               <div className="text-center">
                 <div className="text-4xl font-bold text-green-400 mb-2">
-                  {review.rating.toFixed(1)}
+                  {review.rating === 10 ? '10' : review.rating.toFixed(1)}
                 </div>
                 <div className="mb-2">
                   {/* Progress bar */}
@@ -412,10 +447,14 @@ export const ReviewPage: React.FC = () => {
               onUnlike={toggleLike}
               comments={comments || []}
               onAddComment={postComment}
+              onEditComment={updateComment}
+              onDeleteComment={removeComment}
               isLoadingComments={isLoadingComments}
               isLoadingLike={isLoadingLike}
               reviewAuthorId={review.user_id}
               currentUserId={currentUserId}
+              // Disable interactions if authenticated but user ID not loaded
+              disabled={isAuthenticated && dbUserIdLoading}
             />
           </div>
         )}

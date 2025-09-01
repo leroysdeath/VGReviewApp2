@@ -142,7 +142,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
     }
 
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4">
         {items.map((item) => {
           const gameSlug = item.game?.slug || `game-${item.igdb_id}`;
           const gameName = item.game?.name || 'Unknown Game';
@@ -165,7 +165,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
                     }}
                   />
                 </div>
-                <h3 className="mt-2 text-sm text-gray-300 line-clamp-2">
+                <h3 className="mt-1 md:mt-2 text-xs md:text-sm text-gray-300 line-clamp-2">
                   {gameName}
                 </h3>
               </Link>

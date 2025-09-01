@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Calendar, Star, Play, CheckCircle, ScrollText, Gift, BookOpen } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Calendar, Star, Play, CheckCircle, ScrollText, Gift, BookOpen, MessageCircle } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { getGameUrl } from '../../utils/gameUrls';
+import { useResponsive } from '../../hooks/useResponsive';
 
 interface Activity {
   id: string;
@@ -18,6 +19,11 @@ interface Activity {
   rating?: number;
   review?: string;
   is_recommended?: boolean;
+  // For comment activities
+  reviewAuthor?: {
+    id: number;
+    username: string;
+  };
 }
 
 interface ActivityFeedProps {
@@ -28,6 +34,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { isMobile } = useResponsive();
 
   // Priority map for sorting activities with same timestamp
   // Lower number = should appear first when timestamps are equal
@@ -132,6 +140,34 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
 
       if (collectionError) throw collectionError;
 
+      // Fetch comment activities
+      const { data: commentData, error: commentError } = await supabase
+        .from('comment')
+        .select(`
+          id,
+          content,
+          created_at,
+          rating!comment_rating_id_fkey (
+            user_id,
+            user:user_id (
+              id,
+              username
+            ),
+            game:game_id (
+              id,
+              igdb_id,
+              slug,
+              name,
+              cover_url
+            )
+          )
+        `)
+        .eq('user_id', parseInt(userId))
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (commentError) throw commentError;
+
       // Transform and combine activities
       const combinedActivities: Activity[] = [];
 
@@ -197,6 +233,22 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           type: 'collection',
           date: item.added_at,
           game: item.game
+        });
+      });
+
+      // Add comment activities
+      commentData?.forEach(item => {
+        if (!item.rating?.game || !item.rating?.user) return;
+        
+        combinedActivities.push({
+          id: `comment-${item.id}`,
+          type: 'comment',
+          date: item.created_at,
+          game: item.rating.game,
+          reviewAuthor: {
+            id: item.rating.user.id,
+            username: item.rating.user.username
+          }
         });
       });
 
@@ -268,8 +320,27 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         return <Play className="h-5 w-5 text-blue-400" />;
       case 'completed':
         return <CheckCircle className="h-5 w-5 text-green-400" />;
+      case 'comment':
+        return <MessageCircle className="h-5 w-5 text-blue-400" />;
       default:
         return <Calendar className="h-5 w-5 text-gray-400" />;
+    }
+  };
+
+  const getActivityLink = (activity: Activity): string | null => {
+    switch (activity.type) {
+      case 'review':
+        return `/review/${userId}/${activity.game?.igdb_id || activity.game?.id}`;
+      case 'comment':
+        return `/review/${activity.reviewAuthor?.id}/${activity.game?.igdb_id || activity.game?.id}`;
+      case 'rating':
+      case 'wishlist':
+      case 'collection':
+      case 'started':
+      case 'completed':
+        return getGameUrl(activity.game!);
+      default:
+        return null;
     }
   };
 
@@ -278,10 +349,18 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
       case 'review':
         return (
           <span>
-            wrote a review for{' '}
-            <Link to={getGameUrl(activity.game!)} className="text-purple-400 hover:text-purple-300">
-              {activity.game?.name}
-            </Link>
+            wrote a{' '}
+            {isMobile ? (
+              <span className="text-purple-400">review for {activity.game?.name}</span>
+            ) : (
+              <Link 
+                to={`/review/${userId}/${activity.game?.igdb_id || activity.game?.id}`} 
+                className="text-purple-400 hover:text-purple-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                review for {activity.game?.name}
+              </Link>
+            )}
             {activity.rating && (
               <span className="text-yellow-400 ml-2">
                 ({activity.rating === 10 ? '10' : activity.rating.toFixed(1)}/10)
@@ -293,9 +372,17 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         return (
           <span>
             rated{' '}
-            <Link to={getGameUrl(activity.game!)} className="text-purple-400 hover:text-purple-300">
-              {activity.game?.name}
-            </Link>
+            {isMobile ? (
+              <span className="text-purple-400">{activity.game?.name}</span>
+            ) : (
+              <Link 
+                to={getGameUrl(activity.game!)} 
+                className="text-purple-400 hover:text-purple-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {activity.game?.name}
+              </Link>
+            )}
             <span className="text-yellow-400 ml-2">
               {activity.rating === 10 ? '10' : activity.rating?.toFixed(1)}/10
             </span>
@@ -305,9 +392,17 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         return (
           <span>
             added{' '}
-            <Link to={getGameUrl(activity.game!)} className="text-purple-400 hover:text-purple-300">
-              {activity.game?.name}
-            </Link>
+            {isMobile ? (
+              <span className="text-purple-400">{activity.game?.name}</span>
+            ) : (
+              <Link 
+                to={getGameUrl(activity.game!)} 
+                className="text-purple-400 hover:text-purple-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {activity.game?.name}
+              </Link>
+            )}
             {' '}to wishlist
           </span>
         );
@@ -315,9 +410,17 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         return (
           <span>
             added{' '}
-            <Link to={getGameUrl(activity.game!)} className="text-purple-400 hover:text-purple-300">
-              {activity.game?.name}
-            </Link>
+            {isMobile ? (
+              <span className="text-purple-400">{activity.game?.name}</span>
+            ) : (
+              <Link 
+                to={getGameUrl(activity.game!)} 
+                className="text-purple-400 hover:text-purple-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {activity.game?.name}
+              </Link>
+            )}
             {' '}to collection
           </span>
         );
@@ -325,18 +428,51 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         return (
           <span>
             started playing{' '}
-            <Link to={getGameUrl(activity.game!)} className="text-purple-400 hover:text-purple-300">
-              {activity.game?.name}
-            </Link>
+            {isMobile ? (
+              <span className="text-purple-400">{activity.game?.name}</span>
+            ) : (
+              <Link 
+                to={getGameUrl(activity.game!)} 
+                className="text-purple-400 hover:text-purple-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {activity.game?.name}
+              </Link>
+            )}
           </span>
         );
       case 'completed':
         return (
           <span>
             completed{' '}
-            <Link to={getGameUrl(activity.game!)} className="text-purple-400 hover:text-purple-300">
-              {activity.game?.name}
-            </Link>
+            {isMobile ? (
+              <span className="text-purple-400">{activity.game?.name}</span>
+            ) : (
+              <Link 
+                to={getGameUrl(activity.game!)} 
+                className="text-purple-400 hover:text-purple-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {activity.game?.name}
+              </Link>
+            )}
+          </span>
+        );
+      case 'comment':
+        return (
+          <span>
+            commented on{' '}
+            {isMobile ? (
+              <span className="text-purple-400">{activity.reviewAuthor?.username}'s review of {activity.game?.name}</span>
+            ) : (
+              <Link 
+                to={`/review/${activity.reviewAuthor?.id}/${activity.game?.igdb_id || activity.game?.id}`} 
+                className="text-purple-400 hover:text-purple-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {activity.reviewAuthor?.username}'s review of {activity.game?.name}
+              </Link>
+            )}
           </span>
         );
       default:
@@ -390,61 +526,68 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold text-white mb-6">Recent Activity</h2>
       
-      {activities.map((activity) => (
-        <div key={activity.id} className="flex gap-4 p-4 bg-gray-800 rounded-lg">
-          {/* Game cover */}
-          <Link 
-            to={getGameUrl(activity.game!)} 
-            className="flex-shrink-0 group"
-          >
-            <img
-              src={activity.game?.cover_url || '/default-cover.png'}
-              alt={activity.game?.name || 'Game cover'}
-              className="w-12 h-16 object-cover rounded group-hover:scale-105 transition-transform"
-              onError={(e) => {
-                e.currentTarget.src = '/default-cover.png';
-              }}
-            />
-          </Link>
-
-          {/* Activity content */}
-          <div className="flex-1 min-w-0">
-            {/* Activity header */}
-            <div className="flex items-center gap-2 mb-2">
-              {getActivityIcon(activity.type)}
-              <span className="text-gray-300 text-sm">
-                {getActivityDescription(activity)}
-              </span>
+      {activities.map((activity) => {
+        const activityLink = getActivityLink(activity);
+        const cardContent = (
+          <>
+            {/* Game cover */}
+            <div className="flex-shrink-0 group">
+              <img
+                src={activity.game?.cover_url || '/default-cover.png'}
+                alt={activity.game?.name || 'Game cover'}
+                className="w-12 h-16 object-cover rounded group-hover:scale-105 transition-transform"
+                onError={(e) => {
+                  e.currentTarget.src = '/default-cover.png';
+                }}
+              />
             </div>
 
-            {/* Review text if available */}
-            {activity.review && (
-              <p className="text-gray-400 text-sm mb-2 line-clamp-3">
-                "{activity.review}"
-              </p>
-            )}
-
-            {/* Recommendation badge */}
-            {activity.is_recommended !== null && activity.is_recommended !== undefined && (
-              <div className="mb-2">
-                <span className={`text-xs px-2 py-1 rounded ${
-                  activity.is_recommended 
-                    ? 'bg-green-900 text-green-300' 
-                    : 'bg-red-900 text-red-300'
-                }`}>
-                  {activity.is_recommended ? 'Recommended' : 'Not Recommended'}
+            {/* Activity content */}
+            <div className="flex-1 min-w-0">
+              {/* Activity header */}
+              <div className="flex items-start gap-2 mb-2">
+                <div className="flex-shrink-0 w-5 h-5">
+                  {getActivityIcon(activity.type)}
+                </div>
+                <span className="text-gray-300 text-sm">
+                  {getActivityDescription(activity)}
                 </span>
               </div>
-            )}
 
-            {/* Date */}
-            <div className="flex items-center text-gray-500 text-xs">
-              <Calendar className="h-3 w-3 mr-1" />
-              {formatDate(activity.date)}
+              {/* Review text if available */}
+              {activity.review && (
+                <p className="text-gray-400 text-sm mb-2 line-clamp-3">
+                  "{activity.review}"
+                </p>
+              )}
+
+              {/* Date */}
+              <div className="flex items-center text-gray-500 text-xs">
+                <Calendar className="h-3 w-3 mr-1" />
+                {formatDate(activity.date)}
+              </div>
             </div>
+          </>
+        );
+
+        if (isMobile && activityLink) {
+          return (
+            <div
+              key={activity.id}
+              onClick={() => navigate(activityLink)}
+              className="flex gap-4 p-4 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-750 transition-colors"
+            >
+              {cardContent}
+            </div>
+          );
+        }
+
+        return (
+          <div key={activity.id} className="flex gap-4 p-4 bg-gray-800 rounded-lg">
+            {cardContent}
           </div>
-        </div>
-      ))}
+        );
+      })}
       
       {/* Show more placeholder */}
       {activities.length >= 20 && (

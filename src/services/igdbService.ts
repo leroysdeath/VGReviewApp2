@@ -908,7 +908,6 @@ class IGDBService {
       category: igdbGame.category,
       cover: igdbGame.cover,
       cover_url: igdbGame.cover?.url ? this.transformImageUrl(igdbGame.cover.url) : undefined,
-      pic_url: igdbGame.cover?.url ? this.transformImageUrl(igdbGame.cover.url) : undefined,
       genres: igdbGame.genres?.map(g => g.name) || [],
       genre: igdbGame.genres?.[0]?.name,
       platforms: igdbGame.platforms?.map(p => p.name) || [],

@@ -1,10 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, GripVertical } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { GamePickerModal } from '../GamePickerModal';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  verticalListSortingStrategy,
+  horizontalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { getGameUrl } from '../../utils/gameUrls';
+import { SortableGameCard } from './SortableGameCard';
 
 interface TopGame {
   id: number;
@@ -45,8 +65,74 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
   const [isLoadingUserGames, setIsLoadingUserGames] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [layoutType, setLayoutType] = useState<'desktop' | 'tablet' | 'phoneLandscape' | 'phonePortrait'>('desktop');
 
   const isTop5 = limit === 5;
+
+  // Device and orientation detection
+  useEffect(() => {
+    const checkLayout = () => {
+      const width = window.innerWidth;
+      let newLayout: 'desktop' | 'tablet' | 'phoneLandscape' | 'phonePortrait';
+      
+      if (width >= 1024) {
+        newLayout = 'desktop'; // lg breakpoint and up
+      } else if (width >= 768) {
+        newLayout = 'tablet'; // md breakpoint
+      } else if (width >= 430) {
+        newLayout = 'phoneLandscape'; // landscape phone
+      } else {
+        newLayout = 'phonePortrait'; // portrait phone
+      }
+      
+      setLayoutType(newLayout);
+      
+      // Reset drag state on layout change
+      if (isDragging) {
+        setIsDragging(false);
+        setActiveId(null);
+        document.body.style.overflow = '';
+        document.body.style.touchAction = '';
+      }
+    };
+    
+    checkLayout();
+    window.addEventListener('resize', checkLayout);
+    window.addEventListener('orientationchange', checkLayout);
+    
+    return () => {
+      window.removeEventListener('resize', checkLayout);
+      window.removeEventListener('orientationchange', checkLayout);
+      // Cleanup on unmount
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [isDragging]);
+
+  // Derived states for easier checks
+  const isMobile = layoutType === 'phonePortrait' || layoutType === 'phoneLandscape';
+  const isPhonePortrait = layoutType === 'phonePortrait';
+  const isTabletOrLarger = layoutType === 'tablet' || layoutType === 'desktop';
+
+  // Configure drag and drop sensors with mobile support
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: isMobile ? 10 : 8, // Slightly more distance on mobile
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // Press and hold for 250ms
+        tolerance: 5, // 5px movement tolerance
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Fetch top games based on user's ratings
   const fetchTopGames = async (gameLimit: number) => {
@@ -234,6 +320,75 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
     }
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    // Don't allow drag while saving
+    if (isSaving) return;
+    
+    setActiveId(event.active.id as string);
+    setIsDragging(true);
+    
+    // Haptic feedback on mobile
+    if (isMobile && 'vibrate' in navigator) {
+      navigator.vibrate(10);
+    }
+    
+    // Prevent scrolling on mobile while dragging
+    if (isMobile) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setIsDragging(false);
+    
+    // Re-enable scrolling
+    if (isMobile) {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    
+    if (!over || active.id === over.id) {
+      setActiveId(null);
+      return;
+    }
+
+    const previousState = [...userTopGames];
+    
+    // Get the current indices in the array
+    const activeIndex = userTopGames.findIndex(g => g.game?.id.toString() === active.id);
+    const overIndex = userTopGames.findIndex(g => g.game?.id.toString() === over.id);
+    
+    if (activeIndex === -1 || overIndex === -1) {
+      setActiveId(null);
+      return;
+    }
+
+    // Use arrayMove to reorder - this shifts items, doesn't swap
+    const reordered = arrayMove(userTopGames, activeIndex, overIndex);
+    
+    // Update positions to match new order (1-5)
+    const updatedGames = reordered.map((item, index) => ({
+      ...item,
+      position: index + 1
+    }));
+
+    // Update state optimistically
+    setUserTopGames(updatedGames);
+    setActiveId(null);
+
+    // Save to database
+    const success = await saveTopGames(updatedGames);
+    
+    if (!success) {
+      // Revert on error
+      setUserTopGames(previousState);
+      setError('Failed to save new order. Please try again.');
+    }
+  };
+
   // Load data on mount
   useEffect(() => {
     if (userId) {
@@ -272,12 +427,22 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
 
   // Render Top 5 with editing capability
   if (isTop5 && editable) {
+    // Get sortable items (only games that exist)
+    const sortableItems = userTopGames
+      .filter(item => item.game)
+      .map(item => item.game!.id.toString());
+
+    // Find active game for drag overlay
+    const activeGame = activeId 
+      ? userTopGames.find(g => g.game?.id.toString() === activeId)?.game
+      : null;
+
     return (
       <div>
         {/* Edit toggle */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-white">
-            {isEditingTop5 ? 'Edit Your Top 5' : 'Your Top 5'}
+            {isEditingTop5 ? 'Edit Your Top 5 (Drag to reorder)' : 'Your Top 5'}
           </h2>
           {/* Only show edit button if all 5 slots are filled and no error */}
           {(() => {
@@ -290,81 +455,295 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
             return emptySlots === 0 && !error && (
               <button
                 onClick={() => setIsEditingTop5(!isEditingTop5)}
-                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                disabled={isSaving}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isEditingTop5 ? 'Done' : 'Edit'}
+                {isSaving ? 'Saving...' : isEditingTop5 ? 'Done' : 'Edit'}
               </button>
             );
           })()}
         </div>
 
-        {/* Games grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 md:mb-8">
-          {Array.from({ length: 5 }).map((_, index) => {
-            const position = index + 1;
-            const gameData = userTopGames.find(g => g.position === position);
-            
-            if (gameData?.game && !isEditingTop5) {
-              return (
-                <div key={position} className="relative group">
-                  <Link to={getGameUrl(gameData.game)}>
-                    <div className="relative aspect-[3/4]">
-                      <img
-                        src={gameData.game.cover_url}
-                        alt={gameData.game.name}
-                        className="w-full h-full object-cover rounded-lg"
-                        onError={(e) => {
-                          e.currentTarget.src = '/default-cover.png';
-                        }}
-                      />
-                      <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
-                        {position}
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-              );
-            }
+        {/* Show error if any */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-900/20 border border-red-700 rounded-lg text-red-300 text-sm">
+            {error}
+          </div>
+        )}
 
-            // Editing mode or empty slot
-            return (
-              <div key={position} className="relative aspect-[3/4] group">
-                {gameData?.game && isEditingTop5 ? (
-                  <div className="relative">
-                    <img
-                      src={gameData.game.cover_url}
-                      alt={gameData.game.name}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                    <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
-                      {position}
+        {/* Show hint for mobile users */}
+        {isEditingTop5 && isMobile && !isDragging && (
+          <div className="mb-4 p-3 bg-purple-900/20 border border-purple-700 rounded-lg text-purple-300 text-sm text-center">
+            Press and hold a game to drag and reorder
+          </div>
+        )}
+
+        {/* Games grid with drag and drop */}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext 
+            items={sortableItems} 
+            strategy={
+              isPhonePortrait ? rectSortingStrategy :
+              (layoutType === 'phoneLandscape' || layoutType === 'tablet') ? horizontalListSortingStrategy :
+              rectSortingStrategy
+            }
+          >
+            {/* Container for different layouts */}
+            {isPhonePortrait ? (
+              // Phone Portrait - 1-4 Layout
+              <div className="flex flex-col items-center gap-3 mb-4 transition-all duration-300">
+                {/* Top row - 1 game centered */}
+                <div className="flex justify-center gap-3">
+                  {[1].map((position) => {
+                    const gameData = userTopGames.find(g => g.position === position);
+                    
+                    if (gameData?.game && !isEditingTop5) {
+                      return (
+                        <div key={position} className="relative group w-[180px]">
+                          <Link to={getGameUrl(gameData.game)}>
+                            <div className="relative aspect-[3/4]">
+                              <img
+                                src={gameData.game.cover_url}
+                                alt={gameData.game.name}
+                                className="w-full h-full object-cover rounded-lg"
+                                onError={(e) => {
+                                  e.currentTarget.src = '/default-cover.png';
+                                }}
+                              />
+                              <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                                {position}
+                              </div>
+                            </div>
+                          </Link>
+                        </div>
+                      );
+                    }
+                    
+                    if (gameData?.game && isEditingTop5) {
+                      return (
+                        <div key={gameData.game.id} className="w-[180px]">
+                          <SortableGameCard
+                            id={gameData.game.id.toString()}
+                            position={position}
+                            game={gameData.game}
+                            isEditing={isEditingTop5}
+                            onRemove={handleRemoveGame}
+                            isDragging={activeId === gameData.game.id.toString()}
+                            isMobile={isMobile}
+                            isSaving={isSaving}
+                          />
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div key={`empty-${position}`} className="relative aspect-[3/4] w-[180px] group">
+                        <button
+                          onClick={() => {
+                            setSelectedPosition(position);
+                            setShowGamePicker(true);
+                          }}
+                          className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center hover:border-purple-500 transition-colors"
+                          disabled={isSaving || isEditingTop5}
+                        >
+                          <div className="text-center">
+                            <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                            <span className="text-gray-400 text-sm">Add Game</span>
+                          </div>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Bottom row - 4 games */}
+                <div className="flex justify-center gap-3">
+                  {[2, 3, 4, 5].map((position) => {
+                    const gameData = userTopGames.find(g => g.position === position);
+                    
+                    if (gameData?.game && !isEditingTop5) {
+                      return (
+                        <div key={position} className="relative group w-[90px]">
+                          <Link to={getGameUrl(gameData.game)}>
+                            <div className="relative aspect-[3/4]">
+                              <img
+                                src={gameData.game.cover_url}
+                                alt={gameData.game.name}
+                                className="w-full h-full object-cover rounded-lg"
+                                onError={(e) => {
+                                  e.currentTarget.src = '/default-cover.png';
+                                }}
+                              />
+                              <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs">
+                                {position}
+                              </div>
+                            </div>
+                          </Link>
+                        </div>
+                      );
+                    }
+                    
+                    if (gameData?.game && isEditingTop5) {
+                      return (
+                        <div key={gameData.game.id} className="w-[90px]">
+                          <SortableGameCard
+                            id={gameData.game.id.toString()}
+                            position={position}
+                            game={gameData.game}
+                            isEditing={isEditingTop5}
+                            onRemove={handleRemoveGame}
+                            isDragging={activeId === gameData.game.id.toString()}
+                            isMobile={isMobile}
+                            isSaving={isSaving}
+                          />
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div key={`empty-${position}`} className="relative aspect-[3/4] w-[90px] group">
+                        <button
+                          onClick={() => {
+                            setSelectedPosition(position);
+                            setShowGamePicker(true);
+                          }}
+                          className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center hover:border-purple-500 transition-colors"
+                          disabled={isSaving || isEditingTop5}
+                        >
+                          <div className="text-center">
+                            <Plus className="h-6 w-6 text-gray-400 mx-auto mb-1" />
+                            <span className="text-gray-400 text-xs">Add</span>
+                          </div>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              // Desktop, Tablet, and Phone Landscape - Grid/Row Layout
+              <div className={
+                layoutType === 'desktop' 
+                  ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 md:mb-8 transition-all duration-300"
+                  : (layoutType === 'tablet' || layoutType === 'phoneLandscape')
+                  ? "flex justify-center gap-3 mb-4 transition-all duration-300"
+                  : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 md:mb-8 transition-all duration-300"
+              }>
+              {Array.from({ length: 5 }).map((_, index) => {
+                const position = index + 1;
+                const gameData = userTopGames.find(g => g.position === position);
+                
+                // Non-editing mode - show as Link
+                if (gameData?.game && !isEditingTop5) {
+                  return (
+                    <div key={position} className={`relative group ${
+                      layoutType === 'phoneLandscape' ? 'w-[150px]' :
+                      layoutType === 'tablet' ? 'w-[140px]' :
+                      ''
+                    }`}>
+                      <Link to={getGameUrl(gameData.game)}>
+                        <div className="relative aspect-[3/4]">
+                          <img
+                            src={gameData.game.cover_url}
+                            alt={gameData.game.name}
+                            className="w-full h-full object-cover rounded-lg"
+                            onError={(e) => {
+                              e.currentTarget.src = '/default-cover.png';
+                            }}
+                          />
+                          <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                            {position}
+                          </div>
+                        </div>
+                      </Link>
                     </div>
+                  );
+                }
+
+                // Editing mode with game - use SortableGameCard
+                if (gameData?.game && isEditingTop5) {
+                  return (
+                    <div key={gameData.game.id} className={
+                      layoutType === 'phoneLandscape' ? 'w-[150px]' :
+                      layoutType === 'tablet' ? 'w-[140px]' :
+                      ''
+                    }>
+                      <SortableGameCard
+                        id={gameData.game.id.toString()}
+                        position={position}
+                        game={gameData.game}
+                        isEditing={isEditingTop5}
+                        onRemove={handleRemoveGame}
+                        isDragging={activeId === gameData.game.id.toString()}
+                        isMobile={isMobile}
+                        isSaving={isSaving}
+                      />
+                    </div>
+                  );
+                }
+
+                // Empty slot
+                return (
+                  <div key={`empty-${position}`} className={`relative aspect-[3/4] group ${
+                    layoutType === 'phoneLandscape' ? 'w-[150px]' :
+                    layoutType === 'tablet' ? 'w-[140px]' :
+                    ''
+                  }`}>
                     <button
-                      onClick={() => handleRemoveGame(position)}
-                      className="absolute top-2 right-2 bg-red-600 text-white w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                      onClick={() => {
+                        setSelectedPosition(position);
+                        setShowGamePicker(true);
+                      }}
+                      className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center hover:border-purple-500 transition-colors"
+                      disabled={isSaving || isEditingTop5}
                     >
-                      <X className="h-4 w-4" />
+                      <div className="text-center">
+                        <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <span className="text-gray-400 text-sm">Add Game</span>
+                      </div>
                     </button>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setSelectedPosition(position);
-                      setShowGamePicker(true);
-                    }}
-                    className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center hover:border-purple-500 transition-colors"
-                    disabled={isSaving}
-                  >
-                    <div className="text-center">
-                      <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <span className="text-gray-400 text-sm">Add Game</span>
-                    </div>
-                  </button>
-                )}
+                );
+              })}
+            </div>
+            )}
+          </SortableContext>
+
+          {/* Drag overlay */}
+          <DragOverlay
+            dropAnimation={{
+              duration: 200,
+              easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+            }}
+          >
+            {activeGame && (
+              <div 
+                className={`relative aspect-[3/4] cursor-grabbing transform scale-105 transition-transform ${
+                  isPhonePortrait ? 'w-[130px]' :
+                  layoutType === 'phoneLandscape' ? 'w-[140px]' :
+                  layoutType === 'tablet' ? 'w-[160px]' :
+                  'w-[180px]'
+                }`}
+              >
+                <img
+                  src={activeGame.cover_url}
+                  alt={activeGame.name}
+                  className="w-full h-full object-cover rounded-lg shadow-2xl"
+                  draggable={false}
+                />
+                <div className="absolute inset-0 bg-purple-600/30 rounded-lg animate-pulse" />
+                <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-90 text-white px-2 py-1 rounded text-xs font-bold">
+                  Moving...
+                </div>
               </div>
-            );
-          })}
-        </div>
+            )}
+          </DragOverlay>
+        </DndContext>
 
         {/* Game Picker Modal */}
         <GamePickerModal
@@ -404,7 +783,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
+        <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
           {Array.from({ length: limit }).map((_, index) => {
             const game = topGames[index];
             const position = index + 1;

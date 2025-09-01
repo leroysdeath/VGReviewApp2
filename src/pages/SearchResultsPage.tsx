@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Filter, Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useGameSearch } from '../hooks/useGameSearch';
 import { SmartImage } from '../components/SmartImage';
 import { supabase } from '../services/supabase';
@@ -14,7 +14,6 @@ interface Game {
   description?: string;
   summary?: string;
   release_date?: string;
-  pic_url?: string;
   cover_url?: string;
   developer?: string;
   publisher?: string;
@@ -36,8 +35,6 @@ interface SearchFilters {
   searchTerm?: string;
   platformId?: number;
   releaseYear?: number;
-  minRating?: number;
-  maxRating?: number;
   sortBy: 'name' | 'release_date' | 'avg_rating' | 'rating_count';
   sortOrder: 'asc' | 'desc';
 }
@@ -49,6 +46,18 @@ export const SearchResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { searchState, searchGames, searchTerm, setSearchTerm } = useGameSearch();
+  
+  // Detect mobile and set default view mode accordingly
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [platforms, setPlatforms] = useState<Platform[]>([]);
@@ -60,11 +69,16 @@ export const SearchResultsPage: React.FC = () => {
     searchTerm: '',
     platformId: undefined,
     releaseYear: undefined,
-    minRating: undefined,
-    maxRating: undefined,
     sortBy: 'name',
     sortOrder: 'asc'
   });
+
+  // Set view mode based on device type
+  useEffect(() => {
+    if (isMobile) {
+      setViewMode('list');
+    }
+  }, [isMobile]);
 
   // Load platforms for filter dropdown
   useEffect(() => {
@@ -76,8 +90,6 @@ export const SearchResultsPage: React.FC = () => {
     const query = searchParams.get('q') || '';
     const platform = searchParams.get('platform');
     const year = searchParams.get('year');
-    const minRating = searchParams.get('minRating');
-    const maxRating = searchParams.get('maxRating');
     const sort = searchParams.get('sort') || 'name:asc';
     const page = searchParams.get('page');
     const [sortField, sortOrder] = sort.split(':');
@@ -86,8 +98,6 @@ export const SearchResultsPage: React.FC = () => {
       searchTerm: query,
       platformId: platform ? parseInt(platform) : undefined,
       releaseYear: year ? parseInt(year) : undefined,
-      minRating: minRating ? parseFloat(minRating) : undefined,
-      maxRating: maxRating ? parseFloat(maxRating) : undefined,
       sortBy: sortField as any || 'name',
       sortOrder: sortOrder as any || 'asc'
     });
@@ -119,7 +129,7 @@ export const SearchResultsPage: React.FC = () => {
     if (filters.searchTerm?.trim() && searchStarted) {
       performSearch();
     }
-  }, [filters.platformId, filters.releaseYear, filters.minRating, filters.maxRating, filters.sortBy, filters.sortOrder]);
+  }, [filters.platformId, filters.releaseYear, filters.sortBy, filters.sortOrder]);
 
   const loadPlatforms = async () => {
     try {
@@ -144,7 +154,6 @@ export const SearchResultsPage: React.FC = () => {
       
       await searchGames(filters.searchTerm, {
         genres: filters.platformId ? [filters.platformId.toString()] : undefined,
-        minRating: filters.minRating,
         sortBy: filters.sortBy === 'name' ? 'name' : 
                filters.sortBy === 'release_date' ? 'release_date' : 
                filters.sortBy === 'avg_rating' ? 'rating' : 'popularity',
@@ -178,8 +187,6 @@ export const SearchResultsPage: React.FC = () => {
     if (updatedFilters.searchTerm) params.set('q', updatedFilters.searchTerm);
     if (updatedFilters.platformId) params.set('platform', updatedFilters.platformId.toString());
     if (updatedFilters.releaseYear) params.set('year', updatedFilters.releaseYear.toString());
-    if (updatedFilters.minRating) params.set('minRating', updatedFilters.minRating.toString());
-    if (updatedFilters.maxRating) params.set('maxRating', updatedFilters.maxRating.toString());
     params.set('sort', `${updatedFilters.sortBy}:${updatedFilters.sortOrder}`);
     
     setSearchParams(params);
@@ -198,7 +205,7 @@ export const SearchResultsPage: React.FC = () => {
   };
 
   const getCoverUrl = (game: Game) => {
-    return game.cover_url || game.pic_url || '/placeholder-game.jpg';
+    return game.cover_url || '/placeholder-game.jpg';
   };
 
   // Use games directly from searchState (igdbService already applies filtering)
@@ -239,12 +246,11 @@ export const SearchResultsPage: React.FC = () => {
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center gap-2 transition-colors"
+              className="px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <Filter className="h-5 w-5" />
               Filters
             </button>
-            <div className="flex gap-2">
+            <div className="hidden md:flex gap-2">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-3 rounded-lg transition-colors ${
@@ -304,39 +310,6 @@ export const SearchResultsPage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Min Rating Filter */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Min Rating</label>
-                  <select
-                    value={filters.minRating || ''}
-                    onChange={(e) => handleFilterChange({ 
-                      minRating: e.target.value ? parseFloat(e.target.value) : undefined 
-                    })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="">No Minimum</option>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(rating => (
-                      <option key={rating} value={rating}>{rating}+</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Max Rating Filter */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Max Rating</label>
-                  <select
-                    value={filters.maxRating || ''}
-                    onChange={(e) => handleFilterChange({ 
-                      maxRating: e.target.value ? parseFloat(e.target.value) : undefined 
-                    })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="">No Maximum</option>
-                    {[2, 3, 4, 5, 6, 7, 8, 9, 10].map(rating => (
-                      <option key={rating} value={rating}>Up to {rating}</option>
-                    ))}
-                  </select>
-                </div>
 
                 {/* Sort By */}
                 <div>
@@ -374,8 +347,6 @@ export const SearchResultsPage: React.FC = () => {
                       searchTerm: '',
                       platformId: undefined,
                       releaseYear: undefined,
-                      minRating: undefined,
-                      maxRating: undefined,
                       sortBy: 'name',
                       sortOrder: 'asc'
                     });
@@ -659,8 +630,6 @@ export const SearchResultsPage: React.FC = () => {
                   searchTerm: '',
                   platformId: undefined,
                   releaseYear: undefined,
-                  minRating: undefined,
-                  maxRating: undefined,
                   sortBy: 'name',
                   sortOrder: 'asc'
                 });
