@@ -4,6 +4,9 @@ import type { Game, GameWithCalculatedFields } from '../types/database'
 import { igdbService } from './igdbService'
 import { enhancedSearchService } from './enhancedSearchService'
 import { generateSlug } from '../utils/gameUrls'
+import { gameSyncService } from './gameSyncService'
+import { syncQueue } from '../utils/syncQueue'
+import { IGDBGame } from '../types/igdb'
 
 interface SearchFilters {
   genres?: string[]
@@ -437,12 +440,99 @@ class GameDataService {
         return []
       }
 
-      // Use exact title matching with ILIKE only
-      return this.searchGamesExact(sanitizedQuery, filters)
+      // Step 1: Always check database first
+      const dbResults = await this.searchGamesExact(sanitizedQuery, filters)
+      console.log(`📊 Database search for "${query}": ${dbResults.length} results`)
+
+      // Step 2: If insufficient results, fetch from IGDB
+      const MIN_RESULTS_THRESHOLD = 5
+      if (dbResults.length < MIN_RESULTS_THRESHOLD) {
+        console.log(`🔍 Fetching additional games from IGDB API...`)
+        
+        try {
+          // Fetch from IGDB
+          const igdbGames = await igdbService.searchGames(query, 20)
+          
+          if (igdbGames && igdbGames.length > 0) {
+            // Step 3: Save IGDB results to database (non-blocking)
+            console.log(`💾 Saving ${igdbGames.length} games from IGDB to database...`)
+            
+            // Use sync queue for background saving
+            syncQueue.add(igdbGames as unknown as IGDBGame[])
+            
+            // Also try immediate save (but don't wait)
+            gameSyncService.saveGamesFromIGDB(igdbGames as unknown as IGDBGame[])
+              .catch(error => {
+                console.error('Background save failed:', error)
+                // Already added to queue, so it will be retried
+              })
+            
+            // Step 4: Merge results for immediate return
+            const igdbConverted = this.convertIGDBToLocal(igdbGames)
+            return this.mergeSearchResults(dbResults, igdbConverted)
+          }
+        } catch (igdbError) {
+          console.error('IGDB search failed:', igdbError)
+          // Fall back to database results only
+        }
+      }
+
+      return dbResults
     } catch (error) {
       console.error('Error in searchGames:', error)
       return []
     }
+  }
+
+  /**
+   * Convert IGDB games to local format for immediate display
+   */
+  private convertIGDBToLocal(igdbGames: any[]): GameWithCalculatedFields[] {
+    return igdbGames.map(game => ({
+      id: -(game.id || 0), // Negative ID to indicate it's from IGDB
+      igdb_id: game.id,
+      game_id: game.id?.toString() || '',
+      name: game.name || 'Unknown Game',
+      slug: game.slug || generateSlug(game.name || ''),
+      cover_url: game.cover?.url ? 
+        (game.cover.url.startsWith('//') ? `https:${game.cover.url}` : game.cover.url)
+          .replace('t_thumb', 't_cover_big') : null,
+      release_date: game.first_release_date ? 
+        new Date(game.first_release_date * 1000).toISOString().split('T')[0] : null,
+      genres: game.genres?.map((g: any) => g.name) || [],
+      platforms: game.platforms?.map((p: any) => p.name) || [],
+      summary: game.summary || null,
+      averageUserRating: 0,
+      totalUserRatings: 0
+    }))
+  }
+
+  /**
+   * Merge database and IGDB results, removing duplicates
+   */
+  private mergeSearchResults(
+    dbResults: GameWithCalculatedFields[], 
+    igdbResults: GameWithCalculatedFields[]
+  ): GameWithCalculatedFields[] {
+    const seen = new Set<number>()
+    const merged: GameWithCalculatedFields[] = []
+
+    // Add database results first (preferred)
+    dbResults.forEach(game => {
+      if (game.igdb_id) {
+        seen.add(game.igdb_id)
+      }
+      merged.push(game)
+    })
+
+    // Add IGDB results that aren't duplicates
+    igdbResults.forEach(game => {
+      if (game.igdb_id && !seen.has(game.igdb_id)) {
+        merged.push(game)
+      }
+    })
+
+    return merged
   }
 
   /**
