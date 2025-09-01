@@ -1,17 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import strip from '@rollup/plugin-strip'
 
 export default defineConfig({
   plugins: [
-    react(),
-    // Strip console statements in production
-    process.env.NODE_ENV === 'production' && strip({
-      include: ['**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx'],
-      functions: ['console.log', 'console.debug', 'console.info', 'console.warn'],
-      // Keep console.error for production debugging
-    })
-  ].filter(Boolean),
+    react()
+  ],
   server: {
     port: 5173,
     host: true,
@@ -23,7 +16,15 @@ export default defineConfig({
     assetsDir: 'assets',
     // Dynamic sourcemap and minify based on environment
     sourcemap: process.env.NODE_ENV === 'development',
-    minify: process.env.NODE_ENV === 'production' ? 'esbuild' : false,
+    minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
+    // Terser options to remove console statements in production
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn']
+      }
+    },
     // Optimize build size
     reportCompressedSize: true,
     chunkSizeWarningLimit: 1000,

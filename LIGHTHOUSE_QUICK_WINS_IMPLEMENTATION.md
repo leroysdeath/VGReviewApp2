@@ -16,22 +16,21 @@ Successfully implemented two critical Lighthouse optimizations:
 
 ### Implementation Details
 
-**Package Installed:**
-```bash
-npm install -D @rollup/plugin-strip
-```
-
 **Configuration Added to `vite.config.ts`:**
 ```typescript
-import strip from '@rollup/plugin-strip'
-
-// In plugins array:
-process.env.NODE_ENV === 'production' && strip({
-  include: ['**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx'],
-  functions: ['console.log', 'console.debug', 'console.info', 'console.warn'],
-  // Keeps console.error for production debugging
-})
+build: {
+  minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
+  terserOptions: {
+    compress: {
+      drop_console: true,
+      drop_debugger: true,
+      pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn']
+    }
+  }
+}
 ```
+
+**Note:** Using Vite's built-in Terser minifier instead of external plugin for better Netlify compatibility.
 
 ### Impact
 - **Performance:** +5 points (reduced JavaScript execution)
@@ -221,8 +220,8 @@ If issues arise:
    - Deploy update (SW will unregister)
 
 2. **Restore Console Statements:**
-   - Remove strip plugin from `vite.config.ts`
-   - Uninstall @rollup/plugin-strip
+   - Change `minify: 'terser'` back to `minify: 'esbuild'` in `vite.config.ts`
+   - Remove `terserOptions` configuration block
 
 ---
 
