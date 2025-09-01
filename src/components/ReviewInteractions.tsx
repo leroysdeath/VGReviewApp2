@@ -87,6 +87,8 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   
   const toggleComments = () => {
     setShowComments(!showComments);
+    // Comments are already loaded in background, just toggle visibility
+    console.log('📋 Toggling comments view, already loaded in background');
   };
   
   // Check if current user is the review author
@@ -136,9 +138,15 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
           onClick={toggleComments}
           className="flex items-center gap-2 hover:text-white transition-colors"
           aria-label={showComments ? 'Hide comments' : 'Show comments'}
+          title={isLoadingComments && !showComments ? 'Loading comments...' : ''}
         >
           <MessageSquare className="h-5 w-5" />
-          <span>{initialCommentCount}</span>
+          <span className="relative">
+            {initialCommentCount}
+            {isLoadingComments && !showComments && (
+              <span className="absolute -top-1 -right-2 w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
+            )}
+          </span>
           {showComments ? (
             <ChevronUp className="h-4 w-4" />
           ) : (
@@ -190,8 +198,20 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
           
           {/* Comments List */}
           {isLoadingComments ? (
-            <div className="py-4 text-center text-gray-400">
-              Loading comments...
+            <div className="space-y-4">
+              {/* Loading skeleton for comments */}
+              {[1, 2].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 bg-gray-700 rounded-full"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-700 rounded w-24 mb-2"></div>
+                      <div className="h-3 bg-gray-700 rounded w-full mb-1"></div>
+                      <div className="h-3 bg-gray-700 rounded w-3/4"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : comments && comments.length > 0 ? (
             <div className="space-y-4">

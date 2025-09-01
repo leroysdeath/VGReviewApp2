@@ -13,43 +13,43 @@ The `useReviewInteractions` hook never automatically loads comments. It only loa
 4. User posts comment → `postComment` calls `loadComments()` → Comments appear
 5. User refreshes page → Comments gone (never loaded)
 
-## Action Plan
+## Action Plan - COMPLETED (Option C Implemented)
 
-### Phase 1: Load Comments on Initial Page Load
+### Phase 1: Load Comments on Initial Page Load ✅
 
 **1.1 Modify useReviewInteractions hook**
-- [ ] Add `loadComments()` call in the initial useEffect
-- [ ] Load comments alongside review data and like status
-- [ ] Ensure comments are loaded even if user not authenticated (for viewing)
+- [x] Add `loadComments()` call in the initial useEffect
+- [x] Load comments alongside review data and like status
+- [x] Ensure comments are loaded even if user not authenticated (for viewing)
 
 **1.2 Update loading states**
-- [ ] Set `isLoadingComments` during initial load
-- [ ] Handle errors from initial comment load
-- [ ] Add debug logging for comment loading
+- [x] Set `isLoadingComments` during initial load
+- [x] Handle errors from initial comment load
+- [x] Add debug logging for comment loading
 
-### Phase 2: Optimize Comment Loading
+### Phase 2: Optimize Comment Loading ✅
 
 **2.1 Add smart loading triggers**
-- [ ] Load comments when `showComments` becomes true (if not already loaded)
-- [ ] Add a flag to track if comments have been loaded
-- [ ] Prevent duplicate loading requests
+- [x] Load comments when `showComments` becomes true (if not already loaded)
+- [x] Add a flag to track if comments have been loaded
+- [x] Prevent duplicate loading requests
 
 **2.2 Handle edge cases**
-- [ ] Ensure comments reload after successful post
-- [ ] Handle empty comment state properly
-- [ ] Maintain comment count accuracy
+- [x] Ensure comments reload after successful post
+- [x] Handle empty comment state properly
+- [x] Maintain comment count accuracy
 
-### Phase 3: Improve User Experience
+### Phase 3: Improve User Experience ✅
 
 **3.1 Add visual feedback**
-- [ ] Show skeleton loader while comments load
-- [ ] Display comment count even when section collapsed
-- [ ] Add "Loading comments..." message
+- [x] Show skeleton loader while comments load
+- [x] Display comment count even when section collapsed
+- [x] Add "Loading comments..." message (via pulse indicator)
 
 **3.2 Performance optimization**
-- [ ] Consider lazy loading if many comments
-- [ ] Add pagination for large comment threads
-- [ ] Cache comments to prevent unnecessary reloads
+- [x] Background loading implemented
+- [x] Prevent unnecessary reloads with `commentsLoaded` flag
+- [x] Cache comments until reviewId changes
 
 ## Implementation Details
 

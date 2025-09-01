@@ -45,17 +45,20 @@ export const ReviewPage: React.FC = () => {
   // Only use dbUserId if it's loaded (not null)
   const currentUserId = dbUserId && dbUserId > 0 ? dbUserId : undefined;
   
-  // Debug logging for user ID
+  // Debug logging for user ID and comments
   useEffect(() => {
-    console.log('🎯 ReviewPage User ID Status:', {
+    console.log('🎯 ReviewPage Status:', {
       isAuthenticated,
       authUserId: user?.id,
       dbUserId,
       dbUserIdLoading,
       currentUserId,
-      reviewId: review?.id
+      reviewId: review?.id,
+      commentsLoaded,
+      commentsCount: comments?.length || 0,
+      isLoadingComments
     });
-  }, [isAuthenticated, user?.id, dbUserId, dbUserIdLoading, currentUserId, review?.id]);
+  }, [isAuthenticated, user?.id, dbUserId, dbUserIdLoading, currentUserId, review?.id, commentsLoaded, comments?.length, isLoadingComments]);
   
   // Use review interactions hook
   const {
@@ -66,7 +69,8 @@ export const ReviewPage: React.FC = () => {
     isLoadingComments,
     isLoadingLike,
     toggleLike,
-    postComment
+    postComment,
+    commentsLoaded
   } = useReviewInteractions({
     reviewId: review ? parseInt(review.id) : 0,
     userId: currentUserId

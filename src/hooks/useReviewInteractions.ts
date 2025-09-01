@@ -25,6 +25,7 @@ interface UseReviewInteractionsReturn {
   toggleLike: () => Promise<void>;
   loadComments: () => Promise<void>;
   postComment: (content: string, parentId?: number) => Promise<void>;
+  commentsLoaded: boolean;
 }
 
 export const useReviewInteractions = ({ 
@@ -38,8 +39,9 @@ export const useReviewInteractions = ({
   const [isLoadingLike, setIsLoadingLike] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
 
-  // Load initial data
+  // Load initial data with background comment loading
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -61,15 +63,47 @@ export const useReviewInteractions = ({
           console.log('⏳ User ID not yet loaded, skipping like check');
           setIsLiked(false); // Default to not liked
         }
+
+        // Load comments in background (non-blocking)
+        // This ensures comments are ready when user expands the section
+        loadCommentsInBackground();
       } catch (err) {
         setError('Failed to load review data');
         console.error('Error loading review data:', err);
       }
     };
 
+    // Background loading function for comments
+    const loadCommentsInBackground = async () => {
+      try {
+        console.log('📚 Loading comments in background for review:', reviewId);
+        setIsLoadingComments(true);
+        const response = await getCommentsForReview(reviewId);
+        
+        if (response.success) {
+          setComments(response.data || []);
+          setCommentCount(response.count || 0);
+          setCommentsLoaded(true);
+          console.log('✅ Comments loaded successfully:', response.count, 'comments');
+        } else {
+          console.warn('⚠️ Failed to load comments:', response.error);
+        }
+      } catch (err) {
+        console.error('Error loading comments in background:', err);
+      } finally {
+        setIsLoadingComments(false);
+      }
+    };
+
     if (reviewId) {
       loadInitialData();
     }
+
+    // Reset comments when reviewId changes
+    return () => {
+      setComments([]);
+      setCommentsLoaded(false);
+    };
   }, [reviewId, userId]);
 
   // Toggle like status
@@ -116,12 +150,19 @@ export const useReviewInteractions = ({
     }
   }, [userId, reviewId, isLiked, likeCount]);
 
-  // Load comments
+  // Load comments (used for manual refresh or if background loading failed)
   const loadComments = useCallback(async () => {
+    // Don't reload if already loading or recently loaded
+    if (isLoadingComments || commentsLoaded) {
+      console.log('📚 Comments already loaded or loading, skipping...');
+      return;
+    }
+
     setIsLoadingComments(true);
     setError(null);
 
     try {
+      console.log('🔄 Manually loading comments for review:', reviewId);
       const response = await getCommentsForReview(reviewId);
       
       if (!response.success) {
@@ -130,13 +171,15 @@ export const useReviewInteractions = ({
 
       setComments(response.data || []);
       setCommentCount(response.count || 0);
+      setCommentsLoaded(true);
+      console.log('✅ Comments loaded manually:', response.count, 'comments');
     } catch (err) {
       setError('Failed to load comments');
       console.error('Error loading comments:', err);
     } finally {
       setIsLoadingComments(false);
     }
-  }, [reviewId]);
+  }, [reviewId, isLoadingComments, commentsLoaded]);
 
   // Post a new comment
   const postComment = useCallback(async (content: string, parentId?: number) => {
@@ -155,7 +198,8 @@ export const useReviewInteractions = ({
         throw new Error(response.error);
       }
 
-      // Reload comments to get the updated list
+      // Force reload comments to get the updated list
+      setCommentsLoaded(false); // Reset to allow reload
       await loadComments();
     } catch (err) {
       setError('Failed to post comment');
@@ -174,6 +218,7 @@ export const useReviewInteractions = ({
     error,
     toggleLike,
     loadComments,
-    postComment
+    postComment,
+    commentsLoaded
   };
 };
