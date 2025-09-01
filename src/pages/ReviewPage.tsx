@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Star, X } from 'lucide-react';
+import { Star, X, Edit } from 'lucide-react';
 import { gameDataService } from '../services/gameDataService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
@@ -348,14 +348,26 @@ export const ReviewPage: React.FC = () => {
                   </Link>
                   
                   {/* Review Info */}
-                  <div className="text-gray-400 mb-1">
-                    Review by{' '}
-                    <Link
-                      to={`/user/${review.user.id}`}
-                      className="text-white font-medium hover:text-purple-400 transition-colors"
-                    >
-                      {review.user.username || review.user.name}
-                    </Link>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-gray-400">
+                      Review by{' '}
+                      <Link
+                        to={`/user/${review.user.id}`}
+                        className="text-white font-medium hover:text-purple-400 transition-colors"
+                      >
+                        {review.user.username || review.user.name}
+                      </Link>
+                    </div>
+                    {/* Edit Review Button - Show only if current user is the review owner */}
+                    {isAuthenticated && dbUserId === review.user_id && (
+                      <Link
+                        to={`/review/${game?.igdb_id || gameId}`}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                        <span>Edit Review</span>
+                      </Link>
+                    )}
                   </div>
                   
                   <div className="text-sm text-gray-400 mb-4">
