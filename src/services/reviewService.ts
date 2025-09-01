@@ -809,14 +809,9 @@ export const likeReview = async (
 
     // If like already exists, return early
     if (existingLike) {
-      // Get current like count from computed column (much faster)
-      const { data: ratingData } = await supabase
-        .from('rating')
-        .select('like_count')
-        .eq('id', reviewId)
-        .single();
-      
-      const likeCount = ratingData?.like_count || 0;
+      // Get current like count dynamically
+      const { data: likeCount } = await supabase
+        .rpc('get_review_like_count', { p_review_id: reviewId });
 
       return {
         success: true,
@@ -841,14 +836,9 @@ export const likeReview = async (
     }
     console.log('✅ Like inserted successfully');
 
-    // Get updated like count from computed column (much faster)
-    const { data: ratingData } = await supabase
-      .from('rating')
-      .select('like_count')
-      .eq('id', reviewId)
-      .single();
-    
-    const likeCount = ratingData?.like_count || 0;
+    // Get updated like count dynamically (no triggers needed)
+    const { data: likeCount } = await supabase
+      .rpc('get_review_like_count', { p_review_id: reviewId });
 
     return {
       success: true,
@@ -888,14 +878,9 @@ export const unlikeReview = async (
 
     if (deleteError) throw deleteError;
 
-    // Get updated like count from computed column (much faster)
-    const { data: ratingData } = await supabase
-      .from('rating')
-      .select('like_count')
-      .eq('id', reviewId)
-      .single();
-    
-    const likeCount = ratingData?.like_count || 0;
+    // Get updated like count dynamically (no triggers needed)
+    const { data: likeCount } = await supabase
+      .rpc('get_review_like_count', { p_review_id: reviewId });
 
     return {
       success: true,
