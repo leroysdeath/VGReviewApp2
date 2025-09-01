@@ -331,7 +331,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           <span>
             wrote a{' '}
             <Link 
-              to={`/review/${userId}/${activity.game?.id}`} 
+              to={`/review/${userId}/${activity.game?.igdb_id || activity.game?.id}`} 
               className="text-purple-400 hover:text-purple-300"
             >
               review for {activity.game?.name}
@@ -398,7 +398,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           <span>
             commented on{' '}
             <Link 
-              to={`/review/${activity.reviewAuthor?.id}/${activity.game?.id}`} 
+              to={`/review/${activity.reviewAuthor?.id}/${activity.game?.igdb_id || activity.game?.id}`} 
               className="text-purple-400 hover:text-purple-300"
             >
               {activity.reviewAuthor?.username}'s review of {activity.game?.name}
