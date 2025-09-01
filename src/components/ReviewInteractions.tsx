@@ -117,29 +117,20 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
     <div className={`space-y-4 ${className}`}>
       {/* Like and Comment Buttons */}
       <div className="flex items-center gap-6 text-gray-400">
-        {isReviewAuthor ? (
-          /* Show like count only for review authors, hide if 0 */
-          initialLikeCount > 0 ? (
-            <div className="flex items-center gap-2">
-              <Heart className="h-5 w-5" />
-              <span>{initialLikeCount} {initialLikeCount === 1 ? 'like' : 'likes'}</span>
-            </div>
-          ) : null
-        ) : (
-          <button
-            onClick={handleLikeToggle}
-            disabled={isLoadingLike || disabled}
-            className={`flex items-center gap-2 transition-colors ${
-              disabled ? 'opacity-50 cursor-not-allowed text-gray-500' :
-              isLiked ? 'text-red-500 hover:text-red-600' : 'hover:text-white'
-            }`}
-            aria-label={isLiked ? 'Unlike review' : 'Like review'}
-            title={disabled ? 'Loading user data...' : ''}
-          >
-            <Heart className={`h-5 w-5 transition-transform ${isLiked ? 'fill-current scale-110' : 'scale-100'}`} />
-            <span>{initialLikeCount}</span>
-          </button>
-        )}
+        {/* Allow everyone to like, including the review author (self-liking) */}
+        <button
+          onClick={handleLikeToggle}
+          disabled={isLoadingLike || disabled}
+          className={`flex items-center gap-2 transition-colors ${
+            disabled ? 'opacity-50 cursor-not-allowed text-gray-500' :
+            isLiked ? 'text-red-500 hover:text-red-600' : 'hover:text-white'
+          }`}
+          aria-label={isLiked ? 'Unlike review' : 'Like review'}
+          title={disabled ? 'Loading user data...' : isReviewAuthor ? 'You can like your own review!' : ''}
+        >
+          <Heart className={`h-5 w-5 transition-transform ${isLiked ? 'fill-current scale-110' : 'scale-100'}`} />
+          <span>{initialLikeCount}</span>
+        </button>
         
         <button
           onClick={toggleComments}
