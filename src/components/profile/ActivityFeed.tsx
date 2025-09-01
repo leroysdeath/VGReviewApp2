@@ -545,8 +545,10 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
             {/* Activity content */}
             <div className="flex-1 min-w-0">
               {/* Activity header */}
-              <div className="flex items-center gap-2 mb-2">
-                {getActivityIcon(activity.type)}
+              <div className="flex items-start gap-2 mb-2">
+                <div className="flex-shrink-0 w-5 h-5">
+                  {getActivityIcon(activity.type)}
+                </div>
                 <span className="text-gray-300 text-sm">
                   {getActivityDescription(activity)}
                 </span>
