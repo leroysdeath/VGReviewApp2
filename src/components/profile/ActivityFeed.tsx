@@ -329,9 +329,12 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
       case 'review':
         return (
           <span>
-            wrote a review for{' '}
-            <Link to={getGameUrl(activity.game!)} className="text-purple-400 hover:text-purple-300">
-              {activity.game?.name}
+            wrote a{' '}
+            <Link 
+              to={`/review/${userId}/${activity.game?.id}`} 
+              className="text-purple-400 hover:text-purple-300"
+            >
+              review for {activity.game?.name}
             </Link>
             {activity.rating && (
               <span className="text-yellow-400 ml-2">
@@ -394,12 +397,11 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         return (
           <span>
             commented on{' '}
-            <Link to={`/user/${activity.reviewAuthor?.username}`} className="text-purple-400 hover:text-purple-300">
-              {activity.reviewAuthor?.username}
-            </Link>
-            's review of{' '}
-            <Link to={getGameUrl(activity.game!)} className="text-purple-400 hover:text-purple-300">
-              {activity.game?.name}
+            <Link 
+              to={`/review/${activity.reviewAuthor?.id}/${activity.game?.id}`} 
+              className="text-purple-400 hover:text-purple-300"
+            >
+              {activity.reviewAuthor?.username}'s review of {activity.game?.name}
             </Link>
           </span>
         );
@@ -486,19 +488,6 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
               <p className="text-gray-400 text-sm mb-2 line-clamp-3">
                 "{activity.review}"
               </p>
-            )}
-
-            {/* Recommendation badge */}
-            {activity.is_recommended !== null && activity.is_recommended !== undefined && (
-              <div className="mb-2">
-                <span className={`text-xs px-2 py-1 rounded ${
-                  activity.is_recommended 
-                    ? 'bg-green-900 text-green-300' 
-                    : 'bg-red-900 text-red-300'
-                }`}>
-                  {activity.is_recommended ? 'Recommended' : 'Not Recommended'}
-                </span>
-              </div>
             )}
 
             {/* Date */}
