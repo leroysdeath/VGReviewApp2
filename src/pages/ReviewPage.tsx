@@ -394,7 +394,7 @@ export const ReviewPage: React.FC = () => {
               
               <div className="text-center">
                 <div className="text-4xl font-bold text-green-400 mb-2">
-                  {review.rating.toFixed(1)}
+                  {review.rating === 10 ? '10' : review.rating.toFixed(1)}
                 </div>
                 <div className="mb-2">
                   {/* Progress bar */}
