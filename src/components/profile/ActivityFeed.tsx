@@ -351,7 +351,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           <span>
             wrote a{' '}
             {isMobile ? (
-              <>review for {activity.game?.name}</>
+              <span className="text-purple-400">review for {activity.game?.name}</span>
             ) : (
               <Link 
                 to={`/review/${userId}/${activity.game?.igdb_id || activity.game?.id}`} 
@@ -373,7 +373,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           <span>
             rated{' '}
             {isMobile ? (
-              <>{activity.game?.name}</>
+              <span className="text-purple-400">{activity.game?.name}</span>
             ) : (
               <Link 
                 to={getGameUrl(activity.game!)} 
@@ -393,7 +393,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           <span>
             added{' '}
             {isMobile ? (
-              <>{activity.game?.name}</>
+              <span className="text-purple-400">{activity.game?.name}</span>
             ) : (
               <Link 
                 to={getGameUrl(activity.game!)} 
@@ -411,7 +411,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           <span>
             added{' '}
             {isMobile ? (
-              <>{activity.game?.name}</>
+              <span className="text-purple-400">{activity.game?.name}</span>
             ) : (
               <Link 
                 to={getGameUrl(activity.game!)} 
@@ -429,7 +429,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           <span>
             started playing{' '}
             {isMobile ? (
-              <>{activity.game?.name}</>
+              <span className="text-purple-400">{activity.game?.name}</span>
             ) : (
               <Link 
                 to={getGameUrl(activity.game!)} 
@@ -446,7 +446,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           <span>
             completed{' '}
             {isMobile ? (
-              <>{activity.game?.name}</>
+              <span className="text-purple-400">{activity.game?.name}</span>
             ) : (
               <Link 
                 to={getGameUrl(activity.game!)} 
@@ -463,7 +463,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
           <span>
             commented on{' '}
             {isMobile ? (
-              <>{activity.reviewAuthor?.username}'s review of {activity.game?.name}</>
+              <span className="text-purple-400">{activity.reviewAuthor?.username}'s review of {activity.game?.name}</span>
             ) : (
               <Link 
                 to={`/review/${activity.reviewAuthor?.id}/${activity.game?.igdb_id || activity.game?.id}`} 
