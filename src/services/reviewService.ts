@@ -935,11 +935,12 @@ export const getCommentsForReview = async (
 
     if (error) throw error;
 
-    // Build nested structure
+    // Build 2-level structure (hybrid approach)
     const commentMap = new Map<number, Comment>();
     const topLevelComments: Comment[] = [];
+    const topLevelParentMap = new Map<number, number>(); // Maps comment ID to its top-level parent
 
-    // First pass: create all comment objects
+    // First pass: create all comment objects and identify top-level parents
     data?.forEach(item => {
       const comment: Comment = {
         id: item.id,
@@ -958,25 +959,64 @@ export const getCommentsForReview = async (
       };
 
       commentMap.set(comment.id, comment);
-    });
-
-    // Second pass: build the tree structure
-    commentMap.forEach(comment => {
-      if (comment.parentId) {
-        const parent = commentMap.get(comment.parentId);
-        if (parent) {
-          parent.replies?.push(comment);
-        } else {
-          // If parent doesn't exist, treat as top-level
-          topLevelComments.push(comment);
-        }
-      } else {
-        topLevelComments.push(comment);
+      
+      // Track top-level parent for each comment
+      if (!comment.parentId) {
+        topLevelParentMap.set(comment.id, comment.id);
       }
     });
 
-    // Sort replies by timestamp (oldest first)
+    // Second pass: find top-level parent for nested replies
     commentMap.forEach(comment => {
+      if (comment.parentId) {
+        // Find the top-level parent by traversing up the chain
+        let currentParentId = comment.parentId;
+        let topLevelParent = currentParentId;
+        let depth = 0;
+        const maxDepth = 10; // Prevent infinite loops
+        
+        while (currentParentId && depth < maxDepth) {
+          const parent = commentMap.get(currentParentId);
+          if (!parent || !parent.parentId) {
+            topLevelParent = currentParentId;
+            break;
+          }
+          currentParentId = parent.parentId;
+          depth++;
+        }
+        
+        topLevelParentMap.set(comment.id, topLevelParent);
+      }
+    });
+
+    // Third pass: build 2-level tree structure
+    commentMap.forEach(comment => {
+      if (!comment.parentId) {
+        // This is a top-level comment
+        topLevelComments.push(comment);
+      } else {
+        // This is a reply - attach it to its top-level parent
+        const topLevelParentId = topLevelParentMap.get(comment.id);
+        if (topLevelParentId && topLevelParentId !== comment.id) {
+          const topLevelParent = commentMap.get(topLevelParentId);
+          if (topLevelParent) {
+            // For 2-level structure, all replies go under the top-level comment
+            // Update the parentId to point to the top-level comment
+            comment.parentId = topLevelParentId;
+            topLevelParent.replies?.push(comment);
+          } else {
+            // Orphaned comment - add as top-level
+            topLevelComments.push(comment);
+          }
+        } else {
+          // No valid parent found - add as top-level
+          topLevelComments.push(comment);
+        }
+      }
+    });
+
+    // Sort replies by timestamp (oldest first) for better conversation flow
+    topLevelComments.forEach(comment => {
       if (comment.replies && comment.replies.length > 0) {
         comment.replies.sort((a, b) => 
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -1029,28 +1069,36 @@ export const addComment = async (
     // Sanitize content to prevent XSS attacks
     const sanitizedContent = sanitizeRich(content.trim());
 
-    // Validate parent comment if provided
+    // Validate parent comment and handle 2-level structure
+    let finalParentId = parentId;
     if (parentId) {
       const { data: parentComment, error: parentError } = await supabase
         .from('comment')
-        .select('id')
+        .select('id, parent_comment_id')
         .eq('id', parentId)
         .single();
 
-      if (parentError) {
+      if (parentError || !parentComment) {
         return { success: false, error: 'Parent comment not found' };
+      }
+      
+      // For 2-level structure: if replying to a reply, use the original parent's ID
+      if (parentComment.parent_comment_id) {
+        // This is a reply to a reply - use the top-level comment ID instead
+        finalParentId = parentComment.parent_comment_id;
+        console.log('📝 Reply to reply detected, using top-level parent:', finalParentId);
       }
     }
 
     // Insert comment
-    console.log('📤 Inserting comment with:', { user_id: userId, rating_id: reviewId, contentLength: sanitizedContent.length });
+    console.log('📤 Inserting comment with:', { user_id: userId, rating_id: reviewId, contentLength: sanitizedContent.length, parentId: finalParentId });
     const { data, error } = await supabase
       .from('comment')
       .insert({
         user_id: userId,
         rating_id: reviewId,
         content: sanitizedContent,
-        parent_comment_id: parentId || null,
+        parent_comment_id: finalParentId || null,
         is_published: true
       })
       .select(`

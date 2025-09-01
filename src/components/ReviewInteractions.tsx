@@ -45,6 +45,9 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [commentError, setCommentError] = useState<string | undefined>();
+  const [replyingToId, setReplyingToId] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [replyError, setReplyError] = useState<string | undefined>();
   
   // Character limit for comments
   const MAX_CHARS = 500;
@@ -84,6 +87,35 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
       setCommentText('');
     } catch (err) {
       setCommentError('Failed to post comment. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleReplySubmit = async (parentId: number, replyToUsername?: string) => {
+    if (disabled) {
+      console.log('⚠️ Interactions disabled - waiting for user data to load');
+      setReplyError('Please wait for user data to load');
+      return;
+    }
+    
+    const finalReplyText = replyToUsername && !replyText.includes(`@${replyToUsername}`) 
+      ? `@${replyToUsername} ${replyText}` 
+      : replyText;
+    
+    if (!finalReplyText.trim() || finalReplyText.length > MAX_CHARS) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setReplyError(undefined);
+    
+    try {
+      await onAddComment(finalReplyText, parentId);
+      setReplyText('');
+      setReplyingToId(null);
+    } catch (err) {
+      setReplyError('Failed to post reply. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -227,6 +259,14 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
                   currentUserId={currentUserId}
                   onEdit={onEditComment}
                   onDelete={onDeleteComment}
+                  onReply={handleReplySubmit}
+                  replyingToId={replyingToId}
+                  setReplyingToId={setReplyingToId}
+                  replyText={replyText}
+                  setReplyText={setReplyText}
+                  replyError={replyError}
+                  isSubmitting={isSubmitting}
+                  disabled={disabled}
                 />
               ))}
             </div>
@@ -247,6 +287,14 @@ interface CommentItemProps {
   currentUserId?: number;
   onEdit: (commentId: number, content: string) => Promise<void>;
   onDelete: (commentId: number) => Promise<void>;
+  onReply: (parentId: number, replyToUsername?: string) => Promise<void>;
+  replyingToId: number | null;
+  setReplyingToId: (id: number | null) => void;
+  replyText: string;
+  setReplyText: (text: string) => void;
+  replyError?: string;
+  isSubmitting: boolean;
+  disabled: boolean;
   level?: number;
 }
 
@@ -256,9 +304,16 @@ const CommentItem: React.FC<CommentItemProps> = ({
   currentUserId,
   onEdit,
   onDelete,
+  onReply,
+  replyingToId,
+  setReplyingToId,
+  replyText,
+  setReplyText,
+  replyError,
+  isSubmitting,
+  disabled,
   level = 0 
 }) => {
-  const maxLevel = 5; // Maximum nesting level
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -266,6 +321,48 @@ const CommentItem: React.FC<CommentItemProps> = ({
   
   // Check if current user can edit/delete this comment
   const canModify = currentUserId && comment.userId === currentUserId;
+  
+  // For hybrid 2-level system:
+  // Level 0 = top-level comment
+  // Level 1 = reply to comment (including replies to replies)
+  const isTopLevel = level === 0;
+  const isReply = level === 1;
+  const showReplyButton = !disabled && currentUserId;
+  const isReplyingToThis = replyingToId === comment.id;
+  
+  // Get the parent comment ID for replies
+  // If this is already a reply (level 1), use its parent's ID
+  // If this is top-level (level 0), use this comment's ID
+  const getReplyParentId = () => {
+    if (isTopLevel) return comment.id;
+    // For replies to replies, use the original parent comment ID
+    return comment.parentId || comment.id;
+  };
+  
+  const handleReplyClick = () => {
+    if (isReplyingToThis) {
+      setReplyingToId(null);
+      setReplyText('');
+    } else {
+      setReplyingToId(comment.id);
+      // For replies to replies, pre-fill with @mention
+      if (isReply && comment.user?.name) {
+        setReplyText(`@${comment.user.name} `);
+      } else {
+        setReplyText('');
+      }
+    }
+  };
+  
+  const handleReplySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const parentId = getReplyParentId();
+    const replyToUsername = isReply ? comment.user?.name : undefined;
+    await onReply(parentId, replyToUsername);
+  };
+  
+  const remainingReplyChars = 500 - replyText.length;
+  const isReplyOverLimit = remainingReplyChars < 0;
   
   const handleEdit = async () => {
     if (!editContent.trim()) {
@@ -374,9 +471,14 @@ const CommentItem: React.FC<CommentItemProps> = ({
           
           {/* Comment Actions */}
           <div className="flex items-center gap-4 text-xs text-gray-500">
-            <button className="hover:text-white transition-colors">
-              Reply
-            </button>
+            {showReplyButton && (
+              <button 
+                onClick={handleReplyClick}
+                className="hover:text-white transition-colors"
+              >
+                {isReplyingToThis ? 'Cancel Reply' : 'Reply'}
+              </button>
+            )}
             {canModify && !isEditing && (
               <>
                 <button
@@ -398,8 +500,57 @@ const CommentItem: React.FC<CommentItemProps> = ({
             )}
           </div>
           
-          {/* Nested Replies */}
-          {comment.replies && comment.replies.length > 0 && level < maxLevel && (
+          {/* Reply Form - Show inline for this comment */}
+          {isReplyingToThis && (
+            <form onSubmit={handleReplySubmit} className="mt-3">
+              <div className="relative">
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder={isReply ? `Reply to @${comment.user?.name}...` : "Write a reply..."}
+                  className={`w-full px-3 py-2 bg-gray-800 border rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
+                    isReplyOverLimit ? 'border-red-500' : 'border-gray-600'
+                  }`}
+                  rows={2}
+                  maxLength={500}
+                  disabled={isSubmitting}
+                  autoFocus
+                />
+                <div className={`absolute bottom-2 right-2 text-xs ${
+                  isReplyOverLimit ? 'text-red-500' : 'text-gray-400'
+                }`}>
+                  {remainingReplyChars} chars
+                </div>
+              </div>
+              
+              {replyError && (
+                <p className="mt-1 text-sm text-red-500">{replyError}</p>
+              )}
+              
+              <div className="flex justify-end mt-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReplyingToId(null);
+                    setReplyText('');
+                  }}
+                  className="px-3 py-1 text-gray-400 hover:text-white text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !replyText.trim() || isReplyOverLimit}
+                  className="px-3 py-1 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isSubmitting ? 'Posting...' : 'Post Reply'}
+                </button>
+              </div>
+            </form>
+          )}
+          
+          {/* Nested Replies - Only show for top-level comments (2-level limit) */}
+          {comment.replies && comment.replies.length > 0 && isTopLevel && (
             <div className="mt-3 space-y-3">
               {comment.replies.map((reply) => (
                 <CommentItem
@@ -409,18 +560,20 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   currentUserId={currentUserId}
                   onEdit={onEdit}
                   onDelete={onDelete}
-                  level={level + 1}
+                  onReply={onReply}
+                  replyingToId={replyingToId}
+                  setReplyingToId={setReplyingToId}
+                  replyText={replyText}
+                  setReplyText={setReplyText}
+                  replyError={replyError}
+                  isSubmitting={isSubmitting}
+                  disabled={disabled}
+                  level={1}
                 />
               ))}
             </div>
           )}
           
-          {/* "Continue thread" for deeply nested comments */}
-          {comment.replies && comment.replies.length > 0 && level >= maxLevel && (
-            <div className="mt-2 text-sm text-purple-400 hover:text-purple-300 cursor-pointer">
-              Continue this thread →
-            </div>
-          )}
         </div>
       </div>
     </div>
