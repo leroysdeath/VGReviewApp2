@@ -41,10 +41,44 @@ export const useReviewInteractions = ({
   const [error, setError] = useState<string | null>(null);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
 
-  // Load initial data with background comment loading
+  // Load initial review data and like status
   useEffect(() => {
-    // Background loading function for comments - defined first to avoid temporal dead zone
+    const loadInitialData = async () => {
+      if (!reviewId) return;
+      
+      try {
+        // Get review data
+        const reviewResponse = await getReview(reviewId);
+        if (reviewResponse.success && reviewResponse.data) {
+          setLikeCount(reviewResponse.data.likeCount || 0);
+          setCommentCount(reviewResponse.data.commentCount || 0);
+        }
+
+        // Check if user has liked the review - only if userId is defined
+        if (userId && userId > 0) {
+          console.log('🔍 Checking if user has liked review:', { userId, reviewId });
+          const likeResponse = await hasUserLikedReview(userId, reviewId);
+          if (likeResponse.success) {
+            setIsLiked(likeResponse.data || false);
+          }
+        } else {
+          console.log('⏳ User ID not yet loaded, skipping like check');
+          setIsLiked(false); // Default to not liked
+        }
+      } catch (err) {
+        setError('Failed to load review data');
+        console.error('Error loading review data:', err);
+      }
+    };
+
+    loadInitialData();
+  }, [reviewId, userId]);
+
+  // Load comments in background after initial data loads
+  useEffect(() => {
     const loadCommentsInBackground = async () => {
+      if (!reviewId || commentsLoaded) return;
+      
       try {
         console.log('📚 Loading comments in background for review:', reviewId);
         setIsLoadingComments(true);
@@ -65,46 +99,19 @@ export const useReviewInteractions = ({
       }
     };
 
-    const loadInitialData = async () => {
-      try {
-        // Get review data
-        const reviewResponse = await getReview(reviewId);
-        if (reviewResponse.success && reviewResponse.data) {
-          setLikeCount(reviewResponse.data.likeCount || 0);
-          setCommentCount(reviewResponse.data.commentCount || 0);
-        }
-
-        // Check if user has liked the review - only if userId is defined
-        if (userId && userId > 0) {
-          console.log('🔍 Checking if user has liked review:', { userId, reviewId });
-          const likeResponse = await hasUserLikedReview(userId, reviewId);
-          if (likeResponse.success) {
-            setIsLiked(likeResponse.data || false);
-          }
-        } else {
-          console.log('⏳ User ID not yet loaded, skipping like check');
-          setIsLiked(false); // Default to not liked
-        }
-
-        // Load comments in background (non-blocking)
-        // This ensures comments are ready when user expands the section
-        loadCommentsInBackground();
-      } catch (err) {
-        setError('Failed to load review data');
-        console.error('Error loading review data:', err);
-      }
-    };
-
-    if (reviewId) {
-      loadInitialData();
-    }
-
-    // Reset comments when reviewId changes
+    // Small delay to let initial data load first
+    const timeoutId = setTimeout(loadCommentsInBackground, 100);
+    
     return () => {
-      setComments([]);
-      setCommentsLoaded(false);
+      clearTimeout(timeoutId);
     };
-  }, [reviewId, userId]);
+  }, [reviewId, commentsLoaded]);
+
+  // Reset comments when reviewId changes
+  useEffect(() => {
+    setComments([]);
+    setCommentsLoaded(false);
+  }, [reviewId]);
 
   // Toggle like status
   const toggleLike = useCallback(async () => {
