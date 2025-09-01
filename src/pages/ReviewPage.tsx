@@ -45,21 +45,6 @@ export const ReviewPage: React.FC = () => {
   // Only use dbUserId if it's loaded (not null)
   const currentUserId = dbUserId && dbUserId > 0 ? dbUserId : undefined;
   
-  // Debug logging for user ID and comments
-  useEffect(() => {
-    console.log('🎯 ReviewPage Status:', {
-      isAuthenticated,
-      authUserId: user?.id,
-      dbUserId,
-      dbUserIdLoading,
-      currentUserId,
-      reviewId: review?.id,
-      commentsLoaded,
-      commentsCount: comments?.length || 0,
-      isLoadingComments
-    });
-  }, [isAuthenticated, user?.id, dbUserId, dbUserIdLoading, currentUserId, review?.id, commentsLoaded, comments?.length, isLoadingComments]);
-  
   // Use review interactions hook - only when review is loaded and valid
   const reviewId = review?.id ? parseInt(review.id) : null;
   const useInteractions = reviewId && reviewId > 0;
@@ -78,6 +63,21 @@ export const ReviewPage: React.FC = () => {
     reviewId: useInteractions ? reviewId : 0,
     userId: currentUserId
   });
+
+  // Debug logging for user ID and comments - moved after hook call
+  useEffect(() => {
+    console.log('🎯 ReviewPage Status:', {
+      isAuthenticated,
+      authUserId: user?.id,
+      dbUserId,
+      dbUserIdLoading,
+      currentUserId,
+      reviewId: review?.id,
+      commentsLoaded,
+      commentsCount: comments?.length || 0,
+      isLoadingComments
+    });
+  }, [isAuthenticated, user?.id, dbUserId, dbUserIdLoading, currentUserId, review?.id, commentsLoaded, comments?.length, isLoadingComments]);
 
   useEffect(() => {
     if (userId && gameId) {
