@@ -19,6 +19,7 @@ import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DebugAuthPage } from './pages/DebugAuthPage';
 import { Navigate } from 'react-router-dom';
+import { gamePreloadService } from './services/gamePreloadService';
 
 
 // Lazy load legal pages for better performance
@@ -81,6 +82,19 @@ const ProfileRedirect: React.FC = () => {
 const AppContent: React.FC = () => {
   // Debug navigation
   console.log('🌐 App.tsx: Rendering routes for path:', window.location.pathname);
+
+  // Initialize game preloading service on app startup
+  useEffect(() => {
+    console.log('🚀 Initializing game preload service...');
+    gamePreloadService.startPreloading().catch(error => {
+      console.error('Failed to start preload service:', error);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      gamePreloadService.stopPreloading();
+    };
+  }, []);
 
   return (
     <>

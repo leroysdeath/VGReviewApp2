@@ -4,6 +4,8 @@ import { gameDataService } from '../services/gameDataService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { Link } from 'react-router-dom';
 import type { SearchSuggestion } from '../types/search';
+import { searchMetricsService } from '../services/searchMetricsService';
+import { SearchMode } from '../constants/search';
 
 interface GameSearchProps {
   onGameSelect?: (game: GameWithCalculatedFields) => void;
@@ -113,6 +115,9 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       hasSearched: true
     }));
 
+    // Start tracking search metrics
+    const searchId = searchMetricsService.startSearch(searchTerm);
+
     try {
       console.log('🔍 Performing search for:', searchTerm);
       if (DEBUG_MODE) {
@@ -120,6 +125,15 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         console.log('🐛 [DEBUG] Current URL:', window.location.href);
       }
       const games = await gameDataService.searchGames(searchTerm);
+      
+      // End tracking with success metrics
+      searchMetricsService.endSearch(searchId, {
+        total: games.length,
+        dbCount: games.filter(g => !g.fromIGDB).length, // Assuming we track source
+        igdbCount: games.filter(g => g.fromIGDB).length,
+        cached: false, // Update if we implement caching
+        mode: SearchMode.HYBRID
+      });
       
       setSearchState(prev => ({
         ...prev,
@@ -147,6 +161,16 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       const errorMessage = error instanceof Error 
         ? error.message 
         : 'Failed to search games. Please try again.';
+      
+      // End tracking with error metrics
+      searchMetricsService.endSearch(searchId, {
+        total: 0,
+        dbCount: 0,
+        igdbCount: 0,
+        cached: false,
+        mode: SearchMode.HYBRID,
+        error: errorMessage
+      });
       
       if (DEBUG_MODE) {
         console.log('🐛 [DEBUG] Search error details:', { error, searchTerm, stack: error instanceof Error ? error.stack : 'No stack' });

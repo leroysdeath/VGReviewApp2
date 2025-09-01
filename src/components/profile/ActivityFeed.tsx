@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, Star, Play, CheckCircle, ScrollText, Gift, BookOpen, MessageCircle } from 'lucide-react';
+import { Calendar, Zap, Play, CheckCircle, ScrollText, Gift, BookOpen, MessageCircle } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { getGameUrl } from '../../utils/gameUrls';
 import { useResponsive } from '../../hooks/useResponsive';
@@ -311,7 +311,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
       case 'review':
         return <ScrollText className="h-5 w-5 text-purple-400" />;
       case 'rating':
-        return <Star className="h-5 w-5 text-yellow-400" />;
+        return <Zap className="h-5 w-5 text-yellow-400" />;
       case 'wishlist':
         return <Gift className="h-5 w-5 text-red-400" />;
       case 'collection':
