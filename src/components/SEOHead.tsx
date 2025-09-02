@@ -82,7 +82,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
       )}
 
       {/* PWA Meta Tags */}
-      <meta name="theme-color" content="#1a1625" />
+      <meta name="theme-color" content="#1f2937" />
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       <meta name="apple-mobile-web-app-title" content={siteName} />
