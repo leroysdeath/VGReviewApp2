@@ -8,6 +8,8 @@ import {
   addComment,
   editComment,
   deleteComment,
+  likeComment,
+  unlikeComment,
   Comment
 } from '../services/reviewService';
 
@@ -29,7 +31,9 @@ interface UseReviewInteractionsReturn {
   postComment: (content: string, parentId?: number) => Promise<void>;
   updateComment: (commentId: number, content: string) => Promise<void>;
   removeComment: (commentId: number) => Promise<void>;
+  toggleCommentLike: (commentId: number) => Promise<void>;
   commentsLoaded: boolean;
+  likingCommentId: number | null;
 }
 
 export const useReviewInteractions = ({ 
@@ -44,6 +48,7 @@ export const useReviewInteractions = ({
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
+  const [likingCommentId, setLikingCommentId] = useState<number | null>(null);
 
   // Load initial review data and like status
   useEffect(() => {
@@ -86,7 +91,7 @@ export const useReviewInteractions = ({
       try {
         console.log('📚 Loading comments in background for review:', reviewId);
         setIsLoadingComments(true);
-        const response = await getCommentsForReview(reviewId);
+        const response = await getCommentsForReview(reviewId, {}, userId);
         
         if (response.success) {
           setComments(response.data || []);
@@ -174,7 +179,7 @@ export const useReviewInteractions = ({
 
     try {
       console.log('🔄 Manually loading comments for review:', reviewId);
-      const response = await getCommentsForReview(reviewId);
+      const response = await getCommentsForReview(reviewId, {}, userId);
       
       if (!response.success) {
         throw new Error(response.error);
@@ -190,7 +195,7 @@ export const useReviewInteractions = ({
     } finally {
       setIsLoadingComments(false);
     }
-  }, [reviewId, isLoadingComments, commentsLoaded]);
+  }, [reviewId, isLoadingComments, commentsLoaded, userId]);
 
   // Post a new comment
   const postComment = useCallback(async (content: string, parentId?: number) => {
@@ -302,6 +307,117 @@ export const useReviewInteractions = ({
     }
   }, []);
 
+  // Toggle comment like status
+  const toggleCommentLike = useCallback(async (commentId: number) => {
+    if (!userId || userId <= 0) {
+      console.warn('⚠️ Cannot toggle comment like - userId is undefined or invalid:', userId);
+      setError('You must be logged in to like comments');
+      return;
+    }
+
+    console.log('👍 Toggling comment like:', { userId, commentId });
+    setLikingCommentId(commentId);
+    setError(null);
+
+    try {
+      // Find the comment to get current like status
+      const findComment = (commentList: Comment[]): Comment | undefined => {
+        for (const comment of commentList) {
+          if (comment.id === commentId) return comment;
+          if (comment.replies) {
+            const found = findComment(comment.replies);
+            if (found) return found;
+          }
+        }
+        return undefined;
+      };
+
+      const targetComment = findComment(comments);
+      if (!targetComment) {
+        throw new Error('Comment not found');
+      }
+
+      const currentIsLiked = targetComment.isLiked || false;
+      const newIsLiked = !currentIsLiked;
+
+      // Optimistic update
+      setComments(prevComments => {
+        const updateCommentInList = (commentList: Comment[]): Comment[] => {
+          return commentList.map(comment => {
+            if (comment.id === commentId) {
+              return {
+                ...comment,
+                isLiked: newIsLiked,
+                likeCount: newIsLiked 
+                  ? (comment.likeCount || 0) + 1 
+                  : Math.max(0, (comment.likeCount || 0) - 1)
+              };
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              return { ...comment, replies: updateCommentInList(comment.replies) };
+            }
+            return comment;
+          });
+        };
+        return updateCommentInList(prevComments);
+      });
+
+      // Actual API call
+      const response = newIsLiked
+        ? await likeComment(userId, commentId)
+        : await unlikeComment(userId, commentId);
+
+      if (!response.success) {
+        // Revert optimistic update on failure
+        setComments(prevComments => {
+          const revertCommentInList = (commentList: Comment[]): Comment[] => {
+            return commentList.map(comment => {
+              if (comment.id === commentId) {
+                return {
+                  ...comment,
+                  isLiked: currentIsLiked,
+                  likeCount: targetComment.likeCount
+                };
+              }
+              if (comment.replies && comment.replies.length > 0) {
+                return { ...comment, replies: revertCommentInList(comment.replies) };
+              }
+              return comment;
+            });
+          };
+          return revertCommentInList(prevComments);
+        });
+        throw new Error(response.error);
+      }
+
+      // Update with actual count from server
+      if (response.data) {
+        setComments(prevComments => {
+          const updateCommentCount = (commentList: Comment[]): Comment[] => {
+            return commentList.map(comment => {
+              if (comment.id === commentId) {
+                return {
+                  ...comment,
+                  likeCount: response.data!.likeCount
+                };
+              }
+              if (comment.replies && comment.replies.length > 0) {
+                return { ...comment, replies: updateCommentCount(comment.replies) };
+              }
+              return comment;
+            });
+          };
+          return updateCommentCount(prevComments);
+        });
+      }
+    } catch (err) {
+      setError('Failed to update comment like status');
+      console.error('Error toggling comment like:', err);
+    } finally {
+      setLikingCommentId(null);
+    }
+  }, [userId, comments]);
+
   return {
     likeCount,
     commentCount,
@@ -315,6 +431,8 @@ export const useReviewInteractions = ({
     postComment,
     updateComment,
     removeComment,
-    commentsLoaded
+    toggleCommentLike,
+    commentsLoaded,
+    likingCommentId
   };
 };

@@ -6,6 +6,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthModal } from '../context/AuthModalContext';
 import { getReviews, Review } from '../services/reviewService';
+import { useLikeStore } from '../store/useLikeStore';
 
 // Custom component for the spinning number animation
 const SpinningNumber: React.FC<{ isHovered: boolean }> = ({ isHovered }) => {
@@ -143,9 +144,10 @@ export const ResponsiveLandingPage: React.FC = () => {
   const [reviewsError, setReviewsError] = useState<string | null>(null);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const { isMobile } = useResponsive();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { openModal } = useAuthModal();
   const navigate = useNavigate();
+  const loadBulkStatus = useLikeStore(state => state.loadBulkStatus);
   
   // Helper function to get reliable IGDB ID for URL generation
   const getReliableIgdbId = (review: Review): string => {
@@ -223,6 +225,12 @@ export const ResponsiveLandingPage: React.FC = () => {
           // Limit based on screen size
           const limitedReviews = transformedReviews.slice(0, isMobile ? 3 : 4);
           setRecentReviews(limitedReviews);
+          
+          // Load bulk like statuses for all reviews
+          if (limitedReviews.length > 0) {
+            const ratingIds = limitedReviews.map(r => parseInt(r.id));
+            await loadBulkStatus(user?.id, ratingIds);
+          }
         } else {
           setReviewsError(result.error || 'Failed to load reviews');
         }
@@ -235,7 +243,7 @@ export const ResponsiveLandingPage: React.FC = () => {
     };
     
     loadRecentReviews();
-  }, [isMobile]);
+  }, [isMobile, user?.id, loadBulkStatus]);
 
 
   // Handle join community button click
@@ -397,7 +405,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           ) : recentReviews.length > 0 ? (
             <div className="space-y-4">
               {recentReviews.map((review) => (
-                <ReviewCard key={review.id} review={review} compact />
+                <ReviewCard key={review.id} review={review} compact currentUserId={user?.id} />
               ))}
             </div>
           ) : (
@@ -612,7 +620,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           ) : recentReviews.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-6">
               {recentReviews.map((review) => (
-                <ReviewCard key={review.id} review={review} />
+                <ReviewCard key={review.id} review={review} currentUserId={user?.id} />
               ))}
             </div>
           ) : (
