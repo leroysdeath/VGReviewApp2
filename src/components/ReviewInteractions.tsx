@@ -13,13 +13,18 @@ interface ReviewInteractionsProps {
   onAddComment: (content: string, parentId?: number) => Promise<void>;
   onEditComment: (commentId: number, content: string) => Promise<void>;
   onDeleteComment: (commentId: number) => Promise<void>;
+  onLikeComment?: (commentId: number) => Promise<void>;
+  onUnlikeComment?: (commentId: number) => Promise<void>;
   isLoadingComments: boolean;
   isLoadingLike: boolean;
+  isLikingComment?: boolean;
+  likingCommentId?: number | null;
   error?: string;
   className?: string;
   reviewAuthorId?: number;
   currentUserId?: number;
   disabled?: boolean;
+  disableCommentHover?: boolean;
 }
 
 export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
@@ -33,13 +38,18 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   onAddComment,
   onEditComment,
   onDeleteComment,
+  onLikeComment,
+  onUnlikeComment,
   isLoadingComments,
   isLoadingLike,
+  isLikingComment = false,
+  likingCommentId = null,
   error,
   className = '',
   reviewAuthorId,
   currentUserId,
-  disabled = false
+  disabled = false,
+  disableCommentHover = false
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -172,7 +182,9 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
         
         <button
           onClick={toggleComments}
-          className="flex items-center gap-2 hover:text-white transition-colors"
+          className={`flex items-center gap-2 transition-colors ${
+            disableCommentHover ? '' : 'hover:text-white'
+          }`}
           aria-label={showComments ? 'Hide comments' : 'Show comments'}
           title={isLoadingComments && !showComments ? 'Loading comments...' : ''}
         >
@@ -260,6 +272,9 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
                   onEdit={onEditComment}
                   onDelete={onDeleteComment}
                   onReply={handleReplySubmit}
+                  onLike={onLikeComment}
+                  onUnlike={onUnlikeComment}
+                  isLikingComment={likingCommentId === comment.id}
                   replyingToId={replyingToId}
                   setReplyingToId={setReplyingToId}
                   replyText={replyText}
@@ -288,6 +303,9 @@ interface CommentItemProps {
   onEdit: (commentId: number, content: string) => Promise<void>;
   onDelete: (commentId: number) => Promise<void>;
   onReply: (parentId: number, replyToUsername?: string) => Promise<void>;
+  onLike?: (commentId: number) => Promise<void>;
+  onUnlike?: (commentId: number) => Promise<void>;
+  isLikingComment?: boolean;
   replyingToId: number | null;
   setReplyingToId: (id: number | null) => void;
   replyText: string;
@@ -305,6 +323,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
   onEdit,
   onDelete,
   onReply,
+  onLike,
+  onUnlike,
+  isLikingComment = false,
   replyingToId,
   setReplyingToId,
   replyText,
@@ -471,6 +492,27 @@ const CommentItem: React.FC<CommentItemProps> = ({
           
           {/* Comment Actions */}
           <div className="flex items-center gap-4 text-xs text-gray-500">
+            {/* Like button - show for all authenticated users */}
+            {currentUserId && onLike && onUnlike && (
+              <button
+                onClick={() => {
+                  if (comment.isLiked) {
+                    onUnlike(comment.id);
+                  } else {
+                    onLike(comment.id);
+                  }
+                }}
+                disabled={isLikingComment || disabled}
+                className={`flex items-center gap-1 transition-colors ${
+                  disabled || isLikingComment ? 'opacity-50 cursor-not-allowed' :
+                  comment.isLiked ? 'text-red-500 hover:text-red-600' : 'hover:text-white'
+                }`}
+                title={disabled ? 'Loading...' : comment.isLiked ? 'Unlike comment' : 'Like comment'}
+              >
+                <Heart className={`h-3 w-3 ${comment.isLiked ? 'fill-current' : ''}`} />
+                <span>{comment.likeCount || 0}</span>
+              </button>
+            )}
             {showReplyButton && (
               <button 
                 onClick={handleReplyClick}
@@ -561,6 +603,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onReply={onReply}
+                  onLike={onLike}
+                  onUnlike={onUnlike}
+                  isLikingComment={isLikingComment}
                   replyingToId={replyingToId}
                   setReplyingToId={setReplyingToId}
                   replyText={replyText}
