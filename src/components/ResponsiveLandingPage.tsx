@@ -6,6 +6,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthModal } from '../context/AuthModalContext';
 import { getReviews, Review } from '../services/reviewService';
+import { useLikeStore } from '../store/useLikeStore';
 
 // Custom component for the spinning number animation
 const SpinningNumber: React.FC<{ isHovered: boolean }> = ({ isHovered }) => {
@@ -143,9 +144,10 @@ export const ResponsiveLandingPage: React.FC = () => {
   const [reviewsError, setReviewsError] = useState<string | null>(null);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const { isMobile } = useResponsive();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { openModal } = useAuthModal();
   const navigate = useNavigate();
+  const loadBulkStatus = useLikeStore(state => state.loadBulkStatus);
   
   // Helper function to get reliable IGDB ID for URL generation
   const getReliableIgdbId = (review: Review): string => {
@@ -223,6 +225,12 @@ export const ResponsiveLandingPage: React.FC = () => {
           // Limit based on screen size
           const limitedReviews = transformedReviews.slice(0, isMobile ? 3 : 4);
           setRecentReviews(limitedReviews);
+          
+          // Load bulk like statuses for all reviews
+          if (limitedReviews.length > 0) {
+            const ratingIds = limitedReviews.map(r => parseInt(r.id));
+            await loadBulkStatus(user?.id, ratingIds);
+          }
         } else {
           setReviewsError(result.error || 'Failed to load reviews');
         }
@@ -235,7 +243,7 @@ export const ResponsiveLandingPage: React.FC = () => {
     };
     
     loadRecentReviews();
-  }, [isMobile]);
+  }, [isMobile, user?.id, loadBulkStatus]);
 
 
   // Handle join community button click
@@ -252,11 +260,29 @@ export const ResponsiveLandingPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-900">
         {/* Mobile Hero Section */}
-        <div className="relative bg-gradient-to-br from-purple-900 via-blue-900 to-gray-900 px-4 py-12">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <Gamepad2 className="h-12 w-12 text-purple-400" />
-            </div>
+        <div className="relative bg-gray-900 overflow-hidden px-4 py-12">
+          {/* Simplified multi-layered background for mobile */}
+          {/* Layer 1: Subtle gradient */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: `
+                radial-gradient(ellipse at top, rgba(147, 51, 234, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, rgba(59, 130, 246, 0.08) 0%, transparent 50%)
+              `
+            }}
+          />
+          
+          {/* Layer 2: Single animated orb for performance */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -top-32 -right-32 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl animate-pulse" />
+          </div>
+          
+          {/* Layer 3: Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900/30" />
+          
+          {/* Content */}
+          <div className="relative text-center">
             <h1 className="text-3xl font-bold text-white mb-4">
               Discover Your Next
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block">
@@ -269,31 +295,52 @@ export const ResponsiveLandingPage: React.FC = () => {
             <div className="space-y-3">
               <Link
                 to="/search"
-                className="block w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                className="group relative block w-full overflow-hidden rounded-lg"
               >
-                <div className="flex items-center justify-center gap-2">
-                  <Search className="h-5 w-5" />
-                  Explore Games
+                {/* Glassmorphism background */}
+                <div className="absolute inset-0 bg-purple-600/20 backdrop-blur-sm border border-purple-500/30 rounded-lg" />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/30 to-purple-700/30 opacity-0 group-active:opacity-100 transition-opacity duration-300" />
+                
+                {/* Content */}
+                <div className="relative px-6 py-3 text-white font-medium">
+                  <div className="flex items-center justify-center gap-2">
+                    <Search className="h-5 w-5" />
+                    Explore Games
+                  </div>
                 </div>
               </Link>
               {isAuthenticated ? (
                 <Link
                   to="/users"
-                  className="block w-full px-6 py-3 bg-transparent border-2 border-purple-400 text-purple-400 rounded-lg hover:bg-purple-400 hover:text-white transition-colors font-medium"
+                  className="group relative block w-full overflow-hidden rounded-lg"
                 >
-                  <div className="flex items-center justify-center gap-2">
-                    Browse Community
-                    <ArrowRight className="h-5 w-5" />
+                  {/* Glassmorphism background */}
+                  <div className="absolute inset-0 bg-white/5 backdrop-blur-sm border border-purple-400/50 rounded-lg" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-active:opacity-100 transition-opacity duration-300" />
+                  
+                  {/* Content */}
+                  <div className="relative px-6 py-3 text-purple-300 font-medium">
+                    <div className="flex items-center justify-center gap-2">
+                      Join Community
+                      <ArrowRight className="h-5 w-5" />
+                    </div>
                   </div>
                 </Link>
               ) : (
                 <button
                   onClick={handleJoinCommunity}
-                  className="block w-full px-6 py-3 bg-transparent border-2 border-purple-400 text-purple-400 rounded-lg hover:bg-purple-400 hover:text-white transition-colors font-medium"
+                  className="group relative block w-full overflow-hidden rounded-lg"
                 >
-                  <div className="flex items-center justify-center gap-2">
-                    Join Community
-                    <ArrowRight className="h-5 w-5" />
+                  {/* Glassmorphism background */}
+                  <div className="absolute inset-0 bg-white/5 backdrop-blur-sm border border-purple-400/50 rounded-lg" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-active:opacity-100 transition-opacity duration-300" />
+                  
+                  {/* Content */}
+                  <div className="relative px-6 py-3 text-purple-300 font-medium">
+                    <div className="flex items-center justify-center gap-2">
+                      Join Community
+                      <ArrowRight className="h-5 w-5" />
+                    </div>
                   </div>
                 </button>
               )}
@@ -397,7 +444,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           ) : recentReviews.length > 0 ? (
             <div className="space-y-4">
               {recentReviews.map((review) => (
-                <ReviewCard key={review.id} review={review} compact />
+                <ReviewCard key={review.id} review={review} compact currentUserId={user?.id} />
               ))}
             </div>
           ) : (
@@ -416,8 +463,40 @@ export const ResponsiveLandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-purple-900 via-blue-900 to-gray-900 overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
+      <div className="relative bg-gray-900 overflow-hidden">
+        {/* Multi-layered background */}
+        {/* Layer 1: Base gradient - subtle radial gradients */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(ellipse 80% 50% at 20% 0%, rgba(147, 51, 234, 0.15) 0%, transparent 40%),
+              radial-gradient(ellipse 60% 50% at 80% 0%, rgba(59, 130, 246, 0.12) 0%, transparent 40%),
+              radial-gradient(ellipse 90% 70% at 50% 100%, rgba(139, 92, 246, 0.08) 0%, transparent 40%)
+            `
+          }}
+        />
+        
+        {/* Layer 2: Animated floating orbs */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-20 -left-20 w-72 h-72 bg-purple-600/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute top-40 -right-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+          <div className="absolute -bottom-32 left-1/3 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }} />
+        </div>
+        
+        {/* Layer 3: Subtle noise/grain overlay for texture */}
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E")`,
+            backgroundRepeat: 'repeat'
+          }}
+        />
+        
+        {/* Layer 4: Gradient overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/20 to-gray-900/50" />
+        
+        {/* Content */}
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
@@ -432,26 +511,47 @@ export const ResponsiveLandingPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 to="/search"
-                className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 text-lg font-medium"
+                className="group relative px-8 py-3 text-white rounded-lg flex items-center gap-2 text-lg font-medium overflow-hidden transition-all duration-300 hover:scale-105"
               >
-                <Search className="h-5 w-5" />
-                Explore Games
+                {/* Glassmorphism background - Primary style */}
+                <div className="absolute inset-0 bg-purple-600/30 backdrop-blur-md border border-purple-500/30 rounded-lg" />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/50 to-purple-700/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                
+                {/* Content */}
+                <div className="relative flex items-center gap-2">
+                  <Search className="h-5 w-5" />
+                  Explore Games
+                </div>
               </Link>
               {isAuthenticated ? (
                 <Link
                   to="/users"
-                  className="px-8 py-3 bg-transparent border-2 border-purple-400 text-purple-400 rounded-lg hover:bg-purple-400 hover:text-white transition-colors flex items-center gap-2 text-lg font-medium"
+                  className="group relative px-8 py-3 text-purple-300 rounded-lg flex items-center gap-2 text-lg font-medium overflow-hidden transition-all duration-300 hover:scale-105"
                 >
-                  Browse Community
-                  <ArrowRight className="h-5 w-5" />
+                  {/* Glassmorphism background - Secondary style */}
+                  <div className="absolute inset-0 bg-white/5 backdrop-blur-md border border-purple-400/50 rounded-lg" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  
+                  {/* Content */}
+                  <div className="relative flex items-center gap-2 group-hover:text-white transition-colors duration-300">
+                    Join Community
+                    <ArrowRight className="h-5 w-5" />
+                  </div>
                 </Link>
               ) : (
                 <button
                   onClick={handleJoinCommunity}
-                  className="px-8 py-3 bg-transparent border-2 border-purple-400 text-purple-400 rounded-lg hover:bg-purple-400 hover:text-white transition-colors flex items-center gap-2 text-lg font-medium"
+                  className="group relative px-8 py-3 text-purple-300 rounded-lg flex items-center gap-2 text-lg font-medium overflow-hidden transition-all duration-300 hover:scale-105"
                 >
-                  Join Community
-                  <ArrowRight className="h-5 w-5" />
+                  {/* Glassmorphism background - Secondary style */}
+                  <div className="absolute inset-0 bg-white/5 backdrop-blur-md border border-purple-400/50 rounded-lg" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  
+                  {/* Content */}
+                  <div className="relative flex items-center gap-2 group-hover:text-white transition-colors duration-300">
+                    Join Community
+                    <ArrowRight className="h-5 w-5" />
+                  </div>
                 </button>
               )}
             </div>
@@ -612,7 +712,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           ) : recentReviews.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-6">
               {recentReviews.map((review) => (
-                <ReviewCard key={review.id} review={review} />
+                <ReviewCard key={review.id} review={review} currentUserId={user?.id} />
               ))}
             </div>
           ) : (

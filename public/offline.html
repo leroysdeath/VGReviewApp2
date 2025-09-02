@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VGReviewApp - Offline</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: white;
+    }
+
+    .offline-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .offline-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      font-size: 18px;
+      opacity: 0.9;
+      margin-bottom: 30px;
+      line-height: 1.5;
+    }
+
+    .status-info {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .status-info p {
+      margin-bottom: 10px;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .status-info p:last-child {
+      margin-bottom: 0;
+    }
+
+    .features-offline {
+      text-align: left;
+      margin: 30px 0;
+    }
+
+    .features-offline h3 {
+      font-size: 16px;
+      margin-bottom: 15px;
+      opacity: 0.9;
+    }
+
+    .features-offline ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .features-offline li {
+      padding: 8px 0;
+      padding-left: 25px;
+      position: relative;
+      opacity: 0.8;
+      font-size: 14px;
+    }
+
+    .features-offline li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #10b981;
+    }
+
+    .retry-button {
+      background: white;
+      color: #764ba2;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 20px;
+    }
+
+    .retry-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .retry-button:active {
+      transform: translateY(0);
+    }
+
+    .connection-status {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
+      margin-right: 8px;
+      animation: pulse 2s infinite;
+    }
+
+    .connection-status.online {
+      background: #10b981;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .loading-spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .offline-container {
+        padding: 30px 20px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .subtitle {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <div class="offline-icon">🎮</div>
+    <div class="loading-spinner" id="loadingSpinner"></div>
+    
+    <h1>You're Offline</h1>
+    <p class="subtitle">
+      <span class="connection-status" id="connectionStatus"></span>
+      <span id="statusText">No internet connection detected</span>
+    </p>
+
+    <div class="status-info">
+      <p>📍 Some features require an internet connection</p>
+      <p>💾 Your data is safe and will sync when you're back online</p>
+      <p>🔄 The app will automatically reconnect when available</p>
+    </div>
+
+    <div class="features-offline">
+      <h3>While offline, you can still:</h3>
+      <ul>
+        <li>View previously loaded games and reviews</li>
+        <li>Browse cached content</li>
+        <li>Access your collection and wishlist</li>
+        <li>Read game information you've viewed before</li>
+      </ul>
+    </div>
+
+    <button class="retry-button" onclick="checkConnection()">
+      Try Again
+    </button>
+  </div>
+
+  <script>
+    // Check connection status
+    function checkConnection() {
+      const spinner = document.getElementById('loadingSpinner');
+      const statusEl = document.getElementById('connectionStatus');
+      const statusText = document.getElementById('statusText');
+      const button = document.querySelector('.retry-button');
+      
+      // Show loading state
+      spinner.style.display = 'block';
+      button.disabled = true;
+      button.textContent = 'Checking...';
+      
+      // Try to fetch a small resource
+      fetch('/manifest.json', { 
+        method: 'HEAD',
+        cache: 'no-cache' 
+      })
+        .then(() => {
+          // Online! Reload the page
+          statusEl.classList.add('online');
+          statusText.textContent = 'Connection restored! Reloading...';
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        })
+        .catch(() => {
+          // Still offline
+          spinner.style.display = 'none';
+          button.disabled = false;
+          button.textContent = 'Try Again';
+          statusText.textContent = 'Still offline. Please check your connection.';
+        });
+    }
+
+    // Auto-check connection every 10 seconds
+    let autoCheckInterval;
+    function startAutoCheck() {
+      autoCheckInterval = setInterval(() => {
+        if (navigator.onLine) {
+          checkConnection();
+        }
+      }, 10000);
+    }
+
+    // Listen for online event
+    window.addEventListener('online', () => {
+      checkConnection();
+    });
+
+    // Listen for offline event
+    window.addEventListener('offline', () => {
+      const statusEl = document.getElementById('connectionStatus');
+      const statusText = document.getElementById('statusText');
+      statusEl.classList.remove('online');
+      statusText.textContent = 'Connection lost';
+    });
+
+    // Start auto-checking when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      startAutoCheck();
+      
+      // Update online/offline status
+      if (navigator.onLine) {
+        // If we're viewing this page but online, try to reconnect
+        setTimeout(checkConnection, 2000);
+      }
+    });
+
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+      if (autoCheckInterval) {
+        clearInterval(autoCheckInterval);
+      }
+    });
+  </script>
+</body>
+</html>

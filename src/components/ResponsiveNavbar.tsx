@@ -391,8 +391,7 @@ export const ResponsiveNavbar: React.FC = () => {
           <div className="px-4 py-3">
             <div className="flex items-center justify-between">
               {/* Logo */}
-              <Link to="/" className="flex items-center space-x-2">
-                <Gamepad2 className="h-6 w-6 text-purple-400" />
+              <Link to="/" className="flex items-center">
                 <span className="text-lg font-bold text-white">GameVault</span>
               </Link>
 
@@ -415,8 +414,7 @@ export const ResponsiveNavbar: React.FC = () => {
             <div className="bg-gray-800 w-full max-w-sm h-full shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="p-4 border-b border-gray-700">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Gamepad2 className="h-6 w-6 text-purple-400" />
+                  <div className="flex items-center">
                     <span className="text-lg font-bold text-white">GameVault</span>
                   </div>
                   <button
@@ -741,8 +739,7 @@ export const ResponsiveNavbar: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <div className="flex items-center space-x-4">
-              <Link to="/" className="flex items-center space-x-2">
-                <Gamepad2 className="h-8 w-8 text-purple-400" />
+              <Link to="/" className="flex items-center">
                 <span className="text-xl font-bold text-white">GameVault</span>
               </Link>
               

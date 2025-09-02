@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Worker Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .status {
+      padding: 20px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    .log {
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 5px 0;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    h1 {
+      color: #333;
+    }
+    button {
+      background: #7c3aed;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #6b2ec5;
+    }
+  </style>
+</head>
+<body>
+  <h1>Service Worker Test</h1>
+  
+  <div id="status"></div>
+  <div id="logs"></div>
+  
+  <div style="margin-top: 20px;">
+    <button onclick="testOffline()">Test Offline Page</button>
+    <button onclick="checkCache()">Check Cache</button>
+    <button onclick="clearCache()">Clear Cache</button>
+    <button onclick="unregister()">Unregister SW</button>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const logsEl = document.getElementById('logs');
+
+    function addLog(message, type = 'info') {
+      const log = document.createElement('div');
+      log.className = 'log';
+      log.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logsEl.appendChild(log);
+    }
+
+    function setStatus(message, type = 'info') {
+      statusEl.className = `status ${type}`;
+      statusEl.textContent = message;
+    }
+
+    // Check if service worker is supported
+    if ('serviceWorker' in navigator) {
+      setStatus('Service Worker is supported', 'success');
+      addLog('Service Worker API available');
+
+      // Check registration status
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg) {
+          addLog(`Service Worker registered with scope: ${reg.scope}`);
+          addLog(`State: ${reg.active ? 'Active' : reg.installing ? 'Installing' : reg.waiting ? 'Waiting' : 'Unknown'}`);
+        } else {
+          addLog('No Service Worker registered yet');
+        }
+      });
+
+      // Listen for controller changes
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        addLog('Service Worker controller changed', 'success');
+      });
+
+    } else {
+      setStatus('Service Worker is NOT supported in this browser', 'error');
+    }
+
+    function testOffline() {
+      addLog('Testing offline page...');
+      window.open('/offline.html', '_blank');
+    }
+
+    function checkCache() {
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          addLog(`Found ${names.length} cache(s): ${names.join(', ')}`);
+          
+          names.forEach(name => {
+            caches.open(name).then(cache => {
+              cache.keys().then(requests => {
+                addLog(`Cache "${name}" has ${requests.length} items`);
+              });
+            });
+          });
+        });
+      } else {
+        addLog('Cache API not available', 'error');
+      }
+    }
+
+    function clearCache() {
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          Promise.all(names.map(name => caches.delete(name)))
+            .then(() => {
+              addLog('All caches cleared', 'success');
+            });
+        });
+      }
+    }
+
+    function unregister() {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg) {
+          reg.unregister().then(success => {
+            if (success) {
+              addLog('Service Worker unregistered', 'success');
+              setStatus('Service Worker unregistered - refresh to re-register', 'info');
+            }
+          });
+        } else {
+          addLog('No Service Worker to unregister');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
