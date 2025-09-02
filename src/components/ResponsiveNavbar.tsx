@@ -391,8 +391,7 @@ export const ResponsiveNavbar: React.FC = () => {
           <div className="px-4 py-3">
             <div className="flex items-center justify-between">
               {/* Logo */}
-              <Link to="/" className="flex items-center space-x-2">
-                <Gamepad2 className="h-6 w-6 text-purple-400" />
+              <Link to="/" className="flex items-center">
                 <span className="text-lg font-bold text-white">GameVault</span>
               </Link>
 
