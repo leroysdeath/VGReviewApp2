@@ -2,7 +2,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react()
+  ],
   server: {
     port: 5173,
     host: true,
@@ -14,7 +16,15 @@ export default defineConfig({
     assetsDir: 'assets',
     // Dynamic sourcemap and minify based on environment
     sourcemap: process.env.NODE_ENV === 'development',
-    minify: process.env.NODE_ENV === 'production' ? 'esbuild' : false,
+    minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
+    // Terser options to remove console statements in production
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn']
+      }
+    },
     // Optimize build size
     reportCompressedSize: true,
     chunkSizeWarningLimit: 1000,

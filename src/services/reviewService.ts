@@ -365,6 +365,7 @@ export interface Comment {
   createdAt: string;
   updatedAt: string;
   likeCount?: number;
+  isLiked?: boolean;
   replies?: Comment[];
   user?: {
     id: number;
@@ -809,29 +810,28 @@ export const likeReview = async (
 
     // If like already exists, return early
     if (existingLike) {
-      // Get current like count from computed column (much faster)
-      const { data: ratingData } = await supabase
+      // Get current like count from rating table (maintained by trigger)
+      const { data: rating } = await supabase
         .from('rating')
         .select('like_count')
         .eq('id', reviewId)
         .single();
-      
-      const likeCount = ratingData?.like_count || 0;
 
       return {
         success: true,
-        data: { likeCount: likeCount || 0 },
+        data: { likeCount: rating?.like_count || 0 },
         error: 'User already liked this review'
       };
     }
 
-    // Insert new like
-    console.log('📤 Inserting like with:', { user_id: userId, rating_id: reviewId });
+    // Insert new like (include is_like field as it's required)
+    console.log('📤 Inserting like with:', { user_id: userId, rating_id: reviewId, is_like: true });
     const { error: insertError } = await supabase
       .from('content_like')
       .insert({
         user_id: userId,
-        rating_id: reviewId
+        rating_id: reviewId,
+        is_like: true  // Required field in content_like table
       });
 
     if (insertError) {
@@ -840,18 +840,16 @@ export const likeReview = async (
     }
     console.log('✅ Like inserted successfully');
 
-    // Get updated like count from computed column (much faster)
-    const { data: ratingData } = await supabase
+    // Get updated like count from rating table (maintained by trigger)
+    const { data: rating } = await supabase
       .from('rating')
       .select('like_count')
       .eq('id', reviewId)
       .single();
-    
-    const likeCount = ratingData?.like_count || 0;
 
     return {
       success: true,
-      data: { likeCount: likeCount || 0 }
+      data: { likeCount: rating?.like_count || 0 }
     };
   } catch (error) {
     console.error('Error liking review:', error);
@@ -887,18 +885,16 @@ export const unlikeReview = async (
 
     if (deleteError) throw deleteError;
 
-    // Get updated like count from computed column (much faster)
-    const { data: ratingData } = await supabase
+    // Get updated like count from rating table (maintained by trigger)
+    const { data: rating } = await supabase
       .from('rating')
       .select('like_count')
       .eq('id', reviewId)
       .single();
-    
-    const likeCount = ratingData?.like_count || 0;
 
     return {
       success: true,
-      data: { likeCount: likeCount || 0 }
+      data: { likeCount: rating?.like_count || 0 }
     };
   } catch (error) {
     console.error('Error unliking review:', error);
@@ -910,11 +906,180 @@ export const unlikeReview = async (
 };
 
 /**
+ * Like a comment
+ */
+export const likeComment = async (
+  userId: number,
+  commentId: number
+): Promise<ServiceResponse<{ likeCount: number }>> => {
+  console.log('👍 likeComment called with:', { userId, commentId });
+  
+  try {
+    // Validate input
+    if (!userId || isNaN(userId)) {
+      console.error('❌ Invalid user ID in likeComment:', { userId });
+      return { success: false, error: 'Invalid user ID' };
+    }
+    if (!commentId || isNaN(commentId)) {
+      console.error('❌ Invalid comment ID in likeComment:', { commentId });
+      return { success: false, error: 'Invalid comment ID' };
+    }
+
+    // Check if like already exists
+    const { data: existingLike, error: checkError } = await supabase
+      .from('content_like')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('comment_id', commentId)
+      .maybeSingle();
+
+    if (checkError) {
+      throw checkError;
+    }
+
+    // If like already exists, return current count
+    if (existingLike) {
+      // Get current like count from comment table
+      const { data: commentData } = await supabase
+        .from('comment')
+        .select('like_count')
+        .eq('id', commentId)
+        .single();
+
+      return {
+        success: true,
+        data: { likeCount: commentData?.like_count || 0 },
+        error: 'User already liked this comment'
+      };
+    }
+
+    // Insert new like
+    console.log('📤 Inserting comment like with:', { user_id: userId, comment_id: commentId, is_like: true });
+    const { error: insertError } = await supabase
+      .from('content_like')
+      .insert({
+        user_id: userId,
+        comment_id: commentId,
+        is_like: true
+      });
+
+    if (insertError) {
+      console.error('❌ Error inserting comment like:', insertError);
+      throw insertError;
+    }
+    console.log('✅ Comment like inserted successfully');
+
+    // Get updated like count from comment table (trigger already updated it)
+    const { data: updatedComment } = await supabase
+      .from('comment')
+      .select('like_count')
+      .eq('id', commentId)
+      .single();
+
+    return {
+      success: true,
+      data: { likeCount: updatedComment?.like_count || 0 }
+    };
+  } catch (error) {
+    console.error('Error liking comment:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to like comment'
+    };
+  }
+};
+
+/**
+ * Unlike a comment
+ */
+export const unlikeComment = async (
+  userId: number,
+  commentId: number
+): Promise<ServiceResponse<{ likeCount: number }>> => {
+  console.log('👎 unlikeComment called with:', { userId, commentId });
+  
+  try {
+    // Validate input
+    if (!userId || isNaN(userId)) {
+      return { success: false, error: 'Invalid user ID' };
+    }
+    if (!commentId || isNaN(commentId)) {
+      return { success: false, error: 'Invalid comment ID' };
+    }
+
+    // Delete the like
+    const { error: deleteError } = await supabase
+      .from('content_like')
+      .delete()
+      .eq('user_id', userId)
+      .eq('comment_id', commentId);
+
+    if (deleteError) throw deleteError;
+
+    // Get updated like count from comment table (trigger already updated it)
+    const { data: updatedComment } = await supabase
+      .from('comment')
+      .select('like_count')
+      .eq('id', commentId)
+      .single();
+
+    return {
+      success: true,
+      data: { likeCount: updatedComment?.like_count || 0 }
+    };
+  } catch (error) {
+    console.error('Error unliking comment:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to unlike comment'
+    };
+  }
+};
+
+/**
+ * Check if user has liked a comment
+ */
+export const hasUserLikedComment = async (
+  userId: number,
+  commentId: number
+): Promise<ServiceResponse<boolean>> => {
+  try {
+    // Validate input
+    if (!userId || isNaN(userId)) {
+      return { success: false, error: 'Invalid user ID' };
+    }
+    if (!commentId || isNaN(commentId)) {
+      return { success: false, error: 'Invalid comment ID' };
+    }
+
+    const { data, error } = await supabase
+      .from('content_like')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('comment_id', commentId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true, data: !!data };
+  } catch (error) {
+    console.error('Error checking if user liked comment:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to check comment like status'
+    };
+  }
+};
+
+/**
  * Get comments for a review
  */
 export const getCommentsForReview = async (
   reviewId: number,
-  { limit = 50, offset = 0 }: PaginationParams = {}
+  { limit = 50, offset = 0 }: PaginationParams = {},
+  currentUserId?: number
 ): Promise<ServiceResponse<Comment[]>> => {
   try {
     // Validate input
@@ -922,7 +1087,7 @@ export const getCommentsForReview = async (
       return { success: false, error: 'Invalid review ID' };
     }
 
-    // Fetch all comments for the review
+    // Fetch all comments for the review (including like_count from database)
     const { data, error, count } = await supabase
       .from('comment')
       .select(`
@@ -934,6 +1099,21 @@ export const getCommentsForReview = async (
       .range(offset, offset + limit - 1);
 
     if (error) throw error;
+
+    // If user is authenticated, batch check which comments they've liked
+    let userLikedComments = new Set<number>();
+    if (currentUserId && data && data.length > 0) {
+      const commentIds = data.map(c => c.id);
+      const { data: likes } = await supabase
+        .from('content_like')
+        .select('comment_id')
+        .eq('user_id', currentUserId)
+        .in('comment_id', commentIds);
+      
+      if (likes) {
+        userLikedComments = new Set(likes.map(l => l.comment_id));
+      }
+    }
 
     // Build 2-level structure (hybrid approach)
     const commentMap = new Map<number, Comment>();
@@ -950,6 +1130,8 @@ export const getCommentsForReview = async (
         parentId: item.parent_comment_id || undefined,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
+        likeCount: item.like_count || 0,  // Use the pre-calculated like_count from database
+        isLiked: userLikedComments.has(item.id),  // Check if current user liked this comment
         replies: [],
         user: item.user ? {
           id: item.user.id,

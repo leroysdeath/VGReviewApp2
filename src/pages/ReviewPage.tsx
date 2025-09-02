@@ -60,7 +60,9 @@ export const ReviewPage: React.FC = () => {
     postComment,
     updateComment,
     removeComment,
-    commentsLoaded
+    toggleCommentLike,
+    commentsLoaded,
+    likingCommentId
   } = useReviewInteractions({
     reviewId: useInteractions ? reviewId : 0,
     userId: currentUserId
@@ -449,8 +451,12 @@ export const ReviewPage: React.FC = () => {
               onAddComment={postComment}
               onEditComment={updateComment}
               onDeleteComment={removeComment}
+              onLikeComment={toggleCommentLike}
+              onUnlikeComment={toggleCommentLike}
               isLoadingComments={isLoadingComments}
               isLoadingLike={isLoadingLike}
+              isLikingComment={likingCommentId !== null}
+              likingCommentId={likingCommentId}
               reviewAuthorId={review.user_id}
               currentUserId={currentUserId}
               // Disable interactions if authenticated but user ID not loaded

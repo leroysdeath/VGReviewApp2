@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar } from 'lucide-react';
+import { Calendar, Heart, MessageSquare } from 'lucide-react';
 import { ReviewInteractions } from './ReviewInteractions';
 import { useReviewInteractions } from '../hooks/useReviewInteractions';
 import { escapeHtml } from '../utils/sanitize';
@@ -321,7 +321,21 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Clear float to ensure interactions appear below */}
           <div className="clear-both"></div>
 
-          {/* Review Interactions */}
+          {/* Compact Interactions for mobile/compact view */}
+          {compact && (
+            <div className="flex items-center gap-3 mt-2">
+              <div className="flex items-center gap-1 text-gray-400">
+                <Heart className={`h-4 w-4 ${isLiked ? 'fill-current text-red-500' : ''}`} />
+                <span className="text-xs">{likeCount}</span>
+              </div>
+              <div className="flex items-center gap-1 text-gray-400">
+                <MessageSquare className="h-4 w-4" />
+                <span className="text-xs">{commentCount}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Full Review Interactions */}
           {!compact && (
             <ReviewInteractions
               reviewId={review.id}
@@ -338,6 +352,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               className="mt-3"
               reviewAuthorId={parseInt(review.userId)}
               currentUserId={currentUserId}
+              disableCommentHover={true}
             />
           )}
         </div>
