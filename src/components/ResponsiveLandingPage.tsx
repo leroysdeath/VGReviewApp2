@@ -324,7 +324,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                   {/* Content */}
                   <div className="relative px-6 py-3 text-purple-300 font-medium">
                     <div className="flex items-center justify-center gap-2">
-                      Browse Community
+                      Join Community
                       <ArrowRight className="h-5 w-5" />
                     </div>
                   </div>
@@ -516,9 +516,9 @@ export const ResponsiveLandingPage: React.FC = () => {
                 to="/search"
                 className="group relative px-8 py-3 text-white rounded-lg flex items-center gap-2 text-lg font-medium overflow-hidden transition-all duration-300 hover:scale-105"
               >
-                {/* Glassmorphism background */}
-                <div className="absolute inset-0 bg-purple-600/20 backdrop-blur-md border border-purple-500/30 rounded-lg" />
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/40 to-purple-700/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {/* Glassmorphism background - Primary style */}
+                <div className="absolute inset-0 bg-purple-600/30 backdrop-blur-md border border-purple-500/30 rounded-lg" />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/50 to-purple-700/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 
                 {/* Content */}
                 <div className="relative flex items-center gap-2">
@@ -531,13 +531,13 @@ export const ResponsiveLandingPage: React.FC = () => {
                   to="/users"
                   className="group relative px-8 py-3 text-purple-300 rounded-lg flex items-center gap-2 text-lg font-medium overflow-hidden transition-all duration-300 hover:scale-105"
                 >
-                  {/* Glassmorphism background */}
+                  {/* Glassmorphism background - Secondary style */}
                   <div className="absolute inset-0 bg-white/5 backdrop-blur-md border border-purple-400/50 rounded-lg" />
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   
                   {/* Content */}
                   <div className="relative flex items-center gap-2 group-hover:text-white transition-colors duration-300">
-                    Browse Community
+                    Join Community
                     <ArrowRight className="h-5 w-5" />
                   </div>
                 </Link>
@@ -546,7 +546,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                   onClick={handleJoinCommunity}
                   className="group relative px-8 py-3 text-purple-300 rounded-lg flex items-center gap-2 text-lg font-medium overflow-hidden transition-all duration-300 hover:scale-105"
                 >
-                  {/* Glassmorphism background */}
+                  {/* Glassmorphism background - Secondary style */}
                   <div className="absolute inset-0 bg-white/5 backdrop-blur-md border border-purple-400/50 rounded-lg" />
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   
