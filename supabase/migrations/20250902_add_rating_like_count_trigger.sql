@@ -6,7 +6,13 @@
 CREATE OR REPLACE FUNCTION update_rating_like_count()
 RETURNS TRIGGER AS $$
 BEGIN
+  -- Only process if this is a rating like (not a comment like)
   IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+    -- Skip if this is not a rating like
+    IF NEW.rating_id IS NULL THEN
+      RETURN NEW;
+    END IF;
+    
     -- Update like count for the rating
     UPDATE rating 
     SET like_count = (
@@ -18,6 +24,11 @@ BEGIN
     
     RETURN NEW;
   ELSIF TG_OP = 'DELETE' THEN
+    -- Skip if this was not a rating like
+    IF OLD.rating_id IS NULL THEN
+      RETURN OLD;
+    END IF;
+    
     -- Update like count for the rating
     UPDATE rating 
     SET like_count = (
@@ -36,11 +47,10 @@ $$ LANGUAGE plpgsql;
 -- Drop trigger if exists (for idempotency)
 DROP TRIGGER IF EXISTS trigger_update_rating_like_count ON content_like;
 
--- Create trigger for rating likes
+-- Create trigger for rating likes (without WHEN clause to avoid DELETE issue)
 CREATE TRIGGER trigger_update_rating_like_count
 AFTER INSERT OR UPDATE OR DELETE ON content_like
 FOR EACH ROW
-WHEN (NEW.rating_id IS NOT NULL OR OLD.rating_id IS NOT NULL)
 EXECUTE FUNCTION update_rating_like_count();
 
 -- Backfill existing like counts

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, Zap, Play, CheckCircle, ScrollText, Gift, BookOpen, MessageCircle } from 'lucide-react';
+import { Calendar, Zap, Play, CheckCircle, ScrollText, Gift, BookOpen, MessageCircle, Heart } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { getGameUrl } from '../../utils/gameUrls';
 import { useResponsive } from '../../hooks/useResponsive';
 
 interface Activity {
   id: string;
-  type: 'review' | 'rating' | 'started' | 'completed' | 'comment' | 'wishlist' | 'collection';
+  type: 'review' | 'rating' | 'started' | 'completed' | 'comment' | 'wishlist' | 'collection' | 'review_like';
   date: string;
   game?: {
     id: number;
@@ -46,7 +46,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
     'completed': 4,    // Finished play
     'rating': 5,       // Quick score
     'review': 6,       // Detailed thoughts (appears last)
-    'comment': 7       // Comments (if any)
+    'comment': 7,      // Comments
+    'review_like': 8   // Review likes
   };
 
   const fetchActivities = async () => {
@@ -168,6 +169,36 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
 
       if (commentError) throw commentError;
 
+      // Fetch review like activities
+      const { data: reviewLikeData, error: reviewLikeError } = await supabase
+        .from('content_like')
+        .select(`
+          id,
+          created_at,
+          rating!content_like_rating_id_fkey (
+            id,
+            user_id,
+            user:user_id (
+              id,
+              username
+            ),
+            game:game_id (
+              id,
+              igdb_id,
+              slug,
+              name,
+              cover_url
+            )
+          )
+        `)
+        .eq('user_id', parseInt(userId))
+        .eq('is_like', true)
+        .not('rating_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (reviewLikeError) throw reviewLikeError;
+
       // Transform and combine activities
       const combinedActivities: Activity[] = [];
 
@@ -252,6 +283,22 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         });
       });
 
+      // Add review like activities
+      reviewLikeData?.forEach(item => {
+        if (!item.rating?.game || !item.rating?.user) return;
+        
+        combinedActivities.push({
+          id: `review-like-${item.id}`,
+          type: 'review_like',
+          date: item.created_at,
+          game: item.rating.game,
+          reviewAuthor: {
+            id: item.rating.user.id,
+            username: item.rating.user.username
+          }
+        });
+      });
+
       // Sort by date (most recent first), with secondary sort by activity type for same timestamps
       const sortedActivities = combinedActivities
         .sort((a, b) => {
@@ -322,6 +369,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         return <CheckCircle className="h-5 w-5 text-green-400" />;
       case 'comment':
         return <MessageCircle className="h-5 w-5 text-blue-400" />;
+      case 'review_like':
+        return <Heart className="h-5 w-5 text-red-400" />;
       default:
         return <Calendar className="h-5 w-5 text-gray-400" />;
     }
@@ -332,6 +381,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
       case 'review':
         return `/review/${userId}/${activity.game?.igdb_id || activity.game?.id}`;
       case 'comment':
+      case 'review_like':
         return `/review/${activity.reviewAuthor?.id}/${activity.game?.igdb_id || activity.game?.id}`;
       case 'rating':
       case 'wishlist':
@@ -462,6 +512,23 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
         return (
           <span>
             commented on{' '}
+            {isMobile ? (
+              <span className="text-purple-400">{activity.reviewAuthor?.username}'s review of {activity.game?.name}</span>
+            ) : (
+              <Link 
+                to={`/review/${activity.reviewAuthor?.id}/${activity.game?.igdb_id || activity.game?.id}`} 
+                className="text-purple-400 hover:text-purple-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {activity.reviewAuthor?.username}'s review of {activity.game?.name}
+              </Link>
+            )}
+          </span>
+        );
+      case 'review_like':
+        return (
+          <span>
+            liked{' '}
             {isMobile ? (
               <span className="text-purple-400">{activity.reviewAuthor?.username}'s review of {activity.game?.name}</span>
             ) : (
