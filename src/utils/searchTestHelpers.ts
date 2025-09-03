@@ -195,19 +195,19 @@ export function createMarioTestScenario(): TestGame[] {
     .addFlagship('Super Mario Bros. 3', 'mario', {
       rating: 94,
       metacritic_score: 97,
-      releaseYear: 1988,
+      first_release_date: 591840000,
       platforms: [{ name: 'Nintendo Entertainment System' }]
     })
     .addFlagship('Super Mario 64', 'mario', {
       rating: 93,
       metacritic_score: 94,
-      releaseYear: 1996,
+      first_release_date: 835747200,
       platforms: [{ name: 'Nintendo 64' }]
     })
     .addFlagship('Super Mario Odyssey', 'mario', {
       rating: 91,
       metacritic_score: 97,
-      releaseYear: 2017,
+      first_release_date: 1506816000,
       platforms: [{ name: 'Nintendo Switch' }]
     })
     .addBundle('Super Mario All-Stars', ['SMB1', 'SMB2', 'SMB3', 'Lost Levels'])
@@ -227,7 +227,7 @@ export function createPokemonTestScenario(): TestGame[] {
     .addFlagship('Pokemon Red', 'pokemon', {
       rating: 89,
       metacritic_score: 82,
-      releaseYear: 1996,
+      first_release_date: 835747200,
       platforms: [{ name: 'Game Boy' }],
       developer: 'Game Freak',
       publisher: 'Nintendo'
@@ -235,7 +235,7 @@ export function createPokemonTestScenario(): TestGame[] {
     .addFlagship('Pokemon Blue', 'pokemon', {
       rating: 89,
       metacritic_score: 82,
-      releaseYear: 1996,
+      first_release_date: 835747200,
       platforms: [{ name: 'Game Boy' }],
       developer: 'Game Freak',
       publisher: 'Nintendo'
@@ -243,7 +243,7 @@ export function createPokemonTestScenario(): TestGame[] {
     .addFlagship('Pokemon Gold', 'pokemon', {
       rating: 91,
       metacritic_score: 84,
-      releaseYear: 1999,
+      first_release_date: 946684800,
       platforms: [{ name: 'Game Boy Color' }],
       developer: 'Game Freak',
       publisher: 'The Pokemon Company'
@@ -385,15 +385,15 @@ export function createRegressionTestData(): { [testCase: string]: TestGame[] } {
     'zelda-switch-priority': new TestGameBuilder()
       .addFlagship('The Legend of Zelda: Breath of the Wild', 'zelda', {
         platforms: [{ name: 'Nintendo Switch' }],
-        releaseYear: 2017
+        first_release_date: 1506816000
       })
       .addFlagship('The Legend of Zelda: Tears of the Kingdom', 'zelda', {
         platforms: [{ name: 'Nintendo Switch' }],
-        releaseYear: 2023
+        first_release_date: 1672531200
       })
       .addEdgeCase('The Legend of Zelda: Breath of the Wild (Wii U)', 'Same game different platform', {
         platforms: [{ name: 'Wii U' }],
-        releaseYear: 2017
+        first_release_date: 1506816000
       })
       .build(),
       

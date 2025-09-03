@@ -62,9 +62,8 @@ export function findGameInResults(
     const resultName = result.name?.toLowerCase() || '';
     return searchNames.some(searchName => {
       const normalizedSearchName = searchName.toLowerCase();
-      return resultName.includes(normalizedSearchName) || 
-             normalizedSearchName.includes(resultName) ||
-             isCloseMatch(normalizedSearchName, resultName);
+      // Exact match only for precise test matching
+      return resultName === normalizedSearchName;
     });
   });
 }
@@ -75,9 +74,12 @@ function isCloseMatch(name1: string, name2: string): boolean {
   const normalized1 = normalize(name1);
   const normalized2 = normalize(name2);
   
-  return normalized1.includes(normalized2) || 
-         normalized2.includes(normalized1) ||
-         levenshteinDistance(normalized1, normalized2) <= 3;
+  // More strict matching - only allow very close matches
+  if (Math.abs(normalized1.length - normalized2.length) > 5) {
+    return false;
+  }
+  
+  return levenshteinDistance(normalized1, normalized2) <= 2; // Reduced from 3 to 2
 }
 
 function levenshteinDistance(str1: string, str2: string): number {
@@ -127,7 +129,7 @@ export async function testSearchQuality(
     searchTerm,
     totalImportantGames: importantGames.length,
     foundGames: foundGames.length,
-    foundGamesList,
+    foundGamesList: foundGames,
     missingGames,
     qualityPercentage
   };

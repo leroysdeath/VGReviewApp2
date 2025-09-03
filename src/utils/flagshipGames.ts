@@ -161,6 +161,27 @@ export const FLAGSHIP_GAMES: FlagshipDatabase = {
         significance: 'technical'
       },
       {
+        names: ['The Legend of Zelda: Majora\'s Mask', 'Majora\'s Mask', 'MM'],
+        reason: 'Time loop mechanics, 3-day cycle, mask transformation system masterpiece',
+        releaseYear: 2000,
+        platforms: ['Nintendo 64'],
+        significance: 'innovation'
+      },
+      {
+        names: ['The Legend of Zelda: The Wind Waker', 'Wind Waker', 'TWW'],
+        reason: 'Cel-shaded art revolution, sea exploration, GameCube showcase',
+        releaseYear: 2002,
+        platforms: ['GameCube'],
+        significance: 'innovation'
+      },
+      {
+        names: ['The Legend of Zelda: Twilight Princess', 'Twilight Princess', 'TP'],
+        reason: 'Return to realistic art style, wolf transformation, epic adventure',
+        releaseYear: 2006,
+        platforms: ['GameCube', 'Wii'],
+        significance: 'cultural'
+      },
+      {
         names: ['The Legend of Zelda: Breath of the Wild', 'Breath of the Wild', 'BotW'],
         reason: 'Open world revolution, Switch launch title, reinvented franchise',
         releaseYear: 2017,

@@ -429,7 +429,9 @@ export const COMPANY_OWNERSHIP: Record<string, {
     ],
     secondParty: [
       'lucasfilm', 'lucasfilm games', 'marvel entertainment', 'marvel games',
-      'pixar animation studios', 'pixar', '20th century games'
+      'pixar animation studios', 'pixar', '20th century games',
+      'electronic arts', 'ea', 'ea games', 'respawn entertainment',
+      'sony interactive entertainment', 'insomniac games', 'santa monica studio'
     ],
     franchises: [
       'star wars', 'marvel', 'avengers', 'spider-man', 'x-men',
@@ -489,6 +491,21 @@ export const COMPANY_OWNERSHIP: Record<string, {
       'metal gear', 'silent hill', 'castlevania', 'contra',
       'gradius', 'bomberman', 'dance dance revolution', 'ddr',
       'yu-gi-oh', 'suikoden', 'zone of the enders'
+    ]
+  },
+
+  // Bethesda Network
+  'bethesda game studios': {
+    firstParty: [
+      'bethesda game studios', 'bethesda softworks', 'zenimax online studios',
+      'id software', 'arkane studios', 'machine games', 'tango gameworks'
+    ],
+    secondParty: [
+      'obsidian entertainment', 'inxile entertainment', 'human head studios'
+    ],
+    franchises: [
+      'elder scrolls', 'skyrim', 'fallout', 'doom', 'quake', 'dishonored',
+      'wolfenstein', 'prey', 'rage', 'the elder scrolls'
     ]
   }
 };

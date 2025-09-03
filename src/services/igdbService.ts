@@ -11,6 +11,11 @@ import {
   applyIconicBoost,
   calculateIconicScore 
 } from '../utils/iconicGameDetection';
+import { 
+  calculateGameQuality,
+  prioritizeOriginalVersions,
+  sortByGameQuality 
+} from '../utils/gameQualityScoring';
 
 /**
  * Calculate relevance score for search results with fuzzy matching
@@ -285,8 +290,13 @@ async function findSequelsAndSeries(baseQuery: string, primaryResults: IGDBGame[
       isRelevantSequel(game, baseQuery, franchiseNames)
     );
 
+    // Apply content protection filtering to sequels FIRST
+    const transformedSequels = uniqueSequels.map(game => this.transformGameForFilter(game));
+    const protectedSequels = filterProtectedContent(transformedSequels);
+    const protectedSequelGames = protectedSequels.map(game => uniqueSequels.find(raw => raw.id === game.id)!);
+    
     // Apply season filtering to sequels
-    const seasonFilteredSequels = filterSeasonGames(uniqueSequels);
+    const seasonFilteredSequels = filterSeasonGames(protectedSequelGames);
     
     // Apply pack filtering to sequels
     const packFilteredSequels = filterPackGames(seasonFilteredSequels);
@@ -606,7 +616,34 @@ class IGDBService {
       
       // Check if we need flagship fallback after all filtering
       const franchise = detectFranchiseSearch(query);
-      const needsFlagshipFallback = filteredIGDBGames.length < Math.min(3, limit) && franchise;
+      
+      // Enhanced flagship fallback logic - check quality of results, not just quantity
+      let needsFlagshipFallback = false;
+      if (franchise) {
+        // Always do flagship fallback for major franchise searches if results are low quality
+        const hasMainGameResults = filteredIGDBGames.some(game => 
+          game.category === 0 && // MainGame
+          !game.name.toLowerCase().includes('olympic') && // Not Olympic games
+          !game.name.toLowerCase().includes('party') // Not party games (unless specifically Mario Party search)
+        );
+        
+        // Trigger fallback if we have < 3 main quality games for the franchise
+        const qualityGameCount = filteredIGDBGames.filter(game => 
+          game.category === 0 && 
+          !game.name.toLowerCase().includes('olympic') &&
+          (!game.name.toLowerCase().includes('party') || query.toLowerCase().includes('party'))
+        ).length;
+        
+        needsFlagshipFallback = qualityGameCount < 3 || 
+                               (filteredIGDBGames.length < Math.min(5, limit) && !hasMainGameResults);
+        
+        console.log(`🎯 Flagship analysis for "${franchise}":`, {
+          totalResults: filteredIGDBGames.length,
+          qualityGameCount,
+          hasMainGameResults,
+          needsFallback: needsFlagshipFallback
+        });
+      }
       
       if (needsFlagshipFallback) {
         console.log(`🚀 Triggering flagship fallback for "${franchise}" - Current results: ${filteredIGDBGames.length}`);
@@ -657,6 +694,12 @@ class IGDBService {
       // Apply iconic boost before prioritization
       console.log(`🎯 Applying iconic game boost...`);
       filteredIGDBGames = applyIconicBoost(filteredIGDBGames, query);
+      
+      // Apply quality-based original version prioritization
+      console.log(`🎯 Pre-quality sorting: ${filteredIGDBGames.length} games`);
+      filteredIGDBGames = prioritizeOriginalVersions(filteredIGDBGames);
+      filteredIGDBGames = sortByGameQuality(filteredIGDBGames, query);
+      console.log(`🎯 Post-quality sorting: ${filteredIGDBGames.length} games`);
       
       // Apply intelligent prioritization system (6-tier: Flagship → Famous → Sequels → Main → DLC → Community)
       if (filteredIGDBGames.length > 1) {

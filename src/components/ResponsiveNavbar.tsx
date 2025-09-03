@@ -9,6 +9,7 @@ import { igdbService } from '../services/igdbService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
+import { filterProtectedContent } from '../utils/contentProtectionFilter';
 
 // Using GameWithCalculatedFields from database types
 
@@ -109,10 +110,13 @@ export const ResponsiveNavbar: React.FC = () => {
 
       // Fetch fresh results using enhanced IGDB search with sequel detection
       const igdbResults = await igdbService.searchWithSequels(query, 8);
-      const results = igdbResults.map(game => igdbService.transformGame(game));
+      const transformedResults = igdbResults.map(game => igdbService.transformGame(game));
+      
+      // Apply content protection filtering to mobile search results
+      const filteredResults = filterProtectedContent(transformedResults);
 
-      if (results && Array.isArray(results)) {
-        const limitedResults = results.slice(0, 8);
+      if (filteredResults && Array.isArray(filteredResults)) {
+        const limitedResults = filteredResults.slice(0, 8);
         setSuggestions(limitedResults);
         setIsFromCache(false);
         setCacheStatus('fresh');
