@@ -436,6 +436,71 @@ export function calculateGamePriority(game: Game): PriorityResult {
     }
   }
 
+  // === GAME TYPE BOOSTS ===
+
+  // Apply genre-based boosts for franchise searches (from gameTypeScoring.ts)
+  if ((game as any)._gameTypeBoost) {
+    const gameTypeBoost = (game as any)._gameTypeBoost;
+    const gameTypeReason = (game as any)._gameTypeReason;
+    
+    if (gameTypeBoost > 0) {
+      boosts.push(`Genre relevance (+${gameTypeBoost}): ${gameTypeReason}`);
+      score += gameTypeBoost;
+    } else if (gameTypeBoost < 0) {
+      penalties.push(`Genre mismatch (${gameTypeBoost}): ${gameTypeReason}`);
+      score += gameTypeBoost; // gameTypeBoost is negative
+    }
+  }
+
+  // Apply Olympic/Party penalties for core franchise searches
+  if ((game as any)._olympicPartyPenalty) {
+    const penalty = (game as any)._olympicPartyPenalty;
+    penalties.push(`Olympic/Party content (${penalty})`);
+    score += penalty; // penalty is negative
+  }
+
+  // === PLATFORM & QUALITY BOOSTS ===
+
+  // Apply platform priority boosts (from platformPriority.ts)
+  if ((game as any)._platformBoost) {
+    const platformBoost = (game as any)._platformBoost;
+    const platformReason = (game as any)._platformReason;
+    boosts.push(`Platform priority (+${platformBoost}): ${platformReason}`);
+    score += platformBoost;
+  }
+
+  // Apply age-based significance boosts
+  if ((game as any)._ageBoost) {
+    const ageBoost = (game as any)._ageBoost;
+    const ageReason = (game as any)._ageReason;
+    boosts.push(`Age significance (+${ageBoost}): ${ageReason}`);
+    score += ageBoost;
+  }
+
+  // Apply rating quality boosts (from qualityMetrics.ts)
+  if ((game as any)._ratingBoost) {
+    const ratingBoost = (game as any)._ratingBoost;
+    const ratingReason = (game as any)._ratingReason;
+    boosts.push(`Rating quality (+${ratingBoost}): ${ratingReason}`);
+    score += ratingBoost;
+  }
+
+  // Apply popularity boosts
+  if ((game as any)._popularityBoost) {
+    const popularityBoost = (game as any)._popularityBoost;
+    const popularityReason = (game as any)._popularityReason;
+    boosts.push(`Popularity (+${popularityBoost}): ${popularityReason}`);
+    score += popularityBoost;
+  }
+
+  // Apply franchise significance boosts
+  if ((game as any)._significanceBoost) {
+    const significanceBoost = (game as any)._significanceBoost;
+    const significanceReason = (game as any)._significanceReason;
+    boosts.push(`Franchise significance (+${significanceBoost}): ${significanceReason}`);
+    score += significanceBoost;
+  }
+
   // === FINAL ADJUSTMENTS ===
 
   // Ensure minimum scores

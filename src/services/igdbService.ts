@@ -291,7 +291,19 @@ async function findSequelsAndSeries(baseQuery: string, primaryResults: IGDBGame[
     );
 
     // Apply content protection filtering to sequels FIRST
-    const transformedSequels = uniqueSequels.map(game => this.transformGameForFilter(game));
+    const transformedSequels = uniqueSequels.map(game => ({
+      id: game.id,
+      name: game.name,
+      allNames: [game.name, ...(game.alternative_names?.map(alt => alt.name) || [])].filter(Boolean),
+      developer: game.involved_companies?.[0]?.company?.name,
+      publisher: game.involved_companies?.[0]?.company?.name,
+      summary: game.summary,
+      description: game.summary,
+      category: game.category,
+      genres: game.genres?.map(g => g.name) || [],
+      franchise: game.franchise?.name,
+      collection: game.collection?.name,
+    }));
     const protectedSequels = filterProtectedContent(transformedSequels);
     const protectedSequelGames = protectedSequels.map(game => uniqueSequels.find(raw => raw.id === game.id)!);
     
@@ -558,7 +570,19 @@ class IGDBService {
       console.log('✅ Primary search results:', rawGames.length, 'games found');
       
       // Apply content protection filter
-      const transformedGames = rawGames.map(game => this.transformGameForFilter(game));
+      const transformedGames = rawGames.map(game => ({
+        id: game.id,
+        name: game.name,
+        allNames: [game.name, ...(game.alternative_names?.map(alt => alt.name) || [])].filter(Boolean),
+        developer: game.involved_companies?.[0]?.company?.name,
+        publisher: game.involved_companies?.[0]?.company?.name,
+        summary: game.summary,
+        description: game.summary,
+        category: game.category,
+        genres: game.genres?.map(g => g.name) || [],
+        franchise: game.franchise?.name,
+        collection: game.collection?.name,
+      }));
       
       // Debug: Log some raw games to see what we're getting from IGDB
       if (query.toLowerCase().includes('final fantasy')) {
@@ -667,7 +691,19 @@ class IGDBService {
         const allFlagshipResults = flagshipResults.flat();
         
         // Apply same filtering to flagship results
-        const transformedFlagshipGames = allFlagshipResults.map(game => this.transformGameForFilter(game));
+        const transformedFlagshipGames = allFlagshipResults.map(game => ({
+          id: game.id,
+          name: game.name,
+          allNames: [game.name, ...(game.alternative_names?.map(alt => alt.name) || [])].filter(Boolean),
+          developer: game.involved_companies?.[0]?.company?.name,
+          publisher: game.involved_companies?.[0]?.company?.name,
+          summary: game.summary,
+          description: game.summary,
+          category: game.category,
+          genres: game.genres?.map(g => g.name) || [],
+          franchise: game.franchise?.name,
+          collection: game.collection?.name,
+        }));
         const filteredFlagshipGames = filterProtectedContent(transformedFlagshipGames);
         let finalFlagshipGames = filteredFlagshipGames.map(game => allFlagshipResults.find(raw => raw.id === game.id)!);
         
@@ -700,6 +736,22 @@ class IGDBService {
       filteredIGDBGames = prioritizeOriginalVersions(filteredIGDBGames);
       filteredIGDBGames = sortByGameQuality(filteredIGDBGames, query);
       console.log(`🎯 Post-quality sorting: ${filteredIGDBGames.length} games`);
+      
+      // Apply game type scoring for franchise relevance
+      console.log(`🎮 Applying game type scoring for franchise relevance...`);
+      const { applyGameTypeBoost, applyOlympicPartyPenalty } = await import('../utils/gameTypeScoring');
+      filteredIGDBGames = applyGameTypeBoost(filteredIGDBGames, query);
+      filteredIGDBGames = applyOlympicPartyPenalty(filteredIGDBGames, query);
+      
+      // Apply platform priority and age scoring
+      console.log(`🎮 Applying platform priority and age scoring...`);
+      const { applyAdvancedPlatformBoosts } = await import('../utils/platformPriority');
+      filteredIGDBGames = applyAdvancedPlatformBoosts(filteredIGDBGames, query);
+      
+      // Apply quality metrics (rating, popularity, significance)
+      console.log(`⭐ Applying quality metrics scoring...`);
+      const { applyQualityMetrics } = await import('../utils/qualityMetrics');
+      filteredIGDBGames = applyQualityMetrics(filteredIGDBGames, query);
       
       // Apply intelligent prioritization system (6-tier: Flagship → Famous → Sequels → Main → DLC → Community)
       if (filteredIGDBGames.length > 1) {
@@ -776,8 +828,24 @@ class IGDBService {
       console.log(`🔧 Applying fuzzy ranking to combined results...`);
       const fuzzyRankedResults = rankByFuzzyMatch(uniqueResults, query);
       
+      // Apply game type scoring for franchise relevance in enhanced search
+      console.log(`🎮 Applying game type scoring for franchise relevance...`);
+      const { applyGameTypeBoost, applyOlympicPartyPenalty } = await import('../utils/gameTypeScoring');
+      let typeScoreResults = applyGameTypeBoost(fuzzyRankedResults, query);
+      typeScoreResults = applyOlympicPartyPenalty(typeScoreResults, query);
+      
+      // Apply platform priority and age scoring in enhanced search
+      console.log(`🎮 Applying platform priority and age scoring...`);
+      const { applyAdvancedPlatformBoosts } = await import('../utils/platformPriority');
+      typeScoreResults = applyAdvancedPlatformBoosts(typeScoreResults, query);
+      
+      // Apply quality metrics (rating, popularity, significance) in enhanced search
+      console.log(`⭐ Applying quality metrics scoring...`);
+      const { applyQualityMetrics } = await import('../utils/qualityMetrics');
+      typeScoreResults = applyQualityMetrics(typeScoreResults, query);
+      
       // Apply final prioritization and limit  
-      const prioritizedResults = sortGamesByPriority(fuzzyRankedResults);
+      const prioritizedResults = sortGamesByPriority(typeScoreResults);
       const finalResults = prioritizedResults.slice(0, limit);
       
       console.log(`🎮 Enhanced search complete: ${finalResults.length} results (${primaryResults.length} primary + ${sequelResults.length} sequels)`);
@@ -886,7 +954,19 @@ class IGDBService {
       console.log('✅ Fetched related games:', relatedGames.length);
       
       // Apply content protection filter to related games
-      const transformedRelated = relatedGames.map((game: IGDBGame) => this.transformGameForFilter(game));
+      const transformedRelated = relatedGames.map((game: IGDBGame) => ({
+        id: game.id,
+        name: game.name,
+        allNames: [game.name, ...(game.alternative_names?.map(alt => alt.name) || [])].filter(Boolean),
+        developer: game.involved_companies?.[0]?.company?.name,
+        publisher: game.involved_companies?.[0]?.company?.name,
+        summary: game.summary,
+        description: game.summary,
+        category: game.category,
+        genres: game.genres?.map(g => g.name) || [],
+        franchise: game.franchise?.name,
+        collection: game.collection?.name,
+      }));
       const filteredRelated = filterProtectedContent(transformedRelated);
       
       // Convert back to IGDB format

@@ -58,11 +58,25 @@ export const FLAGSHIP_GAMES: FlagshipDatabase = {
         significance: 'technical'
       },
       {
+        names: ['Super Mario Sunshine', 'Mario Sunshine'],
+        reason: 'GameCube flagship, FLUDD mechanics, tropical setting, challenging platforming',
+        releaseYear: 2002,
+        platforms: ['GameCube'],
+        significance: 'innovation'
+      },
+      {
         names: ['Super Mario Galaxy', 'Mario Galaxy'],
         reason: 'Gravity mechanics innovation, Wii motion controls, critical masterpiece',
         releaseYear: 2007,
         platforms: ['Wii'],
         significance: 'innovation'
+      },
+      {
+        names: ['Super Mario Galaxy 2', 'Mario Galaxy 2'],
+        reason: 'Galaxy evolution, Yoshi return, level design perfection',
+        releaseYear: 2010,
+        platforms: ['Wii'],
+        significance: 'peak'
       },
       {
         names: ['Super Mario Odyssey', 'Mario Odyssey'],
@@ -152,6 +166,13 @@ export const FLAGSHIP_GAMES: FlagshipDatabase = {
         releaseYear: 1991,
         platforms: ['SNES'],
         significance: 'peak'
+      },
+      {
+        names: ['The Legend of Zelda: Link\'s Awakening', 'Link\'s Awakening', 'LA'],
+        reason: 'Game Boy masterpiece, portable Zelda innovation, unique surreal story',
+        releaseYear: 1993,
+        platforms: ['Game Boy'],
+        significance: 'innovation'
       },
       {
         names: ['The Legend of Zelda: Ocarina of Time', 'Ocarina of Time', 'OoT'],
