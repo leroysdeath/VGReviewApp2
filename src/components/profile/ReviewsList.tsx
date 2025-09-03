@@ -246,7 +246,7 @@ export const ReviewsList: React.FC<ReviewsListProps> = ({
             {/* Action buttons */}
             <div className="flex justify-end mt-4 pt-4 border-t border-gray-700">
               <Link
-                to={`/review/${userId}/${review.game_id}`}
+                to={`/review/${userId}/${review.game?.igdb_id || review.game_id}`}
                 className="text-purple-400 hover:text-purple-300 text-sm"
               >
                 View Full Review →
