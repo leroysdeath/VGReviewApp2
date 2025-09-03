@@ -1431,7 +1431,7 @@ export const GamePage: React.FC = () => {
               {reviewsWithText.slice(0, 5).map(review => (
                 <Link 
                   key={review.id} 
-                  to={`/review/${review.userId}/${review.gameId}`}
+                  to={`/review/${review.userId}/${review.igdbGameId || review.gameId}`}
                   className="bg-gray-800 rounded-lg p-4 block hover:bg-gray-700 transition-colors"
                 >
                   <div className="flex items-center gap-3 mb-2">
