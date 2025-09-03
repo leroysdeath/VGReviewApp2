@@ -626,7 +626,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDelete}
-        message="Are you sure you want to delete this comment? This action cannot be undone."
+        message="Are you sure you want to delete this comment?"
         title="Delete Comment"
         isDeleting={isDeleting}
       />
