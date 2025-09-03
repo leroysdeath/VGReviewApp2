@@ -783,6 +783,108 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
           </p>
         </div>
       ) : (
+        // For Top 5 on mobile portrait, use special 1-4 layout
+        isTop5 && isPhonePortrait ? (
+          <div className="flex flex-col items-center gap-3 mb-4">
+            {/* Top row - 1 game centered */}
+            <div className="flex justify-center gap-3">
+              {[1].map((position) => {
+                const game = topGames[position - 1];
+                if (game) {
+                  return (
+                    <Link
+                      key={game.id}
+                      to={getGameUrl(game)}
+                      className="group relative hover:scale-105 transition-transform w-[180px]"
+                    >
+                      <div className="relative aspect-[3/4]">
+                        <img
+                          src={game.cover_url}
+                          alt={game.name}
+                          className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => {
+                            e.currentTarget.src = '/default-cover.png';
+                          }}
+                        />
+                        <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                          {position}
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 bg-gray-900 bg-opacity-75 px-2 py-1 rounded-b-lg">
+                          <div className="text-center">
+                            <span className="text-white text-sm font-bold">
+                              {game.rating === 10 ? '10' : game.rating.toFixed(1)}/10
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                }
+                return (
+                  <div 
+                    key={`empty-${position}`}
+                    className="relative aspect-[3/4] bg-gray-800 rounded-lg border-2 border-dashed border-gray-700 w-[180px]"
+                  >
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-gray-400 text-2xl font-normal">
+                        #{position}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Bottom row - 4 games */}
+            <div className="flex justify-center gap-3">
+              {[2, 3, 4, 5].map((position) => {
+                const game = topGames[position - 1];
+                if (game) {
+                  return (
+                    <Link
+                      key={game.id}
+                      to={getGameUrl(game)}
+                      className="group relative hover:scale-105 transition-transform w-[90px]"
+                    >
+                      <div className="relative aspect-[3/4]">
+                        <img
+                          src={game.cover_url}
+                          alt={game.name}
+                          className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => {
+                            e.currentTarget.src = '/default-cover.png';
+                          }}
+                        />
+                        <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs">
+                          {position}
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 bg-gray-900 bg-opacity-75 px-2 py-1 rounded-b-lg">
+                          <div className="text-center">
+                            <span className="text-white text-xs font-bold">
+                              {game.rating === 10 ? '10' : game.rating.toFixed(1)}/10
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                }
+                return (
+                  <div 
+                    key={`empty-${position}`}
+                    className="relative aspect-[3/4] bg-gray-800 rounded-lg border-2 border-dashed border-gray-700 w-[90px]"
+                  >
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-gray-400 text-xl font-normal">
+                        #{position}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
         <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
           {Array.from({ length: limit }).map((_, index) => {
             const game = topGames[index];
@@ -835,6 +937,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
             );
           })}
         </div>
+        )
       )}
       
       {/* Show Rate More Games button when there are less than 10 games */}
