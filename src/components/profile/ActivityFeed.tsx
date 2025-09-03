@@ -358,7 +358,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
       case 'review':
         return <ScrollText className="h-5 w-5 text-purple-400" />;
       case 'rating':
-        return <Zap className="h-5 w-5 text-yellow-400" />;
+        return null;
       case 'wishlist':
         return <Gift className="h-5 w-5 text-red-400" />;
       case 'collection':
@@ -613,9 +613,11 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
             <div className="flex-1 min-w-0">
               {/* Activity header */}
               <div className="flex items-start gap-2 mb-2">
-                <div className="flex-shrink-0 w-5 h-5">
-                  {getActivityIcon(activity.type)}
-                </div>
+                {getActivityIcon(activity.type) && (
+                  <div className="flex-shrink-0 w-5 h-5">
+                    {getActivityIcon(activity.type)}
+                  </div>
+                )}
                 <span className="text-gray-300 text-sm">
                   {getActivityDescription(activity)}
                 </span>
