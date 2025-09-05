@@ -93,10 +93,30 @@ const SERIES_PATTERNS = {
       baseName: 'The Legend of Zelda',
       identifier: 'zelda',
       generateSeries: (match?: RegExpMatchArray) => [
-        'legend of zelda', 'zelda adventure of link', 'zelda link to the past',
-        'zelda links awakening', 'zelda ocarina of time', 'zelda majoras mask',
-        'zelda wind waker', 'zelda twilight princess', 'zelda skyward sword',
-        'zelda breath of the wild', 'zelda tears of the kingdom'
+        // Full titles with "The Legend of Zelda" prefix for accurate matching
+        'The Legend of Zelda', 
+        'The Legend of Zelda: A Link to the Past',
+        'The Legend of Zelda: Link\'s Awakening',
+        'The Legend of Zelda: Ocarina of Time',
+        'The Legend of Zelda: Majora\'s Mask',
+        'The Legend of Zelda: The Wind Waker',
+        'The Legend of Zelda: Twilight Princess',
+        'The Legend of Zelda: Skyward Sword',
+        'The Legend of Zelda: Breath of the Wild',
+        'The Legend of Zelda: Tears of the Kingdom',
+        'The Legend of Zelda: A Link Between Worlds',
+        'The Legend of Zelda: Tri Force Heroes',
+        'The Legend of Zelda: Four Swords',
+        'The Legend of Zelda: The Minish Cap',
+        'The Legend of Zelda: Phantom Hourglass',
+        'The Legend of Zelda: Spirit Tracks',
+        // Shorter variations for broader matching
+        'Zelda II: The Adventure of Link',
+        'Ocarina of Time',
+        'Majora\'s Mask',
+        'Wind Waker',
+        'Twilight Princess',
+        'Breath of the Wild'
       ]
     },
     {
@@ -104,10 +124,18 @@ const SERIES_PATTERNS = {
       baseName: 'Super Mario',
       identifier: 'mario',
       generateSeries: (match?: RegExpMatchArray) => [
-        'super mario bros', 'super mario bros 2', 'super mario bros 3',
-        'super mario world', 'super mario 64', 'super mario sunshine',
-        'super mario galaxy', 'super mario galaxy 2', 'super mario odyssey',
-        'super mario 3d world', 'super mario wonder'
+        // Focus on mainline flagship Mario titles only
+        'Super Mario Bros.', 'Super Mario Bros. 2', 'Super Mario Bros. 3',
+        'Super Mario World', 'Super Mario World 2: Yoshi\'s Island',
+        'Super Mario 64', 'Super Mario Sunshine',
+        'Super Mario Galaxy', 'Super Mario Galaxy 2', 
+        'Super Mario 3D Land', 'Super Mario 3D World',
+        'Super Mario Odyssey', 'Super Mario Wonder',
+        'New Super Mario Bros.', 'New Super Mario Bros. Wii',
+        'New Super Mario Bros. 2', 'New Super Mario Bros. U',
+        // Avoid spin-offs by NOT including these terms:
+        // 'Mario Kart', 'Mario Party', 'Mario Tennis', 'Mario Golf',
+        // 'Paper Mario', 'Mario & Luigi', 'Dr. Mario', 'Mario Sports'
       ]
     },
     {
@@ -123,6 +151,77 @@ const SERIES_PATTERNS = {
         'call of duty black ops 3', 'call of duty infinite warfare',
         'call of duty wwii', 'call of duty black ops 4', 'call of duty modern warfare',
         'call of duty black ops cold war', 'call of duty vanguard', 'call of duty modern warfare 2'
+      ]
+    },
+    {
+      pattern: /^(assassins?\s*creed)(?:\s*:?\s*(.+))?$/i,
+      baseName: 'Assassin\'s Creed',
+      identifier: 'assassins creed',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'assassins creed', 'assassins creed ii', 'assassins creed brotherhood',
+        'assassins creed revelations', 'assassins creed iii', 'assassins creed iv black flag',
+        'assassins creed unity', 'assassins creed syndicate', 'assassins creed origins',
+        'assassins creed odyssey', 'assassins creed valhalla', 'assassins creed mirage'
+      ]
+    },
+    {
+      pattern: /^(prince of persia)(?:\s*:?\s*(.+))?$/i,
+      baseName: 'Prince of Persia',
+      identifier: 'prince of persia',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'prince of persia', 'prince of persia 2', 'prince of persia sands of time',
+        'prince of persia warrior within', 'prince of persia two thrones',
+        'prince of persia 2008', 'prince of persia forgotten sands'
+      ]
+    },
+    {
+      pattern: /^(tom clancys?)(?:\s+(.+))?$/i,
+      baseName: 'Tom Clancy\'s',
+      identifier: 'tom clancy',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'tom clancys rainbow six', 'tom clancys splinter cell', 'tom clancys ghost recon',
+        'tom clancys the division', 'tom clancys endwar', 'tom clancys hawx',
+        'tom clancys rainbow six siege', 'tom clancys the division 2'
+      ]
+    },
+    {
+      pattern: /^(kingdom hearts)(?:\s*(.+))?$/i,
+      baseName: 'Kingdom Hearts',
+      identifier: 'kingdom hearts',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'kingdom hearts', 'kingdom hearts chain of memories', 'kingdom hearts ii',
+        'kingdom hearts birth by sleep', 'kingdom hearts dream drop distance',
+        'kingdom hearts iii', 'kingdom hearts union x'
+      ]
+    },
+    {
+      pattern: /^(elder scrolls)(?:\s*:?\s*(.+))?$/i,
+      baseName: 'The Elder Scrolls',
+      identifier: 'elder scrolls',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'elder scrolls arena', 'elder scrolls daggerfall', 'elder scrolls morrowind',
+        'elder scrolls oblivion', 'elder scrolls skyrim', 'elder scrolls online',
+        'elder scrolls blades'
+      ]
+    },
+    {
+      pattern: /^(fallout)\s*(\d+|new vegas|tactics)?$/i,
+      baseName: 'Fallout',
+      identifier: 'fallout',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'fallout', 'fallout 2', 'fallout tactics', 'fallout 3',
+        'fallout new vegas', 'fallout 4', 'fallout 76', 'fallout shelter'
+      ]
+    },
+    {
+      pattern: /^(monster hunter)(?:\s*(.+))?$/i,
+      baseName: 'Monster Hunter',
+      identifier: 'monster hunter',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'monster hunter', 'monster hunter freedom', 'monster hunter freedom 2',
+        'monster hunter freedom unite', 'monster hunter tri', 'monster hunter 3',
+        'monster hunter 4', 'monster hunter 4 ultimate', 'monster hunter generations',
+        'monster hunter world', 'monster hunter rise'
       ]
     }
   ],
@@ -146,6 +245,81 @@ const SERIES_PATTERNS = {
       identifier: 'tekken',
       generateSeries: (match?: RegExpMatchArray) => [
         'tekken', 'tekken 2', 'tekken 3', 'tekken 4', 'tekken 5', 'tekken 6', 'tekken 7', 'tekken 8'
+      ]
+    },
+    {
+      pattern: /^(resident evil)\s*(\d+|village|biohazard)?$/i,
+      baseName: 'Resident Evil',
+      identifier: 'resident evil',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'resident evil', 'resident evil 2', 'resident evil 3', 'resident evil 4',
+        'resident evil 5', 'resident evil 6', 'resident evil 7', 'resident evil village',
+        'resident evil code veronica', 'resident evil revelations'
+      ]
+    },
+    {
+      pattern: /^(metal gear solid)\s*([ivx]+|\d+)?$/i,
+      baseName: 'Metal Gear Solid',
+      identifier: 'metal gear solid',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'metal gear solid', 'metal gear solid 2', 'metal gear solid 3',
+        'metal gear solid 4', 'metal gear solid 5', 'metal gear solid v'
+      ]
+    },
+    {
+      pattern: /^(silent hill)\s*(\d+)?$/i,
+      baseName: 'Silent Hill',
+      identifier: 'silent hill',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'silent hill', 'silent hill 2', 'silent hill 3', 'silent hill 4',
+        'silent hill origins', 'silent hill homecoming', 'silent hill downpour'
+      ]
+    },
+    {
+      pattern: /^(battlefield)\s*(\d+|bad company|vietnam)?$/i,
+      baseName: 'Battlefield',
+      identifier: 'battlefield',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'battlefield 1942', 'battlefield vietnam', 'battlefield 2',
+        'battlefield bad company', 'battlefield bad company 2', 'battlefield 3',
+        'battlefield 4', 'battlefield 1', 'battlefield v', 'battlefield 2042'
+      ]
+    },
+    {
+      pattern: /^(gran turismo)\s*(\d+|sport)?$/i,
+      baseName: 'Gran Turismo',
+      identifier: 'gran turismo',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'gran turismo', 'gran turismo 2', 'gran turismo 3', 'gran turismo 4',
+        'gran turismo 5', 'gran turismo 6', 'gran turismo sport', 'gran turismo 7'
+      ]
+    },
+    {
+      pattern: /^(forza)\s*(motorsport|horizon)?\s*(\d+)?$/i,
+      baseName: 'Forza',
+      identifier: 'forza',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'forza motorsport', 'forza motorsport 2', 'forza motorsport 3', 'forza motorsport 4',
+        'forza horizon', 'forza horizon 2', 'forza horizon 3', 'forza horizon 4', 'forza horizon 5'
+      ]
+    },
+    {
+      pattern: /^(medal of honor)(?:\s*:?\s*(.+))?$/i,
+      baseName: 'Medal of Honor',
+      identifier: 'medal of honor',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'medal of honor', 'medal of honor underground', 'medal of honor allied assault',
+        'medal of honor pacific assault', 'medal of honor european assault',
+        'medal of honor airborne', 'medal of honor 2010', 'medal of honor warfighter'
+      ]
+    },
+    {
+      pattern: /^(hitman)\s*(\d+|codename|contracts|blood money|absolution)?$/i,
+      baseName: 'Hitman',
+      identifier: 'hitman',
+      generateSeries: (match?: RegExpMatchArray) => [
+        'hitman codename 47', 'hitman 2 silent assassin', 'hitman contracts',
+        'hitman blood money', 'hitman absolution', 'hitman', 'hitman 2', 'hitman 3'
       ]
     }
   ]
@@ -432,5 +606,88 @@ export function applySisterGameBoost(games: any[], originalQuery: string, origin
     }
 
     return game;
+  });
+}
+
+/**
+ * Detect if a game is a spin-off or non-flagship title
+ */
+function isSpinOff(gameName: string, franchiseBaseName: string): boolean {
+  const lowerName = gameName.toLowerCase();
+  const lowerBase = franchiseBaseName.toLowerCase();
+  
+  // Mario spin-off patterns
+  if (lowerBase.includes('mario')) {
+    const spinOffPatterns = [
+      'kart', 'party', 'tennis', 'golf', 'sports', 'strikers', 'baseball',
+      'basketball', 'olympic', 'paper mario', 'mario & luigi', 'dr. mario',
+      'mario vs', 'mario is missing', 'mario teaches', 'hotel mario'
+    ];
+    return spinOffPatterns.some(pattern => lowerName.includes(pattern));
+  }
+  
+  // Zelda spin-off patterns
+  if (lowerBase.includes('zelda')) {
+    const spinOffPatterns = [
+      'link\'s crossbow', 'tingle', 'hyrule warriors', 'cadence of hyrule',
+      'zelda game & watch', 'bs zelda'
+    ];
+    return spinOffPatterns.some(pattern => lowerName.includes(pattern));
+  }
+  
+  // Pokemon spin-off patterns
+  if (lowerBase.includes('pokemon') || lowerBase.includes('pokémon')) {
+    const spinOffPatterns = [
+      'mystery dungeon', 'ranger', 'rumble', 'snap', 'stadium', 'colosseum',
+      'xd', 'pinball', 'puzzle', 'trozei', 'dash', 'channel', 'go', 'unite',
+      'cafe', 'quest', 'masters', 'duel', 'magikarp', 'sleep'
+    ];
+    return spinOffPatterns.some(pattern => lowerName.includes(pattern));
+  }
+  
+  // Generic spin-off indicators
+  const genericSpinOffPatterns = [
+    'mobile', 'pinball', 'puzzle', 'racing', 'party', 'sports', 
+    'tactics', 'warriors', 'all-stars', 'remix', 'collection'
+  ];
+  
+  return genericSpinOffPatterns.some(pattern => lowerName.includes(pattern));
+}
+
+/**
+ * Apply flagship title prioritization
+ */
+export function prioritizeFlagshipTitles(games: any[], query: string): any[] {
+  const seriesInfo = detectGameSeries(query);
+  if (!seriesInfo) return games;
+  
+  const baseName = seriesInfo.seriesInfo.baseName;
+  
+  return games.map(game => {
+    // Check if it's a spin-off
+    if (isSpinOff(game.name, baseName)) {
+      // Reduce boost for spin-offs
+      const currentBoost = game._sisterGameBoost || 0;
+      return {
+        ...game,
+        _sisterGameBoost: Math.max(0, currentBoost - 100),
+        _flagshipStatus: 'spin-off'
+      };
+    }
+    
+    // Check if it's a flagship title (already has high sister game boost)
+    if (game._sisterGameRelationship === 'exact' || 
+        game._sisterGameRelationship === 'sequel' ||
+        game._sisterGameRelationship === 'prequel') {
+      return {
+        ...game,
+        _flagshipStatus: 'flagship'
+      };
+    }
+    
+    return {
+      ...game,
+      _flagshipStatus: 'unknown'
+    };
   });
 }

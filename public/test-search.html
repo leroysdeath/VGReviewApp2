@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Test</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            background: #1a1a1a; 
+            color: #00ff00; 
+            padding: 20px; 
+        }
+        .search-box {
+            background: #2a2a2a; 
+            padding: 20px; 
+            margin: 20px 0;
+            border: 1px solid #00ff00;
+        }
+        input {
+            width: 300px;
+            padding: 10px;
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            font-family: monospace;
+        }
+        button {
+            background: #00aa00;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        .results {
+            background: #2a2a2a;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid #444;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Search Test</h1>
+    
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Enter search term" value="zelda">
+        <button onclick="testSearch()">Search</button>
+        <button onclick="testSearch('zelda')">Test Zelda</button>
+        <button onclick="testSearch('mario')">Test Mario</button>
+    </div>
+    
+    <div id="results" class="results">Ready to test...</div>
+    
+    <script type="module">
+        // Test direct API call
+        window.testSearch = async function(override) {
+            const query = override || document.getElementById('searchInput').value;
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.textContent = `Searching for "${query}"...\n\n`;
+            
+            try {
+                // Direct call to the search endpoint
+                const response = await fetch(`/api/games/search?q=${encodeURIComponent(query)}`);
+                
+                if (!response.ok) {
+                    resultsDiv.textContent += `HTTP Error: ${response.status}\n`;
+                    return;
+                }
+                
+                const data = await response.json();
+                resultsDiv.textContent += `Found ${data.length} results\n\n`;
+                
+                // Show first 10 results
+                data.slice(0, 10).forEach((game, i) => {
+                    resultsDiv.textContent += `${i+1}. ${game.name}\n`;
+                    if (game._sisterGameBoost) {
+                        resultsDiv.textContent += `   Boost: ${game._sisterGameBoost}\n`;
+                    }
+                    if (game._flagshipStatus) {
+                        resultsDiv.textContent += `   Status: ${game._flagshipStatus}\n`;
+                    }
+                });
+                
+            } catch (error) {
+                resultsDiv.textContent += `Error: ${error.message}\n`;
+                console.error('Search error:', error);
+            }
+        };
+        
+        // Also log to console
+        console.log('Test page ready. Use testSearch() to test.');
+    </script>
+</body>
+</html>

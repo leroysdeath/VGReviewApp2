@@ -756,11 +756,33 @@ class IGDBService {
       // Apply intelligent prioritization system (6-tier: Flagship → Famous → Sequels → Main → DLC → Community)
       if (filteredIGDBGames.length > 1) {
         console.log(`🏆 Applying 6-tier prioritization system...`);
-        filteredIGDBGames = sortGamesByPriority(filteredIGDBGames);
+        
+        // Convert IGDBGame to format expected by prioritization system
+        const gamesForPrioritization = filteredIGDBGames.map(game => ({
+          ...game,
+          genres: game.genres?.map(g => g.name) || [],
+          developer: game.involved_companies?.find(c => c.company)?.company?.name,
+          publisher: game.involved_companies?.find(c => c.company)?.company?.name,
+          igdb_rating: game.rating
+        }));
+        
+        const sortedGames = sortGamesByPriority(gamesForPrioritization as any);
+        filteredIGDBGames = sortedGames.map(sortedGame => {
+          // Find the original IGDBGame and preserve its structure
+          const originalGame = filteredIGDBGames.find(og => og.id === sortedGame.id);
+          return originalGame ? { ...originalGame, ...(sortedGame as any) } : sortedGame;
+        }) as any;
         
         // Log priority analysis for first few games
         filteredIGDBGames.slice(0, 5).forEach((game, index) => {
-          const priority = calculateGamePriority(game);
+          const gameForPriority = {
+            ...game,
+            genres: game.genres?.map(g => g.name) || [],
+            developer: game.involved_companies?.find(c => c.company)?.company?.name,
+            publisher: game.involved_companies?.find(c => c.company)?.company?.name,
+            igdb_rating: game.rating
+          };
+          const priority = calculateGamePriority(gameForPriority as any);
           const fuzzyScore = (game as any)._fuzzyScore;
           const iconicBoost = (game as any)._iconicBoost;
           const isFlagship = (game as any)._isFlagship;
@@ -844,9 +866,21 @@ class IGDBService {
       const { applyQualityMetrics } = await import('../utils/qualityMetrics');
       typeScoreResults = applyQualityMetrics(typeScoreResults, query);
       
-      // Apply final prioritization and limit  
-      const prioritizedResults = sortGamesByPriority(typeScoreResults);
-      const finalResults = prioritizedResults.slice(0, limit);
+      // Apply final prioritization and limit
+      const gamesForFinalPrioritization = typeScoreResults.map(game => ({
+        ...game,
+        genres: game.genres?.map(g => g.name) || [],
+        developer: game.involved_companies?.find(c => c.company)?.company?.name,
+        publisher: game.involved_companies?.find(c => c.company)?.company?.name,
+        igdb_rating: game.rating
+      }));
+      
+      const prioritizedGames = sortGamesByPriority(gamesForFinalPrioritization as any);
+      const finalResults = prioritizedGames.slice(0, limit).map(prioritizedGame => {
+        // Find the original IGDBGame and preserve its structure
+        const originalGame = typeScoreResults.find(og => og.id === prioritizedGame.id);
+        return originalGame || prioritizedGame;
+      }) as IGDBGame[];
       
       console.log(`🎮 Enhanced search complete: ${finalResults.length} results (${primaryResults.length} primary + ${sequelResults.length} sequels)`);
       

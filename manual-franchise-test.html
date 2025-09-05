@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Franchise Coverage Analysis</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            background: #1a1a1a; 
+            color: #00ff00; 
+            padding: 20px; 
+            line-height: 1.4;
+        }
+        .franchise { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #333; 
+            background: #2a2a2a; 
+        }
+        .high-coverage { border-color: #00ff00; }
+        .medium-coverage { border-color: #ffaa00; }
+        .low-coverage { border-color: #ff0000; }
+        .found { color: #00ff00; }
+        .missing { color: #ff4444; }
+        .stats { 
+            background: #333; 
+            padding: 10px; 
+            margin: 10px 0; 
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        button:hover { background: #0088ff; }
+        .progress { background: #333; padding: 5px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>🎮 Franchise Coverage Analysis</h1>
+    <div class="stats">
+        <p>This will test your sister game detection and franchise coverage using your actual search system.</p>
+        <p>⚠️ Note: This uses real API calls and may take several minutes</p>
+    </div>
+    
+    <button onclick="runFullAnalysis()">🚀 Run Full Analysis</button>
+    <button onclick="runSampleAnalysis()">📊 Run Sample Analysis (5 franchises)</button>
+    <button onclick="testSisterGameDetection()">🔧 Test Sister Game Detection Only</button>
+    
+    <div id="progress" class="progress" style="display: none;">
+        <div id="progress-text">Starting analysis...</div>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script type="module">
+        // Franchise data with popular games
+        const FRANCHISE_DATA = {
+            'Pokemon': ['Pokémon Red', 'Pokémon Blue', 'Pokémon Gold', 'Pokémon Silver', 'Pokémon Ruby', 'Pokémon Sapphire'],
+            'Final Fantasy': ['Final Fantasy VII', 'Final Fantasy X', 'Final Fantasy VI', 'Final Fantasy IV', 'Final Fantasy IX'],
+            'Mario': ['Super Mario Bros.', 'Super Mario 64', 'Super Mario World', 'Super Mario Galaxy', 'Super Mario Odyssey'],
+            'Zelda': ['The Legend of Zelda: Ocarina of Time', 'The Legend of Zelda: Breath of the Wild', 'The Legend of Zelda: A Link to the Past'],
+            'Call of Duty': ['Call of Duty 4: Modern Warfare', 'Call of Duty: Modern Warfare 2', 'Call of Duty: Black Ops'],
+            'Resident Evil': ['Resident Evil 2', 'Resident Evil 4', 'Resident Evil 7', 'Resident Evil', 'Resident Evil 3'],
+            'Metal Gear Solid': ['Metal Gear Solid', 'Metal Gear Solid 2', 'Metal Gear Solid 3', 'Metal Gear Solid V'],
+            'Assassin\'s Creed': ['Assassin\'s Creed II', 'Assassin\'s Creed: Brotherhood', 'Assassin\'s Creed IV: Black Flag'],
+            'Grand Theft Auto': ['Grand Theft Auto: Vice City', 'Grand Theft Auto: San Andreas', 'Grand Theft Auto V'],
+            'Street Fighter': ['Street Fighter II', 'Street Fighter Alpha 3', 'Street Fighter IV', 'Street Fighter V']
+        };
+        
+        let analysisResults = [];
+        
+        // Make functions global
+        window.runFullAnalysis = runFullAnalysis;
+        window.runSampleAnalysis = runSampleAnalysis;
+        window.testSisterGameDetection = testSisterGameDetection;
+        
+        function showProgress(text) {
+            document.getElementById('progress').style.display = 'block';
+            document.getElementById('progress-text').textContent = text;
+        }
+        
+        function hideProgress() {
+            document.getElementById('progress').style.display = 'none';
+        }
+        
+        async function testSisterGameDetection() {
+            showProgress('Testing sister game detection...');
+            const results = document.getElementById('results');
+            results.innerHTML = '<h2>🔧 Sister Game Detection Test</h2>';
+            
+            // Test a few franchises
+            const testFranchises = ['Pokemon Red', 'Final Fantasy VII', 'Super Mario Bros', 'Call of Duty'];
+            
+            for (const query of testFranchises) {
+                try {
+                    // This should work since it's browser environment
+                    const { detectGameSeries, generateSisterGameQueries } = await import('./src/utils/sisterGameDetection.js');
+                    
+                    const detection = detectGameSeries(query);
+                    const queries = generateSisterGameQueries(query);
+                    
+                    results.innerHTML += `
+                        <div class="franchise">
+                            <h3>${query}</h3>
+                            <p><strong>Detection:</strong> ${detection ? `✅ ${detection.seriesInfo.type} series (${detection.seriesInfo.baseName})` : '❌ Not detected'}</p>
+                            <p><strong>Generated Queries:</strong> ${queries.length} related games</p>
+                            <div style="font-size: 0.9em; color: #aaa;">
+                                ${queries.slice(0, 8).join(', ')}${queries.length > 8 ? '...' : ''}
+                            </div>
+                        </div>
+                    `;
+                } catch (error) {
+                    results.innerHTML += `<div class="franchise"><h3>${query}</h3><p style="color: #ff4444;">❌ Error: ${error.message}</p></div>`;
+                }
+            }
+            
+            hideProgress();
+        }
+        
+        async function runSampleAnalysis() {
+            const sampleFranchises = ['Pokemon', 'Final Fantasy', 'Mario', 'Zelda', 'Call of Duty'];
+            await runAnalysis(sampleFranchises);
+        }
+        
+        async function runFullAnalysis() {
+            await runAnalysis(Object.keys(FRANCHISE_DATA));
+        }
+        
+        async function runAnalysis(franchisesToTest) {
+            showProgress('Initializing analysis...');
+            const results = document.getElementById('results');
+            results.innerHTML = '<h2>📊 Franchise Coverage Analysis Results</h2>';
+            
+            analysisResults = [];
+            let totalGames = 0;
+            let totalFound = 0;
+            
+            for (let i = 0; i < franchisesToTest.length; i++) {
+                const franchise = franchisesToTest[i];
+                const popularGames = FRANCHISE_DATA[franchise];
+                
+                showProgress(`Analyzing ${franchise} (${i + 1}/${franchisesToTest.length})...`);
+                
+                try {
+                    // Import gameDataService dynamically
+                    const { gameDataService } = await import('./src/services/gameDataService.js');
+                    
+                    // Search for the franchise
+                    const searchResults = await gameDataService.searchGames(franchise);
+                    
+                    // Check coverage of popular games
+                    const foundGames = [];
+                    const missingGames = [];
+                    
+                    for (const popularGame of popularGames) {
+                        const found = searchResults.some(result => {
+                            const resultName = result.name.toLowerCase();
+                            const popularName = popularGame.toLowerCase();
+                            return resultName.includes(popularName.split(' ').slice(-2).join(' ')) || 
+                                   popularName.includes(resultName) ||
+                                   fuzzyMatch(resultName, popularName);
+                        });
+                        
+                        if (found) {
+                            foundGames.push(popularGame);
+                        } else {
+                            missingGames.push(popularGame);
+                        }
+                    }
+                    
+                    const coverage = (foundGames.length / popularGames.length) * 100;
+                    totalGames += popularGames.length;
+                    totalFound += foundGames.length;
+                    
+                    const result = {
+                        franchise,
+                        coverage,
+                        foundGames,
+                        missingGames,
+                        totalSearchResults: searchResults.length
+                    };
+                    
+                    analysisResults.push(result);
+                    
+                    // Add to display
+                    const coverageClass = coverage >= 80 ? 'high-coverage' : coverage >= 50 ? 'medium-coverage' : 'low-coverage';
+                    const coverageEmoji = coverage >= 80 ? '🟢' : coverage >= 50 ? '🟡' : '🔴';
+                    
+                    results.innerHTML += `
+                        <div class="franchise ${coverageClass}">
+                            <h3>${coverageEmoji} ${franchise} - ${coverage.toFixed(1)}% Coverage</h3>
+                            <p><strong>Search Results:</strong> ${searchResults.length} total games found</p>
+                            <p><strong>Popular Games Coverage:</strong> ${foundGames.length}/${popularGames.length}</p>
+                            <p class="found"><strong>Found:</strong> ${foundGames.join(', ') || 'None'}</p>
+                            <p class="missing"><strong>Missing:</strong> ${missingGames.join(', ') || 'None'}</p>
+                        </div>
+                    `;
+                    
+                    // Small delay to avoid overwhelming the API
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                } catch (error) {
+                    results.innerHTML += `
+                        <div class="franchise low-coverage">
+                            <h3>🔴 ${franchise} - Error</h3>
+                            <p style="color: #ff4444;">❌ ${error.message}</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Add summary
+            const overallCoverage = totalGames > 0 ? (totalFound / totalGames) * 100 : 0;
+            const sortedResults = analysisResults.sort((a, b) => b.coverage - a.coverage);
+            
+            const highCoverage = sortedResults.filter(r => r.coverage >= 80).length;
+            const mediumCoverage = sortedResults.filter(r => r.coverage >= 50 && r.coverage < 80).length;
+            const lowCoverage = sortedResults.filter(r => r.coverage < 50).length;
+            
+            results.innerHTML = `
+                <div class="stats">
+                    <h2>📊 OVERALL RESULTS</h2>
+                    <p><strong>Overall Coverage:</strong> ${overallCoverage.toFixed(1)}% (${totalFound}/${totalGames} popular games found)</p>
+                    <p><strong>🟢 High Coverage (80%+):</strong> ${highCoverage} franchises</p>
+                    <p><strong>🟡 Medium Coverage (50-79%):</strong> ${mediumCoverage} franchises</p>
+                    <p><strong>🔴 Low Coverage (<50%):</strong> ${lowCoverage} franchises</p>
+                    <hr>
+                    <h3>Franchise Rankings:</h3>
+                    ${sortedResults.map((r, i) => 
+                        `<p>${i + 1}. ${r.franchise}: ${r.coverage.toFixed(1)}%</p>`
+                    ).join('')}
+                </div>
+            ` + results.innerHTML;
+            
+            hideProgress();
+            
+            console.log('📊 Analysis Complete!');
+            console.log('Results:', analysisResults);
+        }
+        
+        function fuzzyMatch(str1, str2) {
+            const words1 = str1.toLowerCase().split(/\s+/);
+            const words2 = str2.toLowerCase().split(/\s+/);
+            
+            let matches = 0;
+            for (const word1 of words1) {
+                for (const word2 of words2) {
+                    if (word1.includes(word2) || word2.includes(word1)) {
+                        matches++;
+                        break;
+                    }
+                }
+            }
+            
+            return matches / Math.max(words1.length, words2.length) >= 0.5;
+        }
+    </script>
+</body>
+</html>

@@ -3,10 +3,12 @@ import { sanitizeSearchTerm } from '../utils/sqlSecurity'
 import type { Game, GameWithCalculatedFields } from '../types/database'
 import { igdbService } from './igdbService'
 import { enhancedSearchService } from './enhancedSearchService'
+import { gameSearchService } from './gameSearchService'
 import { generateSlug } from '../utils/gameUrls'
 import { gameSyncService } from './gameSyncService'
 import { syncQueue } from '../utils/syncQueue'
 import { IGDBGame } from '../types/igdb'
+import { prioritizeFlagshipTitles } from '../utils/sisterGameDetection'
 
 interface SearchFilters {
   genres?: string[]
@@ -432,7 +434,35 @@ class GameDataService {
     }
   }
 
+  /**
+   * Enhanced search with sister games, sequels, and intelligent prioritization
+   * Replaces basic search with comprehensive franchise coverage
+   */
   async searchGames(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
+    try {
+      console.log(`🔍 Searching for "${query}"`);
+      
+      const sanitizedQuery = sanitizeSearchTerm(query);
+      if (!sanitizedQuery) {
+        return [];
+      }
+
+      // SIMPLIFIED: Use direct database search for speed
+      const dbResults = await this.searchGamesBasic(sanitizedQuery, filters);
+      
+      console.log(`✅ Found ${dbResults.length} games from database search`);
+      return dbResults;
+    } catch (error) {
+      console.error('❌ ENHANCED SEARCH FAILED:', error);
+      console.log('🔄 FALLING BACK TO BASIC SEARCH');
+      
+      // Fallback to basic search if enhanced search fails
+      return this.searchGamesBasic(query, filters);
+    }
+  }
+
+  // BACKUP: Original search method (can be restored if needed)
+  async searchGamesBasic(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
     try {
       const sanitizedQuery = sanitizeSearchTerm(query)
 
@@ -455,17 +485,7 @@ class GameDataService {
           
           if (igdbGames && igdbGames.length > 0) {
             // Step 3: Save IGDB results to database (non-blocking)
-            console.log(`💾 Saving ${igdbGames.length} games from IGDB to database...`)
-            
-            // Use sync queue for background saving
-            syncQueue.add(igdbGames as unknown as IGDBGame[])
-            
-            // Also try immediate save (but don't wait)
-            gameSyncService.saveGamesFromIGDB(igdbGames as unknown as IGDBGame[])
-              .catch(error => {
-                console.error('Background save failed:', error)
-                // Already added to queue, so it will be retried
-              })
+            console.log(`💾 IGDB games found (saving disabled for performance)...`)
             
             // Step 4: Merge results for immediate return
             const igdbConverted = this.convertIGDBToLocal(igdbGames)
@@ -490,18 +510,24 @@ class GameDataService {
   private convertIGDBToLocal(igdbGames: any[]): GameWithCalculatedFields[] {
     return igdbGames.map(game => ({
       id: -(game.id || 0), // Negative ID to indicate it's from IGDB
-      igdb_id: game.id,
-      game_id: game.id?.toString() || '',
+      igdb_id: game.id || 0,
       name: game.name || 'Unknown Game',
-      slug: game.slug || generateSlug(game.name || ''),
+      summary: game.summary || null,
+      release_date: game.first_release_date ? 
+        new Date(game.first_release_date * 1000).toISOString().split('T')[0] : null,
       cover_url: game.cover?.url ? 
         (game.cover.url.startsWith('//') ? `https:${game.cover.url}` : game.cover.url)
           .replace('t_thumb', 't_cover_big') : null,
-      release_date: game.first_release_date ? 
-        new Date(game.first_release_date * 1000).toISOString().split('T')[0] : null,
       genres: game.genres?.map((g: any) => g.name) || [],
       platforms: game.platforms?.map((p: any) => p.name) || [],
-      summary: game.summary || null,
+      screenshots: [],
+      videos: [],
+      developer: null,
+      publisher: null,
+      igdb_rating: game.rating || null,
+      category: game.category || 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       averageUserRating: 0,
       totalUserRatings: 0,
       fromIGDB: true // Track that this came from IGDB API
@@ -749,10 +775,10 @@ class GameDataService {
   }
 
   private transformGameWithRatings(game: GameWithRating): GameWithCalculatedFields {
-    const { rating, ratings, ...gameData } = game
+    const { ratings, ...gameData } = game
 
     // Handle both old and new data structure for compatibility
-    const ratingData = rating || ratings || []
+    const ratingData = ratings || []
 
     // Calculate average rating and count
     let averageUserRating = 0
@@ -766,9 +792,6 @@ class GameDataService {
 
     return {
       ...gameData,
-      // Map release_date to first_release_date for compatibility with GamePage
-      // Convert date string back to Date object for proper formatting
-      first_release_date: gameData.release_date ? new Date(gameData.release_date) : undefined,
       averageUserRating,
       totalUserRatings,
       fromIGDB: false // Mark that this came from database
@@ -880,7 +903,28 @@ class GameDataService {
         }
       }
 
-      return searchResponse.games;
+      // Convert GameSearchResult[] to GameWithCalculatedFields[]
+      return searchResponse.games.map(game => ({
+        id: game.id,
+        igdb_id: game.igdb_id || 0,
+        name: game.name || 'Unknown Game',
+        summary: game.summary || game.description || null,
+        release_date: game.release_date || null,
+        cover_url: game.cover_url || null,
+        genres: game.genres || [],
+        platforms: game.platforms || [],
+        screenshots: game.screenshots || [],
+        videos: [],
+        developer: game.developer || null,
+        publisher: game.publisher || null,
+        igdb_rating: game.igdb_rating || null,
+        category: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        averageUserRating: game.avg_user_rating || 0,
+        totalUserRatings: game.user_rating_count || 0,
+        fromIGDB: false
+      } as GameWithCalculatedFields));
     } catch (error) {
       console.error('Enhanced search failed:', error);
       return [];

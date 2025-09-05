@@ -9,6 +9,9 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/src/test/setup-basic.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^../services/supabase$': '<rootDir>/src/test/supabase-test.ts',
+    '^../../services/supabase$': '<rootDir>/src/test/supabase-test.ts',
+    '^../../../services/supabase$': '<rootDir>/src/test/supabase-test.ts',
   },
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
@@ -35,10 +38,22 @@ export default {
     }
   },
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      useESM: false,
+      tsconfig: {
+        module: 'commonjs',
+        moduleResolution: 'node'
+      }
+    }]
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   transformIgnorePatterns: [
     'node_modules/(?!(.*\\.mjs$))'
-  ]
+  ],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  globals: {
+    'ts-jest': {
+      useESM: false
+    }
+  }
 };

@@ -6,6 +6,8 @@ import { Link } from 'react-router-dom';
 import type { SearchSuggestion } from '../types/search';
 import { searchMetricsService } from '../services/searchMetricsService';
 import { SearchMode } from '../constants/search';
+// Import search debugger for frontend testing
+import '../utils/searchDebugger';
 
 interface GameSearchProps {
   onGameSelect?: (game: GameWithCalculatedFields) => void;
@@ -276,7 +278,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
     debounceTimerRef.current = setTimeout(() => {
       setShowSuggestions(true);
       performSearch(newQuery);
-    }, 300);
+    }, 800);
   };
 
   // Handle suggestion selection

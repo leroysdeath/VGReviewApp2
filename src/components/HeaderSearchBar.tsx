@@ -43,11 +43,11 @@ type SearchTab = 'games' | 'users';
 
 export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({ 
   className = "",
-  placeholder = "Search games or users...",
+  placeholder = "Search games or users... (Enter for full search)",
   enableCache = true,
   showCacheStatus = false,
   maxSuggestions = 8,
-  debounceMs = 300
+  debounceMs = 800
 }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -69,6 +69,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
   const { 
     searchTerm, 
     setSearchTerm, 
+    searchGames,
     quickSearch, 
     navigateToSearch,
     clearSearch 
@@ -317,7 +318,9 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
   const handleSuggestionClick = (game: any) => {
     setSearchTerm(game.name);
     saveRecentSearch(game.name, 'games');
-    navigateToSearch(game.name);
+    // Navigate to search results page AND trigger the search
+    navigate(`/search-results?q=${encodeURIComponent(game.name)}`);
+    searchGames(game.name);
     setIsOpen(false);
     setShowSuggestions(false);
     setHasSearched(false);
@@ -335,7 +338,9 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
   const handleRecentSearchClick = (searchQuery: string, tab: SearchTab) => {
     setSearchTerm(searchQuery);
     if (tab === 'games') {
-      navigateToSearch(searchQuery);
+      // Navigate to search results page AND trigger the search
+      navigate(`/search-results?q=${encodeURIComponent(searchQuery)}`);
+      searchGames(searchQuery);
     } else {
       // For users, perform a search to navigate to the first result
       performQuickSearch(searchQuery, 'users');
@@ -348,7 +353,10 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
     if (searchQuery.trim()) {
       saveRecentSearch(searchQuery);
       if (activeTab === 'games') {
-        navigateToSearch(searchQuery);
+        // Navigate to search results page AND trigger the search
+        navigate(`/search-results?q=${encodeURIComponent(searchQuery.trim())}`);
+        // Also trigger the search immediately using the hook
+        searchGames(searchQuery);
       } else {
         navigate(`/users?q=${encodeURIComponent(searchQuery)}`);
       }

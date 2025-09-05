@@ -28,12 +28,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onQueryChange,
   suggestions,
   isLoading = false,
-  placeholder = 'Search games, genres, platforms...',
+  placeholder = 'Search games, genres, platforms... (Enter to search)',
   onSuggestionSelect,
   className = '',
   enableCache = true,
   showCacheStatus = false,
-  debounceMs = 300
+  debounceMs = 800
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);

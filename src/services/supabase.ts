@@ -72,56 +72,41 @@ export const supabaseHelpers = {
   },
 
   async searchGames(query: string, limit = 20) {
-    // PROFESSIONAL SECURITY FIX: Use PostgreSQL full-text search with complete SQL injection immunity
+    // Simple and fast database search using ILIKE
     if (!query || typeof query !== 'string') {
       return [];
     }
     
     const trimmedQuery = query.trim();
     
-    // Basic validation - the database function handles all security
+    // Basic validation
     if (trimmedQuery.length < 2 || trimmedQuery.length > 100) {
       return [];
     }
     
     try {
-      // Use secure database function that's immune to SQL injection
+      // Use simple ILIKE search which is fast and works
+      const searchPattern = `%${trimmedQuery}%`;
+      
       const { data, error } = await supabase
-        .rpc('search_games_secure', {
-          search_query: trimmedQuery,
-          limit_count: Math.min(limit, 100)
-        });
+        .from('game')
+        .select(`
+          *,
+          platform_games(
+            platform(*)
+          )
+        `)
+        .ilike('name', searchPattern)
+        .limit(Math.min(limit, 100));
       
       if (error) {
-        console.error('Secure search error:', error);
+        console.error('Game search error:', error);
         throw error;
-      }
-      
-      // Transform results to include platform data if needed
-      if (data && data.length > 0) {
-        const gameIds = data.map(game => game.id);
-        const { data: platformData, error: platformError } = await supabase
-          .from('platform_games')
-          .select(`
-            game_id,
-            platform(*)
-          `)
-          .in('game_id', gameIds);
-        
-        if (platformError) {
-          console.warn('Platform data fetch error:', platformError);
-        }
-        
-        // Merge platform data with search results
-        return data.map(game => ({
-          ...game,
-          platform_games: platformData?.filter(p => p.game_id === game.id) || []
-        }));
       }
       
       return data || [];
     } catch (error) {
-      console.error('Secure game search failed:', error);
+      console.error('Game search failed:', error);
       throw error;
     }
   },
