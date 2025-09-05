@@ -414,9 +414,13 @@ export const ResponsiveNavbar: React.FC = () => {
             <div className="bg-gray-800 w-full max-w-sm h-full shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="p-4 border-b border-gray-700">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span className="text-lg font-bold text-white">GameVault</span>
-                  </div>
+                  <Link 
+                    to="/" 
+                    className="flex items-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span className="text-lg font-bold text-white hover:text-purple-400 transition-colors">GameVault</span>
+                  </Link>
                   <button
                     onClick={() => setIsMenuOpen(false)}
                     className="p-2 text-gray-400 hover:text-white transition-colors"

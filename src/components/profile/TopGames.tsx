@@ -445,15 +445,11 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
           <h2 className="text-xl font-semibold text-white">
             {isEditingTop5 ? 'Edit Your Top 5 (Drag to reorder)' : 'Your Top 5'}
           </h2>
-          {/* Only show edit button if all 5 slots are filled and no error */}
+          {/* Show edit button if there's at least 1 game in Top 5 */}
           {(() => {
-            const emptySlots = Array.from({ length: 5 }).filter((_, index) => {
-              const position = index + 1;
-              const gameData = userTopGames.find(g => g.position === position);
-              return !gameData?.game;
-            }).length;
+            const hasGames = userTopGames.some(g => g.game);
             
-            return emptySlots === 0 && !error && (
+            return hasGames && !error && (
               <button
                 onClick={() => setIsEditingTop5(!isEditingTop5)}
                 disabled={isSaving}
