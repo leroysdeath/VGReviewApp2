@@ -1017,9 +1017,9 @@ export const GamePage: React.FC = () => {
                     alt={game.name}
                     className="h-64 w-full object-cover md:h-80 md:w-64"
                     optimization={{
-                      width: window.innerWidth < 768 ? 320 : 640,  // Smaller for mobile
-                      height: window.innerWidth < 768 ? 480 : 960, // Smaller for mobile
-                      quality: window.innerWidth < 768 ? 80 : 95,  // Lower quality for mobile
+                      width: window.innerWidth < 768 ? 640 : 640,  // High quality for all devices
+                      height: window.innerWidth < 768 ? 960 : 960, // High quality for all devices
+                      quality: 95,  // High quality for all devices
                       format: 'webp'
                     }}
                     fallback="/placeholder-game.jpg"
