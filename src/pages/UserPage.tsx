@@ -250,7 +250,7 @@ export const UserPage: React.FC = () => {
             onClick={() => setActiveTab('playlist')}
             className={`pb-2 ${activeTab === 'playlist' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
-            Playlist
+            Want to Play
           </button>
           <button
             onClick={() => setActiveTab('activity')}

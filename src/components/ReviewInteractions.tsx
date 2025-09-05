@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Heart, MessageSquare, ChevronDown, ChevronUp, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Comment } from '../services/reviewService';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 
@@ -444,7 +445,16 @@ const CommentItem: React.FC<CommentItemProps> = ({
         {/* Comment Content */}
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium text-white">{comment.user?.name || 'Anonymous'}</span>
+            {comment.user?.id ? (
+              <Link 
+                to={`/user/${comment.user.id}`}
+                className="font-medium text-white hover:text-purple-400 transition-colors"
+              >
+                {comment.user?.username || comment.user?.name || 'Anonymous'}
+              </Link>
+            ) : (
+              <span className="font-medium text-white">{comment.user?.name || 'Anonymous'}</span>
+            )}
             <span className="text-gray-400 text-xs">{formatRelativeTime(comment.createdAt)}</span>
             {comment.updatedAt && comment.updatedAt !== comment.createdAt && (
               <span className="text-gray-500 text-xs italic">(edited)</span>
