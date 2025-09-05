@@ -228,14 +228,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                 `}
                 loading="lazy"
               />
-              {/* Grey rating bar below image */}
-              <div className="bg-gray-500 px-1 py-0.5">
-                <div className="text-center">
-                  <span className="text-white text-xs font-bold">
-                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-                  </span>
-                </div>
-              </div>
             </div>
           )}
 
@@ -262,40 +254,28 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   {review.gameTitle}
                 </span>
                 
-                {/* Date - only show if no cover image (otherwise rating is on image) */}
-                {!review.gameCoverUrl && (
-                  <div className="flex items-center gap-4 mt-2">
-                    <div className="bg-gray-500 px-2 py-0.5 rounded">
-                      <span className="text-white text-xs font-bold">{review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-1 text-gray-500">
-                      <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
-                      <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
-                        {formatDate(review.date)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Date when cover image is present */}
-                {review.gameCoverUrl && (
-                  <div className="flex items-center gap-1 text-gray-500 mt-2">
+                {/* Rating and Date */}
+                <div className="flex items-center gap-4 mt-2">
+                  <span className="text-yellow-400 font-semibold">
+                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                  </span>
+                  
+                  <div className="flex items-center gap-1 text-gray-500">
                     <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
                     <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
                       {formatDate(review.date)}
                     </span>
                   </div>
-                )}
+                </div>
               </div>
             )}
             
             {/* Rating and Date for when no game title is shown */}
             {!showGameTitle || !review.gameTitle ? (
               <div className="flex items-center gap-4 mt-2">
-                <div className="bg-gray-500 px-2 py-0.5 rounded">
-                  <span className="text-white text-xs font-bold">{review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10</span>
-                </div>
+                <span className="text-yellow-400 font-semibold">
+                  {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                </span>
                 
                 <div className="flex items-center gap-1 text-gray-500">
                   <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
