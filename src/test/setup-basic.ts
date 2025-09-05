@@ -1,28 +1,12 @@
 import '@testing-library/jest-dom';
-import { expect, afterEach, beforeAll, afterAll } from '@jest/globals';
+import { expect, afterEach } from '@jest/globals';
 import { jest } from '@jest/globals';
 import { cleanup } from '@testing-library/react';
-import { setupServer } from 'msw/node';
-import { handlers } from './mocks/handlers';
-
-// Setup MSW server
-export const server = setupServer(...handlers);
-
-// Start server before all tests
-beforeAll(() => {
-  server.listen({ onUnhandledRequest: 'error' });
-});
 
 // Clean up after each test
 afterEach(() => {
   cleanup();
-  server.resetHandlers();
   jest.clearAllMocks();
-});
-
-// Clean up after all tests
-afterAll(() => {
-  server.close();
 });
 
 // Mock environment variables
@@ -57,23 +41,3 @@ global.IntersectionObserver = jest.fn().mockImplementation((callback) => ({
 
 // Mock scrollTo for navigation tests
 window.scrollTo = jest.fn();
-
-// Suppress console errors in tests unless explicitly testing error handling
-const originalError = console.error;
-beforeAll(() => {
-  console.error = (...args: any[]) => {
-    if (
-      typeof args[0] === 'string' &&
-      (args[0].includes('Warning: ReactDOM.render') ||
-       args[0].includes('Warning: useLayoutEffect') ||
-       args[0].includes('Not implemented'))
-    ) {
-      return;
-    }
-    originalError.call(console, ...args);
-  };
-});
-
-afterAll(() => {
-  console.error = originalError;
-});

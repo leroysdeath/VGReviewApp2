@@ -382,6 +382,8 @@ export const COMPANY_OWNERSHIP: Record<string, {
       'pokémon company', 'pokemon company international', 'the pokémon company international',
       'the pokemon company international', 'pokémon company international',
       'nintendo/the pokemon company', 'nintendo/the pokémon company',
+      'pokemon co', 'pokémon co', 'pokemon co.', 'pokémon co.',
+      'tpc', 'pci', 'pokemon company intl', 'pokémon company intl',
       'camelot software planning', 'monolith soft', 'monolithsoft', 'brownie brown', '1-up studio',
       'skip ltd', 'skip', 'nd cube', 'arika', 'grezzo',
       'next level games', 'good-feel', 'tantalus media'
@@ -429,7 +431,9 @@ export const COMPANY_OWNERSHIP: Record<string, {
     ],
     secondParty: [
       'lucasfilm', 'lucasfilm games', 'marvel entertainment', 'marvel games',
-      'pixar animation studios', 'pixar', '20th century games'
+      'pixar animation studios', 'pixar', '20th century games',
+      'electronic arts', 'ea', 'ea games', 'respawn entertainment',
+      'sony interactive entertainment', 'insomniac games', 'santa monica studio'
     ],
     franchises: [
       'star wars', 'marvel', 'avengers', 'spider-man', 'x-men',
@@ -490,6 +494,21 @@ export const COMPANY_OWNERSHIP: Record<string, {
       'gradius', 'bomberman', 'dance dance revolution', 'ddr',
       'yu-gi-oh', 'suikoden', 'zone of the enders'
     ]
+  },
+
+  // Bethesda Network
+  'bethesda game studios': {
+    firstParty: [
+      'bethesda game studios', 'bethesda softworks', 'zenimax online studios',
+      'id software', 'arkane studios', 'machine games', 'tango gameworks'
+    ],
+    secondParty: [
+      'obsidian entertainment', 'inxile entertainment', 'human head studios'
+    ],
+    franchises: [
+      'elder scrolls', 'skyrim', 'fallout', 'doom', 'quake', 'dishonored',
+      'wolfenstein', 'prey', 'rage', 'the elder scrolls'
+    ]
   }
 };
 
@@ -517,12 +536,32 @@ function normalizeCompanyName(name: string): string {
 
 /**
  * Enhanced company matching with fuzzy logic for publisher variations
+ * IMPORTANT: This function should only match legitimate publisher variations,
+ * not fan developers that happen to contain franchise keywords
  */
 function isCompanyMatch(gameCompany: string, authorizedCompany: string): boolean {
   if (!gameCompany || !authorizedCompany) return false;
   
   const normalizedGame = normalizeCompanyName(gameCompany);
   const normalizedAuth = normalizeCompanyName(authorizedCompany);
+  
+  // CRITICAL: Prevent false positives from fan teams containing franchise names
+  // Fan teams often have patterns like "Pokemon Uranium Team", "Mario Fan Developers", etc.
+  const fanIndicators = ['team', 'fan', 'fans', 'community', 'modder', 'modders', 'developer', 'developers', 'studio', 'group', 'project'];
+  const hasFanIndicator = fanIndicators.some(indicator => normalizedGame.includes(indicator));
+  
+  // If it has fan indicators and contains a franchise name, be very strict
+  if (hasFanIndicator) {
+    // Only allow exact matches or very close variations for fan teams
+    const exactMatch = normalizedGame === normalizedAuth || 
+                      normalizedAuth === normalizedGame ||
+                      (normalizedGame.includes(normalizedAuth) && normalizedGame.length - normalizedAuth.length < 5) ||
+                      (normalizedAuth.includes(normalizedGame) && normalizedAuth.length - normalizedGame.length < 5);
+    
+    if (!exactMatch) {
+      return false;
+    }
+  }
   
   // Direct inclusion check (existing behavior)
   if (normalizedGame.includes(normalizedAuth) || normalizedAuth.includes(normalizedGame)) {
