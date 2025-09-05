@@ -874,86 +874,66 @@ export const unlikeReview = async (
 };
 
 /**
+ * Toggle comment like using stored procedure
+ */
+const toggleCommentLike = async (
+  userId: number,
+  commentId: number
+): Promise<ServiceResponse<{ likeCount: number }>> => {
+  console.log('👍 Toggling comment like:', { userId, commentId });
+  
+  try {
+    // Validate input
+    if (!userId || isNaN(userId)) {
+      console.error('❌ Invalid user ID:', { userId });
+      return { success: false, error: 'Invalid user ID' };
+    }
+    if (!commentId || isNaN(commentId)) {
+      console.error('❌ Invalid comment ID:', { commentId });
+      return { success: false, error: 'Invalid comment ID' };
+    }
+
+    // Call the stored procedure
+    const { data, error } = await supabase.rpc('simple_toggle_comment_like', {
+      p_user_id: userId,
+      p_comment_id: commentId
+    });
+
+    if (error) {
+      console.error('❌ Error toggling comment like:', error);
+      throw error;
+    }
+
+    if (!data || !data.success) {
+      console.error('❌ Failed to toggle comment like:', data);
+      return {
+        success: false,
+        error: data?.error || 'Failed to toggle comment like'
+      };
+    }
+
+    console.log('✅ Comment like toggled:', data.action);
+    return {
+      success: true,
+      data: { likeCount: data.likeCount || 0 }
+    };
+  } catch (error) {
+    console.error('Error toggling comment like:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to toggle comment like'
+    };
+  }
+};
+
+/**
  * Like a comment
  */
 export const likeComment = async (
   userId: number,
   commentId: number
 ): Promise<ServiceResponse<{ likeCount: number }>> => {
-  console.log('👍 likeComment called with:', { userId, commentId });
-  
-  try {
-    // Validate input
-    if (!userId || isNaN(userId)) {
-      console.error('❌ Invalid user ID in likeComment:', { userId });
-      return { success: false, error: 'Invalid user ID' };
-    }
-    if (!commentId || isNaN(commentId)) {
-      console.error('❌ Invalid comment ID in likeComment:', { commentId });
-      return { success: false, error: 'Invalid comment ID' };
-    }
-
-    // Use a transaction to ensure atomicity
-    const { data: existingLike } = await supabase
-      .from('content_like')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('comment_id', commentId)
-      .maybeSingle();
-
-    // If like already exists, return current count
-    if (existingLike) {
-      const { data: commentData } = await supabase
-        .from('comment')
-        .select('like_count')
-        .eq('id', commentId)
-        .single();
-
-      return {
-        success: true,
-        data: { likeCount: commentData?.like_count || 0 }
-      };
-    }
-
-    // Insert new like and update count atomically
-    const { error: insertError } = await supabase
-      .from('content_like')
-      .insert({
-        user_id: userId,
-        comment_id: commentId,
-        is_like: true
-      });
-
-    if (insertError) {
-      console.error('❌ Error inserting comment like:', insertError);
-      throw insertError;
-    }
-
-    // Update like_count in comment table
-    const { data: updatedComment, error: updateError } = await supabase
-      .from('comment')
-      .update({ like_count: supabase.raw('like_count + 1') })
-      .eq('id', commentId)
-      .select('like_count')
-      .single();
-
-    if (updateError) {
-      console.error('❌ Error updating comment like count:', updateError);
-      throw updateError;
-    }
-
-    console.log('✅ Comment like added successfully');
-    return {
-      success: true,
-      data: { likeCount: updatedComment?.like_count || 0 }
-    };
-  } catch (error) {
-    console.error('Error liking comment:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to like comment'
-    };
-  }
+  return toggleCommentLike(userId, commentId);
 };
 
 /**
@@ -963,51 +943,7 @@ export const unlikeComment = async (
   userId: number,
   commentId: number
 ): Promise<ServiceResponse<{ likeCount: number }>> => {
-  console.log('👎 unlikeComment called with:', { userId, commentId });
-  
-  try {
-    // Validate input
-    if (!userId || isNaN(userId)) {
-      return { success: false, error: 'Invalid user ID' };
-    }
-    if (!commentId || isNaN(commentId)) {
-      return { success: false, error: 'Invalid comment ID' };
-    }
-
-    // Delete the like
-    const { error: deleteError } = await supabase
-      .from('content_like')
-      .delete()
-      .eq('user_id', userId)
-      .eq('comment_id', commentId);
-
-    if (deleteError) throw deleteError;
-
-    // Update like_count atomically
-    const { data: updatedComment, error: updateError } = await supabase
-      .from('comment')
-      .update({ like_count: supabase.raw('GREATEST(like_count - 1, 0)') })
-      .eq('id', commentId)
-      .select('like_count')
-      .single();
-
-    if (updateError) {
-      console.error('❌ Error updating comment like count:', updateError);
-      throw updateError;
-    }
-
-    console.log('✅ Comment unlike successful');
-    return {
-      success: true,
-      data: { likeCount: updatedComment?.like_count || 0 }
-    };
-  } catch (error) {
-    console.error('Error unliking comment:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to unlike comment'
-    };
-  }
+  return toggleCommentLike(userId, commentId);
 };
 
 /**
