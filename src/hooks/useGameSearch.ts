@@ -2,6 +2,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { igdbService } from '../services/igdbService';
+import { filterProtectedContent } from '../utils/contentProtectionFilter';
 import type { GameWithCalculatedFields } from '../types/database';
 
 interface SearchResult {
@@ -71,11 +72,14 @@ export const useGameSearch = () => {
       // Use enhanced IGDB search with sequel detection for comprehensive results
       const igdbResults = await igdbService.searchWithSequels(query.trim(), searchParams.limit || 20);
       const transformedResults = igdbResults.map(game => igdbService.transformGame(game));
+      
+      // Apply content protection filtering to ensure consistent behavior with HeaderSearchBar
+      const filteredResults = filterProtectedContent(transformedResults);
 
       const data = {
-        games: transformedResults,
-        hasMore: transformedResults.length === searchParams.limit,
-        total: transformedResults.length,
+        games: filteredResults,
+        hasMore: filteredResults.length === searchParams.limit,
+        total: filteredResults.length,
         source: 'igdb' as const
       };
       
@@ -110,8 +114,9 @@ export const useGameSearch = () => {
     
     try {
       const igdbResults = await igdbService.searchWithSequels(query.trim(), 5);
-      const results = igdbResults.map(game => igdbService.transformGame(game));
-      return results; // Already limited to 5 results for quick search
+      const transformedResults = igdbResults.map(game => igdbService.transformGame(game));
+      const filteredResults = filterProtectedContent(transformedResults);
+      return filteredResults; // Already limited to 5 results for quick search
     } catch (error) {
       console.error('Quick search failed:', error);
       return [];

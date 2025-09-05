@@ -143,7 +143,8 @@ const FAN_MADE_INDICATORS = [
   'mod', 'unofficial', 'fan', 'homebrew', 'patch', 'remix', 'hack',
   'romhack', 'rom hack', 'fan game', 'fan-made', 'fan made', 'fangame',
   'community', 'custom', 'parody', 'tribute', 'inspired by',
-  'total conversion', 'overhaul', 'standalone mod'
+  'total conversion', 'overhaul', 'standalone mod',
+  'chapter', 'episode', 'part', 'sui mario', 'storm'
 ];
 
 // Enhanced mod patterns for aggressive copyright filtering
@@ -159,15 +160,30 @@ const ENHANCED_MOD_PATTERNS = [
   'expansion mod', 'addon mod', 'plugin mod'
 ];
 
+// Nintendo-specific ROM hack patterns (very deceptive naming)
+const NINTENDO_ROMHACK_PATTERNS = [
+  // Episodic indicators (Chapter X, Episode X, Part X)
+  /\b(chapter|episode|part)\s*\d+/i,
+  // Numbered sequels to official games that don't exist
+  /super mario bros.*:\s*odyssey/i,  // "Super Mario Bros: Odyssey" isn't real
+  /super mario storm/i,              // "Super Mario Storm" isn't a real series
+  /sui mario/i,                      // "Sui Mario" is clearly a typo/variant
+  // Non-Nintendo Mario variants
+  /mario.*\d+$(?<!64|3d)/i,         // "Something Mario 1/2" but not "Mario 64"
+];
+
 // Comprehensive official company whitelist - games from these companies should NEVER be filtered
 const OFFICIAL_COMPANIES = [
   // Nintendo and subsidiaries
-  'nintendo', 'game freak', 'hal laboratory', 'intelligent systems',
-  'retro studios', 'the pokémon company', 'pokemon company', 
+  'nintendo', 'game freak', 'gamefreak', 'hal laboratory', 'intelligent systems',
+  'retro studios', 'the pokémon company', 'pokemon company', 'the pokemon company',
+  'pokémon company', 'pokemon company international', 'the pokémon company international',
+  'the pokemon company international', 'pokémon company international',
   'nintendo ead', 'nintendo epd', 'creatures inc', 'creatures',
-  'gamefreak', 'rare', 'rare ltd', 'nintendo r&d1', 'nintendo r&d2',
+  'rare', 'rare ltd', 'nintendo r&d1', 'nintendo r&d2',
   'nintendo r&d3', 'nintendo r&d4', 'nintendo software planning & development',
   'nintendo spd', '1-up studio', 'brownie brown', 'skip ltd',
+  'pokemon co', 'pokémon co', 'nintendo of america', 'nintendo of europe',
   
   // Square Enix and subsidiaries
   'square enix', 'square', 'enix', 'square co', 'enix corporation',
@@ -210,7 +226,8 @@ const OFFICIAL_COMPANIES = [
   'electronic arts', 'ea games', 'ea sports', 'bioware', 'dice',
   'activision', 'blizzard entertainment', 'infinity ward', 'treyarch',
   'ubisoft', 'ubisoft montreal', 'ubisoft paris', 'ubisoft toronto',
-  'take-two interactive', 'rockstar games', 'rockstar north', '2k games',
+  'take-two interactive', 'take-two', 'rockstar games', 'rockstar north', 
+  'rockstar san diego', 'rockstar toronto', '2k games', '2k',
   'bandai namco', 'bandai namco entertainment', 'namco', 'bandai',
   'konami', 'kojima productions', 'sega', 'atlus', 'creative assembly',
   'valve', 'id software', 'bethesda game studios', 'bethesda softworks',
@@ -255,10 +272,23 @@ function isOfficialCompany(game: Game): boolean {
   const developer = (game.developer || '').toLowerCase();
   const publisher = (game.publisher || '').toLowerCase();
   
-  // Check if it's made by any official company
-  return OFFICIAL_COMPANIES.some(company => 
+  // Check if it's made by any official company from the hardcoded list
+  const isInOfficialList = OFFICIAL_COMPANIES.some(company => 
     developer.includes(company) || publisher.includes(company)
   );
+  
+  if (isInOfficialList) {
+    return true;
+  }
+  
+  // Also check against franchise authorization system for comprehensive coverage
+  // This ensures Pokemon Company variants and other franchise publishers are recognized
+  const franchiseOwner = findFranchiseOwner(game);
+  if (franchiseOwner) {
+    return isAuthorizedPublisher(developer, publisher, franchiseOwner);
+  }
+  
+  return false;
 }
 
 /**
@@ -279,6 +309,17 @@ function isFanMadeContent(game: Game): boolean {
   );
   
   if (hasExplicitIndicators) return true;
+  
+  // Check Nintendo-specific ROM hack patterns (catches deceptive naming)
+  if (searchText.includes('mario') || searchText.includes('zelda') || searchText.includes('pokemon')) {
+    const hasNintendoRomHackPattern = NINTENDO_ROMHACK_PATTERNS.some(pattern => 
+      pattern.test(game.name || '')
+    );
+    if (hasNintendoRomHackPattern) {
+      console.log(`🚨 NINTENDO ROM HACK DETECTED: "${game.name}" matches deceptive naming pattern`);
+      return true;
+    }
+  }
   
   // IMPORTANT: If it's made by an official company, it's NEVER fan-made
   if (isOfficialCompany(game)) {
@@ -381,11 +422,18 @@ export function shouldFilterContent(game: Game): boolean {
     console.log(`   Category: ${game.category} (${getCategoryLabel(game.category)})`);
     console.log(`   Summary: ${game.summary || 'N/A'}`);
   }
+
+  // CRITICAL: Check if this is an official game FIRST before any other filtering
+  if (isOfficialCompany(game)) {
+    console.log(`✅ OFFICIAL GAME BYPASS: "${game.name}" is from authorized publisher ${game.developer || game.publisher} - allowing regardless of franchise`);
+    return false;
+  }
   
   // Check if game has explicit fan-made indicators
   const hasExplicitFanIndicators = FAN_MADE_INDICATORS.some(indicator => 
     searchText.includes(indicator)
   );
+
   
   // Check if game uses protected franchises
   const hasProtectedFranchise = PROTECTED_FRANCHISES.some(franchise => 
@@ -427,9 +475,11 @@ export function shouldFilterContent(game: Game): boolean {
   if (franchiseOwner) {
     const franchiseLevel = getCompanyCopyrightLevel(franchiseOwner);
     
-    // If franchise owner is more aggressive than current level, use franchise owner
+    // Use franchise owner's copyright level regardless of direction
+    // This handles both MORE restrictive (Nintendo) and LESS restrictive (Bethesda MOD_FRIENDLY)
     if (franchiseLevel === CopyrightLevel.BLOCK_ALL ||
-        (franchiseLevel === CopyrightLevel.AGGRESSIVE && maxCopyrightLevel !== CopyrightLevel.BLOCK_ALL)) {
+        (franchiseLevel === CopyrightLevel.AGGRESSIVE && maxCopyrightLevel !== CopyrightLevel.BLOCK_ALL) ||
+        (franchiseLevel === CopyrightLevel.MOD_FRIENDLY)) {
       maxCopyrightLevel = franchiseLevel;
       responsibleCompany = franchiseOwner;
       console.log(`🎯 FRANCHISE OVERRIDE: "${game.name}" - Using ${franchiseOwner} copyright level (${franchiseLevel}) instead of developer/publisher`);
@@ -464,11 +514,6 @@ export function shouldFilterContent(game: Game): boolean {
         return true;
       }
       
-      // Official company games are still allowed if they pass ownership check
-      if (isOfficialCompany(game)) {
-        console.log(`✅ Official game allowed: "${game.name}" by ${responsibleCompany}`);
-        return false;
-      }
       
       // NEW: Enhanced mod detection for aggressive companies
       if (hasEnhancedModIndicators(game)) {
@@ -497,8 +542,8 @@ export function shouldFilterContent(game: Game): boolean {
         return true;
       }
       
-      // Allow protected franchises if they're official
-      if (hasProtectedFranchise && !isOfficialCompany(game)) {
+      // Block protected franchises by non-official developers (since official already bypassed above)
+      if (hasProtectedFranchise) {
         console.log(`⚠️ Moderate filtering: "${game.name}" - Protected franchise by non-official developer`);
         return true;
       }
@@ -522,7 +567,7 @@ export function shouldFilterContent(game: Game): boolean {
         return true;
       }
       
-      if (hasProtectedFranchise && !isOfficialCompany(game)) {
+      if (hasProtectedFranchise) {
         console.log(`⚠️ Default filtering: "${game.name}" - Protected franchise by unknown company`);
         return true;
       }
@@ -701,7 +746,7 @@ export function debugGameFiltering(game: Game): {
     const level = getCompanyCopyrightLevel(company);
     if (level === CopyrightLevel.BLOCK_ALL || 
         (level === CopyrightLevel.AGGRESSIVE && maxCopyrightLevel !== CopyrightLevel.BLOCK_ALL) ||
-        (level === CopyrightLevel.MODERATE && maxCopyrightLevel === CopyrightLevel.MOD_FRIENDLY)) {
+        (level === CopyrightLevel.MODERATE && maxCopyrightLevel !== CopyrightLevel.AGGRESSIVE && maxCopyrightLevel !== CopyrightLevel.BLOCK_ALL)) {
       maxCopyrightLevel = level;
       responsibleCompany = company;
     }

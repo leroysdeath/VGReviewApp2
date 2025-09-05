@@ -19,12 +19,12 @@ import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DebugAuthPage } from './pages/DebugAuthPage';
 import { Navigate } from 'react-router-dom';
-import { gamePreloadService } from './services/gamePreloadService';
 
 
 // Lazy load legal pages for better performance
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const EnhancedSearchTestPage = lazy(() => import('./pages/EnhancedSearchTestPage'));
 
 // Navigation debugging component
 const NavigationDebugger: React.FC = () => {
@@ -83,18 +83,9 @@ const AppContent: React.FC = () => {
   // Debug navigation
   console.log('🌐 App.tsx: Rendering routes for path:', window.location.pathname);
 
-  // Initialize game preloading service on app startup
-  useEffect(() => {
-    console.log('🚀 Initializing game preload service...');
-    gamePreloadService.startPreloading().catch(error => {
-      console.error('Failed to start preload service:', error);
-    });
-
-    // Cleanup on unmount
-    return () => {
-      gamePreloadService.stopPreloading();
-    };
-  }, []);
+  // Game preloading service disabled to eliminate console spam
+  // Search functionality remains independent and unaffected  
+  // Preloading can be enabled manually if needed via gamePreloadService.startPreloading()
 
   return (
     <>
@@ -117,6 +108,18 @@ const AppContent: React.FC = () => {
                     <Route path="/users" element={<UserSearchPage />} />
                     <Route path="/debug-auth" element={<DebugAuthPage />} />
                     <Route path="/reset-password" element={<ResetPasswordPage />} />
+                    <Route 
+                      path="/enhanced-search-test" 
+                      element={
+                        <Suspense fallback={
+                          <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                            <div className="text-white">Loading Enhanced Search Test...</div>
+                          </div>
+                        }>
+                          <EnhancedSearchTestPage />
+                        </Suspense>
+                      } 
+                    />
                     <Route 
                       path="/review/:gameId?" 
                       element={

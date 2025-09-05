@@ -58,11 +58,25 @@ export const FLAGSHIP_GAMES: FlagshipDatabase = {
         significance: 'technical'
       },
       {
+        names: ['Super Mario Sunshine', 'Mario Sunshine'],
+        reason: 'GameCube flagship, FLUDD mechanics, tropical setting, challenging platforming',
+        releaseYear: 2002,
+        platforms: ['GameCube'],
+        significance: 'innovation'
+      },
+      {
         names: ['Super Mario Galaxy', 'Mario Galaxy'],
         reason: 'Gravity mechanics innovation, Wii motion controls, critical masterpiece',
         releaseYear: 2007,
         platforms: ['Wii'],
         significance: 'innovation'
+      },
+      {
+        names: ['Super Mario Galaxy 2', 'Mario Galaxy 2'],
+        reason: 'Galaxy evolution, Yoshi return, level design perfection',
+        releaseYear: 2010,
+        platforms: ['Wii'],
+        significance: 'peak'
       },
       {
         names: ['Super Mario Odyssey', 'Mario Odyssey'],
@@ -154,11 +168,39 @@ export const FLAGSHIP_GAMES: FlagshipDatabase = {
         significance: 'peak'
       },
       {
+        names: ['The Legend of Zelda: Link\'s Awakening', 'Link\'s Awakening', 'LA'],
+        reason: 'Game Boy masterpiece, portable Zelda innovation, unique surreal story',
+        releaseYear: 1993,
+        platforms: ['Game Boy'],
+        significance: 'innovation'
+      },
+      {
         names: ['The Legend of Zelda: Ocarina of Time', 'Ocarina of Time', 'OoT'],
         reason: '3D Zelda pioneer, Z-targeting, widely considered greatest game ever',
         releaseYear: 1998,
         platforms: ['Nintendo 64'],
         significance: 'technical'
+      },
+      {
+        names: ['The Legend of Zelda: Majora\'s Mask', 'Majora\'s Mask', 'MM'],
+        reason: 'Time loop mechanics, 3-day cycle, mask transformation system masterpiece',
+        releaseYear: 2000,
+        platforms: ['Nintendo 64'],
+        significance: 'innovation'
+      },
+      {
+        names: ['The Legend of Zelda: The Wind Waker', 'Wind Waker', 'TWW'],
+        reason: 'Cel-shaded art revolution, sea exploration, GameCube showcase',
+        releaseYear: 2002,
+        platforms: ['GameCube'],
+        significance: 'innovation'
+      },
+      {
+        names: ['The Legend of Zelda: Twilight Princess', 'Twilight Princess', 'TP'],
+        reason: 'Return to realistic art style, wolf transformation, epic adventure',
+        releaseYear: 2006,
+        platforms: ['GameCube', 'Wii'],
+        significance: 'cultural'
       },
       {
         names: ['The Legend of Zelda: Breath of the Wild', 'Breath of the Wild', 'BotW'],

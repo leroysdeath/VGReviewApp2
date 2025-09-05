@@ -44,6 +44,8 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   className = '',
   ...props
 }) => {
+  // Filter out custom props that shouldn't be passed to DOM element
+  const { lazyStrategy, showLoadingSkeleton, ...validProps } = props;
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(!lazy || priority);
   const [hasError, setHasError] = useState(false);
@@ -134,7 +136,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
           className={`w-full h-full object-cover transition-opacity duration-300 ${
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}
-          {...props}
+          {...validProps}
         />
       )}
       

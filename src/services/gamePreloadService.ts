@@ -232,19 +232,18 @@ class GamePreloadService {
     const currentYear = new Date().getFullYear();
     const lastYear = currentYear - 1;
     
+    // Use franchise names instead of specific years to avoid 400 errors
     const annualReleases = [
-      `FIFA ${currentYear}`,
-      `FIFA ${lastYear}`,
-      `NBA 2K${currentYear % 100}`,
-      `NBA 2K${lastYear % 100}`,
-      `Madden NFL ${currentYear % 100}`,
-      `Madden NFL ${lastYear % 100}`,
-      `MLB The Show ${currentYear % 100}`,
-      `NHL ${currentYear % 100}`,
-      `Call of Duty`, // Gets the latest
+      'FIFA',           // Generic search finds latest available
+      'NBA 2K',         // Generic search finds latest available  
+      'Madden NFL',     // Generic search finds latest available
+      'MLB The Show',   // Generic search finds latest available
+      'NHL',            // Generic search finds latest available
+      'Call of Duty',   // Already generic
+      'EA FC',          // EA Sports FC (new FIFA branding)
     ];
 
-    await this.preloadBatch(annualReleases, 10);
+    await this.preloadBatch(annualReleases, 15);
   }
 
   /**
