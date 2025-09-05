@@ -175,12 +175,15 @@ const NINTENDO_ROMHACK_PATTERNS = [
 // Comprehensive official company whitelist - games from these companies should NEVER be filtered
 const OFFICIAL_COMPANIES = [
   // Nintendo and subsidiaries
-  'nintendo', 'game freak', 'hal laboratory', 'intelligent systems',
-  'retro studios', 'the pokémon company', 'pokemon company', 
+  'nintendo', 'game freak', 'gamefreak', 'hal laboratory', 'intelligent systems',
+  'retro studios', 'the pokémon company', 'pokemon company', 'the pokemon company',
+  'pokémon company', 'pokemon company international', 'the pokémon company international',
+  'the pokemon company international', 'pokémon company international',
   'nintendo ead', 'nintendo epd', 'creatures inc', 'creatures',
-  'gamefreak', 'rare', 'rare ltd', 'nintendo r&d1', 'nintendo r&d2',
+  'rare', 'rare ltd', 'nintendo r&d1', 'nintendo r&d2',
   'nintendo r&d3', 'nintendo r&d4', 'nintendo software planning & development',
   'nintendo spd', '1-up studio', 'brownie brown', 'skip ltd',
+  'pokemon co', 'pokémon co', 'nintendo of america', 'nintendo of europe',
   
   // Square Enix and subsidiaries
   'square enix', 'square', 'enix', 'square co', 'enix corporation',
@@ -223,7 +226,8 @@ const OFFICIAL_COMPANIES = [
   'electronic arts', 'ea games', 'ea sports', 'bioware', 'dice',
   'activision', 'blizzard entertainment', 'infinity ward', 'treyarch',
   'ubisoft', 'ubisoft montreal', 'ubisoft paris', 'ubisoft toronto',
-  'take-two interactive', 'rockstar games', 'rockstar north', '2k games',
+  'take-two interactive', 'take-two', 'rockstar games', 'rockstar north', 
+  'rockstar san diego', 'rockstar toronto', '2k games', '2k',
   'bandai namco', 'bandai namco entertainment', 'namco', 'bandai',
   'konami', 'kojima productions', 'sega', 'atlus', 'creative assembly',
   'valve', 'id software', 'bethesda game studios', 'bethesda softworks',
@@ -268,10 +272,23 @@ function isOfficialCompany(game: Game): boolean {
   const developer = (game.developer || '').toLowerCase();
   const publisher = (game.publisher || '').toLowerCase();
   
-  // Check if it's made by any official company
-  return OFFICIAL_COMPANIES.some(company => 
+  // Check if it's made by any official company from the hardcoded list
+  const isInOfficialList = OFFICIAL_COMPANIES.some(company => 
     developer.includes(company) || publisher.includes(company)
   );
+  
+  if (isInOfficialList) {
+    return true;
+  }
+  
+  // Also check against franchise authorization system for comprehensive coverage
+  // This ensures Pokemon Company variants and other franchise publishers are recognized
+  const franchiseOwner = findFranchiseOwner(game);
+  if (franchiseOwner) {
+    return isAuthorizedPublisher(developer, publisher, franchiseOwner);
+  }
+  
+  return false;
 }
 
 /**
@@ -405,11 +422,18 @@ export function shouldFilterContent(game: Game): boolean {
     console.log(`   Category: ${game.category} (${getCategoryLabel(game.category)})`);
     console.log(`   Summary: ${game.summary || 'N/A'}`);
   }
+
+  // CRITICAL: Check if this is an official game FIRST before any other filtering
+  if (isOfficialCompany(game)) {
+    console.log(`✅ OFFICIAL GAME BYPASS: "${game.name}" is from authorized publisher ${game.developer || game.publisher} - allowing regardless of franchise`);
+    return false;
+  }
   
   // Check if game has explicit fan-made indicators
   const hasExplicitFanIndicators = FAN_MADE_INDICATORS.some(indicator => 
     searchText.includes(indicator)
   );
+
   
   // Check if game uses protected franchises
   const hasProtectedFranchise = PROTECTED_FRANCHISES.some(franchise => 
@@ -490,11 +514,6 @@ export function shouldFilterContent(game: Game): boolean {
         return true;
       }
       
-      // Official company games are still allowed if they pass ownership check
-      if (isOfficialCompany(game)) {
-        console.log(`✅ Official game allowed: "${game.name}" by ${responsibleCompany}`);
-        return false;
-      }
       
       // NEW: Enhanced mod detection for aggressive companies
       if (hasEnhancedModIndicators(game)) {
@@ -523,8 +542,8 @@ export function shouldFilterContent(game: Game): boolean {
         return true;
       }
       
-      // Allow protected franchises if they're official
-      if (hasProtectedFranchise && !isOfficialCompany(game)) {
+      // Block protected franchises by non-official developers (since official already bypassed above)
+      if (hasProtectedFranchise) {
         console.log(`⚠️ Moderate filtering: "${game.name}" - Protected franchise by non-official developer`);
         return true;
       }
@@ -548,7 +567,7 @@ export function shouldFilterContent(game: Game): boolean {
         return true;
       }
       
-      if (hasProtectedFranchise && !isOfficialCompany(game)) {
+      if (hasProtectedFranchise) {
         console.log(`⚠️ Default filtering: "${game.name}" - Protected franchise by unknown company`);
         return true;
       }
