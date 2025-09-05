@@ -833,7 +833,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
 
                   {/* Message */}
                   <p className="text-gray-300 text-sm sm:text-base mb-6">
-                    Remove <span className="font-medium text-white">{gameToRemove.name}</span> from position {gameToRemove.position} in your Top 5?
+                    Remove <span className="font-medium text-white">{gameToRemove.name}</span> from your Top 5?
                   </p>
 
                   {/* Buttons */}
