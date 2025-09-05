@@ -1,6 +1,8 @@
 // Sister Game and Sequel Detection System
 // Identifies related games in the same series (sequels, prequels, sister games)
 
+import { getGameBoostScore, getPriorityGamesByFranchise } from '../data/priorityGames';
+
 interface GameSeriesInfo {
   baseName: string;
   seriesIdentifier: string;
@@ -655,7 +657,7 @@ function isSpinOff(gameName: string, franchiseBaseName: string): boolean {
 }
 
 /**
- * Apply flagship title prioritization
+ * Apply flagship title prioritization with priority game database
  */
 export function prioritizeFlagshipTitles(games: any[], query: string): any[] {
   const seriesInfo = detectGameSeries(query);
@@ -663,31 +665,43 @@ export function prioritizeFlagshipTitles(games: any[], query: string): any[] {
   
   const baseName = seriesInfo.seriesInfo.baseName;
   
+  // Import priority games database - moved to top of file
+  // (imports are handled at top of file)
+  
   return games.map(game => {
-    // Check if it's a spin-off
-    if (isSpinOff(game.name, baseName)) {
-      // Reduce boost for spin-offs
-      const currentBoost = game._sisterGameBoost || 0;
-      return {
-        ...game,
-        _sisterGameBoost: Math.max(0, currentBoost - 100),
-        _flagshipStatus: 'spin-off'
-      };
+    let totalBoost = game._sisterGameBoost || 0;
+    let flagshipStatus = 'unknown';
+    
+    // Check priority games database for flagship boost
+    const priorityBoost = getGameBoostScore(game.name, query);
+    if (priorityBoost > 0) {
+      totalBoost += priorityBoost;
+      flagshipStatus = 'flagship';
+      console.log(`🏆 Flagship game detected: "${game.name}" (+${priorityBoost} priority boost)`);
     }
     
-    // Check if it's a flagship title (already has high sister game boost)
+    // Check if it's a spin-off and penalize
+    if (isSpinOff(game.name, baseName)) {
+      totalBoost = Math.max(0, totalBoost - 100);
+      if (flagshipStatus === 'unknown') {
+        flagshipStatus = 'spin-off';
+      }
+    }
+    
+    // Check if it's already identified as a flagship by sister game logic
     if (game._sisterGameRelationship === 'exact' || 
         game._sisterGameRelationship === 'sequel' ||
         game._sisterGameRelationship === 'prequel') {
-      return {
-        ...game,
-        _flagshipStatus: 'flagship'
-      };
+      if (flagshipStatus === 'unknown') {
+        flagshipStatus = 'flagship';
+      }
     }
     
     return {
       ...game,
-      _flagshipStatus: 'unknown'
+      _sisterGameBoost: totalBoost,
+      _flagshipStatus: flagshipStatus,
+      _priorityBoost: priorityBoost
     };
   });
 }

@@ -103,7 +103,23 @@ export const SearchResultsPage: React.FC = () => {
     });
 
     setCurrentPage(page ? parseInt(page) : 1);
-  }, [searchParams]);
+    
+    // Automatically perform search if query parameter is present
+    if (query.trim()) {
+      setSearchTerm(query);
+      setSearchStarted(true);
+      // Use setTimeout to ensure state is updated before search
+      setTimeout(() => {
+        searchGames(query, {
+          genres: platform ? [platform] : undefined,
+          sortBy: sortField === 'name' ? 'name' : 
+                 sortField === 'release_date' ? 'release_date' : 
+                 sortField === 'avg_rating' ? 'rating' : 'popularity',
+          sortOrder: sortOrder as any || 'asc'
+        });
+      }, 0);
+    }
+  }, [searchParams, searchGames, setSearchTerm]);
 
   // Removed automatic search on typing - now only searches on Enter key press
   // This prevents 429 rate limiting errors from IGDB API

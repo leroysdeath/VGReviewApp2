@@ -447,11 +447,58 @@ class GameDataService {
         return [];
       }
 
-      // SIMPLIFIED: Use direct database search for speed
-      const dbResults = await this.searchGamesBasic(sanitizedQuery, filters);
+      // PHASE 1 & 2: Enhanced search with flagship prioritization
+      let dbResults = await this.searchGamesBasic(sanitizedQuery, filters);
       
-      console.log(`✅ Found ${dbResults.length} games from database search`);
-      return dbResults;
+      console.log(`📊 Initial database search: ${dbResults.length} games`);
+      
+      // Apply flagship prioritization from priority games database
+      const prioritizedResults = prioritizeFlagshipTitles(dbResults, sanitizedQuery);
+      
+      // Enhanced sorting: flagship games first, then by boost score
+      prioritizedResults.sort((a, b) => {
+        const boostA = (a._sisterGameBoost || 0) + (a._priorityBoost || 0);
+        const boostB = (b._sisterGameBoost || 0) + (b._priorityBoost || 0);
+        
+        // Primary sort: flagship games first
+        if (a._flagshipStatus === 'flagship' && b._flagshipStatus !== 'flagship') return -1;
+        if (b._flagshipStatus === 'flagship' && a._flagshipStatus !== 'flagship') return 1;
+        
+        // Secondary sort: by total boost score
+        if (boostA !== boostB) return boostB - boostA;
+        
+        // Tertiary sort: alphabetically
+        return (a.name || '').localeCompare(b.name || '');
+      });
+      
+      console.log(`✨ Applied flagship prioritization - ${prioritizedResults.filter(g => g._flagshipStatus === 'flagship').length} flagship games identified`);
+      
+      // If we have very few results and this looks like a franchise search, try sister game expansion
+      if (prioritizedResults.length < 5 && this.isFranchiseQuery(sanitizedQuery)) {
+        console.log(`🔍 Low results (${prioritizedResults.length}) for potential franchise "${sanitizedQuery}", trying sister game expansion...`);
+        
+        try {
+          const expandedResults = await gameSearchService.searchGames(
+            {
+              query: sanitizedQuery,
+              orderBy: 'relevance',
+              orderDirection: 'desc',
+              ...filters
+            },
+            { limit: 15, offset: 0 }
+          );
+          
+          if (expandedResults.games.length > prioritizedResults.length) {
+            console.log(`📈 Sister game expansion found ${expandedResults.games.length} games`);
+            return expandedResults.games.map(game => this.convertToCalculatedFields(game));
+          }
+        } catch (expansionError) {
+          console.warn('Sister game expansion failed:', expansionError);
+        }
+      }
+      
+      console.log(`✅ Returning ${prioritizedResults.length} games with flagship prioritization`);
+      return prioritizedResults;
     } catch (error) {
       console.error('❌ ENHANCED SEARCH FAILED:', error);
       console.log('🔄 FALLING BACK TO BASIC SEARCH');
@@ -499,7 +546,7 @@ class GameDataService {
 
       return dbResults
     } catch (error) {
-      console.error('Error in searchGames:', error)
+      console.error('Error in searchGamesBasic:', error)
       return []
     }
   }
@@ -566,53 +613,59 @@ class GameDataService {
    * Search games using exact title matching with ILIKE
    */
   private async searchGamesExact(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
-    let queryBuilder = supabase
-      .from('game')
-      .select(`
-        *,
-        rating(rating)
-      `)
-      .ilike('name', `%${query}%`)
-      .limit(20)
+    try {
+      let queryBuilder = supabase
+        .from('game')
+        .select(`
+          *,
+          rating(rating)
+        `)
+        .ilike('name', `%${query}%`)
+        .limit(20)
 
-    // Apply filters if provided
-    if (filters) {
-      if (filters.genres && filters.genres.length > 0) {
-        queryBuilder = queryBuilder.contains('genres', filters.genres)
+      // Apply filters if provided
+      if (filters) {
+        if (filters.genres && filters.genres.length > 0) {
+          queryBuilder = queryBuilder.contains('genres', filters.genres)
+        }
+
+        if (filters.platforms && filters.platforms.length > 0) {
+          queryBuilder = queryBuilder.contains('platforms', filters.platforms)
+        }
+
+        if (filters.releaseYear) {
+          const yearStart = `${filters.releaseYear}-01-01`
+          const yearEnd = `${filters.releaseYear}-12-31`
+          queryBuilder = queryBuilder
+            .gte('release_date', yearStart)
+            .lte('release_date', yearEnd)
+        }
       }
 
-      if (filters.platforms && filters.platforms.length > 0) {
-        queryBuilder = queryBuilder.contains('platforms', filters.platforms)
+      const { data, error } = await queryBuilder
+
+      if (error) {
+        console.error('Error in exact search:', error)
+        return []
       }
 
-      if (filters.releaseYear) {
-        const yearStart = `${filters.releaseYear}-01-01`
-        const yearEnd = `${filters.releaseYear}-12-31`
-        queryBuilder = queryBuilder
-          .gte('release_date', yearStart)
-          .lte('release_date', yearEnd)
-      }
-    }
-
-    const { data, error } = await queryBuilder
-
-    if (error) {
-      console.error('Error in exact search:', error)
-      return []
-    }
-
-    const games = (data || []).map((game: GameWithRating) =>
-      this.transformGameWithRatings(game)
-    )
-
-    // Apply minimum rating filter after calculating averages
-    if (filters?.minRating) {
-      return games.filter(game =>
-        game.averageUserRating && game.averageUserRating >= filters.minRating
+      const games = (data || []).map((game: GameWithRating) =>
+        this.transformGameWithRatings(game)
       )
-    }
 
-    return games
+      // Apply minimum rating filter after calculating averages
+      if (filters?.minRating) {
+        return games.filter(game =>
+          game.averageUserRating && game.averageUserRating >= filters.minRating
+        )
+      }
+
+      console.log(`✅ Found ${games.length} games from database search`);
+      return games
+    } catch (error) {
+      console.error('Error in searchGamesExact:', error);
+      return [];
+    }
   }
 
 
@@ -929,6 +982,53 @@ class GameDataService {
       console.error('Enhanced search failed:', error);
       return [];
     }
+  }
+
+  /**
+   * Check if a query looks like a franchise search
+   */
+  private isFranchiseQuery(query: string): boolean {
+    const franchiseKeywords = [
+      'pokemon', 'mario', 'zelda', 'final fantasy', 'call of duty',
+      'resident evil', 'metal gear', 'star fox', 'street fighter',
+      'tekken', 'mortal kombat', 'grand theft auto', 'assassins creed'
+    ];
+    
+    const lowerQuery = query.toLowerCase();
+    return franchiseKeywords.some(franchise => 
+      lowerQuery.includes(franchise) || franchise.includes(lowerQuery)
+    );
+  }
+
+  /**
+   * Convert GameSearchResult to GameWithCalculatedFields
+   */
+  private convertToCalculatedFields(game: any): GameWithCalculatedFields {
+    return {
+      id: game.id,
+      igdb_id: game.igdb_id || 0,
+      name: game.name || 'Unknown Game',
+      summary: game.summary || game.description || null,
+      release_date: game.release_date || null,
+      cover_url: game.cover_url || null,
+      genres: game.genres || [],
+      platforms: game.platforms || [],
+      screenshots: game.screenshots || [],
+      videos: [],
+      developer: game.developer || null,
+      publisher: game.publisher || null,
+      igdb_rating: game.igdb_rating || null,
+      category: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      averageUserRating: game.avg_user_rating || 0,
+      totalUserRatings: game.user_rating_count || 0,
+      fromIGDB: false,
+      // Preserve enhancement data
+      ...(game._sisterGameBoost && { _sisterGameBoost: game._sisterGameBoost }),
+      ...(game._flagshipStatus && { _flagshipStatus: game._flagshipStatus }),
+      ...(game._priorityBoost && { _priorityBoost: game._priorityBoost })
+    } as GameWithCalculatedFields;
   }
 }
 
