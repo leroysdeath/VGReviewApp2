@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 import { ReviewInteractions } from '../components/ReviewInteractions';
 import { useReviewInteractions } from '../hooks/useReviewInteractions';
+import { SmartImage } from '../components/SmartImage';
 
 interface Review {
   id: string;
@@ -332,14 +333,20 @@ export const ReviewPage: React.FC = () => {
             <div className="bg-gray-800 rounded-lg overflow-hidden">
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
-                  <img
-                    src={game.cover_url || '/placeholder-game.jpg'}
-                    alt={game.name}
-                    className="h-64 w-full object-cover md:h-80 md:w-64"
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder-game.jpg';
-                    }}
-                  />
+                  <Link to={`/game/${gameId}`}>
+                    <SmartImage
+                      src={game.cover_url || '/placeholder-game.jpg'}
+                      alt={game.name}
+                      className="h-64 w-full object-cover md:h-80 md:w-64 hover:opacity-90 transition-opacity cursor-pointer"
+                      optimization={{
+                        width: 640,  // High quality
+                        height: 960, // High quality
+                        quality: 95,  // High quality
+                        format: 'webp'
+                      }}
+                      fallback="/placeholder-game.jpg"
+                    />
+                  </Link>
                 </div>
                 <div className="p-8">
                   <Link 

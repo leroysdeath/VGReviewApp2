@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, X, GripVertical } from 'lucide-react';
+import { Plus, X, GripVertical, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { GamePickerModal } from '../GamePickerModal';
 import {
@@ -52,9 +52,10 @@ interface TopGamesProps {
   userId: string;
   limit: 5 | 10;
   editable?: boolean;
+  isOwnProfile?: boolean;
 }
 
-export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = false }) => {
+export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = false, isOwnProfile = false }) => {
   const navigate = useNavigate();
   const [topGames, setTopGames] = useState<TopGame[]>([]);
   const [userTopGames, setUserTopGames] = useState<UserTopGame[]>([]);
@@ -68,6 +69,8 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [layoutType, setLayoutType] = useState<'desktop' | 'tablet' | 'phoneLandscape' | 'phonePortrait'>('desktop');
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [gameToRemove, setGameToRemove] = useState<{ position: number; name: string } | null>(null);
 
   const isTop5 = limit === 5;
 
@@ -292,24 +295,32 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
     }
   };
 
-  const handleRemoveGame = async (position: number) => {
+  const handleRemoveGame = (position: number) => {
     if (isSaving) return;
     
-    // Show confirmation dialog
-    if (!window.confirm('Remove this game from your Top 5?')) {
-      return;
+    // Find the game being removed
+    const gameData = userTopGames.find(g => g.position === position);
+    if (gameData?.game) {
+      setGameToRemove({ position, name: gameData.game.name });
+      setShowRemoveModal(true);
     }
+  };
+
+  const confirmRemoveGame = async () => {
+    if (!gameToRemove || isSaving) return;
     
     const previousState = [...userTopGames];
     
     // Update state optimistically
     const updatedGames = userTopGames.map(item => 
-      item.position === position 
+      item.position === gameToRemove.position 
         ? { ...item, game: null }
         : item
     );
     
     setUserTopGames(updatedGames);
+    setShowRemoveModal(false);
+    setGameToRemove(null);
     
     // Auto-save to database
     const success = await saveTopGames(updatedGames);
@@ -317,6 +328,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
     if (!success) {
       // Revert on error
       setUserTopGames(previousState);
+      setError('Failed to remove game. Please try again.');
     }
   };
 
@@ -399,6 +411,21 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
     }
   }, [userId, limit, isTop5, editable]);
 
+  // Handle escape key for modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showRemoveModal) {
+        setShowRemoveModal(false);
+        setGameToRemove(null);
+      }
+    };
+    
+    if (showRemoveModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showRemoveModal]);
+
   // Loading state
   if (loading) {
     return (
@@ -444,15 +471,11 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
           <h2 className="text-xl font-semibold text-white">
             {isEditingTop5 ? 'Edit Your Top 5 (Drag to reorder)' : 'Your Top 5'}
           </h2>
-          {/* Only show edit button if all 5 slots are filled and no error */}
+          {/* Show edit button if there's at least 1 game in Top 5 */}
           {(() => {
-            const emptySlots = Array.from({ length: 5 }).filter((_, index) => {
-              const position = index + 1;
-              const gameData = userTopGames.find(g => g.position === position);
-              return !gameData?.game;
-            }).length;
+            const hasGames = userTopGames.some(g => g.game);
             
-            return emptySlots === 0 && !error && (
+            return hasGames && !error && (
               <button
                 onClick={() => setIsEditingTop5(!isEditingTop5)}
                 disabled={isSaving}
@@ -765,6 +788,79 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
             .filter(item => item.game?.id)
             .map(item => item.game!.id.toString())}
         />
+
+        {/* Remove Game Confirmation Modal */}
+        {showRemoveModal && gameToRemove && (
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity"
+              onClick={() => {
+                setShowRemoveModal(false);
+                setGameToRemove(null);
+              }}
+            />
+            
+            {/* Modal */}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+              <div 
+                className="bg-gray-800 rounded-xl p-6 max-w-md w-full max-w-[calc(100vw-2rem)] shadow-2xl pointer-events-auto border border-gray-700"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Close button */}
+                <button
+                  onClick={() => {
+                    setShowRemoveModal(false);
+                    setGameToRemove(null);
+                  }}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                  aria-label="Close modal"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+
+                {/* Content */}
+                <div className="flex flex-col items-center text-center">
+                  {/* Warning Icon */}
+                  <div className="mb-4 flex items-center justify-center w-12 h-12 rounded-full bg-yellow-900/20">
+                    <AlertTriangle className="h-6 w-6 text-yellow-500" />
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
+                    Remove from Top 5?
+                  </h3>
+
+                  {/* Message */}
+                  <p className="text-gray-300 text-sm sm:text-base mb-6">
+                    Remove <span className="font-medium text-white">{gameToRemove.name}</span> from your Top 5?
+                  </p>
+
+                  {/* Buttons */}
+                  <div className="flex gap-3 w-full">
+                    <button
+                      onClick={() => {
+                        setShowRemoveModal(false);
+                        setGameToRemove(null);
+                      }}
+                      disabled={isSaving}
+                      className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={confirmRemoveGame}
+                      disabled={isSaving}
+                      className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSaving ? 'Removing...' : 'OK'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     );
   }
@@ -779,7 +875,14 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
       {topGames.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-gray-400">
-            No games rated yet. Start rating games to see your top {limit}!
+            {limit === 5 
+              ? (isOwnProfile 
+                  ? 'No games rated yet. Start rating games to select your Top 5!'
+                  : 'They haven\'t decided on a Top 5 yet! How sad!')
+              : (isOwnProfile
+                  ? 'No games rated yet. Start rating games to see your Top 10!'
+                  : 'No games rated yet!')
+            }
           </p>
         </div>
       ) : (

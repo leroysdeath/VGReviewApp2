@@ -105,19 +105,19 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
   const IconStrip = () => (
     <button
       onClick={handleOpen}
-      className="md:hidden w-full flex items-center justify-between px-4 py-3 bg-gray-800/50 backdrop-blur-sm rounded-xl hover:bg-gray-700/50 transition-all active:scale-[0.98]"
+      className="md:hidden w-full flex items-center justify-center px-4 py-3 bg-gray-800/50 backdrop-blur-sm rounded-xl hover:bg-gray-700/50 transition-all active:scale-[0.98]"
       aria-label="Game actions menu"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         {/* Wishlist Icon */}
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
           isInWishlist && showWishlist 
             ? 'bg-red-600' 
             : showWishlist 
             ? 'border border-red-500 bg-gray-900/80 backdrop-blur-md' 
             : 'bg-gray-800 opacity-30'
         }`}>
-          <Gift className={`h-5 w-5 ${
+          <Gift className={`h-6 w-6 ${
             isInWishlist && showWishlist 
               ? 'text-white' 
               : showWishlist 
@@ -127,14 +127,14 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
         </div>
 
         {/* Collection Icon */}
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
           isInCollection && showCollection
             ? 'bg-orange-600'
             : showCollection
             ? 'border border-orange-500 bg-gray-900/80 backdrop-blur-md'
             : 'bg-gray-800 opacity-30'
         }`}>
-          <BookOpen className={`h-5 w-5 ${
+          <BookOpen className={`h-6 w-6 ${
             isInCollection && showCollection
               ? 'text-white'
               : showCollection
@@ -144,41 +144,38 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
         </div>
 
         {/* Started Icon */}
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
           isStarted 
             ? 'bg-blue-600' 
             : 'border border-blue-500 bg-gray-900/80 backdrop-blur-md'
         }`}>
-          <Play className={`h-5 w-5 ${
+          <Play className={`h-6 w-6 ${
             isStarted ? 'text-white' : 'text-blue-500'
           }`} />
         </div>
 
         {/* Finished Icon */}
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
           isCompleted 
             ? 'bg-green-600' 
             : 'border border-green-500 bg-gray-900/80 backdrop-blur-md'
         }`}>
-          <CheckCircle className={`h-5 w-5 ${
+          <CheckCircle className={`h-6 w-6 ${
             isCompleted ? 'text-white' : 'text-green-500'
           }`} />
         </div>
 
         {/* Review Icon */}
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
           userHasReviewed 
             ? 'bg-purple-600' 
             : 'border border-purple-500 bg-gray-900/80 backdrop-blur-md'
         }`}>
-          <ScrollText className={`h-5 w-5 ${
+          <ScrollText className={`h-6 w-6 ${
             userHasReviewed ? 'text-white' : 'text-purple-500'
           }`} />
         </div>
       </div>
-
-      {/* Three dots */}
-      <span className="text-gray-400 text-xl">...</span>
     </button>
   );
 

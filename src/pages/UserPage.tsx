@@ -250,7 +250,7 @@ export const UserPage: React.FC = () => {
             onClick={() => setActiveTab('playlist')}
             className={`pb-2 ${activeTab === 'playlist' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
-            Playlist
+            Want to Play
           </button>
           <button
             onClick={() => setActiveTab('activity')}
@@ -262,16 +262,16 @@ export const UserPage: React.FC = () => {
 
         {/* Profile Content - Direct rendering with focused components */}
         {activeTab === 'top5' && (
-          <TopGames userId={id} limit={5} editable={isOwnProfile} />
+          <TopGames userId={id} limit={5} editable={isOwnProfile} isOwnProfile={isOwnProfile} />
         )}
         {activeTab === 'top10' && (
-          <TopGames userId={id} limit={10} />
+          <TopGames userId={id} limit={10} isOwnProfile={isOwnProfile} />
         )}
         {activeTab === 'playlist' && (
           <PlaylistTabs userId={id!} isOwnProfile={isOwnProfile} />
         )}
         {activeTab === 'activity' && (
-          <ActivityFeed userId={id} />
+          <ActivityFeed userId={id} isOwnProfile={isOwnProfile} />
         )}
       </div>
 
