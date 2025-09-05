@@ -34,6 +34,8 @@ interface Game {
   hypes?: number;
   user_rating_count?: number;
   avg_user_rating?: number;
+  platforms?: string[] | Array<{name: string}>;
+  popularity?: number;
 }
 
 export enum GamePriority {
@@ -46,12 +48,78 @@ export enum GamePriority {
   LOW_TIER = 100        // Everything else (Tier 6)
 }
 
+/**
+ * Category priority order for search results
+ * Main games should always appear before DLC, expansions, etc.
+ */
+export enum CategoryPriority {
+  MAIN_GAMES = 10000,      // Category 0: Main games - highest priority
+  EXPANSIONS = 5000,       // Category 2: Standalone expansions, Category 4: Standalone expansion
+  ENHANCED_GAMES = 4000,   // Category 8: Remake, Category 9: Remaster, Category 10: Expanded game
+  EPISODIC = 3000,         // Category 6: Episode, Category 7: Season
+  UPDATES_PORTS = 2000,    // Category 11: Port, Category 14: Update
+  DLC_ADDONS = 1000,       // Category 1: DLC, Category 13: Pack
+  BUNDLES = 500,           // Category 3: Bundle
+  MODS_FORKS = 100,        // Category 5: Mod, Category 12: Fork
+  UNKNOWN = 0              // Unknown category
+}
+
 interface PriorityResult {
   priority: GamePriority;
   score: number;
+  categoryPriority: CategoryPriority;
   reasons: string[];
   boosts: string[];
   penalties: string[];
+}
+
+/**
+ * Get category priority based on IGDB category
+ * Ensures main games appear before DLC, expansions, etc.
+ */
+function getCategoryPriority(category?: number): CategoryPriority {
+  switch (category) {
+    case 0:  return CategoryPriority.MAIN_GAMES;     // Main game
+    case 2:  return CategoryPriority.EXPANSIONS;     // Expansion
+    case 4:  return CategoryPriority.EXPANSIONS;     // Standalone expansion
+    case 8:  return CategoryPriority.ENHANCED_GAMES; // Remake
+    case 9:  return CategoryPriority.ENHANCED_GAMES; // Remaster
+    case 10: return CategoryPriority.ENHANCED_GAMES; // Expanded game
+    case 6:  return CategoryPriority.EPISODIC;       // Episode
+    case 7:  return CategoryPriority.EPISODIC;       // Season
+    case 11: return CategoryPriority.UPDATES_PORTS;  // Port
+    case 14: return CategoryPriority.UPDATES_PORTS;  // Update
+    case 1:  return CategoryPriority.DLC_ADDONS;     // DLC/Add-on
+    case 13: return CategoryPriority.DLC_ADDONS;     // Pack
+    case 3:  return CategoryPriority.BUNDLES;        // Bundle
+    case 5:  return CategoryPriority.MODS_FORKS;     // Mod
+    case 12: return CategoryPriority.MODS_FORKS;     // Fork
+    default: return CategoryPriority.UNKNOWN;        // Unknown
+  }
+}
+
+/**
+ * Get human-readable category name for logging
+ */
+function getCategoryName(category?: number): string {
+  switch (category) {
+    case 0:  return 'Main game';
+    case 1:  return 'DLC/Add-on';
+    case 2:  return 'Expansion';
+    case 3:  return 'Bundle';
+    case 4:  return 'Standalone expansion';
+    case 5:  return 'Mod';
+    case 6:  return 'Episode';
+    case 7:  return 'Season';
+    case 8:  return 'Remake';
+    case 9:  return 'Remaster';
+    case 10: return 'Expanded game';
+    case 11: return 'Port';
+    case 12: return 'Fork';
+    case 13: return 'Pack';
+    case 14: return 'Update';
+    default: return 'Unknown';
+  }
 }
 
 /**
@@ -209,6 +277,10 @@ export function calculateGamePriority(game: Game): PriorityResult {
 
   const searchText = [game.name, game.developer, game.publisher, game.summary, game.description]
     .filter(Boolean).join(' ').toLowerCase();
+
+  // Get category priority - this is the primary sorting criterion
+  const categoryPriority = getCategoryPriority(game.category);
+  const categoryName = getCategoryName(game.category);
 
   // === 6-TIER ENHANCED GAME SYSTEM ===
 
@@ -501,6 +573,22 @@ export function calculateGamePriority(game: Game): PriorityResult {
     score += significanceBoost;
   }
 
+  // Apply sister game and sequel boosts
+  if ((game as any)._sisterGameBoost) {
+    const sisterBoost = (game as any)._sisterGameBoost;
+    const sisterRelationship = (game as any)._sisterGameRelationship;
+    const sisterConfidence = (game as any)._sisterGameConfidence;
+    
+    boosts.push(`Sister game (+${sisterBoost}): ${sisterRelationship} (${Math.round(sisterConfidence * 100)}% confidence)`);
+    score += sisterBoost;
+
+    // Sister games should get at least SEQUEL_TIER priority if they're main games
+    if (sisterBoost >= 100 && game.category === 0 && basePriority < GamePriority.SEQUEL_TIER) {
+      basePriority = GamePriority.SEQUEL_TIER;
+      reasons.push('SEQUEL TIER: Sister/sequel game in recognized series');
+    }
+  }
+
   // === FINAL ADJUSTMENTS ===
 
   // Ensure minimum scores
@@ -524,6 +612,7 @@ export function calculateGamePriority(game: Game): PriorityResult {
   return {
     priority: basePriority,
     score: Math.round(score),
+    categoryPriority,
     reasons,
     boosts,
     penalties
@@ -531,33 +620,39 @@ export function calculateGamePriority(game: Game): PriorityResult {
 }
 
 /**
- * Sort games by priority score (highest first)
+ * Sort games by priority with category prioritization
+ * Main games always appear before DLC, expansions, etc.
  */
 export function sortGamesByPriority(games: Game[]): Game[] {
   return [...games].sort((a, b) => {
     const aPriority = calculateGamePriority(a);
     const bPriority = calculateGamePriority(b);
     
-    // Primary sort: by priority score (descending)
+    // PRIMARY SORT: Category priority (Main games first, then DLC/expansions, etc.)
+    if (aPriority.categoryPriority !== bPriority.categoryPriority) {
+      return bPriority.categoryPriority - aPriority.categoryPriority; // Higher category priority first
+    }
+    
+    // SECONDARY SORT: Game priority score (flagship, famous, sequel, etc.)
     if (aPriority.score !== bPriority.score) {
       return bPriority.score - aPriority.score;
     }
     
-    // Secondary sort: by rating (descending)
+    // TERTIARY SORT: Rating quality (descending)
     const aRating = a.igdb_rating || a.rating || 0;
     const bRating = b.igdb_rating || b.rating || 0;
     if (aRating !== bRating) {
       return bRating - aRating;
     }
     
-    // Tertiary sort: by engagement metrics (descending)
+    // QUATERNARY SORT: Engagement metrics (descending)
     const aEngagement = (a.total_rating_count || a.rating_count || 0) + (a.follows || 0) + (a.hypes || 0);
     const bEngagement = (b.total_rating_count || b.rating_count || 0) + (b.follows || 0) + (b.hypes || 0);
     if (aEngagement !== bEngagement) {
       return bEngagement - aEngagement;
     }
     
-    // Final sort: alphabetical
+    // FINAL SORT: Alphabetical by name
     return a.name.localeCompare(b.name);
   });
 }

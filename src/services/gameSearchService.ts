@@ -1,5 +1,10 @@
 import { supabase } from './supabase'
 import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization'
+import { 
+  generateSisterGameQueries, 
+  applySisterGameBoost, 
+  detectGameSeries 
+} from '../utils/sisterGameDetection'
 
 export interface SearchFilters {
   query?: string
@@ -12,6 +17,98 @@ export interface SearchFilters {
   genres?: string[]
   orderBy?: 'relevance' | 'rating' | 'release_date' | 'name' | 'rating_count'
   orderDirection?: 'asc' | 'desc'
+}
+
+/**
+ * Franchise-aware search query expansion
+ * Expands simple queries like "mario" into comprehensive search terms
+ */
+function expandFranchiseQuery(query: string): string[] {
+  const normalizedQuery = query.toLowerCase().trim();
+  const expansions = [normalizedQuery]; // Always include original query
+  
+  // Franchise expansions for better coverage
+  const franchiseExpansions: Record<string, string[]> = {
+    // Mario franchise
+    'mario': ['mario', 'super mario', 'mario bros', 'mario kart', 'paper mario', 'mario party'],
+    'super mario': ['super mario', 'mario'],
+    
+    // Pokemon franchise  
+    'pokemon': ['pokemon', 'pokémon', 'pocket monster', 'pkmn'],
+    'pokémon': ['pokemon', 'pokémon', 'pocket monster', 'pkmn'],
+    
+    // Zelda franchise
+    'zelda': ['zelda', 'legend of zelda', 'link'],
+    'link': ['link', 'zelda', 'legend of zelda'],
+    
+    // Metroid franchise
+    'metroid': ['metroid', 'samus'],
+    'samus': ['samus', 'metroid'],
+    
+    // Final Fantasy franchise
+    'final fantasy': ['final fantasy', 'ff'],
+    'ff': ['ff', 'final fantasy'],
+    
+    // Grand Theft Auto
+    'gta': ['gta', 'grand theft auto'],
+    'grand theft auto': ['grand theft auto', 'gta'],
+    
+    // Call of Duty
+    'cod': ['cod', 'call of duty'],
+    'call of duty': ['call of duty', 'cod'],
+    
+    // Elder Scrolls
+    'elder scrolls': ['elder scrolls', 'tes'],
+    'skyrim': ['skyrim', 'elder scrolls'],
+    'morrowind': ['morrowind', 'elder scrolls'],
+    'oblivion': ['oblivion', 'elder scrolls'],
+    
+    // Street Fighter
+    'street fighter': ['street fighter', 'sf'],
+    'sf': ['sf', 'street fighter'],
+    
+    // Tekken
+    'tekken': ['tekken', 'iron fist tournament'],
+    
+    // Dragon Quest
+    'dragon quest': ['dragon quest', 'dq', 'dragon warrior'],
+    'dq': ['dq', 'dragon quest']
+  };
+  
+  // Add franchise-specific expansions
+  if (franchiseExpansions[normalizedQuery]) {
+    expansions.push(...franchiseExpansions[normalizedQuery]);
+  }
+  
+  // Add sub-string expansions for compound searches
+  const words = normalizedQuery.split(/\s+/);
+  if (words.length > 1) {
+    words.forEach(word => {
+      if (word.length > 2 && franchiseExpansions[word]) {
+        expansions.push(...franchiseExpansions[word]);
+      }
+    });
+  }
+  
+  // Remove duplicates and return
+  return [...new Set(expansions)];
+}
+
+/**
+ * Enhanced mod detection to prevent mod content from appearing in enhanced searches
+ * This works alongside the existing content protection filter
+ */
+function hasEnhancedModIndicators(game: any): boolean {
+  const searchText = [game.name, game.developer, game.publisher, game.summary, game.description]
+    .filter(Boolean).join(' ').toLowerCase();
+  
+  const modIndicators = [
+    'mod', 'hack', 'rom hack', 'romhack', 'homebrew', 'fan game', 'fangame',
+    'unofficial', 'community', 'enhanced edition', 'remastered by', 'modded',
+    'total conversion', 'overhaul', 'unofficial patch', 'fan translation'
+  ];
+  
+  return modIndicators.some(indicator => searchText.includes(indicator));
 }
 
 export interface PaginationOptions {
@@ -52,8 +149,8 @@ export interface SearchResponse {
 }
 
 /**
- * Calculate relevance score for search results
- * Prevents unrelated games from appearing (like Mario in Zelda searches)
+ * Enhanced relevance calculation with franchise awareness
+ * Improves coverage for franchise games while preventing unrelated matches
  */
 function calculateSearchRelevance(game: any, searchQuery: string): number {
   if (!searchQuery || !searchQuery.trim()) return 1;
@@ -73,23 +170,42 @@ function calculateSearchRelevance(game: any, searchQuery: string): number {
   if (gameName === query) {
     relevanceScore += 100;
   } else if (gameName.includes(query) || query.includes(gameName)) {
-    // Calculate how much of the name matches
     const matchRatio = Math.min(query.length, gameName.length) / Math.max(query.length, gameName.length);
     relevanceScore += 100 * matchRatio;
   }
 
-  // Query words in name (very high relevance)
+  // Enhanced word matching for franchise games
   maxPossibleScore += 80;
   const queryWords = query.split(/\s+/);
   const nameWords = gameName.split(/\s+/);
   let nameWordMatches = 0;
+  
   queryWords.forEach(queryWord => {
-    if (nameWords.some(nameWord => nameWord.includes(queryWord) || queryWord.includes(nameWord))) {
+    // Exact word match
+    const exactMatch = nameWords.some(nameWord => nameWord === queryWord);
+    if (exactMatch) {
       nameWordMatches++;
+      return;
+    }
+    
+    // Partial word match (for cases like "mario" matching "mario:")
+    const partialMatch = nameWords.some(nameWord => 
+      nameWord.includes(queryWord) || queryWord.includes(nameWord)
+    );
+    if (partialMatch) {
+      nameWordMatches += 0.8; // Slightly lower score for partial matches
+      return;
+    }
+    
+    // Franchise-specific fuzzy matching
+    const franchiseMatch = checkFranchiseMatch(queryWord, nameWords);
+    if (franchiseMatch) {
+      nameWordMatches += 0.6;
     }
   });
+  
   if (queryWords.length > 0) {
-    relevanceScore += 80 * (nameWordMatches / queryWords.length);
+    relevanceScore += 80 * Math.min(nameWordMatches / queryWords.length, 1);
   }
 
   // Developer/Publisher match (medium relevance)
@@ -116,12 +232,163 @@ function calculateSearchRelevance(game: any, searchQuery: string): number {
     }
   });
 
+  // Franchise bonus scoring
+  const franchiseBonus = calculateFranchiseBonus(game, query);
+  relevanceScore += franchiseBonus;
+  maxPossibleScore += 20; // Account for potential franchise bonus
+
   // Calculate final relevance as percentage
   const finalRelevance = maxPossibleScore > 0 ? (relevanceScore / maxPossibleScore) : 0;
   
-  // Apply strict threshold - games below 15% relevance are considered unrelated
-  const RELEVANCE_THRESHOLD = 0.15;
+  // Reduce threshold for franchise games to improve coverage
+  const RELEVANCE_THRESHOLD = 0.12; // Reduced from 0.15
   return finalRelevance >= RELEVANCE_THRESHOLD ? finalRelevance : 0;
+}
+
+/**
+ * Check for franchise-specific word matches
+ */
+function checkFranchiseMatch(queryWord: string, nameWords: string[]): boolean {
+  const franchiseMatches: Record<string, string[]> = {
+    'mario': ['super', 'mario', 'bros', 'kart', 'party', 'paper'],
+    'zelda': ['legend', 'zelda', 'link', 'hyrule'],
+    'pokemon': ['pokemon', 'pokémon', 'pocket', 'monster'],
+    'metroid': ['metroid', 'samus'],
+    'final': ['final', 'fantasy', 'ff'],
+    'fantasy': ['final', 'fantasy', 'ff']
+  };
+  
+  const relatedWords = franchiseMatches[queryWord];
+  if (relatedWords) {
+    return nameWords.some(nameWord => relatedWords.includes(nameWord));
+  }
+  
+  return false;
+}
+
+/**
+ * Calculate franchise bonus for well-known franchises
+ */
+function calculateFranchiseBonus(game: any, query: string): number {
+  const gameName = (game.name || '').toLowerCase();
+  const developer = (game.developer || '').toLowerCase();
+  const publisher = (game.publisher || '').toLowerCase();
+  
+  // Official franchise publishers get bonus
+  const officialPublishers = ['nintendo', 'sony', 'microsoft', 'square enix', 'capcom', 'konami', 'bandai namco'];
+  const hasOfficialPublisher = officialPublishers.some(pub => 
+    developer.includes(pub) || publisher.includes(pub)
+  );
+  
+  if (hasOfficialPublisher) {
+    // Check if this is likely a main franchise entry
+    const isMainEntry = !gameName.includes('dlc') && 
+                       !gameName.includes('expansion') && 
+                       game.category === 0; // Main game category
+    
+    if (isMainEntry) {
+      return 20; // Bonus for official main franchise entries
+    } else {
+      return 10; // Smaller bonus for official franchise content
+    }
+  }
+  
+  return 0;
+}
+
+/**
+ * Calculate title similarity score for exact/near matches
+ */
+function calculateTitleSimilarity(gameName: string, searchQuery: string): number {
+  if (!gameName || !searchQuery) return 0;
+  
+  const gameTitle = gameName.toLowerCase().trim();
+  const query = searchQuery.toLowerCase().trim();
+  
+  // Exact match (highest score)
+  if (gameTitle === query) {
+    return 1000;
+  }
+  
+  // Exact match ignoring articles (the, a, an)
+  const cleanGameTitle = gameTitle.replace(/^(the|a|an)\s+/i, '').trim();
+  const cleanQuery = query.replace(/^(the|a|an)\s+/i, '').trim();
+  if (cleanGameTitle === cleanQuery) {
+    return 950;
+  }
+  
+  // Check for content type indicators that suggest this is additional content
+  const contentTypeIndicators = ['dlc', 'expansion', 'pack', 'edition', 'remaster', 'remake', 'enhanced', 'special', 'deluxe', 'definitive', 'goty', 'collection', 'bundle', 'mod', 'patch', 'update'];
+  const hasContentTypeIndicator = contentTypeIndicators.some(indicator => gameTitle.includes(indicator));
+  
+  // Query is start of title, but apply penalty for additional content
+  if (gameTitle.startsWith(query)) {
+    let score = 900;
+    // Reduce score if this appears to be additional content (DLC, expansion, etc.)
+    if (hasContentTypeIndicator) {
+      score = 750; // Still high, but lower than main games without indicators
+    }
+    return score;
+  }
+  
+  // Title starts with query after articles
+  if (cleanGameTitle.startsWith(cleanQuery)) {
+    let score = 850;
+    if (hasContentTypeIndicator) {
+      score = 700;
+    }
+    return score;
+  }
+  
+  // Query contains the full title (e.g., "super mario world" matches "Mario World")
+  if (query.includes(gameTitle)) {
+    return 800;
+  }
+  
+  // Title contains the full query (e.g., "Mario Kart 64" matches "mario")
+  if (gameTitle.includes(query)) {
+    const ratio = query.length / gameTitle.length;
+    return 700 * ratio; // Higher score for queries that are larger portion of title
+  }
+  
+  // Word-by-word matching
+  const queryWords = query.split(/\s+/).filter(w => w.length > 0);
+  const titleWords = gameTitle.split(/\s+/).filter(w => w.length > 0);
+  
+  if (queryWords.length === 0 || titleWords.length === 0) return 0;
+  
+  // Count exact word matches
+  let exactMatches = 0;
+  let partialMatches = 0;
+  
+  queryWords.forEach(queryWord => {
+    const exactMatch = titleWords.some(titleWord => titleWord === queryWord);
+    if (exactMatch) {
+      exactMatches++;
+    } else {
+      // Check for partial matches (e.g., "mario" in "supermario")
+      const partialMatch = titleWords.some(titleWord => 
+        titleWord.includes(queryWord) || queryWord.includes(titleWord)
+      );
+      if (partialMatch) {
+        partialMatches++;
+      }
+    }
+  });
+  
+  const totalMatches = exactMatches + (partialMatches * 0.5);
+  const matchRatio = totalMatches / queryWords.length;
+  
+  // Score based on match percentage and word order
+  if (matchRatio >= 0.8) {
+    return 600 * matchRatio;
+  } else if (matchRatio >= 0.5) {
+    return 400 * matchRatio;
+  } else if (matchRatio >= 0.3) {
+    return 200 * matchRatio;
+  }
+  
+  return 0;
 }
 
 /**
@@ -140,6 +407,135 @@ function filterByRelevance(games: any[], searchQuery?: string): any[] {
     }
     return true;
   });
+}
+
+/**
+ * Intelligent multi-strategy search that tries different approaches
+ * to maximize franchise game coverage including sister games and sequels
+ */
+async function executeIntelligentSearch(originalQuery: string): Promise<any[]> {
+  console.log(`🧠 INTELLIGENT SEARCH: Starting multi-strategy search for "${originalQuery}"`);
+  
+  const allResults = new Map<number, any>(); // Use Map to avoid duplicates by ID
+  let totalAttempts = 0;
+  
+  // Strategy 1: Original query (primary search)
+  totalAttempts++;
+  try {
+    console.log(`📋 STRATEGY 1: Original query "${originalQuery}"`);
+    const { data: originalResults, error: originalError } = await supabase
+      .rpc('search_games_secure', {
+        search_query: originalQuery.trim(),
+        limit_count: 100
+      });
+      
+    if (!originalError && originalResults) {
+      originalResults.forEach((game: any) => {
+        if (!allResults.has(game.id)) {
+          allResults.set(game.id, { ...game, _searchStrategy: 'original', _searchRank: game.search_rank });
+        }
+      });
+      console.log(`   ✅ Found ${originalResults.length} games with original query`);
+    }
+  } catch (error) {
+    console.log(`   ❌ Original query failed:`, error);
+  }
+  
+  // Strategy 2: Franchise expansions
+  const expandedQueries = expandFranchiseQuery(originalQuery);
+  for (const expandedQuery of expandedQueries) {
+    if (expandedQuery === originalQuery.toLowerCase().trim()) continue; // Skip duplicate
+    
+    totalAttempts++;
+    try {
+      console.log(`📋 STRATEGY 2: Expanded query "${expandedQuery}"`);
+      const { data: expandedResults, error: expandedError } = await supabase
+        .rpc('search_games_secure', {
+          search_query: expandedQuery,
+          limit_count: 100
+        });
+        
+      if (!expandedError && expandedResults) {
+        expandedResults.forEach((game: any) => {
+          if (!allResults.has(game.id)) {
+            allResults.set(game.id, { ...game, _searchStrategy: `expanded:${expandedQuery}`, _searchRank: game.search_rank });
+          }
+        });
+        console.log(`   ✅ Found ${expandedResults.length} additional games with "${expandedQuery}"`);
+      }
+    } catch (error) {
+      console.log(`   ❌ Expanded query "${expandedQuery}" failed:`, error);
+    }
+  }
+  
+  // Strategy 3: Sister game and sequel expansion (Pokemon Red → Blue/Yellow, Final Fantasy 7 → other numbers)
+  const sisterGameQueries = generateSisterGameQueries(originalQuery);
+  if (sisterGameQueries.length > 0) {
+    console.log(`📋 STRATEGY 3: Sister game expansion for "${originalQuery}" (${sisterGameQueries.length} queries)`);
+    
+    for (const sisterQuery of sisterGameQueries) {
+      if (sisterQuery === originalQuery.toLowerCase().trim()) continue; // Skip duplicate
+      if (totalAttempts >= 15) break; // Respect API limits
+      
+      totalAttempts++;
+      try {
+        const { data: sisterResults, error: sisterError } = await supabase
+          .rpc('search_games_secure', {
+            search_query: sisterQuery,
+            limit_count: 50 // Lower limit for sister games to balance coverage vs performance
+          });
+          
+        if (!sisterError && sisterResults) {
+          sisterResults.forEach((game: any) => {
+            if (!allResults.has(game.id)) {
+              allResults.set(game.id, { ...game, _searchStrategy: `sister:${sisterQuery}`, _searchRank: game.search_rank });
+            }
+          });
+          console.log(`   ✅ Found ${sisterResults.length} sister games with "${sisterQuery}"`);
+        }
+      } catch (error) {
+        console.log(`   ❌ Sister game query "${sisterQuery}" failed:`, error);
+      }
+    }
+  }
+  
+  // Strategy 4: Partial matching with ILIKE as fallback (for partial matches that full-text missed)
+  // Only if we have very few results so far
+  if (allResults.size < 10) {
+    totalAttempts++;
+    try {
+      console.log(`📋 STRATEGY 4: Partial matching fallback for "${originalQuery}"`);
+      const { data: partialResults, error: partialError } = await supabase
+        .from('game')
+        .select('id, name, summary, description, release_date, pic_url, genres, igdb_id, developer, publisher')
+        .or(`name.ilike.%${originalQuery}%,summary.ilike.%${originalQuery}%,developer.ilike.%${originalQuery}%`)
+        .limit(50);
+        
+      if (!partialError && partialResults) {
+        partialResults.forEach((game: any) => {
+          if (!allResults.has(game.id)) {
+            allResults.set(game.id, { ...game, _searchStrategy: 'partial', _searchRank: 0.1 });
+          }
+        });
+        console.log(`   ✅ Found ${partialResults.length} additional games with partial matching`);
+      }
+    } catch (error) {
+      console.log(`   ❌ Partial matching failed:`, error);
+    }
+  }
+  
+  const finalResults = Array.from(allResults.values());
+  console.log(`🎯 INTELLIGENT SEARCH COMPLETE: Found ${finalResults.length} unique games across ${totalAttempts} strategies`);
+  
+  // Log strategy breakdown
+  const strategyBreakdown = finalResults.reduce((acc: any, game) => {
+    const strategy = game._searchStrategy || 'unknown';
+    acc[strategy] = (acc[strategy] || 0) + 1;
+    return acc;
+  }, {});
+  console.log(`📊 SEARCH STRATEGY BREAKDOWN:`, strategyBreakdown);
+  
+  return finalResults;
 }
 
 class GameSearchService {
@@ -171,26 +567,20 @@ class GameSearchService {
           avg_rating:rating(rating).avg()
         `, { count: 'exact' })
 
-      // Apply search query filter using secure full-text search
+      // Apply search query filter using intelligent multi-strategy search
       if (query && query.trim()) {
-        // Use secure RPC function instead of vulnerable ILIKE
-        const { data: searchResults, error: searchError } = await supabase
-          .rpc('search_games_secure', {
-            search_query: query.trim(),
-            limit_count: 1000 // Get all matching for further filtering
-          });
-          
-        if (searchError) {
-          console.error('Search RPC error:', searchError);
-          throw searchError;
-        }
+        console.log(`🔍 SEARCH INITIATED: "${query.trim()}"`);
+        
+        // Use intelligent search that tries multiple strategies
+        const searchResults = await executeIntelligentSearch(query.trim());
         
         if (searchResults && searchResults.length > 0) {
           const matchingIds = searchResults.map(r => r.id);
           baseQuery = baseQuery.in('id', matchingIds);
+          console.log(`✅ SEARCH RESULTS: Found ${searchResults.length} games, querying database for full details`);
         } else {
-          // No search results, return empty
-          return { data: [], count: 0, error: null };
+          console.log(`❌ NO SEARCH RESULTS: No games found for query "${query.trim()}"`);
+          return { games: [], totalCount: 0, hasMore: false };
         }
       }
 
@@ -311,10 +701,22 @@ class GameSearchService {
         filteredGames = filterByRelevance(filteredGames, query.trim());
       }
 
-      // Sort the results using the intelligent priority system
+      // Apply sister game boosts for better series coverage (Pokemon Red → Blue/Yellow, etc.)
+      if (query && query.trim()) {
+        // Get the original game's genres for genre-based prioritization
+        const potentialOriginalGame = filteredGames.find(game => {
+          const titleScore = calculateTitleSimilarity(game.name, query.trim());
+          return titleScore >= 900; // High similarity suggests this is the original searched game
+        });
+        
+        const originalGameGenres = potentialOriginalGame?.genres;
+        filteredGames = applySisterGameBoost(filteredGames, query.trim(), originalGameGenres);
+      }
+
+      // Sort the results using the intelligent priority system with title similarity
       if (orderBy === 'relevance') {
-        // Use the advanced prioritization system for relevance sorting
-        filteredGames = sortGamesByPriority(filteredGames);
+        // Use title-aware sorting that prioritizes exact matches at the top
+        filteredGames = this.sortGamesByTitleSimilarityAndPriority(filteredGames, query?.trim());
       } else {
         // Use traditional sorting for other sort options
         filteredGames = this.sortGames(filteredGames, orderBy, orderDirection, query);
@@ -471,6 +873,79 @@ class GameSearchService {
     }
     
     return sorted
+  }
+
+  /**
+   * Sort games by title similarity to search query first, then by priority/category
+   * Ensures exact/similar matches appear at the top of search results
+   */
+  private sortGamesByTitleSimilarityAndPriority(games: any[], searchQuery?: string): any[] {
+    if (!searchQuery || !searchQuery.trim()) {
+      // No search query, use regular priority sorting
+      return sortGamesByPriority(games);
+    }
+
+    console.log(`🎯 TITLE-AWARE SORTING: Sorting ${games.length} games for query "${searchQuery}"`);
+
+    return [...games].sort((a, b) => {
+      // Calculate title similarity scores
+      const aTitleScore = calculateTitleSimilarity(a.name, searchQuery);
+      const bTitleScore = calculateTitleSimilarity(b.name, searchQuery);
+
+      // Calculate priority information
+      const aPriority = calculateGamePriority(a);
+      const bPriority = calculateGamePriority(b);
+
+      // SMART SORTING LOGIC: When both games have high title similarity (>800), 
+      // prioritize category to ensure main games come before DLC of the same franchise
+      const highSimilarityThreshold = 800;
+      if (aTitleScore > highSimilarityThreshold && bTitleScore > highSimilarityThreshold) {
+        // Both have high similarity, prioritize by category first to maintain hierarchy
+        if (aPriority.categoryPriority !== bPriority.categoryPriority) {
+          console.log(`   📂 "${a.name}" vs "${b.name}" - High similarity, category priority wins`);
+          return bPriority.categoryPriority - aPriority.categoryPriority;
+        }
+        // Same category, then by title similarity
+        if (aTitleScore !== bTitleScore) {
+          console.log(`   📊 "${a.name}" (${aTitleScore}) vs "${b.name}" (${bTitleScore}) - Same category, title similarity wins`);
+          return bTitleScore - aTitleScore;
+        }
+      } else {
+        // Normal case: title similarity first when scores are not both high
+        if (aTitleScore !== bTitleScore) {
+          console.log(`   📊 "${a.name}" (${aTitleScore}) vs "${b.name}" (${bTitleScore}) - Title similarity wins`);
+          return bTitleScore - aTitleScore; // Higher similarity first
+        }
+        // Same title similarity, then category priority
+        if (aPriority.categoryPriority !== bPriority.categoryPriority) {
+          console.log(`   📂 "${a.name}" vs "${b.name}" - Same title similarity, category priority wins`);
+          return bPriority.categoryPriority - aPriority.categoryPriority;
+        }
+      }
+
+      // TERTIARY SORT: Game priority score (Famous > Sequel > Main > DLC > Community > Low)
+      if (aPriority.score !== bPriority.score) {
+        console.log(`   ⭐ "${a.name}" (${aPriority.score}) vs "${b.name}" (${bPriority.score}) - Priority score wins`);
+        return bPriority.score - aPriority.score;
+      }
+
+      // QUATERNARY SORT: IGDB/Quality rating
+      const aRating = a.igdb_rating || a.rating || 0;
+      const bRating = b.igdb_rating || b.rating || 0;
+      if (aRating !== bRating) {
+        return bRating - aRating;
+      }
+
+      // QUINARY SORT: User engagement
+      const aEngagement = (a.user_rating_count || 0) + (a.follows || 0) + (a.hypes || 0);
+      const bEngagement = (b.user_rating_count || 0) + (b.follows || 0) + (b.hypes || 0);
+      if (aEngagement !== bEngagement) {
+        return bEngagement - aEngagement;
+      }
+
+      // FINAL SORT: Alphabetical by name
+      return a.name.localeCompare(b.name);
+    });
   }
 
   async getPopularGames(limit: number = 20): Promise<GameSearchResult[]> {
