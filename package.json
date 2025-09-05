@@ -9,10 +9,10 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "npx tsc && vite build",
+    "build": "tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "type-check": "npx tsc --noEmit",
+    "type-check": "tsc --noEmit",
     "build:analyze": "vite build --mode analyze",
     "clean": "rm -rf dist node_modules/.vite",
     "sync-igdb": "node scripts/sync-igdb.js",
