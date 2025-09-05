@@ -262,16 +262,16 @@ export const UserPage: React.FC = () => {
 
         {/* Profile Content - Direct rendering with focused components */}
         {activeTab === 'top5' && (
-          <TopGames userId={id} limit={5} editable={isOwnProfile} />
+          <TopGames userId={id} limit={5} editable={isOwnProfile} isOwnProfile={isOwnProfile} />
         )}
         {activeTab === 'top10' && (
-          <TopGames userId={id} limit={10} />
+          <TopGames userId={id} limit={10} isOwnProfile={isOwnProfile} />
         )}
         {activeTab === 'playlist' && (
           <PlaylistTabs userId={id!} isOwnProfile={isOwnProfile} />
         )}
         {activeTab === 'activity' && (
-          <ActivityFeed userId={id} />
+          <ActivityFeed userId={id} isOwnProfile={isOwnProfile} />
         )}
       </div>
 

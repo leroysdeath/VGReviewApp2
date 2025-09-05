@@ -28,9 +28,10 @@ interface Activity {
 
 interface ActivityFeedProps {
   userId: string;
+  isOwnProfile?: boolean;
 }
 
-export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
+export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId, isOwnProfile = false }) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -581,10 +582,12 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
   if (activities.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-400 mb-4">No recent activity</p>
-        <p className="text-gray-500 text-sm">
-          Start rating games and tracking your progress to see activity here!
-        </p>
+        <p className="text-gray-400 mb-4">No activity</p>
+        {isOwnProfile && (
+          <p className="text-gray-500 text-sm">
+            Start rating games and tracking your progress to see activity here!
+          </p>
+        )}
       </div>
     );
   }

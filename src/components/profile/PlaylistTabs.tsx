@@ -118,10 +118,10 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
           <p className="text-gray-400 text-sm sm:text-base mb-4">
             {type === 'collection' 
               ? (isOwnProfile 
-                  ? 'Games you own but haven\'t played will appear here'
+                  ? 'Games you own but haven\'t played go here'
                   : 'Games they own but haven\'t played will appear here')
               : (isOwnProfile 
-                  ? 'Games you want to buy will appear here'
+                  ? 'Games you want to buy go here'
                   : 'Games they want to buy will appear here')
             }
           </p>

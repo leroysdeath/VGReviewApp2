@@ -52,9 +52,10 @@ interface TopGamesProps {
   userId: string;
   limit: 5 | 10;
   editable?: boolean;
+  isOwnProfile?: boolean;
 }
 
-export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = false }) => {
+export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = false, isOwnProfile = false }) => {
   const navigate = useNavigate();
   const [topGames, setTopGames] = useState<TopGame[]>([]);
   const [userTopGames, setUserTopGames] = useState<UserTopGame[]>([]);
@@ -779,7 +780,14 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
       {topGames.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-gray-400">
-            No games rated yet. Start rating games to see your top {limit}!
+            {limit === 5 
+              ? (isOwnProfile 
+                  ? 'No games rated yet. Start rating games to select your Top 5!'
+                  : 'They haven\'t decided on a Top 5 yet! How sad!')
+              : (isOwnProfile
+                  ? 'No games rated yet. Start rating games to see your Top 10!'
+                  : 'No games rated yet!')
+            }
           </p>
         </div>
       ) : (
