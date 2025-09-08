@@ -15,6 +15,11 @@ export default {
     '^../services/supabase$': '<rootDir>/src/test/supabase-test.ts',
     '^../../services/supabase$': '<rootDir>/src/test/supabase-test.ts',
     '^../../../services/supabase$': '<rootDir>/src/test/supabase-test.ts',
+    // Environment mapping for Jest
+    '^.*\\/services\\/env$': '<rootDir>/src/test/env-test.ts',
+    '^../services/env$': '<rootDir>/src/test/env-test.ts',
+    '^../../services/env$': '<rootDir>/src/test/env-test.ts',
+    '^./env$': '<rootDir>/src/test/env-test.ts',
     // Additional service mappings for better resolution
     '^.*\\/services\\/(.*)$': '<rootDir>/src/services/$1',
   },

@@ -27,27 +27,51 @@ function expandFranchiseQuery(query: string): string[] {
   const normalizedQuery = query.toLowerCase().trim();
   const expansions = [normalizedQuery]; // Always include original query
   
-  // Franchise expansions for better coverage
+  // Phase 2: Enhanced franchise expansions for better coverage
   const franchiseExpansions: Record<string, string[]> = {
-    // Mario franchise
-    'mario': ['mario', 'super mario', 'mario bros', 'mario kart', 'paper mario', 'mario party'],
+    // Mario franchise - Enhanced with characters and spin-offs
+    'mario': ['mario', 'super mario', 'mario bros', 'mario kart', 'paper mario', 'mario party', 'luigi', 'yoshi', 'peach', 'bowser'],
     'super mario': ['super mario', 'mario'],
+    'luigi': ['luigi', 'mario', 'super mario'],
+    'yoshi': ['yoshi', 'mario', 'super mario'],
+    'peach': ['peach', 'princess peach', 'mario'],
+    'bowser': ['bowser', 'mario', 'super mario'],
     
     // Pokemon franchise  
     'pokemon': ['pokemon', 'pokémon', 'pocket monster', 'pkmn'],
     'pokémon': ['pokemon', 'pokémon', 'pocket monster', 'pkmn'],
     
-    // Zelda franchise
-    'zelda': ['zelda', 'legend of zelda', 'link'],
+    // Zelda franchise - Enhanced with characters and locations
+    'zelda': ['zelda', 'legend of zelda', 'link', 'hyrule', 'ganondorf', 'triforce'],
     'link': ['link', 'zelda', 'legend of zelda'],
+    'hyrule': ['hyrule', 'zelda', 'legend of zelda'],
+    'ganondorf': ['ganondorf', 'ganon', 'zelda', 'legend of zelda'],
     
     // Metroid franchise
-    'metroid': ['metroid', 'samus'],
+    'metroid': ['metroid', 'samus', 'prime'],
     'samus': ['samus', 'metroid'],
     
     // Final Fantasy franchise
-    'final fantasy': ['final fantasy', 'ff'],
+    'final fantasy': ['final fantasy', 'ff', 'final fantasy vii', 'final fantasy x'],
     'ff': ['ff', 'final fantasy'],
+    
+    // Mega Man franchise - NEW Phase 2 Addition
+    'mega man': ['mega man', 'megaman', 'rockman', 'mega man x', 'mega man zero', 'mega man legends', 'mega man battle network'],
+    'megaman': ['megaman', 'mega man', 'rockman'],
+    'rockman': ['rockman', 'mega man', 'megaman'],
+    'zero': ['zero', 'mega man', 'mega man zero'],
+    
+    // Metal Gear franchise - NEW Phase 2 Addition
+    'metal gear': ['metal gear', 'metal gear solid', 'mgs', 'solid snake', 'snake'],
+    'mgs': ['mgs', 'metal gear', 'metal gear solid'],
+    'solid snake': ['solid snake', 'snake', 'metal gear'],
+    'snake': ['snake', 'metal gear', 'solid snake'],
+    
+    // Might & Magic franchise - NEW Phase 2 Addition
+    'might and magic': ['might and magic', 'might & magic', 'heroes of might and magic', 'heroes', 'mm'],
+    'might & magic': ['might & magic', 'might and magic', 'heroes'],
+    'heroes of might and magic': ['heroes of might and magic', 'heroes', 'might and magic'],
+    'heroes': ['heroes of might and magic', 'heroes', 'might and magic'],
     
     // Grand Theft Auto
     'gta': ['gta', 'grand theft auto'],
@@ -63,16 +87,28 @@ function expandFranchiseQuery(query: string): string[] {
     'morrowind': ['morrowind', 'elder scrolls'],
     'oblivion': ['oblivion', 'elder scrolls'],
     
-    // Street Fighter
-    'street fighter': ['street fighter', 'sf'],
+    // Street Fighter - Enhanced
+    'street fighter': ['street fighter', 'sf', 'ryu', 'chun-li', 'ken'],
     'sf': ['sf', 'street fighter'],
+    'ryu': ['ryu', 'street fighter'],
+    'chun-li': ['chun-li', 'street fighter'],
+    
+    // Sonic franchise - Enhanced Phase 2
+    'sonic': ['sonic', 'sonic the hedgehog', 'tails', 'knuckles', 'shadow'],
+    'tails': ['tails', 'sonic'],
+    'knuckles': ['knuckles', 'sonic'],
+    'shadow': ['shadow', 'sonic'],
     
     // Tekken
     'tekken': ['tekken', 'iron fist tournament'],
     
     // Dragon Quest
     'dragon quest': ['dragon quest', 'dq', 'dragon warrior'],
-    'dq': ['dq', 'dragon quest']
+    'dq': ['dq', 'dragon quest'],
+    
+    // Mortal Kombat - NEW Phase 2
+    'mortal kombat': ['mortal kombat', 'mk', 'scorpion', 'sub-zero'],
+    'mk': ['mk', 'mortal kombat']
   };
   
   // Add franchise-specific expansions
@@ -88,6 +124,37 @@ function expandFranchiseQuery(query: string): string[] {
         expansions.push(...franchiseExpansions[word]);
       }
     });
+  }
+  
+  // Phase 2: Advanced sub-franchise and spin-off detection
+  // Detect numbered sequels and variations
+  const numberPattern = /(\w+)\s*(\d+|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv)/i;
+  const numberMatch = normalizedQuery.match(numberPattern);
+  if (numberMatch && numberMatch[1]) {
+    const baseName = numberMatch[1].toLowerCase();
+    if (franchiseExpansions[baseName]) {
+      expansions.push(...franchiseExpansions[baseName]);
+      console.log(`🔢 SEQUEL DETECTED: "${normalizedQuery}" → adding ${baseName} franchise expansions`);
+    }
+  }
+  
+  // Detect common spin-off patterns
+  const spinoffPatterns = [
+    /(.+?)\s+(kart|party|sports|racing|tennis|golf|strikers)/i,  // Mario Kart, Mario Party, etc.
+    /(.+?)\s+(legends|chronicles|adventures|quest|saga)/i,       // Mega Man Legends, etc.
+    /(.+?)\s+(zero|x|battle network|star force)/i,               // Mega Man X, Zero, etc.
+    /(.+?)\s+(solid|rising|peace walker)/i,                     // Metal Gear Solid, etc.
+  ];
+  
+  for (const pattern of spinoffPatterns) {
+    const match = normalizedQuery.match(pattern);
+    if (match && match[1]) {
+      const baseFranchise = match[1].toLowerCase().trim();
+      if (franchiseExpansions[baseFranchise]) {
+        expansions.push(...franchiseExpansions[baseFranchise]);
+        console.log(`🎮 SPIN-OFF DETECTED: "${normalizedQuery}" → adding ${baseFranchise} franchise expansions`);
+      }
+    }
   }
   
   // Remove duplicates and return
