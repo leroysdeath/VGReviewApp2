@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Gift, BookOpen, Play, CheckCircle, ScrollText, X } from 'lucide-react';
+import { Gift, BookOpen, Play, CheckCircle, ScrollText } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 interface GameActionSheetProps {

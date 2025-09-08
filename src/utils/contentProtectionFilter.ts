@@ -478,7 +478,8 @@ export function shouldFilterContent(game: Game): boolean {
   }
 
   // CRITICAL: Check if this is an official game FIRST before any other filtering
-  if (isOfficialCompany(game)) {
+  // BUT: Never bypass category 5 (Mod) games, even if they claim official publisher
+  if (game.category !== 5 && isOfficialCompany(game)) {
     console.log(`✅ OFFICIAL GAME BYPASS: "${game.name}" is from authorized publisher ${game.developer || game.publisher} - allowing regardless of franchise`);
     return false;
   }

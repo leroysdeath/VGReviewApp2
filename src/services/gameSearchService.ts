@@ -124,12 +124,12 @@ export interface GameSearchResult {
   summary?: string
   release_date?: string
   cover_url?: string
-  cover_url?: string
   developer?: string
   publisher?: string
   genre?: string
   genres?: string[]
   platforms?: string[]
+  category?: number
   igdb_rating?: number
   metacritic_score?: number
   avg_user_rating?: number
@@ -426,7 +426,7 @@ async function executeIntelligentSearch(originalQuery: string): Promise<any[]> {
     const { data: originalResults, error: originalError } = await supabase
       .rpc('search_games_secure', {
         search_query: originalQuery.trim(),
-        limit_count: 100
+        limit_count: 150
       });
       
     if (!originalError && originalResults) {
@@ -452,7 +452,7 @@ async function executeIntelligentSearch(originalQuery: string): Promise<any[]> {
       const { data: expandedResults, error: expandedError } = await supabase
         .rpc('search_games_secure', {
           search_query: expandedQuery,
-          limit_count: 100
+          limit_count: 120
         });
         
       if (!expandedError && expandedResults) {
@@ -543,7 +543,6 @@ class GameSearchService {
     filters: SearchFilters = {},
     pagination: PaginationOptions = {}
   ): Promise<SearchResponse> {
-    const { limit = 20, offset = 0 } = pagination
     const {
       query,
       releaseDateStart,
@@ -557,15 +556,35 @@ class GameSearchService {
       orderDirection = 'desc'
     } = filters
 
+    // Dynamic limit adjustment for major franchises (Phase 1)
+    let dynamicLimit = 50; // Base limit increased from 30
+    
+    // Increase limit for major franchises that have 20+ games
+    if (query) {
+      const lowerQuery = query.toLowerCase().trim();
+      const majorFranchises = [
+        'mario', 'zelda', 'pokemon', 'final fantasy', 'call of duty', 
+        'grand theft auto', 'gta', 'street fighter', 'mortal kombat',
+        'mega man', 'metal gear', 'sonic', 'dragon quest', 'elder scrolls'
+      ];
+      
+      const isMajorFranchise = majorFranchises.some(franchise => 
+        lowerQuery.includes(franchise) || franchise.includes(lowerQuery)
+      );
+      
+      if (isMajorFranchise) {
+        dynamicLimit = 75; // Extra results for major franchises
+        console.log(`🎯 MAJOR FRANCHISE DETECTED: "${query}" - increasing limit to ${dynamicLimit}`);
+      }
+    }
+    
+    const { limit = dynamicLimit, offset = 0 } = pagination
+
     try {
-      // Build the base query with rating aggregations
+      // Build the base query 
       let baseQuery = supabase
         .from('game')
-        .select(`
-          *,
-          rating_count:rating(id).count(),
-          avg_rating:rating(rating).avg()
-        `, { count: 'exact' })
+        .select(`*`, { count: 'exact' })
 
       // Apply search query filter using intelligent multi-strategy search
       if (query && query.trim()) {
@@ -617,7 +636,7 @@ class GameSearchService {
           baseQuery = baseQuery.in('id', Array.from(genreMatchingIds));
         } else {
           // No genre matches found
-          return { data: [], count: 0, error: null };
+          return { games: [], totalCount: 0, hasMore: false };
         }
       }
 
@@ -738,7 +757,7 @@ class GameSearchService {
 
         // Group platforms by game
         const gamePlatforms = new Map<number, string[]>()
-        platformData?.forEach(pg => {
+        platformData?.forEach((pg: any) => {
           if (pg.platform) {
             if (!gamePlatforms.has(pg.game_id)) {
               gamePlatforms.set(pg.game_id, [])

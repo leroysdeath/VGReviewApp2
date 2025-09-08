@@ -17,11 +17,39 @@ import {
   sortByGameQuality 
 } from '../utils/gameQualityScoring';
 
+// Define the transformed game type
+interface TransformedGame {
+  id: number;
+  igdb_id: number;
+  name: string;
+  summary?: string;
+  description?: string;
+  first_release_date?: Date;
+  release_date?: string;
+  rating?: number;
+  igdb_rating?: number;
+  category?: number;
+  cover?: { id: number; url: string };
+  cover_url?: string;
+  genres: string[];
+  genre?: string;
+  platforms: string[];
+  developer?: string;
+  publisher?: string;
+  alternative_names: string[];
+  collection?: string;
+  franchise?: string;
+  franchises: string[];
+  dlcs: number[];
+  expansions: number[];
+  similar_games: number[];
+}
+
 /**
  * Calculate relevance score for search results with fuzzy matching
  * Prevents unrelated games from appearing while allowing for title variations
  */
-function calculateSearchRelevance(game: any, searchQuery: string): number {
+function calculateSearchRelevance(game: IGDBGame | TransformedGame, searchQuery: string): number {
   if (!searchQuery || !searchQuery.trim()) return 1;
 
   const query = searchQuery.toLowerCase().trim();
@@ -132,7 +160,7 @@ function getRelevanceThreshold(searchQuery: string): number {
 /**
  * Filter out games with insufficient search relevance (with dynamic thresholds)
  */
-function filterByRelevance(games: any[], searchQuery?: string): any[] {
+function filterByRelevance(games: (IGDBGame | TransformedGame)[], searchQuery?: string): (IGDBGame | TransformedGame)[] {
   if (!searchQuery || !searchQuery.trim()) {
     return games;
   }
@@ -156,7 +184,7 @@ function filterByRelevance(games: any[], searchQuery?: string): any[] {
  * Filter out season games (IGDB category 7)
  * Seasons are episodic content that doesn't represent complete games
  */
-function filterSeasonGames(games: any[]): any[] {
+function filterSeasonGames(games: (IGDBGame | TransformedGame)[]): (IGDBGame | TransformedGame)[] {
   return games.filter(game => {
     if (game.category === 7) {
       console.log(`🚫 SEASON FILTERED: "${game.name}" - category 7 (Season)`);
@@ -170,7 +198,7 @@ function filterSeasonGames(games: any[]): any[] {
  * Filter out pack/bundle games (IGDB category 3)
  * Packs/bundles are collections of games, not individual games
  */
-function filterPackGames(games: any[]): any[] {
+function filterPackGames(games: (IGDBGame | TransformedGame)[]): (IGDBGame | TransformedGame)[] {
   return games.filter(game => {
     if (game.category === 3) {
       // Only filter actual bundles/collections, not regular editions
@@ -203,7 +231,7 @@ function filterPackGames(games: any[]): any[] {
  * Filter out e-reader card content (simplified)
  * Only catches the most obvious e-reader patterns
  */
-function filterEReaderContent(games: any[]): any[] {
+function filterEReaderContent(games: (IGDBGame | TransformedGame)[]): (IGDBGame | TransformedGame)[] {
   return games.filter(game => {
     if (!game.name) return true;
     
@@ -1028,7 +1056,7 @@ class IGDBService {
   }
 
   // Transform IGDB game for content filter (simplified format)
-  private transformGameForFilter(igdbGame: IGDBGame): any {
+  private transformGameForFilter(igdbGame: IGDBGame): TransformedGame {
     // Include alternative names in the name for better filtering
     const allNames = [
       igdbGame.name,
@@ -1051,7 +1079,7 @@ class IGDBService {
   }
 
   // Transform IGDB game to our app's format
-  transformGame(igdbGame: IGDBGame): any {
+  transformGame(igdbGame: IGDBGame): TransformedGame {
     return {
       id: igdbGame.id,
       igdb_id: igdbGame.id,

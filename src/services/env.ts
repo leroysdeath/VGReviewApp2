@@ -9,28 +9,20 @@ interface EnvironmentVariables {
 }
 
 /**
- * Safely get import.meta if available, otherwise return null
- */
-function getImportMeta(): any {
-  try {
-    // Use eval to avoid TypeScript compilation issues with import.meta in Jest
-    return (typeof globalThis !== 'undefined' && (globalThis as any).import?.meta) || null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Gets environment variables from either import.meta.env (Vite) or process.env (Node/Jest)
+ * Gets environment variables - prioritizes import.meta.env in browser, process.env in Node
  */
 function getEnvVar(key: keyof EnvironmentVariables): string | undefined {
-  // Try import.meta.env first (Vite environment)
-  const importMeta = getImportMeta();
-  if (importMeta?.env?.[key]) {
-    return importMeta.env[key];
+  // In browser/Vite environment, use import.meta.env
+  if (typeof window !== 'undefined') {
+    try {
+      // @ts-ignore - import.meta.env is available in Vite
+      return import.meta.env[key];
+    } catch (e) {
+      return undefined;
+    }
   }
   
-  // Fallback to process.env (Node/Jest environment)
+  // In Node/Jest environment, use process.env
   if (typeof process !== 'undefined' && process.env) {
     return process.env[key];
   }
@@ -42,19 +34,30 @@ function getEnvVar(key: keyof EnvironmentVariables): string | undefined {
  * Environment configuration that works in both Vite and Jest
  */
 export const ENV: EnvironmentVariables = {
-  VITE_SUPABASE_URL: getEnvVar('VITE_SUPABASE_URL') || 'http://localhost:54321',
-  VITE_SUPABASE_ANON_KEY: getEnvVar('VITE_SUPABASE_ANON_KEY') || 'test-anon-key',
+  VITE_SUPABASE_URL: getEnvVar('VITE_SUPABASE_URL') || '',
+  VITE_SUPABASE_ANON_KEY: getEnvVar('VITE_SUPABASE_ANON_KEY') || '',
   VITE_IGDB_CLIENT_ID: getEnvVar('VITE_IGDB_CLIENT_ID'),
   VITE_IGDB_ACCESS_TOKEN: getEnvVar('VITE_IGDB_ACCESS_TOKEN')
 };
 
-// Validate required environment variables
-if (!ENV.VITE_SUPABASE_URL) {
-  throw new Error('Missing required environment variable: VITE_SUPABASE_URL');
+// For test environments, use test values
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+  ENV.VITE_SUPABASE_URL = ENV.VITE_SUPABASE_URL || 'https://test.supabase.co';
+  ENV.VITE_SUPABASE_ANON_KEY = ENV.VITE_SUPABASE_ANON_KEY || 'test-anon-key';
 }
 
-if (!ENV.VITE_SUPABASE_ANON_KEY) {
-  throw new Error('Missing required environment variable: VITE_SUPABASE_ANON_KEY');
+// Validate required environment variables (skip in test environment)
+if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
+  if (!ENV.VITE_SUPABASE_URL) {
+    console.error('Missing required environment variable: VITE_SUPABASE_URL');
+    console.error('Make sure you have a .env file with VITE_SUPABASE_URL set');
+    console.error('Current environment:', typeof window !== 'undefined' ? 'browser' : 'node');
+  }
+
+  if (!ENV.VITE_SUPABASE_ANON_KEY) {
+    console.error('Missing required environment variable: VITE_SUPABASE_ANON_KEY');
+    console.error('Make sure you have a .env file with VITE_SUPABASE_ANON_KEY set');
+  }
 }
 
 // Export individual variables for convenience
@@ -66,13 +69,13 @@ export const {
 } = ENV;
 
 // Development logging
-if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
-  const importMeta = getImportMeta();
-  console.log('🔧 Environment bridge loaded:', {
-    hasSupabaseUrl: !!ENV.VITE_SUPABASE_URL,
+if ((typeof process !== 'undefined' && process.env.NODE_ENV === 'development') || 
+    (typeof window !== 'undefined')) {
+  console.log('🔧 Environment configuration:', {
+    supabaseUrl: ENV.VITE_SUPABASE_URL ? ENV.VITE_SUPABASE_URL.substring(0, 30) + '...' : 'NOT SET',
     hasSupabaseKey: !!ENV.VITE_SUPABASE_ANON_KEY,
     hasIGDBClient: !!ENV.VITE_IGDB_CLIENT_ID,
     hasIGDBToken: !!ENV.VITE_IGDB_ACCESS_TOKEN,
-    environment: importMeta?.env ? 'Vite' : 'Node/Jest'
+    environment: typeof window !== 'undefined' ? 'Browser/Vite' : 'Node/Jest'
   });
 }

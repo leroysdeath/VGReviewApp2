@@ -621,7 +621,7 @@ class GameDataService {
           rating(rating)
         `)
         .ilike('name', `%${query}%`)
-        .limit(20)
+        .limit(50) // Increased from 20 for Phase 1
 
       // Apply filters if provided
       if (filters) {
@@ -931,7 +931,7 @@ class GameDataService {
       autoAddMissing?: boolean;
     } = {}
   ): Promise<GameWithCalculatedFields[]> {
-    const { limit = 20, enableAPIFallback = true, autoAddMissing = false } = options;
+    const { limit = 50, enableAPIFallback = true, autoAddMissing = false } = options; // Phase 1: Increased from 20
 
     try {
       const searchResponse = await enhancedSearchService.searchWithFallback(
