@@ -74,6 +74,7 @@ export const UserPage: React.FC = () => {
       }
       
       // Check if this is the current user's own profile
+      let isCurrentUserProfile = false;
       try {
         if (isAuthenticated && authUser?.id) {
           const { data: currentUserData, error: currentUserError } = await supabase
@@ -83,7 +84,8 @@ export const UserPage: React.FC = () => {
             .single();
           
           if (!currentUserError && currentUserData) {
-            setIsOwnProfile(currentUserData.id === numericId);
+            isCurrentUserProfile = currentUserData.id === numericId;
+            setIsOwnProfile(isCurrentUserProfile);
           } else {
             setIsOwnProfile(false);
           }
@@ -96,7 +98,7 @@ export const UserPage: React.FC = () => {
       }
       
       // Check if following this user (only if not own profile and authenticated)
-      if (!isOwnProfile && isAuthenticated) {
+      if (!isCurrentUserProfile && isAuthenticated) {
         try {
           const followStatus = await isFollowing(numericId.toString());
           setIsFollowingUser(followStatus);
@@ -207,6 +209,29 @@ export const UserPage: React.FC = () => {
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
+
+  // Refresh follow state when page gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      // Only refresh follow state if viewing another user's profile
+      if (!isOwnProfile && isAuthenticated && id) {
+        isFollowing(id).then(status => {
+          setIsFollowingUser(status);
+        }).catch(error => {
+          console.error('Error refreshing follow status:', error);
+        });
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    
+    // Also refresh when navigating back to this page
+    handleFocus();
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [id, isOwnProfile, isAuthenticated, isFollowing]);
 
   if (loading) {
     return <LoadingSpinner size="lg" text="Loading user profile..." />;
