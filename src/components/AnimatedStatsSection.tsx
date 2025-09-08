@@ -66,6 +66,26 @@ export const AnimatedStatsSection: React.FC<AnimatedStatsProps> = ({ className =
 
   // Intersection Observer for scroll-triggered animations
   useEffect(() => {
+    // Counter animation function
+    const startCounterAnimations = () => {
+      statsData.forEach((stat) => {
+        setTimeout(() => {
+          const targetValue = stat.value;
+          const increment = targetValue / 50;
+          let currentValue = 0;
+          
+          const interval = setInterval(() => {
+            currentValue += increment;
+            if (currentValue >= targetValue) {
+              currentValue = targetValue;
+              clearInterval(interval);
+            }
+            setCounters(prev => ({ ...prev, [stat.id]: Math.floor(currentValue) }));
+          }, 30);
+        }, stat.delay * 1000);
+      });
+    };
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !isVisible) {
@@ -81,7 +101,7 @@ export const AnimatedStatsSection: React.FC<AnimatedStatsProps> = ({ className =
     }
 
     return () => observer.disconnect();
-  }, [isVisible]);
+  }, [isVisible, statsData]);
 
   // Counter animation function
   const startCounterAnimations = () => {

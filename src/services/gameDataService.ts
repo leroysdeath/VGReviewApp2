@@ -3,10 +3,12 @@ import { sanitizeSearchTerm } from '../utils/sqlSecurity'
 import type { Game, GameWithCalculatedFields } from '../types/database'
 import { igdbService } from './igdbService'
 import { enhancedSearchService } from './enhancedSearchService'
+import { gameSearchService } from './gameSearchService'
 import { generateSlug } from '../utils/gameUrls'
 import { gameSyncService } from './gameSyncService'
 import { syncQueue } from '../utils/syncQueue'
 import { IGDBGame } from '../types/igdb'
+import { prioritizeFlagshipTitles } from '../utils/sisterGameDetection'
 
 interface SearchFilters {
   genres?: string[]
@@ -432,7 +434,82 @@ class GameDataService {
     }
   }
 
+  /**
+   * Enhanced search with sister games, sequels, and intelligent prioritization
+   * Replaces basic search with comprehensive franchise coverage
+   */
   async searchGames(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
+    try {
+      console.log(`🔍 Searching for "${query}"`);
+      
+      const sanitizedQuery = sanitizeSearchTerm(query);
+      if (!sanitizedQuery) {
+        return [];
+      }
+
+      // PHASE 1 & 2: Enhanced search with flagship prioritization
+      let dbResults = await this.searchGamesBasic(sanitizedQuery, filters);
+      
+      console.log(`📊 Initial database search: ${dbResults.length} games`);
+      
+      // Apply flagship prioritization from priority games database
+      const prioritizedResults = prioritizeFlagshipTitles(dbResults, sanitizedQuery);
+      
+      // Enhanced sorting: flagship games first, then by boost score
+      prioritizedResults.sort((a, b) => {
+        const boostA = (a._sisterGameBoost || 0) + (a._priorityBoost || 0);
+        const boostB = (b._sisterGameBoost || 0) + (b._priorityBoost || 0);
+        
+        // Primary sort: flagship games first
+        if (a._flagshipStatus === 'flagship' && b._flagshipStatus !== 'flagship') return -1;
+        if (b._flagshipStatus === 'flagship' && a._flagshipStatus !== 'flagship') return 1;
+        
+        // Secondary sort: by total boost score
+        if (boostA !== boostB) return boostB - boostA;
+        
+        // Tertiary sort: alphabetically
+        return (a.name || '').localeCompare(b.name || '');
+      });
+      
+      console.log(`✨ Applied flagship prioritization - ${prioritizedResults.filter(g => g._flagshipStatus === 'flagship').length} flagship games identified`);
+      
+      // If we have very few results and this looks like a franchise search, try sister game expansion
+      if (prioritizedResults.length < 5 && this.isFranchiseQuery(sanitizedQuery)) {
+        console.log(`🔍 Low results (${prioritizedResults.length}) for potential franchise "${sanitizedQuery}", trying sister game expansion...`);
+        
+        try {
+          const expandedResults = await gameSearchService.searchGames(
+            {
+              query: sanitizedQuery,
+              orderBy: 'relevance',
+              orderDirection: 'desc',
+              ...filters
+            },
+            { limit: 15, offset: 0 }
+          );
+          
+          if (expandedResults.games.length > prioritizedResults.length) {
+            console.log(`📈 Sister game expansion found ${expandedResults.games.length} games`);
+            return expandedResults.games.map(game => this.convertToCalculatedFields(game));
+          }
+        } catch (expansionError) {
+          console.warn('Sister game expansion failed:', expansionError);
+        }
+      }
+      
+      console.log(`✅ Returning ${prioritizedResults.length} games with flagship prioritization`);
+      return prioritizedResults;
+    } catch (error) {
+      console.error('❌ ENHANCED SEARCH FAILED:', error);
+      console.log('🔄 FALLING BACK TO BASIC SEARCH');
+      
+      // Fallback to basic search if enhanced search fails
+      return this.searchGamesBasic(query, filters);
+    }
+  }
+
+  // BACKUP: Original search method (can be restored if needed)
+  async searchGamesBasic(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
     try {
       const sanitizedQuery = sanitizeSearchTerm(query)
 
@@ -455,17 +532,7 @@ class GameDataService {
           
           if (igdbGames && igdbGames.length > 0) {
             // Step 3: Save IGDB results to database (non-blocking)
-            console.log(`💾 Saving ${igdbGames.length} games from IGDB to database...`)
-            
-            // Use sync queue for background saving
-            syncQueue.add(igdbGames as unknown as IGDBGame[])
-            
-            // Also try immediate save (but don't wait)
-            gameSyncService.saveGamesFromIGDB(igdbGames as unknown as IGDBGame[])
-              .catch(error => {
-                console.error('Background save failed:', error)
-                // Already added to queue, so it will be retried
-              })
+            console.log(`💾 IGDB games found (saving disabled for performance)...`)
             
             // Step 4: Merge results for immediate return
             const igdbConverted = this.convertIGDBToLocal(igdbGames)
@@ -479,7 +546,7 @@ class GameDataService {
 
       return dbResults
     } catch (error) {
-      console.error('Error in searchGames:', error)
+      console.error('Error in searchGamesBasic:', error)
       return []
     }
   }
@@ -490,18 +557,24 @@ class GameDataService {
   private convertIGDBToLocal(igdbGames: any[]): GameWithCalculatedFields[] {
     return igdbGames.map(game => ({
       id: -(game.id || 0), // Negative ID to indicate it's from IGDB
-      igdb_id: game.id,
-      game_id: game.id?.toString() || '',
+      igdb_id: game.id || 0,
       name: game.name || 'Unknown Game',
-      slug: game.slug || generateSlug(game.name || ''),
+      summary: game.summary || null,
+      release_date: game.first_release_date ? 
+        new Date(game.first_release_date * 1000).toISOString().split('T')[0] : null,
       cover_url: game.cover?.url ? 
         (game.cover.url.startsWith('//') ? `https:${game.cover.url}` : game.cover.url)
           .replace('t_thumb', 't_cover_big') : null,
-      release_date: game.first_release_date ? 
-        new Date(game.first_release_date * 1000).toISOString().split('T')[0] : null,
       genres: game.genres?.map((g: any) => g.name) || [],
       platforms: game.platforms?.map((p: any) => p.name) || [],
-      summary: game.summary || null,
+      screenshots: [],
+      videos: [],
+      developer: null,
+      publisher: null,
+      igdb_rating: game.rating || null,
+      category: game.category || 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       averageUserRating: 0,
       totalUserRatings: 0,
       fromIGDB: true // Track that this came from IGDB API
@@ -540,53 +613,59 @@ class GameDataService {
    * Search games using exact title matching with ILIKE
    */
   private async searchGamesExact(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
-    let queryBuilder = supabase
-      .from('game')
-      .select(`
-        *,
-        rating(rating)
-      `)
-      .ilike('name', `%${query}%`)
-      .limit(20)
+    try {
+      let queryBuilder = supabase
+        .from('game')
+        .select(`
+          *,
+          rating(rating)
+        `)
+        .ilike('name', `%${query}%`)
+        .limit(50) // Increased from 20 for Phase 1
 
-    // Apply filters if provided
-    if (filters) {
-      if (filters.genres && filters.genres.length > 0) {
-        queryBuilder = queryBuilder.contains('genres', filters.genres)
+      // Apply filters if provided
+      if (filters) {
+        if (filters.genres && filters.genres.length > 0) {
+          queryBuilder = queryBuilder.contains('genres', filters.genres)
+        }
+
+        if (filters.platforms && filters.platforms.length > 0) {
+          queryBuilder = queryBuilder.contains('platforms', filters.platforms)
+        }
+
+        if (filters.releaseYear) {
+          const yearStart = `${filters.releaseYear}-01-01`
+          const yearEnd = `${filters.releaseYear}-12-31`
+          queryBuilder = queryBuilder
+            .gte('release_date', yearStart)
+            .lte('release_date', yearEnd)
+        }
       }
 
-      if (filters.platforms && filters.platforms.length > 0) {
-        queryBuilder = queryBuilder.contains('platforms', filters.platforms)
+      const { data, error } = await queryBuilder
+
+      if (error) {
+        console.error('Error in exact search:', error)
+        return []
       }
 
-      if (filters.releaseYear) {
-        const yearStart = `${filters.releaseYear}-01-01`
-        const yearEnd = `${filters.releaseYear}-12-31`
-        queryBuilder = queryBuilder
-          .gte('release_date', yearStart)
-          .lte('release_date', yearEnd)
-      }
-    }
-
-    const { data, error } = await queryBuilder
-
-    if (error) {
-      console.error('Error in exact search:', error)
-      return []
-    }
-
-    const games = (data || []).map((game: GameWithRating) =>
-      this.transformGameWithRatings(game)
-    )
-
-    // Apply minimum rating filter after calculating averages
-    if (filters?.minRating) {
-      return games.filter(game =>
-        game.averageUserRating && game.averageUserRating >= filters.minRating
+      const games = (data || []).map((game: GameWithRating) =>
+        this.transformGameWithRatings(game)
       )
-    }
 
-    return games
+      // Apply minimum rating filter after calculating averages
+      if (filters?.minRating) {
+        return games.filter(game =>
+          game.averageUserRating && game.averageUserRating >= filters.minRating
+        )
+      }
+
+      console.log(`✅ Found ${games.length} games from database search`);
+      return games
+    } catch (error) {
+      console.error('Error in searchGamesExact:', error);
+      return [];
+    }
   }
 
 
@@ -749,10 +828,10 @@ class GameDataService {
   }
 
   private transformGameWithRatings(game: GameWithRating): GameWithCalculatedFields {
-    const { rating, ratings, ...gameData } = game
+    const { ratings, ...gameData } = game
 
     // Handle both old and new data structure for compatibility
-    const ratingData = rating || ratings || []
+    const ratingData = ratings || []
 
     // Calculate average rating and count
     let averageUserRating = 0
@@ -766,9 +845,6 @@ class GameDataService {
 
     return {
       ...gameData,
-      // Map release_date to first_release_date for compatibility with GamePage
-      // Convert date string back to Date object for proper formatting
-      first_release_date: gameData.release_date ? new Date(gameData.release_date) : undefined,
       averageUserRating,
       totalUserRatings,
       fromIGDB: false // Mark that this came from database
@@ -855,7 +931,7 @@ class GameDataService {
       autoAddMissing?: boolean;
     } = {}
   ): Promise<GameWithCalculatedFields[]> {
-    const { limit = 20, enableAPIFallback = true, autoAddMissing = false } = options;
+    const { limit = 50, enableAPIFallback = true, autoAddMissing = false } = options; // Phase 1: Increased from 20
 
     try {
       const searchResponse = await enhancedSearchService.searchWithFallback(
@@ -880,11 +956,79 @@ class GameDataService {
         }
       }
 
-      return searchResponse.games;
+      // Convert GameSearchResult[] to GameWithCalculatedFields[]
+      return searchResponse.games.map(game => ({
+        id: game.id,
+        igdb_id: game.igdb_id || 0,
+        name: game.name || 'Unknown Game',
+        summary: game.summary || game.description || null,
+        release_date: game.release_date || null,
+        cover_url: game.cover_url || null,
+        genres: game.genres || [],
+        platforms: game.platforms || [],
+        screenshots: game.screenshots || [],
+        videos: [],
+        developer: game.developer || null,
+        publisher: game.publisher || null,
+        igdb_rating: game.igdb_rating || null,
+        category: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        averageUserRating: game.avg_user_rating || 0,
+        totalUserRatings: game.user_rating_count || 0,
+        fromIGDB: false
+      } as GameWithCalculatedFields));
     } catch (error) {
       console.error('Enhanced search failed:', error);
       return [];
     }
+  }
+
+  /**
+   * Check if a query looks like a franchise search
+   */
+  private isFranchiseQuery(query: string): boolean {
+    const franchiseKeywords = [
+      'pokemon', 'mario', 'zelda', 'final fantasy', 'call of duty',
+      'resident evil', 'metal gear', 'star fox', 'street fighter',
+      'tekken', 'mortal kombat', 'grand theft auto', 'assassins creed'
+    ];
+    
+    const lowerQuery = query.toLowerCase();
+    return franchiseKeywords.some(franchise => 
+      lowerQuery.includes(franchise) || franchise.includes(lowerQuery)
+    );
+  }
+
+  /**
+   * Convert GameSearchResult to GameWithCalculatedFields
+   */
+  private convertToCalculatedFields(game: any): GameWithCalculatedFields {
+    return {
+      id: game.id,
+      igdb_id: game.igdb_id || 0,
+      name: game.name || 'Unknown Game',
+      summary: game.summary || game.description || null,
+      release_date: game.release_date || null,
+      cover_url: game.cover_url || null,
+      genres: game.genres || [],
+      platforms: game.platforms || [],
+      screenshots: game.screenshots || [],
+      videos: [],
+      developer: game.developer || null,
+      publisher: game.publisher || null,
+      igdb_rating: game.igdb_rating || null,
+      category: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      averageUserRating: game.avg_user_rating || 0,
+      totalUserRatings: game.user_rating_count || 0,
+      fromIGDB: false,
+      // Preserve enhancement data
+      ...(game._sisterGameBoost && { _sisterGameBoost: game._sisterGameBoost }),
+      ...(game._flagshipStatus && { _flagshipStatus: game._flagshipStatus }),
+      ...(game._priorityBoost && { _priorityBoost: game._priorityBoost })
+    } as GameWithCalculatedFields;
   }
 }
 

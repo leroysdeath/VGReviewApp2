@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Search Debug</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            background: #1a1a1a; 
+            color: #00ff00; 
+            padding: 20px; 
+        }
+        .debug-section {
+            background: #2a2a2a; 
+            padding: 15px; 
+            margin: 15px 0;
+            border: 1px solid #444;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        button:hover { background: #0088ff; }
+    </style>
+</head>
+<body>
+    <h1>🐛 Pokemon Search Debug</h1>
+    
+    <button onclick="debugPokemonSearch()">Debug Pokemon Search</button>
+    <button onclick="debugDirectAPI()">Test Direct API</button>
+    <button onclick="debugSisterGames()">Test Sister Game Detection</button>
+    
+    <div id="results" class="debug-section">
+        Ready to debug Pokemon search issues...
+    </div>
+
+    <script>
+        async function debugPokemonSearch() {
+            const results = document.getElementById('results');
+            results.textContent = '🔍 Debugging Pokemon search...\n\n';
+            
+            try {
+                // Test 1: Direct fetch to search endpoint
+                results.textContent += 'TEST 1: Direct API call to search endpoint\n';
+                const response = await fetch('/api/search/games?q=pokemon&limit=10');
+                
+                results.textContent += `Response status: ${response.status} ${response.statusText}\n`;
+                results.textContent += `Response headers: ${JSON.stringify([...response.headers.entries()], null, 2)}\n`;
+                
+                if (response.ok) {
+                    const data = await response.text(); // Get as text first
+                    results.textContent += `Response body (first 500 chars): ${data.substring(0, 500)}\n\n`;
+                    
+                    try {
+                        const parsed = JSON.parse(data);
+                        results.textContent += `Parsed data keys: ${Object.keys(parsed)}\n`;
+                        if (parsed.games) {
+                            results.textContent += `Games found: ${parsed.games.length}\n`;
+                            parsed.games.slice(0, 3).forEach((game, i) => {
+                                results.textContent += `  ${i + 1}. ${game.name || 'No name'}\n`;
+                            });
+                        } else if (Array.isArray(parsed)) {
+                            results.textContent += `Array response with ${parsed.length} items\n`;
+                            parsed.slice(0, 3).forEach((game, i) => {
+                                results.textContent += `  ${i + 1}. ${game.name || 'No name'}\n`;
+                            });
+                        } else {
+                            results.textContent += `Unexpected response format: ${typeof parsed}\n`;
+                        }
+                    } catch (parseError) {
+                        results.textContent += `JSON parse error: ${parseError.message}\n`;
+                    }
+                } else {
+                    const errorText = await response.text();
+                    results.textContent += `Error response: ${errorText}\n`;
+                }
+                
+            } catch (error) {
+                results.textContent += `\n❌ ERROR: ${error.message}\n`;
+                results.textContent += `Error stack: ${error.stack}\n`;
+            }
+        }
+
+        async function debugDirectAPI() {
+            const results = document.getElementById('results');
+            results.textContent += '\n🔬 Testing direct database search...\n';
+            
+            try {
+                // Test various Pokemon searches
+                const searches = ['pokemon', 'pokémon', 'Pokemon', 'pikachu', 'red version'];
+                
+                for (const search of searches) {
+                    results.textContent += `\nTesting: "${search}"\n`;
+                    
+                    const response = await fetch(`/api/search/games?q=${encodeURIComponent(search)}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        const games = data.games || data || [];
+                        results.textContent += `  Found: ${games.length} games\n`;
+                        
+                        if (games.length > 0) {
+                            results.textContent += `  First result: "${games[0].name}"\n`;
+                        }
+                    } else {
+                        results.textContent += `  Error: ${response.status}\n`;
+                    }
+                    
+                    // Small delay
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+                
+            } catch (error) {
+                results.textContent += `\n❌ Direct API test failed: ${error.message}\n`;
+            }
+        }
+
+        async function debugSisterGames() {
+            const results = document.getElementById('results');
+            results.textContent += '\n👥 Testing sister game detection...\n';
+            
+            // This won't work in browser but good to try
+            results.textContent += 'Sister game detection requires server-side processing.\n';
+            results.textContent += 'Check browser console for any import errors.\n';
+            
+            try {
+                // Try to call our service if available
+                if (window.gameDataService) {
+                    const searchResults = await window.gameDataService.searchGames('pokemon');
+                    results.textContent += `Sister game search returned: ${searchResults.length} results\n`;
+                } else {
+                    results.textContent += 'gameDataService not available in browser context.\n';
+                }
+            } catch (error) {
+                results.textContent += `Sister game test error: ${error.message}\n`;
+            }
+        }
+
+        // Auto-run basic test on load
+        window.addEventListener('load', () => {
+            setTimeout(debugPokemonSearch, 1000);
+        });
+    </script>
+</body>
+</html>
