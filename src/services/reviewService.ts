@@ -344,6 +344,7 @@ export interface Review {
   user?: {
     id: number;
     name: string;
+    username?: string;
     avatar_url?: string;
   };
   game?: {
@@ -370,6 +371,7 @@ export interface Comment {
   user?: {
     id: number;
     name: string;
+    username?: string;
     avatar_url?: string;
   };
 }
@@ -1425,7 +1427,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
       commentCount: 0, // Will be populated by separate query if needed
       user: item.user ? {
         id: item.user.id,
-        name: item.user.name,
+        name: item.user.username || item.user.name,
         avatar_url: item.user.avatar_url
       } : undefined,
       game: item.game ? {

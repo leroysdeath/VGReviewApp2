@@ -244,13 +244,14 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     available: boolean | null;
     message: string;
   }>({ checking: false, available: null, message: '' });
-  const [originalValues, setOriginalValues] = useState<ProfileFormValues>({
+  const [originalValues, setOriginalValues] = useState<ProfileFormValues & { avatar?: string }>({
     username: initialData.username,
     displayName: initialData.displayName || '',
     bio: initialData.bio || '',
     location: initialData.location || '',
     website: initialData.website || '',
-    platform: initialData.platform || ''
+    platform: initialData.platform || '',
+    avatar: initialData.avatar || ''
   });
   
   // Parse initial platform string into selected platforms
@@ -303,7 +304,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       bio: initialData.bio || '',
       location: initialData.location || '',
       website: initialData.website || '',
-      platform: initialData.platform || ''
+      platform: initialData.platform || '',
+      avatar: initialData.avatar || ''
     };
     
     // Only reset on initial load or if data actually changed from outside
@@ -327,7 +329,9 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
       }
       setSelectedPlatforms(platforms);
       
-      reset(newValues);
+      // Reset form with only the form fields (exclude avatar)
+      const { avatar, ...formValues } = newValues;
+      reset(formValues);
       hasInitialized.current = true;
       initialDataRef.current = initialData;
     }
@@ -386,8 +390,9 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
   // Notify parent of form dirty state changes (including avatar changes)
   useEffect(() => {
-    const originalAvatar = originalValues.avatar || initialData.avatar;
-    const avatarHasChanged = avatarPreview !== originalAvatar;
+    const originalAvatar = originalValues.avatar || '';
+    const currentAvatar = avatarPreview || '';
+    const avatarHasChanged = currentAvatar !== originalAvatar;
     const hasAnyChanges = isDirty || avatarHasChanged;
     
     console.log('🔄 Form change notification check:', {
@@ -399,7 +404,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     });
     
     onFormChange?.(hasAnyChanges);
-  }, [isDirty, avatarPreview, originalValues.avatar, initialData.avatar, onFormChange]);
+  }, [isDirty, avatarPreview, originalValues.avatar, onFormChange]);
 
   // Password change form
   const passwordForm = useForm({

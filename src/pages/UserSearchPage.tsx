@@ -388,7 +388,7 @@ export const UserSearchPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 py-8">
-      <div className={`mx-auto px-4 sm:px-6 lg:px-8 ${isMobile ? '' : 'max-w-7xl'}`}>
+      <div className={`mx-auto px-4 sm:px-6 lg:px-8 ${isMobile ? 'max-w-full' : 'max-w-7xl'}`}>
         
         {/* Header */}
         <div className="mb-8">
@@ -470,7 +470,7 @@ export const UserSearchPage: React.FC = () => {
                 </div>
                 <div className={`gap-6 ${isMobile ? 'space-y-4' : 'grid md:grid-cols-2 lg:grid-cols-3'}`}>
                   {popularReviewers.map((user) => (
-                    <div key={user.id} className={`bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors ${isMobile ? 'p-4' : 'p-6'}`}>
+                    <div key={user.id} className={`bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors ${isMobile ? 'p-3' : 'p-6'} overflow-hidden`}>
                       <div className={`flex items-center gap-4 ${isMobile ? 'mb-3' : 'mb-4'}`}>
                         <div className="relative">
                           {user.avatar ? (
@@ -515,8 +515,8 @@ export const UserSearchPage: React.FC = () => {
                           {user.bio}
                         </p>
                       )}
-                      <div className={`flex items-center justify-between ${isMobile ? 'flex-col gap-3' : ''}`}>
-                        <div className={`flex items-center gap-4 text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                      <div className={`flex items-center justify-between ${isMobile ? 'flex-col gap-3 w-full' : ''}`}>
+                        <div className={`flex items-center gap-4 text-gray-400 ${isMobile ? 'text-xs w-full justify-center' : 'text-sm'}`}>
                           <div className="flex items-center gap-1">
                             <Users className="h-4 w-4" />
                             <span>{user.followers} followers</span>
@@ -525,8 +525,8 @@ export const UserSearchPage: React.FC = () => {
                         <button
                           onClick={() => toggleFollow(user.id)}
                           disabled={followLoading || !canFollow}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                            isMobile ? 'text-xs' : 'text-sm'
+                          className={`flex items-center gap-2 rounded-lg font-medium transition-colors ${
+                            isMobile ? 'text-xs px-3 py-1.5' : 'text-sm px-4 py-2'
                           } ${
                             followLoading || !canFollow
                               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
@@ -583,9 +583,9 @@ export const UserSearchPage: React.FC = () => {
             {/* User List */}
             <div className="space-y-4">
               {filteredUsers.map((user) => (
-                <div key={user.id} className={`bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors ${isMobile ? 'p-4' : 'p-6'}`}>
+                <div key={user.id} className={`bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors ${isMobile ? 'p-3' : 'p-6'} overflow-hidden`}>
                   <div className={`flex items-center justify-between ${isMobile ? 'flex-col gap-3' : ''}`}>
-                    <div className={`flex items-center gap-4 ${isMobile ? 'w-full' : ''}`}>
+                    <div className={`flex items-center gap-3 ${isMobile ? 'w-full' : 'gap-4'}`}>
                       <div className="relative">
                         {user.avatar ? (
                           <img
@@ -624,7 +624,7 @@ export const UserSearchPage: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <div className={`flex items-center gap-6 ${isMobile ? 'w-full justify-between' : ''}`}>
+                    <div className={`flex items-center ${isMobile ? 'w-full justify-around gap-3' : 'gap-6'}`}>
                       <div className="text-center">
                         <div className={`text-white font-semibold ${isMobile ? 'text-sm' : ''}`}>
                           {user.reviewCount}
@@ -640,8 +640,8 @@ export const UserSearchPage: React.FC = () => {
                       <button
                         onClick={() => toggleFollow(user.id)}
                         disabled={followLoading || !canFollow}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                          isMobile ? 'text-xs' : 'text-sm'
+                        className={`flex items-center gap-2 rounded-lg font-medium transition-colors ${
+                          isMobile ? 'text-xs px-3 py-1.5' : 'text-sm px-4 py-2'
                         } ${
                           followLoading || !canFollow
                             ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
@@ -697,8 +697,8 @@ export const UserSearchPage: React.FC = () => {
             )}
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Sidebar - Hidden on mobile */}
+          <div className="hidden lg:block lg:col-span-1 space-y-6">
             
             {/* Recent Searches */}
             {recentSearches.length > 0 && (
