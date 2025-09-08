@@ -387,8 +387,8 @@ export const UserSearchPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 py-8">
-      <div className={`mx-auto px-4 sm:px-6 lg:px-8 ${isMobile ? 'max-w-full' : 'max-w-7xl'}`}>
+    <div className="min-h-screen bg-gray-900 py-4 sm:py-8">
+      <div className={`mx-auto px-3 sm:px-6 lg:px-8 ${isMobile ? 'max-w-full' : 'max-w-7xl'}`}>
         
         {/* Header */}
         <div className="mb-8">
@@ -455,7 +455,7 @@ export const UserSearchPage: React.FC = () => {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-4 gap-8">
+        <div className={`grid lg:grid-cols-4 ${isMobile ? 'gap-4' : 'gap-8'}`}>
           {/* Main Content */}
           <div className="lg:col-span-3">
             
@@ -525,8 +525,8 @@ export const UserSearchPage: React.FC = () => {
                         <button
                           onClick={() => toggleFollow(user.id)}
                           disabled={followLoading || !canFollow}
-                          className={`flex items-center gap-2 rounded-lg font-medium transition-colors ${
-                            isMobile ? 'text-xs px-3 py-1.5' : 'text-sm px-4 py-2'
+                          className={`flex items-center justify-center gap-1 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                            isMobile ? 'text-xs px-2 py-1.5 w-full' : 'text-sm px-4 py-2 gap-2'
                           } ${
                             followLoading || !canFollow
                               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
@@ -542,13 +542,13 @@ export const UserSearchPage: React.FC = () => {
                             </>
                           ) : followingUsers.includes(user.id) ? (
                             <>
-                              <UserCheck className="h-4 w-4" />
-                              Following
+                              <UserCheck className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                              <span>Following</span>
                             </>
                           ) : (
                             <>
-                              <UserPlus className="h-4 w-4" />
-                              {canFollow ? 'Follow' : 'Login to Follow'}
+                              <UserPlus className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                              <span>{canFollow ? 'Follow' : 'Login'}</span>
                             </>
                           )}
                         </button>
@@ -584,8 +584,8 @@ export const UserSearchPage: React.FC = () => {
             <div className="space-y-4">
               {filteredUsers.map((user) => (
                 <div key={user.id} className={`bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors ${isMobile ? 'p-3' : 'p-6'} overflow-hidden`}>
-                  <div className={`flex items-center justify-between ${isMobile ? 'flex-col gap-3' : ''}`}>
-                    <div className={`flex items-center gap-3 ${isMobile ? 'w-full' : 'gap-4'}`}>
+                  <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between'}`}>
+                    <div className={`flex items-center ${isMobile ? 'gap-3 w-full' : 'gap-4'}`}>
                       <div className="relative">
                         {user.avatar ? (
                           <img
@@ -624,7 +624,7 @@ export const UserSearchPage: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <div className={`flex items-center ${isMobile ? 'w-full justify-around gap-3' : 'gap-6'}`}>
+                    <div className={`flex items-center ${isMobile ? 'w-full justify-between gap-2' : 'gap-6'}`}>
                       <div className="text-center">
                         <div className={`text-white font-semibold ${isMobile ? 'text-sm' : ''}`}>
                           {user.reviewCount}
@@ -640,8 +640,8 @@ export const UserSearchPage: React.FC = () => {
                       <button
                         onClick={() => toggleFollow(user.id)}
                         disabled={followLoading || !canFollow}
-                        className={`flex items-center gap-2 rounded-lg font-medium transition-colors ${
-                          isMobile ? 'text-xs px-3 py-1.5' : 'text-sm px-4 py-2'
+                        className={`flex items-center justify-center gap-1 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                          isMobile ? 'text-xs px-2 py-1.5 flex-shrink-0' : 'text-sm px-4 py-2 gap-2'
                         } ${
                           followLoading || !canFollow
                             ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
@@ -657,13 +657,13 @@ export const UserSearchPage: React.FC = () => {
                           </>
                         ) : followingUsers.includes(user.id) ? (
                           <>
-                            <UserCheck className="h-4 w-4" />
-                            Following
+                            <UserCheck className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                            <span>Following</span>
                           </>
                         ) : (
                           <>
-                            <UserPlus className="h-4 w-4" />
-                            {canFollow ? 'Follow' : 'Login to Follow'}
+                            <UserPlus className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                            <span>{canFollow ? 'Follow' : 'Login'}</span>
                           </>
                         )}
                       </button>
