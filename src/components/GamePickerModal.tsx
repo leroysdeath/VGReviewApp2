@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Search, Star, Gamepad2, BookOpen, Gift, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { igdbService } from '../services/igdbService';
 import { collectionWishlistService } from '../services/collectionWishlistService';
@@ -42,6 +43,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
   mode = 'top-games',
   onGameAdded
 }) => {
+  const navigate = useNavigate();
   // Memoize the default excludeGameIds to prevent re-renders
   const memoizedExcludeIds = useMemo(() => excludeGameIds || [], [excludeGameIds]);
   const [games, setGames] = useState<RatedGame[]>([]);
@@ -491,7 +493,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
             /* Empty State */
             <div className="text-center py-12">
               <Gamepad2 className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400">
+              <p className="text-gray-400 mb-6">
                 {mode === 'top-games' ? (
                   searchQuery 
                     ? 'No games found matching your search'
@@ -505,9 +507,23 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                 )}
               </p>
               {(mode === 'collection' || mode === 'wishlist') && startedFinishedGames.size > 0 && (
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 mb-4">
                   {startedFinishedGames.size} game{startedFinishedGames.size !== 1 ? 's' : ''} hidden (already started/finished)
                 </p>
+              )}
+              {/* Rate More Games button for Top 5 mode */}
+              {mode === 'top-games' && (
+                (searchQuery ? true : games.length === 0) && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      navigate('/search');
+                    }}
+                    className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+                  >
+                    Rate More Games
+                  </button>
+                )
               )}
             </div>
           )}

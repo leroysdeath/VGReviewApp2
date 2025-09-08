@@ -1043,8 +1043,8 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
         )
       )}
       
-      {/* Show Rate More Games button when there are less than 10 games */}
-      {limit === 10 && topGames.length > 0 && topGames.length < 10 && (
+      {/* Show Rate More Games button only for own profile when there are less than 10 games */}
+      {limit === 10 && isOwnProfile && topGames.length > 0 && topGames.length < 10 && (
         <div className="mt-8 text-center">
           <button
             onClick={() => navigate('/search')}

@@ -12,6 +12,7 @@ import { FollowersFollowingModal } from '../components/FollowersFollowingModal';
 import { GamesModal } from '../components/GamesModal';
 import { ReviewsModal } from '../components/ReviewsModal';
 import { userServiceSimple, UserUpdate } from '../services/userServiceSimple';
+import { useFollow } from '../hooks/useFollow';
 
 // Lazy load UserSettingsModal to avoid initialization issues
 const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsModal'));
@@ -42,6 +43,10 @@ export const UserPage: React.FC = () => {
   const [isGamesModalOpen, setIsGamesModalOpen] = useState(false);
   const [gamesModalInitialTab, setGamesModalInitialTab] = useState<'all' | 'started' | 'finished'>('all');
   const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
+  
+  // Follow functionality
+  const { toggleFollow, isFollowing, loading: followLoading } = useFollow();
+  const [isFollowingUser, setIsFollowingUser] = useState(false);
 
   // Fetch user data - defined first to avoid temporal dead zone
   const fetchUserData = useCallback(async () => {
@@ -90,6 +95,16 @@ export const UserPage: React.FC = () => {
         setIsOwnProfile(false);
       }
       
+      // Check if following this user (only if not own profile and authenticated)
+      if (!isOwnProfile && isAuthenticated) {
+        try {
+          const followStatus = await isFollowing(numericId.toString());
+          setIsFollowingUser(followStatus);
+        } catch (error) {
+          console.error('Error checking follow status:', error);
+        }
+      }
+      
       // Query basic stats for ProfileDetails
       const { data: startedGamesData } = await supabase
         .from('game_progress')
@@ -123,7 +138,7 @@ export const UserPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, isAuthenticated, authUser]);
+  }, [id, isAuthenticated, authUser, isFollowing]);
 
   // Handle profile save using simplified userService
   const handleSaveProfile = useCallback(async (profileData: UserUpdate) => {
@@ -154,6 +169,20 @@ export const UserPage: React.FC = () => {
   // Modal handlers
   const handleEditClick = () => {
     setShowSettingsModal(true);
+  };
+  
+  // Handle follow/unfollow
+  const handleFollowClick = async () => {
+    if (!id) return;
+    
+    try {
+      const result = await toggleFollow(id);
+      if (result.success) {
+        setIsFollowingUser(result.isFollowing);
+      }
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+    }
   };
 
   const handleFollowersClick = () => {
@@ -222,6 +251,10 @@ export const UserPage: React.FC = () => {
             isDummy={false}
             onEditClick={handleEditClick}
             isCurrentUser={isOwnProfile}
+            onFollowClick={handleFollowClick}
+            isFollowing={isFollowingUser}
+            followLoading={followLoading}
+            isAuthenticated={isAuthenticated}
           />
           <ProfileDetails 
             stats={stats} 

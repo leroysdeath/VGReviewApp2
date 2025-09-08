@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, ExternalLink } from 'lucide-react';
+import { Settings, ExternalLink, UserPlus, UserCheck } from 'lucide-react';
 import { escapeHtml } from '../utils/sanitize';
 
 interface ProfileInfoProps {
@@ -16,9 +16,22 @@ interface ProfileInfoProps {
   isDummy?: boolean;
   onEditClick?: () => void;
   isCurrentUser?: boolean;
+  onFollowClick?: () => void;
+  isFollowing?: boolean;
+  followLoading?: boolean;
+  isAuthenticated?: boolean;
 }
 
-export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false, onEditClick, isCurrentUser = false }) => {
+export const ProfileInfo: React.FC<ProfileInfoProps> = ({ 
+  user, 
+  isDummy = false, 
+  onEditClick, 
+  isCurrentUser = false,
+  onFollowClick,
+  isFollowing = false,
+  followLoading = false,
+  isAuthenticated = false
+}) => {
   // Handle null user case
   if (!user) {
     return (
@@ -54,6 +67,33 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isDummy = false,
           {isCurrentUser && (
             <button onClick={onEditClick} className="text-gray-400 hover:text-white">
               <Settings className="h-4 w-4" />
+            </button>
+          )}
+          {!isCurrentUser && isAuthenticated && (
+            <button
+              onClick={onFollowClick}
+              disabled={followLoading}
+              className={`flex items-center gap-2 px-3 py-1 rounded-lg font-medium text-sm transition-colors ${
+                followLoading
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : isFollowing
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
+              }`}
+            >
+              {followLoading ? (
+                <span className="text-xs">...</span>
+              ) : isFollowing ? (
+                <>
+                  <UserCheck className="h-4 w-4" />
+                  Following
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4" />
+                  Follow
+                </>
+              )}
             </button>
           )}
         </div>
