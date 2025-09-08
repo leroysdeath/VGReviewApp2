@@ -77,7 +77,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({
                 followLoading
                   ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                   : isFollowing
-                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? 'bg-green-600 text-white hover:bg-green-700'
                   : 'bg-purple-600 text-white hover:bg-purple-700'
               }`}
             >
