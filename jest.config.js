@@ -9,9 +9,14 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/src/test/setup-basic.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // Comprehensive Supabase service mapping
+    '^.*\\/services\\/supabase$': '<rootDir>/src/test/supabase-test.ts',
+    '^.*\\/.*\\/services\\/supabase$': '<rootDir>/src/test/supabase-test.ts',
     '^../services/supabase$': '<rootDir>/src/test/supabase-test.ts',
     '^../../services/supabase$': '<rootDir>/src/test/supabase-test.ts',
     '^../../../services/supabase$': '<rootDir>/src/test/supabase-test.ts',
+    // Additional service mappings for better resolution
+    '^.*\\/services\\/(.*)$': '<rootDir>/src/services/$1',
   },
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
@@ -42,7 +47,8 @@ export default {
       useESM: false,
       tsconfig: {
         module: 'commonjs',
-        moduleResolution: 'node'
+        moduleResolution: 'node',
+        target: 'es2020'
       }
     }]
   },
@@ -50,10 +56,5 @@ export default {
   transformIgnorePatterns: [
     'node_modules/(?!(.*\\.mjs$))'
   ],
-  extensionsToTreatAsEsm: ['.ts', '.tsx'],
-  globals: {
-    'ts-jest': {
-      useESM: false
-    }
-  }
+  extensionsToTreatAsEsm: ['.ts', '.tsx']
 };
