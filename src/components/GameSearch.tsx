@@ -51,6 +51,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialViewMode);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -97,8 +98,13 @@ export const GameSearch: React.FC<GameSearchProps> = ({
     return gameSuggestions;
   }, [searchState.results]);
   
-  // Debounced search function
+  // Search function with request cancellation to prevent race conditions
   const performSearch = useCallback(async (searchTerm: string) => {
+    // Cancel any existing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     if (!searchTerm.trim()) {
       setSearchState(prev => ({
         ...prev,
@@ -109,6 +115,10 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       }));
       return;
     }
+
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     setSearchState(prev => ({
       ...prev,
@@ -126,7 +136,14 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         console.log('🐛 [DEBUG] Search context:', { searchTerm, maxResults, timestamp: new Date().toISOString() });
         console.log('🐛 [DEBUG] Current URL:', window.location.href);
       }
+      
       const games = await gameDataService.searchGames(searchTerm);
+      
+      // Check if this request was cancelled
+      if (abortController.signal.aborted) {
+        console.log('🚫 Search cancelled for:', searchTerm);
+        return;
+      }
       
       // End tracking with success metrics
       searchMetricsService.endSearch(searchId, {
@@ -158,6 +175,12 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         console.log('🐛 [DEBUG] Search results:', games);
       }
     } catch (error) {
+      // Don't show error if request was cancelled
+      if (abortController.signal.aborted || (error instanceof Error && error.name === 'AbortError')) {
+        console.log('🚫 Search request cancelled');
+        return;
+      }
+
       console.error('❌ Search failed:', error);
       
       const errorMessage = error instanceof Error 
@@ -274,11 +297,11 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       console.log('🐛 [DEBUG] Input changed:', { newQuery, willSearch: newQuery.trim().length > 0 });
     }
 
-    // Set new timer for debounced search
+    // Set new timer for debounced search (increased to 4000ms to prevent rapid searches)
     debounceTimerRef.current = setTimeout(() => {
       setShowSuggestions(true);
       performSearch(newQuery);
-    }, 800);
+    }, 4000);
   };
 
   // Handle suggestion selection
@@ -316,7 +339,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
     };
   }, []);
 
-  // Cleanup timers on unmount
+  // Cleanup timers and abort controller on unmount
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) {
@@ -324,6 +347,9 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       }
       if (suggestionTimerRef.current) {
         clearTimeout(suggestionTimerRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
   }, []); // Empty dependency array - only cleanup on unmount

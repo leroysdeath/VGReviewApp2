@@ -1,6 +1,12 @@
 import { supabase } from './supabase'
 import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization'
 import { 
+  sortGamesIntelligently, 
+  calculateIntelligentScore,
+  detectSearchIntent,
+  getIntelligentSearchResults
+} from '../utils/intelligentPrioritization'
+import { 
   generateSisterGameQueries, 
   applySisterGameBoost, 
   detectGameSeries 
@@ -799,10 +805,11 @@ class GameSearchService {
         filteredGames = applySisterGameBoost(filteredGames, query.trim(), originalGameGenres);
       }
 
-      // Sort the results using the intelligent priority system with title similarity
+      // Sort the results using Phase 3 intelligent prioritization system
       if (orderBy === 'relevance') {
-        // Use title-aware sorting that prioritizes exact matches at the top
-        filteredGames = this.sortGamesByTitleSimilarityAndPriority(filteredGames, query?.trim());
+        // Use Phase 3 intelligent sorting with comprehensive prioritization
+        console.log('🧠 PHASE 3: Using intelligent prioritization system');
+        filteredGames = sortGamesIntelligently(filteredGames, query?.trim());
       } else {
         // Use traditional sorting for other sort options
         filteredGames = this.sortGames(filteredGames, orderBy, orderDirection, query);
@@ -865,6 +872,25 @@ class GameSearchService {
         follows: game.follows,
         hypes: game.hypes
       }))
+
+      // Add intelligent search analytics for debugging in development
+      const isDev = typeof process === 'undefined' || process.env.NODE_ENV !== 'test';
+      if (query?.trim() && isDev) {
+        try {
+          const intelligentResults = getIntelligentSearchResults(filteredGames, query.trim(), 10);
+          console.log('🧠 PHASE 3 ANALYTICS:', {
+            intent: intelligentResults.intent,
+            summary: intelligentResults.summary,
+            topResults: intelligentResults.results.slice(0, 3).map(r => ({
+              name: r.game.name,
+              totalScore: r.score.totalScore,
+              breakdown: r.score.breakdown
+            }))
+          });
+        } catch (e) {
+          // Silent fail in test environments
+        }
+      }
 
       return {
         games: searchResults,

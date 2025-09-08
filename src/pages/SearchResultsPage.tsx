@@ -121,9 +121,6 @@ export const SearchResultsPage: React.FC = () => {
     }
   }, [searchParams, searchGames, setSearchTerm]);
 
-  // Removed automatic search on typing - now only searches on Enter key press
-  // This prevents 429 rate limiting errors from IGDB API
-
   // Immediate search for non-search-term filter changes
   useEffect(() => {
     if (filters.searchTerm?.trim() && searchStarted) {
@@ -262,15 +259,11 @@ export const SearchResultsPage: React.FC = () => {
                 onKeyDown={handleKeyPress}
                 className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
-              {filters.searchTerm && !searchStarted && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-400">
-                  Auto-search in 2s or press Enter
-                </div>
-              )}
             </div>
             <button
               onClick={() => {
                 if (filters.searchTerm?.trim()) {
+                  console.log('🔘 Manual search button clicked');
                   performSearch();
                 }
               }}
@@ -423,7 +416,12 @@ export const SearchResultsPage: React.FC = () => {
               )}
             </div>
             <button
-              onClick={performSearch}
+              onClick={() => {
+                if (filters.searchTerm?.trim()) {
+                  console.log('🔄 Refresh button clicked');
+                  performSearch();
+                }
+              }}
               className="flex items-center gap-2 hover:text-white transition-colors"
             >
               <RefreshCw className="h-4 w-4" />

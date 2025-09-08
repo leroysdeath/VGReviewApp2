@@ -319,7 +319,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
     setSearchTerm(game.name);
     saveRecentSearch(game.name, 'games');
     // Navigate to search results page AND trigger the search
-    navigate(`/search-results?q=${encodeURIComponent(game.name)}`);
+    navigate(`/search-results?q=${encodeURIComponent(game.name)}&source=header`);
     searchGames(game.name);
     setIsOpen(false);
     setShowSuggestions(false);
@@ -339,7 +339,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
     setSearchTerm(searchQuery);
     if (tab === 'games') {
       // Navigate to search results page AND trigger the search
-      navigate(`/search-results?q=${encodeURIComponent(searchQuery)}`);
+      navigate(`/search-results?q=${encodeURIComponent(searchQuery)}&source=header`);
       searchGames(searchQuery);
     } else {
       // For users, perform a search to navigate to the first result
@@ -354,7 +354,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
       saveRecentSearch(searchQuery);
       if (activeTab === 'games') {
         // Navigate to search results page AND trigger the search
-        navigate(`/search-results?q=${encodeURIComponent(searchQuery.trim())}`);
+        navigate(`/search-results?q=${encodeURIComponent(searchQuery.trim())}&source=header`);
         // Also trigger the search immediately using the hook
         searchGames(searchQuery);
       } else {
