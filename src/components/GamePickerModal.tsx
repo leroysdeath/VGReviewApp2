@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Search, Star, Gamepad2, BookOpen, Gift, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { igdbService } from '../services/igdbService';
 import { collectionWishlistService } from '../services/collectionWishlistService';
@@ -17,7 +18,7 @@ interface RatedGame {
   rating: number;
 }
 
-export type GamePickerMode = 'top-games' | 'collection' | 'wishlist';
+export type GamePickerMode = 'top-games' | 'collection' | 'wishlist' | 'review';
 
 interface GamePickerModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
   mode = 'top-games',
   onGameAdded
 }) => {
+  const navigate = useNavigate();
   // Memoize the default excludeGameIds to prevent re-renders
   const memoizedExcludeIds = useMemo(() => excludeGameIds || [], [excludeGameIds]);
   const [games, setGames] = useState<RatedGame[]>([]);
@@ -49,7 +51,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
-  // Force IGDB search mode for collection/wishlist
+  // Force IGDB search mode for collection/wishlist/review
   const searchMode = mode === 'top-games' ? 'user-games' : 'igdb';
   const [addingGameId, setAddingGameId] = useState<number | null>(null);
   const [startedFinishedGames, setStartedFinishedGames] = useState<Set<number>>(new Set());
@@ -230,6 +232,23 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
   // Handle adding game to collection/wishlist
   const handleAddGame = async (igdbId: number, gameData?: any) => {
+    // For review mode, just call onSelect with the game data
+    if (mode === 'review') {
+      const gameInfo = {
+        igdb_id: igdbId,
+        name: gameData?.name,
+        cover_url: gameData?.cover?.url?.replace('t_thumb', 't_cover_big'),
+        genres: gameData?.genres?.map((g: any) => g.name),
+        platforms: gameData?.platforms?.map((p: any) => p.name),
+        first_release_date: gameData?.first_release_date,
+        summary: gameData?.summary,
+        igdb_rating: gameData?.rating
+      };
+      onSelect(JSON.stringify(gameInfo));
+      onClose();
+      return;
+    }
+    
     // Check if game is started/finished
     if (startedFinishedGames.has(igdbId)) {
       alert('This game has already been started or finished and cannot be added to collection or wishlist.');
@@ -312,6 +331,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
             {title || (
               mode === 'collection' ? 'Add to Collection' :
               mode === 'wishlist' ? 'Add to Wishlist' :
+              mode === 'review' ? 'Select Game to Review' :
               `Select Game for Top 5${position ? ` - Position #${position}` : ''}`
             )}
           </h2>
@@ -406,7 +426,15 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                         <button
                         onClick={() => handleAddGame(game.id, game)}
                         disabled={addingGameId === game.id}
-                        className="w-full py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className={`w-full py-2 text-white text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                          mode === 'collection' 
+                            ? 'bg-orange-600 hover:bg-orange-700'
+                            : mode === 'wishlist'
+                            ? 'bg-red-600 hover:bg-red-700'
+                            : mode === 'review'
+                            ? 'bg-purple-600 hover:bg-purple-700'
+                            : 'bg-purple-600 hover:bg-purple-700'
+                        }`}
                       >
                         {addingGameId === game.id ? (
                           <>
@@ -415,8 +443,10 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                           </>
                         ) : (
                           <>
-                            {mode === 'collection' ? <BookOpen className="h-4 w-4" /> : <Gift className="h-4 w-4" />}
-                            Add to {mode === 'collection' ? 'Collection' : 'Wishlist'}
+                            {mode === 'collection' ? <BookOpen className="h-4 w-4" /> : 
+                             mode === 'wishlist' ? <Gift className="h-4 w-4" /> : 
+                             mode === 'review' ? <Gamepad2 className="h-4 w-4" /> : null}
+                            {mode === 'review' ? 'Select Game' : `Add to ${mode === 'collection' ? 'Collection' : 'Wishlist'}`}
                           </>
                         )}
                         </button>
@@ -466,7 +496,15 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                           }
                         }}
                         disabled={mode !== 'top-games' && addingGameId === parseInt(game.id)}
-                        className="w-full py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className={`w-full py-2 text-white text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                          mode === 'collection' 
+                            ? 'bg-orange-600 hover:bg-orange-700'
+                            : mode === 'wishlist'
+                            ? 'bg-red-600 hover:bg-red-700'
+                            : mode === 'review'
+                            ? 'bg-purple-600 hover:bg-purple-700'
+                            : 'bg-purple-600 hover:bg-purple-700'
+                        }`}
                       >
                         {mode === 'top-games' ? (
                           'Select'
@@ -477,8 +515,10 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                           </>
                         ) : (
                           <>
-                            {mode === 'collection' ? <BookOpen className="h-4 w-4" /> : <Gift className="h-4 w-4" />}
-                            Add to {mode === 'collection' ? 'Collection' : 'Wishlist'}
+                            {mode === 'collection' ? <BookOpen className="h-4 w-4" /> : 
+                             mode === 'wishlist' ? <Gift className="h-4 w-4" /> : 
+                             mode === 'review' ? <Gamepad2 className="h-4 w-4" /> : null}
+                            {mode === 'review' ? 'Select Game' : `Add to ${mode === 'collection' ? 'Collection' : 'Wishlist'}`}
                           </>
                         )}
                       </button>
@@ -491,7 +531,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
             /* Empty State */
             <div className="text-center py-12">
               <Gamepad2 className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400">
+              <p className="text-gray-400 mb-6">
                 {mode === 'top-games' ? (
                   searchQuery 
                     ? 'No games found matching your search'
@@ -505,9 +545,23 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                 )}
               </p>
               {(mode === 'collection' || mode === 'wishlist') && startedFinishedGames.size > 0 && (
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 mb-4">
                   {startedFinishedGames.size} game{startedFinishedGames.size !== 1 ? 's' : ''} hidden (already started/finished)
                 </p>
+              )}
+              {/* Rate More Games button for Top 5 mode */}
+              {mode === 'top-games' && (
+                (searchQuery ? true : games.length === 0) && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      navigate('/search');
+                    }}
+                    className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+                  >
+                    Rate More Games
+                  </button>
+                )
               )}
             </div>
           )}

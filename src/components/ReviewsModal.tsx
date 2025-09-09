@@ -29,7 +29,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
   userId,
   userName
 }) => {
-  const [activeTab, setActiveTab] = useState<'highest' | 'lowest' | 'recent' | 'oldest'>('recent');
+  const [activeTab, setActiveTab] = useState<'recent' | 'oldest' | 'highest' | 'lowest'>('recent');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -141,32 +141,6 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
         {/* Tabs */}
         <div className="flex border-b border-gray-700">
           <button
-            onClick={() => setActiveTab('highest')}
-            className={`flex-1 py-3 px-2 text-center transition-colors ${
-              activeTab === 'highest'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-1">
-              <TrendingUp className="h-4 w-4" />
-              <span className={isMobile ? 'text-xs' : 'text-sm'}>Highest</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('lowest')}
-            className={`flex-1 py-3 px-2 text-center transition-colors ${
-              activeTab === 'lowest'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-1">
-              <TrendingDown className="h-4 w-4" />
-              <span className={isMobile ? 'text-xs' : 'text-sm'}>Lowest</span>
-            </div>
-          </button>
-          <button
             onClick={() => setActiveTab('recent')}
             className={`flex-1 py-3 px-2 text-center transition-colors ${
               activeTab === 'recent'
@@ -190,6 +164,32 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
             <div className="flex items-center justify-center gap-1">
               <History className="h-4 w-4" />
               <span className={isMobile ? 'text-xs' : 'text-sm'}>Oldest</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('highest')}
+            className={`flex-1 py-3 px-2 text-center transition-colors ${
+              activeTab === 'highest'
+                ? 'border-b-2 border-purple-500 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-1">
+              <TrendingUp className="h-4 w-4" />
+              <span className={isMobile ? 'text-xs' : 'text-sm'}>Highest</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('lowest')}
+            className={`flex-1 py-3 px-2 text-center transition-colors ${
+              activeTab === 'lowest'
+                ? 'border-b-2 border-purple-500 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-1">
+              <TrendingDown className="h-4 w-4" />
+              <span className={isMobile ? 'text-xs' : 'text-sm'}>Lowest</span>
             </div>
           </button>
         </div>

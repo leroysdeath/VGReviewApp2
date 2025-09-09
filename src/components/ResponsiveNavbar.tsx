@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X, Gamepad2, Home, Users, ScrollText, LogOut, Settings, Clock, TrendingUp, Database, Loader2, Star, User as UserIcon } from 'lucide-react';
+import { Search, User, Menu, X, Gamepad2, Users, ScrollText, LogOut, Settings, Clock, TrendingUp, Database, Loader2, Star, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthModal } from '../context/AuthModalContext'; // NEW IMPORT
 import { useResponsive } from '../hooks/useResponsive';
@@ -421,9 +421,13 @@ export const ResponsiveNavbar: React.FC = () => {
             <div className="bg-gray-800 w-full max-w-sm h-full shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="p-4 border-b border-gray-700">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span className="text-lg font-bold text-white">GameVault</span>
-                  </div>
+                  <Link 
+                    to="/" 
+                    className="flex items-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span className="text-lg font-bold text-white hover:text-purple-400 transition-colors">GameVault</span>
+                  </Link>
                   <button
                     onClick={() => setIsMenuOpen(false)}
                     className="p-2 text-gray-400 hover:text-white transition-colors"
@@ -437,7 +441,20 @@ export const ResponsiveNavbar: React.FC = () => {
                 {/* User Info Section */}
                 {isAuthenticated ? (
                   <div className="border-b border-gray-700 pb-4">
-                    <div className="flex items-center space-x-3 mb-3">
+                    <Link
+                      to={dbUserId ? `/user/${dbUserId}` : "#"}
+                      className="flex items-center space-x-3 mb-3 hover:bg-gray-700 rounded-lg p-2 transition-colors"
+                      onClick={(e) => {
+                        if (!dbUserId) {
+                          e.preventDefault();
+                          if (!dbUserIdLoading) {
+                            console.error('Database user ID not available');
+                          }
+                        } else {
+                          setIsMenuOpen(false);
+                        }
+                      }}
+                    >
                       {user?.avatar ? (
                         <img
                           src={user.avatar}
@@ -449,11 +466,21 @@ export const ResponsiveNavbar: React.FC = () => {
                           <User className="h-6 w-6 text-white" />
                         </div>
                       )}
-                      <div>
+                      <div className="flex items-center">
                         <p className="text-white font-medium">{user?.name}</p>
-                        <p className="text-gray-400 text-sm">{user?.email}</p>
+                        {dbUserIdLoading && (
+                          <Loader2 className="h-3 w-3 animate-spin ml-2 text-gray-400" />
+                        )}
                       </div>
-                    </div>
+                    </Link>
+                    <Link
+                      to="/review"
+                      className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors w-full"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <ScrollText className="h-5 w-5" />
+                      <span>Write Review</span>
+                    </Link>
                   </div>
                 ) : (
                   <div className="border-b border-gray-700 pb-4">
@@ -634,14 +661,6 @@ export const ResponsiveNavbar: React.FC = () => {
                 {/* Navigation Links */}
                 <div className="space-y-2">
                   <Link
-                    to="/"
-                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Home className="h-5 w-5" />
-                    <span>Home</span>
-                  </Link>
-                  <Link
                     to="/search"
                     className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                     onClick={() => setIsMenuOpen(false)}
@@ -658,39 +677,7 @@ export const ResponsiveNavbar: React.FC = () => {
                     <span>Users</span>
                   </Link>
 
-                  {/* Authenticated User Links */}
-                  {isAuthenticated && (
-                    <>
-                      <Link
-                        to={dbUserId ? `/user/${dbUserId}` : "#"}
-                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors border-t border-gray-700 pt-2 mt-2"
-                        onClick={(e) => {
-                          if (!dbUserId) {
-                            e.preventDefault();
-                            if (!dbUserIdLoading) {
-                              console.error('Database user ID not available');
-                            }
-                          } else {
-                            setIsMenuOpen(false);
-                          }
-                        }}
-                      >
-                        <User className="h-5 w-5" />
-                        <span>Profile</span>
-                        {dbUserIdLoading && (
-                          <Loader2 className="h-3 w-3 animate-spin ml-1" />
-                        )}
-                      </Link>
-                      <Link
-                        to="/review"
-                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <ScrollText className="h-5 w-5" />
-                        <span>Write Review</span>
-                      </Link>
-                    </>
-                  )}
+                  {/* Removed authenticated user links - moved to user info section */}
 
                   {/* Development Links */}
                   {import.meta.env.DEV && (
@@ -1145,13 +1132,6 @@ export const ResponsiveNavbar: React.FC = () => {
               />
             </form>
             
-            <Link
-              to="/"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Home
-            </Link>
             <Link
               to="/search"
               className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"

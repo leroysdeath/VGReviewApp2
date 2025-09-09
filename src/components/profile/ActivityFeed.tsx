@@ -28,9 +28,10 @@ interface Activity {
 
 interface ActivityFeedProps {
   userId: string;
+  isOwnProfile?: boolean;
 }
 
-export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
+export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId, isOwnProfile = false }) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -358,7 +359,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
       case 'review':
         return <ScrollText className="h-5 w-5 text-purple-400" />;
       case 'rating':
-        return <Zap className="h-5 w-5 text-yellow-400" />;
+        return null;
       case 'wishlist':
         return <Gift className="h-5 w-5 text-red-400" />;
       case 'collection':
@@ -581,10 +582,12 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
   if (activities.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-400 mb-4">No recent activity</p>
-        <p className="text-gray-500 text-sm">
-          Start rating games and tracking your progress to see activity here!
-        </p>
+        <p className="text-gray-400 mb-4">No activity</p>
+        {isOwnProfile && (
+          <p className="text-gray-500 text-sm">
+            Start rating games and tracking your progress to see activity here!
+          </p>
+        )}
       </div>
     );
   }
@@ -613,9 +616,11 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId }) => {
             <div className="flex-1 min-w-0">
               {/* Activity header */}
               <div className="flex items-start gap-2 mb-2">
-                <div className="flex-shrink-0 w-5 h-5">
-                  {getActivityIcon(activity.type)}
-                </div>
+                {getActivityIcon(activity.type) && (
+                  <div className="flex-shrink-0 w-5 h-5">
+                    {getActivityIcon(activity.type)}
+                  </div>
+                )}
                 <span className="text-gray-300 text-sm">
                   {getActivityDescription(activity)}
                 </span>

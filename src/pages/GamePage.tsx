@@ -1015,11 +1015,11 @@ export const GamePage: React.FC = () => {
                   <SmartImage
                     src={game.cover?.url ? `https:${game.cover.url}` : (game.cover_url || '/placeholder-game.jpg')}
                     alt={game.name}
-                    className="h-64 w-full object-cover md:h-80 md:w-64"
+                    className="h-96 w-full object-cover md:h-80 md:w-64"
                     optimization={{
-                      width: window.innerWidth < 768 ? 320 : 640,  // Smaller for mobile
-                      height: window.innerWidth < 768 ? 480 : 960, // Smaller for mobile
-                      quality: window.innerWidth < 768 ? 80 : 95,  // Lower quality for mobile
+                      width: window.innerWidth < 768 ? 640 : 640,  // High quality for all devices
+                      height: window.innerWidth < 768 ? 960 : 960, // High quality for all devices
+                      quality: 95,  // High quality for all devices
                       format: 'webp'
                     }}
                     fallback="/placeholder-game.jpg"
@@ -1431,7 +1431,7 @@ export const GamePage: React.FC = () => {
               {reviewsWithText.slice(0, 5).map(review => (
                 <Link 
                   key={review.id} 
-                  to={`/review/${review.userId}/${review.gameId}`}
+                  to={`/review/${review.userId}/${review.igdbGameId || review.gameId}`}
                   className="bg-gray-800 rounded-lg p-4 block hover:bg-gray-700 transition-colors"
                 >
                   <div className="flex items-center gap-3 mb-2">
