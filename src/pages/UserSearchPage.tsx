@@ -387,7 +387,7 @@ export const UserSearchPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 py-4 sm:py-8">
+    <div className="min-h-screen bg-gray-900 py-4 sm:py-8 overflow-x-hidden">
       <div className={`mx-auto ${isMobile ? 'px-4' : 'px-6 lg:px-8 max-w-7xl'}`}>
         
         {/* Header */}
@@ -455,9 +455,9 @@ export const UserSearchPage: React.FC = () => {
           </div>
         )}
 
-        <div className={`grid lg:grid-cols-4 ${isMobile ? 'gap-4' : 'gap-8'}`}>
-          {/* Main Content */}
-          <div className="lg:col-span-3">
+        {isMobile ? (
+          /* Mobile Layout - No Grid */
+          <div>
             
             {/* Popular Reviewers Section (when no search) */}
             {!searchTerm && (
@@ -470,124 +470,85 @@ export const UserSearchPage: React.FC = () => {
                 </div>
                 <div className={`gap-6 ${isMobile ? 'space-y-4' : 'grid md:grid-cols-2 lg:grid-cols-3'}`}>
                   {popularReviewers.map((user) => (
-                    <div key={user.id} className={`bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors ${isMobile ? 'p-4' : 'p-6'} overflow-hidden`}>
-                      <div className={`flex items-center gap-4 ${isMobile ? 'mb-3' : 'mb-4'}`}>
-                        <div className="relative">
+                    <div key={user.id} className="bg-gray-800 rounded-lg p-4 overflow-hidden">
+                      {/* User Header */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="relative flex-shrink-0">
                           {user.avatar ? (
                             <img
                               src={user.avatar}
                               alt={user.username}
-                              className={`rounded-full object-cover ${isMobile ? 'w-12 h-12' : 'w-16 h-16'}`}
+                              className="w-10 h-10 rounded-full object-cover"
                             />
                           ) : (
-                            <div className={`rounded-full bg-purple-600 flex items-center justify-center text-white font-bold ${isMobile ? 'w-12 h-12 text-lg' : 'w-16 h-16 text-xl'}`}>
+                            <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm">
                               {user.username.charAt(0).toUpperCase()}
                             </div>
                           )}
                           {user.verified && (
-                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                              <UserCheck className="h-3 w-3 text-white" />
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                              <UserCheck className="h-2 w-2 text-white" />
                             </div>
                           )}
                         </div>
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <Link 
                             to={`/user/${user.id}`}
-                            className={`font-semibold text-white hover:text-purple-400 transition-colors ${isMobile ? 'text-base' : 'text-lg'}`}
+                            className="font-semibold text-white hover:text-purple-400 transition-colors text-base block"
                           >
                             {user.username}
                           </Link>
-                          <div className="flex items-center gap-2">
-                            <p className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                              {user.reviewCount} reviews
-                            </p>
+                          <p className="text-gray-400 text-xs">
+                            {user.reviewCount} reviews
                             {user.averageRating && (
-                              <div className="flex items-center gap-1">
-                                <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                                <span className="text-yellow-500 text-xs">{user.averageRating}</span>
-                              </div>
+                              <span className="text-yellow-500 ml-2">★ {user.averageRating}</span>
                             )}
-                          </div>
+                          </p>
                         </div>
                       </div>
+                      
+                      {/* Bio */}
                       {user.bio && (
-                        <p className={`text-gray-300 mb-4 line-clamp-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                        <p className="text-gray-300 text-xs line-clamp-2 mb-3">
                           {user.bio}
                         </p>
                       )}
-                      {isMobile ? (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2 text-gray-400 text-xs">
-                            <Users className="h-4 w-4" />
-                            <span>{user.followers} followers</span>
-                          </div>
-                          <button
-                            onClick={() => toggleFollow(user.id)}
-                            disabled={followLoading || !canFollow}
-                            className={`flex items-center justify-center gap-1 rounded-lg font-medium transition-colors text-xs px-3 py-1.5 w-full ${
-                              followLoading || !canFollow
-                              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                              : followingUsers.includes(user.id)
-                              ? 'bg-green-600 text-white hover:bg-green-700'
-                              : 'bg-purple-600 text-white hover:bg-purple-700'
-                          }`}
-                        >
-                          {followLoading ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              Loading...
-                            </>
-                          ) : followingUsers.includes(user.id) ? (
-                            <>
-                              <UserCheck className="h-3 w-3" />
-                              <span>Following</span>
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus className="h-3 w-3" />
-                              <span>{canFollow ? 'Follow' : 'Login'}</span>
-                            </>
-                          )}
-                        </button>
+                      
+                      {/* Stats */}
+                      <div className="text-xs text-gray-400 mb-3">
+                        <Users className="h-3 w-3 inline mr-1" />
+                        <span>{user.followers} followers</span>
                       </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 text-gray-400 text-sm">
-                          <div className="flex items-center gap-1">
-                            <Users className="h-4 w-4" />
-                            <span>{user.followers} followers</span>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => toggleFollow(user.id)}
-                          disabled={followLoading || !canFollow}
-                          className={`flex items-center justify-center gap-2 rounded-lg font-medium transition-colors text-sm px-4 py-2 ${
-                            followLoading || !canFollow
-                              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                              : followingUsers.includes(user.id)
-                              ? 'bg-green-600 text-white hover:bg-green-700'
-                              : 'bg-purple-600 text-white hover:bg-purple-700'
-                          }`}
-                        >
-                          {followLoading ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              Loading...
-                            </>
-                          ) : followingUsers.includes(user.id) ? (
-                            <>
-                              <UserCheck className="h-4 w-4" />
-                              Following
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus className="h-4 w-4" />
-                              {canFollow ? 'Follow' : 'Login'}
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    )}
+                      
+                      {/* Follow Button */}
+                      <button
+                        onClick={() => toggleFollow(user.id)}
+                        disabled={followLoading || !canFollow}
+                        className={`w-full flex items-center justify-center gap-1 rounded-lg font-medium transition-colors text-xs py-2 ${
+                          followLoading || !canFollow
+                            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            : followingUsers.includes(user.id)
+                            ? 'bg-green-600 text-white hover:bg-green-700'
+                            : 'bg-purple-600 text-white hover:bg-purple-700'
+                        }`}
+                      >
+                        {followLoading ? (
+                          <>
+                            <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                            <span>Loading</span>
+                          </>
+                        ) : followingUsers.includes(user.id) ? (
+                          <>
+                            <UserCheck className="h-3 w-3" />
+                            <span>Following</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="h-3 w-3" />
+                            <span>{canFollow ? 'Follow' : 'Login'}</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -618,123 +579,84 @@ export const UserSearchPage: React.FC = () => {
             {/* User List */}
             <div className="space-y-4">
               {filteredUsers.map((user) => (
-                <div key={user.id} className={`bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors ${isMobile ? 'p-4' : 'p-6'} overflow-hidden`}>
-                  <div className={`${isMobile ? 'space-y-3' : 'flex items-center justify-between'}`}>
-                    <div className={`flex items-center ${isMobile ? 'gap-3' : 'gap-4'}`}>
-                      <div className="relative">
-                        {user.avatar ? (
-                          <img
-                            src={user.avatar}
-                            alt={user.username}
-                            className={`rounded-full object-cover ${isMobile ? 'w-10 h-10' : 'w-12 h-12'}`}
-                          />
-                        ) : (
-                          <div className={`rounded-full bg-purple-600 flex items-center justify-center text-white font-bold ${isMobile ? 'w-10 h-10 text-sm' : 'w-12 h-12 text-base'}`}>
-                            {user.username.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        {user.verified && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                            <UserCheck className="h-2 w-2 text-white" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <Link 
-                          to={`/user/${user.id}`}
-                          className={`font-semibold text-white hover:text-purple-400 transition-colors ${isMobile ? 'text-base' : 'text-lg'}`}
-                        >
-                          {user.username}
-                        </Link>
-                        {user.bio && (
-                          <p className={`text-gray-400 ${isMobile ? 'text-xs truncate' : 'text-sm'}`}>
-                            {user.bio}
-                          </p>
-                        )}
-                        {user.averageRating && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                            <span className="text-yellow-500 text-xs">Avg: {user.averageRating}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {isMobile ? (
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-4 text-xs text-gray-400">
-                          <span>{user.reviewCount} reviews</span>
-                          <span>{user.followers} followers</span>
+                <div key={user.id} className="bg-gray-800 rounded-lg p-4 overflow-hidden">
+                  {/* User Header */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="relative flex-shrink-0">
+                      {user.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.username}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                          {user.username.charAt(0).toUpperCase()}
                         </div>
-                        <button
-                          onClick={() => toggleFollow(user.id)}
-                          disabled={followLoading || !canFollow}
-                          className={`flex items-center justify-center gap-1 rounded-lg font-medium transition-colors text-xs px-3 py-1.5 ${
-                            followLoading || !canFollow
-                              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                              : followingUsers.includes(user.id)
-                              ? 'bg-green-600 text-white hover:bg-green-700'
-                              : 'bg-purple-600 text-white hover:bg-purple-700'
-                          }`}
-                      >
-                        {followLoading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Loading...
-                          </>
-                        ) : followingUsers.includes(user.id) ? (
-                          <>
-                            <UserCheck className="h-3 w-3" />
-                            <span>Following</span>
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="h-3 w-3" />
-                            <span>{canFollow ? 'Follow' : 'Login'}</span>
-                          </>
-                        )}
-                      </button>
+                      )}
+                      {user.verified && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                          <UserCheck className="h-2 w-2 text-white" />
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
-                        <div className="text-white font-semibold">{user.reviewCount}</div>
-                        <div className="text-gray-400 text-xs">Reviews</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-white font-semibold">{user.followers}</div>
-                        <div className="text-gray-400 text-xs">Followers</div>
-                      </div>
-                      <button
-                        onClick={() => toggleFollow(user.id)}
-                        disabled={followLoading || !canFollow}
-                        className={`flex items-center justify-center gap-2 rounded-lg font-medium transition-colors text-sm px-4 py-2 ${
-                          followLoading || !canFollow
-                            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                            : followingUsers.includes(user.id)
-                            ? 'bg-green-600 text-white hover:bg-green-700'
-                            : 'bg-purple-600 text-white hover:bg-purple-700'
-                        }`}
+                    <div className="flex-1 min-w-0">
+                      <Link 
+                        to={`/user/${user.id}`}
+                        className="font-semibold text-white hover:text-purple-400 transition-colors text-base block"
                       >
-                        {followLoading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Loading...
-                          </>
-                        ) : followingUsers.includes(user.id) ? (
-                          <>
-                            <UserCheck className="h-4 w-4" />
-                            <span>Following</span>
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="h-4 w-4" />
-                            <span>{canFollow ? 'Follow' : 'Login'}</span>
-                          </>
-                        )}
-                      </button>
+                        {user.username}
+                      </Link>
+                      {user.bio && (
+                        <p className="text-gray-400 text-xs truncate">
+                          {user.bio}
+                        </p>
+                      )}
                     </div>
-                  )}
                   </div>
+                  
+                  {/* Stats */}
+                  <div className="text-xs text-gray-400 mb-3">
+                    <span>{user.reviewCount} reviews</span>
+                    <span className="mx-2">•</span>
+                    <span>{user.followers} followers</span>
+                    {user.averageRating && (
+                      <>
+                        <span className="mx-2">•</span>
+                        <span className="text-yellow-500">★ {user.averageRating}</span>
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* Follow Button */}
+                  <button
+                    onClick={() => toggleFollow(user.id)}
+                    disabled={followLoading || !canFollow}
+                    className={`w-full flex items-center justify-center gap-1 rounded-lg font-medium transition-colors text-xs py-2 ${
+                      followLoading || !canFollow
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : followingUsers.includes(user.id)
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : 'bg-purple-600 text-white hover:bg-purple-700'
+                    }`}
+                  >
+                    {followLoading ? (
+                      <>
+                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Loading</span>
+                      </>
+                    ) : followingUsers.includes(user.id) ? (
+                      <>
+                        <UserCheck className="h-3 w-3" />
+                        <span>Following</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-3 w-3" />
+                        <span>{canFollow ? 'Follow' : 'Login'}</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               ))}
             </div>
@@ -762,9 +684,244 @@ export const UserSearchPage: React.FC = () => {
               </div>
             )}
           </div>
+        ) : (
+          /* Desktop Layout - With Grid */
+          <div className="grid lg:grid-cols-4 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-3">
+              
+              {/* Popular Reviewers Section (when no search) */}
+              {!searchTerm && (
+                <div className="mb-8">
+                  <div className="flex items-center gap-2 mb-6">
+                    <TrendingUp className="h-6 w-6 text-orange-500" />
+                    <h2 className="font-bold text-white text-2xl">
+                      Top Reviewers
+                    </h2>
+                  </div>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {popularReviewers.map((user) => (
+                      <div key={user.id} className="bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors p-6 overflow-hidden">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="relative">
+                            {user.avatar ? (
+                              <img
+                                src={user.avatar}
+                                alt={user.username}
+                                className="w-16 h-16 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-xl">
+                                {user.username.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            {user.verified && (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                <UserCheck className="h-3 w-3 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <Link 
+                              to={`/user/${user.id}`}
+                              className="font-semibold text-white hover:text-purple-400 transition-colors text-lg"
+                            >
+                              {user.username}
+                            </Link>
+                            <div className="flex items-center gap-2">
+                              <p className="text-gray-400 text-sm">
+                                {user.reviewCount} reviews
+                              </p>
+                              {user.averageRating && (
+                                <div className="flex items-center gap-1">
+                                  <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                                  <span className="text-yellow-500 text-xs">{user.averageRating}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {user.bio && (
+                          <p className="text-gray-300 mb-4 line-clamp-2 text-sm">
+                            {user.bio}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 text-gray-400 text-sm">
+                            <div className="flex items-center gap-1">
+                              <Users className="h-4 w-4" />
+                              <span>{user.followers} followers</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => toggleFollow(user.id)}
+                            disabled={followLoading || !canFollow}
+                            className={`flex items-center justify-center gap-2 rounded-lg font-medium transition-colors text-sm px-4 py-2 ${
+                              followLoading || !canFollow
+                                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                : followingUsers.includes(user.id)
+                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                : 'bg-purple-600 text-white hover:bg-purple-700'
+                            }`}
+                          >
+                            {followLoading ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Loading...
+                              </>
+                            ) : followingUsers.includes(user.id) ? (
+                              <>
+                                <UserCheck className="h-4 w-4" />
+                                Following
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus className="h-4 w-4" />
+                                {canFollow ? 'Follow' : 'Login'}
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          {/* Sidebar - Hidden on mobile */}
-          <div className="hidden lg:block lg:col-span-1 space-y-6">
+              {/* Search Results */}
+              <div className="mb-6">
+                <h2 className="font-bold text-white mb-4 text-2xl">
+                  {searchTerm ? `Search Results (${filteredUsers.length})` : 'All Users'}
+                </h2>
+                <p className="text-gray-400">
+                  {searchTerm 
+                    ? `Found ${filteredUsers.length} users matching "${searchTerm}"`
+                    : `Browse all ${users.length} users`
+                  }
+                </p>
+              </div>
+
+              {/* Loading State */}
+              {loadingUsers && (
+                <div className="text-center py-8">
+                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
+                  <p className="text-gray-400 mt-2">Loading users...</p>
+                </div>
+              )}
+
+              {/* User List */}
+              <div className="space-y-4">
+                {filteredUsers.map((user) => (
+                  <div key={user.id} className="bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors p-6 overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          {user.avatar ? (
+                            <img
+                              src={user.avatar}
+                              alt={user.username}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-base">
+                              {user.username.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          {user.verified && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                              <UserCheck className="h-2 w-2 text-white" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <Link 
+                            to={`/user/${user.id}`}
+                            className="font-semibold text-white hover:text-purple-400 transition-colors text-lg"
+                          >
+                            {user.username}
+                          </Link>
+                          {user.bio && (
+                            <p className="text-gray-400 text-sm">
+                              {user.bio}
+                            </p>
+                          )}
+                          {user.averageRating && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                              <span className="text-yellow-500 text-xs">Avg: {user.averageRating}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="text-center">
+                          <div className="text-white font-semibold">{user.reviewCount}</div>
+                          <div className="text-gray-400 text-xs">Reviews</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-white font-semibold">{user.followers}</div>
+                          <div className="text-gray-400 text-xs">Followers</div>
+                        </div>
+                        <button
+                          onClick={() => toggleFollow(user.id)}
+                          disabled={followLoading || !canFollow}
+                          className={`flex items-center justify-center gap-2 rounded-lg font-medium transition-colors text-sm px-4 py-2 ${
+                            followLoading || !canFollow
+                              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                              : followingUsers.includes(user.id)
+                              ? 'bg-green-600 text-white hover:bg-green-700'
+                              : 'bg-purple-600 text-white hover:bg-purple-700'
+                          }`}
+                        >
+                          {followLoading ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Loading...
+                            </>
+                          ) : followingUsers.includes(user.id) ? (
+                            <>
+                              <UserCheck className="h-4 w-4" />
+                              Following
+                            </>
+                          ) : (
+                            <>
+                              <UserPlus className="h-4 w-4" />
+                              {canFollow ? 'Follow' : 'Login'}
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* No Results */}
+              {filteredUsers.length === 0 && !loadingUsers && (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">👥</div>
+                  <h2 className="text-xl font-semibold text-white mb-2">
+                    {searchTerm ? 'No users found' : 'No users yet'}
+                  </h2>
+                  <p className="text-gray-400 mb-4">
+                    {searchTerm 
+                      ? 'Try adjusting your search terms'
+                      : 'Be the first to join the community!'}
+                  </p>
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                    >
+                      Clear Search
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="lg:col-span-1 space-y-6">
             
             {/* Recent Searches */}
             {recentSearches.length > 0 && (
