@@ -337,7 +337,7 @@ export const ReviewPage: React.FC = () => {
                     <SmartImage
                       src={game.cover_url || '/placeholder-game.jpg'}
                       alt={game.name}
-                      className="h-64 w-full object-cover md:h-80 md:w-64 hover:opacity-90 transition-opacity cursor-pointer"
+                      className="h-96 w-full object-cover md:h-80 md:w-64 hover:opacity-90 transition-opacity cursor-pointer"
                       optimization={{
                         width: 640,  // High quality
                         height: 960, // High quality
