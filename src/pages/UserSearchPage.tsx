@@ -686,7 +686,8 @@ export const UserSearchPage: React.FC = () => {
           </div>
         ) : (
           /* Desktop Layout - With Grid */
-          <div className="grid lg:grid-cols-4 gap-8">
+          <div>
+            <div className="grid lg:grid-cols-4 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-3">
               
@@ -1005,24 +1006,26 @@ export const UserSearchPage: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Pagination */}
-        {!isMobile && filteredUsers.length > 20 && (
-          <div className="mt-12 flex justify-center">
-            <div className="flex items-center gap-2">
-              <button className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                Previous
-              </button>
-              <span className="px-4 py-2 bg-purple-600 text-white rounded-lg">1</span>
-              <span className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors cursor-pointer">2</span>
-              <span className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors cursor-pointer">3</span>
-              <button className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                Next
-              </button>
-            </div>
-          </div>
-        )}
       </div>
+      
+      {/* Pagination - Desktop only */}
+      {filteredUsers.length > 20 && (
+        <div className="mt-12 flex justify-center">
+          <div className="flex items-center gap-2">
+            <button className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
+              Previous
+            </button>
+            <span className="px-4 py-2 bg-purple-600 text-white rounded-lg">1</span>
+            <span className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors cursor-pointer">2</span>
+            <span className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors cursor-pointer">3</span>
+            <button className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+    )}
     </div>
   );
 };
