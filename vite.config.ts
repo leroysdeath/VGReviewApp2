@@ -8,7 +8,8 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
-    strictPort: true
+    strictPort: true,
+    allowedHosts: ['devserver-leroysdeath-18--grand-narwhal-4e85d9.netlify.app']
   },
   build: {
     target: 'es2015',
