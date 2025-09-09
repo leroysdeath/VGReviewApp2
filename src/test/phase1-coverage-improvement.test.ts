@@ -1,6 +1,7 @@
 import { gameSearchService } from '../services/gameSearchService';
 import { setupServer } from 'msw/node';
 import { handlers } from './mocks/handlers';
+import { RealisticGameSearchMock, setupRealisticMocks, resetRealisticMocks } from './realistic-mocks';
 
 // Setup MSW server
 const server = setupServer(...handlers);
@@ -49,6 +50,9 @@ describe('Phase 1: Result Limit Improvements', () => {
   }> = [];
 
   beforeAll(() => {
+    // Setup realistic mocks for business logic testing
+    setupRealisticMocks();
+    
     // Start MSW server before tests with debugging
     server.listen({ 
       onUnhandledRequest: (req) => {
@@ -68,6 +72,8 @@ describe('Phase 1: Result Limit Improvements', () => {
   afterEach(() => {
     // Reset handlers after each test to ensure test isolation
     server.resetHandlers();
+    // Reset realistic mocks to avoid state pollution
+    resetRealisticMocks();
   });
 
   afterAll(() => {

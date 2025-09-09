@@ -6,6 +6,9 @@ describe('SearchCoordinator - Core Functionality', () => {
   let executionLog: string[];
 
   beforeEach(() => {
+    // Mock setTimeout to avoid real delays in tests
+    jest.useFakeTimers();
+    
     executionLog = [];
     mockExecutor = jest.fn().mockImplementation(async (query: string) => {
       executionLog.push(`EXECUTED: ${query}`);
@@ -18,6 +21,9 @@ describe('SearchCoordinator - Core Functionality', () => {
 
   afterEach(() => {
     coordinator.destroy();
+    // Restore real timers
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
   });
 
   describe('Single Search Execution', () => {
@@ -31,6 +37,9 @@ describe('SearchCoordinator - Core Functionality', () => {
         coordinator.requestSearch('typing', 'mar', 100),
         coordinator.requestSearch('typing', 'mario', 100)
       ];
+
+      // Fast-forward all timers to trigger delayed searches
+      jest.runAllTimers();
 
       // Wait for all requests to complete
       await Promise.allSettled(promises);
@@ -50,11 +59,14 @@ describe('SearchCoordinator - Core Functionality', () => {
       // Start first search with delay
       const firstSearch = coordinator.requestSearch('user', 'zelda', 500);
       
-      // Wait a bit but not full delay
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Advance time partially (but not enough to trigger first search)
+      jest.advanceTimersByTime(100);
       
       // Start second search (should cancel first)
       const secondSearch = coordinator.requestSearch('user', 'pokemon', 200);
+      
+      // Fast-forward remaining timers
+      jest.runAllTimers();
       
       // Wait for all to complete
       await Promise.allSettled([firstSearch, secondSearch]);
@@ -103,7 +115,8 @@ describe('SearchCoordinator - Core Functionality', () => {
 
       console.log(`   Active search info: ${JSON.stringify(activeInfo, null, 2)}`);
 
-      // Wait for search to complete
+      // Fast-forward to complete the search
+      jest.runAllTimers();
       await searchPromise;
 
       // Should no longer be active
@@ -208,9 +221,12 @@ describe('SearchCoordinator - Core Functionality', () => {
         searchPromises.push(
           coordinator.requestSearch('user-typing', step.query, step.delay)
         );
-        // Small delay between keystrokes
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // Advance time slightly between keystrokes
+        jest.advanceTimersByTime(50);
       }
+
+      // Fast-forward all remaining timers
+      jest.runAllTimers();
 
       // Wait for all searches to settle
       await Promise.allSettled(searchPromises);
@@ -230,11 +246,14 @@ describe('SearchCoordinator - Core Functionality', () => {
       // Start typing with delay
       const typingPromise = coordinator.requestSearch('typing', 'mario', 1000);
       
-      // Wait a bit
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Advance time partially
+      jest.advanceTimersByTime(200);
       
       // User presses Enter (immediate search)
       await coordinator.requestSearch('enter-key', 'mario', 0, true);
+
+      // Fast-forward remaining timers
+      jest.runAllTimers();
 
       // Wait for any remaining promises
       await Promise.allSettled([typingPromise]);

@@ -27,7 +27,10 @@
     "test:dev": "jest --config jest.config.fast.js --watch",
     "test:parallel": "jest --maxWorkers=75%",
     "test:unit": "jest --testPathPatterns=\"(simple|basic|unit|fast)\" --maxWorkers=100%",
-    "test:integration": "jest --testPathPatterns=\"(integration|search|game|franchise)\" --maxWorkers=50%"
+    "test:integration": "jest --testPathPatterns=\"(integration|search|game|franchise)\" --maxWorkers=50%",
+    "test:advanced": "node -r ts-node/register src/test/advanced-runner.ts",
+    "test:incremental": "node -r ts-node/register src/test/advanced-runner.ts incremental",
+    "test:smart": "node -r ts-node/register src/test/advanced-runner.ts dev"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
