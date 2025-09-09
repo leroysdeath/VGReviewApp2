@@ -1007,6 +1007,7 @@ export const UserSearchPage: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
       
       {/* Pagination - Desktop only */}
       {filteredUsers.length > 20 && (
