@@ -284,9 +284,9 @@ export const ResponsiveLandingPage: React.FC = () => {
           {/* Content */}
           <div className="relative text-center">
             <h1 className="text-3xl font-bold text-white mb-4">
-              Discover Your Next
+              Track Your Games.
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block">
-                Gaming Adventure
+                Find the Next
               </span>
             </h1>
             <p className="text-gray-300 mb-8 leading-relaxed">
@@ -500,9 +500,9 @@ export const ResponsiveLandingPage: React.FC = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              Discover Your Next
+              Track Your Games.
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
-                {' '}Gaming Adventure
+                {' '}Find the Next
               </span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
