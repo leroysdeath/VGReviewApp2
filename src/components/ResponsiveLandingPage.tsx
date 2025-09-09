@@ -309,22 +309,6 @@ export const ResponsiveLandingPage: React.FC = () => {
                   </div>
                 </div>
               </Link>
-              <Link
-                to="/enhanced-search-test"
-                className="group relative block w-full overflow-hidden rounded-lg"
-              >
-                {/* Glassmorphism background with distinct styling */}
-                <div className="absolute inset-0 bg-orange-600/20 backdrop-blur-sm border border-orange-500/30 rounded-lg" />
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-600/30 to-orange-700/30 opacity-0 group-active:opacity-100 transition-opacity duration-300" />
-                
-                {/* Content */}
-                <div className="relative px-6 py-3 text-white font-medium">
-                  <div className="flex items-center justify-center gap-2">
-                    <Gamepad2 className="h-5 w-5" />
-                    Test Enhanced Search
-                  </div>
-                </div>
-              </Link>
               {isAuthenticated ? (
                 <Link
                   to="/users"

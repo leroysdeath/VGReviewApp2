@@ -36,6 +36,54 @@ function getCategoryLabel(category?: number): string {
   return category !== undefined ? labels[category] || `Unknown(${category})` : 'undefined';
 }
 
+/**
+ * Check if a game was released within the past N years
+ * Uses IGDB timestamp data (Unix timestamp in seconds)
+ */
+function isGameRecentlyReleased(game: Game, yearsThreshold: number = 3): boolean {
+  const currentTime = Math.floor(Date.now() / 1000); // Current Unix timestamp in seconds
+  const thresholdTime = currentTime - (yearsThreshold * 365 * 24 * 60 * 60); // N years ago
+  
+  // Check first_release_date first (most reliable)
+  if (game.first_release_date && game.first_release_date > thresholdTime) {
+    return true;
+  }
+  
+  // Check release_dates array as fallback
+  if (game.release_dates && game.release_dates.length > 0) {
+    const earliestRelease = game.release_dates
+      .filter(release => release.date)
+      .sort((a, b) => (a.date || 0) - (b.date || 0))[0];
+    
+    if (earliestRelease && earliestRelease.date && earliestRelease.date > thresholdTime) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Get the release year of a game for logging purposes
+ */
+function getGameReleaseYear(game: Game): string {
+  if (game.first_release_date) {
+    return new Date(game.first_release_date * 1000).getFullYear().toString();
+  }
+  
+  if (game.release_dates && game.release_dates.length > 0) {
+    const earliestRelease = game.release_dates
+      .filter(release => release.date)
+      .sort((a, b) => (a.date || 0) - (b.date || 0))[0];
+    
+    if (earliestRelease && earliestRelease.date) {
+      return new Date(earliestRelease.date * 1000).getFullYear().toString();
+    }
+  }
+  
+  return 'Unknown';
+}
+
 interface Game {
   id: number;
   name: string;
@@ -45,6 +93,12 @@ interface Game {
   genres?: string[];
   summary?: string;
   description?: string;
+  first_release_date?: number; // IGDB timestamp (Unix timestamp in seconds)
+  release_dates?: Array<{
+    date?: number; // Unix timestamp in seconds
+    platform?: number;
+    region?: number;
+  }>;
 }
 
 // Companies and franchises known for aggressive IP protection
@@ -424,7 +478,8 @@ export function shouldFilterContent(game: Game): boolean {
   }
 
   // CRITICAL: Check if this is an official game FIRST before any other filtering
-  if (isOfficialCompany(game)) {
+  // BUT: Never bypass category 5 (Mod) games, even if they claim official publisher
+  if (game.category !== 5 && isOfficialCompany(game)) {
     console.log(`✅ OFFICIAL GAME BYPASS: "${game.name}" is from authorized publisher ${game.developer || game.publisher} - allowing regardless of franchise`);
     return false;
   }
@@ -536,15 +591,34 @@ export function shouldFilterContent(game: Game): boolean {
       return false;
       
     case CopyrightLevel.MODERATE:
-      // Only filter obvious fan-made content
+      // NEW: Time-based mod filtering for recent games (past 3 years)
+      // For MODERATE level, time-based logic takes precedence over protected franchise filtering
+      // Some companies are more protective of recent releases but tolerate older mods
+      const isModContent = game.category === 5 || hasEnhancedModIndicators(game);
+      
+      if (isModContent) {
+        const isRecent = isGameRecentlyReleased(game, 3);
+        const releaseYear = getGameReleaseYear(game);
+        
+        if (isRecent) {
+          console.log(`🕐 TIME-BASED MOD FILTER: "${game.name}" (${releaseYear}) - Mod content blocked for recent release (MODERATE level)`);
+          return true;
+        } else {
+          console.log(`⏰ TIME-BASED MOD ALLOWED: "${game.name}" (${releaseYear}) - Older mod content allowed (MODERATE level) - overrides franchise protection`);
+          return false; // Explicitly allow old mods, even for protected franchises
+        }
+      }
+      
+      // Filter other types of fan-made content (non-mod fan content)
       if (hasExplicitFanIndicators) {
-        console.log(`🛡️ Moderate filtering: "${game.name}" - Explicit fan content indicators`);
+        console.log(`🛡️ Moderate filtering: "${game.name}" - Explicit fan content indicators (non-mod)`);
         return true;
       }
       
       // Block protected franchises by non-official developers (since official already bypassed above)
+      // This only applies to non-mod content now
       if (hasProtectedFranchise) {
-        console.log(`⚠️ Moderate filtering: "${game.name}" - Protected franchise by non-official developer`);
+        console.log(`⚠️ Moderate filtering: "${game.name}" - Protected franchise by non-official developer (non-mod)`);
         return true;
       }
       

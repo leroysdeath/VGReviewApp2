@@ -18,7 +18,7 @@ interface SmoothSearchState {
  */
 export function useSmoothSearch({
   searchFunction,
-  debounceMs = 300,
+  debounceMs = 4000,
   initialDelayMs = 150
 }: UseSmoothSearchOptions) {
   const [state, setState] = useState<SmoothSearchState>({

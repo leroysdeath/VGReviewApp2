@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useAuthModal } from '../context/AuthModalContext'; // NEW IMPORT
 import { useResponsive } from '../hooks/useResponsive';
 import { useGameSearch } from '../hooks/useGameSearch';
-import { igdbService } from '../services/igdbService';
+import { gameDataService } from '../services/gameDataService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
@@ -64,6 +64,7 @@ export const ResponsiveNavbar: React.FC = () => {
   const { 
     searchTerm, 
     setSearchTerm, 
+    searchGames,
     quickSearch, 
     navigateToSearch,
     clearSearch 
@@ -108,12 +109,12 @@ export const ResponsiveNavbar: React.FC = () => {
         return;
       }
 
-      // Fetch fresh results using enhanced IGDB search with sequel detection
-      const igdbResults = await igdbService.searchWithSequels(query, 8);
-      const transformedResults = igdbResults.map(game => igdbService.transformGame(game));
+      // Fetch fresh results using enhanced gameDataService search with sister game detection
+      console.log(`🔍 ResponsiveNavbar: Searching for "${query}" using gameDataService`);
+      const searchResults = await gameDataService.searchGames(query);
       
       // Apply content protection filtering to mobile search results
-      const filteredResults = filterProtectedContent(transformedResults);
+      const filteredResults = filterProtectedContent(searchResults);
 
       if (filteredResults && Array.isArray(filteredResults)) {
         const limitedResults = filteredResults.slice(0, 8);
@@ -244,7 +245,7 @@ export const ResponsiveNavbar: React.FC = () => {
 
     debounceRef.current = setTimeout(() => {
       performQuickSearch(searchQuery);
-    }, 300);
+    }, 800);
 
     return () => {
       if (debounceRef.current) {
@@ -270,12 +271,14 @@ export const ResponsiveNavbar: React.FC = () => {
     }
   }, [recentSearches, recentUserSearches, activeTab]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (searchQuery.trim()) {
       saveRecentSearch(searchQuery);
       if (activeTab === 'games') {
+        // Navigate to search results page AND trigger the search
         navigate(`/search-results?q=${encodeURIComponent(searchQuery.trim())}`);
+        searchGames(searchQuery.trim());
       } else {
         navigate(`/users?q=${encodeURIComponent(searchQuery.trim())}`);
       }

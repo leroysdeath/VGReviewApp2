@@ -196,10 +196,12 @@ function calculateSignificanceScore(game: GameMetrics): number {
   ];
   
   if (game.platforms?.some(platform => 
-    systemSellerPlatforms.some(seller => 
-      (typeof platform === 'string' ? platform : platform.name || '')
-        .toLowerCase().includes(seller)
-    )
+    systemSellerPlatforms.some(seller => {
+      const platformName = typeof platform === 'string' 
+        ? platform 
+        : (platform as any)?.name || '';
+      return platformName.toLowerCase().includes(seller);
+    })
   )) {
     score += 10;
   }
@@ -210,10 +212,12 @@ function calculateSignificanceScore(game: GameMetrics): number {
   ];
   
   if (game.genres?.some(genre => 
-    significantGenres.some(sig => 
-      (typeof genre === 'string' ? genre : genre.name || '')
-        .toLowerCase().includes(sig)
-    )
+    significantGenres.some(sig => {
+      const genreName = typeof genre === 'string' 
+        ? genre 
+        : (genre as any)?.name || '';
+      return genreName.toLowerCase().includes(sig);
+    })
   )) {
     score += 5;
   }

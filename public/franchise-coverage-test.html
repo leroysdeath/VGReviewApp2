@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Franchise Coverage Analysis</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            background: #1a1a1a; 
+            color: #00ff00; 
+            padding: 20px; 
+            max-width: 1400px; 
+            margin: 0 auto;
+        }
+        .controls {
+            background: #2a2a2a; 
+            padding: 20px; 
+            margin: 20px 0;
+            border: 1px solid #00ff00;
+        }
+        button {
+            background: #00aa00;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button:hover { background: #00ff00; color: black; }
+        .results {
+            background: #2a2a2a;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #444;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .franchise-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #666;
+        }
+        .high-coverage { border-left-color: #00ff00; }
+        .medium-coverage { border-left-color: #ffaa00; }
+        .low-coverage { border-left-color: #ff4444; }
+        .summary {
+            background: #333;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #666;
+        }
+        .error { color: #ff4444; }
+        .success { color: #00ff00; }
+        .warning { color: #ffaa00; }
+    </style>
+</head>
+<body>
+    <h1>🎮 Live Franchise Coverage Analysis</h1>
+    
+    <div class="controls">
+        <h3>Test Coverage of Key Gaming Franchises</h3>
+        <button onclick="testAllFranchises()">🚀 Test All 32 Franchises</button>
+        <button onclick="testTopPriority()">⭐ Test Top Priority (8 franchises)</button>
+        <button onclick="testSingleFranchise('pokemon')">⚡ Test Pokemon</button>
+        <button onclick="testSingleFranchise('mario')">🍄 Test Mario</button>
+        <button onclick="testSingleFranchise('zelda')">🗡️ Test Zelda</button>
+        <button onclick="clearResults()">🗑️ Clear Results</button>
+    </div>
+    
+    <div id="summary" class="summary" style="display: none;">
+        <h3>📊 ANALYSIS SUMMARY</h3>
+        <div id="summary-content"></div>
+    </div>
+    
+    <div id="results" class="results">
+        Ready to test franchise coverage...
+        
+        This will test your actual database for coverage of flagship games across major franchises.
+        Results will show:
+        - How many flagship games are found per franchise
+        - Coverage percentage for each series
+        - Identification of missing flagship titles
+        - Prioritization recommendations
+    </div>
+
+    <script type="module">
+        // Flagship games database for major franchises
+        const FRANCHISE_FLAGSHIP_GAMES = {
+            'pokemon': ['Pokémon Red', 'Pokémon Blue', 'Pokémon Yellow', 'Pokémon Gold', 'Pokémon Silver', 'Pokémon Crystal', 'Pokémon Ruby', 'Pokémon Sapphire', 'Pokémon Emerald'],
+            'mario': ['Super Mario Bros.', 'Super Mario Bros. 2', 'Super Mario Bros. 3', 'Super Mario World', 'Super Mario 64', 'Super Mario Galaxy', 'Super Mario Odyssey'],
+            'zelda': ['The Legend of Zelda', 'The Legend of Zelda: Ocarina of Time', 'The Legend of Zelda: Breath of the Wild', 'The Legend of Zelda: A Link to the Past', 'The Legend of Zelda: Majora\'s Mask'],
+            'final fantasy': ['Final Fantasy VII', 'Final Fantasy X', 'Final Fantasy VI', 'Final Fantasy IV', 'Final Fantasy IX', 'Final Fantasy VIII'],
+            'call of duty': ['Call of Duty 4: Modern Warfare', 'Call of Duty: Modern Warfare 2', 'Call of Duty: Black Ops', 'Call of Duty: World at War'],
+            'resident evil': ['Resident Evil', 'Resident Evil 2', 'Resident Evil 4', 'Resident Evil 7', 'Resident Evil Village'],
+            'metal gear solid': ['Metal Gear Solid', 'Metal Gear Solid 2', 'Metal Gear Solid 3', 'Metal Gear Solid V'],
+            'street fighter': ['Street Fighter II', 'Street Fighter Alpha 3', 'Street Fighter IV', 'Street Fighter V'],
+            'tekken': ['Tekken 3', 'Tekken 7', 'Tekken 5', 'Tekken Tag Tournament'],
+            'mortal kombat': ['Mortal Kombat', 'Mortal Kombat II', 'Mortal Kombat 3', 'Mortal Kombat X'],
+            'gran turismo': ['Gran Turismo', 'Gran Turismo 2', 'Gran Turismo 3', 'Gran Turismo 4', 'Gran Turismo 7'],
+            'forza': ['Forza Motorsport', 'Forza Horizon 4', 'Forza Horizon 5'],
+            'halo': ['Halo: Combat Evolved', 'Halo 2', 'Halo 3', 'Halo: Reach'],
+            'gears of war': ['Gears of War', 'Gears of War 2', 'Gears of War 3'],
+            'assassins creed': ['Assassin\'s Creed', 'Assassin\'s Creed II', 'Assassin\'s Creed: Brotherhood', 'Assassin\'s Creed IV: Black Flag'],
+            'grand theft auto': ['Grand Theft Auto III', 'Grand Theft Auto: Vice City', 'Grand Theft Auto: San Andreas', 'Grand Theft Auto V'],
+            'elder scrolls': ['The Elder Scrolls III: Morrowind', 'The Elder Scrolls IV: Oblivion', 'The Elder Scrolls V: Skyrim'],
+            'fallout': ['Fallout', 'Fallout 2', 'Fallout 3', 'Fallout: New Vegas', 'Fallout 4'],
+            'dark souls': ['Dark Souls', 'Dark Souls II', 'Dark Souls III'],
+            'monster hunter': ['Monster Hunter', 'Monster Hunter World', 'Monster Hunter Rise'],
+            'star fox': ['Star Fox', 'Star Fox 64', 'Star Fox Zero'],
+            'metroid': ['Metroid', 'Super Metroid', 'Metroid Prime', 'Metroid Dread'],
+            'donkey kong': ['Donkey Kong Country', 'Donkey Kong Country 2', 'Donkey Kong Country: Tropical Freeze'],
+            'kirby': ['Kirby\'s Adventure', 'Kirby Super Star', 'Kirby\'s Return to Dream Land'],
+            'sonic': ['Sonic the Hedgehog', 'Sonic 2', 'Sonic 3', 'Sonic Adventure', 'Sonic Generations'],
+            'crash bandicoot': ['Crash Bandicoot', 'Crash Bandicoot 2', 'Crash Bandicoot 3', 'Crash Bandicoot N. Sane Trilogy'],
+            'spyro': ['Spyro the Dragon', 'Spyro 2: Ripto\'s Rage', 'Spyro: Year of the Dragon'],
+            'kingdom hearts': ['Kingdom Hearts', 'Kingdom Hearts II', 'Kingdom Hearts III'],
+            'persona': ['Persona 3', 'Persona 4', 'Persona 5'],
+            'dragon quest': ['Dragon Quest VIII', 'Dragon Quest XI', 'Dragon Quest IX'],
+            'fire emblem': ['Fire Emblem: Awakening', 'Fire Emblem: Three Houses', 'Fire Emblem Fates'],
+            'xenoblade': ['Xenoblade Chronicles', 'Xenoblade Chronicles 2', 'Xenoblade Chronicles 3']
+        };
+
+        let analysisResults = [];
+        let currentTest = null;
+
+        // Make functions global
+        window.testAllFranchises = testAllFranchises;
+        window.testTopPriority = testTopPriority;
+        window.testSingleFranchise = testSingleFranchise;
+        window.clearResults = clearResults;
+
+        function clearResults() {
+            document.getElementById('results').textContent = 'Results cleared. Ready for new test...';
+            document.getElementById('summary').style.display = 'none';
+            analysisResults = [];
+        }
+
+        async function testTopPriority() {
+            const priorityFranchises = ['pokemon', 'mario', 'zelda', 'final fantasy', 'call of duty', 'resident evil', 'star fox', 'sonic'];
+            await runFranchiseAnalysis(priorityFranchises, 'TOP PRIORITY FRANCHISES');
+        }
+
+        async function testAllFranchises() {
+            const allFranchises = Object.keys(FRANCHISE_FLAGSHIP_GAMES);
+            await runFranchiseAnalysis(allFranchises, 'ALL FRANCHISES');
+        }
+
+        async function testSingleFranchise(franchise) {
+            await runFranchiseAnalysis([franchise], `SINGLE FRANCHISE: ${franchise.toUpperCase()}`);
+        }
+
+        async function runFranchiseAnalysis(franchisesToTest, testName) {
+            const resultsDiv = document.getElementById('results');
+            const summaryDiv = document.getElementById('summary');
+            const summaryContent = document.getElementById('summary-content');
+            
+            resultsDiv.innerHTML = `🚀 Starting ${testName} Analysis...\\n\\n`;
+            summaryDiv.style.display = 'none';
+            analysisResults = [];
+
+            let totalGames = 0;
+            let totalFound = 0;
+            let errorCount = 0;
+
+            for (let i = 0; i < franchisesToTest.length; i++) {
+                const franchise = franchisesToTest[i];
+                const flagshipGames = FRANCHISE_FLAGSHIP_GAMES[franchise];
+                
+                if (!flagshipGames) {
+                    resultsDiv.innerHTML += `❌ No flagship data for ${franchise}\\n`;
+                    continue;
+                }
+
+                resultsDiv.innerHTML += `\\n📊 Testing ${franchise.toUpperCase()} (${i + 1}/${franchisesToTest.length})...\\n`;
+                
+                try {
+                    // Direct API call to search endpoint
+                    const response = await fetch(`/api/search/games?q=${encodeURIComponent(franchise)}&limit=20`);
+                    
+                    let searchResults = [];
+                    if (response.ok) {
+                        const data = await response.json();
+                        searchResults = data.games || data || [];
+                    } else {
+                        // Fallback: try calling the hook directly if API fails
+                        console.warn(`API call failed for ${franchise}, trying direct service call`);
+                        // This might not work in browser but worth trying
+                        searchResults = [];
+                    }
+                    
+                    // Analyze coverage
+                    const foundGames = [];
+                    const missingGames = [];
+                    
+                    flagshipGames.forEach(flagshipGame => {
+                        const found = searchResults.some(result => {
+                            const resultName = result.name?.toLowerCase() || '';
+                            const flagshipName = flagshipGame.toLowerCase();
+                            
+                            // Flexible matching
+                            return resultName.includes(flagshipName) || 
+                                   flagshipName.includes(resultName) ||
+                                   fuzzyMatch(resultName, flagshipName);
+                        });
+                        
+                        if (found) {
+                            foundGames.push(flagshipGame);
+                        } else {
+                            missingGames.push(flagshipGame);
+                        }
+                    });
+                    
+                    const coverage = flagshipGames.length > 0 ? (foundGames.length / flagshipGames.length) * 100 : 0;
+                    totalGames += flagshipGames.length;
+                    totalFound += foundGames.length;
+                    
+                    const result = {
+                        franchise,
+                        coverage,
+                        foundGames,
+                        missingGames,
+                        totalResults: searchResults.length,
+                        flagshipGames
+                    };
+                    
+                    analysisResults.push(result);
+                    
+                    // Display result
+                    const coverageClass = coverage >= 80 ? 'high-coverage' : coverage >= 50 ? 'medium-coverage' : 'low-coverage';
+                    const emoji = coverage >= 80 ? '🟢' : coverage >= 50 ? '🟡' : '🔴';
+                    
+                    resultsDiv.innerHTML += `${emoji} Coverage: ${coverage.toFixed(1)}% (${foundGames.length}/${flagshipGames.length})\\n`;
+                    resultsDiv.innerHTML += `   Total search results: ${searchResults.length}\\n`;
+                    
+                    if (foundGames.length > 0) {
+                        resultsDiv.innerHTML += `   ✅ Found: ${foundGames.join(', ')}\\n`;
+                    }
+                    if (missingGames.length > 0) {
+                        resultsDiv.innerHTML += `   ❌ Missing: ${missingGames.join(', ')}\\n`;
+                    }
+                    
+                    // Scroll to bottom
+                    resultsDiv.scrollTop = resultsDiv.scrollHeight;
+                    
+                    // Small delay to avoid overwhelming
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    
+                } catch (error) {
+                    errorCount++;
+                    resultsDiv.innerHTML += `❌ Error testing ${franchise}: ${error.message}\\n`;
+                    console.error(`Error testing ${franchise}:`, error);
+                }
+            }
+            
+            // Generate summary
+            generateSummary(testName, totalGames, totalFound, errorCount);
+        }
+
+        function generateSummary(testName, totalGames, totalFound, errorCount) {
+            const summaryDiv = document.getElementById('summary');
+            const summaryContent = document.getElementById('summary-content');
+            
+            const overallCoverage = totalGames > 0 ? (totalFound / totalGames) * 100 : 0;
+            const sortedResults = [...analysisResults].sort((a, b) => b.coverage - a.coverage);
+            
+            const highCoverage = sortedResults.filter(r => r.coverage >= 80);
+            const mediumCoverage = sortedResults.filter(r => r.coverage >= 50 && r.coverage < 80);
+            const lowCoverage = sortedResults.filter(r => r.coverage < 50);
+            
+            let summaryHTML = `
+                <h4>${testName} - COMPLETE</h4>
+                <p><strong>Overall Coverage:</strong> ${overallCoverage.toFixed(1)}% (${totalFound}/${totalGames} flagship games)</p>
+                <p><strong>🟢 High Coverage (80%+):</strong> ${highCoverage.length} franchises</p>
+                <p><strong>🟡 Medium Coverage (50-79%):</strong> ${mediumCoverage.length} franchises</p>
+                <p><strong>🔴 Low Coverage (<50%):</strong> ${lowCoverage.length} franchises</p>
+                ${errorCount > 0 ? `<p class="error"><strong>⚠️ Errors:</strong> ${errorCount} franchise tests failed</p>` : ''}
+                
+                <h4>TOP PERFORMERS:</h4>
+            `;
+            
+            // Show top 5 performers
+            sortedResults.slice(0, 5).forEach((result, i) => {
+                const emoji = result.coverage >= 80 ? '🟢' : result.coverage >= 50 ? '🟡' : '🔴';
+                summaryHTML += `<p>${i + 1}. ${emoji} ${result.franchise}: ${result.coverage.toFixed(1)}%</p>`;
+            });
+            
+            if (lowCoverage.length > 0) {
+                summaryHTML += `
+                    <h4 class="error">PRIORITY FOR IMPROVEMENT:</h4>
+                `;
+                lowCoverage.slice(0, 5).forEach(result => {
+                    summaryHTML += `<p class="error">🔴 ${result.franchise}: ${result.coverage.toFixed(1)}% - Missing: ${result.missingGames.length} games</p>`;
+                });
+            }
+            
+            summaryContent.innerHTML = summaryHTML;
+            summaryDiv.style.display = 'block';
+            
+            // Store results globally for further analysis
+            window.latestAnalysisResults = analysisResults;
+            
+            console.log('📊 Analysis Results:', analysisResults);
+        }
+
+        function fuzzyMatch(str1, str2, threshold = 0.6) {
+            if (!str1 || !str2) return false;
+            
+            const words1 = str1.toLowerCase().split(/\\s+/);
+            const words2 = str2.toLowerCase().split(/\\s+/);
+            
+            let matches = 0;
+            for (const word1 of words1) {
+                for (const word2 of words2) {
+                    if (word1.includes(word2) || word2.includes(word1)) {
+                        matches++;
+                        break;
+                    }
+                }
+            }
+            
+            return (matches / Math.max(words1.length, words2.length)) >= threshold;
+        }
+    </script>
+</body>
+</html>

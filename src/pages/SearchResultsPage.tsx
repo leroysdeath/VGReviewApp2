@@ -103,26 +103,23 @@ export const SearchResultsPage: React.FC = () => {
     });
 
     setCurrentPage(page ? parseInt(page) : 1);
-  }, [searchParams]);
-
-  // Debounced search when search term changes
-  useEffect(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
+    
+    // Automatically perform search if query parameter is present
+    if (query.trim()) {
+      setSearchTerm(query);
+      setSearchStarted(true);
+      // Use setTimeout to ensure state is updated before search
+      setTimeout(() => {
+        searchGames(query, {
+          genres: platform ? [platform] : undefined,
+          sortBy: sortField === 'name' ? 'name' : 
+                 sortField === 'release_date' ? 'release_date' : 
+                 sortField === 'avg_rating' ? 'rating' : 'popularity',
+          sortOrder: sortOrder as any || 'asc'
+        });
+      }, 0);
     }
-
-    if (filters.searchTerm?.trim()) {
-      debounceRef.current = setTimeout(() => {
-        performSearch();
-      }, 500); // 500ms delay
-    }
-
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
-  }, [filters.searchTerm]);
+  }, [searchParams, searchGames, setSearchTerm]);
 
   // Immediate search for non-search-term filter changes
   useEffect(() => {
@@ -146,6 +143,11 @@ export const SearchResultsPage: React.FC = () => {
   };
 
   const performSearch = async () => {
+    // Clear any pending debounce timer when search is performed
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    
     if (!filters.searchTerm?.trim()) return;
     
     try {
@@ -181,6 +183,20 @@ export const SearchResultsPage: React.FC = () => {
     const updatedFilters = { ...filters, ...newFilters };
     setFilters(updatedFilters);
     setCurrentPage(1); // Reset to first page when filters change
+    
+    // If search term changed, start debounced search (2 second delay)
+    if ('searchTerm' in newFilters && newFilters.searchTerm?.trim()) {
+      // Clear existing debounce timer
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      
+      // Set new debounce timer for 2 seconds
+      debounceRef.current = setTimeout(() => {
+        console.log('🕐 Auto-search after 2 second delay');
+        performSearch();
+      }, 2000);
+    }
     
     // Update URL params
     const params = new URLSearchParams();
@@ -237,13 +253,26 @@ export const SearchResultsPage: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
                 type="text"
-                placeholder="Search games..."
+                placeholder="Search games... (auto-searches after 2s or press Enter)"
                 value={filters.searchTerm}
                 onChange={(e) => handleFilterChange({ searchTerm: e.target.value })}
                 onKeyDown={handleKeyPress}
                 className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
+            <button
+              onClick={() => {
+                if (filters.searchTerm?.trim()) {
+                  console.log('🔘 Manual search button clicked');
+                  performSearch();
+                }
+              }}
+              disabled={!filters.searchTerm?.trim()}
+              className="px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Search className="h-4 w-4" />
+              Search
+            </button>
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
@@ -387,7 +416,12 @@ export const SearchResultsPage: React.FC = () => {
               )}
             </div>
             <button
-              onClick={performSearch}
+              onClick={() => {
+                if (filters.searchTerm?.trim()) {
+                  console.log('🔄 Refresh button clicked');
+                  performSearch();
+                }
+              }}
               className="flex items-center gap-2 hover:text-white transition-colors"
             >
               <RefreshCw className="h-4 w-4" />

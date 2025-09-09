@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Search Debugger</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            background: #1a1a1a; 
+            color: #00ff00; 
+            padding: 20px; 
+            max-width: 1400px; 
+            margin: 0 auto;
+        }
+        .search-box {
+            background: #2a2a2a; 
+            padding: 20px; 
+            margin: 20px 0;
+            border: 1px solid #00ff00;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            font-family: monospace;
+            font-size: 16px;
+        }
+        button {
+            background: #00aa00;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        button:hover { background: #00ff00; color: black; }
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .result-section {
+            background: #2a2a2a;
+            padding: 15px;
+            border: 1px solid #444;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .game-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: #333;
+            border-left: 3px solid #666;
+        }
+        .flagship { border-left-color: #00ff00; background: #1a3a1a; }
+        .sister-game { border-left-color: #ffaa00; }
+        .unrelated { border-left-color: #ff4444; opacity: 0.7; }
+        .stats {
+            background: #333;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #666;
+        }
+        .debug-info {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 5px;
+        }
+        h3 { color: #00ff00; }
+        .legend {
+            display: flex;
+            gap: 20px;
+            padding: 10px;
+            background: #2a2a2a;
+            margin: 10px 0;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend-box {
+            width: 20px;
+            height: 20px;
+            border-left: 3px solid;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Frontend Search Debugger</h1>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-box" style="border-left-color: #00ff00; background: #1a3a1a;"></div>
+            <span>Flagship Title</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="border-left-color: #ffaa00;"></div>
+            <span>Sister/Related Game</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="border-left-color: #ff4444;"></div>
+            <span>Potentially Unrelated</span>
+        </div>
+    </div>
+    
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Enter search term (e.g., 'zelda' or 'mario')" value="zelda">
+        <div style="margin-top: 10px;">
+            <button onclick="debugSearch('zelda')">🗡️ Debug Zelda</button>
+            <button onclick="debugSearch('mario')">🍄 Debug Mario</button>
+            <button onclick="debugSearch('pokemon')">⚡ Debug Pokemon</button>
+            <button onclick="debugSearch()">🔍 Debug Current Input</button>
+        </div>
+    </div>
+    
+    <div id="stats" class="stats"></div>
+    
+    <div class="results">
+        <div class="result-section">
+            <h3>📊 Search Results</h3>
+            <div id="searchResults"></div>
+        </div>
+        <div class="result-section">
+            <h3>🔧 Debug Analysis</h3>
+            <div id="debugAnalysis"></div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // Import the actual services from your app
+        import { gameDataService } from './src/services/gameDataService.js';
+        import { detectGameSeries, generateSisterGameQueries } from './src/utils/sisterGameDetection.js';
+        
+        // Flagship titles database for validation
+        const FLAGSHIP_TITLES = {
+            zelda: [
+                'ocarina of time', 'breath of the wild', 'tears of the kingdom',
+                'majora\'s mask', 'wind waker', 'twilight princess', 'skyward sword',
+                'a link to the past', 'link\'s awakening', 'a link between worlds'
+            ],
+            mario: [
+                'super mario bros', 'super mario bros 2', 'super mario bros 3',
+                'super mario world', 'super mario 64', 'super mario sunshine',
+                'super mario galaxy', 'super mario galaxy 2', 'super mario odyssey',
+                'super mario 3d world', 'super mario maker'
+            ],
+            pokemon: [
+                'red', 'blue', 'yellow', 'gold', 'silver', 'crystal',
+                'ruby', 'sapphire', 'emerald', 'diamond', 'pearl', 'platinum',
+                'black', 'white', 'x', 'y', 'sun', 'moon', 'sword', 'shield'
+            ]
+        };
+        
+        window.debugSearch = async function(searchTerm) {
+            const query = searchTerm || document.getElementById('searchInput').value;
+            if (!query.trim()) return;
+            
+            const statsDiv = document.getElementById('stats');
+            const resultsDiv = document.getElementById('searchResults');
+            const analysisDiv = document.getElementById('debugAnalysis');
+            
+            statsDiv.innerHTML = '⏳ Searching...';
+            resultsDiv.innerHTML = '';
+            analysisDiv.innerHTML = '';
+            
+            try {
+                console.log(`🔍 Starting debug search for: "${query}"`);
+                
+                // 1. Get sister game detection info
+                const seriesInfo = detectGameSeries(query);
+                const sisterQueries = generateSisterGameQueries(query);
+                
+                // 2. Perform the actual search
+                const startTime = performance.now();
+                const results = await gameDataService.searchGames(query);
+                const searchTime = performance.now() - startTime;
+                
+                console.log(`📊 Search returned ${results.length} results in ${searchTime.toFixed(0)}ms`);
+                console.log('Results:', results);
+                
+                // 3. Analyze results
+                const franchiseKey = query.toLowerCase();
+                const flagshipTitles = FLAGSHIP_TITLES[franchiseKey] || [];
+                
+                let flagshipCount = 0;
+                let sisterGameCount = 0;
+                let unrelatedCount = 0;
+                
+                // Build results HTML
+                let resultsHTML = '';
+                results.forEach((game, index) => {
+                    const nameLower = game.name.toLowerCase();
+                    
+                    // Classify the game
+                    let classification = 'unrelated';
+                    let isActuallySisterGame = false;
+                    
+                    // Check if it's a flagship title
+                    const isFlagship = flagshipTitles.some(title => 
+                        nameLower.includes(title) || title.includes(nameLower.split(':').pop().trim())
+                    );
+                    
+                    // Check if it's related to the franchise
+                    if (isFlagship) {
+                        classification = 'flagship';
+                        flagshipCount++;
+                    } else if (nameLower.includes(franchiseKey)) {
+                        classification = 'sister-game';
+                        sisterGameCount++;
+                        isActuallySisterGame = true;
+                    } else if (game._sisterGameRelationship) {
+                        classification = 'sister-game';
+                        sisterGameCount++;
+                        isActuallySisterGame = true;
+                    } else {
+                        unrelatedCount++;
+                    }
+                    
+                    resultsHTML += `
+                        <div class="game-item ${classification}">
+                            <strong>#${index + 1}: ${game.name}</strong>
+                            ${game.first_release_date ? `<span> (${new Date(game.first_release_date * 1000).getFullYear()})</span>` : ''}
+                            <div class="debug-info">
+                                ${game._sisterGameBoost ? `🚀 Boost: ${game._sisterGameBoost}` : ''}
+                                ${game._sisterGameRelationship ? `🔗 Relation: ${game._sisterGameRelationship}` : ''}
+                                ${game._searchStrategy ? `📍 Strategy: ${game._searchStrategy}` : ''}
+                                ${isFlagship ? '⭐ FLAGSHIP' : ''}
+                                ${isActuallySisterGame && !isFlagship ? '👥 Sister Game' : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                resultsDiv.innerHTML = resultsHTML || '<p>No results found</p>';
+                
+                // Build analysis HTML
+                let analysisHTML = `
+                    <div class="stats">
+                        <h4>Sister Game Detection:</h4>
+                        <p><strong>Series Detected:</strong> ${seriesInfo ? 'YES (' + seriesInfo.seriesInfo.type + ')' : 'NO'}</p>
+                        <p><strong>Base Name:</strong> ${seriesInfo ? seriesInfo.seriesInfo.baseName : 'N/A'}</p>
+                        <p><strong>Sister Queries Generated:</strong> ${sisterQueries.length}</p>
+                        <details>
+                            <summary>View Sister Queries</summary>
+                            <pre>${JSON.stringify(sisterQueries, null, 2)}</pre>
+                        </details>
+                    </div>
+                    
+                    <div class="stats">
+                        <h4>Result Classification:</h4>
+                        <p>⭐ <strong>Flagship Titles:</strong> ${flagshipCount} / ${results.length}</p>
+                        <p>👥 <strong>Sister/Related Games:</strong> ${sisterGameCount} / ${results.length}</p>
+                        <p>❓ <strong>Potentially Unrelated:</strong> ${unrelatedCount} / ${results.length}</p>
+                    </div>
+                    
+                    <div class="stats">
+                        <h4>Quality Analysis:</h4>
+                        <p><strong>Relevance Score:</strong> ${((flagshipCount + sisterGameCount) / results.length * 100).toFixed(1)}%</p>
+                        <p><strong>Flagship Coverage:</strong> ${flagshipCount} found</p>
+                        ${flagshipCount < 5 ? '<p style="color: #ff4444;">⚠️ Low flagship coverage - needs improvement</p>' : ''}
+                        ${unrelatedCount > results.length * 0.3 ? '<p style="color: #ff4444;">⚠️ High noise - too many unrelated results</p>' : ''}
+                    </div>
+                    
+                    <div class="stats">
+                        <h4>Expected Flagship Titles:</h4>
+                        ${flagshipTitles.length > 0 ? 
+                            flagshipTitles.map(title => `<div>• ${title}</div>`).join('') :
+                            '<p>No flagship database for this franchise</p>'
+                        }
+                    </div>
+                `;
+                
+                analysisDiv.innerHTML = analysisHTML;
+                
+                // Update stats
+                statsDiv.innerHTML = `
+                    <strong>Search Stats:</strong> 
+                    Found ${results.length} games in ${searchTime.toFixed(0)}ms | 
+                    Flagship: ${flagshipCount} | 
+                    Related: ${sisterGameCount} | 
+                    Noise: ${unrelatedCount}
+                `;
+                
+            } catch (error) {
+                console.error('Search error:', error);
+                statsDiv.innerHTML = `<span style="color: #ff4444;">Error: ${error.message}</span>`;
+                resultsDiv.innerHTML = '<p style="color: #ff4444;">Search failed. Check console for details.</p>';
+            }
+        };
+        
+        // Auto-run for Zelda on load
+        window.addEventListener('load', () => {
+            setTimeout(() => debugSearch('zelda'), 1000);
+        });
+    </script>
+</body>
+</html>
