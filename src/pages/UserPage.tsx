@@ -12,6 +12,7 @@ import { FollowersFollowingModal } from '../components/FollowersFollowingModal';
 import { GamesModal } from '../components/GamesModal';
 import { ReviewsModal } from '../components/ReviewsModal';
 import { userServiceSimple, UserUpdate } from '../services/userServiceSimple';
+import { useFollow } from '../hooks/useFollow';
 
 // Lazy load UserSettingsModal to avoid initialization issues
 const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsModal'));
@@ -42,6 +43,10 @@ export const UserPage: React.FC = () => {
   const [isGamesModalOpen, setIsGamesModalOpen] = useState(false);
   const [gamesModalInitialTab, setGamesModalInitialTab] = useState<'all' | 'started' | 'finished'>('all');
   const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
+  
+  // Follow functionality
+  const { toggleFollow, isFollowing, loading: followLoading } = useFollow();
+  const [isFollowingUser, setIsFollowingUser] = useState(false);
 
   // Fetch user data - defined first to avoid temporal dead zone
   const fetchUserData = useCallback(async () => {
@@ -69,6 +74,7 @@ export const UserPage: React.FC = () => {
       }
       
       // Check if this is the current user's own profile
+      let isCurrentUserProfile = false;
       try {
         if (isAuthenticated && authUser?.id) {
           const { data: currentUserData, error: currentUserError } = await supabase
@@ -78,7 +84,8 @@ export const UserPage: React.FC = () => {
             .single();
           
           if (!currentUserError && currentUserData) {
-            setIsOwnProfile(currentUserData.id === numericId);
+            isCurrentUserProfile = currentUserData.id === numericId;
+            setIsOwnProfile(isCurrentUserProfile);
           } else {
             setIsOwnProfile(false);
           }
@@ -88,6 +95,16 @@ export const UserPage: React.FC = () => {
       } catch (ownProfileError) {
         console.error('Error checking own profile:', ownProfileError);
         setIsOwnProfile(false);
+      }
+      
+      // Check if following this user (only if not own profile and authenticated)
+      if (!isCurrentUserProfile && isAuthenticated) {
+        try {
+          const followStatus = await isFollowing(numericId.toString());
+          setIsFollowingUser(followStatus);
+        } catch (error) {
+          console.error('Error checking follow status:', error);
+        }
       }
       
       // Query basic stats for ProfileDetails
@@ -123,7 +140,7 @@ export const UserPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, isAuthenticated, authUser]);
+  }, [id, isAuthenticated, authUser, isFollowing]);
 
   // Handle profile save using simplified userService
   const handleSaveProfile = useCallback(async (profileData: UserUpdate) => {
@@ -155,6 +172,20 @@ export const UserPage: React.FC = () => {
   const handleEditClick = () => {
     setShowSettingsModal(true);
   };
+  
+  // Handle follow/unfollow
+  const handleFollowClick = async () => {
+    if (!id) return;
+    
+    try {
+      const result = await toggleFollow(id);
+      if (result.success) {
+        setIsFollowingUser(result.isFollowing);
+      }
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+    }
+  };
 
   const handleFollowersClick = () => {
     setModalInitialTab('followers');
@@ -178,6 +209,29 @@ export const UserPage: React.FC = () => {
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
+
+  // Refresh follow state when page gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      // Only refresh follow state if viewing another user's profile
+      if (!isOwnProfile && isAuthenticated && id) {
+        isFollowing(id).then(status => {
+          setIsFollowingUser(status);
+        }).catch(error => {
+          console.error('Error refreshing follow status:', error);
+        });
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    
+    // Also refresh when navigating back to this page
+    handleFocus();
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [id, isOwnProfile, isAuthenticated, isFollowing]);
 
   if (loading) {
     return <LoadingSpinner size="lg" text="Loading user profile..." />;
@@ -222,6 +276,10 @@ export const UserPage: React.FC = () => {
             isDummy={false}
             onEditClick={handleEditClick}
             isCurrentUser={isOwnProfile}
+            onFollowClick={handleFollowClick}
+            isFollowing={isFollowingUser}
+            followLoading={followLoading}
+            isAuthenticated={isAuthenticated}
           />
           <ProfileDetails 
             stats={stats} 

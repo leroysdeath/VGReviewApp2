@@ -585,13 +585,13 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                 </div>
                 
                 {/* Bottom row - 4 games */}
-                <div className="flex justify-center gap-3">
+                <div className="grid grid-cols-4 gap-2 px-2">
                   {[2, 3, 4, 5].map((position) => {
                     const gameData = userTopGames.find(g => g.position === position);
                     
                     if (gameData?.game && !isEditingTop5) {
                       return (
-                        <div key={position} className="relative group w-[90px]">
+                        <div key={position} className="relative group">
                           <Link to={getGameUrl(gameData.game)}>
                             <div className="relative aspect-[3/4]">
                               <img
@@ -602,7 +602,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                                   e.currentTarget.src = '/default-cover.png';
                                 }}
                               />
-                              <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs">
+                              <div className="absolute top-1 left-1 bg-gray-900 bg-opacity-75 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">
                                 {position}
                               </div>
                             </div>
@@ -613,7 +613,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                     
                     if (gameData?.game && isEditingTop5) {
                       return (
-                        <div key={gameData.game.id} className="w-[90px]">
+                        <div key={gameData.game.id}>
                           <SortableGameCard
                             id={gameData.game.id.toString()}
                             position={position}
@@ -629,7 +629,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                     }
                     
                     return (
-                      <div key={`empty-${position}`} className="relative aspect-[3/4] w-[90px] group">
+                      <div key={`empty-${position}`} className="relative aspect-[3/4] group">
                         <button
                           onClick={() => {
                             setSelectedPosition(position);
@@ -639,8 +639,8 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                           disabled={isSaving || isEditingTop5}
                         >
                           <div className="text-center">
-                            <Plus className="h-6 w-6 text-gray-400 mx-auto mb-1" />
-                            <span className="text-gray-400 text-xs">Add</span>
+                            <Plus className="h-5 w-5 text-gray-400 mx-auto mb-1" />
+                            <span className="text-gray-400 text-[10px]">Add</span>
                           </div>
                         </button>
                       </div>
@@ -1043,8 +1043,8 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
         )
       )}
       
-      {/* Show Rate More Games button when there are less than 10 games */}
-      {limit === 10 && topGames.length > 0 && topGames.length < 10 && (
+      {/* Show Rate More Games button only for own profile when there are less than 10 games */}
+      {limit === 10 && isOwnProfile && topGames.length > 0 && topGames.length < 10 && (
         <div className="mt-8 text-center">
           <button
             onClick={() => navigate('/search')}
