@@ -136,7 +136,9 @@ class GameDataService {
             return {
               ...transformedGame,
               averageUserRating: 0,
-              totalUserRatings: 0
+              totalUserRatings: 0,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             } as GameWithCalculatedFields
           }
 
@@ -234,7 +236,9 @@ class GameDataService {
               game: {
                 ...transformedGame,
                 averageUserRating: 0,
-                totalUserRatings: 0
+                totalUserRatings: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
               } as GameWithCalculatedFields,
               reviews: []
             }

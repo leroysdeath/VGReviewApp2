@@ -846,7 +846,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               )}
             </div>
 
-              
             {/* Location */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-300 mb-1">

@@ -6,9 +6,6 @@ export interface User {
   provider_id: string;
   email: string;
   name: string;
-<<<<<<< HEAD
-  avatar_url?: string;
-=======
   username?: string;
   avatar_url?: string;
   display_name?: string;
@@ -18,7 +15,6 @@ export interface User {
   platform?: string;
   created_at?: string;
   updated_at?: string;
->>>>>>> 531d2d927e2c0e8cec8732850d1c88eec43d4157
 }
 
 export interface Platform {
@@ -83,6 +79,9 @@ export interface GameWithCalculatedFields extends Game {
   totalUserRatings: number;
   userRating?: number; // Current user's rating if exists
   fromIGDB?: boolean; // True if this came from IGDB API, false/undefined if from database
+  _sisterGameBoost?: number; // Sister game boost score for search results
+  _priorityBoost?: number; // Priority boost score for search results
+  _sisterGameRelationship?: string; // Relationship type for sister games
 }
 
 export interface GameWithRatings extends Game {
