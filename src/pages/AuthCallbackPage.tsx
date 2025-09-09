@@ -13,7 +13,7 @@ export const AuthCallbackPage: React.FC = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Extract the access_token and refresh_token from URL parameters
+        // Extract various possible token parameters
         const accessToken = searchParams.get('access_token');
         const refreshToken = searchParams.get('refresh_token');
         const tokenType = searchParams.get('token_type');
@@ -21,15 +21,27 @@ export const AuthCallbackPage: React.FC = () => {
         const error = searchParams.get('error');
         const errorCode = searchParams.get('error_code');
         const errorDescription = searchParams.get('error_description');
+        
+        // Email verification token (newer format)
+        const emailToken = searchParams.get('token');
+        const type = searchParams.get('type') || 'signup';
+        
+        // Hash token from URL fragment (alternative format)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const hashToken = hashParams.get('access_token');
 
         console.log('🔗 Auth callback params:', {
           accessToken: !!accessToken,
           refreshToken: !!refreshToken,
           tokenType,
           expiresIn,
+          emailToken: !!emailToken,
+          type,
+          hashToken: !!hashToken,
           error,
           errorCode,
-          errorDescription
+          errorDescription,
+          fullURL: window.location.href
         });
 
         // Check for errors first
@@ -47,8 +59,35 @@ export const AuthCallbackPage: React.FC = () => {
           return;
         }
 
-        // If we have tokens, set the session
-        if (accessToken && refreshToken) {
+        // Handle different token types
+        if (emailToken) {
+          // Email verification token - use verifyOtp
+          console.log('📧 Processing email verification token');
+          
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: emailToken,
+            type: type as any // 'signup' or 'recovery'
+          });
+
+          if (verifyError) {
+            console.error('Email verification error:', verifyError);
+            setError(verifyError.message || 'Email verification failed');
+          } else {
+            console.log('✅ Email verified successfully', data);
+            setSuccess(true);
+            
+            // Clear any pending verification email from session storage
+            sessionStorage.removeItem('pendingVerificationEmail');
+            
+            // Redirect to home page after a brief success message
+            setTimeout(() => {
+              navigate('/', { replace: true });
+            }, 2000);
+          }
+        } else if (accessToken && refreshToken) {
+          // Session tokens - use setSession
+          console.log('🔑 Processing session tokens');
+          
           const { data, error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
@@ -69,9 +108,37 @@ export const AuthCallbackPage: React.FC = () => {
               navigate('/', { replace: true });
             }, 2000);
           }
+        } else if (hashToken) {
+          // Hash-based tokens - extract from URL fragment
+          console.log('🔗 Processing hash-based tokens');
+          
+          const hashRefreshToken = hashParams.get('refresh_token');
+          if (hashToken && hashRefreshToken) {
+            const { data, error: sessionError } = await supabase.auth.setSession({
+              access_token: hashToken,
+              refresh_token: hashRefreshToken
+            });
+
+            if (sessionError) {
+              console.error('Hash session error:', sessionError);
+              setError(sessionError.message);
+            } else {
+              console.log('✅ Hash session established successfully', data);
+              setSuccess(true);
+              
+              sessionStorage.removeItem('pendingVerificationEmail');
+              
+              setTimeout(() => {
+                navigate('/', { replace: true });
+              }, 2000);
+            }
+          } else {
+            setError('Incomplete hash token data received');
+          }
         } else {
-          // No tokens present, might be a different type of callback
-          setError('No authentication tokens received');
+          // No recognized tokens
+          console.error('❌ No recognized authentication tokens found');
+          setError('No valid authentication tokens received. Please try signing up again.');
         }
       } catch (err) {
         console.error('Auth callback error:', err);
