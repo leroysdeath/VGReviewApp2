@@ -25,15 +25,15 @@ export const useFollow = () => {
         .from('user_follow')
         .select('id')
         .eq('follower_id', currentDbUserId)
-        .eq('following_id', parseInt(targetUserId))
-        .single();
+        .eq('following_id', parseInt(targetUserId));
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error checking follow status:', error);
         return false;
       }
 
-      return !!data;
+      // Check if any records exist (don't use .single() to avoid 406 errors)
+      return data && data.length > 0;
     } catch (error) {
       console.error('Error checking follow status:', error);
       return false;

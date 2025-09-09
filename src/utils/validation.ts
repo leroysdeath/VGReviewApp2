@@ -19,7 +19,13 @@ export const reviewSchema = z.object({
   review: z.string()
     .min(10, 'Review must be at least 10 characters')
     .max(5000, 'Review must be no more than 5000 characters'),
-  finished: z.boolean()
+  finished: z.boolean(),
+  playtimeHours: z.number()
+    .int('Playtime must be a whole number')
+    .min(0, 'Playtime cannot be negative')
+    .max(50000, 'Maximum 50,000 hours allowed')
+    .optional()
+    .nullable()
 });
 
 /**
@@ -53,7 +59,19 @@ export const commentSchema = z.object({
     .max(1000, 'Comment must be no more than 1000 characters')
 });
 
+/**
+ * Playtime validation schema (standalone)
+ * Can be used independently for updating just playtime
+ */
+export const playtimeSchema = z.number()
+  .int('Playtime must be a whole number')
+  .min(0, 'Playtime cannot be negative')
+  .max(50000, 'Maximum 50,000 hours allowed')
+  .optional()
+  .nullable();
+
 // Export types
 export type ReviewData = z.infer<typeof reviewSchema>;
 export type ProfileData = z.infer<typeof profileSchema>;
 export type CommentData = z.infer<typeof commentSchema>;
+export type PlaytimeData = z.infer<typeof playtimeSchema>;

@@ -20,21 +20,23 @@ const getEnvironmentConfig = (): CorsConfig => {
       return {
         environment: 'production',
         allowedOrigins: [
-          'https://grand-narwhal-4e85d9.space',
-          'https://www.grand-narwhal-4e85d9.space'
+          'https://www.gamevault.to',
+          'https://gamevault.to',
+          'http://www.gamevault.to',
+          'http://gamevault.to'
         ],
-        apiBaseUrl: 'https://grand-narwhal-4e85d9.space/api'
+        apiBaseUrl: 'https://www.gamevault.to/api'
       };
     
     case 'staging':
       return {
         environment: 'staging',
         allowedOrigins: [
-          'https://staging.grand-narwhal-4e85d9.space',
+          'https://staging.gamevault.to',
           'http://localhost:5173',
           'http://localhost:3000'
         ],
-        apiBaseUrl: 'https://staging.grand-narwhal-4e85d9.space/api'
+        apiBaseUrl: 'https://staging.gamevault.to/api'
       };
     
     case 'development':

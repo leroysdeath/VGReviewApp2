@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Heart, MessageSquare, ChevronDown, ChevronUp, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Comment } from '../services/reviewService';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 
 interface ReviewInteractionsProps {
   reviewId: string;
@@ -339,6 +341,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [editContent, setEditContent] = useState(comment.content);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   // Check if current user can edit/delete this comment
   const canModify = currentUserId && comment.userId === currentUserId;
@@ -405,13 +408,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
   };
   
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this comment?')) {
-      return;
-    }
-    
     try {
       setIsDeleting(true);
       await onDelete(comment.id);
+      setShowDeleteModal(false);
     } catch (err) {
       setIsDeleting(false);
       console.error('Failed to delete comment:', err);
@@ -445,7 +445,16 @@ const CommentItem: React.FC<CommentItemProps> = ({
         {/* Comment Content */}
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium text-white">{comment.user?.name || 'Anonymous'}</span>
+            {comment.user?.id ? (
+              <Link 
+                to={`/user/${comment.user.id}`}
+                className="font-medium text-white hover:text-purple-400 transition-colors"
+              >
+                {comment.user?.username || comment.user?.name || 'Anonymous'}
+              </Link>
+            ) : (
+              <span className="font-medium text-white">{comment.user?.name || 'Anonymous'}</span>
+            )}
             <span className="text-gray-400 text-xs">{formatRelativeTime(comment.createdAt)}</span>
             {comment.updatedAt && comment.updatedAt !== comment.createdAt && (
               <span className="text-gray-500 text-xs italic">(edited)</span>
@@ -531,12 +540,12 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   Edit
                 </button>
                 <button
-                  onClick={handleDelete}
+                  onClick={() => setShowDeleteModal(true)}
                   disabled={isDeleting}
                   className="hover:text-red-400 transition-colors flex items-center gap-1"
                 >
                   <Trash2 className="h-3 w-3" />
-                  {isDeleting ? 'Deleting...' : 'Delete'}
+                  Delete
                 </button>
               </>
             )}
@@ -621,6 +630,16 @@ const CommentItem: React.FC<CommentItemProps> = ({
           
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        message="Are you sure you want to delete this comment?"
+        title="Delete Comment"
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };

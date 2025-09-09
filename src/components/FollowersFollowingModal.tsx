@@ -46,24 +46,29 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   const loadFollowers = async () => {
     setLoadingFollowers(true);
     try {
-      const { data, error } = await supabase
+      // First get the follower IDs
+      const { data: followData, error: followError } = await supabase
         .from('user_follow')
-        .select(`
-          follower:follower_id (
-            id,
-            username,
-            name,
-            bio,
-            avatar_url
-          )
-        `)
+        .select('follower_id')
         .eq('following_id', parseInt(userId));
 
-      if (error) throw error;
+      if (followError) throw followError;
 
-      const followersData = (data || [])
-        .map((item: any) => item.follower)
-        .filter(Boolean)
+      if (!followData || followData.length === 0) {
+        setFollowers([]);
+        return;
+      }
+
+      // Then get the user details for those IDs
+      const followerIds = followData.map(f => f.follower_id);
+      const { data: usersData, error: usersError } = await supabase
+        .from('user')
+        .select('id, username, name, bio, avatar_url')
+        .in('id', followerIds);
+
+      if (usersError) throw usersError;
+
+      const followersData = (usersData || [])
         .map((user: any) => ({
           id: user.id.toString(),
           username: user.username || user.name || 'Unknown User',
@@ -84,24 +89,29 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   const loadFollowing = async () => {
     setLoadingFollowing(true);
     try {
-      const { data, error } = await supabase
+      // First get the following IDs
+      const { data: followData, error: followError } = await supabase
         .from('user_follow')
-        .select(`
-          following:following_id (
-            id,
-            username,
-            name,
-            bio,
-            avatar_url
-          )
-        `)
+        .select('following_id')
         .eq('follower_id', parseInt(userId));
 
-      if (error) throw error;
+      if (followError) throw followError;
 
-      const followingData = (data || [])
-        .map((item: any) => item.following)
-        .filter(Boolean)
+      if (!followData || followData.length === 0) {
+        setFollowing([]);
+        return;
+      }
+
+      // Then get the user details for those IDs
+      const followingIds = followData.map(f => f.following_id);
+      const { data: usersData, error: usersError } = await supabase
+        .from('user')
+        .select('id, username, name, bio, avatar_url')
+        .in('id', followingIds);
+
+      if (usersError) throw usersError;
+
+      const followingData = (usersData || [])
         .map((user: any) => ({
           id: user.id.toString(),
           username: user.username || user.name || 'Unknown User',
