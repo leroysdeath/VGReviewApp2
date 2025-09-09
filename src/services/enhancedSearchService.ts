@@ -126,25 +126,28 @@ class EnhancedSearchService {
       const filteredGames = filterProtectedContent(transformedGames);
       
       // Convert to GameSearchResult format
-      const searchResults: GameSearchResult[] = filteredGames.map(game => ({
-        id: game.id,
-        igdb_id: game.igdb_id,
-        name: game.name,
-        description: game.description || game.summary,
-        summary: game.summary,
-        release_date: game.release_date,
-        cover_url: game.cover_url,
-        developer: game.developer,
-        publisher: game.publisher,
-        genre: game.genre,
-        genres: game.genres || (game.genre ? [game.genre] : []),
-        platforms: game.platforms || [],
-        igdb_rating: game.igdb_rating || game.rating,
-        metacritic_score: undefined, // IGDB doesn't provide this directly
-        avg_user_rating: undefined, // No user ratings from IGDB
-        user_rating_count: 0, // No user ratings from IGDB
-        screenshots: game.screenshots
-      }));
+      const searchResults: GameSearchResult[] = filteredGames.map(game => {
+        const transformedGame = game as any; // transformGame returns an object with all these properties
+        return {
+          id: transformedGame.id,
+          igdb_id: transformedGame.igdb_id,
+          name: transformedGame.name,
+          description: transformedGame.description || transformedGame.summary,
+          summary: transformedGame.summary,
+          release_date: transformedGame.release_date,
+          cover_url: transformedGame.cover_url,
+          developer: transformedGame.developer,
+          publisher: transformedGame.publisher,
+          genre: transformedGame.genre,
+          genres: transformedGame.genres || (transformedGame.genre ? [transformedGame.genre] : []),
+          platforms: transformedGame.platforms || [],
+          igdb_rating: transformedGame.igdb_rating || transformedGame.rating,
+          metacritic_score: undefined, // IGDB doesn't provide this directly
+          avg_user_rating: undefined, // No user ratings from IGDB
+          user_rating_count: 0, // No user ratings from IGDB
+          screenshots: transformedGame.screenshots
+        };
+      });
 
       return searchResults;
     } catch (error) {
@@ -196,10 +199,8 @@ class EnhancedSearchService {
             igdb_link: `https://www.igdb.com/games/${igdbGame.id}`,
             genre: igdbGame.genres?.[0]?.name || null,
             genres: igdbGame.genres?.map(g => g.name) || null,
-            developer: igdbGame.involved_companies?.find(c => c.developer)?.company?.name || 
-                       igdbGame.involved_companies?.[0]?.company?.name || null,
-            publisher: igdbGame.involved_companies?.find(c => c.publisher)?.company?.name || 
-                       igdbGame.involved_companies?.[0]?.company?.name || null,
+            developer: igdbGame.involved_companies?.[0]?.company?.name || null,
+            publisher: igdbGame.involved_companies?.[0]?.company?.name || null,
             platforms: igdbGame.platforms?.map(p => p.name) || null,
             is_verified: false,
             view_count: 0,
@@ -247,7 +248,7 @@ class EnhancedSearchService {
         const igdbGames = await igdbService.searchGames(filters.query, 10);
         const filteredIGDBGames = igdbGames.filter(game => {
           const transformed = igdbService.transformGame(game);
-          return !filterProtectedContent([transformed]).length === 0; // Only add if not filtered
+          return filterProtectedContent([transformed]).length > 0; // Only add if not filtered (length > 0 means it passed the filter)
         });
 
         if (filteredIGDBGames.length > 0) {

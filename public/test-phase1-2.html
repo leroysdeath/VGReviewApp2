@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 & 2 Testing</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            background: #1a1a1a; 
+            color: #00ff00; 
+            padding: 20px; 
+        }
+        .test-section {
+            background: #2a2a2a; 
+            padding: 15px; 
+            margin: 15px 0;
+            border: 1px solid #444;
+        }
+        .results {
+            background: #1a1a1a; 
+            padding: 10px; 
+            margin: 10px 0;
+            border: 1px solid #333;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        button:hover { background: #0088ff; }
+        .success { color: #00ff00; }
+        .warning { color: #ffaa00; }
+        .error { color: #ff4444; }
+        .flagship { color: #00ff00; font-weight: bold; }
+        .spin-off { color: #ff8888; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Phase 1 & 2 Implementation Testing</h1>
+    
+    <div class="test-section">
+        <h3>Test Enhanced Search with Flagship Prioritization</h3>
+        <button onclick="testStarFox()">🦊 Test Star Fox (Should show Star Fox 64 first)</button>
+        <button onclick="testPokemon()">⚡ Test Pokemon (May be empty, needs seeding)</button>
+        <button onclick="testMario()">🍄 Test Mario (Should prioritize Super Mario Bros)</button>
+        <button onclick="testZelda()">🗡️ Test Zelda (Should prioritize flagship titles)</button>
+        <button onclick="testAllFranchises()">🎮 Test All Major Franchises</button>
+        <button onclick="clearResults()">🗑️ Clear Results</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test Results</h3>
+        <div id="results" class="results">
+            Ready to test Phase 1 & 2 implementation...
+            
+            Expected improvements:
+            - Star Fox 64 should appear first in Star Fox searches
+            - Flagship games get priority boost (+400-500 points)
+            - Spin-offs get penalties (-100 points)
+            - Better overall coverage across franchises
+        </div>
+    </div>
+
+    <script type="module">
+        // Import gameDataService for direct testing
+        import { gameDataService } from './src/services/gameDataService.js';
+        
+        let testResults = {};
+
+        window.testStarFox = () => testFranchise('star fox', 'Star Fox 64 should be first');
+        window.testPokemon = () => testFranchise('pokemon', 'May be empty - needs flagship games seeded');
+        window.testMario = () => testFranchise('mario', 'Super Mario Bros should be prioritized over spin-offs');
+        window.testZelda = () => testFranchise('zelda', 'Ocarina of Time and Breath of Wild should be top');
+        window.testAllFranchises = testAllFranchises;
+        window.clearResults = clearResults;
+
+        function clearResults() {
+            document.getElementById('results').textContent = 'Results cleared. Ready for new tests...';
+            testResults = {};
+        }
+
+        async function testFranchise(franchise, expectation) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.textContent += `\\n🔍 Testing ${franchise.toUpperCase()}...\\n`;
+            resultsDiv.textContent += `Expected: ${expectation}\\n`;
+            
+            try {
+                const startTime = performance.now();
+                
+                // Use gameDataService directly to test the enhanced search
+                const games = await gameDataService.searchGames(franchise);
+                const searchTime = performance.now() - startTime;
+                
+                resultsDiv.textContent += `⏱️ Search completed in ${searchTime.toFixed(0)}ms\\n`;
+                resultsDiv.textContent += `📊 Found ${games.length} games\\n`;
+                
+                if (games.length === 0) {
+                    resultsDiv.textContent += `⚠️ No results found - may need game seeding\\n`;
+                    testResults[franchise] = { count: 0, coverage: 0 };
+                    return;
+                }
+                
+                // Analyze results
+                let flagshipCount = 0;
+                let spinoffCount = 0;
+                
+                resultsDiv.textContent += `\\nTop ${Math.min(5, games.length)} results:\\n`;
+                games.slice(0, 5).forEach((game, i) => {
+                    const name = game.name || 'Unknown';
+                    let classification = '';
+                    let classColor = '';
+                    
+                    // Check for known flagship games
+                    if (isFlagshipGame(name, franchise)) {
+                        classification = ' [FLAGSHIP]';
+                        classColor = 'flagship';
+                        flagshipCount++;
+                    } else if (isSpinoffGame(name, franchise)) {
+                        classification = ' [SPIN-OFF]';
+                        classColor = 'spin-off';
+                        spinoffCount++;
+                    }
+                    
+                    resultsDiv.textContent += `  ${i + 1}. ${name}${classification}\\n`;
+                });
+                
+                const coverage = flagshipCount > 0 ? (flagshipCount / games.length) * 100 : 0;
+                
+                resultsDiv.textContent += `\\n📈 Analysis:\\n`;
+                resultsDiv.textContent += `  Flagship games: ${flagshipCount}/${games.length}\\n`;
+                resultsDiv.textContent += `  Spin-offs: ${spinoffCount}/${games.length}\\n`;
+                resultsDiv.textContent += `  Flagship coverage: ${coverage.toFixed(1)}%\\n`;
+                
+                // Store results
+                testResults[franchise] = {
+                    count: games.length,
+                    flagship: flagshipCount,
+                    spinoffs: spinoffCount,
+                    coverage: coverage,
+                    topGame: games[0]?.name || 'None'
+                };
+                
+                // Check specific expectations
+                if (franchise === 'star fox') {
+                    const topGame = games[0]?.name?.toLowerCase() || '';
+                    if (topGame.includes('star fox 64')) {
+                        resultsDiv.textContent += `✅ SUCCESS: Star Fox 64 is first result!\\n`;
+                    } else {
+                        resultsDiv.textContent += `⚠️ Star Fox 64 not first (may need seeding): "${games[0]?.name}"\\n`;
+                    }
+                }
+                
+                if (franchise === 'pokemon' && games.length === 0) {
+                    resultsDiv.textContent += `⚠️ Pokemon needs critical flagship games seeded\\n`;
+                }
+                
+            } catch (error) {
+                resultsDiv.textContent += `❌ Test failed: ${error.message}\\n`;
+                console.error(`Test failed for ${franchise}:`, error);
+            }
+            
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        async function testAllFranchises() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.textContent += '\\n🎮 TESTING ALL MAJOR FRANCHISES\\n';
+            resultsDiv.textContent += '='.repeat(50) + '\\n';
+            
+            const franchises = [
+                'pokemon', 'mario', 'zelda', 'final fantasy', 
+                'star fox', 'call of duty', 'resident evil', 
+                'street fighter', 'tekken'
+            ];
+            
+            for (let i = 0; i < franchises.length; i++) {
+                const franchise = franchises[i];
+                resultsDiv.textContent += `\\nTesting ${franchise} (${i + 1}/${franchises.length})...\\n`;
+                
+                await testFranchise(franchise, 'General franchise test');
+                
+                // Small delay between tests
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            // Generate summary
+            resultsDiv.textContent += '\\n📊 SUMMARY RESULTS:\\n';
+            resultsDiv.textContent += '='.repeat(30) + '\\n';
+            
+            let totalGames = 0;
+            let totalFlagship = 0;
+            let franchisesWithResults = 0;
+            
+            for (const [franchise, data] of Object.entries(testResults)) {
+                if (data.count > 0) {
+                    franchisesWithResults++;
+                    totalGames += data.count;
+                    totalFlagship += data.flagship;
+                    
+                    const status = data.coverage >= 50 ? '✅' : data.coverage >= 20 ? '⚠️' : '❌';
+                    resultsDiv.textContent += `${status} ${franchise}: ${data.count} games, ${data.coverage.toFixed(1)}% flagship\\n`;
+                } else {
+                    resultsDiv.textContent += `❌ ${franchise}: No results (needs seeding)\\n`;
+                }
+            }
+            
+            const overallCoverage = totalGames > 0 ? (totalFlagship / totalGames) * 100 : 0;
+            
+            resultsDiv.textContent += `\\n📈 OVERALL METRICS:\\n`;
+            resultsDiv.textContent += `  Franchises with results: ${franchisesWithResults}/${franchises.length}\\n`;
+            resultsDiv.textContent += `  Total games found: ${totalGames}\\n`;
+            resultsDiv.textContent += `  Flagship games: ${totalFlagship}\\n`;
+            resultsDiv.textContent += `  Overall flagship coverage: ${overallCoverage.toFixed(1)}%\\n`;
+            
+            if (overallCoverage >= 50) {
+                resultsDiv.textContent += `\\n🎉 EXCELLENT! Phase 1 & 2 improvements are working!\\n`;
+            } else if (overallCoverage >= 20) {
+                resultsDiv.textContent += `\\n✅ GOOD! Improvements visible, consider game seeding.\\n`;
+            } else {
+                resultsDiv.textContent += `\\n⚠️ LOW COVERAGE! Need to run game seeding process.\\n`;
+            }
+        }
+
+        function isFlagshipGame(name, franchise) {
+            const lowerName = name.toLowerCase();
+            const flagshipMap = {
+                'star fox': ['star fox 64', 'starfox 64'],
+                'pokemon': ['pokémon red', 'pokemon red', 'pokémon blue', 'pokemon blue', 'pokémon gold', 'pokemon gold'],
+                'mario': ['super mario bros', 'super mario 64', 'super mario galaxy', 'super mario odyssey'],
+                'zelda': ['ocarina of time', 'breath of the wild', 'link to the past', 'majora', 'wind waker'],
+                'final fantasy': ['final fantasy vii', 'final fantasy 7', 'final fantasy x', 'final fantasy 10'],
+                'call of duty': ['modern warfare', 'black ops', 'world at war'],
+                'resident evil': ['resident evil 2', 'resident evil 4', 'resident evil 7']
+            };
+            
+            const flagships = flagshipMap[franchise] || [];
+            return flagships.some(flagship => lowerName.includes(flagship));
+        }
+
+        function isSpinoffGame(name, franchise) {
+            const lowerName = name.toLowerCase();
+            const spinoffMap = {
+                'mario': ['kart', 'party', 'tennis', 'golf', 'sports'],
+                'zelda': ['hyrule warriors', 'cadence of hyrule'],
+                'pokemon': ['mystery dungeon', 'ranger', 'snap', 'go', 'unite']
+            };
+            
+            const spinoffs = spinoffMap[franchise] || [];
+            return spinoffs.some(spinoff => lowerName.includes(spinoff));
+        }
+    </script>
+</body>
+</html>

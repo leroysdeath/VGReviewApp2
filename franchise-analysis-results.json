@@ -1,0 +1,196 @@
+{
+  "summary": {
+    "totalGames": 41,
+    "totalFound": 40,
+    "overallCoverage": 97.5609756097561,
+    "highCoverageCount": 9,
+    "mediumCoverageCount": 1,
+    "lowCoverageCount": 0
+  },
+  "franchises": [
+    {
+      "franchise": "Pokemon",
+      "coverage": 100,
+      "foundGames": [
+        "Pokémon Red",
+        "Pokémon Blue",
+        "Pokémon Gold",
+        "Pokémon Silver",
+        "Pokémon Ruby",
+        "Pokémon Sapphire"
+      ],
+      "missingGames": [],
+      "totalSearchResults": 5,
+      "popularGames": [
+        "Pokémon Red",
+        "Pokémon Blue",
+        "Pokémon Gold",
+        "Pokémon Silver",
+        "Pokémon Ruby",
+        "Pokémon Sapphire"
+      ]
+    },
+    {
+      "franchise": "Final Fantasy",
+      "coverage": 100,
+      "foundGames": [
+        "Final Fantasy VII",
+        "Final Fantasy X",
+        "Final Fantasy VI",
+        "Final Fantasy IV",
+        "Final Fantasy IX"
+      ],
+      "missingGames": [],
+      "totalSearchResults": 3,
+      "popularGames": [
+        "Final Fantasy VII",
+        "Final Fantasy X",
+        "Final Fantasy VI",
+        "Final Fantasy IV",
+        "Final Fantasy IX"
+      ]
+    },
+    {
+      "franchise": "Mario",
+      "coverage": 100,
+      "foundGames": [
+        "Super Mario Bros.",
+        "Super Mario 64",
+        "Super Mario World",
+        "Super Mario Galaxy",
+        "Super Mario Odyssey"
+      ],
+      "missingGames": [],
+      "totalSearchResults": 4,
+      "popularGames": [
+        "Super Mario Bros.",
+        "Super Mario 64",
+        "Super Mario World",
+        "Super Mario Galaxy",
+        "Super Mario Odyssey"
+      ]
+    },
+    {
+      "franchise": "Zelda",
+      "coverage": 100,
+      "foundGames": [
+        "The Legend of Zelda: Ocarina of Time",
+        "The Legend of Zelda: Breath of the Wild",
+        "The Legend of Zelda: A Link to the Past"
+      ],
+      "missingGames": [],
+      "totalSearchResults": 2,
+      "popularGames": [
+        "The Legend of Zelda: Ocarina of Time",
+        "The Legend of Zelda: Breath of the Wild",
+        "The Legend of Zelda: A Link to the Past"
+      ]
+    },
+    {
+      "franchise": "Call of Duty",
+      "coverage": 100,
+      "foundGames": [
+        "Call of Duty 4: Modern Warfare",
+        "Call of Duty: Modern Warfare 2",
+        "Call of Duty: Black Ops"
+      ],
+      "missingGames": [],
+      "totalSearchResults": 2,
+      "popularGames": [
+        "Call of Duty 4: Modern Warfare",
+        "Call of Duty: Modern Warfare 2",
+        "Call of Duty: Black Ops"
+      ]
+    },
+    {
+      "franchise": "Resident Evil",
+      "coverage": 100,
+      "foundGames": [
+        "Resident Evil 2",
+        "Resident Evil 4",
+        "Resident Evil 7",
+        "Resident Evil",
+        "Resident Evil 3"
+      ],
+      "missingGames": [],
+      "totalSearchResults": 4,
+      "popularGames": [
+        "Resident Evil 2",
+        "Resident Evil 4",
+        "Resident Evil 7",
+        "Resident Evil",
+        "Resident Evil 3"
+      ]
+    },
+    {
+      "franchise": "Metal Gear Solid",
+      "coverage": 100,
+      "foundGames": [
+        "Metal Gear Solid",
+        "Metal Gear Solid 2",
+        "Metal Gear Solid 3",
+        "Metal Gear Solid V"
+      ],
+      "missingGames": [],
+      "totalSearchResults": 2,
+      "popularGames": [
+        "Metal Gear Solid",
+        "Metal Gear Solid 2",
+        "Metal Gear Solid 3",
+        "Metal Gear Solid V"
+      ]
+    },
+    {
+      "franchise": "Grand Theft Auto",
+      "coverage": 100,
+      "foundGames": [
+        "Grand Theft Auto: Vice City",
+        "Grand Theft Auto: San Andreas",
+        "Grand Theft Auto V"
+      ],
+      "missingGames": [],
+      "totalSearchResults": 3,
+      "popularGames": [
+        "Grand Theft Auto: Vice City",
+        "Grand Theft Auto: San Andreas",
+        "Grand Theft Auto V"
+      ]
+    },
+    {
+      "franchise": "Street Fighter",
+      "coverage": 100,
+      "foundGames": [
+        "Street Fighter II",
+        "Street Fighter Alpha 3",
+        "Street Fighter IV",
+        "Street Fighter V"
+      ],
+      "missingGames": [],
+      "totalSearchResults": 2,
+      "popularGames": [
+        "Street Fighter II",
+        "Street Fighter Alpha 3",
+        "Street Fighter IV",
+        "Street Fighter V"
+      ]
+    },
+    {
+      "franchise": "Assassin's Creed",
+      "coverage": 66.66666666666666,
+      "foundGames": [
+        "Assassin's Creed II",
+        "Assassin's Creed: Brotherhood"
+      ],
+      "missingGames": [
+        "Assassin's Creed IV: Black Flag"
+      ],
+      "totalSearchResults": 1,
+      "popularGames": [
+        "Assassin's Creed II",
+        "Assassin's Creed: Brotherhood",
+        "Assassin's Creed IV: Black Flag"
+      ]
+    }
+  ],
+  "timestamp": "2025-09-05T19:42:57.434Z"
+}

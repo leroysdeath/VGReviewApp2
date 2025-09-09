@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Database Seeding</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            background: #1a1a1a; 
+            color: #00ff00; 
+            padding: 20px; 
+        }
+        .section {
+            background: #2a2a2a; 
+            padding: 15px; 
+            margin: 15px 0;
+            border: 1px solid #444;
+        }
+        .results {
+            background: #1a1a1a; 
+            padding: 10px; 
+            margin: 10px 0;
+            border: 1px solid #333;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        button:hover { background: #0088ff; }
+        button:disabled { background: #444; cursor: not-allowed; }
+        .warning { color: #ffaa00; }
+        .error { color: #ff4444; }
+        .success { color: #00ff00; }
+    </style>
+</head>
+<body>
+    <h1>🌱 Game Database Seeding Tool</h1>
+    
+    <div class="section">
+        <h3>Seeding Controls</h3>
+        <button id="dryRunBtn" onclick="runSeeding(true)">🧪 Dry Run (Safe Test)</button>
+        <button id="liveRunBtn" onclick="runSeeding(false)" class="warning">⚠️ Live Run (Adds Games to DB)</button>
+        <button onclick="checkMissing()">🔍 Check Missing Games Only</button>
+        <button onclick="clearResults()">🗑️ Clear Results</button>
+    </div>
+    
+    <div class="section">
+        <h3>Seeding Status</h3>
+        <div id="status">Ready to seed flagship games...</div>
+    </div>
+    
+    <div class="section">
+        <h3>Results Log</h3>
+        <div id="results" class="results">
+            🎮 Game Database Seeding Tool
+            
+            This tool will:
+            1. Check which flagship games are missing from the database
+            2. Fetch missing games from IGDB API
+            3. Add them to the database for improved search coverage
+            
+            Critical games that should be seeded:
+            - Star Fox 64 (should appear first in Star Fox searches)
+            - Pokemon Red/Blue/Yellow (likely completely missing)
+            - Mario flagship titles (Super Mario Bros, etc.)
+            - Zelda flagship titles (Ocarina of Time, etc.)
+            
+            Always run DRY RUN first to see what will be added!
+        </div>
+    </div>
+
+    <script type="module">
+        import { GameSeeder } from './src/services/gameSeeder.js';
+        
+        const seeder = new GameSeeder();
+        let isRunning = false;
+
+        window.runSeeding = async function(dryRun = true) {
+            if (isRunning) return;
+            
+            isRunning = true;
+            const dryRunBtn = document.getElementById('dryRunBtn');
+            const liveRunBtn = document.getElementById('liveRunBtn');
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+            
+            // Disable buttons
+            dryRunBtn.disabled = true;
+            liveRunBtn.disabled = true;
+            
+            try {
+                status.textContent = dryRun ? 'Running dry run...' : 'Running live seeding...';
+                results.textContent += `\\n\\n🚀 ${dryRun ? 'DRY RUN' : 'LIVE SEEDING'} STARTED\\n`;
+                results.textContent += '='.repeat(50) + '\\n';
+                
+                const result = await seeder.runSeeding(dryRun);
+                
+                results.textContent += `\\n📊 SEEDING COMPLETE\\n`;
+                results.textContent += `   Attempted: ${result.attempted}\\n`;
+                results.textContent += `   Successful: ${result.successful}\\n`;
+                results.textContent += `   Failed: ${result.failed}\\n`;
+                results.textContent += `   Success Rate: ${result.attempted > 0 ? ((result.successful / result.attempted) * 100).toFixed(1) + '%' : 'N/A'}\\n`;
+                
+                if (result.errors.length > 0) {
+                    results.textContent += `\\n❌ ERRORS:\\n`;
+                    result.errors.forEach(error => {
+                        results.textContent += `   ${error}\\n`;
+                    });
+                }
+                
+                if (dryRun && result.successful > 0) {
+                    results.textContent += `\\n✅ Dry run successful! Ready for live run.\\n`;
+                    status.textContent = `Dry run complete - ${result.successful} games ready to seed`;
+                } else if (!dryRun && result.successful > 0) {
+                    results.textContent += `\\n🎉 ${result.successful} flagship games added to database!\\n`;
+                    results.textContent += `   Search coverage should now be improved.\\n`;
+                    status.textContent = `Live seeding complete - ${result.successful} games added`;
+                } else {
+                    status.textContent = result.attempted === 0 ? 'All games already present' : 'Seeding failed';
+                }
+                
+            } catch (error) {
+                results.textContent += `\\n❌ SEEDING FAILED: ${error.message}\\n`;
+                status.textContent = `Error: ${error.message}`;
+                console.error('Seeding error:', error);
+            } finally {
+                // Re-enable buttons
+                dryRunBtn.disabled = false;
+                liveRunBtn.disabled = false;
+                isRunning = false;
+                
+                results.scrollTop = results.scrollHeight;
+            }
+        };
+
+        window.checkMissing = async function() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+            
+            try {
+                status.textContent = 'Checking missing games...';
+                results.textContent += `\\n\\n🔍 CHECKING MISSING GAMES\\n`;
+                results.textContent += '='.repeat(30) + '\\n';
+                
+                const missing = await seeder.identifyMissingGames();
+                
+                if (missing.length === 0) {
+                    results.textContent += `✅ All flagship games present in database!\\n`;
+                    status.textContent = 'All flagship games are present';
+                } else {
+                    results.textContent += `❌ Found ${missing.length} missing flagship games:\\n`;
+                    missing.forEach(game => {
+                        results.textContent += `   - ${game.priorityGame.name} (${game.priorityGame.franchise})\\n`;
+                    });
+                    status.textContent = `${missing.length} flagship games missing`;
+                }
+                
+            } catch (error) {
+                results.textContent += `\\n❌ CHECK FAILED: ${error.message}\\n`;
+                status.textContent = `Error: ${error.message}`;
+                console.error('Check error:', error);
+            } finally {
+                isRunning = false;
+                results.scrollTop = results.scrollHeight;
+            }
+        };
+
+        window.clearResults = function() {
+            document.getElementById('results').textContent = 'Results cleared. Ready for seeding...';
+            document.getElementById('status').textContent = 'Ready to seed flagship games...';
+        };
+        
+        // Auto-check missing games on load
+        setTimeout(() => {
+            checkMissing();
+        }, 1000);
+    </script>
+</body>
+</html>

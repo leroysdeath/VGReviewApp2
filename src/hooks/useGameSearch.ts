@@ -1,7 +1,7 @@
 // hooks/useGameSearch.ts
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { igdbService } from '../services/igdbService';
+import { gameDataService } from '../services/gameDataService';
 import { filterProtectedContent } from '../utils/contentProtectionFilter';
 import type { GameWithCalculatedFields } from '../types/database';
 
@@ -69,12 +69,16 @@ export const useGameSearch = () => {
       const searchParams = { ...searchOptions, ...options };
       const offset = append ? searchState.games.length : 0;
       
-      // Use enhanced IGDB search with sequel detection for comprehensive results
-      const igdbResults = await igdbService.searchWithSequels(query.trim(), searchParams.limit || 20);
-      const transformedResults = igdbResults.map(game => igdbService.transformGame(game));
+      // Use enhanced gameDataService search with sister game detection
+      console.log(`🔍 useGameSearch: Searching for "${query}" using gameDataService`);
+      const searchResults = await gameDataService.searchGames(query.trim(), {
+        genres: searchParams.genres,
+        platforms: searchParams.platforms,
+        minRating: searchParams.minRating
+      });
       
       // Apply content protection filtering to ensure consistent behavior with HeaderSearchBar
-      const filteredResults = filterProtectedContent(transformedResults);
+      const filteredResults = filterProtectedContent(searchResults);
 
       const data = {
         games: filteredResults,
@@ -113,9 +117,8 @@ export const useGameSearch = () => {
     if (query.trim().length < 2) return [];
     
     try {
-      const igdbResults = await igdbService.searchWithSequels(query.trim(), 5);
-      const transformedResults = igdbResults.map(game => igdbService.transformGame(game));
-      const filteredResults = filterProtectedContent(transformedResults);
+      const searchResults = await gameDataService.searchGames(query.trim());
+      const filteredResults = filterProtectedContent(searchResults);
       return filteredResults; // Already limited to 5 results for quick search
     } catch (error) {
       console.error('Quick search failed:', error);

@@ -9,6 +9,19 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/src/test/setup-basic.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // Comprehensive Supabase service mapping
+    '^.*\\/services\\/supabase$': '<rootDir>/src/test/supabase-test.ts',
+    '^.*\\/.*\\/services\\/supabase$': '<rootDir>/src/test/supabase-test.ts',
+    '^../services/supabase$': '<rootDir>/src/test/supabase-test.ts',
+    '^../../services/supabase$': '<rootDir>/src/test/supabase-test.ts',
+    '^../../../services/supabase$': '<rootDir>/src/test/supabase-test.ts',
+    // Environment mapping for Jest
+    '^.*\\/services\\/env$': '<rootDir>/src/test/env-test.ts',
+    '^../services/env$': '<rootDir>/src/test/env-test.ts',
+    '^../../services/env$': '<rootDir>/src/test/env-test.ts',
+    '^./env$': '<rootDir>/src/test/env-test.ts',
+    // Additional service mappings for better resolution
+    '^.*\\/services\\/(.*)$': '<rootDir>/src/services/$1',
   },
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
@@ -35,10 +48,18 @@ export default {
     }
   },
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      useESM: false,
+      tsconfig: {
+        module: 'commonjs',
+        moduleResolution: 'node',
+        target: 'es2020'
+      }
+    }]
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   transformIgnorePatterns: [
     'node_modules/(?!(.*\\.mjs$))'
-  ]
+  ],
+  extensionsToTreatAsEsm: ['.ts', '.tsx']
 };

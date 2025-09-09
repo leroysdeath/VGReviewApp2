@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ResponsiveGameCard, CardTheme } from './ResponsiveGameCard';
-import { Filter, Grid, List, Search } from 'lucide-react';
+import { Grid, List, Search } from 'lucide-react';
 
 // Type alias for compatibility
 export type GameData = {

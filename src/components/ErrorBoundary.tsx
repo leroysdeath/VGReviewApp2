@@ -1,6 +1,6 @@
 // Error Boundary Component
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Bug, Copy, RotateCcw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Bug, Copy } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
