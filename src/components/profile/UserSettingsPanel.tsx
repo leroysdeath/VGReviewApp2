@@ -846,43 +846,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               )}
             </div>
 
-            {/* Gaming Platform */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">
-                <div className="flex items-center gap-2">
-                  <Gamepad2 className="h-5 w-5 text-gray-500" />
-                  <span>Gaming Platforms (optional)</span>
-                </div>
-              </label>
-              <div className="flex flex-wrap gap-6">
-                {PLATFORM_OPTIONS.map((platform) => (
-                  <div key={platform} className="flex flex-col items-center">
-                    <label className="cursor-pointer flex flex-col items-center gap-2 group">
-                      <input
-                        type="checkbox"
-                        checked={selectedPlatforms.has(platform)}
-                        onChange={() => handlePlatformToggle(platform)}
-                        disabled={isSubmitting}
-                        className="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800 transition-colors cursor-pointer"
-                      />
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
-                        {platform}
-                      </span>
-                    </label>
-                  </div>
-                ))}
-              </div>
-              {/* Hidden input to maintain form state */}
-              <input
-                type="hidden"
-                {...register('platform')}
-                value={Array.from(selectedPlatforms).sort().join(',')}
-              />
-              {errors.platform && (
-                <p className="mt-2 text-sm text-red-400">{errors.platform.message}</p>
-              )}
-            </div>
-
+              
             {/* Location */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-300 mb-1">
