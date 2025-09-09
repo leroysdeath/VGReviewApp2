@@ -65,15 +65,17 @@ The previous CORS configuration allowed requests from any origin (`Access-Contro
 ### Production
 ```typescript
 allowedOrigins: [
-  'https://grand-narwhal-4e85d9.space',
-  'https://grand-narwhal-4e85d9.space'
+  'https://www.gamevault.to',
+  'https://gamevault.to',
+  'http://www.gamevault.to',
+  'http://gamevault.to'
 ]
 ```
 
 ### Staging
 ```typescript
 allowedOrigins: [
-  'https://staging.grand-narwhal-4e85d9.space',
+  'https://staging.gamevault.to',
   'http://localhost:5173',
   'http://localhost:3000'
 ]
@@ -133,8 +135,10 @@ export default serve(async (req: Request): Promise<Response> => {
    // In src/config/cors.ts and supabase/functions/_shared/cors.ts
    case 'production':
      return [
-       'https://grand-narwhal-4e85d9.space',
-       'https://www.grand-narwhal-4e85d9.space'
+       'https://www.gamevault.to',
+       'https://gamevault.to',
+       'http://www.gamevault.to',
+       'http://gamevault.to'
      ];
    ```
 
@@ -142,7 +146,7 @@ export default serve(async (req: Request): Promise<Response> => {
    ```typescript
    case 'staging':
      return [
-       'https://staging.grand-narwhal-4e85d9.space',
+       'https://staging.gamevault.to',
        'http://localhost:5173',
        'http://localhost:3000'
      ];

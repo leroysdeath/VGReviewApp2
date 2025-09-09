@@ -19,13 +19,15 @@ const getAllowedOrigins = (): string[] => {
   switch (environment) {
     case 'production':
       return [
-        'https://grand-narwhal-4e85d9.space',
-        'https://www.grand-narwhal-4e85d9.space'
+        'https://www.gamevault.to',
+        'https://gamevault.to',
+        'http://www.gamevault.to',
+        'http://gamevault.to'
       ];
     
     case 'staging':
       return [
-        'https://staging.grand-narwhal-4e85d9.space',
+        'https://staging.gamevault.to',
         'http://localhost:5173',
         'http://localhost:3000'
       ];
