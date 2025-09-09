@@ -14,6 +14,7 @@ import { UserSearchPage } from './pages/UserSearchPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
 import { ReviewPage } from './pages/ReviewPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
+import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -108,6 +109,7 @@ const AppContent: React.FC = () => {
                     <Route path="/users" element={<UserSearchPage />} />
                     <Route path="/debug-auth" element={<DebugAuthPage />} />
                     <Route path="/reset-password" element={<ResetPasswordPage />} />
+                    <Route path="/auth/callback" element={<AuthCallbackPage />} />
                     <Route 
                       path="/enhanced-search-test" 
                       element={

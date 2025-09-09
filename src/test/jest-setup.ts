@@ -1,17 +1,38 @@
-// Jest setup file for Node.js globals and polyfills
+// Lightweight Jest setup - minimal polyfills only
 
 import 'whatwg-fetch';
 import { TextEncoder, TextDecoder } from 'util';
 
-// Add fetch to global scope for MSW
-global.fetch = fetch;
-global.Response = Response;
-global.Request = Request;
-global.Headers = Headers;
-
-// Add Node.js globals for MSW
+// Essential globals for MSW
 global.TextEncoder = TextEncoder as any;
 global.TextDecoder = TextDecoder as any;
+
+// Minimal polyfills for MSW (only what's needed)
+if (!global.TransformStream) {
+  global.TransformStream = class TransformStream {
+    readable: any;
+    writable: any;
+    
+    constructor() {
+      const passThrough = {
+        getReader: () => ({ read: () => Promise.resolve({ done: true }) }),
+        getWriter: () => ({ write: () => Promise.resolve() })
+      };
+      this.readable = passThrough;
+      this.writable = passThrough;
+    }
+  } as any;
+}
+
+if (!global.BroadcastChannel) {
+  global.BroadcastChannel = class BroadcastChannel {
+    constructor(public name: string) {}
+    postMessage() {}
+    addEventListener() {}
+    removeEventListener() {}
+    close() {}
+  } as any;
+}
 
 // Set environment variables for tests
 process.env.NODE_ENV = 'test';

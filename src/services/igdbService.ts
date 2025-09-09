@@ -54,8 +54,8 @@ function calculateSearchRelevance(game: IGDBGame | TransformedGame, searchQuery:
 
   const query = searchQuery.toLowerCase().trim();
   const gameName = (game.name || '').toLowerCase();
-  const developer = (game.developer || '').toLowerCase();
-  const publisher = (game.publisher || '').toLowerCase();
+  const developer = ((game as any).developer || '').toLowerCase();
+  const publisher = ((game as any).publisher || '').toLowerCase();
   const summary = (game.summary || '').toLowerCase();
   const genres = Array.isArray(game.genres) ? game.genres.join(' ').toLowerCase() : '';
 

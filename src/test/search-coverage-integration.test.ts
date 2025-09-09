@@ -124,16 +124,17 @@ describe('Search Coverage Integration Tests', () => {
     
     console.log('\n📋 FLAGSHIP PRIORITIZATION SUMMARY:');
     Object.entries(results).forEach(([franchise, data]) => {
-      if (data.error) {
-        console.log(`❌ ${franchise}: ERROR - ${data.error}`);
+      const result = data as any;
+      if (result.error) {
+        console.log(`❌ ${franchise}: ERROR - ${result.error}`);
       } else {
-        const status = data.flagshipFound ? '✅' : '❌';
-        console.log(`${status} ${franchise}: ${data.flagshipFound ? `Flagship at #${data.flagshipIndex + 1}` : 'Flagship not found'} (${data.totalResults} total)`);
+        const status = result.flagshipFound ? '✅' : '❌';
+        console.log(`${status} ${franchise}: ${result.flagshipFound ? `Flagship at #${result.flagshipIndex + 1}` : 'Flagship not found'} (${result.totalResults} total)`);
       }
     });
     
     // At least 2 franchises should have their flagship games found
-    const successfulFinds = Object.values(results).filter(r => r.flagshipFound).length;
+    const successfulFinds = Object.values(results).filter((r: any) => r.flagshipFound).length;
     expect(successfulFinds).toBeGreaterThan(1);
     
   }, 30000);
