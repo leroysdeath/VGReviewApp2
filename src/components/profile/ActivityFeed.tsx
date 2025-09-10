@@ -4,6 +4,7 @@ import { Calendar, Zap, Play, CheckCircle, ScrollText, Gift, BookOpen, MessageCi
 import { supabase } from '../../services/supabase';
 import { getGameUrl } from '../../utils/gameUrls';
 import { useResponsive } from '../../hooks/useResponsive';
+import { getRelativeTime } from '../../utils/dateUtils';
 
 interface Activity {
   id: string;
@@ -342,17 +343,6 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId, isOwnProfile
     fetchActivities();
   }, [userId]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
-    return date.toLocaleDateString();
-  };
 
   const getActivityIcon = (type: Activity['type']) => {
     switch (type) {
@@ -636,7 +626,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId, isOwnProfile
               {/* Date */}
               <div className="flex items-center text-gray-500 text-xs">
                 <Calendar className="h-3 w-3 mr-1" />
-                {formatDate(activity.date)}
+                {getRelativeTime(activity.date)}
               </div>
             </div>
           </>

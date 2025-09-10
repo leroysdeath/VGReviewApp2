@@ -9,6 +9,7 @@ import { createReview, getUserReviewForGameByIGDBId, updateReview } from '../ser
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
 import { useAuth } from '../hooks/useAuth';
 import { mapPlatformNames } from '../utils/platformMapping';
+import { formatGameReleaseDate } from '../utils/dateUtils';
 
 // Search filters interface from SearchResultsPage
 interface SearchFilters {
@@ -366,36 +367,27 @@ export const ReviewFormPage: React.FC = () => {
     setSelectedPlatforms([platform]);
   };
   
+  // Use centralized date formatting for game release dates
   const formatDate = (dateValue: any) => {
-    if (!dateValue) return 'Unknown date';
+    if (!dateValue) return 'TBA';
     
     // Handle already formatted strings
     if (typeof dateValue === 'string') {
       return dateValue;
     }
     
-    // Handle timestamps
+    // Handle timestamps (IGDB provides Unix timestamps in seconds)
     if (typeof dateValue === 'number') {
-      const date = new Date(dateValue * 1000);
-      if (isNaN(date.getTime())) return 'Invalid date';
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
+      return formatGameReleaseDate(dateValue);
     }
     
     // Handle Date objects
     if (dateValue instanceof Date) {
-      if (isNaN(dateValue.getTime())) return 'Invalid date';
-      return dateValue.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
+      // Convert to Unix timestamp in seconds for consistency
+      return formatGameReleaseDate(Math.floor(dateValue.getTime() / 1000));
     }
     
-    return 'Unknown date';
+    return 'TBA';
   };
 
   // Game Card Component for Grid View

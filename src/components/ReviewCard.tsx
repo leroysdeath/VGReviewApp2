@@ -4,6 +4,7 @@ import { Calendar, Heart, MessageSquare } from 'lucide-react';
 import { ReviewInteractions } from './ReviewInteractions';
 import { useReviewInteractions } from '../hooks/useReviewInteractions';
 import { escapeHtml } from '../utils/sanitize';
+import { getRelativeTime } from '../utils/dateUtils';
 
 // TypeScript interfaces for review data
 export interface ReviewData {
@@ -111,18 +112,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
     return { firstPart: title, secondPart: null };
   };
 
-  // Format date for display
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
-    return date.toLocaleDateString();
-  };
 
   // Truncate review text for compact view
   const truncateText = (text: string, maxLength: number): string => {
@@ -263,7 +252,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   <div className="flex items-center gap-1 text-gray-500">
                     <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
                     <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
-                      {formatDate(review.date)}
+                      {getRelativeTime(review.date)}
                     </span>
                   </div>
                 </div>
@@ -280,7 +269,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                 <div className="flex items-center gap-1 text-gray-500">
                   <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
                   <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
-                    {formatDate(review.date)}
+                    {getRelativeTime(review.date)}
                   </span>
                 </div>
               </div>

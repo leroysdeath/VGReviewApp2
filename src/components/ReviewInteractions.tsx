@@ -66,7 +66,11 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   const remainingChars = MAX_CHARS - commentText.length;
   const isOverLimit = remainingChars < 0;
   
-  const handleLikeToggle = () => {
+  const handleLikeToggle = (e: React.MouseEvent) => {
+    // Prevent the click from bubbling up to parent Link component
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (disabled) {
       console.log('⚠️ Interactions disabled - waiting for user data to load');
       return;
@@ -133,7 +137,11 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
     }
   };
   
-  const toggleComments = () => {
+  const toggleComments = (e: React.MouseEvent) => {
+    // Prevent the click from bubbling up to parent Link component
+    e.preventDefault();
+    e.stopPropagation();
+    
     setShowComments(!showComments);
     // Comments are already loaded in background, just toggle visibility
     console.log('📋 Toggling comments view, already loaded in background');

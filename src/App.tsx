@@ -19,6 +19,7 @@ import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DebugAuthPage } from './pages/DebugAuthPage';
+import { FAQ } from './components/FAQ';
 import { Navigate } from 'react-router-dom';
 
 
@@ -160,14 +161,7 @@ const AppContent: React.FC = () => {
                     />
                     <Route 
                       path="/faq" 
-                      element={
-                        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                          <div className="text-white text-center">
-                            <h1 className="text-3xl font-bold mb-4">FAQ</h1>
-                            <p>FAQ page coming soon</p>
-                          </div>
-                        </div>
-                      } 
+                      element={<FAQ />} 
                     />
                     <Route 
                       path="/terms" 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { getGameUrl } from './gameUrls';
+import { getRelativeTime } from './dateUtils';
 
 // Activity types
 export type ActivityType = 'review' | 'review_like' | 'comment' | 'comment_like' | 'comment_reply';
@@ -28,41 +29,10 @@ export interface ActivityData {
 }
 
 /**
- * Format a timestamp into a relative time string (e.g., "2 hours ago")
+ * Export formatRelativeTime as an alias to the centralized getRelativeTime
+ * for backward compatibility
  */
-export const formatRelativeTime = (timestamp: Date | string): string => {
-  const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  
-  // Convert to seconds
-  const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 60) return 'just now';
-  
-  // Convert to minutes
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} ${diffMin === 1 ? 'minute' : 'minutes'} ago`;
-  
-  // Convert to hours
-  const diffHour = Math.floor(diffMin / 60);
-  if (diffHour < 24) return `${diffHour} ${diffHour === 1 ? 'hour' : 'hours'} ago`;
-  
-  // Convert to days
-  const diffDay = Math.floor(diffHour / 24);
-  if (diffDay < 7) return `${diffDay} ${diffDay === 1 ? 'day' : 'days'} ago`;
-  
-  // Convert to weeks
-  const diffWeek = Math.floor(diffDay / 7);
-  if (diffWeek < 4) return `${diffWeek} ${diffWeek === 1 ? 'week' : 'weeks'} ago`;
-  
-  // Convert to months
-  const diffMonth = Math.floor(diffDay / 30);
-  if (diffMonth < 12) return `${diffMonth} ${diffMonth === 1 ? 'month' : 'months'} ago`;
-  
-  // Convert to years
-  const diffYear = Math.floor(diffDay / 365);
-  return `${diffYear} ${diffYear === 1 ? 'year' : 'years'} ago`;
-};
+export const formatRelativeTime = getRelativeTime;
 
 /**
  * Format activity data into a user-friendly description with links
