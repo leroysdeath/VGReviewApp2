@@ -316,8 +316,26 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
   };
 
   const handleSuggestionClick = (game: any) => {
-    // Navigate directly to the game page, not search results
-    navigate(`/game/${game.igdb_id || game.id}`);
+    // Debug logging to see what IDs we have
+    console.log('🎮 Game suggestion clicked:', {
+      name: game.name,
+      id: game.id,
+      igdb_id: game.igdb_id,
+      fullGame: game
+    });
+    
+    // ALWAYS use igdb_id for navigation since these games come from IGDB API
+    // The 'id' field is the database ID which may not exist or be wrong
+    const gameId = game.igdb_id;
+    
+    if (!gameId) {
+      console.error('❌ No IGDB ID found for game:', game.name);
+      return;
+    }
+    
+    console.log('🔗 Navigating to game with IGDB ID:', gameId);
+    
+    navigate(`/game/${gameId}`);
     setSearchTerm('');
     saveRecentSearch(game.name, 'games');
     setIsOpen(false);

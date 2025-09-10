@@ -144,7 +144,7 @@ export const ResponsiveLandingPage: React.FC = () => {
   const [reviewsError, setReviewsError] = useState<string | null>(null);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const { isMobile } = useResponsive();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, dbUserId } = useAuth();
   const { openModal } = useAuthModal();
   const navigate = useNavigate();
   const loadBulkStatus = useLikeStore(state => state.loadBulkStatus);
