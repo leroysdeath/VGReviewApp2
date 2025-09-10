@@ -1,12 +1,13 @@
 // src/components/auth/AuthModal.tsx - COMPLETE REPLACEMENT
-import React, { useState } from 'react';
-import { X, Eye, EyeOff, Mail, Key, User, AlertCircle, Check, Loader2, Gamepad2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Eye, EyeOff, Mail, Key, User, AlertCircle, Check, Loader2, Gamepad2, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthModal } from '../../context/AuthModalContext';
 import { LegalModal } from '../LegalModal';
+import { supabase } from '../../services/supabase';
 
 // Form validation schemas
 const loginSchema = z.object({
@@ -62,6 +63,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy'>('terms');
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState<string>('');
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -119,16 +122,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setAuthError(null);
     
     try {
+      // Store email in session storage for personalization
+      sessionStorage.setItem('pendingVerificationEmail', data.email);
+      
       const result = await signUp(data.email, data.password, data.username);
       if (result.error) {
         setAuthError(result.error.message || 'Signup failed. Please try again.');
+        sessionStorage.removeItem('pendingVerificationEmail');
       } else {
-        onSignupSuccess?.();
+        // Show email verification screen instead of switching to login
+        setVerificationEmail(data.email);
+        setShowEmailVerification(true);
         setAuthError(null);
-        setMode('login');
+        onSignupSuccess?.();
       }
     } catch {
       setAuthError('Signup failed. Please try again.');
+      sessionStorage.removeItem('pendingVerificationEmail');
     } finally {
       setIsLoading(false);
     }
@@ -180,10 +190,55 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setMode(newMode);
     setAuthError(null);
     setResetEmailSent(false);
+    setShowEmailVerification(false);
+    setVerificationEmail('');
     loginForm.reset();
     signupForm.reset();
     resetForm.reset();
   };
+
+  // Handle email verification resend
+  const handleResendVerification = async () => {
+    if (!verificationEmail) return;
+    
+    setIsLoading(true);
+    setAuthError(null);
+    
+    try {
+      // Use Supabase resend method for signup confirmation
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: verificationEmail
+      });
+      
+      if (error) {
+        setAuthError(error.message || 'Failed to resend verification email.');
+      } else {
+        // Show success message briefly
+        setAuthError('Verification email resent! Please check your inbox.');
+        setTimeout(() => setAuthError(null), 3000);
+      }
+    } catch {
+      setAuthError('Failed to resend verification email. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Auto-close modal when user verifies email
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at && showEmailVerification) {
+        setShowEmailVerification(false);
+        closeModal();
+        // Could add toast notification here if you have toast system
+      }
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [showEmailVerification, closeModal]);
 
   if (!isOpen) return null;
 
@@ -258,9 +313,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
+          {/* Email Verification Success Screen */}
+          {showEmailVerification && (
+            <div className="text-center p-6">
+              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold mb-2 text-white">Check Your Email!</h2>
+              <p className="text-gray-400 mb-4">
+                We've sent a verification link to <strong className="text-white">{verificationEmail}</strong>
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                Please check your inbox and click the link to verify your account. Don't forget to check your spam folder!
+              </p>
+              
+              {/* Resend functionality */}
+              <div className="space-y-4">
+                <button 
+                  onClick={handleResendVerification}
+                  disabled={isLoading}
+                  className="text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-colors"
+                >
+                  {isLoading ? 'Resending...' : 'Resend verification email'}
+                </button>
+                
+                <div className="pt-4 border-t border-gray-700">
+                  <button 
+                    onClick={closeModal}
+                    className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Got it!
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Login Form */}
-          {mode === 'login' && (
+          {mode === 'login' && !showEmailVerification && (
             <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
@@ -347,7 +435,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           )}
 
           {/* Signup Form */}
-          {mode === 'signup' && (
+          {mode === 'signup' && !showEmailVerification && (
             <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
               <div>
                 <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
@@ -522,7 +610,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           )}
 
           {/* Reset Password Form */}
-          {mode === 'reset' && !resetEmailSent && (
+          {mode === 'reset' && !resetEmailSent && !showEmailVerification && (
             <form onSubmit={resetForm.handleSubmit(handleReset)} className="space-y-4">
               <div>
                 <label htmlFor="reset-email" className="block text-sm font-medium text-gray-300 mb-2">
@@ -562,8 +650,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           )}
 
           {/* Mode Switch Links */}
-          <div className="mt-6 text-center text-sm">
-            {mode === 'login' && (
+          {!showEmailVerification && (
+            <div className="mt-6 text-center text-sm">
+              {mode === 'login' && (
               <p className="text-gray-400">
                 Don't have an account?{' '}
                 <button
@@ -600,6 +689,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </p>
             )}
           </div>
+          )}
         </div>
       </div>
 

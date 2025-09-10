@@ -1,43 +1,45 @@
 import '@testing-library/jest-dom';
-import { expect, afterEach } from '@jest/globals';
-import { jest } from '@jest/globals';
+import { afterEach } from '@jest/globals';
 import { cleanup } from '@testing-library/react';
+import { resetMSWHandlers } from './test-utils';
 
-// Clean up after each test
+// Lightweight cleanup after each test
 afterEach(() => {
   cleanup();
+  resetMSWHandlers(); // Reset MSW handlers instead of recreating server
   jest.clearAllMocks();
 });
 
-// Mock environment variables
-process.env.VITE_SUPABASE_URL = 'http://localhost:54321';
-process.env.VITE_SUPABASE_ANON_KEY = 'test-anon-key';
+// Essential mocks only - lazy loaded when needed
+let mockMatchMedia: jest.Mock;
+let mockIntersectionObserver: jest.Mock;
 
-// Mock window.matchMedia for responsive components
+// Lazy load match media mock
 Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
+  get() {
+    if (!mockMatchMedia) {
+      mockMatchMedia = jest.fn(() => ({
+        matches: false,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+      }));
+    }
+    return mockMatchMedia;
+  },
+  configurable: true
 });
 
-// Mock IntersectionObserver for lazy loading components
-global.IntersectionObserver = jest.fn().mockImplementation((callback) => ({
-  observe: jest.fn(),
-  unobserve: jest.fn(),
-  disconnect: jest.fn(),
-  root: null,
-  rootMargin: '',
-  thresholds: [],
-  takeRecords: jest.fn(),
-})) as any;
-
-// Mock scrollTo for navigation tests
-window.scrollTo = jest.fn();
+// Lazy load intersection observer mock
+Object.defineProperty(global, 'IntersectionObserver', {
+  get() {
+    if (!mockIntersectionObserver) {
+      mockIntersectionObserver = jest.fn(() => ({
+        observe: jest.fn(),
+        unobserve: jest.fn(),
+        disconnect: jest.fn(),
+      }));
+    }
+    return mockIntersectionObserver;
+  },
+  configurable: true
+});

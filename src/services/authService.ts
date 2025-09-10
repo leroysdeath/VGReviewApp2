@@ -14,6 +14,19 @@ export interface AuthUser {
 class AuthService {
   async signUp(email: string, password: string, username: string): Promise<{ user: User | null; error: any }> {
     try {
+      // Determine redirect URL based on environment
+      const getEmailRedirectTo = () => {
+        const currentOrigin = window.location.origin;
+        
+        // If we're on localhost/development, redirect to local
+        if (currentOrigin.includes('localhost') || currentOrigin.includes('127.0.0.1')) {
+          return `${currentOrigin}/auth/callback`;
+        }
+        
+        // For production, use the current origin
+        return `${currentOrigin}/auth/callback`;
+      };
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -21,7 +34,8 @@ class AuthService {
           data: {
             username,
             name: username
-          }
+          },
+          emailRedirectTo: getEmailRedirectTo()
         }
       });
 

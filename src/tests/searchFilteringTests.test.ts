@@ -3,6 +3,8 @@
  * Tests each filtering layer to identify where popular games are being lost
  */
 
+import { fuzzyMatchScore } from '../utils/fuzzySearch';
+
 describe('Content Protection Filter Testing', () => {
   
   test('should not over-filter official Nintendo games', () => {

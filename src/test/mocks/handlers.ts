@@ -1,376 +1,266 @@
 import { http, HttpResponse } from 'msw';
 import { createMockUser, createMockReview, createMockGame, createMockActivity, createMockComment } from '../factories';
 
-// Helper to simulate delay
+// Minimal delay for performance (reduced from previous values)
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Import optimized fixtures
+import { getFranchiseInfo, generateMockGames } from '../fast-mocks';
+import { SHARED_FIXTURES } from '../shared-fixtures';
+
+// Franchise data for consistent testing
+const FRANCHISE_DATA: Record<string, string[]> = {
+  'mario': [
+    'Super Mario Bros.', 'Super Mario World', 'Super Mario 64', 
+    'Super Mario Odyssey', 'Mario Kart 8 Deluxe', 'Paper Mario',
+    'Mario Party Superstars', "Luigi's Mansion 3", "Yoshi's Island",
+    'Super Mario Galaxy', 'Mario Tennis Aces', 'Mario Golf: Super Rush',
+    'Super Mario 3D World', 'New Super Mario Bros. U', 'Super Mario Maker 2',
+    'Mario & Luigi: Superstar Saga', 'Super Mario Sunshine', 'Mario Strikers',
+    'Dr. Mario', 'Mario Paint', 'Super Mario RPG', 'Mario vs. Donkey Kong',
+    'Super Mario Land', 'Super Mario Land 2', 'Super Mario Bros. 2',
+    'Super Mario Bros. 3', 'Super Mario All-Stars', 'Mario Kart 64',
+    'Mario Kart: Double Dash!!', 'Mario Kart Wii', 'Mario Kart 7',
+    'Mario Kart Tour', 'Mario Party', 'Mario Party 2', 'Mario Party 3',
+    'Mario Party 4', 'Mario Party 5', 'Mario Party 6', 'Mario Party 7',
+    'Mario Party 8', 'Mario Party 9', 'Mario Party 10', 'Mario Tennis',
+    'Mario Tennis Open', 'Mario Golf', 'Mario Superstar Baseball',
+    'Super Mario 3D Land', 'Captain Toad: Treasure Tracker', 'Donkey Kong',
+    'Mario Bros.', 'Wrecking Crew', 'Mario Clash', 'Mario Hoops 3-on-3'
+  ],
+  'zelda': [
+    'The Legend of Zelda: Breath of the Wild', 'The Legend of Zelda: Tears of the Kingdom',
+    'The Legend of Zelda: Ocarina of Time', "The Legend of Zelda: Majora's Mask",
+    'The Legend of Zelda: Wind Waker', "The Legend of Zelda: Link's Awakening",
+    'The Legend of Zelda: A Link to the Past', 'The Legend of Zelda: Twilight Princess',
+    'The Legend of Zelda: Skyward Sword', 'The Legend of Zelda',
+    'Zelda II: The Adventure of Link', 'The Legend of Zelda: A Link Between Worlds',
+    'The Legend of Zelda: Tri Force Heroes', 'The Legend of Zelda: Spirit Tracks',
+    'The Legend of Zelda: Phantom Hourglass', 'The Legend of Zelda: Four Swords',
+    'The Legend of Zelda: Oracle of Ages', 'The Legend of Zelda: Oracle of Seasons'
+  ],
+  'pokemon': [
+    'Pokemon Red', 'Pokemon Blue', 'Pokemon Yellow', 'Pokemon Gold',
+    'Pokemon Silver', 'Pokemon Crystal', 'Pokemon Sword', 'Pokemon Shield',
+    'Pokemon Ruby', 'Pokemon Sapphire', 'Pokemon Emerald', 'Pokemon Diamond',
+    'Pokemon Pearl', 'Pokemon Platinum', 'Pokemon Black', 'Pokemon White',
+    'Pokemon Black 2', 'Pokemon White 2', 'Pokemon X', 'Pokemon Y',
+    'Pokemon Sun', 'Pokemon Moon', 'Pokemon Ultra Sun', 'Pokemon Ultra Moon',
+    'Pokemon Legends: Arceus', 'Pokemon Scarlet', 'Pokemon Violet',
+    'Pokemon Let\'s Go Pikachu', 'Pokemon Let\'s Go Eevee'
+  ],
+  'mega man': [
+    'Mega Man', 'Mega Man 2', 'Mega Man 3', 'Mega Man 4', 'Mega Man 5',
+    'Mega Man 6', 'Mega Man 7', 'Mega Man 8', 'Mega Man 9', 'Mega Man 10',
+    'Mega Man 11', 'Mega Man X', 'Mega Man X2', 'Mega Man X3', 'Mega Man X4',
+    'Mega Man Zero', 'Mega Man ZX', 'Mega Man Legends', 'Mega Man Battle Network'
+  ],
+  'metal gear': [
+    'Metal Gear', 'Metal Gear 2: Solid Snake', 'Metal Gear Solid',
+    'Metal Gear Solid 2', 'Metal Gear Solid 3', 'Metal Gear Solid 4',
+    'Metal Gear Solid V', 'Metal Gear Rising: Revengeance'
+  ]
+};
+
+// Optimized game generation using fast-mocks
+function generateGamesForQuery(query: string, limit: number): any[] {
+  // Use optimized franchise lookup
+  const franchiseInfo = getFranchiseInfo(query);
+  const actualCount = Math.min(limit, franchiseInfo.count);
+  
+  // Use fast mock generator instead of complex object creation
+  return generateMockGames(actualCount, query.charAt(0).toUpperCase() + query.slice(1));
+}
 
 export const handlers = [
   // ============================================
-  // Supabase Auth Endpoints
+  // OPTIONS Preflight - Handle CORS
   // ============================================
-  
-  // Login
-  http.post('*/auth/v1/token', async () => {
-    await delay(100); // Simulate network delay
-    return HttpResponse.json({
-      access_token: 'mock-access-token',
-      token_type: 'bearer',
-      expires_in: 3600,
-      refresh_token: 'mock-refresh-token',
-      user: {
-        id: 'test-user-id',
-        email: 'test@example.com',
-        email_confirmed_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        app_metadata: { provider: 'email' },
-        user_metadata: { name: 'Test User' },
+  http.options('*', () => {
+    return new HttpResponse(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, prefer',
+        'Access-Control-Max-Age': '86400'
       }
     });
   }),
 
-  // Get current user
-  http.get('*/auth/v1/user', async ({ request }) => {
-    const auth = request.headers.get('authorization');
-    if (!auth || !auth.includes('Bearer')) {
-      return new HttpResponse(null, { status: 401 });
-    }
+  // ============================================
+  // Supabase RPC - Search Games (Universal)
+  // ============================================
+  http.post('*/rest/v1/rpc/search_games_secure', async ({ request }) => {
+    console.log('🎯 MSW: Intercepting search_games_secure');
+    // No delay for maximum speed
     
-    return HttpResponse.json({
-      id: 'test-user-id',
-      email: 'test@example.com',
-      email_confirmed_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+    const body = await request.json() as any;
+    const { search_query = '', limit_count = 50 } = body;
+    
+    // Use optimized game generation
+    const games = generateGamesForQuery(search_query, limit_count);
+    
+    // Pre-compute search results efficiently  
+    const searchResults = games.map((game, index) => ({
+      id: game.id,
+      search_rank: 1.0 - (index * 0.01)
+    }));
+    
+    console.log(`🎯 MSW: Returning ${searchResults.length} search results for "${search_query}"`);
+    return HttpResponse.json(searchResults, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      }
     });
   }),
 
-  // Logout
-  http.post('*/auth/v1/logout', async () => {
-    return new HttpResponse(null, { status: 204 });
-  }),
-
   // ============================================
-  // Supabase Database - User
+  // Supabase Game Table (Universal)
   // ============================================
-  
-  // Get user by provider_id
-  http.get('*/rest/v1/user', async ({ request }) => {
-    const url = new URL(request.url);
-    const providerId = url.searchParams.get('provider_id');
+  http.get('*/rest/v1/game*', async ({ request }) => {
+    console.log('🎯 MSW: Intercepting game table query');
+    // No delay for table queries
     
-    if (providerId === 'eq.test-user-id') {
-      return HttpResponse.json([createMockUser({
-        id: 1,
-        provider_id: 'test-user-id',
-        email: 'test@example.com',
-        username: 'testuser',
-      })]);
+    const url = new URL(request.url);
+    const idFilter = url.searchParams.get('id');
+    
+    // Handle ID-based queries
+    if (idFilter && idFilter.startsWith('in.')) {
+      // Extract IDs from filter (format: "in.(1,2,3,4)")
+      const idsString = idFilter.replace('in.(', '').replace(')', '');
+      const ids = idsString.split(',').map(id => parseInt(id.trim()));
+      
+      // Generate games for requested IDs  
+      const games = ids.map(id => {
+        const queryChar = String.fromCharCode(Math.floor(id / 1000));
+        const gameIndex = id % 1000;
+        
+        const franchiseNames = Object.keys(FRANCHISE_DATA);
+        let query = 'unknown';
+        let gameNames = ['Generic Game'];
+        let developer = 'Unknown';
+        
+        // Find franchise by first character
+        for (const franchise of franchiseNames) {
+          if (franchise.toLowerCase().startsWith(queryChar)) {
+            query = franchise;
+            gameNames = FRANCHISE_DATA[franchise];
+            developer = franchise === 'pokemon' ? 'Game Freak' : 
+                        franchise === 'mega man' ? 'Capcom' :
+                        franchise === 'metal gear' ? 'Konami' : 'Nintendo';
+            break;
+          }
+        }
+        
+        const gameName = gameNames[gameIndex % gameNames.length];
+        
+        return createMockGame({
+          id,
+          igdb_id: id + 10000,
+          name: gameName,
+          developer,
+          category: 0,
+          summary: `${gameName} is a critically acclaimed game.`,
+          description: `${gameName} is a critically acclaimed game.`,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      });
+      
+      console.log(`🎯 MSW: Returning ${games.length} games for ID query`);
+      return HttpResponse.json({ data: games, error: null });
+    }
+
+    // Handle text-based search queries (ilike patterns)
+    const orFilter = url.searchParams.get('or');
+    if (orFilter) {
+      // Extract search term from OR filter pattern
+      const match = orFilter.match(/name\.ilike\.%25([^%]+)%25/);
+      if (match) {
+        const searchTerm = match[1].replace(/\+/g, ' ');
+        const games = generateGamesForQuery(searchTerm, 50);
+        console.log(`🎯 MSW: Returning ${games.length} games for text search "${searchTerm}"`);
+        return HttpResponse.json({ data: games, error: null });
+      }
     }
     
-    return HttpResponse.json([]);
-  }),
-
-  // Create user
-  http.post('*/rest/v1/user', async ({ request }) => {
-    const body = await request.json() as any;
-    return HttpResponse.json(createMockUser({
-      ...body,
-      id: 1,
-      created_at: new Date().toISOString(),
-    }));
-  }),
-
-  // Update user
-  http.patch('*/rest/v1/user', async ({ request }) => {
-    const body = await request.json() as any;
-    return HttpResponse.json([createMockUser({
-      ...body,
-      updated_at: new Date().toISOString(),
-    })]);
+    // Default fallback - return empty result
+    console.log('🎯 MSW: No matching query pattern, returning empty result');
+    return HttpResponse.json({ data: [], error: null });
   }),
 
   // ============================================
-  // Supabase Database - Reviews (rating table)
+  // Basic Supabase Operations
   // ============================================
   
-  // Get reviews
-  http.get('*/rest/v1/rating', async ({ request }) => {
-    const url = new URL(request.url);
-    const userId = url.searchParams.get('user_id');
-    const gameId = url.searchParams.get('game_id');
-    
-    // Generate mock reviews based on query
-    const reviews = Array.from({ length: 5 }, (_, i) => 
-      createMockReview({
-        id: i + 1,
-        user_id: userId ? parseInt(userId.replace('eq.', '')) : i + 1,
-        game_id: gameId ? parseInt(gameId.replace('eq.', '')) : i + 100,
-      })
-    );
-    
+  // Auth endpoints
+  http.post('*/auth/v1/token', async () => {
+    await delay(100);
+    return HttpResponse.json({
+      access_token: 'mock-token',
+      user: { id: 'test-user', email: 'test@example.com' }
+    });
+  }),
+
+  http.get('*/auth/v1/user', async ({ request }) => {
+    const auth = request.headers.get('authorization');
+    if (!auth?.includes('Bearer')) {
+      return new HttpResponse(null, { status: 401 });
+    }
+    return HttpResponse.json({ id: 'test-user', email: 'test@example.com' });
+  }),
+
+  // User table
+  http.get('*/rest/v1/user', async () => {
+    return HttpResponse.json([createMockUser({ id: 1 })]);
+  }),
+
+  http.post('*/rest/v1/user', async ({ request }) => {
+    const body = await request.json() as any;
+    return HttpResponse.json(createMockUser({ ...body, id: 1 }));
+  }),
+
+  // Reviews (rating table)
+  http.get('*/rest/v1/rating', async () => {
+    const reviews = Array.from({ length: 5 }, (_, i) => createMockReview({ id: i + 1 }));
     return HttpResponse.json(reviews);
   }),
 
-  // Create review
   http.post('*/rest/v1/rating', async ({ request }) => {
     const body = await request.json() as any;
-    return HttpResponse.json(createMockReview({
-      ...body,
-      id: Math.floor(Math.random() * 1000),
-      post_date_time: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-    }));
+    return HttpResponse.json(createMockReview({ ...body, id: Math.random() }));
   }),
 
-  // Update review
-  http.patch('*/rest/v1/rating', async ({ request }) => {
-    const body = await request.json() as any;
-    return HttpResponse.json([createMockReview({
-      ...body,
-      updated_at: new Date().toISOString(),
-    })]);
-  }),
-
-  // Delete review
-  http.delete('*/rest/v1/rating', async () => {
-    return new HttpResponse(null, { status: 204 });
-  }),
-
-  // ============================================
-  // Supabase Database - Games
-  // ============================================
-  
-  // Get games
-  http.get('*/rest/v1/game', async ({ request }) => {
-    const url = new URL(request.url);
-    const igdbId = url.searchParams.get('igdb_id');
-    
-    if (igdbId) {
-      return HttpResponse.json([createMockGame({
-        id: 1,
-        igdb_id: parseInt(igdbId.replace('eq.', '')),
-      })]);
-    }
-    
-    // Return list of games
-    const games = Array.from({ length: 10 }, (_, i) => 
-      createMockGame({ id: i + 1 })
-    );
-    
-    return HttpResponse.json(games);
-  }),
-
-  // Create game
-  http.post('*/rest/v1/game', async ({ request }) => {
-    const body = await request.json() as any;
-    return HttpResponse.json(createMockGame({
-      ...body,
-      id: Math.floor(Math.random() * 1000),
-      created_at: new Date().toISOString(),
-    }));
-  }),
-
-  // ============================================
-  // Supabase Database - Comments
-  // ============================================
-  
-  // Get comments
-  http.get('*/rest/v1/comment', async ({ request }) => {
-    const url = new URL(request.url);
-    const ratingId = url.searchParams.get('rating_id');
-    
-    const comments = Array.from({ length: 3 }, (_, i) => 
-      createMockComment({
-        id: i + 1,
-        rating_id: ratingId ? parseInt(ratingId.replace('eq.', '')) : 1,
-      })
-    );
-    
+  // Comments
+  http.get('*/rest/v1/comment', async () => {
+    const comments = Array.from({ length: 3 }, (_, i) => createMockComment({ id: i + 1 }));
     return HttpResponse.json(comments);
   }),
 
-  // Create comment
-  http.post('*/rest/v1/comment', async ({ request }) => {
-    const body = await request.json() as any;
-    return HttpResponse.json(createMockComment({
-      ...body,
-      id: Math.floor(Math.random() * 1000),
-      created_at: new Date().toISOString(),
-    }));
-  }),
-
-  // ============================================
-  // Supabase Database - Activities
-  // ============================================
-  
-  // Get activities
+  // Activities
   http.get('*/rest/v1/activities', async () => {
-    const activities = Array.from({ length: 10 }, (_, i) => 
-      createMockActivity({ id: i + 1 })
-    );
-    
+    const activities = Array.from({ length: 10 }, (_, i) => createMockActivity({ id: i + 1 }));
     return HttpResponse.json(activities);
   }),
 
-  // ============================================
-  // Supabase Database - Collections/Wishlists
-  // ============================================
-  
-  // Get user collection
-  http.get('*/rest/v1/user_collection', async ({ request }) => {
-    const url = new URL(request.url);
-    const userId = url.searchParams.get('user_id');
-    
-    if (userId) {
-      const games = Array.from({ length: 4 }, (_, i) => ({
-        id: i + 1,
-        user_id: parseInt(userId.replace('eq.', '')),
-        game_id: i + 100,
-        igdb_id: 1000 + i,
-        added_at: new Date().toISOString(),
-      }));
-      return HttpResponse.json(games);
-    }
-    
-    return HttpResponse.json([]);
-  }),
-
-  // Get user wishlist
-  http.get('*/rest/v1/user_wishlist', async ({ request }) => {
-    const url = new URL(request.url);
-    const userId = url.searchParams.get('user_id');
-    
-    if (userId) {
-      const games = Array.from({ length: 3 }, (_, i) => ({
-        id: i + 1,
-        user_id: parseInt(userId.replace('eq.', '')),
-        game_id: i + 200,
-        igdb_id: 2000 + i,
-        added_at: new Date().toISOString(),
-      }));
-      return HttpResponse.json(games);
-    }
-    
-    return HttpResponse.json([]);
-  }),
-
-  // ============================================
-  // Supabase Database - Game Progress
-  // ============================================
-  
-  // Get game progress
-  http.get('*/rest/v1/game_progress', async ({ request }) => {
-    const url = new URL(request.url);
-    const userId = url.searchParams.get('user_id');
-    
-    if (userId) {
-      const progress = Array.from({ length: 5 }, (_, i) => ({
-        id: i + 1,
-        user_id: parseInt(userId.replace('eq.', '')),
-        game_id: i + 300,
-        igdb_id: 3000 + i,
-        started: i % 2 === 0,
-        completed: i % 3 === 0,
-        started_date: i % 2 === 0 ? new Date().toISOString() : null,
-        completed_date: i % 3 === 0 ? new Date().toISOString() : null,
-      }));
-      return HttpResponse.json(progress);
-    }
-    
-    return HttpResponse.json([]);
-  }),
-
-  // ============================================
-  // Supabase Realtime
-  // ============================================
-  
-  // WebSocket connection for real-time subscriptions
-  http.get('*/realtime/v1/websocket', () => {
-    return new HttpResponse(null, { 
-      status: 101,
-      headers: {
-        'Upgrade': 'websocket',
-        'Connection': 'Upgrade',
-      }
-    });
-  }),
-
-  // ============================================
-  // IGDB API (via Netlify Functions)
-  // ============================================
-  
-  // Search games
+  // IGDB proxy fallbacks
   http.post('*/.netlify/functions/igdb-search', async ({ request }) => {
     const body = await request.json() as any;
-    const { searchTerm, limit = 10 } = body;
+    const { searchTerm = '', limit = 10 } = body;
     
-    // Generate mock games based on search
-    const games = Array.from({ length: limit }, (_, i) => 
-      createMockGame({
-        id: i + 1,
-        name: `${searchTerm} Game ${i + 1}`,
-        igdb_id: Math.floor(Math.random() * 99999),
-      })
-    );
-    
+    const games = generateGamesForQuery(searchTerm, limit);
     return HttpResponse.json({
       games,
-      totalCount: 100,
-      hasMore: true,
+      totalCount: Math.min(games.length * 2, 100),
+      hasMore: games.length >= limit
     });
   }),
 
-  // Get game details
-  http.post('*/.netlify/functions/igdb-game', async ({ request }) => {
-    const body = await request.json() as any;
-    const { gameId } = body;
-    
-    return HttpResponse.json(createMockGame({
-      id: 1,
-      igdb_id: gameId,
-      name: `Game ${gameId}`,
-    }));
-  }),
-
-  // ============================================
-  // Supabase Edge Functions (Fallback IGDB)
-  // ============================================
-  
-  // IGDB proxy fallback
-  http.post('*/functions/v1/igdb-proxy', async ({ request }) => {
-    const body = await request.json() as any;
-    const { endpoint, params } = body;
-    
-    if (endpoint === 'games') {
-      const games = Array.from({ length: 10 }, (_, i) => 
-        createMockGame({ id: i + 1 })
-      );
-      return HttpResponse.json(games);
-    }
-    
-    return HttpResponse.json([]);
-  }),
-
-  // ============================================
-  // RPC Functions
-  // ============================================
-  
-  // Get user activity feed
-  http.post('*/rest/v1/rpc/get_user_activity_feed', async () => {
-    const activities = Array.from({ length: 20 }, (_, i) => 
-      createMockActivity({ id: i + 1 })
-    );
-    
-    return HttpResponse.json(activities);
-  }),
-
-  // Get trending games
-  http.post('*/rest/v1/rpc/get_trending_games', async () => {
-    const games = Array.from({ length: 10 }, (_, i) => 
-      createMockGame({ id: i + 1 })
-    );
-    
-    return HttpResponse.json(games);
-  }),
+  // Catch-all for unhandled requests
+  http.all('*', ({ request }) => {
+    console.warn('🚨 MSW: Unhandled request:', request.method, request.url);
+    return new HttpResponse(null, { status: 404 });
+  })
 ];

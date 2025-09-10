@@ -1,4 +1,9 @@
 import { gameSearchService } from '../services/gameSearchService';
+import { setupServer } from 'msw/node';
+import { handlers } from './mocks/handlers';
+
+// Setup MSW server
+const server = setupServer(...handlers);
 
 describe('Phase 1: Result Limit Improvements', () => {
   // Test franchises that should benefit most from increased limits
@@ -44,10 +49,25 @@ describe('Phase 1: Result Limit Improvements', () => {
   }> = [];
 
   beforeAll(() => {
+    // Start MSW server before tests with debugging
+    server.listen({ 
+      onUnhandledRequest: (req) => {
+        console.warn('🚨 MSW UNHANDLED REQUEST:', req.method, req.url);
+        if (req.url.includes('game')) {
+          console.warn('🚨 GAME TABLE REQUEST NOT HANDLED!');
+        }
+      }
+    });
+    
     console.log('\n🚀 PHASE 1 TESTING: Measuring franchise coverage improvements');
     console.log('Expected improvements:');
     console.log('- Base limit: 30 → 50 games (+66% more results)');
     console.log('- Major franchises: 50 → 75 games (+50% more results)');
+  });
+
+  afterEach(() => {
+    // Reset handlers after each test to ensure test isolation
+    server.resetHandlers();
   });
 
   afterAll(() => {
@@ -75,6 +95,9 @@ describe('Phase 1: Result Limit Improvements', () => {
     console.log(`- Average results ≥40: ${averageResults >= 40 ? '✅ PASS' : '❌ FAIL'}`);
     console.log(`- Response time <3s: ${averageResponseTime < 3 ? '✅ PASS' : '❌ FAIL'}`);
     console.log(`- Major franchises detected: ${dynamicLimitUsage >= 3 ? '✅ PASS' : '❌ FAIL'}`);
+    
+    // Close MSW server after all tests
+    server.close();
   });
 
   testFranchises.forEach(franchise => {
