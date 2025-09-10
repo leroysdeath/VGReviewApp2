@@ -181,12 +181,27 @@ class GameDataService {
     }>;
   }> {
     try {
+      console.log(`🔍 Looking up game with IGDB ID: ${igdbId}`);
+      
       // First check if game exists in database
       const { data: gameData, error: gameError } = await supabase
         .from('game')
         .select('*')
         .eq('igdb_id', igdbId)
         .single()
+
+      if (gameError) {
+        console.log(`Database error for IGDB ID ${igdbId}:`, gameError);
+      }
+      
+      if (gameData) {
+        console.log(`✅ Found game in database:`, {
+          id: gameData.id,
+          igdb_id: gameData.igdb_id,
+          name: gameData.name,
+          slug: gameData.slug
+        });
+      }
 
       if (gameError || !gameData) {
         console.log(`Game with IGDB ID ${igdbId} not found in database, fetching from IGDB API...`)

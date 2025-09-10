@@ -1081,8 +1081,10 @@ class IGDBService {
   // Transform IGDB game to our app's format
   transformGame(igdbGame: IGDBGame): TransformedGame {
     return {
-      id: igdbGame.id,
-      igdb_id: igdbGame.id,
+      // DO NOT set 'id' to igdbGame.id - that's the database ID, not IGDB ID!
+      // The 'id' field should only be set when the game exists in our database
+      id: 0, // Set to 0 or undefined since this game might not be in our database yet
+      igdb_id: igdbGame.id, // This is the actual IGDB ID
       name: igdbGame.name,
       summary: igdbGame.summary,
       description: igdbGame.summary,
