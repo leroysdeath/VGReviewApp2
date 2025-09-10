@@ -120,13 +120,43 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
 
       // Use enhanced IGDB search with sequel detection for header search
       const igdbResults = await igdbService.searchWithSequels(query, maxSuggestions * 2); // Fetch extra to account for filtering
+      
+      // TEMPORARY DEBUG: Log raw IGDB results
+      console.log('🔍 DEBUG - Raw IGDB results:', igdbResults.map(g => ({
+        name: g.name,
+        id: g.id,
+        igdb_id: g.igdb_id
+      })));
+      
       const transformedResults = igdbResults.map(game => igdbService.transformGame(game));
+      
+      // TEMPORARY DEBUG: Log transformed results
+      console.log('🔄 DEBUG - Transformed results:', transformedResults.map(g => ({
+        name: g.name,
+        id: g.id,
+        igdb_id: g.igdb_id
+      })));
       
       // Filter out protected content
       const filteredResults = filterProtectedContent(transformedResults);
+      
+      // TEMPORARY DEBUG: Log filtered results
+      console.log('🛡️ DEBUG - Filtered results:', filteredResults.map(g => ({
+        name: g.name,
+        id: g.id,
+        igdb_id: g.igdb_id
+      })));
 
       if (filteredResults && Array.isArray(filteredResults)) {
         const limitedResults = filteredResults.slice(0, maxSuggestions);
+        
+        // TEMPORARY DEBUG: Log what we're setting in suggestions
+        console.log('💾 DEBUG - Setting suggestions:', limitedResults.map(g => ({
+          name: g.name,
+          id: g.id,
+          igdb_id: g.igdb_id
+        })));
+        
         setSuggestions(limitedResults);
         setIsFromCache(false);
         setCacheStatus('fresh');
@@ -562,7 +592,15 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
             {/* Game Suggestions */}
             {activeTab === 'games' && showSuggestions && suggestions.length > 0 && (
               <div className="space-y-1 p-2">
-                {suggestions.map((game) => (
+                {suggestions.map((game) => {
+                  // TEMPORARY DEBUG: Log each game being rendered
+                  console.log('🎮 DEBUG - Rendering suggestion:', {
+                    name: game.name,
+                    id: game.id,
+                    igdb_id: game.igdb_id
+                  });
+                  
+                  return (
                   <button
                     key={game.id}
                     onClick={() => handleSuggestionClick(game)}
@@ -605,7 +643,8 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
                       </div>
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             )}
 
