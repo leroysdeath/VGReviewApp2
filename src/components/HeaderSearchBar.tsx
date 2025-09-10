@@ -316,11 +316,10 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
   };
 
   const handleSuggestionClick = (game: any) => {
-    setSearchTerm(game.name);
+    // Navigate directly to the game page, not search results
+    navigate(`/game/${game.igdb_id || game.id}`);
+    setSearchTerm('');
     saveRecentSearch(game.name, 'games');
-    // Navigate to search results page AND trigger the search
-    navigate(`/search-results?q=${encodeURIComponent(game.name)}&source=header`);
-    searchGames(game.name);
     setIsOpen(false);
     setShowSuggestions(false);
     setHasSearched(false);
