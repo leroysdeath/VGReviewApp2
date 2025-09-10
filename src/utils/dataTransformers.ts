@@ -1,5 +1,12 @@
 // Utility functions to transform data between different formats
 import { Game as DatabaseGame, Rating as DatabaseRating, User as DatabaseUser } from '../types/database';
+import { 
+  Game as SupabaseGame, 
+  Rating as SupabaseRating, 
+  User as SupabaseUser,
+  GameWithPlatforms,
+  RatingWithUser 
+} from '../types/supabase';
 
 // Transform database game to legacy game format for existing components
 export const transformDatabaseGameToLegacy = (dbGame: DatabaseGame) => {
@@ -7,13 +14,29 @@ export const transformDatabaseGameToLegacy = (dbGame: DatabaseGame) => {
     id: dbGame.id.toString(),
     title: dbGame.name,
     coverImage: dbGame.cover_url || '/placeholder-game.jpg',
-    releaseDate: dbGame.release_date ? dbGame.release_date.toISOString().split('T')[0] : '',
-    genre: dbGame.genre || 'Unknown',
+    releaseDate: dbGame.release_date || '',
+    genre: dbGame.genres?.join(', ') || 'Unknown',
     rating: 0, // This would need to be calculated from ratings
-    description: dbGame.description || '',
-    developer: dbGame.dev || 'Unknown',
+    description: dbGame.summary || '',
+    developer: dbGame.developer || 'Unknown',
     publisher: dbGame.publisher || 'Unknown',
-    platforms: dbGame.platforms?.map(p => p.name) || []
+    platforms: dbGame.platforms || []
+  };
+};
+
+// Transform Supabase game to legacy game format for existing components
+export const transformSupabaseGameToLegacy = (supabaseGame: GameWithPlatforms) => {
+  return {
+    id: supabaseGame.id.toString(),
+    title: supabaseGame.name,
+    coverImage: supabaseGame.cover_url || 'https://images.pexels.com/photos/442576/pexels-photo-442576.jpeg?auto=compress&cs=tinysrgb&w=400',
+    releaseDate: supabaseGame.release_date || '',
+    genre: supabaseGame.genre || 'Unknown',
+    rating: 0, // This would need to be calculated from ratings
+    description: supabaseGame.description || '',
+    developer: supabaseGame.dev || 'Unknown',
+    publisher: supabaseGame.publisher || 'Unknown',
+    platforms: supabaseGame.platform_games?.map(pg => pg.platform.name) || []
   };
 };
 
@@ -25,10 +48,27 @@ export const transformDatabaseRatingToLegacy = (dbRating: DatabaseRating, dbUser
     gameId: dbRating.game_id.toString(),
     rating: dbRating.rating,
     text: dbRating.review || '',
-    date: dbRating.post_date_time.toLocaleDateString(),
+    date: dbRating.post_date_time instanceof Date 
+      ? dbRating.post_date_time.toLocaleDateString()
+      : new Date(dbRating.post_date_time).toLocaleDateString(),
     hasText: !!dbRating.review,
     author: dbUser?.name || dbRating.user?.name || 'Unknown User',
     authorAvatar: dbUser?.avatar_url || dbRating.user?.avatar_url || '/placeholder-avatar.jpg'
+  };
+};
+
+// Transform Supabase rating to legacy review format
+export const transformSupabaseRatingToLegacy = (supabaseRating: RatingWithUser) => {
+  return {
+    id: supabaseRating.id.toString(),
+    userId: supabaseRating.user_id.toString(),
+    gameId: supabaseRating.game_id.toString(),
+    rating: supabaseRating.rating,
+    text: supabaseRating.review || '',
+    date: new Date(supabaseRating.post_date_time).toLocaleDateString(),
+    hasText: !!supabaseRating.review,
+    author: supabaseRating.user?.name || 'Unknown User',
+    authorAvatar: supabaseRating.user?.avatar_url || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150'
   };
 };
 
@@ -46,8 +86,22 @@ export const transformDatabaseUserToLegacy = (dbUser: DatabaseUser) => {
   };
 };
 
-// Calculate average rating from ratings array
-export const calculateAverageRating = (ratings: DatabaseRating[]): number => {
+// Transform Supabase user to legacy user format
+export const transformSupabaseUserToLegacy = (supabaseUser: SupabaseUser) => {
+  return {
+    id: supabaseUser.id.toString(),
+    username: supabaseUser.name,
+    avatar: supabaseUser.avatar_url || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
+    bio: 'Gaming enthusiast', // This would need to be added to the database schema
+    joinDate: 'Unknown', // This would need to be added to the database schema
+    reviewCount: 0, // This would need to be calculated
+    followers: 0, // This would need to be added to the database schema
+    following: 0 // This would need to be added to the database schema
+  };
+};
+
+// Calculate average rating from ratings array (supports both Database and Supabase ratings)
+export const calculateAverageRating = (ratings: DatabaseRating[] | SupabaseRating[]): number => {
   if (ratings.length === 0) return 0;
   const sum = ratings.reduce((acc, rating) => acc + rating.rating, 0);
   return sum / ratings.length;
@@ -90,15 +144,8 @@ export const generateRatingDistribution = (ratings: Array<{ rating: number }>) =
   return distribution; // Now in ascending order (1 to 10)
 };
 
-// Format date for display
-export const formatDate = (date: Date | string): string => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return dateObj.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-};
+// Re-export formatDate from dateUtils for consistency
+export { formatDate } from './dateUtils';
 
 // Format rating for display (ensure 1 decimal place)
 export const formatRating = (rating: number): string => {
@@ -116,8 +163,8 @@ export const truncateText = (text: string, maxLength: number): string => {
   return text.substring(0, maxLength).trim() + '...';
 };
 
-// Generate user stats from ratings
-export const generateUserStats = (ratings: DatabaseRating[]) => {
+// Generate user stats from ratings (supports both Database and Supabase ratings)
+export const generateUserStats = (ratings: DatabaseRating[] | SupabaseRating[]) => {
   const totalGames = ratings.length;
   const completedGames = ratings.filter(r => r.finished).length;
   const averageRating = calculateAverageRating(ratings);
@@ -130,4 +177,21 @@ export const generateUserStats = (ratings: DatabaseRating[]) => {
     totalReviews,
     completionRate: totalGames > 0 ? (completedGames / totalGames) * 100 : 0
   };
+};
+
+// Transform multiple games with calculated ratings (non-redundant function from supabaseTransformers)
+export const transformGamesWithRatings = (
+  games: GameWithPlatforms[], 
+  ratingsMap: Map<number, SupabaseRating[]>
+) => {
+  return games.map(game => {
+    const gameRatings = ratingsMap.get(game.id) || [];
+    const averageRating = calculateAverageRating(gameRatings);
+    
+    return {
+      ...transformSupabaseGameToLegacy(game),
+      rating: averageRating,
+      totalRatings: gameRatings.length
+    };
+  });
 };
