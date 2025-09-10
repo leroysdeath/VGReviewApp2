@@ -262,9 +262,9 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                         
                         <div className="text-gray-300 text-sm">
                           {expandedReviews.has(review.id) || review.reviewText.length <= 150 ? (
-                            <p>{review.reviewText}</p>
+                            <p className="whitespace-pre-line">{review.reviewText}</p>
                           ) : (
-                            <p>
+                            <p className="whitespace-pre-line">
                               {review.reviewText.slice(0, 150)}...
                             </p>
                           )}

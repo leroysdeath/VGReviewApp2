@@ -1456,7 +1456,7 @@ export const GamePage: React.FC = () => {
                     <span className="text-yellow-500">{review.rating}/10</span>
                   </div>
                   {review.text && (
-                    <p className="text-gray-300 text-sm">{review.text}</p>
+                    <p className="text-gray-300 text-sm whitespace-pre-line">{review.text}</p>
                   )}
                 </Link>
               ))}

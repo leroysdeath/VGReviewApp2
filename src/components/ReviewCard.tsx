@@ -280,7 +280,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {review.hasText && (
             <p className={`
               text-gray-300 leading-relaxed mb-4 transition-colors duration-300
-              group-hover:text-gray-200
+              group-hover:text-gray-200 whitespace-pre-line
               ${compact ? 'text-sm' : 'text-base'}
             `}>
               {compact ? escapeHtml(truncateText(review.text, 120)) : escapeHtml(review.text)}
