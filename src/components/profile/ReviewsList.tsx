@@ -220,7 +220,7 @@ export const ReviewsList: React.FC<ReviewsListProps> = ({
 
                 {/* Review text */}
                 {review.review && (
-                  <p className="text-gray-300 mb-3 leading-relaxed">
+                  <p className="text-gray-300 mb-3 leading-relaxed whitespace-pre-line">
                     {review.review}
                   </p>
                 )}
