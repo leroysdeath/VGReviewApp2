@@ -444,7 +444,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           ) : recentReviews.length > 0 ? (
             <div className="space-y-4">
               {recentReviews.map((review) => (
-                <ReviewCard key={review.id} review={review} compact currentUserId={user?.id} />
+                <ReviewCard key={review.id} review={review} compact currentUserId={dbUserId ?? undefined} />
               ))}
             </div>
           ) : (
@@ -712,7 +712,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           ) : recentReviews.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-6">
               {recentReviews.map((review) => (
-                <ReviewCard key={review.id} review={review} currentUserId={user?.id} />
+                <ReviewCard key={review.id} review={review} currentUserId={dbUserId ?? undefined} />
               ))}
             </div>
           ) : (
