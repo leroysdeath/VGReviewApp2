@@ -561,28 +561,51 @@ class IGDBService {
    * Perform basic IGDB search without fallback logic
    */
   private async performBasicSearch(query: string, limit: number): Promise<IGDBGame[]> {
-    const response = await fetch(this.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        searchTerm: query.trim(),
-        limit: limit
-      })
-    });
+    try {
+      const response = await fetch(this.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          searchTerm: query.trim(),
+          limit: limit
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error(`IGDB API error: ${response.status}`);
+      if (!response.ok) {
+        // Production-visible error logging
+        console.error(`🔴 IGDB API Error ${response.status}: ${response.statusText}`);
+        console.error(`🔴 Query that failed: "${query}"`);
+        
+        if (response.status === 500) {
+          console.error('🔴 IGDB Server Error (500) - The IGDB API is temporarily unavailable');
+          // Return empty array instead of throwing to allow graceful degradation
+          return [];
+        }
+        
+        throw new Error(`IGDB API error: ${response.status}`);
+      }
+
+      const data: IGDBSearchResponse = await response.json();
+      
+      if (!data.success) {
+        console.error('🔴 IGDB API returned unsuccessful response:', data.error);
+        throw new Error(data.error || 'IGDB API error');
+      }
+
+      return data.games || [];
+    } catch (error: any) {
+      // Production-visible error logging
+      console.error('🔴 IGDB performBasicSearch error:', {
+        query,
+        error: error?.message || error,
+        stack: error?.stack
+      });
+      
+      // Re-throw to allow calling code to handle
+      throw error;
     }
-
-    const data: IGDBSearchResponse = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.error || 'IGDB API error');
-    }
-
-    return data.games || [];
   }
 
   async searchGames(query: string, limit: number = 20): Promise<IGDBGame[]> {
@@ -591,7 +614,7 @@ class IGDBService {
         return [];
       }
 
-      console.log('🔍 Enhanced multi-strategy search for:', query);
+      console.error('🔍 Enhanced multi-strategy search for:', query);
 
       // Get primary search results
       const rawGames = await this.performBasicSearch(query, limit);
@@ -840,8 +863,21 @@ class IGDBService {
       console.log(`✅ Final results: ${filteredIGDBGames.length} games after all filtering and prioritization`);
       return filteredIGDBGames;
 
-    } catch (error) {
-      console.error('IGDB search failed:', error);
+    } catch (error: any) {
+      // Production-visible error logging
+      console.error('🔴 IGDB searchGames failed:', {
+        query,
+        error: error?.message || error,
+        status: error?.status
+      });
+      
+      // If it's a 500 error, return empty array to allow graceful fallback
+      if (error?.message?.includes('500') || error?.status === 500) {
+        console.error('🔴 IGDB Server Error - Returning empty results for graceful degradation');
+        return [];
+      }
+      
+      // For other errors, still throw to maintain existing behavior
       throw error;
     }
   }
