@@ -82,6 +82,10 @@ export const ResponsiveNavbar: React.FC = () => {
 
   // Enhanced quick search for games with caching
   const performGameSearch = useCallback(async (query: string) => {
+    // Enable debug mode with ?debug=true in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const debugMode = urlParams.get('debug') === 'true';
+    
     if (!query.trim() || query.length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -98,7 +102,17 @@ export const ResponsiveNavbar: React.FC = () => {
       const cached = browserCache.get(cacheKey) as CachedQuickSearch;
       
       if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) { // 5 minutes
-        setSuggestions(cached.results.slice(0, 8));
+        const cachedResults = cached.results.slice(0, 8);
+        
+        // TEMPORARY DEBUG: Log cached suggestions
+        console.log('📦 SETTING CACHED SUGGESTIONS:', cachedResults);
+        console.log('🆔 First cached game IDs:', {
+          id: cachedResults[0]?.id,
+          igdb_id: cachedResults[0]?.igdb_id,
+          name: cachedResults[0]?.name
+        });
+        
+        setSuggestions(cachedResults);
         setIsFromCache(true);
         setCacheStatus('cached');
         setShowSuggestions(true);
@@ -113,11 +127,30 @@ export const ResponsiveNavbar: React.FC = () => {
       console.log(`🔍 ResponsiveNavbar: Searching for "${query}" using gameDataService`);
       const searchResults = await gameDataService.searchGames(query);
       
+      // TEMPORARY DEBUG: Log what gameDataService returned
+      console.error('🎯 CRITICAL - gameDataService returned:', searchResults);
+      console.error('🎯 CRITICAL - First result from service:', {
+        id: searchResults[0]?.id,
+        igdb_id: searchResults[0]?.igdb_id,
+        name: searchResults[0]?.name,
+        type_of_id: typeof searchResults[0]?.id
+      });
+      
       // Apply content protection filtering to mobile search results
       const filteredResults = filterProtectedContent(searchResults);
 
       if (filteredResults && Array.isArray(filteredResults)) {
         const limitedResults = filteredResults.slice(0, 8);
+        
+        // TEMPORARY DEBUG: Log what we're setting in suggestions
+        console.error('🔍 CRITICAL - SETTING SUGGESTIONS:', limitedResults);
+        console.error('🆔 CRITICAL - First game IDs:', {
+          id: limitedResults[0]?.id,
+          igdb_id: limitedResults[0]?.igdb_id,
+          name: limitedResults[0]?.name,
+          type_of_id: typeof limitedResults[0]?.id
+        });
+        
         setSuggestions(limitedResults);
         setIsFromCache(false);
         setCacheStatus('fresh');
@@ -139,8 +172,19 @@ export const ResponsiveNavbar: React.FC = () => {
         setShowSuggestions(false);
       }
 
-    } catch (error) {
-      console.error('Game quick search failed:', error);
+    } catch (error: any) {
+      console.error('🔴 Game quick search failed:', error);
+      console.error('🔴 Error details:', {
+        message: error?.message,
+        status: error?.status,
+        response: error?.response
+      });
+      
+      // Show user-friendly error message
+      if (error?.status === 500 || error?.message?.includes('500')) {
+        console.error('🔴 IGDB API Error 500 - Server Error');
+      }
+      
       setSuggestions([]);
       setCacheStatus('error');
       setShowSuggestions(false);
@@ -291,6 +335,16 @@ export const ResponsiveNavbar: React.FC = () => {
   };
 
   const handleSuggestionClick = (game: Game) => {
+    // TEMPORARY DEBUG: Log the game object being clicked
+    console.error('🎮 CRITICAL - CLICKED GAME - Full object:', game);
+    console.error('📍 CRITICAL - ID values:', {
+      id: game.id,
+      igdb_id: game.igdb_id,
+      typeof_id: typeof game.id,
+      typeof_igdb_id: typeof game.igdb_id
+    });
+    console.error('🚀 CRITICAL - Will navigate to:', `/game/${game.id}`);
+    
     setSearchQuery('');
     saveRecentSearch(game.name, 'games');
     navigate(`/game/${game.id}`);

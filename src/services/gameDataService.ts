@@ -574,10 +574,11 @@ class GameDataService {
    * Convert IGDB games to local format for immediate display
    */
   private convertIGDBToLocal(igdbGames: any[]): GameWithCalculatedFields[] {
-    return igdbGames.map(game => ({
-      id: -(game.id || 0), // Negative ID to indicate it's from IGDB
-      igdb_id: game.id || 0,
-      name: game.name || 'Unknown Game',
+    return igdbGames.map(game => {
+      const converted = {
+        id: -(game.id || 0), // Negative ID to indicate it's from IGDB
+        igdb_id: game.id || 0,
+        name: game.name || 'Unknown Game',
       summary: game.summary || null,
       release_date: game.first_release_date ? 
         new Date(game.first_release_date * 1000).toISOString().split('T')[0] : null,
@@ -597,7 +598,20 @@ class GameDataService {
       averageUserRating: 0,
       totalUserRatings: 0,
       fromIGDB: true // Track that this came from IGDB API
-    }))
+    };
+    
+    // DEBUG: Log the conversion
+    if (game.name && game.name.toLowerCase().includes('expedition')) {
+      console.log('🔄 DEBUG - Converting IGDB game:', {
+        original_id: game.id,
+        converted_id: converted.id,
+        igdb_id: converted.igdb_id,
+        name: converted.name
+      });
+    }
+    
+    return converted;
+    })
   }
 
   /**
@@ -609,6 +623,12 @@ class GameDataService {
   ): GameWithCalculatedFields[] {
     const seen = new Set<number>()
     const merged: GameWithCalculatedFields[] = []
+
+    // DEBUG: Log merge inputs
+    console.log('🔀 DEBUG - Merging results:', {
+      dbResults: dbResults.map(g => ({ name: g.name, id: g.id, igdb_id: g.igdb_id })),
+      igdbResults: igdbResults.map(g => ({ name: g.name, id: g.id, igdb_id: g.igdb_id }))
+    });
 
     // Add database results first (preferred)
     dbResults.forEach(game => {
@@ -624,6 +644,11 @@ class GameDataService {
         merged.push(game)
       }
     })
+    
+    // DEBUG: Log final merged results
+    console.log('✅ DEBUG - Final merged results:', 
+      merged.map(g => ({ name: g.name, id: g.id, igdb_id: g.igdb_id }))
+    );
 
     return merged
   }
