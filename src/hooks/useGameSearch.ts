@@ -1,8 +1,7 @@
 // hooks/useGameSearch.ts
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { gameDataService } from '../services/gameDataService';
-import { filterProtectedContent } from '../utils/contentProtectionFilter';
+import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
 import type { GameWithCalculatedFields } from '../types/database';
 
 interface SearchResult {
@@ -45,6 +44,7 @@ export const useGameSearch = () => {
   });
   
   const abortControllerRef = useRef<AbortController | null>(null);
+  const searchCoordinationRef = useRef<AdvancedSearchCoordination>(new AdvancedSearchCoordination());
 
   // Main search function that both components will use
   const searchGames = useCallback(async (
@@ -69,16 +69,15 @@ export const useGameSearch = () => {
       const searchParams = { ...searchOptions, ...options };
       const offset = append ? searchState.games.length : 0;
       
-      // Use enhanced gameDataService search with sister game detection
-      console.log(`🔍 useGameSearch: Searching for "${query}" using gameDataService`);
-      const searchResults = await gameDataService.searchGames(query.trim(), {
-        genres: searchParams.genres,
-        platforms: searchParams.platforms,
-        minRating: searchParams.minRating
+      // Use Advanced Search Coordination with accent normalization
+      console.log(`🔍 useGameSearch: Searching for "${query}" using Advanced Search Coordination`);
+      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+        maxResults: searchParams.limit || 20,
+        includeMetrics: true
       });
       
-      // Apply content protection filtering to ensure consistent behavior with HeaderSearchBar
-      const filteredResults = filterProtectedContent(searchResults);
+      // Results are already filtered by the coordination service
+      const filteredResults = searchResult.results;
 
       const data = {
         games: filteredResults,
@@ -117,9 +116,11 @@ export const useGameSearch = () => {
     if (query.trim().length < 2) return [];
     
     try {
-      const searchResults = await gameDataService.searchGames(query.trim());
-      const filteredResults = filterProtectedContent(searchResults);
-      return filteredResults; // Already limited to 5 results for quick search
+      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+        maxResults: 5,
+        includeMetrics: false
+      });
+      return searchResult.results;
     } catch (error) {
       console.error('Quick search failed:', error);
       return [];

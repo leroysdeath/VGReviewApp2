@@ -126,7 +126,226 @@ async function multiQuerySearch(searchTerm) {
 }
 ```
 
-### Layer 2: Client-Side Scoring System
+### Layer 2: Database & Client-Side Scoring System
+
+#### A. Database Population Strategy Fix (Critical)
+
+**Problem Identified**: The current database population strategy prevents IGDB API calls when 5+ games exist in the database, severely limiting search improvements.
+
+```javascript
+// CURRENT BROKEN LOGIC in gameDataService.ts:529-530
+const MIN_RESULTS_THRESHOLD = 5
+if (dbResults.length < MIN_RESULTS_THRESHOLD) {
+    // Only queries IGDB if < 5 DB results
+    const igdbGames = await igdbService.searchGames(query, 20)
+}
+```
+
+**Issues**:
+1. Popular franchises (Mario, Pokemon, Zelda) with 5+ DB games never query IGDB
+2. Layer 1 improvements completely bypassed for established franchises  
+3. Users miss new releases, better search results, updated IGDB data
+4. Database becomes stale and coverage remains poor
+
+**Solution - Hybrid Strategy**:
+
+```javascript
+class EnhancedGameDataService {
+  async searchGames(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
+    const sanitizedQuery = sanitizeSearchTerm(query);
+    if (!sanitizedQuery) return [];
+    
+    // Step 1: Always get database results
+    const dbResults = await this.searchGamesExact(sanitizedQuery, filters);
+    console.log(`📊 Database search: ${dbResults.length} results`);
+    
+    // Step 2: Determine if we need IGDB supplementation
+    const shouldQueryIGDB = this.shouldQueryIGDB(dbResults, query, filters);
+    
+    if (shouldQueryIGDB) {
+      try {
+        // Step 3: Get fresh IGDB results using Layer 1 improvements
+        const igdbGames = await this.getIGDBResults(query);
+        
+        // Step 4: Smart merge strategy
+        const mergedResults = await this.smartMerge(dbResults, igdbGames, query);
+        
+        // Step 5: Update database asynchronously (non-blocking)
+        this.updateDatabaseAsync(igdbGames, query);
+        
+        return mergedResults;
+      } catch (error) {
+        console.error('IGDB supplement failed:', error);
+        return dbResults; // Fallback to DB results
+      }
+    }
+    
+    return dbResults;
+  }
+  
+  /**
+   * Intelligent decision on when to query IGDB
+   */
+  private shouldQueryIGDB(dbResults: GameWithCalculatedFields[], query: string, filters?: SearchFilters): boolean {
+    // Always query IGDB if we have very few results
+    if (dbResults.length < 3) {
+      console.log(`🔍 Low DB results (${dbResults.length}) - querying IGDB`);
+      return true;
+    }
+    
+    // Check if this is a franchise search that might benefit from fresh data
+    if (this.isFranchiseQuery(query)) {
+      // For franchise searches, supplement if we have < 10 results
+      if (dbResults.length < 10) {
+        console.log(`🎮 Franchise query with ${dbResults.length} results - supplementing with IGDB`);
+        return true;
+      }
+      
+      // Also check if DB results are stale (older than 7 days)
+      const hasStaleResults = dbResults.some(game => 
+        this.isStaleGame(game, 7 * 24 * 60 * 60 * 1000) // 7 days
+      );
+      
+      if (hasStaleResults) {
+        console.log(`🕐 Stale database results detected - refreshing with IGDB`);
+        return true;
+      }
+    }
+    
+    // For specific searches, be more conservative
+    if (dbResults.length < 5) {
+      console.log(`🎯 Specific search with ${dbResults.length} results - querying IGDB`);
+      return true;
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Get IGDB results using enhanced Layer 1 service
+   */
+  private async getIGDBResults(query: string): Promise<IGDBGame[]> {
+    // Use the enhanced IGDB service we implemented in Layer 1
+    if (this.isFranchiseQuery(query)) {
+      return await igdbServiceV2.searchGames(query, 30); // More results for franchises
+    } else {
+      return await igdbServiceV2.searchGames(query, 15); // Moderate results for specific searches
+    }
+  }
+  
+  /**
+   * Smart merge strategy that prioritizes quality over quantity
+   */
+  private async smartMerge(
+    dbResults: GameWithCalculatedFields[], 
+    igdbGames: IGDBGame[], 
+    query: string
+  ): Promise<GameWithCalculatedFields[]> {
+    
+    // Convert IGDB games to local format
+    const igdbConverted = this.convertIGDBToLocal(igdbGames);
+    
+    // Create a map of existing games by IGDB ID to avoid duplicates
+    const existingIGDBIds = new Set(
+      dbResults
+        .filter(game => game.igdb_id)
+        .map(game => game.igdb_id)
+    );
+    
+    // Filter out IGDB games we already have in database
+    const newIGDBGames = igdbConverted.filter(game => 
+      !existingIGDBIds.has(game.igdb_id)
+    );
+    
+    console.log(`🔄 Merge: ${dbResults.length} DB + ${newIGDBGames.length} new IGDB = ${dbResults.length + newIGDBGames.length} total`);
+    
+    // Combine and sort by relevance
+    const combined = [...dbResults, ...newIGDBGames];
+    return this.sortByRelevance(combined, query);
+  }
+  
+  /**
+   * Check if a game's data is stale
+   */
+  private isStaleGame(game: GameWithCalculatedFields, maxAgeMs: number): boolean {
+    if (!game.updated_at) return true;
+    
+    const gameAge = Date.now() - new Date(game.updated_at).getTime();
+    return gameAge > maxAgeMs;
+  }
+  
+  /**
+   * Asynchronously update database with new IGDB results (non-blocking)
+   */
+  private updateDatabaseAsync(igdbGames: IGDBGame[], query: string): void {
+    // Don't block the response - update in background
+    setTimeout(async () => {
+      try {
+        const gamesToSave = igdbGames
+          .filter(game => game.name && game.id)
+          .slice(0, 10); // Limit batch size
+        
+        if (gamesToSave.length > 0) {
+          await this.batchInsertGames(gamesToSave);
+          console.log(`💾 Background: Saved ${gamesToSave.length} games to database`);
+        }
+      } catch (error) {
+        console.error('Background database update failed:', error);
+        // Don't throw - this is non-critical
+      }
+    }, 100); // Small delay to not block response
+  }
+  
+  /**
+   * Efficiently batch insert games to database
+   */
+  private async batchInsertGames(games: IGDBGame[]): Promise<void> {
+    const transformedGames = games.map(game => ({
+      igdb_id: game.id,
+      game_id: game.id.toString(),
+      name: game.name,
+      slug: generateSlug(game.name),
+      summary: game.summary,
+      release_date: game.first_release_date 
+        ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
+        : null,
+      cover_url: game.cover?.url ? this.transformImageUrl(game.cover.url) : null,
+      genres: game.genres?.map(g => g.name) || [],
+      platforms: game.platforms?.map(p => p.name) || [],
+      developer: game.involved_companies?.find(c => c.developer)?.company?.name,
+      publisher: game.involved_companies?.find(c => c.publisher)?.company?.name,
+      igdb_rating: Math.round(game.rating || 0),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+    
+    // Use upsert to handle duplicates gracefully
+    const { error } = await supabase
+      .from('game')
+      .upsert(transformedGames, { 
+        onConflict: 'igdb_id',
+        ignoreDuplicates: false 
+      });
+    
+    if (error) {
+      console.error('Batch insert failed:', error);
+      throw error;
+    }
+  }
+}
+```
+
+**Benefits of This Fix**:
+1. ✅ **Layer 1 improvements always active** - IGDB queried intelligently
+2. ✅ **Fresh data** - Stale database entries get refreshed  
+3. ✅ **Better franchise coverage** - Popular searches get supplemented
+4. ✅ **Performance maintained** - Database still provides fast base results
+5. ✅ **Non-blocking updates** - Database updated asynchronously
+6. ✅ **Smart thresholds** - Different rules for franchise vs specific searches
+
+**Implementation Priority**: **CRITICAL** - Must be implemented before Layer 1 improvements can be effective
+
+#### B. Comprehensive Relevance Score
 
 #### A. Comprehensive Relevance Score
 ```javascript

@@ -7,6 +7,7 @@ import { ResponsiveLandingPage } from './components/ResponsiveLandingPage';
 import { Footer } from './components/Footer';
 import { AuthModalProvider } from './context/AuthModalContext';
 import { AuthModal } from './components/auth/AuthModal';
+import { AdminProvider } from './context/AdminContext';
 import { GamePage } from './pages/GamePage';
 import { SearchResultsPage } from './pages/SearchResultsPage';
 import { UserPage } from './pages/UserPage';
@@ -26,6 +27,7 @@ import { Navigate } from 'react-router-dom';
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const EnhancedSearchTestPage = lazy(() => import('./pages/EnhancedSearchTestPage'));
+const DiagnosticPage = lazy(() => import('./pages/DiagnosticPage'));
 
 // Navigation debugging component
 const NavigationDebugger: React.FC = () => {
@@ -119,6 +121,18 @@ const AppContent: React.FC = () => {
                           </div>
                         }>
                           <EnhancedSearchTestPage />
+                        </Suspense>
+                      } 
+                    />
+                    <Route 
+                      path="/admin/diagnostic" 
+                      element={
+                        <Suspense fallback={
+                          <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                            <div className="text-white">Loading Search Diagnostic Tool...</div>
+                          </div>
+                        }>
+                          <DiagnosticPage />
                         </Suspense>
                       } 
                     />
@@ -219,9 +233,11 @@ function App() {
     <HelmetProvider>
       <ErrorBoundary>
         <AuthModalProvider>
-          <Router>
-            <AppContent />
-          </Router>
+          <AdminProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </AdminProvider>
         </AuthModalProvider>
       </ErrorBoundary>
     </HelmetProvider>

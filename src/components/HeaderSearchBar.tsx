@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X, Clock, TrendingUp, Database, Loader2, Star, Gamepad2, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGameSearch } from '../hooks/useGameSearch';
-import { igdbService } from '../services/igdbService';
-import { enhancedSearchService } from '../services/enhancedSearchService';
+import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
 import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
@@ -65,6 +64,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
+  const searchCoordinationRef = useRef<AdvancedSearchCoordination>(new AdvancedSearchCoordination());
 
   const { 
     searchTerm, 
@@ -118,12 +118,14 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
         }
       }
 
-      // Use enhanced IGDB search with sequel detection for header search
-      const igdbResults = await igdbService.searchWithSequels(query, maxSuggestions * 2); // Fetch extra to account for filtering
-      const transformedResults = igdbResults.map(game => igdbService.transformGame(game));
+      // Use Advanced Search Coordination with accent normalization for header search
+      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query, {
+        maxResults: maxSuggestions * 2, // Fetch extra to account for filtering
+        includeMetrics: false
+      });
       
-      // Filter out protected content
-      const filteredResults = filterProtectedContent(transformedResults);
+      // Results are already filtered by the coordination service
+      const filteredResults = searchResult.results;
 
       if (filteredResults && Array.isArray(filteredResults)) {
         const limitedResults = filteredResults.slice(0, maxSuggestions);
@@ -144,7 +146,8 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
         }
 
         if (import.meta.env.DEV) {
-          console.log('🌐 Game search (IGDB):', query, limitedResults.length, 'results');
+          console.log('🌐 Game search (Advanced Coordination):', query, limitedResults.length, 'results');
+          console.log('🔤 Search expanded queries:', searchResult.context.expandedQueries);
         }
       } else {
         setSuggestions([]);

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mario Search Data Quality Analysis</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        h1, h2, h3 {
+            color: #1f2937;
+        }
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        .game-list {
+            list-style: none;
+            padding: 0;
+        }
+        .game-item {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .game-name {
+            font-weight: 500;
+        }
+        .game-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        .warning {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            color: #92400e;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d1fae5;
+            border: 1px solid #34d399;
+            color: #065f46;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #fee2e2;
+            border: 1px solid #f87171;
+            color: #991b1b;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+        .iconic-games {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .iconic-game {
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .found { background: #d1fae5; }
+        .missing { background: #fee2e2; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background: #f3f4f6;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Mario Search Data Quality Analysis</h1>
+    
+    <div class="section">
+        <h2>Analysis Controls</h2>
+        <button onclick="analyzeMarioSearch()">🔍 Analyze Mario Search</button>
+        <button onclick="testAlternativeQueries()">🧪 Test Alternative Queries</button>
+    </div>
+
+    <div id="results" class="section" style="display: none;">
+        <h2>Analysis Results</h2>
+        <div id="loading" class="loading">Analyzing search results...</div>
+        <div id="content" style="display: none;"></div>
+    </div>
+
+    <script>
+        const EXPECTED_MARIO_GAMES = [
+            'Super Mario Bros',
+            'Super Mario World',
+            'Super Mario 64',
+            'Super Mario Odyssey',
+            'Mario Kart 8',
+            'Mario Kart 8 Deluxe',
+            'Mario Party',
+            'Super Mario Galaxy',
+            'New Super Mario Bros',
+            'Mario Bros',
+            'Paper Mario',
+            'Mario Tennis',
+            'Super Mario Maker',
+            'Luigi\'s Mansion',
+            'Mario & Luigi'
+        ];
+
+        async function analyzeMarioSearch() {
+            const resultsDiv = document.getElementById('results');
+            const loadingDiv = document.getElementById('loading');
+            const contentDiv = document.getElementById('content');
+            
+            resultsDiv.style.display = 'block';
+            loadingDiv.style.display = 'block';
+            contentDiv.style.display = 'none';
+            
+            try {
+                // Perform the search
+                const response = await fetch('http://localhost:8888/api/search?query=mario', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Search failed: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const games = data.games || [];
+                
+                // Analyze the results
+                const analysis = analyzeResults(games);
+                
+                // Display the analysis
+                displayAnalysis(analysis, games);
+                
+                loadingDiv.style.display = 'none';
+                contentDiv.style.display = 'block';
+                
+            } catch (error) {
+                loadingDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function analyzeResults(games) {
+            // Find iconic games
+            const foundIconic = [];
+            const missingIconic = [];
+            
+            EXPECTED_MARIO_GAMES.forEach(expectedGame => {
+                const found = games.find(game => 
+                    game.name.toLowerCase().includes(expectedGame.toLowerCase().replace('super ', '').replace('new ', ''))
+                );
+                
+                if (found) {
+                    foundIconic.push({
+                        expected: expectedGame,
+                        actual: found,
+                        position: games.indexOf(found) + 1
+                    });
+                } else {
+                    missingIconic.push(expectedGame);
+                }
+            });
+            
+            // Analyze IGDB data quality
+            const igdbGames = games.filter(g => g.source === 'igdb' || g.igdb_id);
+            const withRatings = games.filter(g => g.igdb_rating > 0);
+            const withGoodSampleSize = games.filter(g => (g.total_rating_count || 0) > 50);
+            const withFollows = games.filter(g => (g.follows || 0) > 0);
+            
+            // Analyze top 10
+            const top10Analysis = games.slice(0, 10).map((game, idx) => ({
+                position: idx + 1,
+                name: game.name,
+                rating: game.igdb_rating || 0,
+                ratingCount: game.total_rating_count || 0,
+                follows: game.follows || 0,
+                relevance: calculateRelevance(game.name, 'mario'),
+                isIconic: EXPECTED_MARIO_GAMES.some(eg => 
+                    game.name.toLowerCase().includes(eg.toLowerCase().replace('super ', '').replace('new ', ''))
+                )
+            }));
+            
+            // Identify problems
+            const problems = [];
+            
+            // Check for high-rated obscure games in top positions
+            const obscureHighRated = top10Analysis.filter(g => 
+                g.rating > 85 && 
+                g.follows < 1000 && 
+                !g.isIconic
+            );
+            
+            if (obscureHighRated.length > 2) {
+                problems.push('High-rated obscure games dominating top results');
+            }
+            
+            if (foundIconic.length < EXPECTED_MARIO_GAMES.length * 0.5) {
+                problems.push('Missing many iconic Mario games');
+            }
+            
+            if (withGoodSampleSize.length < games.length * 0.3) {
+                problems.push('Most games have insufficient rating data');
+            }
+            
+            return {
+                totalGames: games.length,
+                foundIconic,
+                missingIconic,
+                igdbCoverage: {
+                    total: igdbGames.length,
+                    withRatings: withRatings.length,
+                    withGoodSampleSize: withGoodSampleSize.length,
+                    withFollows: withFollows.length
+                },
+                top10Analysis,
+                problems,
+                dataQualityScore: calculateDataQualityScore(games, foundIconic.length, EXPECTED_MARIO_GAMES.length)
+            };
+        }
+        
+        function calculateRelevance(name, query) {
+            const n = name.toLowerCase();
+            const q = query.toLowerCase();
+            
+            if (n === q) return 1.0;
+            if (n.startsWith(q)) return 0.8;
+            if (n.includes(q)) return 0.6;
+            
+            const queryWords = q.split(/\s+/);
+            const nameWords = n.split(/\s+/);
+            const matchedWords = queryWords.filter(qw => 
+                nameWords.some(nw => nw.includes(qw) || qw.includes(nw))
+            );
+            
+            return matchedWords.length / queryWords.length * 0.4;
+        }
+        
+        function calculateDataQualityScore(games, foundIconic, expectedIconic) {
+            if (games.length === 0) return 0;
+            
+            const withRatings = games.filter(g => g.igdb_rating > 0).length;
+            const withGoodData = games.filter(g => (g.total_rating_count || 0) > 50).length;
+            const withFollows = games.filter(g => (g.follows || 0) > 0).length;
+            
+            return (
+                (withRatings / games.length) * 0.2 +
+                (withGoodData / games.length) * 0.3 +
+                (withFollows / games.length) * 0.3 +
+                (foundIconic / expectedIconic) * 0.2
+            );
+        }
+        
+        function displayAnalysis(analysis, games) {
+            const contentDiv = document.getElementById('content');
+            
+            let html = `
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Results</div>
+                        <div class="stat-value">${analysis.totalGames}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Iconic Games Found</div>
+                        <div class="stat-value">${analysis.foundIconic.length}/${EXPECTED_MARIO_GAMES.length}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">IGDB Coverage</div>
+                        <div class="stat-value">${analysis.igdbCoverage.total}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Data Quality Score</div>
+                        <div class="stat-value">${(analysis.dataQualityScore * 100).toFixed(1)}%</div>
+                    </div>
+                </div>
+            `;
+            
+            // Problems
+            if (analysis.problems.length > 0) {
+                html += '<h3>⚠️ Issues Detected</h3>';
+                analysis.problems.forEach(problem => {
+                    html += `<div class="warning">${problem}</div>`;
+                });
+            }
+            
+            // Top 10 Analysis
+            html += `
+                <h3>📊 Top 10 Results Analysis</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Game</th>
+                            <th>IGDB Rating</th>
+                            <th>Votes</th>
+                            <th>Follows</th>
+                            <th>Relevance</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            analysis.top10Analysis.forEach(game => {
+                const status = game.isIconic ? '✅ Iconic' : 
+                              game.rating > 85 && game.follows < 1000 ? '⚠️ Obscure' : 
+                              '📦 Regular';
+                
+                html += `
+                    <tr>
+                        <td>${game.position}</td>
+                        <td><strong>${game.name}</strong></td>
+                        <td>${game.rating || 'N/A'}</td>
+                        <td>${game.ratingCount}</td>
+                        <td>${game.follows}</td>
+                        <td>${(game.relevance * 100).toFixed(0)}%</td>
+                        <td>${status}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            
+            // Iconic Games Status
+            html += '<h3>🎯 Iconic Mario Games Coverage</h3>';
+            html += '<div class="iconic-games">';
+            
+            analysis.foundIconic.forEach(item => {
+                html += `
+                    <div class="iconic-game found">
+                        ✅ ${item.expected}<br>
+                        Found at #${item.position}: ${item.actual.name}
+                    </div>
+                `;
+            });
+            
+            analysis.missingIconic.forEach(game => {
+                html += `<div class="iconic-game missing">❌ ${game}</div>`;
+            });
+            
+            html += '</div>';
+            
+            // IGDB Data Quality
+            html += `
+                <h3>📈 IGDB Data Quality Assessment</h3>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-label">With Ratings</div>
+                        <div class="stat-value">${analysis.igdbCoverage.withRatings}/${analysis.totalGames}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Good Sample Size (50+ votes)</div>
+                        <div class="stat-value">${analysis.igdbCoverage.withGoodSampleSize}/${analysis.totalGames}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">With Follows Data</div>
+                        <div class="stat-value">${analysis.igdbCoverage.withFollows}/${analysis.totalGames}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Recommendations
+            html += '<h3>🎯 Recommendations</h3>';
+            
+            if (analysis.dataQualityScore < 0.4) {
+                html += `
+                    <div class="error">
+                        <strong>Critical:</strong> IGDB data quality is insufficient (${(analysis.dataQualityScore * 100).toFixed(1)}%)
+                        <ul>
+                            <li>Consider implementing alternative data sources (Steam API, Metacritic)</li>
+                            <li>Build a franchise recognition system</li>
+                            <li>Use Bayesian averaging for low sample size ratings</li>
+                            <li>Weight community engagement metrics more heavily</li>
+                        </ul>
+                    </div>
+                `;
+            } else if (analysis.dataQualityScore < 0.6) {
+                html += `
+                    <div class="warning">
+                        <strong>Poor:</strong> IGDB data has significant gaps (${(analysis.dataQualityScore * 100).toFixed(1)}%)
+                        <ul>
+                            <li>Implement franchise boosting for known series</li>
+                            <li>Fetch additional fields: follows, hypes, total_rating_count</li>
+                            <li>Consider supplementing with our own database metrics</li>
+                        </ul>
+                    </div>
+                `;
+            } else if (analysis.dataQualityScore < 0.8) {
+                html += `
+                    <div class="warning">
+                        <strong>Good:</strong> IGDB data works but needs enhancement (${(analysis.dataQualityScore * 100).toFixed(1)}%)
+                        <ul>
+                            <li>Fine-tune relevance vs rating weights</li>
+                            <li>Add confidence scoring for ratings</li>
+                        </ul>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="success">
+                        <strong>Excellent:</strong> IGDB data is sufficient for good sorting (${(analysis.dataQualityScore * 100).toFixed(1)}%)
+                    </div>
+                `;
+            }
+            
+            // Raw data sample
+            html += '<h3>📦 Raw Data Sample (First 5 Games)</h3>';
+            html += '<pre style="background: #f3f4f6; padding: 15px; border-radius: 6px; overflow-x: auto;">';
+            html += JSON.stringify(games.slice(0, 5), null, 2);
+            html += '</pre>';
+            
+            contentDiv.innerHTML = html;
+        }
+        
+        async function testAlternativeQueries() {
+            const queries = ['pokemon', 'zelda', 'final fantasy', 'call of duty', 'minecraft'];
+            const resultsDiv = document.getElementById('results');
+            const loadingDiv = document.getElementById('loading');
+            const contentDiv = document.getElementById('content');
+            
+            resultsDiv.style.display = 'block';
+            loadingDiv.style.display = 'block';
+            contentDiv.style.display = 'none';
+            
+            let html = '<h3>🧪 Alternative Query Tests</h3>';
+            
+            for (const query of queries) {
+                try {
+                    const response = await fetch(`http://localhost:8888/api/search?query=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    const games = data.games || [];
+                    
+                    const withRatings = games.filter(g => g.igdb_rating > 0).length;
+                    const withFollows = games.filter(g => (g.follows || 0) > 0).length;
+                    
+                    html += `
+                        <div class="stat-card">
+                            <strong>${query}</strong><br>
+                            Total: ${games.length}, With Ratings: ${withRatings}, With Follows: ${withFollows}
+                        </div>
+                    `;
+                } catch (error) {
+                    html += `
+                        <div class="error">
+                            <strong>${query}</strong>: ${error.message}
+                        </div>
+                    `;
+                }
+            }
+            
+            loadingDiv.style.display = 'none';
+            contentDiv.style.display = 'block';
+            contentDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
