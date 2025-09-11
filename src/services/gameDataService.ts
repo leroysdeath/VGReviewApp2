@@ -110,17 +110,27 @@ class GameDataService {
               name: transformedGame.name,
               slug: generateSlug(transformedGame.name), // Generate slug from name
               summary: transformedGame.summary,
+              description: transformedGame.description, // Add description field
               release_date: transformedGame.first_release_date
                 ? (typeof transformedGame.first_release_date === 'number' 
                     ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
                     : new Date(transformedGame.first_release_date).toISOString().split('T')[0])
                 : null,
               cover_url: transformedGame.cover_url,
+              pic_url: transformedGame.cover_url, // Add pic_url for compatibility
+              screenshots: transformedGame.screenshots || null, // Add screenshots
               genres: transformedGame.genres || [],
               platforms: transformedGame.platforms || [],
               developer: transformedGame.developer,
               publisher: transformedGame.publisher,
               igdb_rating: Math.round(transformedGame.igdb_rating || 0),
+              category: transformedGame.category || null, // Add category
+              alternative_names: transformedGame.alternative_names || null, // Add alternative names
+              franchise_name: transformedGame.franchise || null, // Add franchise name
+              collection_name: transformedGame.collection || null, // Add collection name
+              dlc_ids: transformedGame.dlcs || null, // Add DLC IDs
+              expansion_ids: transformedGame.expansions || null, // Add expansion IDs
+              similar_game_ids: transformedGame.similar_games || null, // Add similar game IDs
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
@@ -227,17 +237,27 @@ class GameDataService {
               name: transformedGame.name,
               slug: generateSlug(transformedGame.name), // Generate slug from name
               summary: transformedGame.summary,
+              description: transformedGame.description, // Add description field
               release_date: transformedGame.first_release_date
                 ? (typeof transformedGame.first_release_date === 'number' 
                     ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
                     : new Date(transformedGame.first_release_date).toISOString().split('T')[0])
                 : null,
               cover_url: transformedGame.cover_url,
+              pic_url: transformedGame.cover_url, // Add pic_url for compatibility
+              screenshots: transformedGame.screenshots || null, // Add screenshots
               genres: transformedGame.genres || [],
               platforms: transformedGame.platforms || [],
               developer: transformedGame.developer,
               publisher: transformedGame.publisher,
               igdb_rating: Math.round(transformedGame.igdb_rating || 0),
+              category: transformedGame.category || null, // Add category
+              alternative_names: transformedGame.alternative_names || null, // Add alternative names
+              franchise_name: transformedGame.franchise || null, // Add franchise name
+              collection_name: transformedGame.collection || null, // Add collection name
+              dlc_ids: transformedGame.dlcs || null, // Add DLC IDs
+              expansion_ids: transformedGame.expansions || null, // Add expansion IDs
+              similar_game_ids: transformedGame.similar_games || null, // Add similar game IDs
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
