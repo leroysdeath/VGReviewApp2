@@ -359,6 +359,12 @@ export class GameDataServiceV2 {
       developer: game.involved_companies?.find(c => c.developer)?.company?.name,
       publisher: game.involved_companies?.find(c => c.publisher)?.company?.name,
       igdb_rating: Math.round(game.rating || 0),
+      // NEW: Store IGDB engagement metrics
+      total_rating: game.total_rating ? Math.round(game.total_rating) : null,
+      rating_count: game.rating_count || 0,
+      follows: game.follows || 0,
+      hypes: game.hypes || 0,
+      // popularity_score will be auto-calculated by database trigger
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));

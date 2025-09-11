@@ -47,7 +47,16 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
   // Memoize the default excludeGameIds to prevent re-renders
   const memoizedExcludeIds = useMemo(() => excludeGameIds || [], [excludeGameIds]);
   const [games, setGames] = useState<RatedGame[]>([]);
-  const [igdbGames, setIgdbGames] = useState<any[]>([]);
+  const [igdbGames, setIgdbGames] = useState<Array<{
+    id: number;
+    name?: string;
+    cover?: { url?: string };
+    genres?: Array<{ name: string }>;
+    platforms?: Array<{ name: string }>;
+    first_release_date?: number;
+    summary?: string;
+    rating?: number;
+  }>>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +80,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
       
       try {
         // If in collection/wishlist mode, fetch started/finished games to exclude them
-        let excludedIgdbIds = new Set<number>();
+        const excludedIgdbIds = new Set<number>();
         if (mode === 'collection' || mode === 'wishlist') {
           const { data: progressData } = await supabase
             .from('game_progress')

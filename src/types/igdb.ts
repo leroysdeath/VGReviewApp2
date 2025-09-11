@@ -58,8 +58,13 @@ export interface IGDBGame {
     name: string;
   };
   
+  // Engagement metrics (now being used)
+  total_rating?: number;        // Combined critic + user rating (0-100)
+  rating_count?: number;        // Number of critic reviews
+  follows?: number;             // Community following count  
+  hypes?: number;               // Pre-release buzz count
+  
   // Fields we DON'T use (excluded from queries)
-  // total_rating?: number;
   // total_rating_count?: number;
   // aggregated_rating?: number;
   // aggregated_rating_count?: number;

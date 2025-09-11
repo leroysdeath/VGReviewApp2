@@ -37,6 +37,12 @@ export interface Game {
   publisher?: string;
   igdb_rating?: number;
   category?: number;
+  // New IGDB metrics columns
+  total_rating?: number;     // Combined critic + user rating (0-100)
+  rating_count?: number;     // Number of critic reviews
+  follows?: number;          // Community following count
+  hypes?: number;            // Pre-release buzz count
+  popularity_score?: number; // Calculated popularity metric
   created_at: string;
   updated_at: string;
 }
