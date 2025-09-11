@@ -77,7 +77,7 @@ export const useGameSearch = () => {
         minRating: searchParams.minRating
       });
       
-      // Apply content protection filtering to ensure consistent behavior with HeaderSearchBar
+      // Apply content protection filtering
       const filteredResults = filterProtectedContent(searchResults);
 
       const data = {
