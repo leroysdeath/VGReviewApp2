@@ -579,6 +579,7 @@ class GameDataService {
         id: -(game.id || 0), // Negative ID to indicate it's from IGDB
         igdb_id: game.id || 0,
         name: game.name || 'Unknown Game',
+        slug: generateSlug(game.name || 'Unknown Game'), // Generate slug for IGDB games
       summary: game.summary || null,
       release_date: game.first_release_date ? 
         new Date(game.first_release_date * 1000).toISOString().split('T')[0] : null,
@@ -602,10 +603,11 @@ class GameDataService {
     
     // DEBUG: Log the conversion
     if (game.name && game.name.toLowerCase().includes('expedition')) {
-      console.log('🔄 DEBUG - Converting IGDB game:', {
+      console.error('🔄 DEBUG - Converting IGDB game:', {
         original_id: game.id,
         converted_id: converted.id,
         igdb_id: converted.igdb_id,
+        slug: converted.slug,
         name: converted.name
       });
     }
