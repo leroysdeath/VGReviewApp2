@@ -26,6 +26,7 @@ export interface Game {
   id: number;
   igdb_id: number;
   name: string;
+  slug?: string;
   summary?: string;
   release_date?: string;
   cover_url?: string;

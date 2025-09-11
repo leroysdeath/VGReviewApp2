@@ -334,20 +334,24 @@ export const ResponsiveNavbar: React.FC = () => {
     }
   };
 
-  const handleSuggestionClick = (game: Game) => {
+  const handleSuggestionClick = (game: GameWithCalculatedFields) => {
     // TEMPORARY DEBUG: Log the game object being clicked
     console.error('🎮 CRITICAL - CLICKED GAME - Full object:', game);
     console.error('📍 CRITICAL - ID values:', {
       id: game.id,
       igdb_id: game.igdb_id,
+      slug: game.slug,
       typeof_id: typeof game.id,
       typeof_igdb_id: typeof game.igdb_id
     });
-    console.error('🚀 CRITICAL - Will navigate to:', `/game/${game.id}`);
+    
+    // Use slug if available, otherwise use igdb_id (not database id to avoid collision)
+    const identifier = game.slug || game.igdb_id;
+    console.error('🚀 CRITICAL - Will navigate to:', `/game/${identifier}`);
     
     setSearchQuery('');
     saveRecentSearch(game.name, 'games');
-    navigate(`/game/${game.id}`);
+    navigate(`/game/${identifier}`);
     setIsSearchOpen(false);
     setShowSuggestions(false);
     setHasSearched(false);
