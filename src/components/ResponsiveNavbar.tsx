@@ -644,7 +644,7 @@ export const ResponsiveNavbar: React.FC = () => {
                                         <span className="truncate">
                                           {(() => {
                                             const mappedPlatforms = mapPlatformNames(game.platforms);
-                                            return mappedPlatforms.slice(0, 3).join(', ') + (mappedPlatforms.length > 3 ? '...' : '');
+                                            return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
                                           })()}
                                         </span>
                                       </>
@@ -928,7 +928,7 @@ export const ResponsiveNavbar: React.FC = () => {
                                     <span className="truncate">
                                       {(() => {
                                         const mappedPlatforms = mapPlatformNames(game.platforms);
-                                        return mappedPlatforms.slice(0, 3).join(', ') + (mappedPlatforms.length > 3 ? '...' : '');
+                                        return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
                                       })()}
                                     </span>
                                   </>
