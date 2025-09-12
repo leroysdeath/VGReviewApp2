@@ -89,7 +89,11 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
     error,
     toggleLike,
     loadComments,
-    postComment
+    postComment,
+    updateComment,
+    removeComment,
+    toggleCommentLike,
+    likingCommentId
   } = useReviewInteractions({
     reviewId: parseInt(review.id),
     userId: currentUserId
@@ -280,50 +284,41 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {review.hasText && (
             <p className={`
               text-gray-300 leading-relaxed mb-4 transition-colors duration-300
-              group-hover:text-gray-200 whitespace-pre-line
+              group-hover:text-gray-200 whitespace-pre-line line-clamp-3
               ${compact ? 'text-sm' : 'text-base'}
             `}>
-              {compact ? escapeHtml(truncateText(review.text, 120)) : escapeHtml(review.text)}
+              {escapeHtml(truncateText(review.text, 144))}
             </p>
           )}
 
           {/* Clear float to ensure interactions appear below */}
           <div className="clear-both"></div>
 
-          {/* Compact Interactions for mobile/compact view */}
-          {compact && (
-            <div className="flex items-center gap-3 mt-2">
-              <div className="flex items-center gap-1 text-gray-400">
-                <Heart className={`h-4 w-4 ${isLiked ? 'fill-current text-red-500' : ''}`} />
-                <span className="text-xs">{likeCount}</span>
-              </div>
-              <div className="flex items-center gap-1 text-gray-400">
-                <MessageSquare className="h-4 w-4" />
-                <span className="text-xs">{commentCount}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Full Review Interactions */}
-          {!compact && (
-            <ReviewInteractions
-              reviewId={review.id}
-              initialLikeCount={review.likeCount || likeCount}
-              initialCommentCount={review.commentCount || commentCount}
-              isLiked={isLiked}
-              onLike={toggleLike}
-              onUnlike={toggleLike}
-              comments={comments}
-              onAddComment={postComment}
-              isLoadingComments={isLoadingComments}
-              isLoadingLike={isLoadingLike}
-              error={error || undefined}
-              className="mt-3"
-              reviewAuthorId={parseInt(review.userId)}
-              currentUserId={currentUserId}
-              disableCommentHover={true}
-            />
-          )}
+          {/* Review Interactions - now shown for both compact and full modes */}
+          <ReviewInteractions
+            reviewId={review.id}
+            initialLikeCount={review.likeCount || likeCount}
+            initialCommentCount={review.commentCount || commentCount}
+            isLiked={isLiked}
+            onLike={toggleLike}
+            onUnlike={toggleLike}
+            comments={comments}
+            onAddComment={postComment}
+            onEditComment={updateComment}
+            onDeleteComment={removeComment}
+            onLikeComment={toggleCommentLike}
+            onUnlikeComment={toggleCommentLike}
+            isLoadingComments={isLoadingComments}
+            isLoadingLike={isLoadingLike}
+            isLikingComment={false}
+            likingCommentId={likingCommentId}
+            error={error || undefined}
+            className="mt-3"
+            reviewAuthorId={parseInt(review.userId)}
+            currentUserId={currentUserId}
+            disableCommentHover={true}
+            disableComments={true}
+          />
         </div>
       </div>
 
