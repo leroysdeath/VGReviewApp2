@@ -444,7 +444,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           ) : recentReviews.length > 0 ? (
             <div className="space-y-4">
               {recentReviews.map((review) => (
-                <ReviewCard key={review.id} review={review} compact currentUserId={dbUserId ?? undefined} />
+                <ReviewCard key={review.id} review={review} currentUserId={dbUserId ?? undefined} />
               ))}
             </div>
           ) : (

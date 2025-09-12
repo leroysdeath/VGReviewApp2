@@ -27,6 +27,7 @@ interface ReviewInteractionsProps {
   currentUserId?: number;
   disabled?: boolean;
   disableCommentHover?: boolean;
+  disableComments?: boolean;
 }
 
 export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
@@ -51,7 +52,8 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   reviewAuthorId,
   currentUserId,
   disabled = false,
-  disableCommentHover = false
+  disableCommentHover = false,
+  disableComments = false
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -142,6 +144,11 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
     e.preventDefault();
     e.stopPropagation();
     
+    // Don't toggle if comments are disabled
+    if (disableComments) {
+      return;
+    }
+    
     setShowComments(!showComments);
     // Comments are already loaded in background, just toggle visibility
     console.log('📋 Toggling comments view, already loaded in background');
@@ -193,28 +200,30 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
         <button
           onClick={toggleComments}
           className={`flex items-center gap-2 transition-colors ${
-            disableCommentHover ? '' : 'hover:text-white'
+            disableComments ? 'cursor-default' : disableCommentHover ? '' : 'hover:text-white'
           }`}
-          aria-label={showComments ? 'Hide comments' : 'Show comments'}
-          title={isLoadingComments && !showComments ? 'Loading comments...' : ''}
+          aria-label={disableComments ? 'Comments disabled' : showComments ? 'Hide comments' : 'Show comments'}
+          title={disableComments ? 'View full review to see comments' : isLoadingComments && !showComments ? 'Loading comments...' : ''}
         >
           <MessageSquare className="h-5 w-5" />
           <span className="relative">
             {initialCommentCount}
-            {isLoadingComments && !showComments && (
+            {isLoadingComments && !showComments && !disableComments && (
               <span className="absolute -top-1 -right-2 w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
             )}
           </span>
-          {showComments ? (
-            <ChevronUp className="h-4 w-4" />
-          ) : (
-            <ChevronDown className="h-4 w-4" />
+          {!disableComments && (
+            showComments ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )
           )}
         </button>
       </div>
       
       {/* Comments Section */}
-      {showComments && (
+      {showComments && !disableComments && (
         <div className="pt-2 border-t border-gray-700">
           {/* Comment Form */}
           <form onSubmit={handleCommentSubmit} className="mb-4">
