@@ -1441,6 +1441,65 @@ export const deleteComment = async (
 };
 
 /**
+ * Delete a review
+ */
+export const deleteReview = async (
+  reviewId: number
+): Promise<ServiceResponse<boolean>> => {
+  console.log('🗑️ deleteReview called with:', { reviewId });
+  
+  try {
+    // Validate input
+    if (!reviewId || isNaN(reviewId)) {
+      return { success: false, error: 'Invalid review ID' };
+    }
+
+    // Get current user ID to verify ownership
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // Verify the review belongs to the current user
+    const { data: existingReview, error: verifyError } = await supabase
+      .from('rating')
+      .select('id, user_id')
+      .eq('id', reviewId)
+      .eq('user_id', userId)
+      .single();
+
+    if (verifyError || !existingReview) {
+      console.error('❌ Review not found or access denied:', verifyError);
+      return { success: false, error: 'Review not found or you do not have permission to delete it' };
+    }
+
+    // Delete review (this will cascade delete related comments and likes)
+    console.log('📤 Deleting review:', { reviewId });
+    const { error } = await supabase
+      .from('rating')
+      .delete()
+      .eq('id', reviewId);
+
+    if (error) {
+      console.error('❌ Error deleting review:', error);
+      throw error;
+    }
+    console.log('✅ Review deleted successfully:', { reviewId });
+
+    return {
+      success: true,
+      data: true
+    };
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete review'
+    };
+  }
+};
+
+/**
  * Get recent reviews from all users (for landing page)
  */
 export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>> => {
