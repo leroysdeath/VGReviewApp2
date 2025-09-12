@@ -194,22 +194,30 @@ export const useAuth = (): UseAuthReturn => {
         setDbUserId(result.userId);
         console.log('✅ Database user ID set:', result.userId);
         
-        // Fetch the full user profile from database to get avatar_url
+        // Fetch the full user profile from database to get avatar_url and username
         const { data: dbUser, error: dbError } = await supabase
           .from('user')
-          .select('avatar_url')
+          .select('avatar_url, username, name')
           .eq('id', result.userId)
           .single();
         
-        if (!dbError && dbUser?.avatar_url) {
-          // Update the user state with the database avatar
+        if (!dbError && dbUser) {
+          // Update the user state with the database avatar and username
           setUser(prevUser => {
             if (prevUser) {
-              return { ...prevUser, avatar: dbUser.avatar_url };
+              return { 
+                ...prevUser, 
+                avatar: dbUser.avatar_url || prevUser.avatar,
+                name: dbUser.username || dbUser.name || prevUser.name // Prefer username over name
+              };
             }
             return prevUser;
           });
-          console.log('✅ User avatar updated from database:', dbUser.avatar_url);
+          console.log('✅ User profile updated from database:', {
+            avatar: dbUser.avatar_url,
+            username: dbUser.username,
+            name: dbUser.name
+          });
         }
       } else {
         console.error('Failed to get/create database user:', result.error);
@@ -406,6 +414,7 @@ export const useAuth = (): UseAuthReturn => {
       if (dbUserId && session?.user) {
         const dbUpdates = {
           name: updates.username || user?.name || '',
+          username: updates.username || undefined, // Also update username column
           avatar_url: updates.avatar
         };
         
@@ -414,9 +423,30 @@ export const useAuth = (): UseAuthReturn => {
           return { error: result.error };
         }
 
-        // Update local state
-        if (user) {
-          setUser({ ...user, name: updates.username || user.name, avatar: updates.avatar || user.avatar });
+        // Re-fetch the updated profile from database to ensure state sync
+        const { data: updatedUser, error: fetchError } = await supabase
+          .from('user')
+          .select('avatar_url, username, name')
+          .eq('id', dbUserId)
+          .single();
+        
+        if (!fetchError && updatedUser) {
+          // Update local state with fresh database values
+          setUser(prevUser => {
+            if (prevUser) {
+              return { 
+                ...prevUser, 
+                name: updatedUser.username || updatedUser.name || prevUser.name,
+                avatar: updatedUser.avatar_url || prevUser.avatar
+              };
+            }
+            return prevUser;
+          });
+        } else {
+          // Fallback to optimistic update if fetch fails
+          if (user) {
+            setUser({ ...user, name: updates.username || user.name, avatar: updates.avatar || user.avatar });
+          }
         }
       }
 

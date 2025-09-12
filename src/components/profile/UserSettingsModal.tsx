@@ -9,7 +9,6 @@ interface UserSettingsModalProps {
   userId: string;
   userData?: {
     username: string;
-    displayName?: string;
     email: string;
     bio?: string;
     location?: string;
@@ -43,7 +42,6 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   // Use provided user data directly - no fetching or refreshing
   const currentUserData = propUserData || {
     username: '',
-    displayName: '',
     email: '',
     bio: '',
     location: '',

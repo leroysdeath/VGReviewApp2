@@ -1,5 +1,5 @@
 // src/components/auth/AuthModal.tsx - COMPLETE REPLACEMENT
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Eye, EyeOff, Mail, Key, User, AlertCircle, Check, Loader2, Gamepad2, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useAuthModal } from '../../context/AuthModalContext';
 import { LegalModal } from '../LegalModal';
 import { supabase } from '../../services/supabase';
+import { authService } from '../../services/authService';
 
 // Form validation schemas
 const loginSchema = z.object({
@@ -66,6 +67,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy'>('terms');
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState<string>('');
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameCheckTimeout, setUsernameCheckTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -88,6 +92,49 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       agreeToTerms: false
     }
   });
+
+  // Check username availability with debounce
+  const checkUsernameAvailability = useCallback(async (username: string) => {
+    if (!username || username.length < 3) {
+      setUsernameAvailable(null);
+      return;
+    }
+
+    setCheckingUsername(true);
+    try {
+      const { available } = await authService.checkUsernameAvailability(username);
+      setUsernameAvailable(available);
+    } catch (error) {
+      console.error('Username check failed:', error);
+      setUsernameAvailable(null);
+    } finally {
+      setCheckingUsername(false);
+    }
+  }, []);
+
+  // Debounced username check effect
+  useEffect(() => {
+    const username = signupForm.watch('username');
+    
+    if (usernameCheckTimeout) {
+      clearTimeout(usernameCheckTimeout);
+    }
+
+    if (username && username.length >= 3) {
+      const timeout = setTimeout(() => {
+        checkUsernameAvailability(username);
+      }, 500); // 500ms debounce
+      setUsernameCheckTimeout(timeout);
+    } else {
+      setUsernameAvailable(null);
+    }
+
+    return () => {
+      if (usernameCheckTimeout) {
+        clearTimeout(usernameCheckTimeout);
+      }
+    };
+  }, [signupForm.watch('username')]);
 
   // Reset password form
   const resetForm = useForm<ResetFormValues>({
@@ -455,15 +502,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     })}
                     type="text"
                     id="username"
-                    className="w-full pl-10 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full pl-10 pr-20 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent ${
+                      usernameAvailable === false ? 'border-red-500 focus:ring-red-500' : 
+                      usernameAvailable === true ? 'border-green-500 focus:ring-green-500' : 
+                      'border-gray-600 focus:ring-blue-500'
+                    }`}
                     placeholder="Choose a username"
                     disabled={isLoading}
                     maxLength={21}
                   />
-                  <span className="absolute right-3 top-3 text-xs text-gray-500">
-                    {signupForm.watch('username')?.length || 0}/21
-                  </span>
+                  <div className="absolute right-3 top-3 flex items-center gap-2">
+                    {checkingUsername && (
+                      <Loader2 className="h-4 w-4 text-gray-400 animate-spin" />
+                    )}
+                    {!checkingUsername && usernameAvailable === true && (
+                      <Check className="h-4 w-4 text-green-400" />
+                    )}
+                    {!checkingUsername && usernameAvailable === false && (
+                      <X className="h-4 w-4 text-red-400" />
+                    )}
+                    <span className="text-xs text-gray-500">
+                      {signupForm.watch('username')?.length || 0}/21
+                    </span>
+                  </div>
                 </div>
+                {usernameAvailable === false && !checkingUsername && (
+                  <p className="mt-1 text-sm text-red-400">This username is already taken</p>
+                )}
                 {signupForm.formState.errors.username && (
                   <p className="mt-1 text-sm text-red-400">{signupForm.formState.errors.username.message}</p>
                 )}

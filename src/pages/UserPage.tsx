@@ -349,7 +349,6 @@ export const UserPage: React.FC = () => {
             userId={authUser?.id || ''}
             userData={{
               username: transformedUser.username,
-              displayName: user.display_name || '',
               email: user.email || authUser?.email || '',
               bio: transformedUser.bio,
               location: transformedUser.location || '',

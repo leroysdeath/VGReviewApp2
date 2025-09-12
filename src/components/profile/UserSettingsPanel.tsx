@@ -30,7 +30,6 @@ const getProfileSchema = () => z.object({
     .max(21, 'Username must be 21 characters or less')
     .transform(val => val.toLowerCase())
     .or(z.literal('')),
-  displayName: z.string().optional().or(z.literal('')),
   bio: z.string().max(160, 'Bio must be 160 characters or less').optional().or(z.literal('')),
   location: z.string().max(50, 'Location must be 50 characters or less').optional().or(z.literal('')),
   website: z.string()
@@ -86,11 +85,6 @@ const getDynamicProfileSchema = (changedFields: Set<string>) => {
     schema.username = z.string().optional().or(z.literal(''));
   }
   
-  if (changedFields.has('displayName')) {
-    schema.displayName = z.string().optional().or(z.literal(''));
-  } else {
-    schema.displayName = z.string().optional().or(z.literal(''));
-  }
   
   if (changedFields.has('bio')) {
     schema.bio = z.string().max(160, 'Bio must be 160 characters or less').optional().or(z.literal(''));
@@ -186,7 +180,6 @@ interface UserSettingsPanelProps {
   userId?: string;  // Add this for compatibility
   initialData?: {   // Make this optional
     username: string;
-    displayName?: string;
     email: string;
     bio?: string;
     location?: string;
@@ -214,7 +207,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   userId,
   initialData = {    // Provide default values
     username: '',
-    displayName: '',
     email: '',
     bio: '',
     location: '',
@@ -253,7 +245,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   }>({ checking: false, available: null, message: '' });
   const [originalValues, setOriginalValues] = useState<ProfileFormValues & { avatar?: string }>({
     username: initialData.username,
-    displayName: initialData.displayName || '',
     bio: initialData.bio || '',
     location: initialData.location || '',
     website: initialData.website || '',
@@ -307,8 +298,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   useEffect(() => {
     const newValues = {
       username: initialData.username,
-      displayName: initialData.displayName || '',
-      bio: initialData.bio || '',
+        bio: initialData.bio || '',
       location: initialData.location || '',
       website: initialData.website || '',
       platform: initialData.platform || '',
@@ -821,23 +811,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               )}
             </div>
 
-            {/* Display Name */}
-            <div>
-              <label htmlFor="displayName" className="block text-sm font-medium text-gray-300 mb-1">
-                Display Name (optional)
-              </label>
-              <input
-                id="displayName"
-                type="text"
-                {...register('displayName')}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                placeholder="Your public display name"
-                disabled={isSubmitting}
-              />
-              {errors.displayName && (
-                <p className="mt-1 text-sm text-red-400">{errors.displayName.message}</p>
-              )}
-            </div>
 
 
             {/* Bio */}
