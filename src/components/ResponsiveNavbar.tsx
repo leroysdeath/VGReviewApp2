@@ -10,6 +10,7 @@ import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
 import { filterProtectedContent } from '../utils/contentProtectionFilter';
+import { mapPlatformNames } from '../utils/platformMapping';
 
 // Using GameWithCalculatedFields from database types
 
@@ -637,11 +638,15 @@ export const ResponsiveNavbar: React.FC = () => {
                                     {game.release_date && (
                                       <span>{formatReleaseYear(game.release_date)}</span>
                                     )}
-                                    {game.averageUserRating && (
+                                    {game.platforms && game.platforms.length > 0 && (
                                       <>
                                         {game.release_date && <span>•</span>}
-                                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                        <span>{game.averageUserRating?.toFixed(1) || '0.0'}</span>
+                                        <span className="truncate">
+                                          {(() => {
+                                            const mappedPlatforms = mapPlatformNames(game.platforms);
+                                            return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
+                                          })()}
+                                        </span>
                                       </>
                                     )}
                                   </div>
@@ -917,11 +922,15 @@ export const ResponsiveNavbar: React.FC = () => {
                                 {game.release_date && (
                                   <span>{formatReleaseYear(game.release_date)}</span>
                                 )}
-                                {game.averageUserRating && (
+                                {game.platforms && game.platforms.length > 0 && (
                                   <>
                                     {game.release_date && <span>•</span>}
-                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                    <span>{game.averageUserRating?.toFixed(1) || '0.0'}</span>
+                                    <span className="truncate">
+                                      {(() => {
+                                        const mappedPlatforms = mapPlatformNames(game.platforms);
+                                        return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
+                                      })()}
+                                    </span>
                                   </>
                                 )}
                               </div>

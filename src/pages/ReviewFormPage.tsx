@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart } from 'lucide-react';
+import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart, Trash2 } from 'lucide-react';
 import { gameDataService } from '../services/gameDataService';
 import { gameSearchService } from '../services/gameSearchService';
 import type { Game, GameWithCalculatedFields } from '../types/database';
 import { GamePickerModal } from '../components/GamePickerModal';
-import { createReview, getUserReviewForGameByIGDBId, updateReview } from '../services/reviewService';
+import { createReview, getUserReviewForGameByIGDBId, updateReview, deleteReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
 import { useAuth } from '../hooks/useAuth';
 import { mapPlatformNames } from '../utils/platformMapping';
@@ -97,6 +97,8 @@ export const ReviewFormPage: React.FC = () => {
     selectedPlatforms: string[];
   } | null>(null);
   const [hasFormChanges, setHasFormChanges] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     // Load game if gameId is provided (gameId is IGDB ID from URL)
@@ -497,6 +499,34 @@ export const ReviewFormPage: React.FC = () => {
     if (e.key === 'Enter') {
       e.preventDefault();
       setShowSearchModal(true);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!existingReviewId) return;
+    
+    setDeleteLoading(true);
+    try {
+      const result = await deleteReview(existingReviewId);
+      
+      if (result.success) {
+        console.log('Review deleted successfully');
+        // Navigate back to the game page
+        if (selectedGame?.igdb_id) {
+          navigate(`/game/${selectedGame.igdb_id}`);
+        } else {
+          navigate(-1);
+        }
+      } else {
+        console.error('Failed to delete review:', result.error);
+        alert(`Failed to delete review: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      alert('Failed to delete review. Please try again.');
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -1020,6 +1050,17 @@ export const ReviewFormPage: React.FC = () => {
 
             {/* Submit Buttons */}
             <div className="flex justify-end gap-4 pt-6">
+              {isEditMode && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={deleteLoading}
+                  className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => navigate(-1)}
@@ -1065,6 +1106,44 @@ export const ReviewFormPage: React.FC = () => {
           userId={user.id.toString()}
           mode="review"
         />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-semibold text-white mb-4">Delete Review</h3>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to delete your review for {selectedGame?.name}? This action cannot be undone.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={handleDelete}
+                disabled={deleteLoading}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {deleteLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleteLoading}
+                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
