@@ -10,6 +10,7 @@ import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
 import { filterProtectedContent } from '../utils/contentProtectionFilter';
+import { mapPlatformNames } from '../utils/platformMapping';
 
 // Using GameWithCalculatedFields from database types
 
@@ -641,7 +642,10 @@ export const ResponsiveNavbar: React.FC = () => {
                                       <>
                                         {game.release_date && <span>•</span>}
                                         <span className="truncate">
-                                          {game.platforms.slice(0, 3).join(', ')}{game.platforms.length > 3 ? '...' : ''}
+                                          {(() => {
+                                            const mappedPlatforms = mapPlatformNames(game.platforms);
+                                            return mappedPlatforms.slice(0, 3).join(', ') + (mappedPlatforms.length > 3 ? '...' : '');
+                                          })()}
                                         </span>
                                       </>
                                     )}
@@ -922,7 +926,10 @@ export const ResponsiveNavbar: React.FC = () => {
                                   <>
                                     {game.release_date && <span>•</span>}
                                     <span className="truncate">
-                                      {game.platforms.slice(0, 3).join(', ')}{game.platforms.length > 3 ? '...' : ''}
+                                      {(() => {
+                                        const mappedPlatforms = mapPlatformNames(game.platforms);
+                                        return mappedPlatforms.slice(0, 3).join(', ') + (mappedPlatforms.length > 3 ? '...' : '');
+                                      })()}
                                     </span>
                                   </>
                                 )}
