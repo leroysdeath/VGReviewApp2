@@ -144,9 +144,9 @@ export class GameDataServiceV2 {
     try {
       // Use the enhanced IGDB service we implemented in Layer 1
       if (this.isFranchiseQuery(query)) {
-        return await igdbServiceV2.searchGames(query, 30); // More results for franchises
+        return await igdbServiceV2.searchGames(query, 150); // Get many results for franchises to enable pagination
       } else {
-        return await igdbServiceV2.searchGames(query, 15); // Moderate results for specific searches
+        return await igdbServiceV2.searchGames(query, 100); // Get more results for better pagination
       }
     } catch (error) {
       console.error('Enhanced IGDB search failed:', error);
@@ -288,12 +288,13 @@ export class GameDataServiceV2 {
   
   /**
    * Calculate relevance score for a game against query
+   * Enhanced with IGDB metrics for professional-grade ranking
    */
   private calculateRelevanceScore(game: GameWithCalculatedFields, query: string): number {
     const name = game.name.toLowerCase();
     let score = 0;
     
-    // Exact match - highest score
+    // 1. Text Relevance (0-100 points)
     if (name === query) {
       score += 100;
     } else if (name.startsWith(query)) {
@@ -310,12 +311,118 @@ export class GameDataServiceV2 {
       score += (matchedWords.length / queryWords.length) * 40;
     }
     
-    // Quality bonuses
-    if (game.igdb_rating > 80) score += 10;
-    if (game.totalUserRatings > 10) score += 5;
-    if (game.summary && game.summary.length > 50) score += 5;
+    // 2. Quality Score (0-50 points) - Based on IGDB total_rating
+    const totalRating = (game as any).total_rating;
+    if (totalRating) {
+      // Non-linear scaling to favor highly rated games
+      // 90-100: Maximum bonus (45-50 points)
+      // 80-90: Strong bonus (35-45 points)  
+      // 70-80: Moderate bonus (20-35 points)
+      // Below 70: Minimal bonus
+      if (totalRating >= 90) {
+        score += 45 + (totalRating - 90) * 0.5;
+      } else if (totalRating >= 80) {
+        score += 35 + (totalRating - 80);
+      } else if (totalRating >= 70) {
+        score += 20 + (totalRating - 70) * 1.5;
+      } else {
+        score += totalRating * 0.285; // ~20 points at 70
+      }
+    } else if (game.igdb_rating > 0) {
+      // Fallback to old igdb_rating if available (reduced weight)
+      const qualityScore = Math.pow(game.igdb_rating / 100, 1.5) * 25;
+      score += qualityScore;
+    }
     
-    return score;
+    // 3. Authority Score (0-45 points) - Tiered based on rating_count
+    const ratingCount = (game as any).rating_count || 0;
+    
+    // Tiered authority scoring for more intuitive results
+    // Elite tier (1000+ reviews): 35-45 points
+    // High tier (500-999 reviews): 28-35 points
+    // Mid tier (100-499 reviews): 20-28 points
+    // Low tier (20-99 reviews): 10-20 points
+    // Minimal tier (<20 reviews): 0-10 points
+    let authorityScore = 0;
+    if (ratingCount >= 1000) {
+      authorityScore = 35 + Math.min(Math.log10(ratingCount / 1000) * 10, 10);
+    } else if (ratingCount >= 500) {
+      authorityScore = 28 + ((ratingCount - 500) / 500) * 7;
+    } else if (ratingCount >= 100) {
+      authorityScore = 20 + ((ratingCount - 100) / 400) * 8;
+    } else if (ratingCount >= 20) {
+      authorityScore = 10 + ((ratingCount - 20) / 80) * 10;
+    } else {
+      authorityScore = (ratingCount / 20) * 10;
+    }
+    
+    score += authorityScore;
+    
+    // 4. Engagement Score (0-25 points) - Based on follows and hypes
+    const follows = (game as any).follows || 0;
+    const hypes = (game as any).hypes || 0;
+    
+    // Hypes indicate upcoming/recent interest (weighted higher)
+    // Follows indicate sustained interest
+    let engagementScore = 0;
+    
+    // Hype factor (0-15 points) - for upcoming or recently released games
+    if (hypes > 0) {
+      if (hypes >= 100) {
+        engagementScore += 12 + Math.min(Math.log10(hypes / 100) * 3, 3);
+      } else if (hypes >= 50) {
+        engagementScore += 8 + ((hypes - 50) / 50) * 4;
+      } else if (hypes >= 10) {
+        engagementScore += 4 + ((hypes - 10) / 40) * 4;
+      } else {
+        engagementScore += (hypes / 10) * 4;
+      }
+    }
+    
+    // Follow factor (0-10 points) - for established interest
+    if (follows > 0) {
+      engagementScore += Math.min(Math.log10(follows + 1) * 3.5, 10);
+    }
+    
+    score += engagementScore;
+    
+    // 5. Franchise Bonus (0-10 points) - Boost well-known series
+    if (this.isFranchiseQuery(query)) {
+      const franchiseBonus = this.calculateFranchiseBonus(game, query);
+      score += franchiseBonus;
+    }
+    
+    // 6. Content & Community Bonus (0-5 points)
+    if (game.summary && game.summary.length > 100) score += 2;
+    if (game.cover_url) score += 1; // Has cover art
+    if (game.totalUserRatings > 10) score += 2;
+    
+    return Math.round(score * 10) / 10; // Round to 1 decimal for cleaner debug output
+  }
+  
+  /**
+   * Calculate franchise bonus for games that are core entries
+   */
+  private calculateFranchiseBonus(game: GameWithCalculatedFields, query: string): number {
+    const name = game.name.toLowerCase();
+    const queryLower = query.toLowerCase();
+    
+    // Bonus for numbered entries (Mario 3, Final Fantasy VII, etc.)
+    if (/\b(i{1,3}|iv|v|vi{0,3}|ix|x|\d+)\b/.test(name)) {
+      return 8;
+    }
+    
+    // Bonus for subtitle entries (Ocarina of Time, etc.)
+    if (name.includes(':') || name.includes(' - ')) {
+      return 6;
+    }
+    
+    // Bonus if game contains franchise name prominently
+    if (name.startsWith(queryLower)) {
+      return 4;
+    }
+    
+    return 2;
   }
   
   /**
@@ -392,12 +499,12 @@ export class GameDataServiceV2 {
       console.log(`🔍 Database search for: "${query}"`);
       
       // First: Search by name only (much faster)
-      let nameResults = await this.searchByName(query, filters, 30);
+      let nameResults = await this.searchByName(query, filters, 50);
       console.log(`📛 Name search: ${nameResults.length} results`);
       
       // If we don't have enough results, add summary search
-      if (nameResults.length < 20) {
-        const summaryResults = await this.searchBySummary(query, filters, 20);
+      if (nameResults.length < 30) {
+        const summaryResults = await this.searchBySummary(query, filters, 30);
         console.log(`📝 Summary search: ${summaryResults.length} results`);
         
         // Merge results, avoiding duplicates
@@ -408,8 +515,8 @@ export class GameDataServiceV2 {
       
       console.log(`✅ Total database results: ${nameResults.length}`);
       
-      // Sort in memory by IGDB rating (fast since we have limited results)
-      return nameResults.sort((a, b) => (b.igdb_rating || 0) - (a.igdb_rating || 0));
+      // Sort by enhanced relevance score using new IGDB metrics
+      return this.sortByRelevance(nameResults, query);
       
     } catch (error) {
       console.error('Error in searchGamesExact:', error);
@@ -420,7 +527,7 @@ export class GameDataServiceV2 {
   /**
    * Fast name-only search
    */
-  private async searchByName(query: string, filters?: SearchFilters, limit: number = 30): Promise<GameWithCalculatedFields[]> {
+  private async searchByName(query: string, filters?: SearchFilters, limit: number = 50): Promise<GameWithCalculatedFields[]> {
     let queryBuilder = supabase
       .from('game')
       .select('*')
@@ -458,7 +565,7 @@ export class GameDataServiceV2 {
   /**
    * Summary search (used as supplement)
    */
-  private async searchBySummary(query: string, filters?: SearchFilters, limit: number = 20): Promise<GameWithCalculatedFields[]> {
+  private async searchBySummary(query: string, filters?: SearchFilters, limit: number = 30): Promise<GameWithCalculatedFields[]> {
     let queryBuilder = supabase
       .from('game')
       .select('*')

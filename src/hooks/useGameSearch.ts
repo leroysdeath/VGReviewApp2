@@ -37,7 +37,7 @@ export const useGameSearch = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [searchOptions, setSearchOptions] = useState<SearchOptions>({
-    limit: 20,
+    limit: 150,  // Request more results to enable proper pagination
     offset: 0,
     sortBy: 'popularity',
     sortOrder: 'desc'
@@ -72,7 +72,7 @@ export const useGameSearch = () => {
       // Use Advanced Search Coordination with accent normalization
       console.log(`🔍 useGameSearch: Searching for "${query}" using Advanced Search Coordination`);
       const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
-        maxResults: searchParams.limit || 20,
+        maxResults: searchParams.limit || 150,  // Request enough results for multiple pages
         includeMetrics: true
       });
       

@@ -150,7 +150,7 @@ export class EnhancedIGDBService {
       platforms.name, involved_companies.company.name, franchises.name;
       where name ~ *"${searchTerm}"* & category = (0,8,9,10);
       sort total_rating desc;
-      limit 20;
+      limit 100;
     `.trim();
   }
   
@@ -165,7 +165,7 @@ export class EnhancedIGDBService {
       platforms.name, involved_companies.company.name, franchises.name;
       where franchises.name ~ *"${franchiseName}"*;
       sort first_release_date asc;
-      limit 50;
+      limit 150;
     `.trim();
   }
   
@@ -179,7 +179,7 @@ export class EnhancedIGDBService {
       platforms.name, involved_companies.company.name, alternative_names.name;
       where alternative_names.name ~ *"${searchTerm}"*;
       sort total_rating desc;
-      limit 10;
+      limit 50;
     `.trim();
   }
   
@@ -193,7 +193,7 @@ export class EnhancedIGDBService {
       platforms.name, involved_companies.company.name, collection.name;
       where collection.name ~ *"${searchTerm}"*;
       sort first_release_date desc;
-      limit 20;
+      limit 100;
     `.trim();
   }
   

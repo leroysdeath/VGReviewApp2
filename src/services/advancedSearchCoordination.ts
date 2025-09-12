@@ -303,19 +303,19 @@ export class AdvancedSearchCoordination {
   private getDefaultMaxResults(intent: SearchIntent): number {
     switch (intent) {
       case SearchIntent.SPECIFIC_GAME:
-        return 10; // Focused results for specific searches
+        return 50; // Allow for variations and similar games
       case SearchIntent.FRANCHISE_BROWSE:
-        return 50; // Good coverage for franchise exploration
+        return 150; // Full franchise coverage for pagination
       case SearchIntent.GENRE_DISCOVERY:
-        return 100; // Extensive results for discovery
+        return 150; // Extensive results for discovery
       case SearchIntent.YEAR_SEARCH:
-        return 75; // Recent games exploration
+        return 100; // Recent games exploration
       case SearchIntent.DEVELOPER_SEARCH:
-        return 40; // Developer portfolio browsing
+        return 100; // Developer portfolio browsing
       case SearchIntent.PLATFORM_SEARCH:
-        return 60; // Platform library browsing
+        return 100; // Platform library browsing
       default:
-        return 30;
+        return 100; // Default to enough for pagination
     }
   }
 
