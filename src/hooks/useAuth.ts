@@ -119,12 +119,12 @@ export const useAuth = (): UseAuthReturn => {
             id: session.user.id,
             email: session.user.email || '',
             name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
-            avatar: session.user.user_metadata?.avatar_url,
+            avatar: session.user.user_metadata?.avatar_url, // Will be overridden by database avatar if exists
             created_at: session.user.created_at
           };
           setUser(authUser);
           
-          // Get or create database user ID (non-blocking with separate loading state)
+          // Get or create database user ID and fetch avatar (non-blocking with separate loading state)
           setDbUserIdLoading(true);
           getOrCreateDbUserId(session).finally(() => {
             setDbUserIdLoading(false);
@@ -154,12 +154,12 @@ export const useAuth = (): UseAuthReturn => {
             id: session.user.id,
             email: session.user.email || '',
             name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
-            avatar: session.user.user_metadata?.avatar_url,
+            avatar: session.user.user_metadata?.avatar_url, // Will be overridden by database avatar if exists
             created_at: session.user.created_at
           };
           setUser(authUser);
           
-          // Get or create database user ID (non-blocking with separate loading state)
+          // Get or create database user ID and fetch avatar (non-blocking with separate loading state)
           setDbUserIdLoading(true);
           getOrCreateDbUserId(session).finally(() => {
             setDbUserIdLoading(false);
@@ -178,7 +178,7 @@ export const useAuth = (): UseAuthReturn => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Helper function to get or create database user ID
+  // Helper function to get or create database user ID and fetch profile data
   const getOrCreateDbUserId = async (session: Session) => {
     try {
       const timeoutPromise = new Promise<{ success: false, error: string }>((resolve) => {
@@ -193,6 +193,24 @@ export const useAuth = (): UseAuthReturn => {
       if (result.success && result.userId) {
         setDbUserId(result.userId);
         console.log('✅ Database user ID set:', result.userId);
+        
+        // Fetch the full user profile from database to get avatar_url
+        const { data: dbUser, error: dbError } = await supabase
+          .from('user')
+          .select('avatar_url')
+          .eq('id', result.userId)
+          .single();
+        
+        if (!dbError && dbUser?.avatar_url) {
+          // Update the user state with the database avatar
+          setUser(prevUser => {
+            if (prevUser) {
+              return { ...prevUser, avatar: dbUser.avatar_url };
+            }
+            return prevUser;
+          });
+          console.log('✅ User avatar updated from database:', dbUser.avatar_url);
+        }
       } else {
         console.error('Failed to get/create database user:', result.error);
         setDbUserId(null);

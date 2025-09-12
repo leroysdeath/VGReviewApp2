@@ -19,8 +19,9 @@ const loginSchema = z.object({
 const signupSchema = z.object({
   username: z.string()
     .min(3, 'Username must be at least 3 characters')
-    .max(30, 'Username must be less than 30 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+    .max(21, 'Username must be 21 characters or less')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
+    .transform(val => val.toLowerCase()),
   email: z.string().email('Please enter a valid email address'),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
@@ -441,16 +442,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
                   Username
                 </label>
+                <p className="text-xs text-gray-400 mb-2">
+                  Automatically converted to lowercase • 3-21 characters
+                </p>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   <input
-                    {...signupForm.register('username')}
+                    {...signupForm.register('username', {
+                      onChange: (e) => {
+                        e.target.value = e.target.value.toLowerCase();
+                      }
+                    })}
                     type="text"
                     id="username"
-                    className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Choose a username"
                     disabled={isLoading}
+                    maxLength={21}
                   />
+                  <span className="absolute right-3 top-3 text-xs text-gray-500">
+                    {signupForm.watch('username')?.length || 0}/21
+                  </span>
                 </div>
                 {signupForm.formState.errors.username && (
                   <p className="mt-1 text-sm text-red-400">{signupForm.formState.errors.username.message}</p>

@@ -25,7 +25,11 @@ import { AccountDeletionSection } from './AccountDeletionSection';
 
 // Create schemas as functions to avoid initialization issues
 const getProfileSchema = () => z.object({
-  username: z.string().min(3, 'Username must be at least 3 characters').or(z.literal('')),
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(21, 'Username must be 21 characters or less')
+    .transform(val => val.toLowerCase())
+    .or(z.literal('')),
   displayName: z.string().optional().or(z.literal('')),
   bio: z.string().max(160, 'Bio must be 160 characters or less').optional().or(z.literal('')),
   location: z.string().max(50, 'Location must be 50 characters or less').optional().or(z.literal('')),
@@ -74,7 +78,10 @@ const getDynamicProfileSchema = (changedFields: Set<string>) => {
   // Always include all fields in schema, but only apply validation to changed fields
   
   if (changedFields.has('username')) {
-    schema.username = z.string().min(3, 'Username must be at least 3 characters');
+    schema.username = z.string()
+      .min(3, 'Username must be at least 3 characters')
+      .max(21, 'Username must be 21 characters or less')
+      .transform(val => val.toLowerCase());
   } else {
     schema.username = z.string().optional().or(z.literal(''));
   }
@@ -756,13 +763,20 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-1">
                 Username
               </label>
+              <p className="text-xs text-gray-400 mb-2">
+                Automatically converted to lowercase • 3-21 characters
+              </p>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                 <input
                   id="username"
                   type="text"
-                  {...register('username')}
-                  className={`w-full pl-10 pr-10 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                  {...register('username', {
+                    onChange: (e) => {
+                      e.target.value = e.target.value.toLowerCase();
+                    }
+                  })}
+                  className={`w-full pl-10 pr-16 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                     errors.username || (usernameStatus.available === false && watchedUsername !== originalValues.username) 
                       ? 'border-red-500' 
                       : usernameStatus.available === true 
@@ -772,7 +786,12 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   placeholder="GamerTag"
                   autoComplete="off"
                   disabled={isSubmitting}
+                  maxLength={21}
                 />
+                {/* Character counter */}
+                <span className="absolute right-10 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
+                  {watch('username')?.length || 0}/21
+                </span>
                 {/* Username status indicator */}
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                   {usernameStatus.checking && (
