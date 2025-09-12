@@ -882,8 +882,30 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               )}
             </div>
 
-            {/* Submit button */}
-            <div className="flex justify-end">
+            {/* Submit button and messages */}
+            <div className="flex items-center justify-end gap-4">
+              {/* Validation messages - now on the left */}
+              <div className="flex-1 text-right">
+                {Object.keys(errors).length > 0 && (
+                  <p className="text-sm text-red-400">
+                    Please fix the validation errors above before saving.
+                  </p>
+                )}
+                
+                {usernameStatus.available === false && watchedUsername !== originalValues.username && (
+                  <p className="text-sm text-red-400">
+                    Username is not available. Please choose a different one.
+                  </p>
+                )}
+                
+                {usernameStatus.checking && (
+                  <p className="text-sm text-gray-400">
+                    Checking username availability...
+                  </p>
+                )}
+              </div>
+
+              {/* Submit button - now on the right */}
               <button
                 type="submit"
                 disabled={
@@ -925,25 +947,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   </>
                 )}
               </button>
-              
-              {/* Validation help message */}
-              {Object.keys(errors).length > 0 && (
-                <p className="text-sm text-red-400 mt-2 text-center">
-                  Please fix the validation errors above before saving.
-                </p>
-              )}
-              
-              {usernameStatus.available === false && watchedUsername !== originalValues.username && (
-                <p className="text-sm text-red-400 mt-2 text-center">
-                  Username is not available. Please choose a different one.
-                </p>
-              )}
-              
-              {usernameStatus.checking && (
-                <p className="text-sm text-gray-400 mt-2 text-center">
-                  Checking username availability...
-                </p>
-              )}
             </div>
           </form>
           </div>
