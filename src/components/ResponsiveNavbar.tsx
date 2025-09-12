@@ -637,11 +637,12 @@ export const ResponsiveNavbar: React.FC = () => {
                                     {game.release_date && (
                                       <span>{formatReleaseYear(game.release_date)}</span>
                                     )}
-                                    {game.averageUserRating && (
+                                    {game.platforms && game.platforms.length > 0 && (
                                       <>
                                         {game.release_date && <span>•</span>}
-                                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                        <span>{game.averageUserRating?.toFixed(1) || '0.0'}</span>
+                                        <span className="truncate">
+                                          {game.platforms.slice(0, 3).join(', ')}{game.platforms.length > 3 ? '...' : ''}
+                                        </span>
                                       </>
                                     )}
                                   </div>
@@ -917,11 +918,12 @@ export const ResponsiveNavbar: React.FC = () => {
                                 {game.release_date && (
                                   <span>{formatReleaseYear(game.release_date)}</span>
                                 )}
-                                {game.averageUserRating && (
+                                {game.platforms && game.platforms.length > 0 && (
                                   <>
                                     {game.release_date && <span>•</span>}
-                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                    <span>{game.averageUserRating?.toFixed(1) || '0.0'}</span>
+                                    <span className="truncate">
+                                      {game.platforms.slice(0, 3).join(', ')}{game.platforms.length > 3 ? '...' : ''}
+                                    </span>
                                   </>
                                 )}
                               </div>
