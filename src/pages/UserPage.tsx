@@ -49,7 +49,7 @@ export const UserPage: React.FC = () => {
   const [isFollowingUser, setIsFollowingUser] = useState(false);
 
   // Fetch user data - defined first to avoid temporal dead zone
-  const fetchUserData = useCallback(async () => {
+  const fetchUserData = useCallback(async (skipLoadingState = false) => {
     // Parse ID to integer for database queries
     const numericId = parseInt(id);
     
@@ -60,7 +60,9 @@ export const UserPage: React.FC = () => {
     }
     
     try {
-      setLoading(true);
+      if (!skipLoadingState) {
+        setLoading(true);
+      }
       
       // Fetch user data
       const { data: userData, error: userError } = await supabase
@@ -159,8 +161,14 @@ export const UserPage: React.FC = () => {
         throw new Error(updateResult.error || 'Profile update failed');
       }
 
-      // Refresh the user data after successful update
-      await fetchUserData();
+      // Close modal first before refreshing data
+      setShowSettingsModal(false);
+      
+      // Refresh the user data after successful update with a small delay
+      // to ensure modal has closed properly, skip loading state to prevent flicker
+      setTimeout(() => {
+        fetchUserData(true);
+      }, 100);
       
     } catch (error) {
       console.error('Error saving profile:', error);

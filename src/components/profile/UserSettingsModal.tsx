@@ -106,10 +106,11 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     setHasUnsavedChanges(isDirty);
   };
 
-  // Handle successful save - close immediately
+  // Handle successful save - reset state but don't close
+  // (parent component will handle closing to prevent race conditions)
   const handleSuccess = () => {
     setHasUnsavedChanges(false);
-    onClose();
+    // Don't call onClose() here - let parent handle it
   };
 
   // Handle confirm close without saving
