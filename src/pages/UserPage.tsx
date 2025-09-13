@@ -19,7 +19,7 @@ const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsM
 
 export const UserPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { user: authUser, isAuthenticated } = useAuth();
+  const { user: authUser, isAuthenticated, updateProfile } = useAuth();
 
   // Redirect if no ID provided - redirect to current user's profile
   if (!id) {
@@ -49,7 +49,7 @@ export const UserPage: React.FC = () => {
   const [isFollowingUser, setIsFollowingUser] = useState(false);
 
   // Fetch user data - defined first to avoid temporal dead zone
-  const fetchUserData = useCallback(async () => {
+  const fetchUserData = useCallback(async (skipLoadingState = false) => {
     // Parse ID to integer for database queries
     const numericId = parseInt(id);
     
@@ -60,7 +60,9 @@ export const UserPage: React.FC = () => {
     }
     
     try {
-      setLoading(true);
+      if (!skipLoadingState) {
+        setLoading(true);
+      }
       
       // Fetch user data
       const { data: userData, error: userError } = await supabase
@@ -153,20 +155,58 @@ export const UserPage: React.FC = () => {
       const { mapFormToDatabase } = await import('../utils/userFieldMapping');
       const mappedData = mapFormToDatabase(profileData);
 
-      const updateResult = await userServiceSimple.updateUser(id, mappedData);
-      
-      if (!updateResult.success) {
-        throw new Error(updateResult.error || 'Profile update failed');
+      // If editing own profile, use updateProfile for global state sync
+      // This ensures ResponsiveNavbar updates immediately
+      if (isOwnProfile && authUser) {
+        // Use the auth service's updateProfile which handles both database and auth state
+        const authUpdateResult = await updateProfile({
+          username: mappedData.username || mappedData.name,
+          avatar: mappedData.avatar_url
+        });
+        
+        if (authUpdateResult.error) {
+          throw authUpdateResult.error;
+        }
+        
+        // Also update any other fields that aren't handled by updateProfile
+        // (bio, location, website, platform) using userServiceSimple
+        const otherFields = {
+          bio: mappedData.bio,
+          location: mappedData.location,
+          website: mappedData.website,
+          platform: mappedData.platform
+        };
+        
+        // Only update if there are other fields to update
+        if (Object.values(otherFields).some(val => val !== undefined)) {
+          const updateResult = await userServiceSimple.updateUser(id, otherFields);
+          if (!updateResult.success) {
+            throw new Error(updateResult.error || 'Failed to update additional profile fields');
+          }
+        }
+      } else {
+        // For non-own profiles (if that's ever allowed), use the original method
+        const updateResult = await userServiceSimple.updateUser(id, mappedData);
+        
+        if (!updateResult.success) {
+          throw new Error(updateResult.error || 'Profile update failed');
+        }
       }
 
-      // Refresh the user data after successful update
-      await fetchUserData();
+      // Close modal first before refreshing data
+      setShowSettingsModal(false);
+      
+      // Refresh the user data after successful update with a small delay
+      // to ensure modal has closed properly, skip loading state to prevent flicker
+      setTimeout(() => {
+        fetchUserData(true);
+      }, 100);
       
     } catch (error) {
       console.error('Error saving profile:', error);
       throw error;
     }
-  }, [id, fetchUserData]);
+  }, [id, fetchUserData, isOwnProfile, authUser, updateProfile]);
 
   // Modal handlers
   const handleEditClick = () => {
@@ -349,7 +389,6 @@ export const UserPage: React.FC = () => {
             userId={authUser?.id || ''}
             userData={{
               username: transformedUser.username,
-              displayName: user.display_name || '',
               email: user.email || authUser?.email || '',
               bio: transformedUser.bio,
               location: transformedUser.location || '',

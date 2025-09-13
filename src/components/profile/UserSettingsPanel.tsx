@@ -22,11 +22,15 @@ import {
 } from 'lucide-react';
 import { ProfileUpdateData, checkUsernameAvailability } from '../../services/profileService';
 import { AccountDeletionSection } from './AccountDeletionSection';
+import { PrivacySettings } from '../privacy/PrivacySettings';
 
 // Create schemas as functions to avoid initialization issues
 const getProfileSchema = () => z.object({
-  username: z.string().min(3, 'Username must be at least 3 characters').or(z.literal('')),
-  displayName: z.string().optional().or(z.literal('')),
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(21, 'Username must be 21 characters or less')
+    .transform(val => val.toLowerCase())
+    .or(z.literal('')),
   bio: z.string().max(160, 'Bio must be 160 characters or less').optional().or(z.literal('')),
   location: z.string().max(50, 'Location must be 50 characters or less').optional().or(z.literal('')),
   website: z.string()
@@ -74,16 +78,14 @@ const getDynamicProfileSchema = (changedFields: Set<string>) => {
   // Always include all fields in schema, but only apply validation to changed fields
   
   if (changedFields.has('username')) {
-    schema.username = z.string().min(3, 'Username must be at least 3 characters');
+    schema.username = z.string()
+      .min(3, 'Username must be at least 3 characters')
+      .max(21, 'Username must be 21 characters or less')
+      .transform(val => val.toLowerCase());
   } else {
     schema.username = z.string().optional().or(z.literal(''));
   }
   
-  if (changedFields.has('displayName')) {
-    schema.displayName = z.string().optional().or(z.literal(''));
-  } else {
-    schema.displayName = z.string().optional().or(z.literal(''));
-  }
   
   if (changedFields.has('bio')) {
     schema.bio = z.string().max(160, 'Bio must be 160 characters or less').optional().or(z.literal(''));
@@ -179,7 +181,6 @@ interface UserSettingsPanelProps {
   userId?: string;  // Add this for compatibility
   initialData?: {   // Make this optional
     username: string;
-    displayName?: string;
     email: string;
     bio?: string;
     location?: string;
@@ -207,7 +208,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   userId,
   initialData = {    // Provide default values
     username: '',
-    displayName: '',
     email: '',
     bio: '',
     location: '',
@@ -229,7 +229,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     onSaveFunction: onSave
   });
   
-  const [activeTab, setActiveTab] = useState<'profile' | 'account'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'privacy' | 'account'>('profile');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -246,7 +246,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   }>({ checking: false, available: null, message: '' });
   const [originalValues, setOriginalValues] = useState<ProfileFormValues & { avatar?: string }>({
     username: initialData.username,
-    displayName: initialData.displayName || '',
     bio: initialData.bio || '',
     location: initialData.location || '',
     website: initialData.website || '',
@@ -300,8 +299,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   useEffect(() => {
     const newValues = {
       username: initialData.username,
-      displayName: initialData.displayName || '',
-      bio: initialData.bio || '',
+        bio: initialData.bio || '',
       location: initialData.location || '',
       website: initialData.website || '',
       platform: initialData.platform || '',
@@ -629,9 +627,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
   return (
     <div className={`bg-gray-800 rounded-xl border border-gray-700 overflow-hidden ${className}`}>
-      {/* Tabs - temporarily hidden */}
-      {false && (
-        <div className="border-b border-gray-700">
+      {/* Tabs */}
+      <div className="border-b border-gray-700">
           <div className="flex overflow-x-auto">
             <button
               onClick={() => setActiveTab('profile')}
@@ -643,7 +640,17 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             >
               Profile
             </button>
-            {/* Account tab temporarily hidden - will be restored later */}
+            <button
+              onClick={() => setActiveTab('privacy')}
+              className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'privacy'
+                  ? 'border-purple-500 text-purple-400'
+                  : 'border-transparent text-gray-400 hover:text-white'
+              }`}
+            >
+              Privacy
+            </button>
+            {/* Account tab hidden for now */}
             {false && (
               <button
                 onClick={() => setActiveTab('account')}
@@ -658,7 +665,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             )}
           </div>
         </div>
-      )}
 
       <div className="p-6">
         {/* Updating message */}
@@ -756,13 +762,20 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-1">
                 Username
               </label>
+              <p className="text-xs text-gray-400 mb-2">
+                Automatically converted to lowercase • 3-21 characters
+              </p>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                 <input
                   id="username"
                   type="text"
-                  {...register('username')}
-                  className={`w-full pl-10 pr-10 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                  {...register('username', {
+                    onChange: (e) => {
+                      e.target.value = e.target.value.toLowerCase();
+                    }
+                  })}
+                  className={`w-full pl-10 pr-16 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                     errors.username || (usernameStatus.available === false && watchedUsername !== originalValues.username) 
                       ? 'border-red-500' 
                       : usernameStatus.available === true 
@@ -772,7 +785,12 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   placeholder="GamerTag"
                   autoComplete="off"
                   disabled={isSubmitting}
+                  maxLength={21}
                 />
+                {/* Character counter */}
+                <span className="absolute right-10 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
+                  {watch('username')?.length || 0}/21
+                </span>
                 {/* Username status indicator */}
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                   {usernameStatus.checking && (
@@ -802,23 +820,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               )}
             </div>
 
-            {/* Display Name */}
-            <div>
-              <label htmlFor="displayName" className="block text-sm font-medium text-gray-300 mb-1">
-                Display Name (optional)
-              </label>
-              <input
-                id="displayName"
-                type="text"
-                {...register('displayName')}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-                placeholder="Your public display name"
-                disabled={isSubmitting}
-              />
-              {errors.displayName && (
-                <p className="mt-1 text-sm text-red-400">{errors.displayName.message}</p>
-              )}
-            </div>
 
 
             {/* Bio */}
@@ -890,8 +891,30 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               )}
             </div>
 
-            {/* Submit button */}
-            <div className="flex justify-end">
+            {/* Submit button and messages */}
+            <div className="flex items-center justify-end gap-4">
+              {/* Validation messages - now on the left */}
+              <div className="flex-1 text-right">
+                {Object.keys(errors).length > 0 && (
+                  <p className="text-sm text-red-400">
+                    Please fix the validation errors above before saving.
+                  </p>
+                )}
+                
+                {usernameStatus.available === false && watchedUsername !== originalValues.username && (
+                  <p className="text-sm text-red-400">
+                    Username is not available. Please choose a different one.
+                  </p>
+                )}
+                
+                {usernameStatus.checking && (
+                  <p className="text-sm text-gray-400">
+                    Checking username availability...
+                  </p>
+                )}
+              </div>
+
+              {/* Submit button - now on the right */}
               <button
                 type="submit"
                 disabled={
@@ -933,31 +956,19 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                   </>
                 )}
               </button>
-              
-              {/* Validation help message */}
-              {Object.keys(errors).length > 0 && (
-                <p className="text-sm text-red-400 mt-2 text-center">
-                  Please fix the validation errors above before saving.
-                </p>
-              )}
-              
-              {usernameStatus.available === false && watchedUsername !== originalValues.username && (
-                <p className="text-sm text-red-400 mt-2 text-center">
-                  Username is not available. Please choose a different one.
-                </p>
-              )}
-              
-              {usernameStatus.checking && (
-                <p className="text-sm text-gray-400 mt-2 text-center">
-                  Checking username availability...
-                </p>
-              )}
             </div>
           </form>
           </div>
         )}
 
-        {/* Account Settings - temporarily hidden */}
+        {/* Privacy Settings */}
+        {activeTab === 'privacy' && (
+          <div className="relative">
+            <PrivacySettings userId={parseInt(userId || '0')} />
+          </div>
+        )}
+
+        {/* Account Settings - hidden for now */}
         {false && activeTab === 'account' && (
           <div className="space-y-8">
             {/* Password Change */}

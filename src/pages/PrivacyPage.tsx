@@ -21,10 +21,11 @@ GameVault ("we," "our," or "us") is committed to protecting your privacy. This P
 - **Communications**: Messages you send to us or other users through the platform
 
 ### 2.2 Information Collected Automatically
-- **Usage Data**: Pages visited, features used, time spent on the platform, and interaction patterns
+- **Usage Data**: Pages visited, features used, and interaction patterns (no precise timestamps)
 - **Game Activity**: Games viewed, reviewed, rated, and added to lists
 - **Device Information**: Browser type, operating system, device type, and screen resolution
-- **Log Data**: IP address, access times, and referring URLs
+- **Session Information**: Hashed session identifiers (not personally identifiable)
+- **Location**: Country only (for legal compliance, no IP addresses stored)
 
 ### 2.3 Information from Third Parties
 - **Authentication Providers**: If you sign in using social login, we receive basic profile information
@@ -41,6 +42,20 @@ We use collected information to:
 - Improve our Service through analytics and user feedback
 - Detect and prevent fraud, abuse, and security issues
 - Comply with legal obligations
+
+### 3.1 Game View Tracking
+
+With your consent, we track game views to:
+- Show trending and popular games
+- Improve search and discovery features
+- Provide personalized recommendations (if opted-in)
+- Generate anonymous community statistics
+
+**Privacy Controls:**
+- Choose your tracking level: None, Anonymous, or Full
+- Anonymous tracking is the default (no personal data linked)
+- Change preferences anytime in Privacy Settings
+- All tracking requires explicit consent
 
 ## 4. Information Sharing and Disclosure
 
@@ -102,11 +117,26 @@ We currently do not respond to Do Not Track browser signals.
 
 ## 8. Data Retention
 
-We retain your information for as long as your account is active or as needed to provide the Service. After account deletion:
-- Account data is deleted within 30 days
-- Anonymized analytics data may be retained
-- Content you posted may remain visible but dissociated from your account
-- We may retain certain information to comply with legal obligations
+We follow privacy-by-design principles with automatic data cleanup:
+
+### 8.1 Retention Periods
+- **Game View Data**: Automatically deleted after 90 days
+- **Aggregated Analytics**: Retained for 180 days
+- **Account Data**: Retained while account is active
+- **Content (Reviews/Comments)**: Retained but can be anonymized upon request
+- **Audit Logs**: Retained for 2 years for legal compliance
+
+### 8.2 Your Control
+- Request data export at any time (JSON format)
+- Request immediate data deletion
+- Choose to anonymize content instead of deletion
+- Opt-out of all tracking with immediate effect
+
+### 8.3 After Account Deletion
+- Personal data deleted within 30 days
+- Reviews and comments anonymized (preserved for community value)
+- All tracking data permanently removed
+- Audit logs retained as required by law
 
 ## 9. International Data Transfers
 
