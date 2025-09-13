@@ -19,7 +19,7 @@ const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsM
 
 export const UserPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { user: authUser, isAuthenticated } = useAuth();
+  const { user: authUser, isAuthenticated, updateProfile } = useAuth();
 
   // Redirect if no ID provided - redirect to current user's profile
   if (!id) {
@@ -155,10 +155,42 @@ export const UserPage: React.FC = () => {
       const { mapFormToDatabase } = await import('../utils/userFieldMapping');
       const mappedData = mapFormToDatabase(profileData);
 
-      const updateResult = await userServiceSimple.updateUser(id, mappedData);
-      
-      if (!updateResult.success) {
-        throw new Error(updateResult.error || 'Profile update failed');
+      // If editing own profile, use updateProfile for global state sync
+      // This ensures ResponsiveNavbar updates immediately
+      if (isOwnProfile && authUser) {
+        // Use the auth service's updateProfile which handles both database and auth state
+        const authUpdateResult = await updateProfile({
+          username: mappedData.username || mappedData.name,
+          avatar: mappedData.avatar_url
+        });
+        
+        if (authUpdateResult.error) {
+          throw authUpdateResult.error;
+        }
+        
+        // Also update any other fields that aren't handled by updateProfile
+        // (bio, location, website, platform) using userServiceSimple
+        const otherFields = {
+          bio: mappedData.bio,
+          location: mappedData.location,
+          website: mappedData.website,
+          platform: mappedData.platform
+        };
+        
+        // Only update if there are other fields to update
+        if (Object.values(otherFields).some(val => val !== undefined)) {
+          const updateResult = await userServiceSimple.updateUser(id, otherFields);
+          if (!updateResult.success) {
+            throw new Error(updateResult.error || 'Failed to update additional profile fields');
+          }
+        }
+      } else {
+        // For non-own profiles (if that's ever allowed), use the original method
+        const updateResult = await userServiceSimple.updateUser(id, mappedData);
+        
+        if (!updateResult.success) {
+          throw new Error(updateResult.error || 'Profile update failed');
+        }
       }
 
       // Close modal first before refreshing data
@@ -174,7 +206,7 @@ export const UserPage: React.FC = () => {
       console.error('Error saving profile:', error);
       throw error;
     }
-  }, [id, fetchUserData]);
+  }, [id, fetchUserData, isOwnProfile, authUser, updateProfile]);
 
   // Modal handlers
   const handleEditClick = () => {
