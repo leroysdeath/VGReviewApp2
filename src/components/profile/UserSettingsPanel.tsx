@@ -968,8 +968,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
           </div>
         )}
 
-        {/* Account Settings */}
-        {activeTab === 'account' && (
+        {/* Account Settings - hidden for now */}
+        {false && activeTab === 'account' && (
           <div className="space-y-8">
             {/* Password Change */}
             <div className="bg-gray-750 rounded-lg p-6 border border-gray-700">
