@@ -87,6 +87,14 @@ ALTER TABLE public.game_views ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.game_metrics_daily ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.privacy_audit_log ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view own preferences" ON public.user_preferences;
+DROP POLICY IF EXISTS "Users can update own preferences" ON public.user_preferences;
+DROP POLICY IF EXISTS "Users can insert own preferences" ON public.user_preferences;
+DROP POLICY IF EXISTS "Users can view own game views" ON public.game_views;
+DROP POLICY IF EXISTS "Public can view metrics" ON public.game_metrics_daily;
+DROP POLICY IF EXISTS "Users can view own audit log" ON public.privacy_audit_log;
+
 -- User preferences policies
 CREATE POLICY "Users can view own preferences" ON public.user_preferences
   FOR SELECT USING (user_id IN (SELECT id FROM public.user WHERE provider_id = auth.uid()));
@@ -332,6 +340,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop existing triggers if they exist
+DROP TRIGGER IF EXISTS update_user_preferences_updated_at ON public.user_preferences;
+DROP TRIGGER IF EXISTS update_game_metrics_daily_updated_at ON public.game_metrics_daily;
+
+-- Create triggers
 CREATE TRIGGER update_user_preferences_updated_at
   BEFORE UPDATE ON public.user_preferences
   FOR EACH ROW

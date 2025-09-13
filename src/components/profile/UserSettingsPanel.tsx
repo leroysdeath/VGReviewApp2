@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { ProfileUpdateData, checkUsernameAvailability } from '../../services/profileService';
 import { AccountDeletionSection } from './AccountDeletionSection';
+import { PrivacySettings } from '../privacy/PrivacySettings';
 
 // Create schemas as functions to avoid initialization issues
 const getProfileSchema = () => z.object({
@@ -228,7 +229,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     onSaveFunction: onSave
   });
   
-  const [activeTab, setActiveTab] = useState<'profile' | 'account'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'privacy' | 'account'>('profile');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -626,8 +627,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
   return (
     <div className={`bg-gray-800 rounded-xl border border-gray-700 overflow-hidden ${className}`}>
-      {/* Tabs - temporarily hidden */}
-      {false && (
+      {/* Tabs */}
+      {
         <div className="border-b border-gray-700">
           <div className="flex overflow-x-auto">
             <button
@@ -640,9 +641,17 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             >
               Profile
             </button>
-            {/* Account tab temporarily hidden - will be restored later */}
-            {false && (
-              <button
+            <button
+              onClick={() => setActiveTab('privacy')}
+              className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'privacy'
+                  ? 'border-purple-500 text-purple-400'
+                  : 'border-transparent text-gray-400 hover:text-white'
+              }`}
+            >
+              Privacy
+            </button>
+            <button
                 onClick={() => setActiveTab('account')}
                 className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === 'account'
@@ -652,7 +661,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               >
                 Account
               </button>
-            )}
           </div>
         </div>
       )}
@@ -952,8 +960,15 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
           </div>
         )}
 
-        {/* Account Settings - temporarily hidden */}
-        {false && activeTab === 'account' && (
+        {/* Privacy Settings */}
+        {activeTab === 'privacy' && (
+          <div className="relative">
+            <PrivacySettings userId={parseInt(userId || '0')} />
+          </div>
+        )}
+
+        {/* Account Settings */}
+        {activeTab === 'account' && (
           <div className="space-y-8">
             {/* Password Change */}
             <div className="bg-gray-750 rounded-lg p-6 border border-gray-700">
