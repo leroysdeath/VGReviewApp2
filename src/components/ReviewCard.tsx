@@ -206,10 +206,10 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
         {/* Review Content */}
         <div className="flex-1 min-w-0 relative">
-          {/* Game Cover Image and Rating - positioned on the right */}
+          {/* Game Cover Image - positioned on the right */}
           {showGameTitle && review.gameTitle && review.gameCoverUrl && (
             <div className={`
-              float-right ml-4 mb-4 flex-shrink-0 flex flex-col items-center
+              float-right ml-4 mb-4 flex-shrink-0
               ${compact ? 'w-16' : 'w-20'}
             `}>
               <img
@@ -221,10 +221,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                 `}
                 loading="lazy"
               />
-              {/* Rating centered below cover image */}
-              <span className="text-yellow-400 font-semibold mt-2 text-sm">
-                {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-              </span>
             </div>
           )}
 
@@ -251,25 +247,31 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   {review.gameTitle}
                 </span>
                 
-                {/* Date only */}
-                <div className="flex items-center mt-2">
+                {/* Date and Rating */}
+                <div className="flex items-center gap-4 mt-2">
                   <div className="flex items-center text-gray-500">
                     <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
                       {getRelativeTime(review.date)}
                     </span>
                   </div>
+                  <span className="text-yellow-400 font-semibold">
+                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                  </span>
                 </div>
               </div>
             )}
             
-            {/* Date only for when no game title is shown */}
+            {/* Date and Rating for when no game title is shown */}
             {!showGameTitle || !review.gameTitle ? (
-              <div className="flex items-center mt-2">
+              <div className="flex items-center gap-4 mt-2">
                 <div className="flex items-center text-gray-500">
                   <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
                     {getRelativeTime(review.date)}
                   </span>
                 </div>
+                <span className="text-yellow-400 font-semibold">
+                  {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                </span>
               </div>
             ) : null}
           </div>
