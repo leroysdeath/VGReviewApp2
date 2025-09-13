@@ -130,17 +130,27 @@ GRANT SELECT ON activity_feed TO anon;
 DROP VIEW IF EXISTS rating_with_counts CASCADE;
 CREATE OR REPLACE VIEW rating_with_counts WITH (security_invoker=true) AS
 SELECT 
-  r.*,
-  COALESCE(cl.like_count, 0) AS like_count,
-  COALESCE(cc.comment_count, 0) AS comment_count
+  r.id,
+  r.user_id,
+  r.game_id,
+  r.rating,
+  r.review,
+  r.is_published,
+  r.created_at,
+  r.updated_at,
+  r.helpful_count,
+  r.comment_count AS existing_comment_count,
+  r.like_count AS existing_like_count,
+  COALESCE(cl.calculated_like_count, 0) AS calculated_like_count,
+  COALESCE(cc.calculated_comment_count, 0) AS calculated_comment_count
 FROM rating r
 LEFT JOIN LATERAL (
-  SELECT COUNT(*) AS like_count
+  SELECT COUNT(*) AS calculated_like_count
   FROM content_like
   WHERE rating_id = r.id AND is_like = true
 ) cl ON true
 LEFT JOIN LATERAL (
-  SELECT COUNT(*) AS comment_count
+  SELECT COUNT(*) AS calculated_comment_count
   FROM comment
   WHERE rating_id = r.id AND is_published = true
 ) cc ON true;
