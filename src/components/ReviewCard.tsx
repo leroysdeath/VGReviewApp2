@@ -206,10 +206,10 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
         {/* Review Content */}
         <div className="flex-1 min-w-0 relative">
-          {/* Game Cover Image - positioned on the right */}
+          {/* Game Cover Image and Rating - positioned on the right */}
           {showGameTitle && review.gameTitle && review.gameCoverUrl && (
             <div className={`
-              float-right ml-4 mb-4 flex-shrink-0
+              float-right ml-4 mb-4 flex-shrink-0 flex flex-col items-center
               ${compact ? 'w-16' : 'w-20'}
             `}>
               <img
@@ -221,6 +221,10 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                 `}
                 loading="lazy"
               />
+              {/* Rating centered below cover image */}
+              <span className="text-yellow-400 font-semibold mt-2 text-sm">
+                {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+              </span>
             </div>
           )}
 
@@ -274,7 +278,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {review.hasText && (
             <p className={`
               text-gray-300 leading-relaxed mb-4 transition-colors duration-300
-              group-hover:text-gray-200 whitespace-pre-line line-clamp-6 sm:line-clamp-3
+              group-hover:text-gray-200 whitespace-pre-line line-clamp-3
               ${compact ? 'text-sm' : 'text-base'}
             `}>
               {escapeHtml(truncateText(review.text, 144))}
@@ -284,10 +288,8 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Clear float to ensure interactions appear below */}
           <div className="clear-both"></div>
 
-          {/* Interactions and Rating Container */}
-          <div className="flex items-center justify-between">
-            {/* Review Interactions - now shown for both compact and full modes */}
-            <ReviewInteractions
+          {/* Review Interactions - now shown for both compact and full modes */}
+          <ReviewInteractions
             reviewId={review.id}
             initialLikeCount={review.likeCount || likeCount}
             initialCommentCount={review.commentCount || commentCount}
@@ -311,12 +313,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             disableCommentHover={true}
             disableComments={true}
           />
-
-            {/* Rating aligned to the right */}
-            <span className="text-yellow-400 font-semibold ml-4">
-              {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-            </span>
-          </div>
         </div>
       </div>
 
