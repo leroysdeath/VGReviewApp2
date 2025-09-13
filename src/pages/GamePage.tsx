@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Calendar, User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Gift, BookOpen, Play, CheckCircle } from 'lucide-react';
+import { User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Gift, BookOpen, Play, CheckCircle } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
@@ -1031,7 +1031,6 @@ export const GamePage: React.FC = () => {
                   </h1>
                   <div className="space-y-2 text-gray-400 mb-6">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
                       <span>
                         {formatFullDate(game.first_release_date || game.release_date)}
                       </span>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, Heart, MessageSquare } from 'lucide-react';
+import { Heart, MessageSquare } from 'lucide-react';
 import { ReviewInteractions } from './ReviewInteractions';
 import { useReviewInteractions } from '../hooks/useReviewInteractions';
 import { escapeHtml } from '../utils/sanitize';
@@ -247,14 +247,9 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   {review.gameTitle}
                 </span>
                 
-                {/* Rating and Date */}
-                <div className="flex items-center gap-4 mt-2">
-                  <span className="text-yellow-400 font-semibold">
-                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-                  </span>
-                  
-                  <div className="flex items-center gap-1 text-gray-500">
-                    <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                {/* Date only */}
+                <div className="flex items-center mt-2">
+                  <div className="flex items-center text-gray-500">
                     <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
                       {getRelativeTime(review.date)}
                     </span>
@@ -263,15 +258,10 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               </div>
             )}
             
-            {/* Rating and Date for when no game title is shown */}
+            {/* Date only for when no game title is shown */}
             {!showGameTitle || !review.gameTitle ? (
-              <div className="flex items-center gap-4 mt-2">
-                <span className="text-yellow-400 font-semibold">
-                  {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-                </span>
-                
-                <div className="flex items-center gap-1 text-gray-500">
-                  <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
+              <div className="flex items-center mt-2">
+                <div className="flex items-center text-gray-500">
                   <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
                     {getRelativeTime(review.date)}
                   </span>
@@ -284,7 +274,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {review.hasText && (
             <p className={`
               text-gray-300 leading-relaxed mb-4 transition-colors duration-300
-              group-hover:text-gray-200 whitespace-pre-line line-clamp-3
+              group-hover:text-gray-200 whitespace-pre-line line-clamp-6 sm:line-clamp-3
               ${compact ? 'text-sm' : 'text-base'}
             `}>
               {escapeHtml(truncateText(review.text, 144))}
@@ -294,8 +284,10 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Clear float to ensure interactions appear below */}
           <div className="clear-both"></div>
 
-          {/* Review Interactions - now shown for both compact and full modes */}
-          <ReviewInteractions
+          {/* Interactions and Rating Container */}
+          <div className="flex items-center justify-between">
+            {/* Review Interactions - now shown for both compact and full modes */}
+            <ReviewInteractions
             reviewId={review.id}
             initialLikeCount={review.likeCount || likeCount}
             initialCommentCount={review.commentCount || commentCount}
@@ -319,6 +311,12 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             disableCommentHover={true}
             disableComments={true}
           />
+
+            {/* Rating aligned to the right */}
+            <span className="text-yellow-400 font-semibold ml-4">
+              {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+            </span>
+          </div>
         </div>
       </div>
 
