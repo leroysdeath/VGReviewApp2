@@ -89,17 +89,17 @@ ALTER TABLE public.privacy_audit_log ENABLE ROW LEVEL SECURITY;
 
 -- User preferences policies
 CREATE POLICY "Users can view own preferences" ON public.user_preferences
-  FOR SELECT USING (EXISTS (SELECT 1 FROM public.user WHERE id = user_preferences.user_id AND provider_id = (auth.uid())::text));
+  FOR SELECT USING (user_id IN (SELECT id FROM public.user WHERE provider_id = auth.uid()::text));
 
 CREATE POLICY "Users can update own preferences" ON public.user_preferences
-  FOR UPDATE USING (EXISTS (SELECT 1 FROM public.user WHERE id = user_preferences.user_id AND provider_id = (auth.uid())::text));
+  FOR UPDATE USING (user_id IN (SELECT id FROM public.user WHERE provider_id = auth.uid()::text));
 
 CREATE POLICY "Users can insert own preferences" ON public.user_preferences
-  FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.user WHERE id = user_preferences.user_id AND provider_id = (auth.uid())::text));
+  FOR INSERT WITH CHECK (user_id IN (SELECT id FROM public.user WHERE provider_id = auth.uid()::text));
 
 -- Game views policies (more restrictive)
 CREATE POLICY "Users can view own game views" ON public.game_views
-  FOR SELECT USING (user_id IS NULL OR EXISTS (SELECT 1 FROM public.user WHERE id = game_views.user_id AND provider_id = (auth.uid())::text));
+  FOR SELECT USING (user_id IS NULL OR user_id IN (SELECT id FROM public.user WHERE provider_id = auth.uid()::text));
 
 -- Public can view aggregated metrics
 CREATE POLICY "Public can view metrics" ON public.game_metrics_daily
@@ -107,7 +107,7 @@ CREATE POLICY "Public can view metrics" ON public.game_metrics_daily
 
 -- Privacy audit log - users can only see their own
 CREATE POLICY "Users can view own audit log" ON public.privacy_audit_log
-  FOR SELECT USING (user_id IS NULL OR EXISTS (SELECT 1 FROM public.user WHERE id = privacy_audit_log.user_id AND provider_id = (auth.uid())::text));
+  FOR SELECT USING (user_id IS NULL OR user_id IN (SELECT id FROM public.user WHERE provider_id = auth.uid()::text));
 
 -- ============================================
 -- 6. FUNCTIONS FOR DATA CLEANUP
