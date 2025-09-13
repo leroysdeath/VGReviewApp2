@@ -115,7 +115,7 @@ SELECT
   NULL::integer AS rating_id,
   NULL::integer AS comment_id,
   NULL::integer AS follow_id,
-  COALESCE(gp.completed_at, gp.updated_at, gp.created_at) AS activity_timestamp,
+  COALESCE(gp.completed_date, gp.updated_at, gp.created_at) AS activity_timestamp,
   NULL::numeric AS rating_value,
   NULL::text AS review_text,
   true AS is_published
