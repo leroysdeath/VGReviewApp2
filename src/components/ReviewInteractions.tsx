@@ -28,6 +28,7 @@ interface ReviewInteractionsProps {
   disabled?: boolean;
   disableCommentHover?: boolean;
   disableComments?: boolean;
+  isAuthenticated?: boolean;
 }
 
 export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
@@ -53,7 +54,8 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   currentUserId,
   disabled = false,
   disableCommentHover = false,
-  disableComments = false
+  disableComments = false,
+  isAuthenticated = false
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -231,13 +233,13 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
               <textarea
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                placeholder="What are your thoughts?"
+                placeholder={isAuthenticated ? "What are your thoughts?" : "Sign up or login to comment"}
                 className={`w-full px-3 py-2 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
                   isOverLimit ? 'border-red-500' : 'border-gray-600'
-                }`}
+                } ${!isAuthenticated ? 'cursor-not-allowed opacity-60' : ''}`}
                 rows={3}
                 maxLength={MAX_CHARS}
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isAuthenticated}
                 aria-label="Add a comment"
               />
               <div className={`absolute bottom-2 right-2 text-xs ${
@@ -254,11 +256,11 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
             <div className="flex justify-end mt-2">
               <button
                 type="submit"
-                disabled={isSubmitting || !commentText.trim() || isOverLimit || disabled}
+                disabled={isSubmitting || !commentText.trim() || isOverLimit || disabled || !isAuthenticated}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title={disabled ? 'Loading user data...' : ''}
+                title={!isAuthenticated ? 'Sign up or login to comment' : disabled ? 'Loading user data...' : ''}
               >
-                {disabled ? 'Loading...' : isSubmitting ? 'Posting...' : 'Post Comment'}
+                {!isAuthenticated ? 'Post Comment' : disabled ? 'Loading...' : isSubmitting ? 'Posting...' : 'Post Comment'}
               </button>
             </div>
           </form>
