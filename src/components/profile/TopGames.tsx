@@ -540,6 +540,32 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
             {isPhonePortrait ? (
               // Phone Portrait - 1-4 Layout
               <div className="flex flex-col items-center gap-3 mb-4 transition-all duration-300">
+                {/* When viewing other users, only show games they have */}
+                {!editable ? (
+                  // Non-editable view - only show existing games
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
+                    {userTopGames.filter(g => g.game).map((gameData) => (
+                      <div key={gameData.position} className="relative group">
+                        <Link to={getGameUrl(gameData.game!)}>
+                          <div className="relative aspect-[3/4]">
+                            <img
+                              src={gameData.game!.cover_url}
+                              alt={gameData.game!.name}
+                              className="w-full h-full object-cover rounded-lg"
+                              onError={(e) => {
+                                e.currentTarget.src = '/default-cover.png';
+                              }}
+                            />
+                            <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                              {gameData.position}
+                            </div>
+                          </div>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
                 {/* Top row - 1 game centered */}
                 <div className="flex justify-center gap-3">
                   {[1].map((position) => {
@@ -583,7 +609,10 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                         </div>
                       );
                     }
-                    
+
+                    // Only show empty slots for own profile
+                    if (!editable) return null;
+
                     return (
                       <div key={`empty-${position}`} className="relative aspect-[3/4] w-[180px] group">
                         <button
@@ -592,7 +621,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                             setShowGamePicker(true);
                           }}
                           className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center hover:border-purple-500 transition-colors"
-                          disabled={isSaving || isEditingTop5 || !editable}
+                          disabled={isSaving || isEditingTop5}
                         >
                           <div className="text-center">
                             <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
@@ -647,7 +676,10 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                         </div>
                       );
                     }
-                    
+
+                    // Only show empty slots for own profile
+                    if (!editable) return null;
+
                     return (
                       <div key={`empty-${position}`} className="relative aspect-[3/4] group">
                         <button
@@ -656,7 +688,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                             setShowGamePicker(true);
                           }}
                           className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center hover:border-purple-500 transition-colors"
-                          disabled={isSaving || isEditingTop5 || !editable}
+                          disabled={isSaving || isEditingTop5}
                         >
                           <div className="text-center">
                             <Plus className="h-5 w-5 text-gray-400 mx-auto mb-1" />
@@ -667,17 +699,21 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                     );
                   })}
                 </div>
+                </>
+                )}
               </div>
             ) : (
               // Desktop, Tablet, and Phone Landscape - Grid/Row Layout
               <div className={
-                layoutType === 'desktop' 
+                layoutType === 'desktop'
                   ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 md:mb-8 transition-all duration-300"
                   : (layoutType === 'tablet' || layoutType === 'phoneLandscape')
                   ? "flex justify-center gap-3 mb-4 transition-all duration-300"
                   : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 md:mb-8 transition-all duration-300"
               }>
-              {Array.from({ length: 5 }).map((_, index) => {
+              {editable ? (
+                // Editable view - show all 5 positions
+                Array.from({ length: 5 }).map((_, index) => {
                 const position = index + 1;
                 const gameData = userTopGames.find(g => g.position === position);
                 
@@ -730,7 +766,9 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                   );
                 }
 
-                // Empty slot
+                // Empty slot - only show for own profile
+                if (!editable) return null;
+
                 return (
                   <div key={`empty-${position}`} className={`relative aspect-[3/4] group ${
                     layoutType === 'phoneLandscape' ? 'w-[150px]' :
@@ -752,7 +790,33 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                     </button>
                   </div>
                 );
-              })}
+              })
+              ) : (
+                // Non-editable view - only show games that exist
+                userTopGames.filter(g => g.game).map((gameData) => (
+                  <div key={gameData.position} className={`relative group ${
+                    layoutType === 'phoneLandscape' ? 'w-[150px]' :
+                    layoutType === 'tablet' ? 'w-[140px]' :
+                    ''
+                  }`}>
+                    <Link to={getGameUrl(gameData.game!)}>
+                      <div className="relative aspect-[3/4]">
+                        <img
+                          src={gameData.game!.cover_url}
+                          alt={gameData.game!.name}
+                          className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => {
+                            e.currentTarget.src = '/default-cover.png';
+                          }}
+                        />
+                        <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                          {gameData.position}
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                ))
+              )}
             </div>
             )}
           </SortableContext>
