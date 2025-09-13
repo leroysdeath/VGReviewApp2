@@ -142,14 +142,7 @@ export const PrivacyConsentBanner: React.FC = () => {
               <Shield className="h-6 w-6 text-purple-400" />
               <h3 className="text-lg font-semibold text-white">Your Privacy Matters</h3>
             </div>
-            {/* Mobile: Each sentence on its own line */}
-            <div className="text-gray-300 text-sm mb-2 sm:hidden">
-              <p className="mb-1">We use minimal analytics.</p>
-              <p className="mb-1">We never sell your data.</p>
-              <p>You're always in control.</p>
-            </div>
-            {/* Desktop: Original paragraph */}
-            <p className="text-gray-300 text-sm mb-2 hidden sm:block">
+            <p className="text-gray-300 text-sm mb-2">
               We use minimal analytics to improve your experience. We never sell your data, and you're always in control.
             </p>
             {/* Mobile: Only Privacy Policy and No tracking */}
