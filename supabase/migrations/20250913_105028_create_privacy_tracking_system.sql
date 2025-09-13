@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS public.game_views (
 CREATE INDEX IF NOT EXISTS idx_game_views_date ON public.game_views(view_date);
 CREATE INDEX IF NOT EXISTS idx_game_views_game_date ON public.game_views(game_id, view_date);
 CREATE INDEX IF NOT EXISTS idx_game_views_user ON public.game_views(user_id) WHERE user_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_game_views_cleanup ON public.game_views(view_date) WHERE view_date < CURRENT_DATE - INTERVAL '90 days';
+-- Note: Removed the cleanup index with date calculation as it causes IMMUTABLE function error
+-- The cleanup will still work efficiently using idx_game_views_date
 
 -- ============================================
 -- 3. AGGREGATED METRICS TABLE
@@ -237,9 +238,15 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- ============================================
 
 -- Function to aggregate daily metrics (run via cron)
-CREATE OR REPLACE FUNCTION aggregate_daily_metrics(p_date DATE DEFAULT CURRENT_DATE - 1)
+CREATE OR REPLACE FUNCTION aggregate_daily_metrics(p_date DATE DEFAULT NULL)
 RETURNS void AS $$
+DECLARE
+  target_date DATE;
 BEGIN
+  -- Use provided date or default to yesterday
+  target_date := COALESCE(p_date, (CURRENT_DATE - INTERVAL '1 day')::DATE);
+  
+  -- Simplified aggregation query
   INSERT INTO public.game_metrics_daily (
     game_id,
     metric_date,
@@ -247,42 +254,27 @@ BEGIN
     unique_sessions,
     authenticated_views,
     anonymous_views,
-    view_sources
+    view_sources,
+    updated_at
   )
   SELECT 
     game_id,
-    p_date,
+    target_date as metric_date,
     COUNT(*) as total_views,
     COUNT(DISTINCT session_hash) as unique_sessions,
     COUNT(user_id) as authenticated_views,
     COUNT(*) - COUNT(user_id) as anonymous_views,
-    jsonb_object_agg(
-      COALESCE(view_source, 'unknown'), 
-      source_count
-    ) as view_sources
-  FROM (
-    SELECT 
-      game_id,
-      view_source,
-      COUNT(*) as source_count
-    FROM public.game_views
-    WHERE view_date = p_date
-    GROUP BY game_id, view_source
-  ) source_stats
-  JOIN (
-    SELECT DISTINCT game_id
-    FROM public.game_views
-    WHERE view_date = p_date
-  ) games USING (game_id)
-  LEFT JOIN LATERAL (
-    SELECT 
-      COUNT(*) as total,
-      COUNT(DISTINCT session_hash) as unique_sessions,
-      COUNT(user_id) as auth_views
-    FROM public.game_views gv
-    WHERE gv.game_id = games.game_id
-      AND gv.view_date = p_date
-  ) stats ON true
+    jsonb_build_object(
+      'search', SUM(CASE WHEN view_source = 'search' THEN 1 ELSE 0 END),
+      'direct', SUM(CASE WHEN view_source = 'direct' THEN 1 ELSE 0 END),
+      'recommendation', SUM(CASE WHEN view_source = 'recommendation' THEN 1 ELSE 0 END),
+      'list', SUM(CASE WHEN view_source = 'list' THEN 1 ELSE 0 END),
+      'review', SUM(CASE WHEN view_source = 'review' THEN 1 ELSE 0 END),
+      'profile', SUM(CASE WHEN view_source = 'profile' THEN 1 ELSE 0 END)
+    ) as view_sources,
+    NOW() as updated_at
+  FROM public.game_views
+  WHERE view_date = target_date
   GROUP BY game_id
   ON CONFLICT (game_id, metric_date) 
   DO UPDATE SET
@@ -291,7 +283,7 @@ BEGIN
     authenticated_views = EXCLUDED.authenticated_views,
     anonymous_views = EXCLUDED.anonymous_views,
     view_sources = EXCLUDED.view_sources,
-    updated_at = NOW();
+    updated_at = EXCLUDED.updated_at;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
