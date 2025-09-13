@@ -63,7 +63,6 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
   const [isEditingTop5, setIsEditingTop5] = useState(false);
   const [showGamePicker, setShowGamePicker] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
-  const [isLoadingUserGames, setIsLoadingUserGames] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -137,10 +136,10 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
     })
   );
 
-  // Fetch top games based on user's ratings
+  // Fetch top games based on user's ratings (only for Top 10)
   const fetchTopGames = async (gameLimit: number) => {
     if (!userId) return;
-    
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -186,8 +185,8 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
   // Fetch user's manually curated Top 5 (only for limit === 5)
   const fetchUserTopGames = async () => {
     if (!userId || !isTop5) return;
-    
-    setIsLoadingUserGames(true);
+
+    setLoading(true);
     setError(null);
     
     try {
@@ -222,9 +221,9 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
       setUserTopGames(filledPositions);
     } catch (error) {
       console.error('Error fetching user top games:', error);
-      setError('Failed to load your Top 5');
+      setError('Failed to load Top 5');
     } finally {
-      setIsLoadingUserGames(false);
+      setLoading(false);
     }
   };
 
@@ -404,12 +403,15 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
   // Load data on mount
   useEffect(() => {
     if (userId) {
-      fetchTopGames(limit);
-      if (isTop5 && editable) {
+      if (isTop5) {
+        // For Top 5, always fetch user's manually curated games
         fetchUserTopGames();
+      } else {
+        // For Top 10, fetch top rated games
+        fetchTopGames(limit);
       }
     }
-  }, [userId, limit, isTop5, editable]);
+  }, [userId, limit, isTop5]);
 
   // Handle escape key for modal
   useEffect(() => {
@@ -452,8 +454,8 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
     );
   }
 
-  // Render Top 5 with editing capability
-  if (isTop5 && editable) {
+  // Render Top 5
+  if (isTop5) {
     // Get sortable items (only games that exist)
     const sortableItems = userTopGames
       .filter(item => item.game)
@@ -464,18 +466,36 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
       ? userTopGames.find(g => g.game?.id.toString() === activeId)?.game
       : null;
 
+    // Check if user has any games in their Top 5
+    const hasAnyGamesInTop5 = userTopGames.some(g => g.game);
+
+    // If no games in Top 5 and not editable, show empty state
+    if (!hasAnyGamesInTop5 && !editable) {
+      return (
+        <div>
+          <h2 className="text-xl font-semibold text-white mb-6">Top 5 Favorites</h2>
+          <div className="text-center py-8">
+            <p className="text-gray-400">
+              They haven't decided on a Top 5 yet! How sad!
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div>
         {/* Edit toggle */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-white">
-            {isEditingTop5 ? 'Edit Your Top 5 (Drag to reorder)' : 'Your Top 5'}
+            {isEditingTop5 ? 'Edit Your Top 5 (Drag to reorder)' :
+             isOwnProfile ? 'Your Top 5' : 'Top 5 Favorites'}
           </h2>
-          {/* Show edit button if there's at least 1 game in Top 5 */}
+          {/* Show edit button if there's at least 1 game in Top 5 and it's the user's own profile */}
           {(() => {
             const hasGames = userTopGames.some(g => g.game);
-            
-            return hasGames && !error && (
+
+            return editable && hasGames && !error && (
               <button
                 onClick={() => setIsEditingTop5(!isEditingTop5)}
                 disabled={isSaving}
@@ -572,7 +592,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                             setShowGamePicker(true);
                           }}
                           className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center hover:border-purple-500 transition-colors"
-                          disabled={isSaving || isEditingTop5}
+                          disabled={isSaving || isEditingTop5 || !editable}
                         >
                           <div className="text-center">
                             <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
@@ -636,7 +656,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                             setShowGamePicker(true);
                           }}
                           className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center hover:border-purple-500 transition-colors"
-                          disabled={isSaving || isEditingTop5}
+                          disabled={isSaving || isEditingTop5 || !editable}
                         >
                           <div className="text-center">
                             <Plus className="h-5 w-5 text-gray-400 mx-auto mb-1" />
@@ -865,23 +885,19 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
     );
   }
 
-  // Render standard top games (Top 10 or non-editable Top 5)
+  // Render standard top games (Top 10 only, Top 5 is handled above)
   return (
     <div>
       <h2 className="text-xl font-semibold text-white mb-6">
-        {limit === 5 ? 'Top 5 Favorites' : `Top ${limit} Highest Ranked`}
+        {`Top ${limit} Highest Ranked`}
       </h2>
-      
+
       {topGames.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-gray-400">
-            {limit === 5 
-              ? (isOwnProfile 
-                  ? 'No games rated yet. Start rating games to select your Top 5!'
-                  : 'They haven\'t decided on a Top 5 yet! How sad!')
-              : (isOwnProfile
-                  ? 'No games rated yet. Start rating games to see your Top 10!'
-                  : 'No games rated yet!')
+            {isOwnProfile
+              ? 'No games rated yet. Start rating games to see your Top 10!'
+              : 'No games rated yet!'
             }
           </p>
         </div>
