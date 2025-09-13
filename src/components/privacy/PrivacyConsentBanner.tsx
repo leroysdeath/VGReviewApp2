@@ -43,7 +43,7 @@ export const PrivacyConsentBanner: React.FC = () => {
       setShowSuccess(true);
       setTimeout(() => {
         setIsVisible(false);
-      }, 2000);
+      }, 500);
     } catch (error) {
       console.error('Error saving consent:', error);
     } finally {
@@ -68,7 +68,7 @@ export const PrivacyConsentBanner: React.FC = () => {
       setShowSuccess(true);
       setTimeout(() => {
         setIsVisible(false);
-      }, 2000);
+      }, 500);
     } catch (error) {
       console.error('Error saving consent:', error);
     } finally {
@@ -113,7 +113,7 @@ export const PrivacyConsentBanner: React.FC = () => {
       setShowSuccess(true);
       setTimeout(() => {
         setIsVisible(false);
-      }, 2000);
+      }, 500);
     } catch (error) {
       console.error('Error saving consent:', error);
     } finally {
@@ -124,8 +124,8 @@ export const PrivacyConsentBanner: React.FC = () => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gray-900/95 backdrop-blur-lg border-t border-gray-700 shadow-2xl animate-slide-up">
-      <div className="max-w-7xl mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 sm:right-0 z-50 p-4 bg-gray-900/95 backdrop-blur-lg border-t border-gray-700 shadow-2xl animate-slide-up">
+      <div className="max-w-7xl mx-auto sm:max-w-7xl max-w-xs">
         {/* Success Message */}
         {showSuccess && (
           <div className="mb-4 p-3 bg-green-900/50 border border-green-700 rounded-lg flex items-center gap-2">
@@ -142,40 +142,74 @@ export const PrivacyConsentBanner: React.FC = () => {
               <Shield className="h-6 w-6 text-purple-400" />
               <h3 className="text-lg font-semibold text-white">Your Privacy Matters</h3>
             </div>
-            <p className="text-gray-300 text-sm mb-2">
-              We use minimal analytics to improve your gaming experience. We never sell your data and you're always in control.
+            {/* Mobile: Each sentence on its own line */}
+            <div className="text-gray-300 text-sm mb-2 sm:hidden">
+              <p className="mb-1">We use minimal analytics.</p>
+              <p className="mb-1">We never sell your data.</p>
+              <p>You're always in control.</p>
+            </div>
+            {/* Desktop: Original paragraph */}
+            <p className="text-gray-300 text-sm mb-2 hidden sm:block">
+              We use minimal analytics to improve your experience. We never sell your data, and you're always in control.
             </p>
-            <div className="flex items-center gap-4 text-xs text-gray-400">
-              <Link to="/privacy" className="hover:text-purple-400 transition-colors">
+            {/* Mobile: Only Privacy Policy and No tracking */}
+            <div className="flex items-center gap-4 text-xs text-gray-400 sm:hidden">
+              <Link to="/privacy" className="hover:text-purple-400 transition-colors inline-flex items-center">
                 Privacy Policy
               </Link>
-              <span>•</span>
-              <span>Data retained for 90 days only</span>
-              <span>•</span>
-              <span>No tracking without consent</span>
+              <span className="inline-flex items-center">•</span>
+              <span className="inline-flex items-center">No tracking without consent</span>
+            </div>
+            {/* Desktop: All three items */}
+            <div className="hidden sm:flex items-center gap-4 text-xs text-gray-400">
+              <Link to="/privacy" className="hover:text-purple-400 transition-colors inline-flex items-center">
+                Privacy Policy
+              </Link>
+              <span className="inline-flex items-center">•</span>
+              <span className="inline-flex items-center">Data retained for 90 days only</span>
+              <span className="inline-flex items-center">•</span>
+              <span className="inline-flex items-center">No tracking without consent</span>
             </div>
           </div>
 
           {/* Right: Actions */}
           <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-            <button
-              onClick={handleAcceptEssential}
-              disabled={isProcessing}
-              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 text-sm font-medium"
-            >
-              Accept Essential
-            </button>
+            {/* Mobile order: Accept All, Accept Essential, Customize, X */}
+            {/* Desktop order: Customize, Accept Essential, Accept All, X */}
             <button
               onClick={handleAcceptAll}
               disabled={isProcessing}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 text-sm font-medium"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 text-sm font-medium sm:hidden"
             >
               Accept All
             </button>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               disabled={isProcessing}
-              className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 text-sm font-medium flex items-center gap-2"
+              className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 text-sm font-medium flex items-center gap-2 justify-center hidden sm:flex sm:order-1"
+            >
+              <Settings className="h-4 w-4" />
+              Customize
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={handleAcceptEssential}
+              disabled={isProcessing}
+              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 text-sm font-medium sm:order-2"
+            >
+              Accept Essential
+            </button>
+            <button
+              onClick={handleAcceptAll}
+              disabled={isProcessing}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 text-sm font-medium hidden sm:block sm:order-3"
+            >
+              Accept All
+            </button>
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              disabled={isProcessing}
+              className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 text-sm font-medium flex items-center gap-2 justify-center sm:hidden"
             >
               <Settings className="h-4 w-4" />
               Customize
@@ -184,7 +218,7 @@ export const PrivacyConsentBanner: React.FC = () => {
             <button
               onClick={handleDecline}
               disabled={isProcessing}
-              className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+              className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50 sm:order-4"
               aria-label="Decline all"
             >
               <X className="h-5 w-5" />
