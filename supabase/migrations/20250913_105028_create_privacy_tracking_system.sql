@@ -16,6 +16,33 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Add missing columns if table already exists
+ALTER TABLE public.user_preferences 
+  ADD COLUMN IF NOT EXISTS analytics_opted_in BOOLEAN DEFAULT false;
+ALTER TABLE public.user_preferences 
+  ADD COLUMN IF NOT EXISTS tracking_level TEXT DEFAULT 'anonymous';
+ALTER TABLE public.user_preferences 
+  ADD COLUMN IF NOT EXISTS consent_date TIMESTAMPTZ;
+ALTER TABLE public.user_preferences 
+  ADD COLUMN IF NOT EXISTS consent_ip_country TEXT;
+ALTER TABLE public.user_preferences 
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE public.user_preferences 
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Add check constraint if it doesn't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'user_preferences_tracking_level_check'
+  ) THEN
+    ALTER TABLE public.user_preferences 
+      ADD CONSTRAINT user_preferences_tracking_level_check 
+      CHECK (tracking_level IN ('none', 'anonymous', 'full'));
+  END IF;
+END $$;
+
 -- Create index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_user_preferences_user_id ON public.user_preferences(user_id);
 
@@ -32,6 +59,33 @@ CREATE TABLE IF NOT EXISTS public.game_views (
   view_source TEXT CHECK (view_source IN ('search', 'direct', 'recommendation', 'list', 'review', 'profile')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add missing columns if table already exists
+ALTER TABLE public.game_views 
+  ADD COLUMN IF NOT EXISTS game_id INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE public.game_views 
+  ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES public.user(id) ON DELETE SET NULL;
+ALTER TABLE public.game_views 
+  ADD COLUMN IF NOT EXISTS session_hash TEXT;
+ALTER TABLE public.game_views 
+  ADD COLUMN IF NOT EXISTS view_date DATE DEFAULT CURRENT_DATE;
+ALTER TABLE public.game_views 
+  ADD COLUMN IF NOT EXISTS view_source TEXT;
+ALTER TABLE public.game_views 
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Add check constraint if it doesn't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'game_views_view_source_check'
+  ) THEN
+    ALTER TABLE public.game_views 
+      ADD CONSTRAINT game_views_view_source_check 
+      CHECK (view_source IN ('search', 'direct', 'recommendation', 'list', 'review', 'profile'));
+  END IF;
+END $$;
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_game_views_date ON public.game_views(view_date);
@@ -57,6 +111,22 @@ CREATE TABLE IF NOT EXISTS public.game_metrics_daily (
   PRIMARY KEY (game_id, metric_date)
 );
 
+-- Add missing columns if table already exists
+ALTER TABLE public.game_metrics_daily 
+  ADD COLUMN IF NOT EXISTS total_views INTEGER DEFAULT 0;
+ALTER TABLE public.game_metrics_daily 
+  ADD COLUMN IF NOT EXISTS unique_sessions INTEGER DEFAULT 0;
+ALTER TABLE public.game_metrics_daily 
+  ADD COLUMN IF NOT EXISTS authenticated_views INTEGER DEFAULT 0;
+ALTER TABLE public.game_metrics_daily 
+  ADD COLUMN IF NOT EXISTS anonymous_views INTEGER DEFAULT 0;
+ALTER TABLE public.game_metrics_daily 
+  ADD COLUMN IF NOT EXISTS view_sources JSONB DEFAULT '{}';
+ALTER TABLE public.game_metrics_daily 
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE public.game_metrics_daily 
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
 -- Index for efficient queries
 CREATE INDEX IF NOT EXISTS idx_game_metrics_date ON public.game_metrics_daily(metric_date);
 CREATE INDEX IF NOT EXISTS idx_game_metrics_game ON public.game_metrics_daily(game_id);
@@ -73,6 +143,31 @@ CREATE TABLE IF NOT EXISTS public.privacy_audit_log (
   ip_country TEXT, -- Country only for compliance
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add missing columns if table already exists
+ALTER TABLE public.privacy_audit_log 
+  ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES public.user(id) ON DELETE SET NULL;
+ALTER TABLE public.privacy_audit_log 
+  ADD COLUMN IF NOT EXISTS action TEXT;
+ALTER TABLE public.privacy_audit_log 
+  ADD COLUMN IF NOT EXISTS details JSONB;
+ALTER TABLE public.privacy_audit_log 
+  ADD COLUMN IF NOT EXISTS ip_country TEXT;
+ALTER TABLE public.privacy_audit_log 
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Add check constraint if it doesn't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'privacy_audit_log_action_check'
+  ) THEN
+    ALTER TABLE public.privacy_audit_log 
+      ADD CONSTRAINT privacy_audit_log_action_check 
+      CHECK (action IN ('consent_given', 'consent_withdrawn', 'data_exported', 'data_deleted', 'preferences_updated'));
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_privacy_audit_user ON public.privacy_audit_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_privacy_audit_date ON public.privacy_audit_log(created_at);
@@ -359,14 +454,29 @@ CREATE TRIGGER update_game_metrics_daily_updated_at
 -- 11. COMMENTS FOR DOCUMENTATION
 -- ============================================
 
+-- Only add comments if columns exist
 COMMENT ON TABLE public.user_preferences IS 'Stores user privacy preferences and consent status for GDPR compliance';
 COMMENT ON TABLE public.game_views IS 'Privacy-compliant game view tracking with minimal data collection';
 COMMENT ON TABLE public.game_metrics_daily IS 'Pre-aggregated daily metrics to avoid querying raw tracking data';
 COMMENT ON TABLE public.privacy_audit_log IS 'Audit trail for privacy-related actions for compliance';
 
-COMMENT ON COLUMN public.game_views.session_hash IS 'SHA-256 hash of session ID - never store raw session data';
-COMMENT ON COLUMN public.game_views.view_date IS 'Date only (no timestamp) for enhanced privacy';
-COMMENT ON COLUMN public.user_preferences.consent_ip_country IS 'Country code only - never store full IP addresses';
+-- Add column comments only if columns exist
+DO $$
+BEGIN
+  -- Check and comment on game_views columns
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'game_views' AND column_name = 'session_hash') THEN
+    COMMENT ON COLUMN public.game_views.session_hash IS 'SHA-256 hash of session ID - never store raw session data';
+  END IF;
+  
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'game_views' AND column_name = 'view_date') THEN
+    COMMENT ON COLUMN public.game_views.view_date IS 'Date only (no timestamp) for enhanced privacy';
+  END IF;
+  
+  -- Check and comment on user_preferences columns
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'user_preferences' AND column_name = 'consent_ip_country') THEN
+    COMMENT ON COLUMN public.user_preferences.consent_ip_country IS 'Country code only - never store full IP addresses';
+  END IF;
+END $$;
 
 -- Grant necessary permissions for functions
 GRANT EXECUTE ON FUNCTION cleanup_old_tracking_data() TO authenticated;

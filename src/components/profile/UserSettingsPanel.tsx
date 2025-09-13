@@ -628,8 +628,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
   return (
     <div className={`bg-gray-800 rounded-xl border border-gray-700 overflow-hidden ${className}`}>
       {/* Tabs */}
-      {
-        <div className="border-b border-gray-700">
+      <div className="border-b border-gray-700">
           <div className="flex overflow-x-auto">
             <button
               onClick={() => setActiveTab('profile')}
@@ -651,7 +650,9 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             >
               Privacy
             </button>
-            <button
+            {/* Account tab hidden for now */}
+            {false && (
+              <button
                 onClick={() => setActiveTab('account')}
                 className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === 'account'
@@ -661,9 +662,9 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
               >
                 Account
               </button>
+            )}
           </div>
         </div>
-      )}
 
       <div className="p-6">
         {/* Updating message */}
