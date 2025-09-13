@@ -21,6 +21,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { DebugAuthPage } from './pages/DebugAuthPage';
 import { FAQ } from './components/FAQ';
 import { Navigate } from 'react-router-dom';
+import { PrivacyConsentBanner } from './components/privacy/PrivacyConsentBanner';
 
 
 // Lazy load legal pages for better performance
@@ -203,6 +204,7 @@ const AppContent: React.FC = () => {
         </main>
         <Footer />
         <AuthModal />
+        <PrivacyConsentBanner />
       </div>
     </>
   );
