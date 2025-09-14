@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Grid, List, Loader, AlertCircle, Star, Calendar, RefreshCw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Grid, List, Loader, AlertCircle, Star, RefreshCw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useGameSearch } from '../hooks/useGameSearch';
 import { SmartImage } from '../components/SmartImage';
 import { supabase } from '../services/supabase';
@@ -500,16 +500,18 @@ export const SearchResultsPage: React.FC = () => {
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold text-lg mb-2 line-clamp-2">{game.name}</h3>
-                      {(game.release_date || game.developer) && (
+                      {(game.release_date || game.platforms) && (
                         <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
                           {game.release_date && (
-                            <>
-                              <Calendar className="h-4 w-4" />
-                              <span>{new Date(game.release_date).getFullYear()}</span>
-                            </>
+                            <span>{new Date(game.release_date).getFullYear()}</span>
                           )}
-                          {game.release_date && game.developer && <span>•</span>}
-                          {game.developer && <span>{game.developer}</span>}
+                          {game.release_date && game.platforms && game.platforms.length > 0 && <span>•</span>}
+                          {game.platforms && game.platforms.length > 0 && (
+                            <span>
+                              {game.platforms.slice(0, 3).join(', ')}
+                              {game.platforms.length > 3 ? '...' : ''}
+                            </span>
+                          )}
                         </div>
                       )}
                       {game.user_rating_count > 0 && (
@@ -560,15 +562,16 @@ export const SearchResultsPage: React.FC = () => {
                           <p className="text-gray-400 text-sm mb-2 line-clamp-2">
                             {game.summary || game.description || 'No description available'}
                           </p>
-                          <div className="flex gap-4 text-sm text-gray-400">
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
                             {game.release_date && (
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                <span>{new Date(game.release_date).getFullYear()}</span>
-                              </div>
+                              <span>{new Date(game.release_date).getFullYear()}</span>
                             )}
-                            {game.developer && (
-                              <span>by {game.developer}</span>
+                            {game.release_date && game.platforms && game.platforms.length > 0 && <span>•</span>}
+                            {game.platforms && game.platforms.length > 0 && (
+                              <span>
+                                {game.platforms.slice(0, 3).join(', ')}
+                                {game.platforms.length > 3 ? '...' : ''}
+                              </span>
                             )}
                           </div>
                         </div>
