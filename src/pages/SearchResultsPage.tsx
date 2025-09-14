@@ -501,7 +501,7 @@ export const SearchResultsPage: React.FC = () => {
                       )}
                     </div>
                     <div className="p-4">
-                      <h3 className="font-semibold text-lg mb-2 line-clamp-2">{game.name}</h3>
+                      <h3 className="font-semibold text-lg mb-2 line-clamp-2 min-h-[3.5rem]">{game.name}</h3>
                       {(game.release_date || game.platforms) && (
                         <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
                           {game.release_date && (
