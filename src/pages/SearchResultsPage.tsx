@@ -461,7 +461,7 @@ export const SearchResultsPage: React.FC = () => {
         {!searchState.error && filteredGames.length > 0 && (
           <div className="transition-opacity duration-300 ease-in-out">
             {viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
                 {filteredGames.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(game => (
                   <div
                     key={game.id}
@@ -512,7 +512,7 @@ export const SearchResultsPage: React.FC = () => {
                             <span>
                               {(() => {
                                 const mappedPlatforms = mapPlatformNames(game.platforms);
-                                return mappedPlatforms.slice(0, 3).join(', ') + (mappedPlatforms.length > 3 ? '...' : '');
+                                return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
                               })()}
                             </span>
                           )}
@@ -575,7 +575,7 @@ export const SearchResultsPage: React.FC = () => {
                               <span>
                                 {(() => {
                                   const mappedPlatforms = mapPlatformNames(game.platforms);
-                                  return mappedPlatforms.slice(0, 3).join(', ') + (mappedPlatforms.length > 3 ? '...' : '');
+                                  return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
                                 })()}
                               </span>
                             )}
