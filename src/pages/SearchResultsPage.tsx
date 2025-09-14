@@ -6,6 +6,7 @@ import { SmartImage } from '../components/SmartImage';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { shouldShowCategoryLabel, getCategoryLabel, getCategoryStyles } from '../utils/gameCategoryLabels';
+import { mapPlatformNames } from '../utils/platformMapping';
 
 interface Game {
   id: number;
@@ -19,6 +20,7 @@ interface Game {
   publisher?: string;
   genre?: string;
   genres?: string[];
+  platforms?: string[];
   igdb_rating?: number;
   metacritic_score?: number;
   avg_user_rating?: number;
@@ -508,8 +510,10 @@ export const SearchResultsPage: React.FC = () => {
                           {game.release_date && game.platforms && game.platforms.length > 0 && <span>•</span>}
                           {game.platforms && game.platforms.length > 0 && (
                             <span>
-                              {game.platforms.slice(0, 3).join(', ')}
-                              {game.platforms.length > 3 ? '...' : ''}
+                              {(() => {
+                                const mappedPlatforms = mapPlatformNames(game.platforms);
+                                return mappedPlatforms.slice(0, 3).join(', ') + (mappedPlatforms.length > 3 ? '...' : '');
+                              })()}
                             </span>
                           )}
                         </div>
@@ -569,8 +573,10 @@ export const SearchResultsPage: React.FC = () => {
                             {game.release_date && game.platforms && game.platforms.length > 0 && <span>•</span>}
                             {game.platforms && game.platforms.length > 0 && (
                               <span>
-                                {game.platforms.slice(0, 3).join(', ')}
-                                {game.platforms.length > 3 ? '...' : ''}
+                                {(() => {
+                                  const mappedPlatforms = mapPlatformNames(game.platforms);
+                                  return mappedPlatforms.slice(0, 3).join(', ') + (mappedPlatforms.length > 3 ? '...' : '');
+                                })()}
                               </span>
                             )}
                           </div>
