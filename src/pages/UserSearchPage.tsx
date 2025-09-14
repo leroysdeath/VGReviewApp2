@@ -985,12 +985,6 @@ export const UserSearchPage: React.FC = () => {
               <h3 className="text-lg font-semibold text-white mb-4">Quick Filters</h3>
               <div className="space-y-2">
                 <button
-                  onClick={() => setSearchTerm('pro')}
-                  className="w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors"
-                >
-                  Pro Reviewers
-                </button>
-                <button
                   onClick={() => setSortBy('recent')}
                   className="w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors"
                 >

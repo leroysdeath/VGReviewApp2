@@ -458,6 +458,7 @@ export const ReviewPage: React.FC = () => {
               onAddComment={postComment}
               onEditComment={updateComment}
               onDeleteComment={removeComment}
+              isAuthenticated={isAuthenticated}
               onLikeComment={toggleCommentLike}
               onUnlikeComment={toggleCommentLike}
               isLoadingComments={isLoadingComments}
