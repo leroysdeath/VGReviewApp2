@@ -1,14 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, X, Clock, TrendingUp, Database, Loader2, Star, Gamepad2, User as UserIcon } from 'lucide-react';
+import { Search, X, Loader2, Star, Gamepad2, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGameSearch } from '../hooks/useGameSearch';
-import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
 import type { GameWithCalculatedFields } from '../types/database';
-import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
-import { filterProtectedContent } from '../utils/contentProtectionFilter';
-
-// Using GameWithCalculatedFields from database types
 
 interface User {
   id: string;
@@ -20,242 +15,92 @@ interface User {
 interface HeaderSearchBarProps {
   className?: string;
   placeholder?: string;
-  enableCache?: boolean;
-  showCacheStatus?: boolean;
   maxSuggestions?: number;
   debounceMs?: number;
-}
-
-interface CachedQuickSearch {
-  query: string;
-  results: GameWithCalculatedFields[];
-  timestamp: number;
-}
-
-interface CachedUserSearch {
-  query: string;
-  results: User[];
-  timestamp: number;
 }
 
 type SearchTab = 'games' | 'users';
 
 export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({ 
   className = "",
-  placeholder = "Search games or users... (Enter for full search)",
-  enableCache = true,
-  showCacheStatus = false,
+  placeholder = "Search games or users...",
   maxSuggestions = 8,
-  debounceMs = 800
+  debounceMs = 500
 }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<SearchTab>('games');
-  const [suggestions, setSuggestions] = useState<GameWithCalculatedFields[]>([]);
+  const [gameSuggestions, setGameSuggestions] = useState<GameWithCalculatedFields[]>([]);
   const [userSuggestions, setUserSuggestions] = useState<User[]>([]);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [recentUserSearches, setRecentUserSearches] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [cacheStatus, setCacheStatus] = useState<'cached' | 'fresh' | 'loading' | 'error'>('loading');
-  const [isFromCache, setIsFromCache] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
-  const searchCoordinationRef = useRef<AdvancedSearchCoordination>(new AdvancedSearchCoordination());
 
   const { 
     searchTerm, 
     setSearchTerm, 
     searchGames,
-    quickSearch, 
-    navigateToSearch,
-    clearSearch 
+    searchState // Direct access to the same search results as SearchResultsPage
   } = useGameSearch();
 
-  // Load recent searches from cache
-  useEffect(() => {
-    if (enableCache) {
-      const savedGames = browserCache.get('headerRecentSearches') || [];
-      const savedUsers = browserCache.get('headerRecentUserSearches') || [];
-      setRecentSearches(savedGames.slice(0, 5));
-      setRecentUserSearches(savedUsers.slice(0, 5));
-    }
-  }, [enableCache]);
-
-  // Enhanced quick search for games with caching
+  // Simple game search using the EXACT same searchGames method as SearchResultsPage
   const performGameSearch = useCallback(async (query: string) => {
     if (!query.trim() || query.length < 2) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      setCacheStatus('loading');
+      setGameSuggestions([]);
       return;
     }
 
-    setIsLoadingSuggestions(true);
-    setCacheStatus('loading');
-
+    setIsLoading(true);
     try {
-      // Check cache first
-      if (enableCache) {
-        const cacheKey = `header_search:games:${query.toLowerCase()}`;
-        const cached = browserCache.get(cacheKey) as CachedQuickSearch;
-        
-        if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) { // 5 minutes
-          // Apply filtering to cached results too
-          const filteredCachedResults = filterProtectedContent(cached.results);
-          setSuggestions(filteredCachedResults.slice(0, maxSuggestions));
-          setIsFromCache(true);
-          setCacheStatus('cached');
-          setShowSuggestions(true);
-          
-          if (import.meta.env.DEV) {
-            console.log('🚀 Game search cache hit:', query);
-          }
-          return;
-        }
+      if (import.meta.env.DEV) {
+        console.log('🔍 NEW HeaderSearchBar: Triggering searchGames for:', query);
       }
 
-      // Use Advanced Search Coordination with accent normalization for header search
-      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query, {
-        maxResults: maxSuggestions * 2, // Fetch extra to account for filtering
-        includeMetrics: false
-      });
+      // Use the EXACT same searchGames method that SearchResultsPage uses
+      await searchGames(query);
       
-      // Results are already filtered by the coordination service
-      const filteredResults = searchResult.results;
+      // Get results from the SAME searchState that SearchResultsPage uses
+      const results = searchState.games.slice(0, maxSuggestions);
+      setGameSuggestions(results);
 
-      if (filteredResults && Array.isArray(filteredResults)) {
-        const limitedResults = filteredResults.slice(0, maxSuggestions);
-        setSuggestions(limitedResults);
-        setIsFromCache(false);
-        setCacheStatus('fresh');
-        setShowSuggestions(true);
-
-        // Cache the results
-        if (enableCache) {
-          const cacheKey = `header_search:games:${query.toLowerCase()}`;
-          const cacheData: CachedQuickSearch = {
-            query,
-            results: limitedResults,
-            timestamp: Date.now()
-          };
-          browserCache.set(cacheKey, cacheData, 300); // 5 minutes
-        }
-
-        if (import.meta.env.DEV) {
-          console.log('🌐 Game search (Advanced Coordination):', query, limitedResults.length, 'results');
-          console.log('🔤 Search expanded queries:', searchResult.context.expandedQueries);
-        }
-      } else {
-        setSuggestions([]);
-        setShowSuggestions(false);
+      if (import.meta.env.DEV) {
+        console.log('🎯 NEW HeaderSearchBar: Got', results.length, 'results');
+        console.log('🎯 NEW HeaderSearchBar: First 3:', results.slice(0, 3).map(g => g.name));
       }
-
     } catch (error) {
-      console.error('Game quick search failed:', error);
-      setSuggestions([]);
-      setCacheStatus('error');
-      setShowSuggestions(false);
+      console.error('HeaderSearchBar game search failed:', error);
+      setGameSuggestions([]);
     } finally {
-      setIsLoadingSuggestions(false);
+      setIsLoading(false);
     }
-  }, [enableCache, maxSuggestions]);
+  }, [searchGames, searchState.games, maxSuggestions]);
 
-  // User search functionality
+  // Simple user search
   const performUserSearch = useCallback(async (query: string) => {
     if (!query.trim() || query.length < 2) {
       setUserSuggestions([]);
-      setShowSuggestions(false);
-      setCacheStatus('loading');
       return;
     }
 
-    setIsLoadingSuggestions(true);
-    setCacheStatus('loading');
-
+    setIsLoading(true);
     try {
-      // Check cache first
-      if (enableCache) {
-        const cacheKey = `header_search:users:${query.toLowerCase()}`;
-        const cached = browserCache.get(cacheKey) as CachedUserSearch;
-        
-        if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) { // 5 minutes
-          setUserSuggestions(cached.results.slice(0, maxSuggestions));
-          setIsFromCache(true);
-          setCacheStatus('cached');
-          setShowSuggestions(true);
-          
-          if (import.meta.env.DEV) {
-            console.log('🚀 User search cache hit:', query);
-          }
-          return;
-        }
-      }
-
-      // Fetch users from Supabase
       const { data: users, error } = await supabase
         .from('user')
         .select('id, name, bio, avatar_url')
         .ilike('name', `%${query}%`)
         .limit(maxSuggestions);
 
-      if (error) {
-        console.error('User search error:', error);
-        setUserSuggestions([]);
-        setCacheStatus('error');
-        setShowSuggestions(false);
-        return;
-      }
-
-      if (users && Array.isArray(users)) {
-        setUserSuggestions(users);
-        setIsFromCache(false);
-        setCacheStatus('fresh');
-        setShowSuggestions(true);
-
-        // Cache the results
-        if (enableCache) {
-          const cacheKey = `header_search:users:${query.toLowerCase()}`;
-          const cacheData: CachedUserSearch = {
-            query,
-            results: users,
-            timestamp: Date.now()
-          };
-          browserCache.set(cacheKey, cacheData, 300); // 5 minutes
-        }
-
-        if (import.meta.env.DEV) {
-          console.log('🌐 User search fresh fetch:', query, users.length, 'results');
-        }
-      } else {
-        setUserSuggestions([]);
-        setShowSuggestions(false);
-      }
-
+      if (error) throw error;
+      setUserSuggestions(users || []);
     } catch (error) {
-      console.error('User quick search failed:', error);
+      console.error('HeaderSearchBar user search failed:', error);
       setUserSuggestions([]);
-      setCacheStatus('error');
-      setShowSuggestions(false);
     } finally {
-      setIsLoadingSuggestions(false);
+      setIsLoading(false);
     }
-  }, [enableCache, maxSuggestions]);
-
-  // Combined search function
-  const performQuickSearch = useCallback(async (query: string, tab?: SearchTab) => {
-    const searchTab = tab || activeTab;
-    setHasSearched(true);
-    
-    if (searchTab === 'games') {
-      await performGameSearch(query);
-    } else {
-      await performUserSearch(query);
-    }
-  }, [activeTab, performGameSearch, performUserSearch]);
+  }, [maxSuggestions]);
 
   // Debounced search effect
   useEffect(() => {
@@ -263,41 +108,31 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
       clearTimeout(debounceRef.current);
     }
 
-    debounceRef.current = setTimeout(() => {
-      performQuickSearch(searchTerm);
-    }, debounceMs);
+    if (searchTerm.length >= 2) {
+      debounceRef.current = setTimeout(() => {
+        if (activeTab === 'games') {
+          performGameSearch(searchTerm);
+        } else {
+          performUserSearch(searchTerm);
+        }
+      }, debounceMs);
+    } else {
+      setGameSuggestions([]);
+      setUserSuggestions([]);
+    }
 
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [searchTerm, performQuickSearch, debounceMs]);
-
-  // Save search to recent searches
-  const saveRecentSearch = useCallback((searchQuery: string, tab?: SearchTab) => {
-    if (!enableCache || !searchQuery.trim()) return;
-    
-    const searchTab = tab || activeTab;
-    
-    if (searchTab === 'games') {
-      const updated = [searchQuery, ...recentSearches.filter(s => s !== searchQuery)].slice(0, 5);
-      setRecentSearches(updated);
-      browserCache.set('headerRecentSearches', updated, 24 * 60 * 60); // 24 hours
-    } else {
-      const updated = [searchQuery, ...recentUserSearches.filter(s => s !== searchQuery)].slice(0, 5);
-      setRecentUserSearches(updated);
-      browserCache.set('headerRecentUserSearches', updated, 24 * 60 * 60); // 24 hours
-    }
-  }, [enableCache, recentSearches, recentUserSearches, activeTab]);
+  }, [searchTerm, activeTab, performGameSearch, performUserSearch, debounceMs]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        setShowSuggestions(false);
-        setHasSearched(false); // Reset search state when closing
       }
     };
 
@@ -307,9 +142,6 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
 
   const handleInputFocus = () => {
     setIsOpen(true);
-    if (searchTerm.length >= 2) {
-      setShowSuggestions(true);
-    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -318,110 +150,54 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
     setIsOpen(true);
   };
 
-  const handleSuggestionClick = (game: any) => {
+  const handleGameClick = (game: GameWithCalculatedFields) => {
     setSearchTerm(game.name);
-    saveRecentSearch(game.name, 'games');
-    // Navigate to search results page AND trigger the search
     navigate(`/search-results?q=${encodeURIComponent(game.name)}&source=header`);
-    searchGames(game.name);
     setIsOpen(false);
-    setShowSuggestions(false);
-    setHasSearched(false);
   };
 
   const handleUserClick = (user: User) => {
-    saveRecentSearch(user.username || user.name, 'users');
     navigate(`/user/${user.id}`);
     setIsOpen(false);
-    setShowSuggestions(false);
     setSearchTerm('');
-    setHasSearched(false);
   };
 
-  const handleRecentSearchClick = (searchQuery: string, tab: SearchTab) => {
-    setSearchTerm(searchQuery);
-    if (tab === 'games') {
-      // Navigate to search results page AND trigger the search
-      navigate(`/search-results?q=${encodeURIComponent(searchQuery)}&source=header`);
-      searchGames(searchQuery);
-    } else {
-      // For users, perform a search to navigate to the first result
-      performQuickSearch(searchQuery, 'users');
-    }
-    setIsOpen(false);
-    setShowSuggestions(false);
-  };
-
-  const performSearch = (searchQuery: string) => {
-    if (searchQuery.trim()) {
-      saveRecentSearch(searchQuery);
+  const handleSearch = () => {
+    if (searchTerm.trim()) {
       if (activeTab === 'games') {
-        // Navigate to search results page AND trigger the search
-        navigate(`/search-results?q=${encodeURIComponent(searchQuery.trim())}&source=header`);
-        // Also trigger the search immediately using the hook
-        searchGames(searchQuery);
+        navigate(`/search-results?q=${encodeURIComponent(searchTerm.trim())}&source=header`);
       } else {
-        navigate(`/users?q=${encodeURIComponent(searchQuery)}`);
+        navigate(`/users?q=${encodeURIComponent(searchTerm)}`);
       }
       setIsOpen(false);
-      setShowSuggestions(false);
-      setHasSearched(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      performSearch(searchTerm);
+      handleSearch();
     } else if (e.key === 'Escape') {
       setIsOpen(false);
-      setShowSuggestions(false);
       inputRef.current?.blur();
     }
   };
 
   const handleClearSearch = () => {
     setSearchTerm('');
-    setSuggestions([]);
+    setGameSuggestions([]);
     setUserSuggestions([]);
-    setShowSuggestions(false);
-    setCacheStatus('loading');
-    setHasSearched(false);
     inputRef.current?.focus();
-  };
-
-  const clearRecentSearches = () => {
-    if (activeTab === 'games') {
-      setRecentSearches([]);
-      browserCache.delete('headerRecentSearches');
-    } else {
-      setRecentUserSearches([]);
-      browserCache.delete('headerRecentUserSearches');
-    }
   };
 
   const handleTabChange = (tab: SearchTab) => {
     setActiveTab(tab);
-    // Re-perform search with new tab if there's a search term
     if (searchTerm.trim()) {
-      performQuickSearch(searchTerm, tab);
-    }
-  };
-
-  // Determine placeholder text
-  const getPlaceholder = () => {
-    if (!hasSearched || !isOpen) {
-      return "Search games or users...";
-    }
-    return activeTab === 'games' ? "Search games..." : "Search users...";
-  };
-
-  const getCacheStatusColor = () => {
-    switch (cacheStatus) {
-      case 'cached': return 'text-green-400';
-      case 'fresh': return 'text-blue-400';
-      case 'error': return 'text-red-400';
-      default: return 'text-gray-400';
+      if (tab === 'games') {
+        performGameSearch(searchTerm);
+      } else {
+        performUserSearch(searchTerm);
+      }
     }
   };
 
@@ -429,6 +205,9 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
     if (!timestamp) return '';
     return new Date(timestamp * 1000).getFullYear();
   };
+
+  const showSuggestions = isOpen && searchTerm.length >= 2;
+  const currentSuggestions = activeTab === 'games' ? gameSuggestions : userSuggestions;
 
   return (
     <div ref={searchRef} className={`relative ${className}`}>
@@ -451,7 +230,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
             onChange={handleInputChange}
             onFocus={handleInputFocus}
             onKeyDown={handleKeyDown}
-            placeholder={getPlaceholder()}
+            placeholder={placeholder}
             className={`
               w-full pl-10 pr-16 py-2 bg-gray-900/80 backdrop-blur-lg border border-gray-700 rounded-lg
               text-white placeholder-gray-400 text-sm
@@ -463,25 +242,12 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
             aria-haspopup="listbox"
           />
 
-          {/* Cache Status & Loading Indicator */}
-          <div className="absolute right-8 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-            {showCacheStatus && enableCache && (
-              <div className="flex items-center">
-                {cacheStatus === 'loading' || isLoadingSuggestions ? (
-                  <Loader2 className="h-3 w-3 text-purple-400 animate-spin" />
-                ) : (
-                  <Database className={`h-3 w-3 ${getCacheStatusColor()}`} />
-                )}
-                {import.meta.env.DEV && (
-                  <span className={`text-xs ml-1 ${getCacheStatusColor()}`}>
-                    {cacheStatus === 'cached' ? 'C' : 
-                     cacheStatus === 'fresh' ? 'F' : 
-                     cacheStatus === 'error' ? 'E' : 'L'}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Loading Indicator */}
+          {isLoading && (
+            <div className="absolute right-8 top-1/2 transform -translate-y-1/2">
+              <Loader2 className="h-3 w-3 text-purple-400 animate-spin" />
+            </div>
+          )}
 
           {searchTerm && (
             <button
@@ -525,33 +291,13 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
           </div>
 
           <div className="max-h-80 overflow-y-auto">
-            {/* Cache Status Header */}
-            {showCacheStatus && enableCache && ((activeTab === 'games' && suggestions.length > 0) || (activeTab === 'users' && userSuggestions.length > 0)) && (
-              <div className="px-3 py-2 border-b border-gray-700 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs">
-                  <Database className={`h-3 w-3 ${getCacheStatusColor()}`} />
-                  <span className={getCacheStatusColor()}>
-                    {isFromCache ? 'Cached results' : 'Fresh results'}
-                  </span>
-                </div>
-                {isFromCache && (
-                  <button
-                    onClick={() => performQuickSearch(searchTerm)}
-                    className="text-xs text-purple-400 hover:text-purple-300"
-                  >
-                    Refresh
-                  </button>
-                )}
-              </div>
-            )}
-
             {/* Game Suggestions */}
-            {activeTab === 'games' && showSuggestions && suggestions.length > 0 && (
+            {activeTab === 'games' && showSuggestions && gameSuggestions.length > 0 && (
               <div className="space-y-1 p-2">
-                {suggestions.map((game) => (
+                {gameSuggestions.map((game) => (
                   <button
                     key={game.id}
-                    onClick={() => handleSuggestionClick(game)}
+                    onClick={() => handleGameClick(game)}
                     className="flex items-center w-full text-left p-2 hover:bg-gray-700 rounded group transition-colors"
                   >
                     {/* Game Cover */}
@@ -577,9 +323,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-400">
                         {game.first_release_date && (
-                          <>
-                            <span>{formatReleaseYear(game.first_release_date)}</span>
-                          </>
+                          <span>{formatReleaseYear(game.first_release_date)}</span>
                         )}
                         {game.rating && (
                           <>
@@ -609,7 +353,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
                       {user.avatar_url ? (
                         <img
                           src={user.avatar_url}
-                          alt={user.username || user.name}
+                          alt={user.name}
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
@@ -623,7 +367,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
                     {/* User Info */}
                     <div className="min-w-0 flex-1">
                       <div className="text-white font-medium truncate group-hover:text-purple-300 transition-colors">
-                        {user.username || user.name}
+                        {user.name}
                       </div>
                       {user.bio && (
                         <div className="text-xs text-gray-400 truncate">
@@ -636,68 +380,8 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
               </div>
             )}
 
-            {/* Recent Searches */}
-            {searchTerm.trim() === '' && (
-              <>
-                {activeTab === 'games' && recentSearches.length > 0 && (
-                  <div>
-                    <div className="px-3 py-2 flex items-center justify-between border-t border-gray-700">
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Recent Game Searches
-                      </span>
-                      <button
-                        onClick={clearRecentSearches}
-                        className="text-xs text-red-400 hover:text-red-300"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                    <div className="space-y-1 p-2">
-                      {recentSearches.map((searchQuery, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleRecentSearchClick(searchQuery, 'games')}
-                          className="flex items-center w-full text-left p-2 hover:bg-gray-700 rounded transition-colors"
-                        >
-                          <Clock className="h-4 w-4 text-gray-400 mr-3 flex-shrink-0" />
-                          <span className="text-white truncate">{searchQuery}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {activeTab === 'users' && recentUserSearches.length > 0 && (
-                  <div>
-                    <div className="px-3 py-2 flex items-center justify-between border-t border-gray-700">
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Recent User Searches
-                      </span>
-                      <button
-                        onClick={clearRecentSearches}
-                        className="text-xs text-red-400 hover:text-red-300"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                    <div className="space-y-1 p-2">
-                      {recentUserSearches.map((searchQuery, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleRecentSearchClick(searchQuery, 'users')}
-                          className="flex items-center w-full text-left p-2 hover:bg-gray-700 rounded transition-colors"
-                        >
-                          <Clock className="h-4 w-4 text-gray-400 mr-3 flex-shrink-0" />
-                          <span className="text-white truncate">{searchQuery}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
             {/* Loading State */}
-            {isLoadingSuggestions && searchTerm.length >= 2 && (
+            {isLoading && showSuggestions && (
               <div className="p-4 text-center">
                 <Loader2 className="h-5 w-5 text-purple-500 animate-spin mx-auto mb-2" />
                 <div className="text-sm text-gray-400">
@@ -707,72 +391,23 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
             )}
 
             {/* No Results */}
-            {showSuggestions && searchTerm.length >= 2 && !isLoadingSuggestions && cacheStatus !== 'error' && (
-              <>
-                {activeTab === 'games' && suggestions.length === 0 && (
-                  <div className="p-4 text-center">
-                    <div className="text-gray-400 mb-2">No games found</div>
-                    <button
-                      onClick={() => performSearch(searchTerm)}
-                      className="text-sm text-purple-400 hover:text-purple-300"
-                    >
-                      Search "{searchTerm}" anyway
-                    </button>
-                  </div>
-                )}
-                {activeTab === 'users' && userSuggestions.length === 0 && (
-                  <div className="p-4 text-center">
-                    <div className="text-gray-400 mb-2">No users found</div>
-                    <button
-                      onClick={() => performSearch(searchTerm)}
-                      className="text-sm text-purple-400 hover:text-purple-300"
-                    >
-                      Search "{searchTerm}" anyway
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Error State */}
-            {cacheStatus === 'error' && (
+            {showSuggestions && !isLoading && currentSuggestions.length === 0 && (
               <div className="p-4 text-center">
-                <div className="text-red-400 mb-2">Search error</div>
+                <div className="text-gray-400 mb-2">No {activeTab} found</div>
                 <button
-                  onClick={() => performQuickSearch(searchTerm)}
+                  onClick={handleSearch}
                   className="text-sm text-purple-400 hover:text-purple-300"
                 >
-                  Try again
+                  Search "{searchTerm}" anyway
                 </button>
               </div>
             )}
 
             {/* Search Prompt */}
-            {!showSuggestions && searchTerm.trim() === '' && !isLoadingSuggestions && (
-              <>
-                {activeTab === 'games' && recentSearches.length === 0 && (
-                  <div className="p-4 text-center text-gray-400">
-                    <p className="text-sm">Start typing to search for games...</p>
-                    <div className="flex items-center justify-center gap-4 mt-3 text-xs">
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3" />
-                        <span>Popular: Cyberpunk, Elden Ring</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {activeTab === 'users' && recentUserSearches.length === 0 && (
-                  <div className="p-4 text-center text-gray-400">
-                    <p className="text-sm">Start typing to search for users...</p>
-                    <div className="flex items-center justify-center gap-4 mt-3 text-xs">
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3" />
-                        <span>Find friends and reviewers</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
+            {!showSuggestions && !isLoading && (
+              <div className="p-4 text-center text-gray-400">
+                <p className="text-sm">Start typing to search for {activeTab}...</p>
+              </div>
             )}
           </div>
 
@@ -780,7 +415,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
           {searchTerm.trim() && (
             <div className="border-t border-gray-700 p-2">
               <button
-                onClick={() => performSearch(searchTerm)}
+                onClick={handleSearch}
                 className="w-full flex items-center justify-center gap-2 p-2 text-sm text-purple-400 hover:text-purple-300 hover:bg-gray-700 rounded transition-colors"
               >
                 <Search className="h-4 w-4" />

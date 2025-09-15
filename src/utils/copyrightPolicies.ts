@@ -616,9 +616,9 @@ export function isAuthorizedPublisher(developer: string, publisher: string, fran
   const result = isAuthorizedDev || isAuthorizedPub;
   
   if (!result && (devLower || pubLower)) {
-    console.log(`🔍 OWNERSHIP CHECK: "${developer || 'N/A'}" / "${publisher || 'N/A'}" not authorized for ${franchiseOwner}`);
+    // Ownership check applied
   } else if (result) {
-    console.log(`✅ AUTHORIZED: "${developer || 'N/A'}" / "${publisher || 'N/A'}" authorized for ${franchiseOwner}`);
+    // Authorization confirmed
   }
   
   return result;
@@ -643,7 +643,6 @@ export function findFranchiseOwner(game: any, searchText?: string): string | nul
     );
     
     if (matchesFranchise) {
-      console.log(`🎯 FRANCHISE DETECTED: "${game.name}" belongs to ${company} franchise`);
       return company;
     }
   }

@@ -35,21 +35,7 @@ const NavigationDebugger: React.FC = () => {
   const { isAuthenticated } = useAuth();
   
   useEffect(() => {
-    console.log('🧭 NavigationDebugger: Route changed', {
-      pathname: location.pathname,
-      search: location.search,
-      isAuthenticated,
-      timestamp: new Date().toISOString()
-    });
-    
-    // Specifically track user page navigation
-    if (location.pathname.startsWith('/user/')) {
-      console.log('👤 NavigationDebugger: User page navigation detected', {
-        path: location.pathname,
-        userId: location.pathname.split('/')[2],
-        isAuthenticated
-      });
-    }
+    // Navigation tracking removed for production
   }, [location, isAuthenticated]);
   
   return null;
@@ -84,7 +70,6 @@ const ProfileRedirect: React.FC = () => {
 // Component that needs to be inside Router context
 const AppContent: React.FC = () => {
   // Debug navigation
-  console.log('🌐 App.tsx: Rendering routes for path:', window.location.pathname);
 
   // Game preloading service disabled to eliminate console spam
   // Search functionality remains independent and unaffected  
@@ -104,7 +89,6 @@ const AppContent: React.FC = () => {
                     <Route path="/search-results" element={<SearchResultsPage />} />
                     <Route path="/user/:id" element={
                       <>
-                        {console.log('🚨 App.tsx: UserPage route matched for path:', window.location.pathname, 'useParams would be:', window.location.pathname.split('/')[2])}
                         <UserPage />
                       </>
                     } />
@@ -210,7 +194,6 @@ const AppContent: React.FC = () => {
                     {/* Catch-all route for debugging */}
                     <Route path="*" element={
                       <>
-                        {console.log('🔍 App.tsx: Catch-all route hit for path:', window.location.pathname)}
                         <div className="min-h-screen bg-gray-900 flex items-center justify-center">
                           <div className="text-white text-center">
                             <h1 className="text-3xl font-bold mb-4">Page Not Found</h1>

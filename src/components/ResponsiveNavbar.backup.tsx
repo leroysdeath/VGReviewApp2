@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useAuthModal } from '../context/AuthModalContext'; // NEW IMPORT
 import { useResponsive } from '../hooks/useResponsive';
 import { useGameSearch } from '../hooks/useGameSearch';
+import { gameDataService } from '../services/gameDataService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
@@ -61,7 +62,6 @@ export const ResponsiveNavbar: React.FC = () => {
   const debounceRef = useRef<NodeJS.Timeout>();
   
   const { 
-    searchState,
     searchTerm, 
     setSearchTerm, 
     searchGames,
@@ -80,7 +80,7 @@ export const ResponsiveNavbar: React.FC = () => {
     setRecentUserSearches(savedUsers.slice(0, 5));
   }, []);
 
-  // Enhanced quick search for games with caching using improved search algorithm
+  // Enhanced quick search for games with caching
   const performGameSearch = useCallback(async (query: string) => {
     if (!query.trim() || query.length < 2) {
       setSuggestions([]);
@@ -102,16 +102,18 @@ export const ResponsiveNavbar: React.FC = () => {
         setIsFromCache(true);
         setCacheStatus('cached');
         setShowSuggestions(true);
+        
+        if (import.meta.env.DEV) {
+          console.log('🚀 Game search cache hit:', query);
+        }
         return;
       }
 
-      // Use the SAME improved search that SearchResultsPage uses
-      await searchGames(query);
+      // Fetch fresh results using enhanced gameDataService search with sister game detection
+      console.log(`🔍 ResponsiveNavbar: Searching for "${query}" using gameDataService`);
+      const searchResults = await gameDataService.searchGames(query);
       
-      // Get results from the SAME searchState that SearchResultsPage uses
-      const searchResults = searchState.games;
-      
-      // Apply content protection filtering to search results
+      // Apply content protection filtering to mobile search results
       const filteredResults = filterProtectedContent(searchResults);
 
       if (filteredResults && Array.isArray(filteredResults)) {
@@ -128,6 +130,10 @@ export const ResponsiveNavbar: React.FC = () => {
           timestamp: Date.now()
         };
         browserCache.set(cacheKey, cacheData, 300); // 5 minutes
+
+        if (import.meta.env.DEV) {
+          console.log('🌐 Game search fresh fetch:', query, limitedResults.length, 'results');
+        }
       } else {
         setSuggestions([]);
         setShowSuggestions(false);
@@ -141,7 +147,7 @@ export const ResponsiveNavbar: React.FC = () => {
     } finally {
       setIsLoadingSuggestions(false);
     }
-  }, [searchGames, searchState.games]);
+  }, []);
 
   // User search functionality
   const performUserSearch = useCallback(async (query: string) => {
@@ -284,7 +290,7 @@ export const ResponsiveNavbar: React.FC = () => {
     }
   };
 
-  const handleSuggestionClick = (game: GameWithCalculatedFields) => {
+  const handleSuggestionClick = (game: Game) => {
     setSearchQuery('');
     saveRecentSearch(game.name, 'games');
     navigate(`/game/${game.id}`);
@@ -295,7 +301,7 @@ export const ResponsiveNavbar: React.FC = () => {
   };
 
   const handleUserClick = (user: UserSearchResult) => {
-    saveRecentSearch(user.name, 'users');
+    saveRecentSearch(user.username || user.name, 'users');
     navigate(`/user/${user.id}`);
     setIsSearchOpen(false);
     setShowSuggestions(false);
@@ -600,7 +606,7 @@ export const ResponsiveNavbar: React.FC = () => {
                                   {user.avatar_url ? (
                                     <img
                                       src={user.avatar_url}
-                                      alt={user.name}
+                                      alt={user.username || user.name}
                                       className="w-full h-full object-cover"
                                       loading="lazy"
                                     />
@@ -612,7 +618,7 @@ export const ResponsiveNavbar: React.FC = () => {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="text-white font-medium truncate">
-                                    {user.name}
+                                    {user.username || user.name}
                                   </div>
                                   {user.bio && (
                                     <div className="text-xs text-gray-400 truncate">

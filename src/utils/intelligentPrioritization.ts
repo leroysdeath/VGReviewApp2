@@ -391,7 +391,6 @@ export function sortGamesIntelligently(games: Game[], query?: string): Game[] {
     
     // Primary sort: Intelligent total score
     if (aIntelligent.totalScore !== bIntelligent.totalScore) {
-      console.log(`   🎯 "${a.name}" (${aIntelligent.totalScore}) vs "${b.name}" (${bIntelligent.totalScore}) - Intelligent score wins`);
       return bIntelligent.totalScore - aIntelligent.totalScore;
     }
     

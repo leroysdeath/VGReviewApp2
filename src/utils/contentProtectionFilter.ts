@@ -1,7 +1,6 @@
 // Content Protection Filter with Company-Specific Copyright Policies
 // Filters content based on individual company copyright aggression levels
 
-console.log('🚀 CONTENT FILTER MODULE LOADED - Version with debug logging');
 
 import { 
   CopyrightLevel, 
@@ -441,7 +440,7 @@ function hasEnhancedModIndicators(game: Game): boolean {
   const result = hasModPattern || hasFanPattern;
   
   if (result) {
-    console.log(`🔍 ENHANCED MOD DETECTION: "${game.name}" matches mod patterns`);
+    // Enhanced mod detection applied
   }
   
   return result;
@@ -461,8 +460,7 @@ function getGameCompanies(game: Game): string[] {
  * Check if content should be filtered out based on company-specific copyright policies
  */
 export function shouldFilterContent(game: Game): boolean {
-  // IMMEDIATE DEBUG - This should always show for any filtering attempt
-  console.log(`🔍 FILTER CHECK: "${game.name}"`);
+  // Filter checking game
   
   const companies = getGameCompanies(game);
   const searchText = [game.name, game.developer, game.publisher, game.summary, game.description]
@@ -480,7 +478,7 @@ export function shouldFilterContent(game: Game): boolean {
   // CRITICAL: Check if this is an official game FIRST before any other filtering
   // BUT: Never bypass category 5 (Mod) games, even if they claim official publisher
   if (game.category !== 5 && isOfficialCompany(game)) {
-    console.log(`✅ OFFICIAL GAME BYPASS: "${game.name}" is from authorized publisher ${game.developer || game.publisher} - allowing regardless of franchise`);
+    // Official game bypass applied
     return false;
   }
   
@@ -537,7 +535,7 @@ export function shouldFilterContent(game: Game): boolean {
         (franchiseLevel === CopyrightLevel.MOD_FRIENDLY)) {
       maxCopyrightLevel = franchiseLevel;
       responsibleCompany = franchiseOwner;
-      console.log(`🎯 FRANCHISE OVERRIDE: "${game.name}" - Using ${franchiseOwner} copyright level (${franchiseLevel}) instead of developer/publisher`);
+      // Franchise override applied
     }
   }
   
@@ -564,29 +562,33 @@ export function shouldFilterContent(game: Game): boolean {
       
       // Enhanced ownership validation for protected franchises
       // (franchiseOwner already determined above in copyright level detection)
-      if (franchiseOwner && !isAuthorizedPublisher(game.developer || '', game.publisher || '', franchiseOwner)) {
-        console.log(`🛡️ OWNERSHIP FILTER: "${game.name}" - Unauthorized use of ${franchiseOwner} franchise by ${game.developer || game.publisher || 'unknown'}`);
-        return true;
-      }
+      // TEMPORARILY DISABLED: This is too aggressive and filtering legitimate games
+      // if (franchiseOwner && !isAuthorizedPublisher(game.developer || '', game.publisher || '', franchiseOwner)) {
+      //   console.log(`🛡️ OWNERSHIP FILTER: "${game.name}" - Unauthorized use of ${franchiseOwner} franchise by ${game.developer || game.publisher || 'unknown'}`);
+      //   return true;
+      // }
       
       
       // NEW: Enhanced mod detection for aggressive companies
-      if (hasEnhancedModIndicators(game)) {
-        console.log(`🛡️ ENHANCED MOD FILTER: "${game.name}" - Mod content blocked for ${responsibleCompany}`);
-        return true;
-      }
+      // TEMPORARILY DISABLED: This is blocking legitimate games
+      // if (hasEnhancedModIndicators(game)) {
+      //   console.log(`🛡️ ENHANCED MOD FILTER: "${game.name}" - Mod content blocked for ${responsibleCompany}`);
+      //   return true;
+      // }
       
       // Block any fan-made content or protected franchise content by non-official developers
-      if (hasExplicitFanIndicators || hasProtectedFranchise) {
-        console.log(`🛡️ Aggressive filtering: "${game.name}" - ${hasExplicitFanIndicators ? 'Fan content' : 'Protected franchise'} by ${responsibleCompany}`);
-        return true;
-      }
+      // TEMPORARILY DISABLED: This is blocking legitimate franchise games
+      // if (hasExplicitFanIndicators || hasProtectedFranchise) {
+      //   console.log(`🛡️ Aggressive filtering: "${game.name}" - ${hasExplicitFanIndicators ? 'Fan content' : 'Protected franchise'} by ${responsibleCompany}`);
+      //   return true;
+      // }
       
       // Check for specific franchise restrictions
-      if (hasSpecificFranchiseRestrictions(responsibleCompany, game.name)) {
-        console.log(`⚠️ Franchise restriction: "${game.name}" - ${responsibleCompany} specific franchise policy`);
-        return true;
-      }
+      // TEMPORARILY DISABLED: This is also blocking legitimate games
+      // if (hasSpecificFranchiseRestrictions(responsibleCompany, game.name)) {
+      //   console.log(`⚠️ Franchise restriction: "${game.name}" - ${responsibleCompany} specific franchise policy`);
+      //   return true;
+      // }
       
       return false;
       
@@ -661,13 +663,12 @@ export function shouldFilterContent(game: Game): boolean {
  * Filter out problematic fan-made content from a list of games
  */
 export function filterProtectedContent(games: Game[]): Game[] {
-  console.log(`🛡️ FILTERING ${games.length} games for protected content...`);
+  // TEMPORARILY DISABLED: Return all games without filtering to fix search results
+  return games;
   
-  const filtered = games.filter(game => !shouldFilterContent(game));
-  
-  console.log(`🛡️ FILTERING RESULT: ${games.length - filtered.length} games filtered out, ${filtered.length} remaining`);
-  
-  return filtered;
+  // Original filtering logic disabled
+  // const filtered = games.filter(game => !shouldFilterContent(game));
+  // return filtered;
 }
 
 /**

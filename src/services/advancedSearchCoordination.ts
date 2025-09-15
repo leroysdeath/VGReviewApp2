@@ -158,7 +158,7 @@ export class AdvancedSearchCoordination {
     const accentVariations = expandWithAccentVariations(query);
     expansions.push(...accentVariations);
     
-    console.log(`🔤 Accent expansions for "${query}":`, accentVariations);
+    // Debug: Accent expansions for query
 
     // Common abbreviations and alternative names
     const expansionRules: Record<string, string[]> = {
@@ -425,7 +425,7 @@ export class AdvancedSearchCoordination {
       }
     }
 
-    console.log(`📊 Smart results: ${allResults.length} games from ${selectedQueries.length} prioritized queries`);
+    // Smart query execution completed
 
     // Apply advanced filtering and sorting
     return this.processSearchResults(allResults, context);
@@ -435,7 +435,7 @@ export class AdvancedSearchCoordination {
    * Process search results with advanced filtering and sorting
    */
   private processSearchResults(results: SearchResult[], context: SearchContext): SearchResult[] {
-    console.log(`🔧 Processing ${results.length} raw results...`);
+    // Processing raw results
 
     // Apply content protection filtering
     const contentFilteredResults = filterProtectedContent(results.map(r => ({
@@ -450,7 +450,7 @@ export class AdvancedSearchCoordination {
       return results.find(r => r.id === filteredGame.id)!;
     }).filter(Boolean);
 
-    console.log(`🛡️ Content filtering: ${results.length} → ${contentFilteredResults.length} (${results.length - contentFilteredResults.length} filtered)`);
+    // Content filtering applied
 
     // Apply quality threshold filtering
     const qualityFilteredResults = contentFilteredResults.filter(result => {
@@ -458,7 +458,7 @@ export class AdvancedSearchCoordination {
       return meetsThreshold;
     });
 
-    console.log(`⭐ Quality filtering: ${contentFilteredResults.length} → ${qualityFilteredResults.length} (threshold: ${context.qualityThreshold})`);
+    // Quality filtering applied
 
     // Sort by intelligent prioritization
     const sortedResults = sortGamesIntelligently(
@@ -469,7 +469,7 @@ export class AdvancedSearchCoordination {
     // Apply max results limit
     const finalResults = sortedResults.slice(0, context.maxResults);
 
-    console.log(`✅ Final results: ${finalResults.length} games (limit: ${context.maxResults})`);
+    // Final results processed
 
     return finalResults;
   }

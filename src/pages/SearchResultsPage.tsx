@@ -152,7 +152,6 @@ export const SearchResultsPage: React.FC = () => {
     
     try {
       setSearchStarted(true);
-      console.log('🔍 SearchResultsPage: Performing search for:', filters.searchTerm);
       
       await searchGames(filters.searchTerm, {
         genres: filters.platformId ? [filters.platformId.toString()] : undefined,
@@ -162,9 +161,8 @@ export const SearchResultsPage: React.FC = () => {
         sortOrder: filters.sortOrder
       });
       
-      console.log('✅ SearchResultsPage: Search completed, results:', searchState.games.length);
     } catch (err) {
-      console.error('❌ SearchResultsPage: Search failed:', err);
+      console.error('SearchResultsPage: Search failed:', err);
     }
   };
 
@@ -193,7 +191,6 @@ export const SearchResultsPage: React.FC = () => {
       
       // Set new debounce timer for 2 seconds
       debounceRef.current = setTimeout(() => {
-        console.log('🕐 Auto-search after 2 second delay');
         performSearch();
       }, 2000);
     }
@@ -226,11 +223,6 @@ export const SearchResultsPage: React.FC = () => {
 
   // Use games directly from searchState (igdbService already applies filtering)
   const filteredGames = useMemo(() => {
-    // Log search results in development
-    if (import.meta.env.DEV && searchState.games.length > 0) {
-      console.log(`📊 Search results: ${searchState.games.length} games from ${searchState.source}`);
-    }
-    
     return searchState.games;
   }, [searchState.games]);
 
@@ -263,7 +255,6 @@ export const SearchResultsPage: React.FC = () => {
             <button
               onClick={() => {
                 if (filters.searchTerm?.trim()) {
-                  console.log('🔘 Manual search button clicked');
                   performSearch();
                 }
               }}
@@ -418,7 +409,6 @@ export const SearchResultsPage: React.FC = () => {
             <button
               onClick={() => {
                 if (filters.searchTerm?.trim()) {
-                  console.log('🔄 Refresh button clicked');
                   performSearch();
                 }
               }}

@@ -70,10 +70,10 @@ export const useGameSearch = () => {
       const offset = append ? searchState.games.length : 0;
       
       // Use Advanced Search Coordination with accent normalization
-      console.log(`🔍 useGameSearch: Searching for "${query}" using Advanced Search Coordination`);
       const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
         maxResults: searchParams.limit || 150,  // Request enough results for multiple pages
-        includeMetrics: true
+        includeMetrics: true,
+        bypassCache: false // SearchResultsPage can use cache since it's the main search interface
       });
       
       // Results are already filtered by the coordination service
@@ -94,6 +94,7 @@ export const useGameSearch = () => {
         totalResults: data.total || data.games.length,
         source: data.source
       }));
+
 
       return data.games;
     } catch (error: any) {

@@ -71,11 +71,5 @@ export const {
 // Development logging
 if ((typeof process !== 'undefined' && process.env.NODE_ENV === 'development') || 
     (typeof window !== 'undefined')) {
-  console.log('🔧 Environment configuration:', {
-    supabaseUrl: ENV.VITE_SUPABASE_URL ? ENV.VITE_SUPABASE_URL.substring(0, 30) + '...' : 'NOT SET',
-    hasSupabaseKey: !!ENV.VITE_SUPABASE_ANON_KEY,
-    hasIGDBClient: !!ENV.VITE_IGDB_CLIENT_ID,
-    hasIGDBToken: !!ENV.VITE_IGDB_ACCESS_TOKEN,
-    environment: typeof window !== 'undefined' ? 'Browser/Vite' : 'Node/Jest'
-  });
+  // Environment configuration loaded
 }
