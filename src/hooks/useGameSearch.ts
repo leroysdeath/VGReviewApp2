@@ -73,7 +73,7 @@ export const useGameSearch = () => {
       const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
         maxResults: searchParams.limit || 150,  // Request enough results for multiple pages
         includeMetrics: true,
-        bypassCache: false // SearchResultsPage can use cache since it's the main search interface
+        bypassCache: false // Always use cache for better performance
       });
       
       // Results are already filtered by the coordination service

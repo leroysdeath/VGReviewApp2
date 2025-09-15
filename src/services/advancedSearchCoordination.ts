@@ -61,14 +61,15 @@ export interface SearchMetrics {
 export class AdvancedSearchCoordination {
   private gameDataService: GameDataServiceV2;
   private queryCache: Map<string, { results: SearchResult[]; timestamp: number; metrics: SearchMetrics }> = new Map();
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private pendingRequests: Map<string, Promise<{ results: SearchResult[]; context: SearchContext; metrics?: SearchMetrics }>> = new Map();
+  private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes for better performance
 
   constructor() {
     this.gameDataService = new GameDataServiceV2();
   }
 
   /**
-   * Main search entry point with advanced coordination
+   * Main search entry point with advanced coordination and request deduplication
    */
   async coordinatedSearch(
     query: string,
@@ -88,7 +89,13 @@ export class AdvancedSearchCoordination {
     // Build search context
     const context = this.buildSearchContext(query, options);
     
-    // Check cache first
+    // Check for duplicate in-flight requests first
+    if (this.pendingRequests.has(context.cacheKey)) {
+      console.log(`🔄 REQUEST DEDUPLICATION: Waiting for in-flight request for "${query}"`);
+      return await this.pendingRequests.get(context.cacheKey)!;
+    }
+    
+    // Check cache
     if (!options.bypassCache) {
       const cached = this.getCachedResults(context.cacheKey);
       if (cached) {
@@ -103,6 +110,31 @@ export class AdvancedSearchCoordination {
     
     console.log(`🚀 ADVANCED SEARCH: "${query}" (Intent: ${context.searchIntent}, Threshold: ${context.qualityThreshold})`);
     
+    // Create and store pending request promise
+    const requestPromise = this.executeSearchInternal(context, startTime, options.includeMetrics);
+    this.pendingRequests.set(context.cacheKey, requestPromise);
+    
+    try {
+      const result = await requestPromise;
+      return result;
+    } finally {
+      // Clean up pending request
+      this.pendingRequests.delete(context.cacheKey);
+    }
+  }
+
+  /**
+   * Internal search execution method
+   */
+  private async executeSearchInternal(
+    context: SearchContext,
+    startTime: number,
+    includeMetrics?: boolean
+  ): Promise<{
+    results: SearchResult[];
+    context: SearchContext;
+    metrics?: SearchMetrics;
+  }> {
     // Execute coordinated search
     const searchResults = await this.executeCoordinatedSearch(context);
     
@@ -125,7 +157,7 @@ export class AdvancedSearchCoordination {
     return {
       results: searchResults,
       context,
-      metrics: options.includeMetrics ? metrics : undefined
+      metrics: includeMetrics ? metrics : undefined
     };
   }
 
