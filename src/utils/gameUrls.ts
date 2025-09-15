@@ -39,12 +39,49 @@ export const isNumericIdentifier = (identifier: string): boolean => {
   return /^\d+$/.test(identifier);
 };
 
-// Helper to generate slug from name
-export const generateSlug = (name: string): string => {
-  return name
+// Helper to generate slug from name with collision handling
+export const generateSlug = (name: string, igdbId?: number): string => {
+  const baseSlug = name
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim();
+  
+  // If we have an IGDB ID, append it to ensure uniqueness
+  if (igdbId) {
+    return `${baseSlug}-${igdbId}`;
+  }
+  
+  return baseSlug;
+};
+
+// Helper to generate slug with guaranteed uniqueness check
+export const generateUniqueSlug = async (name: string, igdbId: number): Promise<string> => {
+  // Import supabase here to avoid circular dependency
+  const { supabase } = await import('../services/supabase');
+  
+  // First try the basic slug
+  let baseSlug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+  
+  // Check if base slug exists
+  const { data: existingGame } = await supabase
+    .from('game')
+    .select('id, igdb_id')
+    .eq('slug', baseSlug)
+    .neq('igdb_id', igdbId) // Don't conflict with same game
+    .single();
+  
+  // If no conflict, use base slug
+  if (!existingGame) {
+    return baseSlug;
+  }
+  
+  // If conflict exists, append IGDB ID for uniqueness
+  return `${baseSlug}-${igdbId}`;
 };

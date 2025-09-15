@@ -7,7 +7,7 @@ import { supabase } from './supabase';
 import { sanitizeSearchTerm } from '../utils/sqlSecurity';
 import type { Game, GameWithCalculatedFields } from '../types/database';
 import { igdbServiceV2, IGDBGame } from './igdbServiceV2';
-import { generateSlug } from '../utils/gameUrls';
+import { generateSlug, generateUniqueSlug } from '../utils/gameUrls';
 
 interface SearchFilters {
   genres?: string[];
@@ -440,8 +440,11 @@ export class GameDataServiceV2 {
           await this.batchInsertGames(gamesToSave);
           console.log(`💾 Background: Saved ${gamesToSave.length} games to database for query "${query}"`);
         }
-      } catch (error) {
-        console.error('Background database update failed:', error);
+      } catch (error: any) {
+        // Only log non-duplicate errors
+        if (error?.code !== '23505') {
+          console.error('Background database update failed:', error);
+        }
         // Don't throw - this is non-critical
       }
     }, 100); // Small delay to not block response
@@ -451,42 +454,76 @@ export class GameDataServiceV2 {
    * Efficiently batch insert games to database
    */
   private async batchInsertGames(games: IGDBGame[]): Promise<void> {
-    const transformedGames = games.map(game => ({
-      igdb_id: game.id,
-      game_id: game.id.toString(),
-      name: game.name,
-      slug: generateSlug(game.name),
-      summary: game.summary,
-      release_date: game.first_release_date 
-        ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
-        : null,
-      cover_url: game.cover?.url ? this.transformImageUrl(game.cover.url) : null,
-      genres: game.genres?.map(g => g.name) || [],
-      platforms: game.platforms?.map(p => p.name) || [],
-      developer: game.involved_companies?.find(c => c.developer)?.company?.name,
-      publisher: game.involved_companies?.find(c => c.publisher)?.company?.name,
-      igdb_rating: Math.round(game.rating || 0),
-      // NEW: Store IGDB engagement metrics
-      total_rating: game.total_rating ? Math.round(game.total_rating) : null,
-      rating_count: game.rating_count || 0,
-      follows: game.follows || 0,
-      hypes: game.hypes || 0,
-      // popularity_score will be auto-calculated by database trigger
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }));
+    // Process games sequentially to handle slug conflicts properly
+    const transformedGames = [];
+    
+    for (const game of games) {
+      try {
+        const slug = await generateUniqueSlug(game.name, game.id);
+        
+        transformedGames.push({
+          igdb_id: game.id,
+          game_id: game.id.toString(),
+          name: game.name,
+          slug: slug,
+          summary: game.summary,
+          release_date: game.first_release_date 
+            ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
+            : null,
+          cover_url: game.cover?.url ? this.transformImageUrl(game.cover.url) : null,
+          genres: game.genres?.map(g => g.name) || [],
+          platforms: game.platforms?.map(p => p.name) || [],
+          developer: game.involved_companies?.find(c => c.developer)?.company?.name,
+          publisher: game.involved_companies?.find(c => c.publisher)?.company?.name,
+          igdb_rating: Math.round(game.rating || 0),
+          total_rating: game.total_rating ? Math.round(game.total_rating) : null,
+          rating_count: game.rating_count || 0,
+          follows: game.follows || 0,
+          hypes: game.hypes || 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      } catch (slugError) {
+        console.warn(`Failed to generate slug for game ${game.name}:`, slugError);
+        // Use fallback slug with IGDB ID
+        transformedGames.push({
+          igdb_id: game.id,
+          game_id: game.id.toString(),
+          name: game.name,
+          slug: generateSlug(game.name, game.id), // Fallback with ID
+          summary: game.summary,
+          release_date: game.first_release_date 
+            ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
+            : null,
+          cover_url: game.cover?.url ? this.transformImageUrl(game.cover.url) : null,
+          genres: game.genres?.map(g => g.name) || [],
+          platforms: game.platforms?.map(p => p.name) || [],
+          developer: game.involved_companies?.find(c => c.developer)?.company?.name,
+          publisher: game.involved_companies?.find(c => c.publisher)?.company?.name,
+          igdb_rating: Math.round(game.rating || 0),
+          total_rating: game.total_rating ? Math.round(game.total_rating) : null,
+          rating_count: game.rating_count || 0,
+          follows: game.follows || 0,
+          hypes: game.hypes || 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      }
+    }
     
     // Use upsert to handle duplicates gracefully
-    const { error } = await supabase
-      .from('game')
-      .upsert(transformedGames, { 
-        onConflict: 'igdb_id',
-        ignoreDuplicates: false 
-      });
-    
-    if (error) {
-      console.error('Batch insert failed:', error);
-      throw error;
+    // Split into chunks to avoid conflicts
+    for (const game of transformedGames) {
+      const { error } = await supabase
+        .from('game')
+        .upsert(game, { 
+          onConflict: 'igdb_id',
+          ignoreDuplicates: true 
+        });
+      
+      if (error && error.code !== '23505') {
+        console.error(`Failed to upsert game ${game.name}:`, error);
+      }
     }
   }
   
@@ -528,76 +565,106 @@ export class GameDataServiceV2 {
    * Fast name-only search
    */
   private async searchByName(query: string, filters?: SearchFilters, limit: number = 50): Promise<GameWithCalculatedFields[]> {
-    let queryBuilder = supabase
-      .from('game')
-      .select('*')
-      .ilike('name', `%${query}%`);
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 10000); // 10 second timeout
     
-    // Apply filters
-    if (filters?.genres && filters.genres.length > 0) {
-      queryBuilder = queryBuilder.contains('genres', filters.genres);
+    try {
+      let queryBuilder = supabase
+        .from('game')
+        .select('*')
+        .ilike('name', `%${query}%`)
+        .abortSignal(abortController.signal);
+      
+      // Apply filters
+      if (filters?.genres && filters.genres.length > 0) {
+        queryBuilder = queryBuilder.contains('genres', filters.genres);
+      }
+      
+      if (filters?.platforms && filters.platforms.length > 0) {
+        queryBuilder = queryBuilder.contains('platforms', filters.platforms);
+      }
+      
+      if (filters?.minRating) {
+        queryBuilder = queryBuilder.gte('igdb_rating', filters.minRating);
+      }
+      
+      if (filters?.releaseYear) {
+        queryBuilder = queryBuilder.like('release_date', `${filters.releaseYear}%`);
+      }
+      
+      queryBuilder = queryBuilder.limit(limit);
+      
+      const { data, error } = await queryBuilder;
+      
+      clearTimeout(timeoutId);
+      
+      if (error) {
+        console.error('Name search error:', error);
+        return [];
+      }
+      
+      return (data || []).map(game => this.transformGameWithoutRatings(game as Game));
+    } catch (abortError) {
+      clearTimeout(timeoutId);
+      if (abortError.name === 'AbortError') {
+        console.error('❌ Name search timed out after 10 seconds');
+        return [];
+      }
+      throw abortError;
     }
-    
-    if (filters?.platforms && filters.platforms.length > 0) {
-      queryBuilder = queryBuilder.contains('platforms', filters.platforms);
-    }
-    
-    if (filters?.minRating) {
-      queryBuilder = queryBuilder.gte('igdb_rating', filters.minRating);
-    }
-    
-    if (filters?.releaseYear) {
-      queryBuilder = queryBuilder.like('release_date', `${filters.releaseYear}%`);
-    }
-    
-    queryBuilder = queryBuilder.limit(limit);
-    
-    const { data, error } = await queryBuilder;
-    
-    if (error) {
-      console.error('Name search error:', error);
-      return [];
-    }
-    
-    return (data || []).map(game => this.transformGameWithoutRatings(game as Game));
   }
   
   /**
    * Summary search (used as supplement)
    */
   private async searchBySummary(query: string, filters?: SearchFilters, limit: number = 30): Promise<GameWithCalculatedFields[]> {
-    let queryBuilder = supabase
-      .from('game')
-      .select('*')
-      .ilike('summary', `%${query}%`);
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 8000); // 8 second timeout
     
-    // Apply filters
-    if (filters?.genres && filters.genres.length > 0) {
-      queryBuilder = queryBuilder.contains('genres', filters.genres);
+    try {
+      let queryBuilder = supabase
+        .from('game')
+        .select('*')
+        .ilike('summary', `%${query}%`)
+        .abortSignal(abortController.signal);
+      
+      // Apply filters
+      if (filters?.genres && filters.genres.length > 0) {
+        queryBuilder = queryBuilder.contains('genres', filters.genres);
+      }
+      
+      if (filters?.platforms && filters.platforms.length > 0) {
+        queryBuilder = queryBuilder.contains('platforms', filters.platforms);
+      }
+      
+      if (filters?.minRating) {
+        queryBuilder = queryBuilder.gte('igdb_rating', filters.minRating);
+      }
+      
+      if (filters?.releaseYear) {
+        queryBuilder = queryBuilder.like('release_date', `${filters.releaseYear}%`);
+      }
+      
+      queryBuilder = queryBuilder.limit(limit);
+      
+      const { data, error } = await queryBuilder;
+      
+      clearTimeout(timeoutId);
+      
+      if (error) {
+        console.error('Summary search error:', error);
+        return [];
+      }
+      
+      return (data || []).map(game => this.transformGameWithoutRatings(game as Game));
+    } catch (abortError) {
+      clearTimeout(timeoutId);
+      if (abortError.name === 'AbortError') {
+        console.error('❌ Summary search timed out after 8 seconds');
+        return [];
+      }
+      throw abortError;
     }
-    
-    if (filters?.platforms && filters.platforms.length > 0) {
-      queryBuilder = queryBuilder.contains('platforms', filters.platforms);
-    }
-    
-    if (filters?.minRating) {
-      queryBuilder = queryBuilder.gte('igdb_rating', filters.minRating);
-    }
-    
-    if (filters?.releaseYear) {
-      queryBuilder = queryBuilder.like('release_date', `${filters.releaseYear}%`);
-    }
-    
-    queryBuilder = queryBuilder.limit(limit);
-    
-    const { data, error } = await queryBuilder;
-    
-    if (error) {
-      console.error('Summary search error:', error);
-      return [];
-    }
-    
-    return (data || []).map(game => this.transformGameWithoutRatings(game as Game));
   }
   
   /**
