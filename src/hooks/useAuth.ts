@@ -192,7 +192,6 @@ export const useAuth = (): UseAuthReturn => {
       
       if (result.success && result.userId) {
         setDbUserId(result.userId);
-        console.log('✅ Database user ID set:', result.userId);
       } else {
         console.error('Failed to get/create database user:', result.error);
         setDbUserId(null);

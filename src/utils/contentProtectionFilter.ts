@@ -660,15 +660,157 @@ export function shouldFilterContent(game: Game): boolean {
 }
 
 /**
- * Filter out problematic fan-made content from a list of games
+ * Check if a DLC is a major expansion that should be kept
+ */
+function isMajorExpansion(game: Game): boolean {
+  const name = game.name.toLowerCase();
+  const summary = (game.summary || '').toLowerCase();
+  
+  // Major expansion keywords that indicate substantial content
+  const majorExpansionKeywords = [
+    // Classic major expansions
+    'expansion', 'dawnguard', 'dragonborn', 'shivering isles', 'knights of the nine',
+    'blood and wine', 'hearts of stone', 'far harbor', 'nuka-world',
+    'gods and monsters', 'frozen throne', 'lord of destruction',
+    'burning crusade', 'wrath of the lich king', 'cataclysm', 'mists of pandaria',
+    'warlords of draenor', 'legion', 'battle for azeroth', 'shadowlands',
+    
+    // Campaign/story expansions
+    'campaign', 'story expansion', 'new story', 'additional campaign',
+    'episode', 'chapter', 'saga', 'chronicles',
+    
+    // Major content indicators
+    'new world', 'new region', 'new area', 'new continent', 'new island',
+    'new campaign', 'new storyline', 'new adventure',
+    
+    // Size indicators
+    'large expansion', 'major expansion', 'full expansion', 'massive expansion',
+    'substantial content', 'dozens of hours', 'hours of content',
+    
+    // Franchise-specific major DLCs
+    'old world blues', 'dead money', 'honest hearts', 'lonesome road',
+    'mothership zeta', 'point lookout', 'the pitt', 'broken steel',
+    'awakening', 'golems of amgarrak', 'witch hunt', 'legacy',
+    'mark of the assassin', 'sebastian', 'exiled prince'
+  ];
+  
+  // Check if the name or summary contains major expansion indicators
+  const hasMajorKeywords = majorExpansionKeywords.some(keyword => 
+    name.includes(keyword) || summary.includes(keyword)
+  );
+  
+  if (hasMajorKeywords) {
+    return true;
+  }
+  
+  // Small DLC indicators that should be filtered
+  const smallDLCKeywords = [
+    'skin pack', 'cosmetic', 'outfit', 'costume', 'weapon pack',
+    'character pack', 'map pack', 'level pack', 'challenge pack',
+    'booster pack', 'starter pack', 'digital deluxe upgrade',
+    'season pass', 'battle pass', 'premium upgrade',
+    'texture pack', 'sound pack', 'music pack', 'soundtrack',
+    'avatar', 'profile', 'theme', 'wallpaper', 'icon pack'
+  ];
+  
+  const hasSmallDLCKeywords = smallDLCKeywords.some(keyword => 
+    name.includes(keyword) || summary.includes(keyword)
+  );
+  
+  if (hasSmallDLCKeywords) {
+    return false; // Definitely small DLC
+  }
+  
+  // If no clear indicators, assume it's small DLC for Category 1
+  return false;
+}
+
+/**
+ * Filter out problematic fan-made content, collections, ports, and small DLC from a list of games
  */
 export function filterProtectedContent(games: Game[]): Game[] {
-  // TEMPORARILY DISABLED: Return all games without filtering to fix search results
-  return games;
+  // Enhanced filtering for mods, fan content, collections, and ports
+  const filtered = games.filter(game => {
+    // Filter out IGDB category 5 (Mods) explicitly
+    if (game.category === 5) {
+      console.log(`🚫 MOD FILTER: Filtering out mod "${game.name}" (Category 5)`);
+      return false;
+    }
+    
+    // Filter out IGDB category 3 (Bundle/Collection)
+    if (game.category === 3) {
+      console.log(`📦 COLLECTION FILTER: Filtering out bundle/collection "${game.name}" (Category 3)`);
+      return false;
+    }
+    
+    // Filter out IGDB category 11 (Port)
+    if (game.category === 11) {
+      console.log(`🔄 PORT FILTER: Filtering out port "${game.name}" (Category 11)`);
+      return false;
+    }
+    
+    // Filter out IGDB category 9 (Remaster)
+    if (game.category === 9) {
+      console.log(`✨ REMASTER FILTER: Filtering out remaster "${game.name}" (Category 9)`);
+      return false;
+    }
+    
+    // Filter out IGDB category 13 (Pack/Collection)
+    if (game.category === 13) {
+      console.log(`📦 PACK FILTER: Filtering out pack "${game.name}" (Category 13)`);
+      return false;
+    }
+    
+    // Filter out IGDB category 1 (DLC/Add-on) UNLESS it's a major expansion
+    if (game.category === 1) {
+      const isMajor = isMajorExpansion(game);
+      if (isMajor) {
+        console.log(`🎮 MAJOR DLC KEPT: Keeping major expansion "${game.name}" (Category 1)`);
+        // Don't filter out major expansions
+      } else {
+        console.log(`🚫 DLC FILTER: Filtering out small DLC "${game.name}" (Category 1)`);
+        return false;
+      }
+    }
+    
+    // Keep Category 2 (Expansion) and Category 4 (Standalone expansion) - these are always substantial
+    if (game.category === 2) {
+      console.log(`✅ EXPANSION KEPT: Keeping expansion "${game.name}" (Category 2)`);
+    }
+    if (game.category === 4) {
+      console.log(`✅ STANDALONE EXPANSION KEPT: Keeping standalone expansion "${game.name}" (Category 4)`);
+    }
+    
+    // Filter out games with explicit mod indicators in the name
+    const name = game.name.toLowerCase();
+    const modIndicators = ['mod', 'hack', 'rom hack', 'romhack', 'fan game', 'fangame', 'homebrew', 'unofficial'];
+    
+    if (modIndicators.some(indicator => name.includes(indicator))) {
+      console.log(`🚫 NAME FILTER: Filtering out mod/fan game "${game.name}"`);
+      return false;
+    }
+    
+    // Filter out collections, compilations, and remasters by name patterns
+    const collectionIndicators = [
+      'collection', 'compilation', 'anthology', 'bundle',
+      'trilogy', 'quadrilogy', 'complete edition', 'definitive edition',
+      'all-stars', 'hd collection', 'classics', 'legacy collection',
+      'master collection', 'anniversary collection', 'ultimate collection',
+      'remastered', 'remaster', 'hd remaster', 'enhanced edition',
+      'special edition', 'game of the year edition', 'goty edition'
+    ];
+    
+    if (collectionIndicators.some(indicator => name.includes(indicator))) {
+      console.log(`📦 COLLECTION NAME FILTER: Filtering out collection "${game.name}"`);
+      return false;
+    }
+    
+    // Use the more comprehensive filtering logic for other content
+    return !shouldFilterContent(game);
+  });
   
-  // Original filtering logic disabled
-  // const filtered = games.filter(game => !shouldFilterContent(game));
-  // return filtered;
+  console.log(`🛡️ Content filter: ${games.length} → ${filtered.length} games (filtered ${games.length - filtered.length} items)`);
+  return filtered;
 }
 
 /**

@@ -1395,7 +1395,6 @@ export const deleteComment = async (
  */
 export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>> => {
   try {
-    console.log('🔍 Fetching recent reviews:', { limit });
 
     // Use abortController for timeout
     const abortController = new AbortController();
@@ -1471,7 +1470,6 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
         } : undefined
       })) || [];
 
-      console.log('✅ Successfully fetched reviews:', { count: reviews.length });
       return { success: true, data: reviews, count };
     } catch (abortError) {
       clearTimeout(timeoutId);

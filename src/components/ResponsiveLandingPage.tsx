@@ -177,19 +177,7 @@ export const ResponsiveLandingPage: React.FC = () => {
   const transformReviewData = (review: Review): ReviewData => {
     const theme: ReviewData['theme'] = ['purple', 'green', 'orange', 'blue', 'red'][review.id % 5] as ReviewData['theme'];
     
-    // Debug logging to understand the data structure
-    console.log('🔍 Transforming review:', {
-      reviewId: review.id,
-      userId: review.userId,
-      gameId: review.gameId,
-      reviewIgdbId: (review as any).igdb_id,
-      game: review.game,
-      gameIgdbId: (review.game as any)?.igdb_id,
-      gameGameId: (review.game as any)?.game_id,
-    });
-    
     const igdbId = getReliableIgdbId(review);
-    console.log('📍 Final IGDB ID for routing:', igdbId);
     
     return {
       id: review.id.toString(),

@@ -37,7 +37,7 @@ export const useGameSearch = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [searchOptions, setSearchOptions] = useState<SearchOptions>({
-    limit: 150,  // Request more results to enable proper pagination
+    limit: 40,  // Reduced for better relevance and faster search
     offset: 0,
     sortBy: 'popularity',
     sortOrder: 'desc'
@@ -60,10 +60,13 @@ export const useGameSearch = () => {
     abortControllerRef.current = new AbortController();
     
     try {
+      // Clear previous results immediately for new searches
       setSearchState(prev => ({
         ...prev,
         loading: true,
-        error: null
+        error: null,
+        games: append ? prev.games : [], // Clear games if not appending
+        totalResults: append ? prev.totalResults : 0
       }));
 
       const searchParams = { ...searchOptions, ...options };
@@ -71,7 +74,7 @@ export const useGameSearch = () => {
       
       // Use Advanced Search Coordination with accent normalization
       const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
-        maxResults: searchParams.limit || 150,  // Request enough results for multiple pages
+        maxResults: searchParams.limit || 40,  // Reduced for better relevance and speed
         includeMetrics: true,
         bypassCache: false // Always use cache for better performance
       });
@@ -112,14 +115,16 @@ export const useGameSearch = () => {
     }
   }, [searchOptions]); // FIXED: Removed searchState.games.length dependency
 
-  // Quick search for autocomplete/suggestions
+  // Quick search for autocomplete/suggestions - optimized for speed
   const quickSearch = useCallback(async (query: string) => {
     if (query.trim().length < 2) return [];
     
     try {
       const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
-        maxResults: 5,
-        includeMetrics: false
+        maxResults: 8, // Match maxSuggestions in HeaderSearchBar
+        includeMetrics: false, // Skip expensive metrics calculation for dropdown
+        bypassCache: false, // Use cache for faster results
+        fastMode: true // Use fast search path for dropdown
       });
       return searchResult.results;
     } catch (error) {

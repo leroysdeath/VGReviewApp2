@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X, Loader2, Star, Gamepad2, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useGameSearch } from '../hooks/useGameSearch';
+import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
 import type { GameWithCalculatedFields } from '../types/database';
 import { supabase } from '../services/supabase';
 
@@ -25,11 +25,12 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
   className = "",
   placeholder = "Search games or users...",
   maxSuggestions = 8,
-  debounceMs = 500
+  debounceMs = 200
 }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<SearchTab>('games');
+  const [searchTerm, setSearchTerm] = useState(''); // Independent local state
   const [gameSuggestions, setGameSuggestions] = useState<GameWithCalculatedFields[]>([]);
   const [userSuggestions, setUserSuggestions] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,15 +38,9 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
+  const searchCoordinationRef = useRef<AdvancedSearchCoordination>(new AdvancedSearchCoordination());
 
-  const { 
-    searchTerm, 
-    setSearchTerm, 
-    searchGames,
-    searchState // Direct access to the same search results as SearchResultsPage
-  } = useGameSearch();
-
-  // Simple game search using the EXACT same searchGames method as SearchResultsPage
+  // Direct game search using fast mode for immediate dropdown results
   const performGameSearch = useCallback(async (query: string) => {
     if (!query.trim() || query.length < 2) {
       setGameSuggestions([]);
@@ -55,19 +50,21 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
     setIsLoading(true);
     try {
       if (import.meta.env.DEV) {
-        console.log('🔍 NEW HeaderSearchBar: Triggering searchGames for:', query);
+        console.log('🔍 HeaderSearchBar: Fast search for:', query);
       }
 
-      // Use the EXACT same searchGames method that SearchResultsPage uses
-      await searchGames(query);
+      // Use fast mode for immediate dropdown results - independent of main search
+      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+        maxResults: maxSuggestions,
+        includeMetrics: false,
+        fastMode: true,
+        bypassCache: false
+      });
       
-      // Get results from the SAME searchState that SearchResultsPage uses
-      const results = searchState.games.slice(0, maxSuggestions);
-      setGameSuggestions(results);
+      setGameSuggestions(searchResult.results);
 
       if (import.meta.env.DEV) {
-        console.log('🎯 NEW HeaderSearchBar: Got', results.length, 'results');
-        console.log('🎯 NEW HeaderSearchBar: First 3:', results.slice(0, 3).map(g => g.name));
+        console.log('🎯 HeaderSearchBar: Got', searchResult.results.length, 'fast results');
       }
     } catch (error) {
       console.error('HeaderSearchBar game search failed:', error);
@@ -75,7 +72,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [searchGames, searchState.games, maxSuggestions]);
+  }, [maxSuggestions]);
 
   // Simple user search
   const performUserSearch = useCallback(async (query: string) => {

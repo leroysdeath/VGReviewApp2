@@ -142,12 +142,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
     }
     
     const url = `/review/${userId}/${gameId}`;
-    console.log('🔗 ReviewCard URL:', {
-      userId: review.userId,
-      igdbGameId: review.igdbGameId,
-      gameId: review.gameId,
-      finalUrl: url
-    });
     
     return url;
   };

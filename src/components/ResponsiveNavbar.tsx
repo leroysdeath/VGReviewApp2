@@ -9,6 +9,7 @@ import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
 import { filterProtectedContent } from '../utils/contentProtectionFilter';
+import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
 
 // Using GameWithCalculatedFields from database types
 
@@ -59,16 +60,11 @@ export const ResponsiveNavbar: React.FC = () => {
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
+  const searchCoordinationRef = useRef<AdvancedSearchCoordination>(new AdvancedSearchCoordination());
   
-  const { 
-    searchState,
-    searchTerm, 
-    setSearchTerm, 
-    searchGames,
-    quickSearch, 
-    navigateToSearch,
-    clearSearch 
-  } = useGameSearch();
+  // Remove dependency on shared useGameSearch hook for navbar dropdown
+  // Keep it only for navigation to search results page
+  const { navigateToSearch } = useGameSearch();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -80,7 +76,7 @@ export const ResponsiveNavbar: React.FC = () => {
     setRecentUserSearches(savedUsers.slice(0, 5));
   }, []);
 
-  // Enhanced quick search for games with caching using improved search algorithm
+  // Enhanced quick search for games with independent fast search (no shared state)
   const performGameSearch = useCallback(async (query: string) => {
     if (!query.trim() || query.length < 2) {
       setSuggestions([]);
@@ -105,17 +101,68 @@ export const ResponsiveNavbar: React.FC = () => {
         return;
       }
 
-      // Use the SAME improved search that SearchResultsPage uses
-      await searchGames(query);
+      if (import.meta.env.DEV) {
+        console.log('🔍 ResponsiveNavbar: Fast search for:', query);
+      }
+
+      // Use enhanced fast mode search with fallback to full search if needed
+      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+        maxResults: 8,
+        includeMetrics: false,
+        fastMode: true,
+        bypassCache: false,
+        useAggressive: false // Conservative for dropdown to avoid unrelated results
+      });
       
-      // Get results from the SAME searchState that SearchResultsPage uses
-      const searchResults = searchState.games;
+      // If fast mode returns no results, fallback to regular search for better coverage
+      if (searchResult.results.length === 0 && query.trim().length >= 2) {
+        if (import.meta.env.DEV) {
+          console.log('🔄 ResponsiveNavbar: Fast mode empty, trying fallback search');
+        }
+        
+        const fallbackResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+          maxResults: 8,
+          includeMetrics: false,
+          fastMode: false, // Use full search as fallback
+          bypassCache: false,
+          useAggressive: false
+        });
+        
+        // Use fallback results if we got any
+        if (fallbackResult.results.length > 0) {
+          searchResult.results = fallbackResult.results;
+          if (import.meta.env.DEV) {
+            console.log('✅ ResponsiveNavbar: Fallback search returned', fallbackResult.results.length, 'results');
+          }
+        }
+      }
       
       // Apply content protection filtering to search results
-      const filteredResults = filterProtectedContent(searchResults);
+      const filteredResults = filterProtectedContent(searchResult.results);
 
       if (filteredResults && Array.isArray(filteredResults)) {
-        const limitedResults = filteredResults.slice(0, 8);
+        // Enhanced: Apply additional relevance filtering for dropdown
+        const relevantResults = filteredResults.filter(game => {
+          const queryLower = query.toLowerCase().trim();
+          const nameLower = game.name.toLowerCase();
+          
+          // Prioritize games that start with or contain the exact query
+          if (nameLower.includes(queryLower)) {
+            return true;
+          }
+          
+          // Check for word matches in title
+          const queryWords = queryLower.split(/\s+/);
+          const nameWords = nameLower.split(/\s+/);
+          const matchingWords = queryWords.filter(qWord => 
+            nameWords.some(nWord => nWord.includes(qWord))
+          );
+          
+          // Require at least 60% word match for dropdown results
+          return matchingWords.length / queryWords.length >= 0.6;
+        });
+
+        const limitedResults = relevantResults.slice(0, 8);
         setSuggestions(limitedResults);
         setIsFromCache(false);
         setCacheStatus('fresh');
@@ -128,6 +175,10 @@ export const ResponsiveNavbar: React.FC = () => {
           timestamp: Date.now()
         };
         browserCache.set(cacheKey, cacheData, 300); // 5 minutes
+
+        if (import.meta.env.DEV) {
+          console.log('🎯 ResponsiveNavbar: Got', limitedResults.length, 'enhanced results');
+        }
       } else {
         setSuggestions([]);
         setShowSuggestions(false);
@@ -141,7 +192,7 @@ export const ResponsiveNavbar: React.FC = () => {
     } finally {
       setIsLoadingSuggestions(false);
     }
-  }, [searchGames, searchState.games]);
+  }, []);
 
   // User search functionality
   const performUserSearch = useCallback(async (query: string) => {
@@ -239,7 +290,7 @@ export const ResponsiveNavbar: React.FC = () => {
 
     debounceRef.current = setTimeout(() => {
       performQuickSearch(searchQuery);
-    }, 800);
+    }, 300); // Faster response with enhanced search
 
     return () => {
       if (debounceRef.current) {
@@ -270,9 +321,8 @@ export const ResponsiveNavbar: React.FC = () => {
     if (searchQuery.trim()) {
       saveRecentSearch(searchQuery);
       if (activeTab === 'games') {
-        // Navigate to search results page AND trigger the search
+        // Navigate to search results page (the page will handle its own search)
         navigate(`/search-results?q=${encodeURIComponent(searchQuery.trim())}`);
-        searchGames(searchQuery.trim());
       } else {
         navigate(`/users?q=${encodeURIComponent(searchQuery.trim())}`);
       }
@@ -630,7 +680,7 @@ export const ResponsiveNavbar: React.FC = () => {
                           <div className="p-4 text-center">
                             <Loader2 className="h-5 w-5 text-purple-500 animate-spin mx-auto mb-2" />
                             <div className="text-sm text-gray-400">
-                              Searching {activeTab === 'games' ? 'games' : 'users'}...
+                              {activeTab === 'games' ? 'Enhanced search...' : 'Searching users...'}
                             </div>
                           </div>
                         )}
@@ -910,7 +960,7 @@ export const ResponsiveNavbar: React.FC = () => {
                       <div className="p-4 text-center">
                         <Loader2 className="h-5 w-5 text-purple-500 animate-spin mx-auto mb-2" />
                         <div className="text-sm text-gray-400">
-                          Searching {activeTab === 'games' ? 'games' : 'users'}...
+                          {activeTab === 'games' ? 'Enhanced search...' : 'Searching users...'}
                         </div>
                       </div>
                     )}

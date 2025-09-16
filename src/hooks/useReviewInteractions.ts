@@ -89,7 +89,6 @@ export const useReviewInteractions = ({
       if (!reviewId || commentsLoaded) return;
       
       try {
-        console.log('📚 Loading comments in background for review:', reviewId);
         setIsLoadingComments(true);
         const response = await getCommentsForReview(reviewId, {}, userId);
         

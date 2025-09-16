@@ -26,6 +26,8 @@ interface GameWithRating extends Game {
  * Enhanced Game Data Service V2 - Fixes Database Threshold Issue
  */
 export class GameDataServiceV2 {
+  private queryCache = new Map<string, { results: GameWithCalculatedFields[], timestamp: number }>();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   
   /**
    * Main search function with intelligent IGDB supplementation
@@ -33,6 +35,16 @@ export class GameDataServiceV2 {
   async searchGames(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
     const sanitizedQuery = sanitizeSearchTerm(query);
     if (!sanitizedQuery) return [];
+    
+    // Check cache first (only for simple queries without filters)
+    if (!filters || Object.keys(filters).length === 0) {
+      const cacheKey = sanitizedQuery.toLowerCase();
+      const cached = this.queryCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL) {
+        console.log(`🚀 Cache hit for "${query}" (${cached.results.length} results)`);
+        return cached.results;
+      }
+    }
     
     try {
       // Step 1: Always get database results first (fast response)
@@ -58,6 +70,14 @@ export class GameDataServiceV2 {
             // Step 5: Update database asynchronously (non-blocking)
             this.updateDatabaseAsync(igdbGames, query);
             
+            // Cache results for future requests (no filters only)
+            if (!filters || Object.keys(filters).length === 0) {
+              this.queryCache.set(sanitizedQuery.toLowerCase(), {
+                results: mergedResults,
+                timestamp: Date.now()
+              });
+            }
+            
             return mergedResults;
           }
         } catch (igdbError) {
@@ -66,6 +86,14 @@ export class GameDataServiceV2 {
         }
       } else {
         console.log(`📋 Using database results only (${dbResults.length} games)`);
+      }
+      
+      // Cache database-only results too (no filters only)
+      if (!filters || Object.keys(filters).length === 0) {
+        this.queryCache.set(sanitizedQuery.toLowerCase(), {
+          results: dbResults,
+          timestamp: Date.now()
+        });
       }
       
       return dbResults;
@@ -144,9 +172,9 @@ export class GameDataServiceV2 {
     try {
       // Use the enhanced IGDB service we implemented in Layer 1
       if (this.isFranchiseQuery(query)) {
-        return await igdbServiceV2.searchGames(query, 150); // Get many results for franchises to enable pagination
+        return await igdbServiceV2.searchGames(query, 40); // Focused franchise results for better relevance
       } else {
-        return await igdbServiceV2.searchGames(query, 100); // Get more results for better pagination
+        return await igdbServiceV2.searchGames(query, 30); // Focused results for specific searches
       }
     } catch (error) {
       console.error('Enhanced IGDB search failed:', error);
@@ -166,17 +194,17 @@ export class GameDataServiceV2 {
     // Convert IGDB games to local format
     const igdbConverted = this.convertIGDBToLocal(igdbGames);
     
-    // Create a map of existing games by IGDB ID to avoid duplicates
-    const existingIGDBIds = new Set(
-      dbResults
-        .filter(game => game.igdb_id)
-        .map(game => game.igdb_id)
-    );
+    // Optimize duplicate checking with faster lookups
+    const existingIGDBIds = new Set<number>();
+    const existingNames = new Set<string>();
     
-    // Also check for name-based duplicates (fuzzy matching)
-    const existingNames = new Set(
-      dbResults.map(game => this.normalizeGameName(game.name))
-    );
+    // Single pass to build lookup sets
+    for (const game of dbResults) {
+      if (game.igdb_id) {
+        existingIGDBIds.add(game.igdb_id);
+      }
+      existingNames.add(this.normalizeGameName(game.name));
+    }
     
     // Filter out IGDB games we already have
     const newIGDBGames = igdbConverted.filter(game => {
@@ -429,8 +457,8 @@ export class GameDataServiceV2 {
    * Asynchronously update database with new IGDB results (non-blocking)
    */
   private updateDatabaseAsync(igdbGames: IGDBGame[], query: string): void {
-    // Don't block the response - update in background
-    setTimeout(async () => {
+    // Use queueMicrotask for better performance than setTimeout
+    queueMicrotask(async () => {
       try {
         const gamesToSave = igdbGames
           .filter(game => game.name && game.id)
@@ -447,7 +475,7 @@ export class GameDataServiceV2 {
         }
         // Don't throw - this is non-critical
       }
-    }, 100); // Small delay to not block response
+    });
   }
   
   /**
@@ -511,22 +539,88 @@ export class GameDataServiceV2 {
       }
     }
     
-    // Use upsert to handle duplicates gracefully
-    // Split into chunks to avoid conflicts
-    for (const game of transformedGames) {
+    // Use batch upsert for better performance
+    if (transformedGames.length > 0) {
       const { error } = await supabase
         .from('game')
-        .upsert(game, { 
+        .upsert(transformedGames, { 
           onConflict: 'igdb_id',
           ignoreDuplicates: true 
         });
       
       if (error && error.code !== '23505') {
-        console.error(`Failed to upsert game ${game.name}:`, error);
+        console.error(`Failed to batch upsert ${transformedGames.length} games:`, error);
       }
     }
   }
   
+  /**
+   * Fast search optimized for dropdown suggestions
+   */
+  async searchGamesFast(query: string, maxResults: number = 8): Promise<GameWithCalculatedFields[]> {
+    try {
+      console.log(`⚡ Fast search for: "${query}" (max: ${maxResults})`);
+      
+      // Search larger pool then filter to maxResults - preserves search quality
+      const searchLimit = Math.max(maxResults * 10, 100); // Get 10x results or min 100 for better filtering
+      const results = await this.searchByName(query, undefined, searchLimit);
+      console.log(`⚡ Fast search retrieved: ${results.length} from pool of ${searchLimit}`);
+      
+      // Sort by relevance but skip complex metrics for speed
+      const scoredResults = results.map(game => ({
+        ...game,
+        _relevanceScore: this.calculateSimpleRelevanceScore(game, query)
+      }));
+      
+      // Filter out very low relevance results, sort, and limit to maxResults
+      const filteredAndSorted = scoredResults
+        .filter(game => game._relevanceScore >= 30) // Filter unrelated games
+        .sort((a, b) => b._relevanceScore - a._relevanceScore)
+        .slice(0, maxResults) // Apply final result limit
+        .map(({ _relevanceScore, ...game }) => game); // Remove temp score field
+        
+      console.log(`⚡ Fast search final results: ${filteredAndSorted.length} (filtered from ${results.length})`);
+      return filteredAndSorted;
+    } catch (error) {
+      console.error('Error in fast search:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * Simple relevance scoring for fast searches (no complex IGDB metrics)
+   */
+  private calculateSimpleRelevanceScore(game: GameWithCalculatedFields, query: string): number {
+    const name = game.name.toLowerCase();
+    const queryLower = query.toLowerCase();
+    
+    if (name === queryLower) return 100;
+    if (name.startsWith(queryLower)) return 80;
+    if (name.includes(queryLower)) return 60;
+    
+    // Word-based matching
+    const queryWords = queryLower.split(/\s+/);
+    const nameWords = name.split(/\s+/);
+    const matchedWords = queryWords.filter(qw => 
+      nameWords.some(nw => nw.includes(qw) || qw.includes(nw))
+    );
+    
+    const wordMatchRatio = matchedWords.length / queryWords.length;
+    
+    // Early exit for poor matches to prevent unrelated results in dropdown
+    if (wordMatchRatio < 0.5) {
+      // Check if at least one significant word matches
+      const hasSignificantMatch = queryWords.some(qWord => 
+        qWord.length >= 3 && nameWords.some(nWord => nWord.includes(qWord))
+      );
+      if (!hasSignificantMatch) {
+        return 5; // Very low score for unrelated games
+      }
+    }
+    
+    return wordMatchRatio * 40;
+  }
+
   /**
    * Search games in database (exact matching)
    */
@@ -536,12 +630,12 @@ export class GameDataServiceV2 {
       console.log(`🔍 Database search for: "${query}"`);
       
       // First: Search by name only (much faster)
-      let nameResults = await this.searchByName(query, filters, 50);
+      let nameResults = await this.searchByName(query, filters, 25); // Reduced from 50 for faster dropdown
       console.log(`📛 Name search: ${nameResults.length} results`);
       
       // If we don't have enough results, add summary search
-      if (nameResults.length < 30) {
-        const summaryResults = await this.searchBySummary(query, filters, 30);
+      if (nameResults.length < 15) { // Reduced threshold for faster response
+        const summaryResults = await this.searchBySummary(query, filters, 15); // Reduced from 30
         console.log(`📝 Summary search: ${summaryResults.length} results`);
         
         // Merge results, avoiding duplicates
@@ -566,7 +660,7 @@ export class GameDataServiceV2 {
    */
   private async searchByName(query: string, filters?: SearchFilters, limit: number = 50): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => abortController.abort(), 3000); // 3 second timeout for faster response
     
     try {
       let queryBuilder = supabase
@@ -607,7 +701,7 @@ export class GameDataServiceV2 {
     } catch (abortError) {
       clearTimeout(timeoutId);
       if (abortError.name === 'AbortError') {
-        console.error('❌ Name search timed out after 10 seconds');
+        console.error('❌ Name search timed out after 3 seconds');
         return [];
       }
       throw abortError;
@@ -619,7 +713,7 @@ export class GameDataServiceV2 {
    */
   private async searchBySummary(query: string, filters?: SearchFilters, limit: number = 30): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 8000); // 8 second timeout
+    const timeoutId = setTimeout(() => abortController.abort(), 2000); // 2 second timeout for faster response
     
     try {
       let queryBuilder = supabase
@@ -660,7 +754,7 @@ export class GameDataServiceV2 {
     } catch (abortError) {
       clearTimeout(timeoutId);
       if (abortError.name === 'AbortError') {
-        console.error('❌ Summary search timed out after 8 seconds');
+        console.error('❌ Summary search timed out after 2 seconds');
         return [];
       }
       throw abortError;

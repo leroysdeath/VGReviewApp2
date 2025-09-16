@@ -78,6 +78,7 @@ export class AdvancedSearchCoordination {
       useAggressive?: boolean;
       bypassCache?: boolean;
       includeMetrics?: boolean;
+      fastMode?: boolean; // New option for dropdown searches
     } = {}
   ): Promise<{
     results: SearchResult[];
@@ -85,6 +86,37 @@ export class AdvancedSearchCoordination {
     metrics?: SearchMetrics;
   }> {
     const startTime = Date.now();
+    
+    // Fast path for dropdown searches - bypass all complex logic
+    if (options.fastMode) {
+      console.log(`⚡ FAST MODE: Quick search for dropdown: "${query}"`);
+      try {
+        const fastResults = await this.gameDataService.searchGamesFast(query, options.maxResults || 8);
+        return {
+          results: fastResults.map(game => ({
+            ...game,
+            source: 'database' as const,
+            relevanceScore: 0, // Skip relevance calculation for speed
+            qualityScore: 0 // Skip quality calculation for speed
+          })),
+          context: this.buildSearchContext(query, options),
+          metrics: options.includeMetrics ? {
+            totalSearchTime: Date.now() - startTime,
+            dbQueryTime: Date.now() - startTime,
+            igdbQueryTime: 0,
+            processingTime: 0,
+            cacheHit: false,
+            resultCount: fastResults.length,
+            qualityFiltered: 0,
+            contentFiltered: 0,
+            queriesExpanded: 1
+          } : undefined
+        };
+      } catch (error) {
+        console.error('Fast mode search failed:', error);
+        // Fall through to normal search if fast mode fails
+      }
+    }
     
     // Build search context
     const context = this.buildSearchContext(query, options);
@@ -335,19 +367,19 @@ export class AdvancedSearchCoordination {
   private getDefaultMaxResults(intent: SearchIntent): number {
     switch (intent) {
       case SearchIntent.SPECIFIC_GAME:
-        return 50; // Allow for variations and similar games
+        return 20; // Focused results for specific searches
       case SearchIntent.FRANCHISE_BROWSE:
-        return 150; // Full franchise coverage for pagination
+        return 40; // Reasonable franchise coverage with better relevance
       case SearchIntent.GENRE_DISCOVERY:
-        return 150; // Extensive results for discovery
+        return 50; // More focused discovery results
       case SearchIntent.YEAR_SEARCH:
-        return 100; // Recent games exploration
+        return 40; // Recent games exploration
       case SearchIntent.DEVELOPER_SEARCH:
-        return 100; // Developer portfolio browsing
+        return 40; // Developer portfolio browsing
       case SearchIntent.PLATFORM_SEARCH:
-        return 100; // Platform library browsing
+        return 40; // Platform library browsing
       default:
-        return 100; // Default to enough for pagination
+        return 40; // Default to focused, relevant results
     }
   }
 
@@ -430,7 +462,12 @@ export class AdvancedSearchCoordination {
             qualityScore: this.calculateQualityScore(game)
           }));
 
-          return { query: expandedQuery, results: convertedResults };
+          // Filter out games with very low relevance scores to prevent unrelated results
+          const relevantResults = convertedResults.filter(game => 
+            (game.relevanceScore || 0) >= 0.4 // Increased threshold to filter unrelated games
+          );
+
+          return { query: expandedQuery, results: relevantResults };
         } catch (error) {
           console.error(`❌ Query failed for "${expandedQuery}":`, error);
           return { query: expandedQuery, results: [] };
@@ -450,8 +487,8 @@ export class AdvancedSearchCoordination {
         }
       }
 
-      // Early termination if we have enough results
-      if (allResults.length >= 20) {
+      // Early termination if we have enough quality results
+      if (allResults.length >= 15) {
         console.log(`✂️ Early termination: Found ${allResults.length} results after ${i + batchSize} queries`);
         break;
       }
@@ -519,6 +556,9 @@ export class AdvancedSearchCoordination {
     // Starts with query
     if (lowerGameName.startsWith(lowerQuery)) return 0.9;
     
+    // Contains query as whole word at the beginning
+    if (lowerGameName.startsWith(lowerQuery + ' ')) return 0.85;
+    
     // Contains query as whole word
     const queryWords = lowerQuery.split(/\s+/);
     const gameWords = lowerGameName.split(/\s+/);
@@ -527,6 +567,17 @@ export class AdvancedSearchCoordination {
     );
     
     const wordMatchRatio = matchedWords.length / queryWords.length;
+    
+    // Early exit for poor matches to prevent unrelated results
+    if (wordMatchRatio < 0.5) {
+      // Check if at least one significant word matches
+      const hasSignificantMatch = queryWords.some(qWord => 
+        qWord.length >= 3 && gameWords.some(gWord => gWord.includes(qWord))
+      );
+      if (!hasSignificantMatch) {
+        return 0.1; // Very low score for unrelated games
+      }
+    }
     
     // Boost score if query words appear in order
     let sequenceBonus = 0;
@@ -538,7 +589,44 @@ export class AdvancedSearchCoordination {
       }
     }
     
-    return Math.min(0.7 * wordMatchRatio + sequenceBonus, 0.8);
+    // Penalize if the game name contains completely unrelated franchise names
+    const unrelatedPenalty = this.calculateUnrelatedPenalty(lowerGameName, lowerQuery);
+    
+    const baseScore = Math.min(0.7 * wordMatchRatio + sequenceBonus, 0.8);
+    return Math.max(baseScore - unrelatedPenalty, 0.1);
+  }
+  
+  /**
+   * Calculate penalty for games that contain unrelated franchise names
+   */
+  private calculateUnrelatedPenalty(gameName: string, query: string): number {
+    const queryWords = query.split(/\s+/);
+    const gameWords = gameName.split(/\s+/);
+    
+    // Common franchise keywords that indicate different franchises
+    const franchiseKeywords = [
+      'mario', 'zelda', 'pokemon', 'sonic', 'mega man', 'megaman',
+      'final fantasy', 'dragon quest', 'resident evil', 'silent hill',
+      'metal gear', 'grand theft auto', 'call of duty', 'assassin',
+      'elder scrolls', 'fallout', 'witcher', 'dark souls', 'halo',
+      'uncharted', 'god of war', 'street fighter', 'mortal kombat',
+      'tekken', 'kingdom hearts', 'persona', 'shin megami tensei'
+    ];
+    
+    // Check if the game contains franchise keywords not present in the query
+    const gameContainsUnrelatedFranchise = franchiseKeywords.some(franchise => {
+      const franchiseWords = franchise.split(/\s+/);
+      const gameContainsFranchise = franchiseWords.every(word => 
+        gameWords.some(gWord => gWord.includes(word))
+      );
+      const queryContainsFranchise = franchiseWords.some(word => 
+        queryWords.some(qWord => qWord.includes(word))
+      );
+      
+      return gameContainsFranchise && !queryContainsFranchise;
+    });
+    
+    return gameContainsUnrelatedFranchise ? 0.4 : 0; // Heavy penalty for unrelated franchises
   }
 
   /**
