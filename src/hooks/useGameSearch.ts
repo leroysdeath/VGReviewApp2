@@ -115,7 +115,7 @@ export const useGameSearch = () => {
     }
   }, [searchOptions]); // FIXED: Removed searchState.games.length dependency
 
-  // Quick search for autocomplete/suggestions - optimized for speed
+  // Quick search for autocomplete/suggestions - uses same filtering as main search
   const quickSearch = useCallback(async (query: string) => {
     if (query.trim().length < 2) return [];
     
@@ -124,7 +124,7 @@ export const useGameSearch = () => {
         maxResults: 8, // Match maxSuggestions in HeaderSearchBar
         includeMetrics: false, // Skip expensive metrics calculation for dropdown
         bypassCache: false, // Use cache for faster results
-        fastMode: true // Use fast search path for dropdown
+        fastMode: false // Use full search with filtering for consistent results
       });
       return searchResult.results;
     } catch (error) {

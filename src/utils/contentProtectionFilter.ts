@@ -726,6 +726,145 @@ function isMajorExpansion(game: Game): boolean {
 }
 
 /**
+ * Filter out fan games and e-reader content specifically
+ * This is a more targeted filter for search results
+ */
+export function filterFanGamesAndEReaderContent(games: Game[]): Game[] {
+  return games.filter(game => {
+    const name = game.name.toLowerCase();
+    const developer = (game.developer || '').toLowerCase();
+    const publisher = (game.publisher || '').toLowerCase();
+    const summary = (game.summary || '').toLowerCase();
+    
+    // Filter e-reader content
+    // Check for e-reader patterns in name
+    const eReaderPatterns = [
+      '-e ', // e.g., "Mario Party-e "
+      '-e$', // ends with -e
+      'pokémon-e',
+      'pokemon-e',
+      'e-reader',
+      'e reader',
+      'ereader'
+    ];
+    
+    for (const pattern of eReaderPatterns) {
+      if (pattern.endsWith('$')) {
+        if (name.endsWith(pattern.slice(0, -1))) {
+          console.log(`🎴 E-READER FILTER: Filtering "${game.name}" - e-reader content`);
+          return false;
+        }
+      } else if (name.includes(pattern)) {
+        console.log(`🎴 E-READER FILTER: Filtering "${game.name}" - e-reader content`);
+        return false;
+      }
+    }
+    
+    // Check for e-reader in summary (but be more specific to avoid false positives)
+    // Only filter if it's primarily about e-reader cards, not just mentioning them
+    if ((summary.includes('e-reader cards featuring') || 
+         summary.includes('e reader cards featuring') ||
+         summary.includes('card game for the e-reader') || 
+         summary.includes('e-reader version') ||
+         (summary.startsWith('e-reader') && summary.includes('card')))) {
+      console.log(`🎴 E-READER FILTER: Filtering "${game.name}" - e-reader card content in summary`);
+      return false;
+    }
+    
+    // Filter fan games
+    // Category 5 is mod/fan game
+    if (game.category === 5) {
+      console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - Category 5 (Mod/Fan Game)`);
+      return false;
+    }
+    
+    // Check for fan game keywords in publisher/developer
+    const fanGameIndicators = [
+      'fan game', 'fangame', 'fan-game', 'fan made', 'fan-made', 'fanmade',
+      'fan project', 'fan team', 'community', 'homebrew', 'rom hack', 'romhack',
+      'unofficial', 'tribute', 'remake by', 'inspired by'
+    ];
+    
+    for (const indicator of fanGameIndicators) {
+      if (developer.includes(indicator) || publisher.includes(indicator)) {
+        console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - Fan game indicator in developer/publisher`);
+        return false;
+      }
+    }
+    
+    // Check for specific known fan games by name patterns
+    const knownFanGames = [
+      // Mario fan games
+      'super mario bros. x', 'mario forever', 'another mario',
+      'mario worker', 'psycho waluigi', 'toad strikes back',
+      
+      // Zelda fan games (be careful not to match official games)
+      'zelda classic', 'zelda: mystery of solarus', 'zelda fan',
+      'zelda: oni link', 'zelda: time to triumph',
+      
+      // Pokemon fan games
+      'pokemon uranium', 'pokemon insurgence', 'pokemon prism',
+      'pokemon light platinum', 'pokemon glazed', 'pokemon reborn',
+      'pokemon rejuvenation', 'pokemon phoenix rising', 'pokemon sage',
+      'pokemon solar light', 'pokemon lunar dark', 'pokemon clover',
+      
+      // Metroid fan games
+      'am2r', 'another metroid', 'metroid prime 2d', 'metroid: rogue',
+      'metroid confrontation', 'metroid sr388', 'hyper metroid',
+      
+      // Sonic fan games
+      'sonic before', 'sonic after', 'sonic chrono', 'sonic robo',
+      'sonic utopia', 'sonic world', 'sonic fan', 'sonic mania plus fan',
+      
+      // Other franchise fan games
+      'mega man unlimited', 'mega man revolution', 'street fighter x mega',
+      'chrono trigger: crimson', 'mother 4', 'oddity'
+    ];
+    
+    for (const fanGame of knownFanGames) {
+      if (name.includes(fanGame)) {
+        console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - Known fan game`);
+        return false;
+      }
+    }
+    
+    // Check for suspicious patterns that indicate fan games
+    // e.g., famous franchises with unknown publishers
+    const protectedFranchises = ['mario', 'zelda', 'metroid', 'pokemon', 'pokémon', 'sonic', 'mega man', 'kirby'];
+    const officialPublishers = ['nintendo', 'sega', 'capcom', 'game freak', 'retro studios', 'hal laboratory', 'sonic team'];
+    
+    for (const franchise of protectedFranchises) {
+      if (name.includes(franchise)) {
+        // Check if it's from an official publisher
+        const hasOfficialPublisher = officialPublishers.some(pub => 
+          developer.includes(pub) || publisher.includes(pub)
+        );
+        
+        // If it's a protected franchise but not from official publisher, check more carefully
+        if (!hasOfficialPublisher) {
+          // Check for obvious fan game patterns
+          if (name.includes('fan') || name.includes('remake') || name.includes('redux') || 
+              name.includes('reborn') || name.includes('revolution') || name.includes('unlimited')) {
+            console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - ${franchise} fan game pattern`);
+            return false;
+          }
+          
+          // Check if publisher/developer is suspicious
+          if (publisher === '' || developer === '' || 
+              publisher.includes('unknown') || developer.includes('unknown') ||
+              publisher.includes('indie') || developer.includes('indie')) {
+            console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - Suspicious ${franchise} game from unknown publisher`);
+            return false;
+          }
+        }
+      }
+    }
+    
+    return true; // Keep the game
+  });
+}
+
+/**
  * Filter out problematic fan-made content, collections, ports, and small DLC from a list of games
  */
 export function filterProtectedContent(games: Game[]): Game[] {

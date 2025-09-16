@@ -11,6 +11,7 @@ import {
   applySisterGameBoost, 
   detectGameSeries 
 } from '../utils/sisterGameDetection'
+import { filterFanGamesAndEReaderContent } from '../utils/contentProtectionFilter'
 
 export interface SearchFilters {
   query?: string
@@ -792,6 +793,10 @@ class GameSearchService {
       if (query && query.trim()) {
         filteredGames = filterByRelevance(filteredGames, query.trim());
       }
+      
+      // Apply fan game and e-reader content filtering
+      filteredGames = filterFanGamesAndEReaderContent(filteredGames);
+      console.log(`🎮 FAN GAME/E-READER FILTER: ${games?.length || 0} games → ${filteredGames.length} after filtering`);
 
       // Apply sister game boosts for better series coverage (Pokemon Red → Blue/Yellow, etc.)
       if (query && query.trim()) {

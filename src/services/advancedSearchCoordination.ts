@@ -12,7 +12,7 @@
 
 import { GameDataServiceV2 } from './gameDataServiceV2';
 import { sortGamesIntelligently, detectSearchIntent, SearchIntent } from '../utils/intelligentPrioritization';
-import { filterProtectedContent } from '../utils/contentProtectionFilter';
+import { filterProtectedContent, filterFanGamesAndEReaderContent } from '../utils/contentProtectionFilter';
 import { normalizeAccents, expandWithAccentVariations, createSearchVariants } from '../utils/accentNormalization';
 
 export interface SearchContext {
@@ -506,7 +506,7 @@ export class AdvancedSearchCoordination {
   private processSearchResults(results: SearchResult[], context: SearchContext): SearchResult[] {
     // Processing raw results
 
-    // Apply content protection filtering
+    // Apply content protection filtering (collections, ports, etc.)
     const contentFilteredResults = filterProtectedContent(results.map(r => ({
       id: r.id,
       name: r.name,
@@ -519,10 +519,23 @@ export class AdvancedSearchCoordination {
       return results.find(r => r.id === filteredGame.id)!;
     }).filter(Boolean);
 
+    // Apply fan game and e-reader filtering
+    const fanGameFilteredResults = filterFanGamesAndEReaderContent(contentFilteredResults.map(r => ({
+      id: r.id,
+      name: r.name,
+      developer: r.developer,
+      publisher: r.publisher,
+      category: r.category,
+      genres: r.genres,
+      summary: r.summary
+    }))).map(filteredGame => {
+      return contentFilteredResults.find(r => r.id === filteredGame.id)!;
+    }).filter(Boolean);
+
     // Content filtering applied
 
     // Apply quality threshold filtering
-    const qualityFilteredResults = contentFilteredResults.filter(result => {
+    const qualityFilteredResults = fanGameFilteredResults.filter(result => {
       const meetsThreshold = (result.qualityScore || 0) >= context.qualityThreshold;
       return meetsThreshold;
     });

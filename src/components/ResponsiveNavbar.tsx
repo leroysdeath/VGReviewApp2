@@ -8,7 +8,7 @@ import { useGameSearch } from '../hooks/useGameSearch';
 import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
-import { filterProtectedContent } from '../utils/contentProtectionFilter';
+// Filtering is now handled by AdvancedSearchCoordination service
 import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
 
 // Using GameWithCalculatedFields from database types
@@ -105,40 +105,19 @@ export const ResponsiveNavbar: React.FC = () => {
         console.log('🔍 ResponsiveNavbar: Fast search for:', query);
       }
 
-      // Use enhanced fast mode search with fallback to full search if needed
+      // Use the same search as the search results page (no fastMode)
+      // This ensures navbar shows same results as main search
       const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
         maxResults: 8,
         includeMetrics: false,
-        fastMode: true,
+        fastMode: false, // Use full search with all filtering
         bypassCache: false,
         useAggressive: false // Conservative for dropdown to avoid unrelated results
       });
       
-      // If fast mode returns no results, fallback to regular search for better coverage
-      if (searchResult.results.length === 0 && query.trim().length >= 2) {
-        if (import.meta.env.DEV) {
-          console.log('🔄 ResponsiveNavbar: Fast mode empty, trying fallback search');
-        }
-        
-        const fallbackResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
-          maxResults: 8,
-          includeMetrics: false,
-          fastMode: false, // Use full search as fallback
-          bypassCache: false,
-          useAggressive: false
-        });
-        
-        // Use fallback results if we got any
-        if (fallbackResult.results.length > 0) {
-          searchResult.results = fallbackResult.results;
-          if (import.meta.env.DEV) {
-            console.log('✅ ResponsiveNavbar: Fallback search returned', fallbackResult.results.length, 'results');
-          }
-        }
-      }
-      
-      // Apply content protection filtering to search results
-      const filteredResults = filterProtectedContent(searchResult.results);
+      // Results are already filtered by the coordination service
+      // No need to apply filters again since coordinatedSearch already does it
+      const filteredResults = searchResult.results;
 
       if (filteredResults && Array.isArray(filteredResults)) {
         // Enhanced: Apply additional relevance filtering for dropdown
