@@ -182,17 +182,22 @@ export const SearchResultsPage: React.FC = () => {
     setFilters(updatedFilters);
     setCurrentPage(1); // Reset to first page when filters change
     
-    // If search term changed, start debounced search (2 second delay)
+    // If search term changed, start debounced search with improved timing
     if ('searchTerm' in newFilters && newFilters.searchTerm?.trim()) {
-      // Clear existing debounce timer
+      // Clear existing debounce timer and any ongoing search
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
       
-      // Set new debounce timer for 2 seconds
+      // RACE CONDITION FIX: Clear any ongoing search immediately
+      // This helps prevent stale results from appearing
+      setSearchStarted(false);
+      
+      // Reduced debounce time from 2000ms to 400ms for better UX
+      // Still prevents excessive API calls while being more responsive
       debounceRef.current = setTimeout(() => {
         performSearch();
-      }, 2000);
+      }, 400);
     }
     
     // Update URL params
