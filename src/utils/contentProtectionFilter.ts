@@ -1,6 +1,8 @@
 // Content Protection Filter with Company-Specific Copyright Policies
 // Filters content based on individual company copyright aggression levels
 
+// Debug flag to control console logging (set to false to reduce verbosity)
+const DEBUG_FILTERING = false;
 
 import { 
   CopyrightLevel, 
@@ -85,6 +87,7 @@ function getGameReleaseYear(game: Game): string {
 
 interface Game {
   id: number;
+  igdb_id?: number; // IGDB ID for the game
   name: string;
   developer?: string;
   publisher?: string;
@@ -98,6 +101,16 @@ interface Game {
     platform?: number;
     region?: number;
   }>;
+  // Manual admin flags
+  greenlight_flag?: boolean;
+  redlight_flag?: boolean;
+  flag_reason?: string;
+  // New IGDB metrics
+  total_rating?: number;
+  rating_count?: number;
+  follows?: number;
+  hypes?: number;
+  popularity_score?: number;
 }
 
 // Companies and franchises known for aggressive IP protection
@@ -319,9 +332,152 @@ const OFFICIAL_CAPCOM_COMPANIES = OFFICIAL_COMPANIES.filter(c =>
 );
 
 /**
+ * Known official Pokemon game IGDB IDs
+ * This list helps when games have missing developer/publisher metadata
+ */
+const KNOWN_OFFICIAL_POKEMON_IDS = new Set([
+  // Gen 1
+  1511, // Pokemon Blue
+  1512, // Pokemon Red
+  1513, // Pokemon Yellow
+  // Gen 2
+  1514, // Pokemon Crystal
+  1515, // Pokemon Gold
+  1516, // Pokemon Silver
+  // Gen 3
+  1517, // Pokemon Ruby
+  1518, // Pokemon Sapphire
+  1519, // Pokemon Emerald
+  1529, // Pokemon FireRed
+  1530, // Pokemon LeafGreen
+  // Gen 4
+  1520, // Pokemon Diamond
+  1531, // Pokemon Pearl
+  1532, // Pokemon Platinum
+  2155, // Pokemon HeartGold
+  2156, // Pokemon SoulSilver
+  // Gen 5
+  1521, // Pokemon Black
+  1522, // Pokemon White
+  8284, // Pokemon Black 2
+  8285, // Pokemon White 2
+  // Gen 6
+  9617, // Pokemon X
+  9618, // Pokemon Y
+  11208, // Pokemon Omega Ruby
+  11207, // Pokemon Alpha Sapphire
+  // Gen 7
+  19038, // Pokemon Sun
+  19039, // Pokemon Moon
+  26758, // Pokemon Ultra Sun
+  26759, // Pokemon Ultra Moon
+  // Gen 8
+  103055, // Pokemon Sword
+  103056, // Pokemon Shield
+  119193, // Pokemon Brilliant Diamond
+  119194, // Pokemon Shining Pearl
+  119191, // Pokemon Legends: Arceus
+  // Gen 9
+  207879, // Pokemon Scarlet
+  207880, // Pokemon Violet
+  // Mystery Dungeon series
+  2320, // Pokemon Mystery Dungeon: Blue Rescue Team
+  2319, // Pokemon Mystery Dungeon: Red Rescue Team
+  2321, // Pokemon Mystery Dungeon: Explorers of Time
+  2322, // Pokemon Mystery Dungeon: Explorers of Darkness
+  2323, // Pokemon Mystery Dungeon: Explorers of Sky
+  // Stadium/Colosseum series
+  1533, // Pokemon Stadium
+  1534, // Pokemon Stadium 2
+  2161, // Pokemon Colosseum
+  2162, // Pokemon XD: Gale of Darkness
+  // Ranger series
+  2324, // Pokemon Ranger
+  2325, // Pokemon Ranger: Shadows of Almia
+  2326, // Pokemon Ranger: Guardian Signs
+  // Other mainline/official
+  1535, // Pokemon Snap
+  19815, // Pokemon GO
+  27351, // Pokemon Let's Go Pikachu
+  27352, // Pokemon Let's Go Eevee
+  135196, // New Pokemon Snap
+  143630, // Pokemon UNITE
+  179649, // Pokemon Cafe Mix / Pokemon Cafe ReMix
+]);
+
+/**
+ * Check if a game is a known official Pokemon game
+ * This helps when developer/publisher metadata is missing
+ */
+function isKnownOfficialPokemonGame(game: Game): boolean {
+  // Check by IGDB ID first
+  if (game.igdb_id && KNOWN_OFFICIAL_POKEMON_IDS.has(game.igdb_id)) {
+    return true;
+  }
+  
+  // Fallback: Check if it's a Pokemon game with official-looking name patterns
+  const name = game.name.toLowerCase();
+  const isPokemonGame = name.includes('pokemon') || name.includes('pokémon');
+  
+  if (!isPokemonGame) {
+    return false;
+  }
+  
+  // Check for known fan game names first
+  const knownFanGameNames = [
+    'uranium', 'insurgence', 'reborn', 'rejuvenation', 'phoenix rising',
+    'sage', 'solar light', 'lunar dark', 'clover', 'prism', 'glazed',
+    'light platinum', 'flora sky', 'ash gray', 'liquid crystal',
+    'dark rising', 'zeta', 'omicron', 'melanite', 'empyrean'
+  ];
+  
+  const isFanGameName = knownFanGameNames.some(fanName => 
+    name.includes(fanName)
+  );
+  
+  if (isFanGameName) {
+    return false; // It's a known fan game
+  }
+  
+  // Check for official game name patterns (mainline games)
+  const officialPatterns = [
+    /pokémon (red|blue|yellow|green)( version)?$/i,
+    /pokémon (gold|silver|crystal)( version)?$/i,
+    /pokémon (ruby|sapphire|emerald)( version)?$/i,
+    /pokémon (firered|leafgreen)( version)?$/i,
+    /pokémon (diamond|pearl|platinum)( version)?$/i,
+    /pokémon (heartgold|soulsilver)( version)?$/i,
+    /pokémon (black|white)( version)?( 2)?$/i,
+    /pokémon (x|y)$/i,
+    /pokémon (omega ruby|alpha sapphire)$/i,
+    /pokémon (sun|moon|ultra sun|ultra moon)$/i,
+    /pokémon (sword|shield)$/i,
+    /pokémon (brilliant diamond|shining pearl)$/i,
+    /pokémon legends[: ]arceus$/i,
+    /pokémon (scarlet|violet)$/i,
+    /pokémon (let's go,? pikachu|let's go,? eevee)$/i,
+    /pokémon (stadium|snap|colosseum|xd|ranger|mystery dungeon)/i,
+    /pokémon go$/i,
+    /new pokémon snap$/i,
+    /pokémon unite$/i,
+    /pokémon café/i
+  ];
+  
+  // If it matches an official pattern and doesn't have fan indicators, treat as official
+  const matchesOfficialPattern = officialPatterns.some(pattern => pattern.test(game.name));
+  const hasFanIndicators = FAN_MADE_INDICATORS.some(indicator => 
+    name.includes(indicator) || 
+    (game.developer && game.developer.toLowerCase().includes(indicator)) ||
+    (game.publisher && game.publisher.toLowerCase().includes(indicator))
+  );
+  
+  return matchesOfficialPattern && !hasFanIndicators;
+}
+
+/**
  * Check if a game is made by an official company
  */
-function isOfficialCompany(game: Game): boolean {
+export function isOfficialCompany(game: Game): boolean {
   const developer = (game.developer || '').toLowerCase();
   const publisher = (game.publisher || '').toLowerCase();
   
@@ -369,7 +525,7 @@ function isFanMadeContent(game: Game): boolean {
       pattern.test(game.name || '')
     );
     if (hasNintendoRomHackPattern) {
-      console.log(`🚨 NINTENDO ROM HACK DETECTED: "${game.name}" matches deceptive naming pattern`);
+      if (DEBUG_FILTERING) console.log(`🚨 NINTENDO ROM HACK DETECTED: "${game.name}" matches deceptive naming pattern`);
       return true;
     }
   }
@@ -463,22 +619,36 @@ export function shouldFilterContent(game: Game): boolean {
   // Filter checking game
   
   const companies = getGameCompanies(game);
-  const searchText = [game.name, game.developer, game.publisher, game.summary, game.description]
-    .filter(Boolean).join(' ').toLowerCase();
+  const rawSearchText = [game.name, game.developer, game.publisher, game.summary, game.description]
+    .filter(Boolean).join(' ');
+  
+  // Apply accent normalization to handle characters like "Pokémon" -> "Pokemon"
+  const searchText = rawSearchText
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
   
   // DEBUG: Log detailed game info for samus searches
   if (searchText.includes('samus') || searchText.includes('metroid')) {
-    console.log(`🧪 SAMUS/METROID DEBUG: Analyzing "${game.name}"`);
-    console.log(`   Developer: ${game.developer || 'N/A'}`);
-    console.log(`   Publisher: ${game.publisher || 'N/A'}`);
-    console.log(`   Category: ${game.category} (${getCategoryLabel(game.category)})`);
-    console.log(`   Summary: ${game.summary || 'N/A'}`);
+    if (DEBUG_FILTERING) console.log(`🧪 SAMUS/METROID DEBUG: Analyzing "${game.name}"`);
+    if (DEBUG_FILTERING) console.log(`   Developer: ${game.developer || 'N/A'}`);
+    if (DEBUG_FILTERING) console.log(`   Publisher: ${game.publisher || 'N/A'}`);
+    if (DEBUG_FILTERING) console.log(`   Category: ${game.category} (${getCategoryLabel(game.category)})`);
+    if (DEBUG_FILTERING) console.log(`   Summary: ${game.summary || 'N/A'}`);
   }
 
   // CRITICAL: Check if this is an official game FIRST before any other filtering
   // BUT: Never bypass category 5 (Mod) games, even if they claim official publisher
   if (game.category !== 5 && isOfficialCompany(game)) {
     // Official game bypass applied
+    return false;
+  }
+  
+  // SPECIAL CASE: Handle known official Pokemon games that might have missing metadata
+  // This helps when IGDB/database data is incomplete
+  if (game.category !== 5 && isKnownOfficialPokemonGame(game)) {
+    if (DEBUG_FILTERING) console.log(`✅ KNOWN POKEMON: Allowing "${game.name}" - known official Pokemon game`);
     return false;
   }
   
@@ -492,6 +662,7 @@ export function shouldFilterContent(game: Game): boolean {
   const hasProtectedFranchise = PROTECTED_FRANCHISES.some(franchise => 
     searchText.includes(franchise)
   );
+
   
   // Check copyright level for each company involved
   // Priority: BLOCK_ALL > AGGRESSIVE > MODERATE > MOD_FRIENDLY
@@ -539,24 +710,25 @@ export function shouldFilterContent(game: Game): boolean {
     }
   }
   
+
   // Apply filtering based on copyright level
   switch (maxCopyrightLevel) {
     case CopyrightLevel.BLOCK_ALL:
       // Block ALL content from this company (extremely rare)
-      console.log(`🔒 BLOCKED ALL: "${game.name}" - Company: ${responsibleCompany} (${getPolicyReason(responsibleCompany)})`);
+      if (DEBUG_FILTERING) console.log(`🔒 BLOCKED ALL: "${game.name}" - Company: ${responsibleCompany} (${getPolicyReason(responsibleCompany)})`);
       return true;
       
     case CopyrightLevel.AGGRESSIVE:
       // DEBUG: Extra logging for samus/metroid
       if (searchText.includes('samus') || searchText.includes('metroid')) {
-        console.log(`🧪 AGGRESSIVE CASE: "${game.name}" - Company: ${responsibleCompany}, Level: ${maxCopyrightLevel}`);
-        console.log(`   Franchise Owner: ${franchiseOwner || 'none'}`);
-        console.log(`   Category Check: ${game.category} === 5? ${game.category === 5}`);
+        if (DEBUG_FILTERING) console.log(`🧪 AGGRESSIVE CASE: "${game.name}" - Company: ${responsibleCompany}, Level: ${maxCopyrightLevel}`);
+        if (DEBUG_FILTERING) console.log(`   Franchise Owner: ${franchiseOwner || 'none'}`);
+        if (DEBUG_FILTERING) console.log(`   Category Check: ${game.category} === 5? ${game.category === 5}`);
       }
       
       // NEW: Block IGDB category 5 (Mod) for aggressive companies
       if (game.category === 5) {
-        console.log(`🛡️ IGDB MOD CATEGORY FILTER: "${game.name}" - Category 5 (Mod) blocked for AGGRESSIVE company ${responsibleCompany}`);
+        if (DEBUG_FILTERING) console.log(`🛡️ IGDB MOD CATEGORY FILTER: "${game.name}" - Category 5 (Mod) blocked for AGGRESSIVE company ${responsibleCompany}`);
         return true;
       }
       
@@ -564,7 +736,7 @@ export function shouldFilterContent(game: Game): boolean {
       // (franchiseOwner already determined above in copyright level detection)
       // TEMPORARILY DISABLED: This is too aggressive and filtering legitimate games
       // if (franchiseOwner && !isAuthorizedPublisher(game.developer || '', game.publisher || '', franchiseOwner)) {
-      //   console.log(`🛡️ OWNERSHIP FILTER: "${game.name}" - Unauthorized use of ${franchiseOwner} franchise by ${game.developer || game.publisher || 'unknown'}`);
+      //   if (DEBUG_FILTERING) console.log(`🛡️ OWNERSHIP FILTER: "${game.name}" - Unauthorized use of ${franchiseOwner} franchise by ${game.developer || game.publisher || 'unknown'}`);
       //   return true;
       // }
       
@@ -572,21 +744,21 @@ export function shouldFilterContent(game: Game): boolean {
       // NEW: Enhanced mod detection for aggressive companies
       // TEMPORARILY DISABLED: This is blocking legitimate games
       // if (hasEnhancedModIndicators(game)) {
-      //   console.log(`🛡️ ENHANCED MOD FILTER: "${game.name}" - Mod content blocked for ${responsibleCompany}`);
+      //   if (DEBUG_FILTERING) console.log(`🛡️ ENHANCED MOD FILTER: "${game.name}" - Mod content blocked for ${responsibleCompany}`);
       //   return true;
       // }
       
-      // Block any fan-made content or protected franchise content by non-official developers
-      // TEMPORARILY DISABLED: This is blocking legitimate franchise games
-      // if (hasExplicitFanIndicators || hasProtectedFranchise) {
-      //   console.log(`🛡️ Aggressive filtering: "${game.name}" - ${hasExplicitFanIndicators ? 'Fan content' : 'Protected franchise'} by ${responsibleCompany}`);
-      //   return true;
-      // }
+      // Block fan-made content for aggressive companies (re-enabled with safer logic)
+      // Only filter if there are explicit fan indicators, not just protected franchises
+      if (hasExplicitFanIndicators) {
+        if (DEBUG_FILTERING) console.log(`🛡️ Aggressive filtering: "${game.name}" - Fan content blocked for ${responsibleCompany}`);
+        return true;
+      }
       
       // Check for specific franchise restrictions
       // TEMPORARILY DISABLED: This is also blocking legitimate games
       // if (hasSpecificFranchiseRestrictions(responsibleCompany, game.name)) {
-      //   console.log(`⚠️ Franchise restriction: "${game.name}" - ${responsibleCompany} specific franchise policy`);
+      //   if (DEBUG_FILTERING) console.log(`⚠️ Franchise restriction: "${game.name}" - ${responsibleCompany} specific franchise policy`);
       //   return true;
       // }
       
@@ -603,24 +775,24 @@ export function shouldFilterContent(game: Game): boolean {
         const releaseYear = getGameReleaseYear(game);
         
         if (isRecent) {
-          console.log(`🕐 TIME-BASED MOD FILTER: "${game.name}" (${releaseYear}) - Mod content blocked for recent release (MODERATE level)`);
+          if (DEBUG_FILTERING) console.log(`🕐 TIME-BASED MOD FILTER: "${game.name}" (${releaseYear}) - Mod content blocked for recent release (MODERATE level)`);
           return true;
         } else {
-          console.log(`⏰ TIME-BASED MOD ALLOWED: "${game.name}" (${releaseYear}) - Older mod content allowed (MODERATE level) - overrides franchise protection`);
+          if (DEBUG_FILTERING) console.log(`⏰ TIME-BASED MOD ALLOWED: "${game.name}" (${releaseYear}) - Older mod content allowed (MODERATE level) - overrides franchise protection`);
           return false; // Explicitly allow old mods, even for protected franchises
         }
       }
       
       // Filter other types of fan-made content (non-mod fan content)
       if (hasExplicitFanIndicators) {
-        console.log(`🛡️ Moderate filtering: "${game.name}" - Explicit fan content indicators (non-mod)`);
+        if (DEBUG_FILTERING) console.log(`🛡️ Moderate filtering: "${game.name}" - Explicit fan content indicators (non-mod)`);
         return true;
       }
       
       // Block protected franchises by non-official developers (since official already bypassed above)
       // This only applies to non-mod content now
       if (hasProtectedFranchise) {
-        console.log(`⚠️ Moderate filtering: "${game.name}" - Protected franchise by non-official developer (non-mod)`);
+        if (DEBUG_FILTERING) console.log(`⚠️ Moderate filtering: "${game.name}" - Protected franchise by non-official developer (non-mod)`);
         return true;
       }
       
@@ -629,22 +801,22 @@ export function shouldFilterContent(game: Game): boolean {
     case CopyrightLevel.MOD_FRIENDLY:
       // Only filter extremely obvious fan content that could cause legal issues
       if (hasExplicitFanIndicators && searchText.includes('commercial')) {
-        console.log(`🛡️ Mod-friendly filtering: "${game.name}" - Commercial fan content (rare)`);
+        if (DEBUG_FILTERING) console.log(`🛡️ Mod-friendly filtering: "${game.name}" - Commercial fan content (rare)`);
         return true;
       }
       
-      console.log(`✅ Mod-friendly: "${game.name}" - Company supports fan content: ${responsibleCompany}`);
+      if (DEBUG_FILTERING) console.log(`✅ Mod-friendly: "${game.name}" - Company supports fan content: ${responsibleCompany}`);
       return false;
       
     default:
       // Default moderate filtering for unknown companies
       if (hasExplicitFanIndicators) {
-        console.log(`🛡️ Default filtering: "${game.name}" - Fan content by unknown company policy`);
+        if (DEBUG_FILTERING) console.log(`🛡️ Default filtering: "${game.name}" - Fan content by unknown company policy`);
         return true;
       }
       
       if (hasProtectedFranchise) {
-        console.log(`⚠️ Default filtering: "${game.name}" - Protected franchise by unknown company`);
+        if (DEBUG_FILTERING) console.log(`⚠️ Default filtering: "${game.name}" - Protected franchise by unknown company`);
         return true;
       }
       
@@ -653,7 +825,7 @@ export function shouldFilterContent(game: Game): boolean {
   
   // DEBUG: Log if samus/metroid game passes through all filters
   if (searchText.includes('samus') || searchText.includes('metroid')) {
-    console.log(`✅ PASSED FILTER: "${game.name}" - Level: ${maxCopyrightLevel}, Company: ${responsibleCompany}`);
+    if (DEBUG_FILTERING) console.log(`✅ PASSED FILTER: "${game.name}" - Level: ${maxCopyrightLevel}, Company: ${responsibleCompany}`);
   }
   
   return false;
@@ -728,9 +900,20 @@ function isMajorExpansion(game: Game): boolean {
 /**
  * Filter out fan games and e-reader content specifically
  * This is a more targeted filter for search results
+ * Respects manual admin flags: greenlight_flag overrides to keep, redlight_flag overrides to filter
  */
 export function filterFanGamesAndEReaderContent(games: Game[]): Game[] {
   return games.filter(game => {
+    // Check manual admin flags first
+    if (game.greenlight_flag === true) {
+      if (DEBUG_FILTERING) if (DEBUG_FILTERING) console.log(`✅ GREENLIGHT: Keeping "${game.name}" - admin override to always show`);
+      return true; // Admin explicitly wants this game shown
+    }
+    
+    if (game.redlight_flag === true) {
+      if (DEBUG_FILTERING) if (DEBUG_FILTERING) console.log(`🚫 REDLIGHT: Filtering "${game.name}" - admin override to always hide`);
+      return false; // Admin explicitly wants this game hidden
+    }
     const name = game.name.toLowerCase();
     const developer = (game.developer || '').toLowerCase();
     const publisher = (game.publisher || '').toLowerCase();
@@ -751,11 +934,11 @@ export function filterFanGamesAndEReaderContent(games: Game[]): Game[] {
     for (const pattern of eReaderPatterns) {
       if (pattern.endsWith('$')) {
         if (name.endsWith(pattern.slice(0, -1))) {
-          console.log(`🎴 E-READER FILTER: Filtering "${game.name}" - e-reader content`);
+          if (DEBUG_FILTERING) console.log(`🎴 E-READER FILTER: Filtering "${game.name}" - e-reader content`);
           return false;
         }
       } else if (name.includes(pattern)) {
-        console.log(`🎴 E-READER FILTER: Filtering "${game.name}" - e-reader content`);
+        if (DEBUG_FILTERING) console.log(`🎴 E-READER FILTER: Filtering "${game.name}" - e-reader content`);
         return false;
       }
     }
@@ -767,14 +950,14 @@ export function filterFanGamesAndEReaderContent(games: Game[]): Game[] {
          summary.includes('card game for the e-reader') || 
          summary.includes('e-reader version') ||
          (summary.startsWith('e-reader') && summary.includes('card')))) {
-      console.log(`🎴 E-READER FILTER: Filtering "${game.name}" - e-reader card content in summary`);
+      if (DEBUG_FILTERING) console.log(`🎴 E-READER FILTER: Filtering "${game.name}" - e-reader card content in summary`);
       return false;
     }
     
     // Filter fan games
     // Category 5 is mod/fan game
     if (game.category === 5) {
-      console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - Category 5 (Mod/Fan Game)`);
+      if (DEBUG_FILTERING) console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - Category 5 (Mod/Fan Game)`);
       return false;
     }
     
@@ -787,7 +970,7 @@ export function filterFanGamesAndEReaderContent(games: Game[]): Game[] {
     
     for (const indicator of fanGameIndicators) {
       if (developer.includes(indicator) || publisher.includes(indicator)) {
-        console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - Fan game indicator in developer/publisher`);
+        if (DEBUG_FILTERING) console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - Fan game indicator in developer/publisher`);
         return false;
       }
     }
@@ -823,7 +1006,7 @@ export function filterFanGamesAndEReaderContent(games: Game[]): Game[] {
     
     for (const fanGame of knownFanGames) {
       if (name.includes(fanGame)) {
-        console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - Known fan game`);
+        if (DEBUG_FILTERING) console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - Known fan game`);
         return false;
       }
     }
@@ -845,7 +1028,7 @@ export function filterFanGamesAndEReaderContent(games: Game[]): Game[] {
           // Check for obvious fan game patterns
           if (name.includes('fan') || name.includes('remake') || name.includes('redux') || 
               name.includes('reborn') || name.includes('revolution') || name.includes('unlimited')) {
-            console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - ${franchise} fan game pattern`);
+            if (DEBUG_FILTERING) console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - ${franchise} fan game pattern`);
             return false;
           }
           
@@ -853,7 +1036,7 @@ export function filterFanGamesAndEReaderContent(games: Game[]): Game[] {
           if (publisher === '' || developer === '' || 
               publisher.includes('unknown') || developer.includes('unknown') ||
               publisher.includes('indie') || developer.includes('indie')) {
-            console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - Suspicious ${franchise} game from unknown publisher`);
+            if (DEBUG_FILTERING) console.log(`🎮 FAN GAME FILTER: Filtering "${game.name}" - Suspicious ${franchise} game from unknown publisher`);
             return false;
           }
         }
@@ -866,37 +1049,48 @@ export function filterFanGamesAndEReaderContent(games: Game[]): Game[] {
 
 /**
  * Filter out problematic fan-made content, collections, ports, and small DLC from a list of games
+ * Respects manual admin flags: greenlight_flag overrides to keep, redlight_flag overrides to filter
  */
 export function filterProtectedContent(games: Game[]): Game[] {
   // Enhanced filtering for mods, fan content, collections, and ports
   const filtered = games.filter(game => {
+    // Check manual admin flags first
+    if (game.greenlight_flag === true) {
+      if (DEBUG_FILTERING) if (DEBUG_FILTERING) console.log(`✅ GREENLIGHT: Keeping "${game.name}" - admin override to always show`);
+      return true; // Admin explicitly wants this game shown
+    }
+    
+    if (game.redlight_flag === true) {
+      if (DEBUG_FILTERING) if (DEBUG_FILTERING) console.log(`🚫 REDLIGHT: Filtering "${game.name}" - admin override to always hide`);
+      return false; // Admin explicitly wants this game hidden
+    }
     // Filter out IGDB category 5 (Mods) explicitly
     if (game.category === 5) {
-      console.log(`🚫 MOD FILTER: Filtering out mod "${game.name}" (Category 5)`);
+      if (DEBUG_FILTERING) console.log(`🚫 MOD FILTER: Filtering out mod "${game.name}" (Category 5)`);
       return false;
     }
     
     // Filter out IGDB category 3 (Bundle/Collection)
     if (game.category === 3) {
-      console.log(`📦 COLLECTION FILTER: Filtering out bundle/collection "${game.name}" (Category 3)`);
+      if (DEBUG_FILTERING) console.log(`📦 COLLECTION FILTER: Filtering out bundle/collection "${game.name}" (Category 3)`);
       return false;
     }
     
     // Filter out IGDB category 11 (Port)
     if (game.category === 11) {
-      console.log(`🔄 PORT FILTER: Filtering out port "${game.name}" (Category 11)`);
+      if (DEBUG_FILTERING) console.log(`🔄 PORT FILTER: Filtering out port "${game.name}" (Category 11)`);
       return false;
     }
     
     // Filter out IGDB category 9 (Remaster)
     if (game.category === 9) {
-      console.log(`✨ REMASTER FILTER: Filtering out remaster "${game.name}" (Category 9)`);
+      if (DEBUG_FILTERING) console.log(`✨ REMASTER FILTER: Filtering out remaster "${game.name}" (Category 9)`);
       return false;
     }
     
     // Filter out IGDB category 13 (Pack/Collection)
     if (game.category === 13) {
-      console.log(`📦 PACK FILTER: Filtering out pack "${game.name}" (Category 13)`);
+      if (DEBUG_FILTERING) console.log(`📦 PACK FILTER: Filtering out pack "${game.name}" (Category 13)`);
       return false;
     }
     
@@ -904,20 +1098,20 @@ export function filterProtectedContent(games: Game[]): Game[] {
     if (game.category === 1) {
       const isMajor = isMajorExpansion(game);
       if (isMajor) {
-        console.log(`🎮 MAJOR DLC KEPT: Keeping major expansion "${game.name}" (Category 1)`);
+        if (DEBUG_FILTERING) console.log(`🎮 MAJOR DLC KEPT: Keeping major expansion "${game.name}" (Category 1)`);
         // Don't filter out major expansions
       } else {
-        console.log(`🚫 DLC FILTER: Filtering out small DLC "${game.name}" (Category 1)`);
+        if (DEBUG_FILTERING) console.log(`🚫 DLC FILTER: Filtering out small DLC "${game.name}" (Category 1)`);
         return false;
       }
     }
     
     // Keep Category 2 (Expansion) and Category 4 (Standalone expansion) - these are always substantial
     if (game.category === 2) {
-      console.log(`✅ EXPANSION KEPT: Keeping expansion "${game.name}" (Category 2)`);
+      if (DEBUG_FILTERING) console.log(`✅ EXPANSION KEPT: Keeping expansion "${game.name}" (Category 2)`);
     }
     if (game.category === 4) {
-      console.log(`✅ STANDALONE EXPANSION KEPT: Keeping standalone expansion "${game.name}" (Category 4)`);
+      if (DEBUG_FILTERING) console.log(`✅ STANDALONE EXPANSION KEPT: Keeping standalone expansion "${game.name}" (Category 4)`);
     }
     
     // Filter out games with explicit mod indicators in the name
@@ -925,7 +1119,7 @@ export function filterProtectedContent(games: Game[]): Game[] {
     const modIndicators = ['mod', 'hack', 'rom hack', 'romhack', 'fan game', 'fangame', 'homebrew', 'unofficial'];
     
     if (modIndicators.some(indicator => name.includes(indicator))) {
-      console.log(`🚫 NAME FILTER: Filtering out mod/fan game "${game.name}"`);
+      if (DEBUG_FILTERING) console.log(`🚫 NAME FILTER: Filtering out mod/fan game "${game.name}"`);
       return false;
     }
     
@@ -940,7 +1134,7 @@ export function filterProtectedContent(games: Game[]): Game[] {
     ];
     
     if (collectionIndicators.some(indicator => name.includes(indicator))) {
-      console.log(`📦 COLLECTION NAME FILTER: Filtering out collection "${game.name}"`);
+      if (DEBUG_FILTERING) console.log(`📦 COLLECTION NAME FILTER: Filtering out collection "${game.name}"`);
       return false;
     }
     
@@ -948,7 +1142,7 @@ export function filterProtectedContent(games: Game[]): Game[] {
     return !shouldFilterContent(game);
   });
   
-  console.log(`🛡️ Content filter: ${games.length} → ${filtered.length} games (filtered ${games.length - filtered.length} items)`);
+  if (DEBUG_FILTERING) console.log(`🛡️ Content filter: ${games.length} → ${filtered.length} games (filtered ${games.length - filtered.length} items)`);
   return filtered;
 }
 
@@ -1029,9 +1223,9 @@ export function testFinalFantasyFiltering() {
   console.log('🧪 Testing Final Fantasy filtering:');
   testGames.forEach(game => {
     const result = debugGameFiltering(game);
-    console.log(`Game: ${game.name} (${game.developer}) → Filtered: ${result.filtered}`);
+    if (DEBUG_FILTERING) console.log(`Game: ${game.name} (${game.developer}) → Filtered: ${result.filtered}`);
     if (result.filtered) {
-      console.log(`  Reasons: Fan-made: ${result.isFanMade}, Protected: ${result.isProtectedFranchise}, Official SE: ${result.isOfficialSquareEnix}`);
+      if (DEBUG_FILTERING) console.log(`  Reasons: Fan-made: ${result.isFanMade}, Protected: ${result.isProtectedFranchise}, Official SE: ${result.isOfficialSquareEnix}`);
     }
   });
 }
@@ -1136,7 +1330,7 @@ export function handleDMCARequest(
   reason: string, 
   franchises?: string[]
 ): void {
-  console.log(`🚨 DMCA RESPONSE: Adding ${companyName} to aggressive filtering`);
+  if (DEBUG_FILTERING) console.log(`🚨 DMCA RESPONSE: Adding ${companyName} to aggressive filtering`);
   addAggressiveCompany(companyName, reason, franchises);
   
   // Optionally clear any cached game data that might contain newly-filtered content
@@ -1146,7 +1340,7 @@ export function handleDMCARequest(
       key.includes('game_search') || key.includes('igdb_cache')
     );
     cacheKeys.forEach(key => window.localStorage.removeItem(key));
-    console.log(`🧹 Cleared ${cacheKeys.length} cache entries`);
+    if (DEBUG_FILTERING) console.log(`🧹 Cleared ${cacheKeys.length} cache entries`);
   }
 }
 
@@ -1155,7 +1349,7 @@ export function handleDMCARequest(
  * Use this only for companies that demand complete removal of all content
  */
 export function handleEmergencyBlock(companyName: string, reason: string): void {
-  console.log(`🔒 EMERGENCY BLOCK: Completely blocking all content from ${companyName}`);
+  if (DEBUG_FILTERING) console.log(`🔒 EMERGENCY BLOCK: Completely blocking all content from ${companyName}`);
   blockCompanyCompletely(companyName, reason);
   
   // Clear all caches more aggressively
@@ -1201,7 +1395,7 @@ export function shouldHideFanContent(game: Game): boolean {
     
     // Hide fan content if any company is AGGRESSIVE or BLOCK_ALL
     if (level === CopyrightLevel.AGGRESSIVE || level === CopyrightLevel.BLOCK_ALL) {
-      console.log(`🛡️ Hiding fan content for "${game.name}" due to ${company} policy: ${level}`);
+      if (DEBUG_FILTERING) console.log(`🛡️ Hiding fan content for "${game.name}" due to ${company} policy: ${level}`);
       return true;
     }
   }
@@ -1360,7 +1554,7 @@ export function testEnhancedAggressiveFiltering(): void {
   ];
   
   testCases.forEach((testGame, index) => {
-    console.log(`\n--- Test ${index + 1}: ${testGame.name} ---`);
+    if (DEBUG_FILTERING) console.log(`\n--- Test ${index + 1}: ${testGame.name} ---`);
     
     const game = {
       id: index + 1,
@@ -1373,20 +1567,20 @@ export function testEnhancedAggressiveFiltering(): void {
     // Test franchise detection
     const franchiseOwner = findFranchiseOwner(game);
     if (franchiseOwner) {
-      console.log(`🎯 Franchise Owner: ${franchiseOwner}`);
+      if (DEBUG_FILTERING) console.log(`🎯 Franchise Owner: ${franchiseOwner}`);
       
       // Test authorization
       const isAuthorized = isAuthorizedPublisher(game.developer || '', game.publisher || '', franchiseOwner);
-      console.log(`🔐 Authorized Publisher: ${isAuthorized}`);
+      if (DEBUG_FILTERING) console.log(`🔐 Authorized Publisher: ${isAuthorized}`);
     }
     
     // Test mod detection
     const hasModIndicators = hasEnhancedModIndicators(game);
-    console.log(`🔧 Mod Detected: ${hasModIndicators}`);
+    if (DEBUG_FILTERING) console.log(`🔧 Mod Detected: ${hasModIndicators}`);
     
     // Test final filtering decision
     const isFiltered = shouldFilterContent(game);
-    console.log(`🛡️ FINAL RESULT: ${isFiltered ? '❌ FILTERED' : '✅ ALLOWED'}`);
+    if (DEBUG_FILTERING) console.log(`🛡️ FINAL RESULT: ${isFiltered ? '❌ FILTERED' : '✅ ALLOWED'}`);
     
     console.log('---');
   });
@@ -1417,6 +1611,65 @@ export function testModDetectionPatterns(): void {
   modTitles.forEach(title => {
     const testGame = { id: 1, name: title, developer: 'Test', publisher: 'Test' };
     const isModDetected = hasEnhancedModIndicators(testGame);
-    console.log(`"${title}" → Mod Detected: ${isModDetected ? '✅' : '❌'}`);
+    if (DEBUG_FILTERING) console.log(`"${title}" → Mod Detected: ${isModDetected ? '✅' : '❌'}`);
   });
+}
+
+/**
+ * Get copyright information for a game based on its companies
+ * Used for diagnostic display purposes
+ */
+export function getGameCopyrightInfo(game: Game): {
+  level: CopyrightLevel;
+  reason: string;
+  company: string;
+} {
+  const companies = getGameCompanies(game);
+  const searchText = [game.name, game.developer, game.publisher, game.summary, game.description]
+    .filter(Boolean).join(' ').toLowerCase();
+  
+  let maxCopyrightLevel = CopyrightLevel.MODERATE;
+  let responsibleCompany = '';
+  
+  // Check direct company copyright levels
+  for (const company of companies) {
+    if (!company) continue;
+    
+    const level = getCompanyCopyrightLevel(company);
+    
+    if (level === CopyrightLevel.BLOCK_ALL) {
+      maxCopyrightLevel = level;
+      responsibleCompany = company;
+    } else if (level === CopyrightLevel.AGGRESSIVE && maxCopyrightLevel !== CopyrightLevel.BLOCK_ALL) {
+      maxCopyrightLevel = level;
+      responsibleCompany = company;
+    } else if (level === CopyrightLevel.MOD_FRIENDLY && 
+               maxCopyrightLevel !== CopyrightLevel.BLOCK_ALL && 
+               maxCopyrightLevel !== CopyrightLevel.AGGRESSIVE) {
+      maxCopyrightLevel = level;
+      responsibleCompany = company;
+    } else if (!responsibleCompany) {
+      maxCopyrightLevel = level;
+      responsibleCompany = company;
+    }
+  }
+  
+  // Check franchise ownership
+  let franchiseOwner = findFranchiseOwner(game, searchText);
+  if (franchiseOwner) {
+    const franchiseLevel = getCompanyCopyrightLevel(franchiseOwner);
+    
+    if (franchiseLevel === CopyrightLevel.BLOCK_ALL ||
+        (franchiseLevel === CopyrightLevel.AGGRESSIVE && maxCopyrightLevel !== CopyrightLevel.BLOCK_ALL) ||
+        (franchiseLevel === CopyrightLevel.MOD_FRIENDLY)) {
+      maxCopyrightLevel = franchiseLevel;
+      responsibleCompany = franchiseOwner;
+    }
+  }
+  
+  return {
+    level: maxCopyrightLevel,
+    reason: getPolicyReason(responsibleCompany),
+    company: responsibleCompany
+  };
 }

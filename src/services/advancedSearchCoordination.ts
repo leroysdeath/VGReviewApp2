@@ -10,6 +10,9 @@
  * Built on top of the existing Layer 1-3 services for maximum effectiveness.
  */
 
+// Debug flag to control console logging
+const DEBUG_SEARCH_COORDINATION = false;
+
 import { GameDataServiceV2 } from './gameDataServiceV2';
 import { sortGamesIntelligently, detectSearchIntent, SearchIntent } from '../utils/intelligentPrioritization';
 import { filterProtectedContent, filterFanGamesAndEReaderContent } from '../utils/contentProtectionFilter';
@@ -89,7 +92,7 @@ export class AdvancedSearchCoordination {
     
     // Fast path for dropdown searches - bypass all complex logic
     if (options.fastMode) {
-      console.log(`⚡ FAST MODE: Quick search for dropdown: "${query}"`);
+      if (DEBUG_SEARCH_COORDINATION) console.log(`⚡ FAST MODE: Quick search for dropdown: "${query}"`);
       try {
         const fastResults = await this.gameDataService.searchGamesFast(query, options.maxResults || 8);
         return {
@@ -123,7 +126,7 @@ export class AdvancedSearchCoordination {
     
     // Check for duplicate in-flight requests first
     if (this.pendingRequests.has(context.cacheKey)) {
-      console.log(`🔄 REQUEST DEDUPLICATION: Waiting for in-flight request for "${query}"`);
+      if (DEBUG_SEARCH_COORDINATION) console.log(`🔄 REQUEST DEDUPLICATION: Waiting for in-flight request for "${query}"`);
       return await this.pendingRequests.get(context.cacheKey)!;
     }
     
@@ -131,7 +134,7 @@ export class AdvancedSearchCoordination {
     if (!options.bypassCache) {
       const cached = this.getCachedResults(context.cacheKey);
       if (cached) {
-        console.log(`⚡ CACHE HIT: Returning ${cached.results.length} cached results for "${query}"`);
+        if (DEBUG_SEARCH_COORDINATION) console.log(`⚡ CACHE HIT: Returning ${cached.results.length} cached results for "${query}"`);
         return {
           results: cached.results,
           context,
@@ -140,7 +143,7 @@ export class AdvancedSearchCoordination {
       }
     }
     
-    console.log(`🚀 ADVANCED SEARCH: "${query}" (Intent: ${context.searchIntent}, Threshold: ${context.qualityThreshold})`);
+    if (DEBUG_SEARCH_COORDINATION) console.log(`🚀 ADVANCED SEARCH: "${query}" (Intent: ${context.searchIntent}, Threshold: ${context.qualityThreshold})`);
     
     // Create and store pending request promise
     const requestPromise = this.executeSearchInternal(context, startTime, options.includeMetrics);
@@ -443,7 +446,7 @@ export class AdvancedSearchCoordination {
     const maxQueries = Math.min(prioritizedQueries.length, 5); // Limit to 5 queries max
     const selectedQueries = prioritizedQueries.slice(0, maxQueries);
 
-    console.log(`🔍 Smart execution: Using ${selectedQueries.length} prioritized queries from ${context.expandedQueries.length} expansions:`, selectedQueries);
+    if (DEBUG_SEARCH_COORDINATION) console.log(`🔍 Smart execution: Using ${selectedQueries.length} prioritized queries from ${context.expandedQueries.length} expansions:`, selectedQueries);
 
     // Execute selected queries with concurrency control
     const batchSize = 2; // Execute 2 queries at a time
@@ -489,7 +492,7 @@ export class AdvancedSearchCoordination {
 
       // Early termination if we have enough quality results
       if (allResults.length >= 15) {
-        console.log(`✂️ Early termination: Found ${allResults.length} results after ${i + batchSize} queries`);
+        if (DEBUG_SEARCH_COORDINATION) console.log(`✂️ Early termination: Found ${allResults.length} results after ${i + batchSize} queries`);
         break;
       }
     }

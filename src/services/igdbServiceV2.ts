@@ -3,6 +3,9 @@
  * Integrates multi-query strategy and better query building
  */
 
+// Debug flag to control console logging
+const DEBUG_IGDB = false;
+
 import { filterProtectedContent, getFilterStats } from '../utils/contentProtectionFilter';
 import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization';
 import { rankByFuzzyMatch } from '../utils/fuzzySearch';
@@ -93,25 +96,25 @@ export class IGDBServiceV2 {
         rawGames = await this.performOptimizedSearch(query, limit);
       }
       
-      console.log(`✅ Raw results: ${rawGames.length} games found`);
+      if (DEBUG_IGDB) console.log(`✅ Raw results: ${rawGames.length} games found`);
       
       // Apply content protection filter
       const filteredGames = this.applyContentFilters(rawGames, query);
-      console.log(`🛡️ After content filters: ${filteredGames.length} games`);
+      if (DEBUG_IGDB) console.log(`🛡️ After content filters: ${filteredGames.length} games`);
       
       // Apply category filters
       let categoryFiltered = this.applyCategoryFilters(filteredGames);
-      console.log(`📦 After category filters: ${categoryFiltered.length} games`);
+      if (DEBUG_IGDB) console.log(`📦 After category filters: ${categoryFiltered.length} games`);
       
       // Apply relevance filtering
       categoryFiltered = this.filterByRelevance(categoryFiltered, query);
-      console.log(`🎯 After relevance filter: ${categoryFiltered.length} games`);
+      if (DEBUG_IGDB) console.log(`🎯 After relevance filter: ${categoryFiltered.length} games`);
       
       // Check for sister games if applicable
       if (categoryFiltered.length < limit) {
         const sisterGames = await this.findSisterGames(query, categoryFiltered);
         if (sisterGames.length > 0) {
-          console.log(`👯 Found ${sisterGames.length} sister games`);
+          if (DEBUG_IGDB) console.log(`👯 Found ${sisterGames.length} sister games`);
           categoryFiltered = this.mergeUnique(categoryFiltered, sisterGames);
         }
       }
@@ -206,12 +209,12 @@ export class IGDBServiceV2 {
     return games.filter(game => {
       // Filter out problematic categories
       if (game.category === 7) { // Season
-        console.log(`🚫 Filtered season: "${game.name}"`);
+        if (DEBUG_IGDB) console.log(`🚫 Filtered season: "${game.name}"`);
         return false;
       }
       
       if (game.category === 14) { // Update
-        console.log(`🚫 Filtered update: "${game.name}"`);
+        if (DEBUG_IGDB) console.log(`🚫 Filtered update: "${game.name}"`);
         return false;
       }
       
@@ -224,7 +227,7 @@ export class IGDBServiceV2 {
                               name.includes('compilation');
         
         if (isActualBundle && !name.includes('edition')) {
-          console.log(`🚫 Filtered bundle: "${game.name}"`);
+          if (DEBUG_IGDB) console.log(`🚫 Filtered bundle: "${game.name}"`);
           return false;
         }
       }
@@ -242,7 +245,7 @@ export class IGDBServiceV2 {
     return games.filter(game => {
       const relevance = this.calculateRelevance(game, query);
       if (relevance < threshold) {
-        console.log(`🚫 Low relevance: "${game.name}" (${relevance.toFixed(3)})`);
+        if (DEBUG_IGDB) console.log(`🚫 Low relevance: "${game.name}" (${relevance.toFixed(3)})`);
         return false;
       }
       return true;

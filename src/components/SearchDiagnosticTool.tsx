@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { searchDiagnosticService } from '../services/searchDiagnosticService';
 import { AdminKeyManager } from './AdminKeyManager';
 import { SearchResultsTable } from './SearchResultsTable';
+import { ManualFlaggingPanel } from './ManualFlaggingPanel';
 
 interface DiagnosticResult {
   query: string;
@@ -65,7 +66,7 @@ export const SearchDiagnosticTool: React.FC = () => {
   const [bulkResults, setBulkResults] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [igdbStats, setIgdbStats] = useState<any>(null);
-  const [selectedTab, setSelectedTab] = useState<'single' | 'bulk' | 'patterns' | 'results'>('single');
+  const [selectedTab, setSelectedTab] = useState<'single' | 'bulk' | 'patterns' | 'results' | 'flags'>('single');
 
   useEffect(() => {
     // Update IGDB stats periodically
@@ -206,7 +207,7 @@ export const SearchDiagnosticTool: React.FC = () => {
         {/* Navigation */}
         <nav className="mb-8">
           <div className="flex space-x-4">
-            {(['single', 'bulk', 'patterns', 'results'] as const).map((tab) => (
+            {(['single', 'bulk', 'patterns', 'results', 'flags'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setSelectedTab(tab)}
@@ -220,6 +221,7 @@ export const SearchDiagnosticTool: React.FC = () => {
                 {tab === 'bulk' && '🧪 Bulk Testing'}
                 {tab === 'patterns' && '📊 Pattern Analysis'}
                 {tab === 'results' && '📋 Results Table'}
+                {tab === 'flags' && '🏷️ Manual Flags'}
               </button>
             ))}
           </div>
@@ -362,6 +364,20 @@ export const SearchDiagnosticTool: React.FC = () => {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Manual Flags Tab */}
+        {selectedTab === 'flags' && (
+          <div className="space-y-6">
+            <div className="bg-gray-800 p-6 rounded-lg">
+              <h2 className="text-xl font-bold mb-4">Manual Game Flagging</h2>
+              <p className="text-gray-300 mb-6">
+                Use this panel to manually override the automatic filtering system. 
+                Greenlight flags ensure games are never filtered, while redlight flags ensure games are always filtered.
+              </p>
+              <ManualFlaggingPanel />
+            </div>
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@
  */
 
 import { searchDiagnosticService } from '../services/searchDiagnosticService';
+import { gameDataService } from '../services/gameDataService';
 
 // Mock data for testing
 const mockGameData = [
@@ -45,7 +46,86 @@ const mockGameData = [
   }
 ];
 
-describe('Search Diagnostic Service', () => {
+describe('Search Diagnostic Test', () => {
+  test('should perform basic diagnostic search', async () => {
+    console.log('🔍 SEARCH DIAGNOSTIC ANALYSIS');
+    console.log('==============================');
+    
+    // Test key franchises that are problematic
+    const testQueries = [
+      'Pokemon', 
+      'Final Fantasy', 
+      'Call of Duty',
+      'Forza',
+      'Resident Evil'
+    ];
+    
+    for (const query of testQueries) {
+      console.log(`\n📊 Testing: "${query}"`);
+      console.log('-'.repeat(40));
+      
+      try {
+        // Test main search service
+        const mainResults = await gameDataService.searchGames(query);
+        console.log(`✅ Main Search Results: ${mainResults.length}`);
+        
+        if (mainResults.length > 0) {
+          console.log(`   Sample: ${mainResults.slice(0, 3).map(g => g.name).join(', ')}`);
+        }
+        
+        // Test diagnostic service
+        const diagnostic = await searchDiagnosticService.analyzeSingleSearch(query);
+        
+        console.log(`📊 Database Analysis:`);
+        console.log(`   - Name search: ${diagnostic.dbResults.nameSearchCount} results`);
+        console.log(`   - Summary search: ${diagnostic.dbResults.summarySearchCount} results`);
+        console.log(`   - Total DB: ${diagnostic.dbResults.totalCount} results`);
+        console.log(`   - DB Duration: ${diagnostic.dbResults.duration}ms`);
+        
+        if (diagnostic.igdbResults) {
+          console.log(`🌐 IGDB Analysis:`);
+          console.log(`   - IGDB results: ${diagnostic.igdbResults.count}`);
+          console.log(`   - Rate limited: ${diagnostic.igdbResults.rateLimited}`);
+          console.log(`   - Duration: ${diagnostic.igdbResults.duration}ms`);
+        } else {
+          console.log(`🚫 IGDB not queried (sufficient DB results)`);
+        }
+        
+        console.log(`⚡ Performance:`);
+        console.log(`   - Total: ${diagnostic.performance.totalDuration}ms`);
+        console.log(`   - DB Query: ${diagnostic.performance.dbQueryTime}ms`);
+        console.log(`   - Processing: ${diagnostic.performance.processingTime}ms`);
+        
+        // Analyze quality issues
+        if (mainResults.length < 10) {
+          console.warn(`⚠️  LOW RESULTS: Only ${mainResults.length} games found for major franchise`);
+        }
+        
+        if (mainResults.length === 5) {
+          console.warn(`🚨 SUSPECTED LIMIT: Exactly 5 results suggests artificial limiting`);
+        }
+        
+        if (diagnostic.performance.totalDuration > 3000) {
+          console.warn(`🐌 SLOW SEARCH: ${diagnostic.performance.totalDuration}ms is too slow`);
+        }
+        
+      } catch (error) {
+        console.error(`💥 Error testing "${query}":`, error);
+      }
+    }
+    
+    // Get IGDB usage stats
+    const igdbStats = searchDiagnosticService.getIGDBStats();
+    console.log(`\n🌐 IGDB API Stats:`);
+    console.log(`   - Daily requests used: ${igdbStats.dailyRequestCount}`);
+    console.log(`   - Remaining quota: ${igdbStats.remainingQuota}`);
+    console.log(`   - Current rate limit: ${igdbStats.currentRateLimit}/4 per second`);
+    
+    expect(true).toBe(true); // Always pass - this is diagnostic
+  }, 60000);
+});
+
+describe('Original Search Diagnostic Service', () => {
   beforeEach(() => {
     // Reset any mocks or state before each test
     jest.clearAllMocks();

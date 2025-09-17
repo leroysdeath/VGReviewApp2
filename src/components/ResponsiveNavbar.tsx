@@ -10,6 +10,7 @@ import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
 // Filtering is now handled by AdvancedSearchCoordination service
 import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
+import { getGameUrl } from '../utils/gameUrls';
 
 // Using GameWithCalculatedFields from database types
 
@@ -316,7 +317,7 @@ export const ResponsiveNavbar: React.FC = () => {
   const handleSuggestionClick = (game: GameWithCalculatedFields) => {
     setSearchQuery('');
     saveRecentSearch(game.name, 'games');
-    navigate(`/game/${game.id}`);
+    navigate(getGameUrl(game));
     setIsSearchOpen(false);
     setShowSuggestions(false);
     setHasSearched(false);

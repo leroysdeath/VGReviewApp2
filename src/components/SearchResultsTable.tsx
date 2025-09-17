@@ -10,7 +10,7 @@ interface SearchResultsTableProps {
   analysis: SearchResultsAnalysis;
 }
 
-type SortField = 'position' | 'relevance' | 'quality' | 'popularity' | 'total_score' | 'name';
+type SortField = 'position' | 'relevance' | 'quality' | 'popularity' | 'total_score' | 'name' | 'total_rating' | 'follows' | 'flag_status' | 'copyright_level';
 type SortDirection = 'asc' | 'desc';
 
 export const SearchResultsTable: React.FC<SearchResultsTableProps> = ({ analysis }) => {
@@ -64,6 +64,23 @@ export const SearchResultsTable: React.FC<SearchResultsTableProps> = ({ analysis
         case 'name':
           aValue = a.gameName.toLowerCase();
           bValue = b.gameName.toLowerCase();
+          break;
+        case 'total_rating':
+          aValue = a.igdbMetrics?.totalRating || 0;
+          bValue = b.igdbMetrics?.totalRating || 0;
+          break;
+        case 'follows':
+          aValue = a.igdbMetrics?.follows || 0;
+          bValue = b.igdbMetrics?.follows || 0;
+          break;
+        case 'flag_status':
+          aValue = a.flagStatus.hasGreenlight ? 2 : a.flagStatus.hasRedlight ? 1 : 0;
+          bValue = b.flagStatus.hasGreenlight ? 2 : b.flagStatus.hasRedlight ? 1 : 0;
+          break;
+        case 'copyright_level':
+          const levelValues = { 'BLOCK_ALL': 4, 'AGGRESSIVE': 3, 'MODERATE': 2, 'MOD_FRIENDLY': 1 };
+          aValue = levelValues[a.copyrightInfo.level] || 0;
+          bValue = levelValues[b.copyrightInfo.level] || 0;
           break;
         default:
           return 0;
@@ -193,6 +210,18 @@ export const SearchResultsTable: React.FC<SearchResultsTableProps> = ({ analysis
                 >
                   Total Score {getSortIcon('total_score')}
                 </th>
+                <th 
+                  className="px-4 py-3 text-center cursor-pointer hover:bg-gray-600"
+                  onClick={() => handleSort('flag_status')}
+                >
+                  Flag Status {getSortIcon('flag_status')}
+                </th>
+                <th 
+                  className="px-4 py-3 text-center cursor-pointer hover:bg-gray-600"
+                  onClick={() => handleSort('copyright_level')}
+                >
+                  Copyright Level {getSortIcon('copyright_level')}
+                </th>
                 <th className="px-4 py-3 text-center">Match Type</th>
                 <th className="px-4 py-3 text-center">Issues</th>
                 <th className="px-4 py-3 text-center">Actions</th>
@@ -255,6 +284,41 @@ export const SearchResultsTable: React.FC<SearchResultsTableProps> = ({ analysis
                   <td className="px-4 py-3 text-center">
                     <div className="font-mono text-purple-400">
                       {result.totalSortingScore.toFixed(3)}
+                    </div>
+                  </td>
+                  
+                  <td className="px-4 py-3 text-center">
+                    <div className="text-xs">
+                      {result.flagStatus.hasGreenlight && (
+                        <div className="text-green-400 font-semibold">✅ GREENLIGHT</div>
+                      )}
+                      {result.flagStatus.hasRedlight && (
+                        <div className="text-red-400 font-semibold">🚫 REDLIGHT</div>
+                      )}
+                      {!result.flagStatus.overrideActive && (
+                        <div className="text-gray-400">⚪ Auto</div>
+                      )}
+                    </div>
+                    {result.flagStatus.flagReason && (
+                      <div className="text-xs text-gray-400 mt-1 truncate" title={result.flagStatus.flagReason}>
+                        {result.flagStatus.flagReason}
+                      </div>
+                    )}
+                  </td>
+                  
+                  <td className="px-4 py-3 text-center">
+                    <div className="text-xs">
+                      <div className={`font-semibold ${
+                        result.copyrightInfo.level === 'BLOCK_ALL' ? 'text-red-600' :
+                        result.copyrightInfo.level === 'AGGRESSIVE' ? 'text-red-400' :
+                        result.copyrightInfo.level === 'MODERATE' ? 'text-yellow-400' :
+                        'text-green-400'
+                      }`}>
+                        {result.copyrightInfo.level}
+                      </div>
+                      <div className="text-gray-400 truncate" title={result.copyrightInfo.responsibleCompany}>
+                        {result.copyrightInfo.responsibleCompany}
+                      </div>
                     </div>
                   </td>
                   
@@ -399,6 +463,58 @@ const DetailedResultModal: React.FC<{
                 <div>Score: {result.relevanceBreakdown.nameMatch.score.toFixed(3)}</div>
                 <div>Summary: {result.relevanceBreakdown.summaryMatch.hasMatch ? '✅' : '❌'}</div>
                 <div>Genre: {result.relevanceBreakdown.genreMatch.matches.length > 0 ? '✅' : '❌'}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Manual Flags & Copyright Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="bg-gray-700 p-4 rounded">
+              <h4 className="font-semibold mb-2">🏷️ Manual Flag Status</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <span>Status:</span>
+                  {result.flagStatus.hasGreenlight && (
+                    <span className="text-green-400 font-semibold">✅ GREENLIGHT</span>
+                  )}
+                  {result.flagStatus.hasRedlight && (
+                    <span className="text-red-400 font-semibold">🚫 REDLIGHT</span>
+                  )}
+                  {!result.flagStatus.overrideActive && (
+                    <span className="text-gray-400">⚪ Auto (No Override)</span>
+                  )}
+                </div>
+                {result.flagStatus.flagReason && (
+                  <div>Reason: {result.flagStatus.flagReason}</div>
+                )}
+                {result.flagStatus.flaggedAt && (
+                  <div>Flagged: {new Date(result.flagStatus.flaggedAt).toLocaleDateString()}</div>
+                )}
+                {result.flagStatus.flaggedBy && (
+                  <div>By: {result.flagStatus.flaggedBy}</div>
+                )}
+              </div>
+            </div>
+            
+            <div className="bg-gray-700 p-4 rounded">
+              <h4 className="font-semibold mb-2">©️ Copyright Protection</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <span>Level:</span>
+                  <span className={`font-semibold ${
+                    result.copyrightInfo.level === 'BLOCK_ALL' ? 'text-red-600' :
+                    result.copyrightInfo.level === 'AGGRESSIVE' ? 'text-red-400' :
+                    result.copyrightInfo.level === 'MODERATE' ? 'text-yellow-400' :
+                    'text-green-400'
+                  }`}>
+                    {result.copyrightInfo.level}
+                  </span>
+                </div>
+                <div>Company: {result.copyrightInfo.responsibleCompany}</div>
+                <div className="text-gray-300">{result.copyrightInfo.levelDescription}</div>
+                {result.copyrightInfo.policyReason && (
+                  <div className="text-xs text-gray-400 mt-2">{result.copyrightInfo.policyReason}</div>
+                )}
               </div>
             </div>
           </div>

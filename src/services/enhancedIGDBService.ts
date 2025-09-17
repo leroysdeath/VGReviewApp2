@@ -3,6 +3,9 @@
  * Implements multi-factor query building and multi-query strategy for better search coverage
  */
 
+// Debug flag to control console logging
+const DEBUG_ENHANCED_IGDB = false;
+
 import { IGDBGame } from './igdbService';
 
 interface QueryOptions {
@@ -120,16 +123,16 @@ export class EnhancedIGDBService {
       query: this.buildQueryForCollections(searchTerm)
     });
     
-    console.log(`🔍 Executing ${queries.length} targeted queries for "${searchTerm}"`);
+    if (DEBUG_ENHANCED_IGDB) console.log(`🔍 Executing ${queries.length} targeted queries for "${searchTerm}"`);
     
     // Execute queries in parallel
     const queryPromises = queries.map(async (q) => {
       try {
         const results = await this.executeQuery(q.query);
-        console.log(`✅ ${q.description}: ${results.length} results`);
+        if (DEBUG_ENHANCED_IGDB) console.log(`✅ ${q.description}: ${results.length} results`);
         return { ...q, results };
       } catch (error) {
-        console.log(`⚠️ ${q.description} failed:`, error);
+        if (DEBUG_ENHANCED_IGDB) console.log(`⚠️ ${q.description} failed:`, error);
         return { ...q, results: [] };
       }
     });
@@ -325,7 +328,7 @@ export class EnhancedIGDBService {
       return baseResults.slice(0, limit);
     }
     
-    console.log(`👯 Searching for sister games: ${sisterPatterns.join(', ')}`);
+    if (DEBUG_ENHANCED_IGDB) console.log(`👯 Searching for sister games: ${sisterPatterns.join(', ')}`);
     
     // Search for sister games
     const sisterSearches = sisterPatterns.map(pattern => 
@@ -340,7 +343,7 @@ export class EnhancedIGDBService {
     const existingIds = new Set(baseResults.map(g => g.id));
     const uniqueSisterGames = flatSisterResults.filter(g => !existingIds.has(g.id));
     
-    console.log(`✅ Found ${uniqueSisterGames.length} sister games`);
+    if (DEBUG_ENHANCED_IGDB) console.log(`✅ Found ${uniqueSisterGames.length} sister games`);
     
     return [...baseResults, ...uniqueSisterGames].slice(0, limit);
   }

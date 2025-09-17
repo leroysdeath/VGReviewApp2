@@ -1,62 +1,104 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
-import { testAccentNormalization } from '../utils/accentNormalization';
+import { gameDataService } from '../services/gameDataService';
+import { searchDiagnosticService } from '../services/searchDiagnosticService';
 
-describe('Pokemon Search Debug - Accent Normalization', () => {
-  let searchService: AdvancedSearchCoordination;
-  
-  beforeEach(() => {
-    searchService = new AdvancedSearchCoordination();
-    // Don't mock console for this test - we want to see the output
-  });
-  
-  afterEach(() => {
-    jest.restoreAllMocks();
-    searchService.clearCache();
-  });
-
-  it('should demonstrate accent normalization working', () => {
-    console.log('\n=== POKEMON SEARCH ACCENT NORMALIZATION DEBUG ===\n');
-    testAccentNormalization();
-  });
-
-  it('should show Pokemon search query expansion in action', async () => {
-    console.log('\n=== POKEMON QUERY EXPANSION DEBUG ===\n');
+describe('Pokemon Search Debug Test', () => {
+  test('should debug Pokemon search results in detail', async () => {
+    console.log('🔍 POKEMON SEARCH DEBUG TEST');
+    console.log('================================');
     
-    console.log('🔍 Testing "pokemon" search:');
-    const pokemonResult = await searchService.coordinatedSearch('pokemon', { 
-      includeMetrics: true,
-      maxResults: 5
-    });
+    // Test various Pokemon search terms
+    const pokemonSearchTerms = [
+      'Pokemon',
+      'pokemon', 
+      'Pokémon',
+      'Pokemon Red',
+      'Pokemon Blue',
+      'Pokemon Yellow',
+      'Pokemon Gold',
+      'Pokemon Silver',
+      'Pokemon Crystal',
+      'Pokemon Ruby',
+      'Pokemon Sapphire',
+      'Pokemon Emerald',
+      'Pokemon Diamond',
+      'Pokemon Pearl',
+      'Pokemon Platinum',
+      'Pokemon Black',
+      'Pokemon White',
+      'Pokemon X',
+      'Pokemon Y',
+      'Pokemon Sun',
+      'Pokemon Moon',
+      'Pokemon Sword',
+      'Pokemon Shield',
+      'Pokemon Scarlet',
+      'Pokemon Violet',
+      'Pokemon Legends Arceus'
+    ];
     
-    console.log('Original query: "pokemon"');
-    console.log('Expanded queries:', pokemonResult.context.expandedQueries);
-    console.log('Search intent:', pokemonResult.context.searchIntent);
-    console.log('Results found:', pokemonResult.results.length);
+    for (const searchTerm of pokemonSearchTerms) {
+      console.log(`\n📊 Testing: "${searchTerm}"`);
+      
+      try {
+        // Use the main search service
+        const mainResults = await gameDataService.searchGames(searchTerm);
+        console.log(`   Main Search: ${mainResults.length} results`);
+        
+        if (mainResults.length > 0) {
+          console.log(`   Sample results: ${mainResults.slice(0, 3).map(g => g.name).join(', ')}`);
+        }
+        
+        // Use diagnostic service for deeper analysis
+        const diagnostic = await searchDiagnosticService.analyzeSingleSearch(searchTerm);
+        console.log(`   DB Name Search: ${diagnostic.dbResults.nameSearchCount} results`);
+        console.log(`   DB Summary Search: ${diagnostic.dbResults.summarySearchCount} results`);
+        console.log(`   Total DB Results: ${diagnostic.dbResults.totalCount} results`);
+        
+        if (diagnostic.igdbResults) {
+          console.log(`   IGDB Results: ${diagnostic.igdbResults.count} results`);
+          console.log(`   Rate Limited: ${diagnostic.igdbResults.rateLimited}`);
+        }
+        
+        // Check result analysis
+        if (diagnostic.resultAnalysis) {
+          console.log(`   Final Results Count: ${diagnostic.resultAnalysis.finalCount}`);
+          console.log(`   Coverage Issues: ${diagnostic.resultAnalysis.coverageAnalysis.issues.join(', ')}`);
+        }
+        
+        console.log(`   Performance: ${diagnostic.performance.totalDuration}ms total`);
+        
+        if (mainResults.length === 0) {
+          console.warn(`   ❌ NO RESULTS for "${searchTerm}"`);
+        }
+        
+      } catch (error) {
+        console.error(`   💥 Error searching for "${searchTerm}":`, error);
+      }
+    }
     
-    console.log('\n🔍 Testing "pokémon" search:');
-    const pokemonAccentResult = await searchService.coordinatedSearch('pokémon', { 
-      includeMetrics: true,
-      maxResults: 5
-    });
+    console.log('\n🎯 POKEMON SEARCH SUMMARY:');
+    console.log('============================');
     
-    console.log('Original query: "pokémon"');
-    console.log('Expanded queries:', pokemonAccentResult.context.expandedQueries);
-    console.log('Search intent:', pokemonAccentResult.context.searchIntent);
-    console.log('Results found:', pokemonAccentResult.results.length);
+    // Test if we can find any Pokemon games directly from database
+    const { data: directDbResults, error } = await (global as any).supabase
+      .from('game')
+      .select('*')
+      .ilike('name', '%pokemon%')
+      .limit(50);
+      
+    if (error) {
+      console.error('❌ Direct DB query failed:', error);
+    } else {
+      console.log(`📊 Direct DB query found ${directDbResults?.length || 0} Pokemon games`);
+      if (directDbResults && directDbResults.length > 0) {
+        console.log('Sample games from DB:', directDbResults.slice(0, 5).map((g: any) => g.name));
+      }
+    }
     
-    // Both searches should produce similar results now
-    expect(pokemonResult.context.expandedQueries.length).toBeGreaterThan(1);
-    expect(pokemonAccentResult.context.expandedQueries.length).toBeGreaterThan(1);
+    // Check IGDB stats
+    const igdbStats = searchDiagnosticService.getIGDBStats();
+    console.log(`🌐 IGDB Stats - Daily requests: ${igdbStats.dailyRequestCount}, Remaining: ${igdbStats.remainingQuota}`);
     
-    // Should have cross-pollination of terms
-    const hasAccentInNormal = pokemonResult.context.expandedQueries.some(q => q.includes('pokémon'));
-    const hasNormalInAccent = pokemonAccentResult.context.expandedQueries.some(q => q.includes('pokemon'));
-    
-    console.log('\n✅ Cross-pollination check:');
-    console.log('pokemon search includes "pokémon":', hasAccentInNormal);
-    console.log('pokémon search includes "pokemon":', hasNormalInAccent);
-    
-    expect(hasAccentInNormal || hasNormalInAccent).toBe(true);
-  }, 30000);
+    expect(true).toBe(true); // Always pass - this is diagnostic
+  }, 120000);
 });

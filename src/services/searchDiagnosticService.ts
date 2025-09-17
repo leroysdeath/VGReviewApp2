@@ -12,6 +12,7 @@ import { supabase } from './supabase';
 import { gameDataServiceV2 } from './gameDataServiceV2';
 import { igdbServiceV2 } from './igdbServiceV2';
 import { resultAnalysisService, type SearchResultsAnalysis } from './resultAnalysisService';
+import { AdvancedSearchCoordination } from './advancedSearchCoordination';
 import type { GameWithCalculatedFields } from '../types/database';
 
 interface SearchDiagnostic {
@@ -46,6 +47,27 @@ interface SearchDiagnostic {
       '41-60': number;
       '61-80': number;
       '81-100': number;
+    };
+    // New metrics analysis
+    totalRatingDistribution: {
+      '0-20': number;
+      '21-40': number;
+      '41-60': number;
+      '61-80': number;
+      '81-100': number;
+    };
+    popularityDistribution: {
+      'viral': number; // >80k
+      'mainstream': number; // 50k-80k
+      'popular': number; // 10k-50k
+      'known': number; // 1k-10k
+      'niche': number; // <1k
+    };
+    flagAnalysis: {
+      total: number;
+      greenlight: number;
+      redlight: number;
+      unflagged: number;
     };
   };
   
@@ -152,13 +174,14 @@ class IGDBRateLimiter {
 
 export class SearchDiagnosticService {
   private rateLimiter = new IGDBRateLimiter();
+  private advancedSearchCoordination = new AdvancedSearchCoordination();
   
   /**
    * Analyze a single search query with comprehensive diagnostics
    */
   async analyzeSingleSearch(query: string): Promise<SearchDiagnostic> {
     const startTime = Date.now();
-    console.log(`🔍 Starting diagnostic analysis for: "${query}"`);
+    // console.log(`🔍 Starting diagnostic analysis for: "${query}"`);
     
     // Step 1: Analyze database search
     const dbStart = Date.now();
@@ -176,13 +199,19 @@ export class SearchDiagnosticService {
       igdbDuration = Date.now() - igdbStart;
     }
     
-    // Step 3: Analyze filters and sorting
-    const allGames = [...dbResults.games, ...(igdbResults?.games || [])];
-    const filterAnalysis = this.analyzeFilters(allGames);
-    const sortingAnalysis = this.analyzeSorting(allGames, query);
+    // Step 3: Get final results using improved search coordination
+    const coordinatedSearchResult = await this.advancedSearchCoordination.coordinatedSearch(query, {
+      maxResults: 40,
+      includeMetrics: true,
+      fastMode: false,
+      bypassCache: false,
+      useAggressive: false
+    });
     
-    // Step 4: Detailed result analysis
-    const finalResults = await gameDataServiceV2.searchGames(query);
+    // Step 4: Analyze filters and sorting on final results
+    const finalResults = coordinatedSearchResult.results || [];
+    const filterAnalysis = this.analyzeFilters(finalResults);
+    const sortingAnalysis = this.analyzeSorting(finalResults, query);
     const resultAnalysis = resultAnalysisService.analyzeSearchResults(
       query,
       dbResults.games,
@@ -307,7 +336,7 @@ export class SearchDiagnosticService {
   }
   
   /**
-   * Analyze filter distributions
+   * Analyze filter distributions with new IGDB metrics and manual flags
    */
   private analyzeFilters(games: GameWithCalculatedFields[]) {
     const genreDistribution: Record<string, number> = {};
@@ -319,6 +348,30 @@ export class SearchDiagnosticService {
       '41-60': 0,
       '61-80': 0,
       '81-100': 0
+    };
+    
+    // New IGDB metrics distributions
+    const totalRatingDistribution = {
+      '0-20': 0,
+      '21-40': 0,
+      '41-60': 0,
+      '61-80': 0,
+      '81-100': 0
+    };
+    
+    const popularityDistribution = {
+      'viral': 0,
+      'mainstream': 0,
+      'popular': 0,
+      'known': 0,
+      'niche': 0
+    };
+    
+    const flagAnalysis = {
+      total: 0,
+      greenlight: 0,
+      redlight: 0,
+      unflagged: 0
     };
     
     games.forEach(game => {
@@ -342,20 +395,53 @@ export class SearchDiagnosticService {
         releaseYearDistribution[year] = (releaseYearDistribution[year] || 0) + 1;
       }
       
-      // Ratings
+      // Original IGDB ratings
       const rating = game.igdb_rating || 0;
       if (rating <= 20) ratingDistribution['0-20']++;
       else if (rating <= 40) ratingDistribution['21-40']++;
       else if (rating <= 60) ratingDistribution['41-60']++;
       else if (rating <= 80) ratingDistribution['61-80']++;
       else ratingDistribution['81-100']++;
+      
+      // New total rating distribution
+      const totalRating = (game as any).total_rating || 0;
+      if (totalRating <= 20) totalRatingDistribution['0-20']++;
+      else if (totalRating <= 40) totalRatingDistribution['21-40']++;
+      else if (totalRating <= 60) totalRatingDistribution['41-60']++;
+      else if (totalRating <= 80) totalRatingDistribution['61-80']++;
+      else if (totalRating > 0) totalRatingDistribution['81-100']++;
+      
+      // Popularity distribution
+      const popularityScore = (game as any).popularity_score || 0;
+      if (popularityScore > 80000) popularityDistribution['viral']++;
+      else if (popularityScore > 50000) popularityDistribution['mainstream']++;
+      else if (popularityScore > 10000) popularityDistribution['popular']++;
+      else if (popularityScore > 1000) popularityDistribution['known']++;
+      else popularityDistribution['niche']++;
+      
+      // Manual flag analysis
+      const greenlight = (game as any).greenlight_flag;
+      const redlight = (game as any).redlight_flag;
+      
+      if (greenlight) {
+        flagAnalysis.greenlight++;
+        flagAnalysis.total++;
+      } else if (redlight) {
+        flagAnalysis.redlight++;
+        flagAnalysis.total++;
+      } else {
+        flagAnalysis.unflagged++;
+      }
     });
     
     return {
       genreDistribution,
       platformDistribution,
       releaseYearDistribution,
-      ratingDistribution
+      ratingDistribution,
+      totalRatingDistribution,
+      popularityDistribution,
+      flagAnalysis
     };
   }
   
@@ -375,9 +461,13 @@ export class SearchDiagnosticService {
     
     const originalOrder = games.map(g => g.name);
     
-    // Sort by rating
+    // Sort by new total rating (prioritized) then fallback to old rating
     const sortedByRating = [...games]
-      .sort((a, b) => (b.igdb_rating || 0) - (a.igdb_rating || 0))
+      .sort((a, b) => {
+        const aRating = (a as any).total_rating || a.igdb_rating || 0;
+        const bRating = (b as any).total_rating || b.igdb_rating || 0;
+        return bRating - aRating;
+      })
       .map(g => g.name);
     
     // Sort by relevance (simple name matching for now)
@@ -385,12 +475,14 @@ export class SearchDiagnosticService {
       .sort((a, b) => this.calculateRelevanceScore(b, query) - this.calculateRelevanceScore(a, query))
       .map(g => g.name);
     
-    const topRatedGame = games.reduce((top, game) => 
-      (game.igdb_rating || 0) > (top.igdb_rating || 0) ? game : top
-    ).name;
+    const topRatedGame = games.reduce((top, game) => {
+      const gameRating = (game as any).total_rating || game.igdb_rating || 0;
+      const topRating = (top as any).total_rating || top.igdb_rating || 0;
+      return gameRating > topRating ? game : top;
+    }).name;
     
     const averageRating = games.reduce((sum, game) => 
-      sum + (game.igdb_rating || 0), 0
+      sum + ((game as any).total_rating || game.igdb_rating || 0), 0
     ) / games.length;
     
     return {
@@ -427,8 +519,16 @@ export class SearchDiagnosticService {
       score += (matchedWords.length / queryWords.length) * 40;
     }
     
-    // Quality bonuses
-    if (game.igdb_rating && game.igdb_rating > 80) score += 10;
+    // Quality bonuses using new metrics
+    const totalRating = (game as any).total_rating || game.igdb_rating || 0;
+    const popularity = (game as any).popularity_score || 0;
+    
+    if (totalRating > 80) score += 15;
+    else if (totalRating > 60) score += 10;
+    
+    if (popularity > 50000) score += 10; // Mainstream/viral games
+    else if (popularity > 10000) score += 5; // Popular games
+    
     if (game.summary && game.summary.length > 50) score += 5;
     
     return score;

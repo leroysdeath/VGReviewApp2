@@ -10,6 +10,7 @@
 
 import type { GameWithCalculatedFields } from '../types/database';
 import type { IGDBGame } from './igdbServiceV2';
+import { getGameCopyrightInfo } from '../utils/contentProtectionFilter';
 
 export interface FilteringDecision {
   passed: boolean;
@@ -58,6 +59,40 @@ export interface ResultAnalysis {
     hasPlatforms: boolean;
     hasRating: boolean;
     completenessScore: number;
+    // New IGDB metrics
+    hasTotalRating: boolean;
+    hasRatingCount: boolean;
+    hasFollows: boolean;
+    hasPopularityScore: boolean;
+    metricsCompletenessScore: number;
+  };
+  
+  // New IGDB metrics
+  igdbMetrics: {
+    totalRating?: number;
+    ratingCount?: number;
+    follows?: number;
+    hypes?: number;
+    popularityScore?: number;
+    popularityTier: 'viral' | 'mainstream' | 'popular' | 'known' | 'niche';
+  };
+  
+  // Manual flags
+  flagStatus: {
+    hasGreenlight: boolean;
+    hasRedlight: boolean;
+    flagReason?: string;
+    flaggedAt?: string;
+    flaggedBy?: string;
+    overrideActive: boolean;
+  };
+  
+  // Copyright filtering level
+  copyrightInfo: {
+    level: 'BLOCK_ALL' | 'AGGRESSIVE' | 'MODERATE' | 'MOD_FRIENDLY';
+    responsibleCompany: string;
+    policyReason: string;
+    levelDescription: string;
   };
   
   // Search relevance
@@ -192,10 +227,19 @@ export class ResultAnalysisService {
     // Calculate ranking factors
     const rankingFactors = this.calculateRankingFactors(game, query, relevanceBreakdown);
     
+    // Get copyright information
+    const copyrightInfo = getGameCopyrightInfo(game);
+    
+    // Analyze IGDB metrics
+    const igdbMetrics = this.analyzeIGDBMetrics(game);
+    
+    // Analyze flag status
+    const flagStatus = this.analyzeFlagStatus(game);
+    
     return {
       gameId: game.id || game.igdb_id,
       gameName: game.name,
-      source: game._source,
+      source: game._source || 'database',
       finalPosition: finalPosition === -1 ? -1 : finalPosition,
       
       filteringDecisions,
@@ -207,6 +251,9 @@ export class ResultAnalysisService {
       rankingFactors,
       
       qualityMetrics,
+      igdbMetrics,
+      flagStatus,
+      copyrightInfo,
       relevanceBreakdown
     };
   }
@@ -711,6 +758,46 @@ export class ResultAnalysisService {
       irrelevantResults: irrelevantResults.slice(0, 10),
       missingRelevantTerms: missingRelevantTerms.slice(0, 5),
       sortingAnomalies: sortingAnomalies.slice(0, 10)
+    };
+  }
+
+  /**
+   * Analyze IGDB metrics for a game
+   */
+  private analyzeIGDBMetrics(game: any) {
+    const popularityScore = game.popularity_score || 0;
+    let popularityTier: 'viral' | 'mainstream' | 'popular' | 'known' | 'niche' = 'niche';
+    
+    if (popularityScore > 100000) popularityTier = 'viral';
+    else if (popularityScore > 50000) popularityTier = 'mainstream';
+    else if (popularityScore > 20000) popularityTier = 'popular';
+    else if (popularityScore > 5000) popularityTier = 'known';
+
+    return {
+      totalRating: game.total_rating,
+      ratingCount: game.rating_count,
+      follows: game.follows,
+      hypes: game.hypes,
+      popularityScore,
+      popularityTier
+    };
+  }
+
+  /**
+   * Analyze manual flag status for a game
+   */
+  private analyzeFlagStatus(game: any) {
+    const hasGreenlight = game.greenlight_flag === true;
+    const hasRedlight = game.redlight_flag === true;
+    const overrideActive = hasGreenlight || hasRedlight;
+
+    return {
+      hasGreenlight,
+      hasRedlight,
+      flagReason: game.flag_reason,
+      flaggedAt: game.flagged_at,
+      flaggedBy: game.flagged_by,
+      overrideActive
     };
   }
 }

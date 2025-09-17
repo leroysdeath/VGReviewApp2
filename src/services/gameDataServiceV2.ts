@@ -3,6 +3,9 @@
  * Fixes the database threshold issue that prevents IGDB polling
  */
 
+// Debug flag to control console logging
+const DEBUG_GAME_DATA = false;
+
 import { supabase } from './supabase';
 import { sanitizeSearchTerm } from '../utils/sqlSecurity';
 import type { Game, GameWithCalculatedFields } from '../types/database';
@@ -41,7 +44,7 @@ export class GameDataServiceV2 {
       const cacheKey = sanitizedQuery.toLowerCase();
       const cached = this.queryCache.get(cacheKey);
       if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL) {
-        console.log(`🚀 Cache hit for "${query}" (${cached.results.length} results)`);
+        if (DEBUG_GAME_DATA) console.log(`🚀 Cache hit for "${query}" (${cached.results.length} results)`);
         return cached.results;
       }
     }
@@ -49,20 +52,20 @@ export class GameDataServiceV2 {
     try {
       // Step 1: Always get database results first (fast response)
       const dbResults = await this.searchGamesExact(sanitizedQuery, filters);
-      console.log(`📊 Database search: ${dbResults.length} results for "${query}"`);
+      if (DEBUG_GAME_DATA) console.log(`📊 Database search: ${dbResults.length} results for "${query}"`);
       
       // Step 2: Determine if we need IGDB supplementation
       const shouldQueryIGDB = this.shouldQueryIGDB(dbResults, query, filters);
       
       if (shouldQueryIGDB) {
         try {
-          console.log(`🚀 Supplementing with IGDB results...`);
+          if (DEBUG_GAME_DATA) console.log(`🚀 Supplementing with IGDB results...`);
           
           // Step 3: Get fresh IGDB results using Layer 1 improvements
           const igdbGames = await this.getIGDBResults(query);
           
           if (igdbGames && igdbGames.length > 0) {
-            console.log(`✅ IGDB returned ${igdbGames.length} additional results`);
+            if (DEBUG_GAME_DATA) console.log(`✅ IGDB returned ${igdbGames.length} additional results`);
             
             // Step 4: Smart merge strategy
             const mergedResults = await this.smartMerge(dbResults, igdbGames, query);
@@ -85,7 +88,7 @@ export class GameDataServiceV2 {
           // Continue with database results only
         }
       } else {
-        console.log(`📋 Using database results only (${dbResults.length} games)`);
+        if (DEBUG_GAME_DATA) console.log(`📋 Using database results only (${dbResults.length} games)`);
       }
       
       // Cache database-only results too (no filters only)
@@ -110,7 +113,7 @@ export class GameDataServiceV2 {
   private shouldQueryIGDB(dbResults: GameWithCalculatedFields[], query: string, filters?: SearchFilters): boolean {
     // Always query IGDB if we have very few results
     if (dbResults.length < 3) {
-      console.log(`🔍 Low DB results (${dbResults.length}) - querying IGDB`);
+      if (DEBUG_GAME_DATA) console.log(`🔍 Low DB results (${dbResults.length}) - querying IGDB`);
       return true;
     }
     
@@ -118,7 +121,7 @@ export class GameDataServiceV2 {
     if (this.isFranchiseQuery(query)) {
       // For franchise searches, supplement if we have < 10 results
       if (dbResults.length < 10) {
-        console.log(`🎮 Franchise query "${query}" with ${dbResults.length} results - supplementing with IGDB`);
+        if (DEBUG_GAME_DATA) console.log(`🎮 Franchise query "${query}" with ${dbResults.length} results - supplementing with IGDB`);
         return true;
       }
       
@@ -128,20 +131,20 @@ export class GameDataServiceV2 {
       );
       
       if (hasStaleResults) {
-        console.log(`🕐 Stale database results detected - refreshing with IGDB`);
+        if (DEBUG_GAME_DATA) console.log(`🕐 Stale database results detected - refreshing with IGDB`);
         return true;
       }
       
       // For franchise searches with good coverage, occasionally refresh (10% chance)
       if (dbResults.length >= 10 && Math.random() < 0.1) {
-        console.log(`🎲 Random refresh for franchise search (10% chance)`);
+        if (DEBUG_GAME_DATA) console.log(`🎲 Random refresh for franchise search (10% chance)`);
         return true;
       }
     }
     
     // For specific searches, be more conservative
     if (dbResults.length < 5) {
-      console.log(`🎯 Specific search with ${dbResults.length} results - querying IGDB`);
+      if (DEBUG_GAME_DATA) console.log(`🎯 Specific search with ${dbResults.length} results - querying IGDB`);
       return true;
     }
     
@@ -222,7 +225,7 @@ export class GameDataServiceV2 {
       return true;
     });
     
-    console.log(`🔄 Merge: ${dbResults.length} DB + ${newIGDBGames.length} new IGDB = ${dbResults.length + newIGDBGames.length} total`);
+    if (DEBUG_GAME_DATA) console.log(`🔄 Merge: ${dbResults.length} DB + ${newIGDBGames.length} new IGDB = ${dbResults.length + newIGDBGames.length} total`);
     
     // Combine and sort by relevance
     const combined = [...dbResults, ...newIGDBGames];
@@ -466,7 +469,7 @@ export class GameDataServiceV2 {
         
         if (gamesToSave.length > 0) {
           await this.batchInsertGames(gamesToSave);
-          console.log(`💾 Background: Saved ${gamesToSave.length} games to database for query "${query}"`);
+          if (DEBUG_GAME_DATA) console.log(`💾 Background: Saved ${gamesToSave.length} games to database for query "${query}"`);
         }
       } catch (error: any) {
         // Only log non-duplicate errors
@@ -487,7 +490,9 @@ export class GameDataServiceV2 {
     
     for (const game of games) {
       try {
-        const slug = await generateUniqueSlug(game.name, game.id);
+        // PERFORMANCE FIX: Use simple slug generation instead of expensive DB queries
+        // This eliminates the 406 errors and improves search performance dramatically
+        const slug = generateSlug(game.name, game.id);
         
         transformedGames.push({
           igdb_id: game.id,
@@ -559,12 +564,12 @@ export class GameDataServiceV2 {
    */
   async searchGamesFast(query: string, maxResults: number = 8): Promise<GameWithCalculatedFields[]> {
     try {
-      console.log(`⚡ Fast search for: "${query}" (max: ${maxResults})`);
+      if (DEBUG_GAME_DATA) console.log(`⚡ Fast search for: "${query}" (max: ${maxResults})`);
       
       // Search larger pool then filter to maxResults - preserves search quality
       const searchLimit = Math.max(maxResults * 10, 100); // Get 10x results or min 100 for better filtering
       const results = await this.searchByName(query, undefined, searchLimit);
-      console.log(`⚡ Fast search retrieved: ${results.length} from pool of ${searchLimit}`);
+      if (DEBUG_GAME_DATA) console.log(`⚡ Fast search retrieved: ${results.length} from pool of ${searchLimit}`);
       
       // Sort by relevance but skip complex metrics for speed
       const scoredResults = results.map(game => ({
@@ -579,7 +584,7 @@ export class GameDataServiceV2 {
         .slice(0, maxResults) // Apply final result limit
         .map(({ _relevanceScore, ...game }) => game); // Remove temp score field
         
-      console.log(`⚡ Fast search final results: ${filteredAndSorted.length} (filtered from ${results.length})`);
+      if (DEBUG_GAME_DATA) console.log(`⚡ Fast search final results: ${filteredAndSorted.length} (filtered from ${results.length})`);
       return filteredAndSorted;
     } catch (error) {
       console.error('Error in fast search:', error);
@@ -627,16 +632,16 @@ export class GameDataServiceV2 {
   private async searchGamesExact(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
     try {
       // Strategy: Try name search first (faster), then supplement with summary search if needed
-      console.log(`🔍 Database search for: "${query}"`);
+      if (DEBUG_GAME_DATA) console.log(`🔍 Database search for: "${query}"`);
       
       // First: Search by name only (much faster)
       let nameResults = await this.searchByName(query, filters, 25); // Reduced from 50 for faster dropdown
-      console.log(`📛 Name search: ${nameResults.length} results`);
+      if (DEBUG_GAME_DATA) console.log(`📛 Name search: ${nameResults.length} results`);
       
       // If we don't have enough results, add summary search
       if (nameResults.length < 15) { // Reduced threshold for faster response
         const summaryResults = await this.searchBySummary(query, filters, 15); // Reduced from 30
-        console.log(`📝 Summary search: ${summaryResults.length} results`);
+        if (DEBUG_GAME_DATA) console.log(`📝 Summary search: ${summaryResults.length} results`);
         
         // Merge results, avoiding duplicates
         const existingIds = new Set(nameResults.map(g => g.id));
@@ -644,7 +649,7 @@ export class GameDataServiceV2 {
         nameResults = [...nameResults, ...newResults];
       }
       
-      console.log(`✅ Total database results: ${nameResults.length}`);
+      if (DEBUG_GAME_DATA) console.log(`✅ Total database results: ${nameResults.length}`);
       
       // Sort by enhanced relevance score using new IGDB metrics
       return this.sortByRelevance(nameResults, query);
@@ -660,7 +665,7 @@ export class GameDataServiceV2 {
    */
   private async searchByName(query: string, filters?: SearchFilters, limit: number = 50): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 3000); // 3 second timeout for faster response
+    const timeoutId = setTimeout(() => abortController.abort(), 8000); // 8 second timeout for complex queries
     
     try {
       let queryBuilder = supabase
@@ -713,7 +718,7 @@ export class GameDataServiceV2 {
    */
   private async searchBySummary(query: string, filters?: SearchFilters, limit: number = 30): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 2000); // 2 second timeout for faster response
+    const timeoutId = setTimeout(() => abortController.abort(), 6000); // 6 second timeout for summary searches
     
     try {
       let queryBuilder = supabase
