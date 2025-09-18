@@ -4,7 +4,7 @@
  */
 
 // Debug flag to control console logging
-const DEBUG_GAME_DATA = false;
+const DEBUG_GAME_DATA = true; // INVESTIGATION MODE - Enable detailed logging
 
 import { supabase } from './supabase';
 import { sanitizeSearchTerm } from '../utils/sqlSecurity';
@@ -428,6 +428,12 @@ export class GameDataServiceV2 {
     if (game.cover_url) score += 1; // Has cover art
     if (game.totalUserRatings > 10) score += 2;
     
+    // 7. Manual Curation Boost (150 points) - Green-flagged games get massive priority
+    // This ensures manually curated games appear at the top of search results
+    if ((game as any).greenlight_flag === true) {
+      score += 150;
+    }
+    
     return Math.round(score * 10) / 10; // Round to 1 decimal for cleaner debug output
   }
   
@@ -634,29 +640,76 @@ export class GameDataServiceV2 {
       // Strategy: Try name search first (faster), then supplement with summary search if needed
       if (DEBUG_GAME_DATA) console.log(`🔍 Database search for: "${query}"`);
       
-      // First: Search by name only (much faster)
-      let nameResults = await this.searchByName(query, filters, 25); // Reduced from 50 for faster dropdown
+      // Run green flag search and name search in parallel for better performance
+      const [greenFlaggedGames, nameResults] = await Promise.all([
+        this.searchGreenFlaggedGames(query).catch(() => []), // Don't let green flag search fail the whole operation
+        this.searchByName(query, filters, 25)
+      ]);
+      
+      if (DEBUG_GAME_DATA) console.log(`🟢 Green-flagged games: ${greenFlaggedGames.length} results`);
       if (DEBUG_GAME_DATA) console.log(`📛 Name search: ${nameResults.length} results`);
       
-      // If we don't have enough results, add summary search
-      if (nameResults.length < 15) { // Reduced threshold for faster response
+      // Merge green-flagged games with regular results (avoiding duplicates)
+      const existingIds = new Set(nameResults.map(g => g.id));
+      const uniqueGreenFlagged = greenFlaggedGames.filter(g => !existingIds.has(g.id));
+      let combinedResults = [...uniqueGreenFlagged, ...nameResults];
+      
+      // If we still don't have enough results, add summary search
+      if (combinedResults.length < 15) { // Reduced threshold for faster response
         const summaryResults = await this.searchBySummary(query, filters, 15); // Reduced from 30
         if (DEBUG_GAME_DATA) console.log(`📝 Summary search: ${summaryResults.length} results`);
         
         // Merge results, avoiding duplicates
-        const existingIds = new Set(nameResults.map(g => g.id));
-        const newResults = summaryResults.filter(g => !existingIds.has(g.id));
-        nameResults = [...nameResults, ...newResults];
+        const currentIds = new Set(combinedResults.map(g => g.id));
+        const newResults = summaryResults.filter(g => !currentIds.has(g.id));
+        combinedResults = [...combinedResults, ...newResults];
       }
       
-      if (DEBUG_GAME_DATA) console.log(`✅ Total database results: ${nameResults.length}`);
+      if (DEBUG_GAME_DATA) console.log(`✅ Total database results: ${combinedResults.length}`);
       
-      // Sort by enhanced relevance score using new IGDB metrics
-      return this.sortByRelevance(nameResults, query);
+      // Sort by enhanced relevance score using new IGDB metrics (green flags will get 150-point boost)
+      return this.sortByRelevance(combinedResults, query);
       
     } catch (error) {
       console.error('Error in searchGamesExact:', error);
       return [];
+    }
+  }
+  
+  /**
+   * Search for green-flagged games that match the query
+   * These are manually curated games that should always appear
+   */
+  private async searchGreenFlaggedGames(query: string): Promise<GameWithCalculatedFields[]> {
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 8000); // Increased to 8 seconds like other searches
+    
+    try {
+      // Simplified query - just search green-flagged games, no complex filters
+      const { data, error } = await supabase
+        .from('game')
+        .select('*')
+        .eq('greenlight_flag', true)
+        .ilike('name', `%${query}%`)
+        .abortSignal(abortController.signal)
+        .limit(5); // Reduced limit for faster query
+      
+      clearTimeout(timeoutId);
+      
+      if (error) {
+        if (DEBUG_GAME_DATA) console.error('Green flag search error:', error);
+        return []; // Fail silently to not break regular search
+      }
+      
+      if (DEBUG_GAME_DATA) console.log(`🟢 Green flag search found ${(data || []).length} games for "${query}"`);
+      return (data || []).map(game => this.transformGameWithoutRatings(game as Game));
+    } catch (abortError) {
+      clearTimeout(timeoutId);
+      if (abortError.name === 'AbortError') {
+        if (DEBUG_GAME_DATA) console.warn('⚠️ Green flag search timed out - continuing with regular search');
+        return []; // Return empty array to continue with regular search
+      }
+      throw abortError;
     }
   }
   
@@ -672,6 +725,7 @@ export class GameDataServiceV2 {
         .from('game')
         .select('*')
         .ilike('name', `%${query}%`)
+        .or('redlight_flag.is.null,redlight_flag.eq.false')  // Filter out red-flagged games
         .abortSignal(abortController.signal);
       
       // Apply filters
@@ -725,6 +779,7 @@ export class GameDataServiceV2 {
         .from('game')
         .select('*')
         .ilike('summary', `%${query}%`)
+        .or('redlight_flag.is.null,redlight_flag.eq.false')  // Filter out red-flagged games
         .abortSignal(abortController.signal);
       
       // Apply filters

@@ -9,9 +9,12 @@ import {
   User,
   TrendingUp,
   Star,
-  Users
+  Users,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { gameFlagService, type FlaggedGame, type FlagSummary, type FlagType } from '../services/gameFlagService';
+import { filterProtectedContent, filterFanGamesAndEReaderContent } from '../utils/contentProtectionFilter';
 
 interface GameSearchResult {
   id: number;
@@ -129,6 +132,35 @@ export const ManualFlaggingPanel: React.FC = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
+  // Check if a game would be filtered out in search results
+  const checkFilteringStatus = (game: GameSearchResult | FlaggedGame) => {
+    // Convert game to the format expected by filters
+    const gameForFilter = {
+      id: game.id,
+      name: game.name,
+      developer: game.developer,
+      publisher: game.publisher,
+      category: game.category,
+      genres: undefined, // Not available in this interface
+      summary: undefined, // Not available in this interface
+      greenlight_flag: game.greenlight_flag,
+      redlight_flag: game.redlight_flag
+    };
+
+    // Test content protection filters
+    const passesContentFilter = filterProtectedContent([gameForFilter]).length > 0;
+    const passesFanGameFilter = filterFanGamesAndEReaderContent([gameForFilter]).length > 0;
+    
+    const wouldBeFiltered = !passesContentFilter || !passesFanGameFilter;
+    
+    return {
+      wouldBeFiltered,
+      reason: !passesContentFilter ? 'Content Protection Filter (Category/Bundle/Port)' : 
+              !passesFanGameFilter ? 'Fan Game/E-Reader Filter' : 
+              null
+    };
+  };
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -236,6 +268,7 @@ export const ManualFlaggingPanel: React.FC = () => {
                     game={game}
                     onFlag={handleFlag}
                     showMetrics={true}
+                    filteringStatus={checkFilteringStatus(game)}
                   />
                 ))}
               </div>
@@ -257,6 +290,7 @@ export const ManualFlaggingPanel: React.FC = () => {
                   key={game.id}
                   game={game}
                   onFlag={handleFlag}
+                  filteringStatus={checkFilteringStatus(game)}
                 />
               ))}
             </div>
@@ -281,6 +315,7 @@ export const ManualFlaggingPanel: React.FC = () => {
                   game={game}
                   onFlag={handleFlag}
                   showConflict={true}
+                  filteringStatus={checkFilteringStatus(game)}
                 />
               ))}
             </div>
@@ -296,7 +331,8 @@ const GameFlagRow: React.FC<{
   game: GameSearchResult;
   onFlag: (gameId: number, flagType: FlagType, reason?: string) => void;
   showMetrics?: boolean;
-}> = ({ game, onFlag, showMetrics = false }) => {
+  filteringStatus?: { wouldBeFiltered: boolean; reason: string | null };
+}> = ({ game, onFlag, showMetrics = false, filteringStatus }) => {
   const [reason, setReason] = useState('');
 
   const handleFlag = (flagType: FlagType) => {
@@ -332,6 +368,32 @@ const GameFlagRow: React.FC<{
             <div className={getCategoryColor(game.category)}>
               Category: {getCategoryLabel(game.category)}
             </div>
+            
+            {/* Filtering Status */}
+            {filteringStatus && (
+              <div className="flex items-center gap-2 mt-2">
+                {filteringStatus.wouldBeFiltered ? (
+                  <>
+                    <EyeOff className="h-4 w-4 text-red-400" />
+                    <span className="text-red-400 text-sm font-medium">
+                      Would be filtered in search
+                    </span>
+                    {filteringStatus.reason && (
+                      <span className="text-red-300 text-xs">
+                        ({filteringStatus.reason})
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4 text-green-400" />
+                    <span className="text-green-400 text-sm font-medium">
+                      Visible in search results
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
             
             {showMetrics && (
               <div className="flex gap-4 text-xs mt-2">
@@ -410,7 +472,8 @@ const FlaggedGameRow: React.FC<{
   game: FlaggedGame;
   onFlag: (gameId: number, flagType: FlagType, reason?: string) => void;
   showConflict?: boolean;
-}> = ({ game, onFlag, showConflict = false }) => {
+  filteringStatus?: { wouldBeFiltered: boolean; reason: string | null };
+}> = ({ game, onFlag, showConflict = false, filteringStatus }) => {
   const getBorderColor = () => {
     if (showConflict && game.conflict_status === 'potential_conflict') {
       return 'border-yellow-500';
@@ -435,6 +498,33 @@ const FlaggedGameRow: React.FC<{
             <div>Developer: {game.developer || 'Unknown'}</div>
             <div>Publisher: {game.publisher || 'Unknown'}</div>
             <div>Category: {getCategoryLabel(game.category)}</div>
+            
+            {/* Filtering Status */}
+            {filteringStatus && (
+              <div className="flex items-center gap-2 mt-1">
+                {filteringStatus.wouldBeFiltered ? (
+                  <>
+                    <EyeOff className="h-4 w-4 text-red-400" />
+                    <span className="text-red-400 text-sm font-medium">
+                      Would be filtered in search
+                    </span>
+                    {filteringStatus.reason && (
+                      <span className="text-red-300 text-xs">
+                        ({filteringStatus.reason})
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4 text-green-400" />
+                    <span className="text-green-400 text-sm font-medium">
+                      Visible in search results
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+            
             {game.flag_reason && (
               <div className="text-yellow-300">Reason: {game.flag_reason}</div>
             )}
@@ -457,28 +547,3 @@ const FlaggedGameRow: React.FC<{
   );
 };
 
-const getCategoryLabel = (category?: number) => {
-  const labels: Record<number, string> = {
-    0: 'Main game',
-    1: 'DLC/Add-on',
-    2: 'Expansion',
-    3: 'Bundle',
-    4: 'Standalone expansion',
-    5: 'Mod',
-    6: 'Episode',
-    7: 'Season',
-    8: 'Remake',
-    9: 'Remaster',
-    10: 'Expanded game',
-    11: 'Port',
-    12: 'Fork',
-    13: 'Pack',
-    14: 'Update'
-  };
-  return category !== undefined ? labels[category] || `Unknown(${category})` : 'Unknown';
-};
-
-const formatDate = (dateString?: string) => {
-  if (!dateString) return 'Never';
-  return new Date(dateString).toLocaleDateString();
-};

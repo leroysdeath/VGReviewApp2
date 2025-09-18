@@ -2,7 +2,7 @@
 // Filters content based on individual company copyright aggression levels
 
 // Debug flag to control console logging (set to false to reduce verbosity)
-const DEBUG_FILTERING = false;
+const DEBUG_FILTERING = true; // INVESTIGATION MODE - Enable detailed logging
 
 import { 
   CopyrightLevel, 
