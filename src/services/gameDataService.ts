@@ -601,7 +601,7 @@ class GameDataService {
         }
       }
       
-      console.log(`✅ Returning ${prioritizedResults.length} games with flagship prioritization`);
+      // Returning games with flagship prioritization
       return prioritizedResults;
     } catch (error) {
       console.error('❌ ENHANCED SEARCH FAILED:', error);

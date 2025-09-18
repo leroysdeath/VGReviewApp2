@@ -9,7 +9,7 @@ import { Filter, X } from 'lucide-react';
 
 interface AdvancedSearchProps {
   className?: string;
-  renderGameCard: (game: any, index: number) => React.ReactNode;
+  renderGameCard: (game: { id: string | number; [key: string]: unknown }, index: number) => React.ReactNode;
 }
 
 export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
@@ -38,18 +38,20 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
     // Handle different suggestion types
     switch (suggestion.type) {
-      case 'genre':
+      case 'genre': {
         const genreId = MOCK_GENRES.find(g => g.label === suggestion.title)?.id;
         if (genreId && !filters.genres.includes(genreId)) {
           setFilters({ genres: [...filters.genres, genreId] });
         }
         break;
-      case 'platform':
+      }
+      case 'platform': {
         const platformId = MOCK_PLATFORMS.find(p => p.label === suggestion.title)?.id;
         if (platformId && !filters.platforms.includes(platformId)) {
           setFilters({ platforms: [...filters.platforms, platformId] });
         }
         break;
+      }
       default:
         // For game type, just keep the search query
         break;

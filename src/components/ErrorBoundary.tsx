@@ -31,13 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Enhanced error logging
-    console.group('🚨 Error Boundary Caught Error');
-    console.error('Error:', error);
-    console.error('Error Info:', errorInfo);
-    console.error('Component Stack:', errorInfo.componentStack);
-    console.error('Error Stack:', error.stack);
-    console.groupEnd();
+    // Error logging removed for production
     
     // Store error info in state
     this.setState({ errorInfo });
@@ -75,11 +69,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
     navigator.clipboard.writeText(JSON.stringify(errorDetails, null, 2))
       .then(() => {
-        console.log('Error details copied to clipboard');
         // You could show a toast notification here
       })
       .catch(err => {
-        console.error('Failed to copy error details:', err);
       });
   };
   render() {

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mario IGDB Data Quality Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        h1 { color: #60a5fa; }
+        h2 { color: #94a3b8; margin-top: 30px; }
+        .controls {
+            margin: 20px 0;
+            padding: 20px;
+            background: #1e293b;
+            border-radius: 8px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover { background: #2563eb; }
+        .results {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #334155;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+        .game-row {
+            display: grid;
+            grid-template-columns: 40px 3fr 1fr 1fr 1fr 1fr 100px;
+            gap: 10px;
+            padding: 10px;
+            border-bottom: 1px solid #334155;
+            align-items: center;
+        }
+        .game-row:hover { background: #334155; }
+        .header-row {
+            font-weight: bold;
+            color: #94a3b8;
+            border-bottom: 2px solid #475569;
+        }
+        .game-name { color: #60a5fa; font-weight: 500; }
+        .iconic { background: #065f46; }
+        .obscure { background: #7c2d12; }
+        .good { color: #10b981; }
+        .poor { color: #f59e0b; }
+        .bad { color: #ef4444; }
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 5px;
+        }
+        .tag-iconic { background: #10b981; color: white; }
+        .tag-obscure { background: #ef4444; color: white; }
+        .tag-franchise { background: #3b82f6; color: white; }
+        pre {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.875rem;
+        }
+        .warning {
+            background: #7c2d12;
+            border: 1px solid #ea580c;
+            color: #fed7aa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #064e3b;
+            border: 1px solid #10b981;
+            color: #d1fae5;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .error {
+            background: #7f1d1d;
+            border: 1px solid #ef4444;
+            color: #fecaca;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Mario Search IGDB Data Quality Analysis</h1>
+    
+    <div class="controls">
+        <p>This test will analyze the IGDB data quality for Mario searches by:</p>
+        <ul>
+            <li>Checking if iconic Mario games appear in results</li>
+            <li>Analyzing IGDB rating data completeness</li>
+            <li>Identifying if obscure games rank above iconic titles</li>
+            <li>Determining if we need alternative data sources</li>
+        </ul>
+        <button onclick="runDirectTest()">🔍 Run Direct IGDB Test</button>
+        <button onclick="runDiagnosticTest()">🔬 Use Diagnostic Tool</button>
+    </div>
+    
+    <div id="results" style="display: none;"></div>
+
+    <script>
+        const ICONIC_MARIO_GAMES = [
+            'Super Mario Bros', 'Super Mario World', 'Super Mario 64',
+            'Super Mario Odyssey', 'Mario Kart 8', 'Mario Kart 8 Deluxe',
+            'Super Mario Galaxy', 'Mario Party', 'Paper Mario',
+            'New Super Mario Bros', 'Luigi\'s Mansion', 'Mario Tennis',
+            'Super Mario Maker', 'Mario & Luigi', 'Dr. Mario'
+        ];
+
+        async function runDirectTest() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<div class="success">🔄 Calling IGDB API directly...</div>';
+            
+            try {
+                // Call the Netlify function that proxies to IGDB
+                // Note: IGDB doesn't allow sort with search, so we just use search
+                const response = await fetch('/.netlify/functions/igdb-search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: 'fields name,rating,rating_count,total_rating,total_rating_count,follows,hypes,franchise,collection,cover,platforms,genres,summary; search "mario"; limit 50;'
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`IGDB API failed: ${response.status} - ${errorText}`);
+                }
+                
+                const games = await response.json();
+                analyzeAndDisplay(games, 'IGDB Direct');
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                console.error('Direct test error:', error);
+            }
+        }
+
+        async function runDiagnosticTest() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<div class="success">🔄 Opening diagnostic tool...</div>';
+            
+            // Since we can't directly access the diagnostic tool's API,
+            // we'll provide instructions for manual testing
+            resultsDiv.innerHTML = `
+                <div class="warning">
+                    <h3>📋 Manual Test Instructions</h3>
+                    <ol>
+                        <li>Go to <a href="/admin/diagnostic" target="_blank" style="color: #60a5fa;">Admin Diagnostic Tool</a></li>
+                        <li>Login with admin key: <code>debug</code></li>
+                        <li>Go to "Single Search" tab</li>
+                        <li>Enter query: <code>mario</code></li>
+                        <li>Click "Analyze"</li>
+                        <li>Go to "Results Table" tab to see detailed results</li>
+                    </ol>
+                    <p>Look for these key indicators:</p>
+                    <ul>
+                        <li>Are iconic Mario games (Super Mario Bros, Mario Kart, etc.) in the top 10?</li>
+                        <li>Do most games have IGDB ratings and follow counts?</li>
+                        <li>Are there obscure high-rated games ranking above iconic titles?</li>
+                    </ul>
+                </div>
+                
+                <h3>🎯 Expected vs Reality Check</h3>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Expected Iconic Games</div>
+                        <div class="stat-value">${ICONIC_MARIO_GAMES.length}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Minimum Acceptable</div>
+                        <div class="stat-value">${Math.floor(ICONIC_MARIO_GAMES.length * 0.6)}</div>
+                    </div>
+                </div>
+                
+                <h3>📊 Data Quality Thresholds</h3>
+                <ul>
+                    <li><span class="good">Good (>70%):</span> IGDB data is sufficient, minor tweaks needed</li>
+                    <li><span class="poor">Poor (40-70%):</span> IGDB has gaps, need supplementation</li>
+                    <li><span class="bad">Critical (<40%):</span> IGDB insufficient, need alternatives</li>
+                </ul>
+            `;
+        }
+
+        function analyzeAndDisplay(games, source) {
+            const resultsDiv = document.getElementById('results');
+            
+            // Analyze the data
+            const analysis = {
+                total: games.length,
+                iconicFound: [],
+                iconicMissing: [],
+                withRating: 0,
+                withGoodSampleSize: 0,
+                withFollows: 0,
+                withFranchise: 0,
+                topTenAnalysis: []
+            };
+            
+            // Check each game
+            games.forEach((game, index) => {
+                // Check if iconic
+                const isIconic = ICONIC_MARIO_GAMES.some(iconic => 
+                    game.name && game.name.toLowerCase().includes(
+                        iconic.toLowerCase().replace('super ', '').replace('new ', '')
+                    )
+                );
+                
+                if (isIconic) {
+                    analysis.iconicFound.push({
+                        name: game.name,
+                        position: index + 1,
+                        rating: game.rating || game.total_rating,
+                        ratingCount: game.rating_count || game.total_rating_count,
+                        follows: game.follows
+                    });
+                }
+                
+                // Data quality checks
+                if (game.rating || game.total_rating) analysis.withRating++;
+                if ((game.rating_count || game.total_rating_count || 0) > 50) analysis.withGoodSampleSize++;
+                if (game.follows > 0) analysis.withFollows++;
+                if (game.franchise) analysis.withFranchise++;
+                
+                // Top 10 analysis
+                if (index < 10) {
+                    analysis.topTenAnalysis.push({
+                        position: index + 1,
+                        name: game.name,
+                        rating: game.rating || game.total_rating || 0,
+                        ratingCount: game.rating_count || game.total_rating_count || 0,
+                        follows: game.follows || 0,
+                        isIconic: isIconic,
+                        hasFranchise: !!game.franchise
+                    });
+                }
+            });
+            
+            // Find missing games
+            ICONIC_MARIO_GAMES.forEach(iconic => {
+                const found = analysis.iconicFound.some(f => 
+                    f.name.toLowerCase().includes(
+                        iconic.toLowerCase().replace('super ', '').replace('new ', '')
+                    )
+                );
+                if (!found) {
+                    analysis.iconicMissing.push(iconic);
+                }
+            });
+            
+            // Calculate data quality score
+            const dataQualityScore = (
+                (analysis.withRating / analysis.total) * 0.25 +
+                (analysis.withGoodSampleSize / analysis.total) * 0.25 +
+                (analysis.withFollows / analysis.total) * 0.25 +
+                (analysis.iconicFound.length / ICONIC_MARIO_GAMES.length) * 0.25
+            );
+            
+            // Display results
+            let html = `<h2>📊 ${source} Results Analysis</h2>`;
+            
+            // Summary stats
+            html += `
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Results</div>
+                        <div class="stat-value">${analysis.total}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Iconic Found</div>
+                        <div class="stat-value ${analysis.iconicFound.length >= 10 ? 'good' : analysis.iconicFound.length >= 6 ? 'poor' : 'bad'}">
+                            ${analysis.iconicFound.length}/${ICONIC_MARIO_GAMES.length}
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">With Ratings</div>
+                        <div class="stat-value">${analysis.withRating} (${((analysis.withRating/analysis.total)*100).toFixed(0)}%)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Good Sample Size</div>
+                        <div class="stat-value">${analysis.withGoodSampleSize} (${((analysis.withGoodSampleSize/analysis.total)*100).toFixed(0)}%)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">With Follows</div>
+                        <div class="stat-value">${analysis.withFollows} (${((analysis.withFollows/analysis.total)*100).toFixed(0)}%)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Data Quality Score</div>
+                        <div class="stat-value ${dataQualityScore > 0.7 ? 'good' : dataQualityScore > 0.4 ? 'poor' : 'bad'}">
+                            ${(dataQualityScore * 100).toFixed(1)}%
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Data quality assessment
+            if (dataQualityScore < 0.4) {
+                html += `
+                    <div class="error">
+                        <h3>❌ CRITICAL: IGDB Data Insufficient</h3>
+                        <p>The IGDB data quality score is ${(dataQualityScore * 100).toFixed(1)}%, which is below the critical threshold.</p>
+                        <h4>Major Issues:</h4>
+                        <ul>
+                            ${analysis.iconicFound.length < 6 ? '<li>Missing most iconic Mario games</li>' : ''}
+                            ${analysis.withGoodSampleSize < analysis.total * 0.3 ? '<li>Most games lack sufficient rating data</li>' : ''}
+                            ${analysis.withFollows < analysis.total * 0.5 ? '<li>Limited engagement metrics available</li>' : ''}
+                        </ul>
+                        <h4>Recommendations:</h4>
+                        <ul>
+                            <li>🔧 Implement alternative data sources (Steam API, Metacritic)</li>
+                            <li>🏷️ Build a franchise recognition system</li>
+                            <li>📊 Use Bayesian averaging for low sample size ratings</li>
+                            <li>💪 Weight community engagement heavily over ratings</li>
+                            <li>🗂️ Create manual curation for iconic games</li>
+                        </ul>
+                    </div>
+                `;
+            } else if (dataQualityScore < 0.7) {
+                html += `
+                    <div class="warning">
+                        <h3>⚠️ POOR: IGDB Data Has Significant Gaps</h3>
+                        <p>The IGDB data quality score is ${(dataQualityScore * 100).toFixed(1)}%, indicating significant issues.</p>
+                        <h4>Recommendations:</h4>
+                        <ul>
+                            <li>📥 Ensure you're fetching: follows, hypes, total_rating_count, franchise fields</li>
+                            <li>🎮 Implement franchise boosting for known series</li>
+                            <li>💾 Supplement with your own database metrics</li>
+                            <li>⚖️ Adjust weight balance between ratings and engagement</li>
+                        </ul>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="success">
+                        <h3>✅ GOOD: IGDB Data Is Workable</h3>
+                        <p>The IGDB data quality score is ${(dataQualityScore * 100).toFixed(1)}%, which is acceptable.</p>
+                        <p>Minor adjustments to sorting weights should provide good results.</p>
+                    </div>
+                `;
+            }
+            
+            // Top 10 analysis
+            html += '<h2>🎯 Top 10 Results Analysis</h2>';
+            html += '<div class="game-row header-row">';
+            html += '<div>#</div><div>Game Name</div><div>Rating</div><div>Votes</div><div>Follows</div><div>Franchise</div><div>Status</div>';
+            html += '</div>';
+            
+            analysis.topTenAnalysis.forEach(game => {
+                const rowClass = game.isIconic ? 'iconic' : 
+                               (game.rating > 85 && game.follows < 1000) ? 'obscure' : '';
+                
+                html += `<div class="game-row ${rowClass}">`;
+                html += `<div>${game.position}</div>`;
+                html += `<div class="game-name">${game.name}`;
+                if (game.isIconic) html += '<span class="tag tag-iconic">Iconic</span>';
+                if (game.rating > 85 && game.follows < 1000 && !game.isIconic) html += '<span class="tag tag-obscure">Obscure</span>';
+                if (game.hasFranchise) html += '<span class="tag tag-franchise">Franchise</span>';
+                html += '</div>';
+                html += `<div>${game.rating ? game.rating.toFixed(1) : 'N/A'}</div>`;
+                html += `<div>${game.ratingCount || 0}</div>`;
+                html += `<div>${game.follows || 0}</div>`;
+                html += `<div>${game.hasFranchise ? '✅' : '❌'}</div>`;
+                html += `<div class="${game.isIconic ? 'good' : 'poor'}">${game.isIconic ? 'Iconic' : 'Regular'}</div>`;
+                html += '</div>';
+            });
+            
+            // Missing iconic games
+            if (analysis.iconicMissing.length > 0) {
+                html += '<h2>❌ Missing Iconic Games</h2>';
+                html += '<ul>';
+                analysis.iconicMissing.forEach(game => {
+                    html += `<li>${game}</li>`;
+                });
+                html += '</ul>';
+            }
+            
+            // Raw data sample
+            html += '<h2>📦 Raw Data Sample (First 3 Games)</h2>';
+            html += '<pre>' + JSON.stringify(games.slice(0, 3), null, 2) + '</pre>';
+            
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

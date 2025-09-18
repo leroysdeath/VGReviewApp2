@@ -10,6 +10,71 @@ import {
   sortGamesByPriority 
 } from './gamePrioritization';
 
+// Iconic Mario games that should be prioritized
+const ICONIC_MARIO_GAMES = [
+  // Original trilogy (highest priority)
+  'super mario bros.',
+  'super mario bros. 2', 
+  'super mario bros. 3',
+  
+  // Classic iconic entries
+  'super mario world',
+  'super mario 64',
+  'super mario sunshine',
+  'super mario galaxy',
+  'super mario galaxy 2',
+  'super mario odyssey',
+  
+  // New Super Mario series
+  'new super mario bros.',
+  'new super mario bros. wii',
+  'new super mario bros. u',
+  'new super mario bros. 2',
+  
+  // 3D series
+  'super mario 3d land',
+  'super mario 3d world',
+  
+  // Mario Kart main entries
+  'mario kart',
+  'super mario kart',
+  'mario kart 64',
+  'mario kart: double dash!!',
+  'mario kart wii',
+  'mario kart 8',
+  'mario kart 8 deluxe'
+];
+
+// Other iconic franchise games
+const ICONIC_FRANCHISE_GAMES = new Map([
+  ['zelda', [
+    'the legend of zelda',
+    'zelda ii: the adventure of link',
+    'the legend of zelda: a link to the past',
+    'the legend of zelda: ocarina of time',
+    'the legend of zelda: majora\'s mask',
+    'the legend of zelda: the wind waker',
+    'the legend of zelda: twilight princess',
+    'the legend of zelda: skyward sword',
+    'the legend of zelda: breath of the wild',
+    'the legend of zelda: tears of the kingdom'
+  ]],
+  ['pokemon', [
+    'pokemon red',
+    'pokemon blue',
+    'pokemon yellow',
+    'pokemon gold',
+    'pokemon silver',
+    'pokemon crystal',
+    'pokemon ruby',
+    'pokemon sapphire',
+    'pokemon emerald',
+    'pokemon diamond',
+    'pokemon pearl',
+    'pokemon platinum'
+  ]]
+]);
+
 interface Game {
   id: number;
   name: string;
@@ -39,6 +104,7 @@ interface IntelligentScore {
   popularityScore: number;
   recencyBonus: number;
   intentMatchScore: number;
+  iconicBonus: number; // New field for iconic game boost
   totalScore: number;
   breakdown: {
     titleMatch: number;
@@ -48,6 +114,7 @@ interface IntelligentScore {
     userEngagement: number;
     criticalAcclaim: number;
     platformRelevance: number;
+    iconicGameBoost: number; // New breakdown field
   };
 }
 
@@ -310,6 +377,54 @@ function calculateIntentMatchScore(game: Game, query: string, intent: SearchInte
 }
 
 /**
+ * Calculate iconic game boost for franchise searches
+ */
+function calculateIconicGameBoost(game: Game, query: string): number {
+  const gameName = game.name.toLowerCase();
+  const queryLower = query.toLowerCase();
+  
+  // Check for Mario franchise
+  if (queryLower.includes('mario')) {
+    // Highest boost for original trilogy
+    if (gameName === 'super mario bros.') return 100;
+    if (gameName === 'super mario bros. 2') return 95;
+    if (gameName === 'super mario bros. 3') return 95;
+    
+    // High boost for other iconic entries
+    const iconicMatch = ICONIC_MARIO_GAMES.find(iconic => 
+      gameName.includes(iconic) || iconic.includes(gameName)
+    );
+    if (iconicMatch) {
+      if (gameName.includes('super mario galaxy')) return 90;
+      if (gameName.includes('super mario 64')) return 88;
+      if (gameName.includes('super mario odyssey')) return 87;
+      if (gameName.includes('super mario world')) return 85;
+      if (gameName.includes('new super mario bros.')) return 80;
+      return 75; // Other iconic Mario games
+    }
+  }
+  
+  // Check other franchises
+  for (const [franchise, iconicGames] of ICONIC_FRANCHISE_GAMES) {
+    if (queryLower.includes(franchise)) {
+      const iconicMatch = iconicGames.find(iconic => 
+        gameName.includes(iconic.toLowerCase()) || iconic.toLowerCase().includes(gameName)
+      );
+      if (iconicMatch) {
+        return 70; // Boost for other iconic franchise games
+      }
+    }
+  }
+  
+  // Small boost for games that contain the queried franchise but aren't iconic
+  if (queryLower.includes('mario') && gameName.includes('mario')) {
+    return 20; // Small boost for non-iconic Mario games
+  }
+  
+  return 0; // No boost for unrelated games
+}
+
+/**
  * Calculate comprehensive intelligent score for a game
  */
 export function calculateIntelligentScore(game: Game, query: string): IntelligentScore {
@@ -321,6 +436,7 @@ export function calculateIntelligentScore(game: Game, query: string): Intelligen
   const popularityScore = calculatePopularityScore(game);
   const recencyBonus = calculateRecencyBonus(game);
   const intentMatchScore = calculateIntentMatchScore(game, query, intent);
+  const iconicBonus = calculateIconicGameBoost(game, query);
   
   // Calculate breakdown for debugging
   const breakdown = {
@@ -330,7 +446,8 @@ export function calculateIntelligentScore(game: Game, query: string): Intelligen
     metadataQuality: qualityScore * 0.3,
     userEngagement: popularityScore * 0.4,
     criticalAcclaim: qualityScore * 0.4,
-    platformRelevance: intentMatchScore * 0.3
+    platformRelevance: intentMatchScore * 0.3,
+    iconicGameBoost: iconicBonus
   };
   
   // Weight the scores based on search intent
@@ -338,23 +455,24 @@ export function calculateIntelligentScore(game: Game, query: string): Intelligen
   
   switch (intent) {
     case SearchIntent.SPECIFIC_GAME:
-      totalScore = (relevanceScore * 0.6) + (qualityScore * 0.25) + (popularityScore * 0.1) + (intentMatchScore * 0.05);
+      totalScore = (relevanceScore * 0.6) + (qualityScore * 0.25) + (popularityScore * 0.1) + (intentMatchScore * 0.05) + (iconicBonus * 0.2);
       break;
       
     case SearchIntent.FRANCHISE_BROWSE:
-      totalScore = (relevanceScore * 0.4) + (qualityScore * 0.3) + (popularityScore * 0.2) + (intentMatchScore * 0.1);
+      // Give iconic games a major boost for franchise searches
+      totalScore = (relevanceScore * 0.3) + (qualityScore * 0.2) + (popularityScore * 0.1) + (intentMatchScore * 0.1) + (iconicBonus * 0.3);
       break;
       
     case SearchIntent.GENRE_DISCOVERY:
-      totalScore = (relevanceScore * 0.2) + (qualityScore * 0.4) + (popularityScore * 0.3) + (recencyBonus * 0.1);
+      totalScore = (relevanceScore * 0.2) + (qualityScore * 0.4) + (popularityScore * 0.3) + (recencyBonus * 0.1) + (iconicBonus * 0.05);
       break;
       
     case SearchIntent.YEAR_SEARCH:
-      totalScore = (recencyBonus * 0.4) + (qualityScore * 0.3) + (popularityScore * 0.2) + (relevanceScore * 0.1);
+      totalScore = (recencyBonus * 0.4) + (qualityScore * 0.3) + (popularityScore * 0.2) + (relevanceScore * 0.1) + (iconicBonus * 0.05);
       break;
       
     default:
-      totalScore = (relevanceScore * 0.35) + (qualityScore * 0.3) + (popularityScore * 0.25) + (intentMatchScore * 0.1);
+      totalScore = (relevanceScore * 0.3) + (qualityScore * 0.2) + (popularityScore * 0.15) + (intentMatchScore * 0.1) + (iconicBonus * 0.25);
   }
   
   return {
@@ -363,6 +481,7 @@ export function calculateIntelligentScore(game: Game, query: string): Intelligen
     popularityScore,
     recencyBonus,
     intentMatchScore,
+    iconicBonus,
     totalScore: Math.round(totalScore),
     breakdown
   };
@@ -391,7 +510,6 @@ export function sortGamesIntelligently(games: Game[], query?: string): Game[] {
     
     // Primary sort: Intelligent total score
     if (aIntelligent.totalScore !== bIntelligent.totalScore) {
-      console.log(`   🎯 "${a.name}" (${aIntelligent.totalScore}) vs "${b.name}" (${bIntelligent.totalScore}) - Intelligent score wins`);
       return bIntelligent.totalScore - aIntelligent.totalScore;
     }
     

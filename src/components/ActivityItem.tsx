@@ -42,7 +42,6 @@ interface ActivityItemProps {
 }
 
 const ActivityItem: React.FC<ActivityItemProps> = ({
-  id,
   type,
   timestamp,
   actor,

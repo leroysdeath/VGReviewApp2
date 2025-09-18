@@ -5,11 +5,12 @@ import { useAuth } from '../hooks/useAuth';
 import { useAuthModal } from '../context/AuthModalContext'; // NEW IMPORT
 import { useResponsive } from '../hooks/useResponsive';
 import { useGameSearch } from '../hooks/useGameSearch';
-import { gameDataService } from '../services/gameDataService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
-import { filterProtectedContent } from '../utils/contentProtectionFilter';
+// Filtering is now handled by AdvancedSearchCoordination service
+import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
+import { getGameUrl } from '../utils/gameUrls';
 import { mapPlatformNames } from '../utils/platformMapping';
 
 // Using GameWithCalculatedFields from database types
@@ -61,15 +62,11 @@ export const ResponsiveNavbar: React.FC = () => {
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
+  const searchCoordinationRef = useRef<AdvancedSearchCoordination>(new AdvancedSearchCoordination());
   
-  const { 
-    searchTerm, 
-    setSearchTerm, 
-    searchGames,
-    quickSearch, 
-    navigateToSearch,
-    clearSearch 
-  } = useGameSearch();
+  // Remove dependency on shared useGameSearch hook for navbar dropdown
+  // Keep it only for navigation to search results page
+  const { navigateToSearch } = useGameSearch();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -81,7 +78,7 @@ export const ResponsiveNavbar: React.FC = () => {
     setRecentUserSearches(savedUsers.slice(0, 5));
   }, []);
 
-  // Enhanced quick search for games with caching
+  // Enhanced quick search for games with independent fast search (no shared state)
   const performGameSearch = useCallback(async (query: string) => {
     // Enable debug mode with ?debug=true in URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -117,41 +114,49 @@ export const ResponsiveNavbar: React.FC = () => {
         setIsFromCache(true);
         setCacheStatus('cached');
         setShowSuggestions(true);
-        
-        if (import.meta.env.DEV) {
-          console.log('🚀 Game search cache hit:', query);
-        }
         return;
       }
 
-      // Fetch fresh results using enhanced gameDataService search with sister game detection
-      console.log(`🔍 ResponsiveNavbar: Searching for "${query}" using gameDataService`);
-      const searchResults = await gameDataService.searchGames(query);
-      
-      // TEMPORARY DEBUG: Log what gameDataService returned
-      console.error('🎯 CRITICAL - gameDataService returned:', searchResults);
-      console.error('🎯 CRITICAL - First result from service:', {
-        id: searchResults[0]?.id,
-        igdb_id: searchResults[0]?.igdb_id,
-        name: searchResults[0]?.name,
-        type_of_id: typeof searchResults[0]?.id
+      if (import.meta.env.DEV) {
+        console.log('🔍 ResponsiveNavbar: Fast search for:', query);
+      }
+
+      // Use the same search as the search results page (no fastMode)
+      // This ensures navbar shows same results as main search
+      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+        maxResults: 8,
+        includeMetrics: false,
+        fastMode: false, // Use full search with all filtering
+        bypassCache: false,
+        useAggressive: false // Conservative for dropdown to avoid unrelated results
       });
-      
-      // Apply content protection filtering to mobile search results
-      const filteredResults = filterProtectedContent(searchResults);
+      // Results are already filtered by the coordination service
+      // No need to apply filters again since coordinatedSearch already does it
+      const filteredResults = searchResult.results;
 
       if (filteredResults && Array.isArray(filteredResults)) {
-        const limitedResults = filteredResults.slice(0, 8);
-        
-        // TEMPORARY DEBUG: Log what we're setting in suggestions
-        console.error('🔍 CRITICAL - SETTING SUGGESTIONS:', limitedResults);
-        console.error('🆔 CRITICAL - First game IDs:', {
-          id: limitedResults[0]?.id,
-          igdb_id: limitedResults[0]?.igdb_id,
-          name: limitedResults[0]?.name,
-          type_of_id: typeof limitedResults[0]?.id
+        // Enhanced: Apply additional relevance filtering for dropdown
+        const relevantResults = filteredResults.filter(game => {
+          const queryLower = query.toLowerCase().trim();
+          const nameLower = game.name.toLowerCase();
+          
+          // Prioritize games that start with or contain the exact query
+          if (nameLower.includes(queryLower)) {
+            return true;
+          }
+          
+          // Check for word matches in title
+          const queryWords = queryLower.split(/\s+/);
+          const nameWords = nameLower.split(/\s+/);
+          const matchingWords = queryWords.filter(qWord => 
+            nameWords.some(nWord => nWord.includes(qWord))
+          );
+          
+          // Require at least 60% word match for dropdown results
+          return matchingWords.length / queryWords.length >= 0.6;
         });
-        
+
+        const limitedResults = relevantResults.slice(0, 8);
         setSuggestions(limitedResults);
         setIsFromCache(false);
         setCacheStatus('fresh');
@@ -166,7 +171,7 @@ export const ResponsiveNavbar: React.FC = () => {
         browserCache.set(cacheKey, cacheData, 300); // 5 minutes
 
         if (import.meta.env.DEV) {
-          console.log('🌐 Game search fresh fetch:', query, limitedResults.length, 'results');
+          console.log('🎯 ResponsiveNavbar: Got', limitedResults.length, 'enhanced results');
         }
       } else {
         setSuggestions([]);
@@ -290,7 +295,7 @@ export const ResponsiveNavbar: React.FC = () => {
 
     debounceRef.current = setTimeout(() => {
       performQuickSearch(searchQuery);
-    }, 800);
+    }, 300); // Faster response with enhanced search
 
     return () => {
       if (debounceRef.current) {
@@ -321,9 +326,8 @@ export const ResponsiveNavbar: React.FC = () => {
     if (searchQuery.trim()) {
       saveRecentSearch(searchQuery);
       if (activeTab === 'games') {
-        // Navigate to search results page AND trigger the search
+        // Navigate to search results page (the page will handle its own search)
         navigate(`/search-results?q=${encodeURIComponent(searchQuery.trim())}`);
-        searchGames(searchQuery.trim());
       } else {
         navigate(`/users?q=${encodeURIComponent(searchQuery.trim())}`);
       }
@@ -336,23 +340,9 @@ export const ResponsiveNavbar: React.FC = () => {
   };
 
   const handleSuggestionClick = (game: GameWithCalculatedFields) => {
-    // TEMPORARY DEBUG: Log the game object being clicked
-    console.error('🎮 CRITICAL - CLICKED GAME - Full object:', game);
-    console.error('📍 CRITICAL - ID values:', {
-      id: game.id,
-      igdb_id: game.igdb_id,
-      slug: game.slug,
-      typeof_id: typeof game.id,
-      typeof_igdb_id: typeof game.igdb_id
-    });
-    
-    // Use slug if available, otherwise use igdb_id (not database id to avoid collision)
-    const identifier = game.slug || game.igdb_id;
-    console.error('🚀 CRITICAL - Will navigate to:', `/game/${identifier}`);
-    
     setSearchQuery('');
     saveRecentSearch(game.name, 'games');
-    navigate(`/game/${identifier}`);
+    navigate(getGameUrl(game));
     setIsSearchOpen(false);
     setShowSuggestions(false);
     setHasSearched(false);
@@ -360,7 +350,7 @@ export const ResponsiveNavbar: React.FC = () => {
   };
 
   const handleUserClick = (user: UserSearchResult) => {
-    saveRecentSearch(user.username || user.name, 'users');
+    saveRecentSearch(user.name, 'users');
     navigate(`/user/${user.id}`);
     setIsSearchOpen(false);
     setShowSuggestions(false);
@@ -669,7 +659,7 @@ export const ResponsiveNavbar: React.FC = () => {
                                   {user.avatar_url ? (
                                     <img
                                       src={user.avatar_url}
-                                      alt={user.username || user.name}
+                                      alt={user.name}
                                       className="w-full h-full object-cover"
                                       loading="lazy"
                                     />
@@ -681,7 +671,7 @@ export const ResponsiveNavbar: React.FC = () => {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="text-white font-medium truncate">
-                                    {user.username || user.name}
+                                    {user.name}
                                   </div>
                                   {user.bio && (
                                     <div className="text-xs text-gray-400 truncate">
@@ -699,7 +689,7 @@ export const ResponsiveNavbar: React.FC = () => {
                           <div className="p-4 text-center">
                             <Loader2 className="h-5 w-5 text-purple-500 animate-spin mx-auto mb-2" />
                             <div className="text-sm text-gray-400">
-                              Searching {activeTab === 'games' ? 'games' : 'users'}...
+                              {activeTab === 'games' ? 'Enhanced search...' : 'Searching users...'}
                             </div>
                           </div>
                         )}
@@ -983,7 +973,7 @@ export const ResponsiveNavbar: React.FC = () => {
                       <div className="p-4 text-center">
                         <Loader2 className="h-5 w-5 text-purple-500 animate-spin mx-auto mb-2" />
                         <div className="text-sm text-gray-400">
-                          Searching {activeTab === 'games' ? 'games' : 'users'}...
+                          {activeTab === 'games' ? 'Enhanced search...' : 'Searching users...'}
                         </div>
                       </div>
                     )}
