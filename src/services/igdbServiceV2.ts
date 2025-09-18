@@ -292,15 +292,16 @@ export class IGDBServiceV2 {
     const patterns = enhancedIGDBService['detectSisterGamePatterns'](query);
     if (patterns.length === 0) return [];
     
-    const sisterSearches = patterns.map(async pattern => {
+    // PERFORMANCE FIX: Execute sister game searches sequentially to prevent rate limiting
+    const results: IGDBGame[][] = [];
+    for (const pattern of patterns) {
       try {
-        return await this.performOptimizedSearch(pattern, 5);
+        const result = await this.performOptimizedSearch(pattern, 5);
+        results.push(result);
       } catch {
-        return [];
+        results.push([]);
       }
-    });
-    
-    const results = await Promise.all(sisterSearches);
+    }
     const flat = results.flat();
     
     // Filter out games we already have

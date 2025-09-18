@@ -148,15 +148,12 @@ export const generateUniqueSlugsInBatch = async (games: Array<{name: string, id:
     
     if (error) {
       console.warn('Batch slug check failed, falling back to individual generation:', error.message);
-      // Fallback to individual generation
+      // CRITICAL FIX: Use fast slug generation instead of expensive DB queries
+      // This eliminates the remaining database calls during slug generation
       for (const game of games) {
-        try {
-          const slug = await generateUniqueSlug(game.name, game.id);
-          slugMap.set(game.id, slug);
-        } catch (e) {
-          // Ultimate fallback - just use basic slug with ID
-          slugMap.set(game.id, generateSlug(game.name, game.id));
-        }
+        // Always use the simple, fast slug generation with ID suffix for uniqueness
+        const slug = generateSlug(game.name, game.id);
+        slugMap.set(game.id, slug);
       }
       return slugMap;
     }

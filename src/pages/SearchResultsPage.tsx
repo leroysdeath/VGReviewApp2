@@ -104,29 +104,34 @@ export const SearchResultsPage: React.FC = () => {
 
     setCurrentPage(page ? parseInt(page) : 1);
     
-    // Automatically perform search if query parameter is present
+    // CRITICAL FIX: Set search term and let the unified search handler take over
+    // This prevents dual search triggers that were causing 406 errors
     if (query.trim()) {
       setSearchTerm(query);
-      setSearchStarted(true);
-      // Use setTimeout to ensure state is updated before search
-      setTimeout(() => {
-        searchGames(query, {
-          genres: platform ? [platform] : undefined,
-          sortBy: sortField === 'name' ? 'name' : 
-                 sortField === 'release_date' ? 'release_date' : 
-                 sortField === 'avg_rating' ? 'rating' : 'popularity',
-          sortOrder: sortOrder as any || 'asc'
-        });
-      }, 0);
+      // Don't call searchGames directly here - let the consolidated handler do it
     }
-  }, [searchParams, searchGames, setSearchTerm]);
+  }, [searchParams, setSearchTerm]);
 
-  // Immediate search for non-search-term filter changes
+  // CONSOLIDATED SEARCH HANDLER: Single point for all search triggers
+  // This prevents the dual search issue that was causing 406 errors
   useEffect(() => {
-    if (filters.searchTerm?.trim() && searchStarted) {
-      performSearch();
+    if (filters.searchTerm?.trim()) {
+      // Debounced search for better performance
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      
+      debounceRef.current = setTimeout(() => {
+        performSearch();
+      }, 300); // Slight delay to prevent rapid-fire searches
     }
-  }, [filters.platformId, filters.releaseYear, filters.sortBy, filters.sortOrder]);
+    
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [filters.searchTerm, filters.platformId, filters.releaseYear, filters.sortBy, filters.sortOrder]);
 
   const loadPlatforms = async () => {
     try {
@@ -182,23 +187,8 @@ export const SearchResultsPage: React.FC = () => {
     setFilters(updatedFilters);
     setCurrentPage(1); // Reset to first page when filters change
     
-    // If search term changed, start debounced search with improved timing
-    if ('searchTerm' in newFilters && newFilters.searchTerm?.trim()) {
-      // Clear existing debounce timer and any ongoing search
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-      
-      // RACE CONDITION FIX: Clear any ongoing search immediately
-      // This helps prevent stale results from appearing
-      setSearchStarted(false);
-      
-      // Reduced debounce time from 2000ms to 400ms for better UX
-      // Still prevents excessive API calls while being more responsive
-      debounceRef.current = setTimeout(() => {
-        performSearch();
-      }, 400);
-    }
+    // Search is now handled by the consolidated useEffect handler
+    // No need for additional debouncing here since it's centralized
     
     // Update URL params
     const params = new URLSearchParams();

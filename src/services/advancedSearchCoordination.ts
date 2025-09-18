@@ -448,52 +448,47 @@ export class AdvancedSearchCoordination {
 
     if (DEBUG_SEARCH_COORDINATION) console.log(`🔍 Smart execution: Using ${selectedQueries.length} prioritized queries from ${context.expandedQueries.length} expansions:`, selectedQueries);
 
-    // Execute selected queries with concurrency control
-    const batchSize = 2; // Execute 2 queries at a time
-    for (let i = 0; i < selectedQueries.length; i += batchSize) {
-      const batch = selectedQueries.slice(i, i + batchSize);
+    // CRITICAL FIX: Execute queries sequentially to prevent 406 errors
+    // Sequential execution prevents database overload while maintaining search quality
+    for (let i = 0; i < selectedQueries.length; i++) {
+      const expandedQuery = selectedQueries[i];
       
-      const batchPromises = batch.map(async (expandedQuery) => {
-        try {
-          const queryResults = await this.gameDataService.searchGames(expandedQuery);
-          
-          // Convert to SearchResult format and add source tracking
-          const convertedResults: SearchResult[] = queryResults.map(game => ({
-            ...game,
-            source: 'hybrid' as const,
-            relevanceScore: this.calculateRelevanceScore(game.name, context.originalQuery),
-            qualityScore: this.calculateQualityScore(game)
-          }));
+      try {
+        if (DEBUG_SEARCH_COORDINATION) console.log(`🔍 Sequential query ${i + 1}/${selectedQueries.length}: "${expandedQuery}"`);
+        
+        const queryResults = await this.gameDataService.searchGames(expandedQuery);
+        
+        // Convert to SearchResult format and add source tracking
+        const convertedResults: SearchResult[] = queryResults.map(game => ({
+          ...game,
+          source: 'hybrid' as const,
+          relevanceScore: this.calculateRelevanceScore(game.name, context.originalQuery),
+          qualityScore: this.calculateQualityScore(game)
+        }));
 
-          // Filter out games with very low relevance scores to prevent unrelated results
-          const relevantResults = convertedResults.filter(game => 
-            (game.relevanceScore || 0) >= 0.4 // Increased threshold to filter unrelated games
-          );
+        // Filter out games with very low relevance scores to prevent unrelated results
+        const relevantResults = convertedResults.filter(game => 
+          (game.relevanceScore || 0) >= 0.4 // Increased threshold to filter unrelated games
+        );
 
-          return { query: expandedQuery, results: relevantResults };
-        } catch (error) {
-          console.error(`❌ Query failed for "${expandedQuery}":`, error);
-          return { query: expandedQuery, results: [] };
-        }
-      });
-
-      // Wait for batch to complete
-      const batchResults = await Promise.all(batchPromises);
-      
-      // Add results from this batch
-      for (const { query, results } of batchResults) {
-        for (const result of results) {
+        // Add results from this query
+        for (const result of relevantResults) {
           if (!seenIds.has(result.id)) {
             seenIds.add(result.id);
             allResults.push(result);
           }
         }
-      }
 
-      // Early termination if we have enough quality results
-      if (allResults.length >= 15) {
-        if (DEBUG_SEARCH_COORDINATION) console.log(`✂️ Early termination: Found ${allResults.length} results after ${i + batchSize} queries`);
-        break;
+        // Early termination if we have enough quality results
+        if (allResults.length >= 20) {
+          if (DEBUG_SEARCH_COORDINATION) console.log(`✂️ Early termination: Found ${allResults.length} results after ${i + 1} queries`);
+          break;
+        }
+        
+      } catch (error) {
+        console.error(`❌ Sequential query failed for "${expandedQuery}":`, error);
+        // Continue with next query instead of failing completely
+        continue;
       }
     }
 
