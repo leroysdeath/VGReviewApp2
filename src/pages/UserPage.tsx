@@ -250,6 +250,11 @@ export const UserPage: React.FC = () => {
     fetchUserData();
   }, [fetchUserData]);
 
+  // Reset to Top 5 tab when navigating to a different user
+  useEffect(() => {
+    setActiveTab('top5');
+  }, [id]);
+
   // Refresh follow state when page gains focus
   useEffect(() => {
     const handleFocus = () => {
