@@ -196,19 +196,6 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
         {/* Tabs */}
         <div className="flex border-b border-gray-700">
           <button
-            onClick={() => setActiveTab('followers')}
-            className={`flex-1 py-3 px-4 text-center transition-colors ${
-              activeTab === 'followers'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <Users className="h-4 w-4" />
-              Followers
-            </div>
-          </button>
-          <button
             onClick={() => setActiveTab('following')}
             className={`flex-1 py-3 px-4 text-center transition-colors ${
               activeTab === 'following'
@@ -219,6 +206,19 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
             <div className="flex items-center justify-center gap-2">
               <Users className="h-4 w-4" />
               Following
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('followers')}
+            className={`flex-1 py-3 px-4 text-center transition-colors ${
+              activeTab === 'followers'
+                ? 'border-b-2 border-purple-500 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Users className="h-4 w-4" />
+              Followers
             </div>
           </button>
         </div>
@@ -275,8 +275,8 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
                         followLoading
                           ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                           : followingUsers.includes(user.id)
-                          ? 'bg-green-600 text-white hover:bg-green-700'
-                          : 'bg-purple-600 text-white hover:bg-purple-700'
+                          ? 'bg-[#E8A5A5] text-white hover:bg-[#E8A5A5]/80'
+                          : 'bg-[#FF6B9D] text-white hover:bg-[#FF6B9D]/80'
                       }`}
                     >
                       {followLoading ? (

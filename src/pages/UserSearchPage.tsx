@@ -735,7 +735,6 @@ export const UserSearchPage: React.FC = () => {
                               </p>
                               {user.averageRating && (
                                 <div className="flex items-center gap-1">
-                                  <Star className="h-3 w-3 text-yellow-500 fill-current" />
                                   <span className="text-yellow-500 text-xs">{user.averageRating}</span>
                                 </div>
                               )}
@@ -848,7 +847,6 @@ export const UserSearchPage: React.FC = () => {
                           )}
                           {user.averageRating && (
                             <div className="flex items-center gap-1 mt-1">
-                              <Star className="h-3 w-3 text-yellow-500 fill-current" />
                               <span className="text-yellow-500 text-xs">Avg: {user.averageRating}</span>
                             </div>
                           )}
