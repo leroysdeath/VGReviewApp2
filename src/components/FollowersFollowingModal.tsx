@@ -206,8 +206,8 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
             <div className="flex items-center justify-center gap-2">
               {activeTab === 'following' ? (
                 <>
-                  <div className="bg-[#E8A5A5] text-white w-5 h-5 rounded-full flex items-center justify-center">
-                    <UserCheck className="h-3 w-3" />
+                  <div className="bg-[#E8A5A5] text-white w-8 h-8 rounded-full flex items-center justify-center">
+                    <UserCheck className="h-5 w-5" />
                   </div>
                   <span className="text-[#E8A5A5]">Following</span>
                 </>
@@ -230,8 +230,8 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
             <div className="flex items-center justify-center gap-2">
               {activeTab === 'followers' ? (
                 <>
-                  <div className="bg-[#FF6B9D] text-white w-5 h-5 rounded-full flex items-center justify-center">
-                    <UsersRound className="h-3 w-3" />
+                  <div className="bg-[#FF6B9D] text-white w-8 h-8 rounded-full flex items-center justify-center">
+                    <UsersRound className="h-5 w-5" />
                   </div>
                   <span className="text-[#FF6B9D]">Followers</span>
                 </>
