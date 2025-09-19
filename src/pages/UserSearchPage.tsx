@@ -538,10 +538,7 @@ export const UserSearchPage: React.FC = () => {
                             <span>Loading</span>
                           </>
                         ) : followingUsers.includes(user.id) ? (
-                          <>
-                            <UserCheck className="h-3 w-3" />
-                            <span>Following</span>
-                          </>
+                          <UserCheck className="h-3 w-3" />
                         ) : (
                           <>
                             <UserPlus className="h-3 w-3" />
@@ -646,10 +643,7 @@ export const UserSearchPage: React.FC = () => {
                         <span>Loading</span>
                       </>
                     ) : followingUsers.includes(user.id) ? (
-                      <>
-                        <UserCheck className="h-3 w-3" />
-                        <span>Following</span>
-                      </>
+                      <UserCheck className="h-3 w-3" />
                     ) : (
                       <>
                         <UserPlus className="h-3 w-3" />
@@ -770,10 +764,7 @@ export const UserSearchPage: React.FC = () => {
                                 Loading...
                               </>
                             ) : followingUsers.includes(user.id) ? (
-                              <>
-                                <UserCheck className="h-4 w-4" />
-                                Following
-                              </>
+                              <UserCheck className="h-4 w-4" />
                             ) : (
                               <>
                                 <UserPlus className="h-4 w-4" />
@@ -878,10 +869,7 @@ export const UserSearchPage: React.FC = () => {
                               Loading...
                             </>
                           ) : followingUsers.includes(user.id) ? (
-                            <>
-                              <UserCheck className="h-4 w-4" />
-                              Following
-                            </>
+                            <UserCheck className="h-4 w-4" />
                           ) : (
                             <>
                               <UserPlus className="h-4 w-4" />

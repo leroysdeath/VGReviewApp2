@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, UserPlus, UserCheck } from 'lucide-react';
+import { X, Users, UserPlus, UserCheck, Heart, UsersRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
@@ -199,26 +199,48 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
             onClick={() => setActiveTab('following')}
             className={`flex-1 py-3 px-4 text-center transition-colors ${
               activeTab === 'following'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'border-b-2 border-[#FF6B9D]'
+                : 'border-b-2 border-transparent'
             }`}
           >
             <div className="flex items-center justify-center gap-2">
-              <Users className="h-4 w-4" />
-              Following
+              {activeTab === 'following' ? (
+                <>
+                  <div className="bg-[#FF6B9D] text-white w-5 h-5 rounded-full flex items-center justify-center">
+                    <Heart className="h-3 w-3 fill-current" />
+                  </div>
+                  <span className="text-[#FF6B9D]">Following</span>
+                </>
+              ) : (
+                <>
+                  <Heart className="h-5 w-5 text-gray-400" />
+                  <span className="text-gray-400 hover:text-white transition-colors">Following</span>
+                </>
+              )}
             </div>
           </button>
           <button
             onClick={() => setActiveTab('followers')}
             className={`flex-1 py-3 px-4 text-center transition-colors ${
               activeTab === 'followers'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'border-b-2 border-[#E8A5A5]'
+                : 'border-b-2 border-transparent'
             }`}
           >
             <div className="flex items-center justify-center gap-2">
-              <Users className="h-4 w-4" />
-              Followers
+              {activeTab === 'followers' ? (
+                <>
+                  <div className="bg-[#E8A5A5] text-white w-5 h-5 rounded-full flex items-center justify-center">
+                    <UsersRound className="h-3 w-3" />
+                  </div>
+                  <span className="text-[#E8A5A5]">Followers</span>
+                </>
+              ) : (
+                <>
+                  <UsersRound className="h-5 w-5 text-gray-400" />
+                  <span className="text-gray-400 hover:text-white transition-colors">Followers</span>
+                </>
+              )}
             </div>
           </button>
         </div>
@@ -227,7 +249,11 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
         <div className="flex-1 overflow-y-auto p-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+              <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
+                activeTab === 'following'
+                  ? 'border-[#FF6B9D]'
+                  : 'border-[#E8A5A5]'
+              }`}></div>
             </div>
           ) : currentUsers.length === 0 ? (
             <div className="text-center py-8">
@@ -282,10 +308,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
                       {followLoading ? (
                         <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : followingUsers.includes(user.id) ? (
-                        <>
-                          <UserCheck className="h-3 w-3" />
-                          Following
-                        </>
+                        <UserCheck className="h-3 w-3" />
                       ) : (
                         <>
                           <UserPlus className="h-3 w-3" />

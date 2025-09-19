@@ -84,10 +84,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({
               {followLoading ? (
                 <span className="text-xs">...</span>
               ) : isFollowing ? (
-                <>
-                  <UserCheck className="h-4 w-4" />
-                  Following
-                </>
+                <UserCheck className="h-4 w-4" />
               ) : (
                 <>
                   <UserPlus className="h-4 w-4" />
