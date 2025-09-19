@@ -274,16 +274,40 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         <div className="flex border-b border-gray-700">
           <button
             onClick={() => setActiveTab('all')}
-            className={`flex-1 py-3 px-4 text-center transition-colors ${
-              activeTab === 'all'
-                ? 'border-b-2 border-purple-500'
-                : 'border-b-2 border-transparent'
-            }`}
+            className={`flex-1 py-3 px-4 text-center transition-colors relative`}
           >
             <div className="flex items-center justify-center gap-2">
-              <Gamepad2 className={`h-4 w-4 ${activeTab === 'all' ? 'text-purple-400' : 'text-gray-400'}`} />
-              <span className={activeTab === 'all' ? 'text-purple-400' : 'text-gray-400 hover:text-white transition-colors'}>All Games</span>
+              {activeTab === 'all' ? (
+                <div className="relative w-4 h-4 overflow-hidden">
+                  <div className="absolute inset-0 flex">
+                    <div className="w-1/2 overflow-hidden">
+                      <Gamepad2 className="h-4 w-4 text-blue-400" />
+                    </div>
+                    <div className="w-1/2 overflow-hidden">
+                      <Gamepad2 className="h-4 w-4 text-green-400" style={{ marginLeft: '-8px' }} />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Gamepad2 className="h-4 w-4 text-gray-400" />
+              )}
+              <div>
+                {activeTab === 'all' ? (
+                  <>
+                    <span className="text-blue-400">All</span>
+                    <span className="text-green-400"> Games</span>
+                  </>
+                ) : (
+                  <span className="text-gray-400 hover:text-white transition-colors">All Games</span>
+                )}
+              </div>
             </div>
+            {activeTab === 'all' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 flex">
+                <div className="flex-1 bg-blue-500"></div>
+                <div className="flex-1 bg-green-500"></div>
+              </div>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('started')}
@@ -297,7 +321,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
               {activeTab === 'started' ? (
                 <>
                   <div className="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
-                    <Play className="h-2.5 w-2.5 fill-current" />
+                    <Play className="h-3 w-3 fill-white" style={{ marginLeft: '1px' }} />
                   </div>
                   <span className="text-blue-400">Started</span>
                 </>
@@ -321,7 +345,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
               {activeTab === 'finished' ? (
                 <>
                   <div className="bg-green-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
-                    <CheckCircle className="h-2.5 w-2.5 fill-current" />
+                    <CheckCircle className="h-3 w-3" />
                   </div>
                   <span className="text-green-400">Finished</span>
                 </>
