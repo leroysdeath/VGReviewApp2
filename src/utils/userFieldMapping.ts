@@ -12,7 +12,6 @@ export const mapDatabaseUserToForm = (dbUser: any) => {
   if (!dbUser) {
     return {
       username: '',
-      displayName: '',
       email: '',
       bio: '',
       location: '',
@@ -24,7 +23,6 @@ export const mapDatabaseUserToForm = (dbUser: any) => {
 
   return {
     username: dbUser.username || dbUser.name || '',
-    displayName: dbUser.display_name || '',
     email: dbUser.email || '',
     bio: dbUser.bio || '',
     location: dbUser.location || '',
@@ -48,9 +46,6 @@ export const mapFormToDatabase = (formData: any) => {
     dbData.name = formData.username;
   }
   
-  if ('displayName' in formData) {
-    dbData.display_name = formData.displayName;
-  }
   
   if ('email' in formData) {
     dbData.email = formData.email?.toLowerCase(); // Ensure email is lowercase

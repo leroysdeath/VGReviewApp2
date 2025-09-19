@@ -83,6 +83,30 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip development server requests comprehensively
+  // Check for localhost development
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+    return; // Skip ALL localhost requests
+  }
+  
+  // Additional checks for development-specific requests
+  if (url.pathname.includes('@vite') || 
+      url.pathname.includes('@react-refresh') ||
+      url.pathname.includes('@id') ||
+      url.pathname.includes('node_modules') ||
+      url.pathname.includes('.tsx') ||
+      url.pathname.includes('.ts') ||
+      url.pathname.includes('.jsx') ||
+      url.pathname.includes('src/') ||
+      url.pathname.startsWith('/src/') ||
+      url.pathname.includes('__vite') ||
+      url.pathname.includes('hot-update') ||
+      url.port === '5173' || // Vite dev server port  
+      url.port === '8888' || // Netlify dev server port
+      url.port === '3000') { // Common dev port
+    return;
+  }
+
   // Skip Supabase auth and realtime requests (always fresh)
   if (url.hostname.includes('supabase.co') && 
       (url.pathname.includes('/auth/') || url.pathname.includes('/realtime/'))) {

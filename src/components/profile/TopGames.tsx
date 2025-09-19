@@ -63,7 +63,6 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
   const [isEditingTop5, setIsEditingTop5] = useState(false);
   const [showGamePicker, setShowGamePicker] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
-  const [isLoadingUserGames, setIsLoadingUserGames] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -137,10 +136,10 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
     })
   );
 
-  // Fetch top games based on user's ratings
+  // Fetch top games based on user's ratings (only for Top 10)
   const fetchTopGames = async (gameLimit: number) => {
     if (!userId) return;
-    
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -186,8 +185,8 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
   // Fetch user's manually curated Top 5 (only for limit === 5)
   const fetchUserTopGames = async () => {
     if (!userId || !isTop5) return;
-    
-    setIsLoadingUserGames(true);
+
+    setLoading(true);
     setError(null);
     
     try {
@@ -222,9 +221,9 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
       setUserTopGames(filledPositions);
     } catch (error) {
       console.error('Error fetching user top games:', error);
-      setError('Failed to load your Top 5');
+      setError('Failed to load Top 5');
     } finally {
-      setIsLoadingUserGames(false);
+      setLoading(false);
     }
   };
 
@@ -404,12 +403,15 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
   // Load data on mount
   useEffect(() => {
     if (userId) {
-      fetchTopGames(limit);
-      if (isTop5 && editable) {
+      if (isTop5) {
+        // For Top 5, always fetch user's manually curated games
         fetchUserTopGames();
+      } else {
+        // For Top 10, fetch top rated games
+        fetchTopGames(limit);
       }
     }
-  }, [userId, limit, isTop5, editable]);
+  }, [userId, limit, isTop5]);
 
   // Handle escape key for modal
   useEffect(() => {
@@ -452,8 +454,8 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
     );
   }
 
-  // Render Top 5 with editing capability
-  if (isTop5 && editable) {
+  // Render Top 5
+  if (isTop5) {
     // Get sortable items (only games that exist)
     const sortableItems = userTopGames
       .filter(item => item.game)
@@ -464,18 +466,36 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
       ? userTopGames.find(g => g.game?.id.toString() === activeId)?.game
       : null;
 
+    // Check if user has any games in their Top 5
+    const hasAnyGamesInTop5 = userTopGames.some(g => g.game);
+
+    // If no games in Top 5 and not editable, show empty state
+    if (!hasAnyGamesInTop5 && !editable) {
+      return (
+        <div>
+          <h2 className="text-xl font-semibold text-white mb-6">Top 5 Favorites</h2>
+          <div className="text-center py-8">
+            <p className="text-gray-400">
+              They haven't decided on a Top 5 yet! How sad!
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div>
         {/* Edit toggle */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-white">
-            {isEditingTop5 ? 'Edit Your Top 5 (Drag to reorder)' : 'Your Top 5'}
+            {isEditingTop5 ? 'Edit Your Top 5 (Drag to reorder)' :
+             isOwnProfile ? 'Your Top 5' : 'Top 5 Favorites'}
           </h2>
-          {/* Show edit button if there's at least 1 game in Top 5 */}
+          {/* Show edit button if there's at least 1 game in Top 5 and it's the user's own profile */}
           {(() => {
             const hasGames = userTopGames.some(g => g.game);
-            
-            return hasGames && !error && (
+
+            return editable && hasGames && !error && (
               <button
                 onClick={() => setIsEditingTop5(!isEditingTop5)}
                 disabled={isSaving}
@@ -520,6 +540,32 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
             {isPhonePortrait ? (
               // Phone Portrait - 1-4 Layout
               <div className="flex flex-col items-center gap-3 mb-4 transition-all duration-300">
+                {/* When viewing other users, only show games they have */}
+                {!editable ? (
+                  // Non-editable view - only show existing games
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
+                    {userTopGames.filter(g => g.game).map((gameData) => (
+                      <div key={gameData.position} className="relative group">
+                        <Link to={getGameUrl(gameData.game!)}>
+                          <div className="relative aspect-[3/4]">
+                            <img
+                              src={gameData.game!.cover_url}
+                              alt={gameData.game!.name}
+                              className="w-full h-full object-cover rounded-lg"
+                              onError={(e) => {
+                                e.currentTarget.src = '/default-cover.png';
+                              }}
+                            />
+                            <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                              {gameData.position}
+                            </div>
+                          </div>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
                 {/* Top row - 1 game centered */}
                 <div className="flex justify-center gap-3">
                   {[1].map((position) => {
@@ -563,7 +609,10 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                         </div>
                       );
                     }
-                    
+
+                    // Only show empty slots for own profile
+                    if (!editable) return null;
+
                     return (
                       <div key={`empty-${position}`} className="relative aspect-[3/4] w-[180px] group">
                         <button
@@ -627,7 +676,10 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                         </div>
                       );
                     }
-                    
+
+                    // Only show empty slots for own profile
+                    if (!editable) return null;
+
                     return (
                       <div key={`empty-${position}`} className="relative aspect-[3/4] group">
                         <button
@@ -647,17 +699,21 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                     );
                   })}
                 </div>
+                </>
+                )}
               </div>
             ) : (
               // Desktop, Tablet, and Phone Landscape - Grid/Row Layout
               <div className={
-                layoutType === 'desktop' 
+                layoutType === 'desktop'
                   ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 md:mb-8 transition-all duration-300"
                   : (layoutType === 'tablet' || layoutType === 'phoneLandscape')
                   ? "flex justify-center gap-3 mb-4 transition-all duration-300"
                   : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6 md:mb-8 transition-all duration-300"
               }>
-              {Array.from({ length: 5 }).map((_, index) => {
+              {editable ? (
+                // Editable view - show all 5 positions
+                Array.from({ length: 5 }).map((_, index) => {
                 const position = index + 1;
                 const gameData = userTopGames.find(g => g.position === position);
                 
@@ -710,7 +766,9 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                   );
                 }
 
-                // Empty slot
+                // Empty slot - only show for own profile
+                if (!editable) return null;
+
                 return (
                   <div key={`empty-${position}`} className={`relative aspect-[3/4] group ${
                     layoutType === 'phoneLandscape' ? 'w-[150px]' :
@@ -732,7 +790,33 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                     </button>
                   </div>
                 );
-              })}
+              })
+              ) : (
+                // Non-editable view - only show games that exist
+                userTopGames.filter(g => g.game).map((gameData) => (
+                  <div key={gameData.position} className={`relative group ${
+                    layoutType === 'phoneLandscape' ? 'w-[150px]' :
+                    layoutType === 'tablet' ? 'w-[140px]' :
+                    ''
+                  }`}>
+                    <Link to={getGameUrl(gameData.game!)}>
+                      <div className="relative aspect-[3/4]">
+                        <img
+                          src={gameData.game!.cover_url}
+                          alt={gameData.game!.name}
+                          className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => {
+                            e.currentTarget.src = '/default-cover.png';
+                          }}
+                        />
+                        <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                          {gameData.position}
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                ))
+              )}
             </div>
             )}
           </SortableContext>
@@ -865,23 +949,19 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
     );
   }
 
-  // Render standard top games (Top 10 or non-editable Top 5)
+  // Render standard top games (Top 10 only, Top 5 is handled above)
   return (
     <div>
       <h2 className="text-xl font-semibold text-white mb-6">
-        {limit === 5 ? 'Top 5 Favorites' : `Top ${limit} Highest Ranked`}
+        {`Top ${limit} Highest Ranked`}
       </h2>
-      
+
       {topGames.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-gray-400">
-            {limit === 5 
-              ? (isOwnProfile 
-                  ? 'No games rated yet. Start rating games to select your Top 5!'
-                  : 'They haven\'t decided on a Top 5 yet! How sad!')
-              : (isOwnProfile
-                  ? 'No games rated yet. Start rating games to see your Top 10!'
-                  : 'No games rated yet!')
+            {isOwnProfile
+              ? 'No games rated yet. Start rating games to see your Top 10!'
+              : 'No games rated yet!'
             }
           </p>
         </div>

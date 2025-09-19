@@ -31,6 +31,7 @@ interface TransformedGame {
   category?: number;
   cover?: { id: number; url: string };
   cover_url?: string;
+  screenshots?: string[];
   genres: string[];
   genre?: string;
   platforms: string[];
@@ -458,6 +459,7 @@ interface IGDBGame {
   id: number;
   name: string;
   summary?: string;
+  storyline?: string;
   first_release_date?: number;
   rating?: number;
   category?: number;
@@ -465,6 +467,10 @@ interface IGDBGame {
     id: number;
     url: string;
   };
+  screenshots?: Array<{
+    id: number;
+    url: string;
+  }>;
   genres?: Array<{
     id: number;
     name: string;
@@ -477,6 +483,8 @@ interface IGDBGame {
     company: {
       name: string;
     };
+    developer?: boolean;
+    publisher?: boolean;
   }>;
   alternative_names?: Array<{
     id: number;
@@ -561,28 +569,51 @@ class IGDBService {
    * Perform basic IGDB search without fallback logic
    */
   private async performBasicSearch(query: string, limit: number): Promise<IGDBGame[]> {
-    const response = await fetch(this.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        searchTerm: query.trim(),
-        limit: limit
-      })
-    });
+    try {
+      const response = await fetch(this.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          searchTerm: query.trim(),
+          limit: limit
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error(`IGDB API error: ${response.status}`);
+      if (!response.ok) {
+        // Production-visible error logging
+        console.error(`🔴 IGDB API Error ${response.status}: ${response.statusText}`);
+        console.error(`🔴 Query that failed: "${query}"`);
+        
+        if (response.status === 500) {
+          console.error('🔴 IGDB Server Error (500) - The IGDB API is temporarily unavailable');
+          // Return empty array instead of throwing to allow graceful degradation
+          return [];
+        }
+        
+        throw new Error(`IGDB API error: ${response.status}`);
+      }
+
+      const data: IGDBSearchResponse = await response.json();
+      
+      if (!data.success) {
+        console.error('🔴 IGDB API returned unsuccessful response:', data.error);
+        throw new Error(data.error || 'IGDB API error');
+      }
+
+      return data.games || [];
+    } catch (error: any) {
+      // Production-visible error logging
+      console.error('🔴 IGDB performBasicSearch error:', {
+        query,
+        error: error?.message || error,
+        stack: error?.stack
+      });
+      
+      // Re-throw to allow calling code to handle
+      throw error;
     }
-
-    const data: IGDBSearchResponse = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.error || 'IGDB API error');
-    }
-
-    return data.games || [];
   }
 
   async searchGames(query: string, limit: number = 20): Promise<IGDBGame[]> {
@@ -591,11 +622,21 @@ class IGDBService {
         return [];
       }
 
-      console.log('🔍 Enhanced multi-strategy search for:', query);
+      console.error('🔍 Enhanced multi-strategy search for:', query);
 
       // Get primary search results
       const rawGames = await this.performBasicSearch(query, limit);
       console.log('✅ Primary search results:', rawGames.length, 'games found');
+      
+      // Debug: Check if Breath of the Wild is in raw results
+      if (query.toLowerCase().includes('zelda')) {
+        const botwInRaw = rawGames.find(g => g.name?.toLowerCase().includes('breath of the wild') && !g.name?.toLowerCase().includes('bundle'));
+        if (botwInRaw) {
+          console.log('🎮 BotW found in raw results:', botwInRaw.name, 'ID:', botwInRaw.id, 'Category:', botwInRaw.category);
+        } else {
+          console.log('❌ BotW NOT found in raw IGDB results');
+        }
+      }
       
       // Apply content protection filter
       const transformedGames = rawGames.map(game => ({
@@ -646,6 +687,16 @@ class IGDBService {
       // Convert back to IGDB format
       let filteredIGDBGames = filteredGames.map(game => rawGames.find(raw => raw.id === game.id)!);
       
+      // Debug: Check BotW after content filter
+      if (query.toLowerCase().includes('zelda')) {
+        const botwAfterContent = filteredIGDBGames.find(g => g.name?.toLowerCase().includes('breath of the wild') && !g.name?.toLowerCase().includes('bundle'));
+        if (botwAfterContent) {
+          console.log('✅ BotW survived content filter');
+        } else {
+          console.log('❌ BotW removed by content filter');
+        }
+      }
+      
       // Apply season filtering to remove seasonal content
       console.log(`🎮 Pre-season filter: ${filteredIGDBGames.length} games`);
       filteredIGDBGames = filterSeasonGames(filteredIGDBGames);
@@ -665,6 +716,16 @@ class IGDBService {
       console.log(`🎯 Pre-relevance filter: ${filteredIGDBGames.length} games`);
       filteredIGDBGames = filterByRelevance(filteredIGDBGames, query);
       console.log(`🎯 Post-relevance filter: ${filteredIGDBGames.length} games`);
+      
+      // Debug: Check BotW after relevance filter
+      if (query.toLowerCase().includes('zelda')) {
+        const botwAfterRelevance = filteredIGDBGames.find(g => g.name?.toLowerCase().includes('breath of the wild') && !g.name?.toLowerCase().includes('bundle'));
+        if (botwAfterRelevance) {
+          console.log('✅ BotW survived relevance filter');
+        } else {
+          console.log('❌ BotW removed by relevance filter or not in results');
+        }
+      }
       
       // Check if we need flagship fallback after all filtering
       const franchise = detectFranchiseSearch(query);
@@ -840,8 +901,21 @@ class IGDBService {
       console.log(`✅ Final results: ${filteredIGDBGames.length} games after all filtering and prioritization`);
       return filteredIGDBGames;
 
-    } catch (error) {
-      console.error('IGDB search failed:', error);
+    } catch (error: any) {
+      // Production-visible error logging
+      console.error('🔴 IGDB searchGames failed:', {
+        query,
+        error: error?.message || error,
+        status: error?.status
+      });
+      
+      // If it's a 500 error, return empty array to allow graceful fallback
+      if (error?.message?.includes('500') || error?.status === 500) {
+        console.error('🔴 IGDB Server Error - Returning empty results for graceful degradation');
+        return [];
+      }
+      
+      // For other errors, still throw to maintain existing behavior
       throw error;
     }
   }
@@ -1081,11 +1155,13 @@ class IGDBService {
   // Transform IGDB game to our app's format
   transformGame(igdbGame: IGDBGame): TransformedGame {
     return {
-      id: igdbGame.id,
-      igdb_id: igdbGame.id,
+      // DO NOT set 'id' to igdbGame.id - that's the database ID, not IGDB ID!
+      // The 'id' field should only be set when the game exists in our database
+      id: 0, // Set to 0 or undefined since this game might not be in our database yet
+      igdb_id: igdbGame.id, // This is the actual IGDB ID
       name: igdbGame.name,
       summary: igdbGame.summary,
-      description: igdbGame.summary,
+      description: igdbGame.storyline || igdbGame.summary, // Use storyline if available, otherwise summary
       first_release_date: igdbGame.first_release_date ? new Date(igdbGame.first_release_date * 1000) : undefined,
       release_date: igdbGame.first_release_date ? new Date(igdbGame.first_release_date * 1000).toISOString() : undefined,
       rating: igdbGame.rating,
@@ -1093,11 +1169,12 @@ class IGDBService {
       category: igdbGame.category,
       cover: igdbGame.cover,
       cover_url: igdbGame.cover?.url ? this.transformImageUrl(igdbGame.cover.url) : undefined,
+      screenshots: igdbGame.screenshots?.map(s => this.transformImageUrl(s.url)) || [], // Add screenshots
       genres: igdbGame.genres?.map(g => g.name) || [],
       genre: igdbGame.genres?.[0]?.name,
       platforms: igdbGame.platforms?.map(p => p.name) || [],
-      developer: igdbGame.involved_companies?.[0]?.company?.name,
-      publisher: igdbGame.involved_companies?.[0]?.company?.name,
+      developer: igdbGame.involved_companies?.find(c => c.developer)?.company?.name, // Find developer specifically
+      publisher: igdbGame.involved_companies?.find(c => c.publisher)?.company?.name, // Find publisher specifically
       // New fields for enhanced search
       alternative_names: igdbGame.alternative_names?.map(alt => alt.name) || [],
       collection: igdbGame.collection?.name,

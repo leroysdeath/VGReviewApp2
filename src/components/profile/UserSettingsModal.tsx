@@ -9,7 +9,6 @@ interface UserSettingsModalProps {
   userId: string;
   userData?: {
     username: string;
-    displayName?: string;
     email: string;
     bio?: string;
     location?: string;
@@ -43,7 +42,6 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   // Use provided user data directly - no fetching or refreshing
   const currentUserData = propUserData || {
     username: '',
-    displayName: '',
     email: '',
     bio: '',
     location: '',
@@ -108,10 +106,11 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     setHasUnsavedChanges(isDirty);
   };
 
-  // Handle successful save - close immediately
+  // Handle successful save - reset state but don't close
+  // (parent component will handle closing to prevent race conditions)
   const handleSuccess = () => {
     setHasUnsavedChanges(false);
-    onClose();
+    // Don't call onClose() here - let parent handle it
   };
 
   // Handle confirm close without saving

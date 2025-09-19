@@ -119,12 +119,12 @@ export const useAuth = (): UseAuthReturn => {
             id: session.user.id,
             email: session.user.email || '',
             name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
-            avatar: session.user.user_metadata?.avatar_url,
+            avatar: session.user.user_metadata?.avatar_url, // Will be overridden by database avatar if exists
             created_at: session.user.created_at
           };
           setUser(authUser);
           
-          // Get or create database user ID (non-blocking with separate loading state)
+          // Get or create database user ID and fetch avatar (non-blocking with separate loading state)
           setDbUserIdLoading(true);
           getOrCreateDbUserId(session).finally(() => {
             setDbUserIdLoading(false);
@@ -154,12 +154,12 @@ export const useAuth = (): UseAuthReturn => {
             id: session.user.id,
             email: session.user.email || '',
             name: session.user.user_metadata?.name || session.user.user_metadata?.username || 'User',
-            avatar: session.user.user_metadata?.avatar_url,
+            avatar: session.user.user_metadata?.avatar_url, // Will be overridden by database avatar if exists
             created_at: session.user.created_at
           };
           setUser(authUser);
           
-          // Get or create database user ID (non-blocking with separate loading state)
+          // Get or create database user ID and fetch avatar (non-blocking with separate loading state)
           setDbUserIdLoading(true);
           getOrCreateDbUserId(session).finally(() => {
             setDbUserIdLoading(false);
@@ -178,7 +178,7 @@ export const useAuth = (): UseAuthReturn => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Helper function to get or create database user ID
+  // Helper function to get or create database user ID and fetch profile data
   const getOrCreateDbUserId = async (session: Session) => {
     try {
       const timeoutPromise = new Promise<{ success: false, error: string }>((resolve) => {
@@ -387,6 +387,7 @@ export const useAuth = (): UseAuthReturn => {
       if (dbUserId && session?.user) {
         const dbUpdates = {
           name: updates.username || user?.name || '',
+          username: updates.username || undefined, // Also update username column
           avatar_url: updates.avatar
         };
         
@@ -395,9 +396,30 @@ export const useAuth = (): UseAuthReturn => {
           return { error: result.error };
         }
 
-        // Update local state
-        if (user) {
-          setUser({ ...user, name: updates.username || user.name, avatar: updates.avatar || user.avatar });
+        // Re-fetch the updated profile from database to ensure state sync
+        const { data: updatedUser, error: fetchError } = await supabase
+          .from('user')
+          .select('avatar_url, username, name')
+          .eq('id', dbUserId)
+          .single();
+        
+        if (!fetchError && updatedUser) {
+          // Update local state with fresh database values
+          setUser(prevUser => {
+            if (prevUser) {
+              return { 
+                ...prevUser, 
+                name: updatedUser.username || updatedUser.name || prevUser.name,
+                avatar: updatedUser.avatar_url || prevUser.avatar
+              };
+            }
+            return prevUser;
+          });
+        } else {
+          // Fallback to optimistic update if fetch fails
+          if (user) {
+            setUser({ ...user, name: updates.username || user.name, avatar: updates.avatar || user.avatar });
+          }
         }
       }
 

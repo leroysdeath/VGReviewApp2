@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, Star } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { getGameUrl } from '../../utils/gameUrls';
+import { getRelativeTime } from '../../utils/dateUtils';
 
 interface Review {
   id: number;
@@ -97,17 +98,6 @@ export const ReviewsList: React.FC<ReviewsListProps> = ({
     }
   }, [reviews, filter]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
-    return date.toLocaleDateString();
-  };
 
   if (loading) {
     return (
@@ -230,7 +220,7 @@ export const ReviewsList: React.FC<ReviewsListProps> = ({
 
                 {/* Review text */}
                 {review.review && (
-                  <p className="text-gray-300 mb-3 leading-relaxed">
+                  <p className="text-gray-300 mb-3 leading-relaxed whitespace-pre-line">
                     {review.review}
                   </p>
                 )}
@@ -238,7 +228,7 @@ export const ReviewsList: React.FC<ReviewsListProps> = ({
                 {/* Date */}
                 <div className="flex items-center text-gray-500 text-sm">
                   <Calendar className="h-4 w-4 mr-1" />
-                  {formatDate(review.post_date_time)}
+                  {getRelativeTime(review.post_date_time)}
                 </div>
               </div>
             </div>

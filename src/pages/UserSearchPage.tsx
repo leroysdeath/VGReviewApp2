@@ -528,8 +528,8 @@ export const UserSearchPage: React.FC = () => {
                           followLoading || !canFollow
                             ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                             : followingUsers.includes(user.id)
-                            ? 'bg-green-600 text-white hover:bg-green-700'
-                            : 'bg-purple-600 text-white hover:bg-purple-700'
+                            ? 'bg-[#E8A5A5] text-white hover:bg-[#E8A5A5]/80'
+                            : 'bg-[#FF6B9D] text-white hover:bg-[#FF6B9D]/80'
                         }`}
                       >
                         {followLoading ? (
@@ -538,10 +538,7 @@ export const UserSearchPage: React.FC = () => {
                             <span>Loading</span>
                           </>
                         ) : followingUsers.includes(user.id) ? (
-                          <>
-                            <UserCheck className="h-3 w-3" />
-                            <span>Following</span>
-                          </>
+                          <UserCheck className="h-5 w-5" />
                         ) : (
                           <>
                             <UserPlus className="h-3 w-3" />
@@ -636,8 +633,8 @@ export const UserSearchPage: React.FC = () => {
                       followLoading || !canFollow
                         ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                         : followingUsers.includes(user.id)
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : 'bg-purple-600 text-white hover:bg-purple-700'
+                        ? 'bg-[#E8A5A5] text-white hover:bg-[#E8A5A5]/80'
+                        : 'bg-[#FF6B9D] text-white hover:bg-[#FF6B9D]/80'
                     }`}
                   >
                     {followLoading ? (
@@ -646,10 +643,7 @@ export const UserSearchPage: React.FC = () => {
                         <span>Loading</span>
                       </>
                     ) : followingUsers.includes(user.id) ? (
-                      <>
-                        <UserCheck className="h-3 w-3" />
-                        <span>Following</span>
-                      </>
+                      <UserCheck className="h-5 w-5" />
                     ) : (
                       <>
                         <UserPlus className="h-3 w-3" />
@@ -735,7 +729,6 @@ export const UserSearchPage: React.FC = () => {
                               </p>
                               {user.averageRating && (
                                 <div className="flex items-center gap-1">
-                                  <Star className="h-3 w-3 text-yellow-500 fill-current" />
                                   <span className="text-yellow-500 text-xs">{user.averageRating}</span>
                                 </div>
                               )}
@@ -761,8 +754,8 @@ export const UserSearchPage: React.FC = () => {
                               followLoading || !canFollow
                                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                                 : followingUsers.includes(user.id)
-                                ? 'bg-green-600 text-white hover:bg-green-700'
-                                : 'bg-purple-600 text-white hover:bg-purple-700'
+                                ? 'bg-[#E8A5A5] text-white hover:bg-[#E8A5A5]/80'
+                                : 'bg-[#FF6B9D] text-white hover:bg-[#FF6B9D]/80'
                             }`}
                           >
                             {followLoading ? (
@@ -771,10 +764,7 @@ export const UserSearchPage: React.FC = () => {
                                 Loading...
                               </>
                             ) : followingUsers.includes(user.id) ? (
-                              <>
-                                <UserCheck className="h-4 w-4" />
-                                Following
-                              </>
+                              <UserCheck className="h-5 w-5" />
                             ) : (
                               <>
                                 <UserPlus className="h-4 w-4" />
@@ -848,7 +838,6 @@ export const UserSearchPage: React.FC = () => {
                           )}
                           {user.averageRating && (
                             <div className="flex items-center gap-1 mt-1">
-                              <Star className="h-3 w-3 text-yellow-500 fill-current" />
                               <span className="text-yellow-500 text-xs">Avg: {user.averageRating}</span>
                             </div>
                           )}
@@ -870,8 +859,8 @@ export const UserSearchPage: React.FC = () => {
                             followLoading || !canFollow
                               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                               : followingUsers.includes(user.id)
-                              ? 'bg-green-600 text-white hover:bg-green-700'
-                              : 'bg-purple-600 text-white hover:bg-purple-700'
+                              ? 'bg-[#E8A5A5] text-white hover:bg-[#E8A5A5]/80'
+                              : 'bg-[#FF6B9D] text-white hover:bg-[#FF6B9D]/80'
                           }`}
                         >
                           {followLoading ? (
@@ -880,10 +869,7 @@ export const UserSearchPage: React.FC = () => {
                               Loading...
                             </>
                           ) : followingUsers.includes(user.id) ? (
-                            <>
-                              <UserCheck className="h-4 w-4" />
-                              Following
-                            </>
+                            <UserCheck className="h-5 w-5" />
                           ) : (
                             <>
                               <UserPlus className="h-4 w-4" />
@@ -984,12 +970,6 @@ export const UserSearchPage: React.FC = () => {
             <div className="bg-gray-800 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Quick Filters</h3>
               <div className="space-y-2">
-                <button
-                  onClick={() => setSearchTerm('pro')}
-                  className="w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors"
-                >
-                  Pro Reviewers
-                </button>
                 <button
                   onClick={() => setSortBy('recent')}
                   className="w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors"

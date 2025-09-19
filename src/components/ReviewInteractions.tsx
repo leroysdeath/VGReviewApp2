@@ -27,6 +27,8 @@ interface ReviewInteractionsProps {
   currentUserId?: number;
   disabled?: boolean;
   disableCommentHover?: boolean;
+  disableComments?: boolean;
+  isAuthenticated?: boolean;
 }
 
 export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
@@ -51,7 +53,9 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   reviewAuthorId,
   currentUserId,
   disabled = false,
-  disableCommentHover = false
+  disableCommentHover = false,
+  disableComments = false,
+  isAuthenticated = false
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -66,7 +70,11 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
   const remainingChars = MAX_CHARS - commentText.length;
   const isOverLimit = remainingChars < 0;
   
-  const handleLikeToggle = () => {
+  const handleLikeToggle = (e: React.MouseEvent) => {
+    // Prevent the click from bubbling up to parent Link component
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (disabled) {
       console.log('⚠️ Interactions disabled - waiting for user data to load');
       return;
@@ -133,7 +141,16 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
     }
   };
   
-  const toggleComments = () => {
+  const toggleComments = (e: React.MouseEvent) => {
+    // Prevent the click from bubbling up to parent Link component
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Don't toggle if comments are disabled
+    if (disableComments) {
+      return;
+    }
+    
     setShowComments(!showComments);
     // Comments are already loaded in background, just toggle visibility
     console.log('📋 Toggling comments view, already loaded in background');
@@ -185,28 +202,30 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
         <button
           onClick={toggleComments}
           className={`flex items-center gap-2 transition-colors ${
-            disableCommentHover ? '' : 'hover:text-white'
+            disableComments ? 'cursor-default' : disableCommentHover ? '' : 'hover:text-white'
           }`}
-          aria-label={showComments ? 'Hide comments' : 'Show comments'}
-          title={isLoadingComments && !showComments ? 'Loading comments...' : ''}
+          aria-label={disableComments ? 'Comments disabled' : showComments ? 'Hide comments' : 'Show comments'}
+          title={disableComments ? 'View full review to see comments' : isLoadingComments && !showComments ? 'Loading comments...' : ''}
         >
           <MessageSquare className="h-5 w-5" />
           <span className="relative">
             {initialCommentCount}
-            {isLoadingComments && !showComments && (
+            {isLoadingComments && !showComments && !disableComments && (
               <span className="absolute -top-1 -right-2 w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
             )}
           </span>
-          {showComments ? (
-            <ChevronUp className="h-4 w-4" />
-          ) : (
-            <ChevronDown className="h-4 w-4" />
+          {!disableComments && (
+            showComments ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )
           )}
         </button>
       </div>
       
       {/* Comments Section */}
-      {showComments && (
+      {showComments && !disableComments && (
         <div className="pt-2 border-t border-gray-700">
           {/* Comment Form */}
           <form onSubmit={handleCommentSubmit} className="mb-4">
@@ -214,13 +233,13 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
               <textarea
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                placeholder="What are your thoughts?"
+                placeholder={isAuthenticated ? "What are your thoughts?" : "Sign up or login to comment"}
                 className={`w-full px-3 py-2 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
                   isOverLimit ? 'border-red-500' : 'border-gray-600'
-                }`}
+                } ${!isAuthenticated ? 'cursor-not-allowed opacity-60' : ''}`}
                 rows={3}
                 maxLength={MAX_CHARS}
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isAuthenticated}
                 aria-label="Add a comment"
               />
               <div className={`absolute bottom-2 right-2 text-xs ${
@@ -237,11 +256,11 @@ export const ReviewInteractions: React.FC<ReviewInteractionsProps> = ({
             <div className="flex justify-end mt-2">
               <button
                 type="submit"
-                disabled={isSubmitting || !commentText.trim() || isOverLimit || disabled}
+                disabled={isSubmitting || !commentText.trim() || isOverLimit || disabled || !isAuthenticated}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title={disabled ? 'Loading user data...' : ''}
+                title={!isAuthenticated ? 'Sign up or login to comment' : disabled ? 'Loading user data...' : ''}
               >
-                {disabled ? 'Loading...' : isSubmitting ? 'Posting...' : 'Post Comment'}
+                {!isAuthenticated ? 'Post Comment' : disabled ? 'Loading...' : isSubmitting ? 'Posting...' : 'Post Comment'}
               </button>
             </div>
           </form>

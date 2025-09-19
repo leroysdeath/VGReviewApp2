@@ -254,6 +254,29 @@ class AuthService {
       return { error };
     }
   }
+
+  async checkUsernameAvailability(username: string): Promise<{ available: boolean; error?: any }> {
+    try {
+      if (!username || username.length < 3) {
+        return { available: false };
+      }
+
+      const { count, error } = await supabase
+        .from('user')
+        .select('id', { count: 'exact', head: true })
+        .eq('username', username.toLowerCase());
+
+      if (error) {
+        console.error('Username availability check error:', error);
+        return { available: false, error };
+      }
+
+      return { available: count === 0 };
+    } catch (error) {
+      console.error('Username availability check error:', error);
+      return { available: false, error };
+    }
+  }
 }
 
 export const authService = new AuthService();

@@ -4,8 +4,9 @@ import App from './App.tsx';
 import './index.css';
 import './styles/accessibility.css';
 
-// Register service worker for offline support and caching
-if ('serviceWorker' in navigator) {
+// Register service worker for offline support and caching (PRODUCTION ONLY)
+// Skip ServiceWorker in development to avoid caching issues
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')
@@ -43,6 +44,16 @@ if ('serviceWorker' in navigator) {
       refreshing = true;
       window.location.reload();
     }
+  });
+}
+
+// In development, unregister any existing service worker
+if ('serviceWorker' in navigator && import.meta.env.DEV) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((registration) => {
+      registration.unregister();
+      console.log('Service Worker unregistered for development');
+    });
   });
 }
 

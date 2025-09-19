@@ -403,7 +403,7 @@ export const ReviewPage: React.FC = () => {
                           </button>
                         </>
                       ) : (
-                        <p>{reviewText}</p>
+                        <p className="whitespace-pre-line">{reviewText}</p>
                       )}
                     </div>
                   )}
@@ -458,6 +458,7 @@ export const ReviewPage: React.FC = () => {
               onAddComment={postComment}
               onEditComment={updateComment}
               onDeleteComment={removeComment}
+              isAuthenticated={isAuthenticated}
               onLikeComment={toggleCommentLike}
               onUnlikeComment={toggleCommentLike}
               isLoadingComments={isLoadingComments}
@@ -504,7 +505,7 @@ export const ReviewPage: React.FC = () => {
                   <span className="text-yellow-500">{review.rating}/10</span>
                 </div>
               </div>
-              <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+              <div className="text-gray-300 leading-relaxed whitespace-pre-line">
                 {reviewText}
               </div>
             </div>

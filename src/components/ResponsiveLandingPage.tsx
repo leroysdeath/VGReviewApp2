@@ -144,7 +144,7 @@ export const ResponsiveLandingPage: React.FC = () => {
   const [reviewsError, setReviewsError] = useState<string | null>(null);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const { isMobile } = useResponsive();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, dbUserId } = useAuth();
   const { openModal } = useAuthModal();
   const navigate = useNavigate();
   const loadBulkStatus = useLikeStore(state => state.loadBulkStatus);
@@ -432,7 +432,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           ) : recentReviews.length > 0 ? (
             <div className="space-y-4">
               {recentReviews.map((review) => (
-                <ReviewCard key={review.id} review={review} compact currentUserId={user?.id} />
+                <ReviewCard key={review.id} review={review} currentUserId={dbUserId ?? undefined} />
               ))}
             </div>
           ) : (
@@ -700,7 +700,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           ) : recentReviews.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-6">
               {recentReviews.map((review) => (
-                <ReviewCard key={review.id} review={review} currentUserId={user?.id} />
+                <ReviewCard key={review.id} review={review} currentUserId={dbUserId ?? undefined} />
               ))}
             </div>
           ) : (

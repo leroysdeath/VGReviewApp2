@@ -561,6 +561,16 @@ export const checkUsernameAvailability = async (
         }
       };
     }
+    
+    if (username.trim().length > 21) {
+      return {
+        success: true,
+        data: {
+          available: false,
+          message: 'Username must be 21 characters or less'
+        }
+      };
+    }
 
     const sanitizedUsername = username.trim().toLowerCase();
     

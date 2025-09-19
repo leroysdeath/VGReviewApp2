@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { igdbService } from '../services/igdbService';
 import { collectionWishlistService } from '../services/collectionWishlistService';
+import { ensureGameExists } from '../services/reviewService';
 
 interface Game {
   id: string;
@@ -241,6 +242,40 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
   // Handle adding game to collection/wishlist
   const handleAddGame = async (igdbId: number, gameData?: any) => {
+    // First, ensure the game exists in the database for all modes
+    if (gameData) {
+      try {
+        console.log('🎮 Ensuring game exists in database before selection:', igdbId);
+        
+        // Prepare game data for database insertion
+        const gameForDb = {
+          id: 0, // New game, no database ID yet
+          igdb_id: igdbId,
+          name: gameData.name,
+          cover_url: gameData.cover?.url?.replace('t_thumb', 't_cover_big'),
+          genre: gameData.genres?.[0]?.name,
+          releaseDate: gameData.first_release_date 
+            ? new Date(gameData.first_release_date * 1000).toISOString()
+            : undefined
+        };
+        
+        // Ensure game exists in database
+        const ensureResult = await ensureGameExists(gameForDb);
+        
+        if (!ensureResult.success) {
+          console.error('❌ Failed to ensure game exists:', ensureResult.error);
+          setError('Failed to add game to database');
+          return;
+        }
+        
+        console.log('✅ Game ensured in database with ID:', ensureResult.data?.gameId);
+      } catch (error) {
+        console.error('❌ Error ensuring game exists:', error);
+        setError('Failed to process game selection');
+        return;
+      }
+    }
+    
     // For review mode, just call onSelect with the game data
     if (mode === 'review') {
       const gameInfo = {

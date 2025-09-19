@@ -34,7 +34,6 @@ export interface DatabaseUser {
 export interface ClientUser {
   id: string;                    // Supabase auth UUID for client use
   username: string;
-  displayName: string;
   email: string;
   avatar: string | null;
   bio: string;
@@ -51,7 +50,6 @@ export interface ClientUser {
  */
 export interface ProfileUpdateData {
   username?: string;
-  displayName?: string;
   bio?: string;
   location?: string;
   website?: string;
@@ -74,7 +72,6 @@ export interface ServiceResponse<T> {
 export const dbUserToClientUser = (dbUser: DatabaseUser): ClientUser => ({
   id: dbUser.provider_id,
   username: dbUser.username || dbUser.name || 'user',
-  displayName: dbUser.display_name || '',
   email: dbUser.email,
   avatar: dbUser.avatar_url,
   bio: dbUser.bio || '',
@@ -94,7 +91,6 @@ export const dbUserToClientUser = (dbUser: DatabaseUser): ClientUser => ({
  */
 export const clientUpdateToDbUpdate = (updates: ProfileUpdateData) => ({
   username: updates.username,
-  display_name: updates.displayName,
   bio: updates.bio,
   location: updates.location,
   website: updates.website,
