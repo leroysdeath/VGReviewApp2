@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense, useRef } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -47,6 +47,10 @@ export const UserPage: React.FC = () => {
   // Follow functionality
   const { toggleFollow, isFollowing, loading: followLoading } = useFollow();
   const [isFollowingUser, setIsFollowingUser] = useState(false);
+
+  // Ref for ProfileDetails to calculate modal position
+  const profileDetailsRef = useRef<HTMLDivElement>(null);
+  const [modalTopPosition, setModalTopPosition] = useState<number | null>(null);
 
   // Fetch user data - defined first to avoid temporal dead zone
   const fetchUserData = useCallback(async (skipLoadingState = false) => {
@@ -208,6 +212,16 @@ export const UserPage: React.FC = () => {
     }
   }, [id, fetchUserData, isOwnProfile, authUser, updateProfile]);
 
+  // Calculate modal position based on ProfileDetails
+  const calculateModalPosition = () => {
+    if (profileDetailsRef.current) {
+      const rect = profileDetailsRef.current.getBoundingClientRect();
+      const bottomPosition = rect.bottom + window.scrollY;
+      // Add small gap (4px) below the ProfileDetails
+      setModalTopPosition(bottomPosition + 4);
+    }
+  };
+
   // Modal handlers
   const handleEditClick = () => {
     setShowSettingsModal(true);
@@ -228,27 +242,36 @@ export const UserPage: React.FC = () => {
   };
 
   const handleFollowersClick = () => {
+    calculateModalPosition();
     setModalInitialTab('followers');
     setIsFollowersModalOpen(true);
   };
 
   const handleFollowingClick = () => {
+    calculateModalPosition();
     setModalInitialTab('following');
     setIsFollowersModalOpen(true);
   };
 
   const handleGamesClick = () => {
+    calculateModalPosition();
     setGamesModalInitialTab('all');
     setIsGamesModalOpen(true);
   };
 
   const handleReviewsClick = () => {
+    calculateModalPosition();
     setIsReviewsModalOpen(true);
   };
   
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
+
+  // Reset to Top 5 tab when navigating to a different user
+  useEffect(() => {
+    setActiveTab('top5');
+  }, [id]);
 
   // Refresh follow state when page gains focus
   useEffect(() => {
@@ -321,13 +344,15 @@ export const UserPage: React.FC = () => {
             followLoading={followLoading}
             isAuthenticated={isAuthenticated}
           />
-          <ProfileDetails 
-            stats={stats} 
-            onFollowersClick={handleFollowersClick}
-            onFollowingClick={handleFollowingClick}
-            onGamesClick={handleGamesClick}
-            onReviewsClick={handleReviewsClick}
-          />
+          <div ref={profileDetailsRef}>
+            <ProfileDetails
+              stats={stats}
+              onFollowersClick={handleFollowersClick}
+              onFollowingClick={handleFollowingClick}
+              onGamesClick={handleGamesClick}
+              onReviewsClick={handleReviewsClick}
+            />
+          </div>
         </div>
 
         {/* Tabs Navigation */}
@@ -408,6 +433,7 @@ export const UserPage: React.FC = () => {
         userId={id!}
         userName={transformedUser.username}
         initialTab={modalInitialTab}
+        topPosition={modalTopPosition}
       />
 
       {/* Games Modal */}
@@ -417,6 +443,7 @@ export const UserPage: React.FC = () => {
         userId={id!}
         userName={transformedUser.username}
         initialTab={gamesModalInitialTab}
+        topPosition={modalTopPosition}
       />
 
       {/* Reviews Modal */}
@@ -425,6 +452,7 @@ export const UserPage: React.FC = () => {
         onClose={() => setIsReviewsModalOpen(false)}
         userId={id!}
         userName={transformedUser.username}
+        topPosition={modalTopPosition}
       />
     </div>
   );
