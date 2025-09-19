@@ -29,6 +29,9 @@ export default {
     '^../services/env$': '<rootDir>/src/test/env-test.ts',
     '^../../services/env$': '<rootDir>/src/test/env-test.ts',
     '^./env$': '<rootDir>/src/test/env-test.ts',
+    // Mock game services for tests
+    '^.*\\/services\\/gameDataService$': '<rootDir>/src/test/mocks/gameDataService-mock.ts',
+    '^.*\\/services\\/gameSearchService$': '<rootDir>/src/test/mocks/gameSearchService-mock.ts',
     // Additional service mappings for better resolution
     '^.*\\/services\\/(.*)$': '<rootDir>/src/services/$1',
   },

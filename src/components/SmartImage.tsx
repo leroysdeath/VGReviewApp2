@@ -17,6 +17,7 @@ interface SmartImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   // Error handling
   fallback?: string;
   onError?: () => void;
+  retryAttempts?: number;
   
   // Loading states
   showLoadingSpinner?: boolean;
@@ -37,6 +38,7 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   optimization = {},
   fallback = '/placeholder-image.jpg',
   onError,
+  retryAttempts = 2,
   showLoadingSpinner = true,
   placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0yMCAyOEMyNCA0IDI4IDIwIDIwIDIwQzEyIDIwIDE2IDQgMjAgMjhaIiBmaWxsPSIjNEI1NTYzIi8+Cjwvc3ZnPgo=',
   preload = false,
@@ -49,16 +51,25 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(!lazy || priority);
   const [hasError, setHasError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [currentSrc, setCurrentSrc] = useState(src);
   const imgRef = useRef<HTMLImageElement>(null);
   
   // Use optimization hook when optimize is enabled
   const { src: optimizedSrc, loading: optimizing } = useOptimizedImage(
-    optimize ? src : '', 
+    optimize ? currentSrc : '', 
     optimize ? optimization : {}
   );
   
-  // Determine final source URL
-  const finalSrc = hasError ? fallback : (optimize ? optimizedSrc : src);
+  // Determine final source URL with retry logic
+  const getFinalSrc = () => {
+    if (hasError && retryCount >= retryAttempts) {
+      return fallback;
+    }
+    return optimize ? optimizedSrc : currentSrc;
+  };
+  
+  const finalSrc = getFinalSrc();
   const isLoading = optimize ? optimizing : false;
 
   // Intersection Observer for lazy loading
@@ -95,9 +106,29 @@ export const SmartImage: React.FC<SmartImageProps> = ({
 
   const handleLoad = () => {
     setIsLoaded(true);
+    setHasError(false);
+    setRetryCount(0);
   };
 
   const handleError = () => {
+    if (retryCount < retryAttempts) {
+      // Try with different URL variants for IGDB images
+      const retryVariants = [
+        currentSrc.replace('/t_cover_big/', '/t_cover_small/'),
+        currentSrc.replace('f_webp', 'f_jpg'),
+        currentSrc.replace(',q_85', ',q_75'),
+        src // Original source as last resort
+      ];
+      
+      if (retryCount < retryVariants.length) {
+        // Silently retry with different image variants
+        setCurrentSrc(retryVariants[retryCount]);
+        setRetryCount(prev => prev + 1);
+        setIsLoaded(false);
+        return;
+      }
+    }
+    
     setHasError(true);
     onError?.();
   };
@@ -141,13 +172,13 @@ export const SmartImage: React.FC<SmartImageProps> = ({
       )}
       
       {/* Error state */}
-      {hasError && finalSrc === fallback && (
+      {hasError && retryCount >= retryAttempts && (
         <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
           <div className="text-center text-gray-400">
             <svg className="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
             </svg>
-            <p className="text-sm">Failed to load image</p>
+            <p className="text-sm">Image unavailable</p>
           </div>
         </div>
       )}

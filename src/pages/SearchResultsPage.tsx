@@ -106,29 +106,34 @@ export const SearchResultsPage: React.FC = () => {
 
     setCurrentPage(page ? parseInt(page) : 1);
     
-    // Automatically perform search if query parameter is present
+    // CRITICAL FIX: Set search term and let the unified search handler take over
+    // This prevents dual search triggers that were causing 406 errors
     if (query.trim()) {
       setSearchTerm(query);
-      setSearchStarted(true);
-      // Use setTimeout to ensure state is updated before search
-      setTimeout(() => {
-        searchGames(query, {
-          genres: platform ? [platform] : undefined,
-          sortBy: sortField === 'name' ? 'name' : 
-                 sortField === 'release_date' ? 'release_date' : 
-                 sortField === 'avg_rating' ? 'rating' : 'popularity',
-          sortOrder: sortOrder as any || 'asc'
-        });
-      }, 0);
+      // Don't call searchGames directly here - let the consolidated handler do it
     }
-  }, [searchParams, searchGames, setSearchTerm]);
+  }, [searchParams, setSearchTerm]);
 
-  // Immediate search for non-search-term filter changes
+  // CONSOLIDATED SEARCH HANDLER: Single point for all search triggers
+  // This prevents the dual search issue that was causing 406 errors
   useEffect(() => {
-    if (filters.searchTerm?.trim() && searchStarted) {
-      performSearch();
+    if (filters.searchTerm?.trim()) {
+      // Debounced search for better performance
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      
+      debounceRef.current = setTimeout(() => {
+        performSearch();
+      }, 300); // Slight delay to prevent rapid-fire searches
     }
-  }, [filters.platformId, filters.releaseYear, filters.sortBy, filters.sortOrder]);
+    
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [filters.searchTerm, filters.platformId, filters.releaseYear, filters.sortBy, filters.sortOrder]);
 
   const loadPlatforms = async () => {
     try {
@@ -154,7 +159,6 @@ export const SearchResultsPage: React.FC = () => {
     
     try {
       setSearchStarted(true);
-      console.log('🔍 SearchResultsPage: Performing search for:', filters.searchTerm);
       
       await searchGames(filters.searchTerm, {
         genres: filters.platformId ? [filters.platformId.toString()] : undefined,
@@ -164,9 +168,8 @@ export const SearchResultsPage: React.FC = () => {
         sortOrder: filters.sortOrder
       });
       
-      console.log('✅ SearchResultsPage: Search completed, results:', searchState.games.length);
     } catch (err) {
-      console.error('❌ SearchResultsPage: Search failed:', err);
+      console.error('SearchResultsPage: Search failed:', err);
     }
   };
 
@@ -186,19 +189,8 @@ export const SearchResultsPage: React.FC = () => {
     setFilters(updatedFilters);
     setCurrentPage(1); // Reset to first page when filters change
     
-    // If search term changed, start debounced search (2 second delay)
-    if ('searchTerm' in newFilters && newFilters.searchTerm?.trim()) {
-      // Clear existing debounce timer
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-      
-      // Set new debounce timer for 2 seconds
-      debounceRef.current = setTimeout(() => {
-        console.log('🕐 Auto-search after 2 second delay');
-        performSearch();
-      }, 2000);
-    }
+    // Search is now handled by the consolidated useEffect handler
+    // No need for additional debouncing here since it's centralized
     
     // Update URL params
     const params = new URLSearchParams();
@@ -228,11 +220,6 @@ export const SearchResultsPage: React.FC = () => {
 
   // Use games directly from searchState (igdbService already applies filtering)
   const filteredGames = useMemo(() => {
-    // Log search results in development
-    if (import.meta.env.DEV && searchState.games.length > 0) {
-      console.log(`📊 Search results: ${searchState.games.length} games from ${searchState.source}`);
-    }
-    
     return searchState.games;
   }, [searchState.games]);
 
@@ -265,7 +252,6 @@ export const SearchResultsPage: React.FC = () => {
             <button
               onClick={() => {
                 if (filters.searchTerm?.trim()) {
-                  console.log('🔘 Manual search button clicked');
                   performSearch();
                 }
               }}
@@ -420,7 +406,6 @@ export const SearchResultsPage: React.FC = () => {
             <button
               onClick={() => {
                 if (filters.searchTerm?.trim()) {
-                  console.log('🔄 Refresh button clicked');
                   performSearch();
                 }
               }}

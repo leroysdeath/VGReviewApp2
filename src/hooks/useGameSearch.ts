@@ -1,8 +1,7 @@
 // hooks/useGameSearch.ts
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { gameDataService } from '../services/gameDataService';
-import { filterProtectedContent } from '../utils/contentProtectionFilter';
+import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
 import type { GameWithCalculatedFields } from '../types/database';
 
 interface SearchResult {
@@ -38,13 +37,14 @@ export const useGameSearch = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [searchOptions, setSearchOptions] = useState<SearchOptions>({
-    limit: 20,
+    limit: 40,  // Reduced for better relevance and faster search
     offset: 0,
     sortBy: 'popularity',
     sortOrder: 'desc'
   });
   
   const abortControllerRef = useRef<AbortController | null>(null);
+  const searchCoordinationRef = useRef<AdvancedSearchCoordination>(new AdvancedSearchCoordination());
 
   // Main search function that both components will use
   const searchGames = useCallback(async (
@@ -60,25 +60,26 @@ export const useGameSearch = () => {
     abortControllerRef.current = new AbortController();
     
     try {
+      // Clear previous results immediately for new searches
       setSearchState(prev => ({
         ...prev,
         loading: true,
-        error: null
+        error: null,
+        games: append ? prev.games : [], // Clear games if not appending
+        totalResults: append ? prev.totalResults : 0
       }));
 
       const searchParams = { ...searchOptions, ...options };
       const offset = append ? searchState.games.length : 0;
       
-      // Use enhanced gameDataService search with sister game detection
-      console.log(`🔍 useGameSearch: Searching for "${query}" using gameDataService`);
-      const searchResults = await gameDataService.searchGames(query.trim(), {
-        genres: searchParams.genres,
-        platforms: searchParams.platforms,
-        minRating: searchParams.minRating
+      // Use Advanced Search Coordination with accent normalization
+      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+        maxResults: searchParams.limit || 40,  // Reduced for better relevance and speed
+        includeMetrics: true,
+        bypassCache: false // Always use cache for better performance
       });
-      
-      // Apply content protection filtering
-      const filteredResults = filterProtectedContent(searchResults);
+      // Results are already filtered by the coordination service
+      const filteredResults = searchResult.results;
 
       const data = {
         games: filteredResults,
@@ -96,6 +97,7 @@ export const useGameSearch = () => {
         source: data.source
       }));
 
+
       return data.games;
     } catch (error: any) {
       if (error.name === 'AbortError') {
@@ -112,14 +114,18 @@ export const useGameSearch = () => {
     }
   }, [searchOptions]); // FIXED: Removed searchState.games.length dependency
 
-  // Quick search for autocomplete/suggestions
+  // Quick search for autocomplete/suggestions - uses same filtering as main search
   const quickSearch = useCallback(async (query: string) => {
     if (query.trim().length < 2) return [];
     
     try {
-      const searchResults = await gameDataService.searchGames(query.trim());
-      const filteredResults = filterProtectedContent(searchResults);
-      return filteredResults; // Already limited to 5 results for quick search
+      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+        maxResults: 8, // Match maxSuggestions in HeaderSearchBar
+        includeMetrics: false, // Skip expensive metrics calculation for dropdown
+        bypassCache: false, // Use cache for faster results
+        fastMode: false // Use full search with filtering for consistent results
+      });
+      return searchResult.results;
     } catch (error) {
       console.error('Quick search failed:', error);
       return [];

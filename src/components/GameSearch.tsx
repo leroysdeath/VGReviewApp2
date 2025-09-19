@@ -619,7 +619,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
             className="absolute z-50 mt-2 w-full bg-gray-800 border border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto"
             role="listbox"
           >
-            {suggestions.map((suggestion, index) => (
+            {suggestions.map((suggestion) => (
               <div
                 key={suggestion.id}
                 role="option"

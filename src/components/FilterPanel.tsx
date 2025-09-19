@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Filter, Check } from 'lucide-react';
 import { GameSearchFilters, GenreOption, PlatformOption, SORT_OPTIONS } from '../types/search';
 import ReactSlider from 'react-slider';
-import DatePicker from 'react-datepicker';
+// import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 interface FilterPanelProps {
@@ -66,7 +66,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
   // Handle sort option change
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onFiltersChange({ sortBy: e.target.value as any });
+    onFiltersChange({ sortBy: e.target.value as GameSearchFilters['sortBy'] });
   };
 
   // Format year for display

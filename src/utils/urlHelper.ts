@@ -17,10 +17,7 @@ export const getGameUrl = (game: {
   
   // Priority 3: Generate slug from name (temporary)
   if (game.name) {
-    const tempSlug = game.name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-');
+    const tempSlug = generateSlug(game.name);
     return `/game/${tempSlug}`;
   }
   
@@ -39,10 +36,16 @@ export const isNumericIdentifier = (identifier: string): boolean => {
 
 // Helper to generate slug from name
 export const generateSlug = (name: string): string => {
-  return name
+  // Normalize accented characters to their ASCII equivalents
+  const normalizedName = name
+    .normalize('NFD') // Decompose accented characters
+    .replace(/[\u0300-\u036f]/g, ''); // Remove diacritical marks
+    
+  return normalizedName
     .toLowerCase()
+    .trim() // Trim whitespace first
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
-    .trim();
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
 };

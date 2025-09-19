@@ -276,7 +276,7 @@ async function findSequelsAndSeries(baseQuery: string, primaryResults: IGDBGame[
     const endpoint = '/.netlify/functions/igdb-search'; // Use static endpoint
     
     // 1. Search using top patterns only (reduced API calls)
-    for (const pattern of allPatterns.slice(0, 5)) { // Reduced from 12 to 5
+    for (const pattern of allPatterns.slice(0, 3)) { // Reduced from 12 to 3 for better performance
       sequelSearches.push(
         fetch(endpoint, {
           method: 'POST',
@@ -539,8 +539,8 @@ class IGDBService {
     const flagshipPatterns = generateFlagshipSearchPatterns(franchise);
     const flagshipSearches: Promise<IGDBGame[]>[] = [];
     
-    // Search for each flagship pattern
-    for (const pattern of flagshipPatterns.slice(0, 8)) { // Limit patterns to avoid too many requests
+    // Search for each flagship pattern  
+    for (const pattern of flagshipPatterns.slice(0, 2)) { // Reduced from 8 to 2 for better performance
       flagshipSearches.push(
         this.performBasicSearch(pattern, 3)
           .catch(error => {
@@ -765,8 +765,8 @@ class IGDBService {
         const flagshipPatterns = generateFlagshipSearchPatterns(franchise);
         const flagshipSearches: Promise<IGDBGame[]>[] = [];
         
-        // Reduced API calls: Search for top 3 flagship patterns only
-        for (const pattern of flagshipPatterns.slice(0, 3)) {
+        // Reduced API calls: Search for top 2 flagship patterns only for better performance  
+        for (const pattern of flagshipPatterns.slice(0, 2)) {
           flagshipSearches.push(
             this.performBasicSearch(pattern, 5)
               .catch(error => {

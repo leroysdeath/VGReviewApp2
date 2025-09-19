@@ -168,7 +168,6 @@ class BrowserCacheManager {
         }
       }, this.CLEANUP_INTERVAL_MS);
       
-      console.log('✅ Cache cleanup interval started');
     } catch (error) {
       console.error('Failed to start cache cleanup interval:', error);
     }
@@ -178,7 +177,6 @@ class BrowserCacheManager {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
-      console.log('🛑 Cache cleanup interval stopped');
     }
   }
   
@@ -193,7 +191,6 @@ class BrowserCacheManager {
   public destroy() {
     if (this.isDestroyed) return;
     
-    console.log('🧹 Destroying cache manager...');
     this.isDestroyed = true;
     this.stopCleanupInterval();
     this.removeEventListeners();
