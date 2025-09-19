@@ -58,21 +58,21 @@ export const ProfileDetails: React.FC<ProfileDetailsProps> = ({
         </div>
         <button
           onClick={onFollowingClick}
-          className="group flex flex-col items-center justify-center border border-[#FF6B9D] hover:bg-[#FF6B9D]/10 rounded-lg p-2 transition-all min-w-0"
+          className="group flex flex-col items-center justify-center border border-[#E8A5A5] hover:bg-[#E8A5A5]/10 rounded-lg p-2 transition-all min-w-0"
           disabled={!onFollowingClick}
         >
-          <div className="text-lg sm:text-xl font-bold text-white group-hover:text-[#FF6B9D] transition-colors">{stats.following}</div>
-          <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide group-hover:text-[#FF6B9D] transition-colors text-center">
+          <div className="text-lg sm:text-xl font-bold text-white group-hover:text-[#E8A5A5] transition-colors">{stats.following}</div>
+          <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide group-hover:text-[#E8A5A5] transition-colors text-center">
             FOLLOWING
           </div>
         </button>
         <button
           onClick={onFollowersClick}
-          className="group flex flex-col items-center justify-center border border-[#E8A5A5] hover:bg-[#E8A5A5]/10 rounded-lg p-2 transition-all min-w-0"
+          className="group flex flex-col items-center justify-center border border-[#FF6B9D] hover:bg-[#FF6B9D]/10 rounded-lg p-2 transition-all min-w-0"
           disabled={!onFollowersClick}
         >
-          <div className="text-lg sm:text-xl font-bold text-white group-hover:text-[#E8A5A5] transition-colors">{stats.followers.toLocaleString()}</div>
-          <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide group-hover:text-[#E8A5A5] transition-colors text-center">
+          <div className="text-lg sm:text-xl font-bold text-white group-hover:text-[#FF6B9D] transition-colors">{stats.followers.toLocaleString()}</div>
+          <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide group-hover:text-[#FF6B9D] transition-colors text-center">
             FOLLOWERS
           </div>
         </button>
