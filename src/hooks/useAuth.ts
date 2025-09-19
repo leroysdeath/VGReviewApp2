@@ -192,33 +192,6 @@ export const useAuth = (): UseAuthReturn => {
       
       if (result.success && result.userId) {
         setDbUserId(result.userId);
-        console.log('✅ Database user ID set:', result.userId);
-        
-        // Fetch the full user profile from database to get avatar_url and username
-        const { data: dbUser, error: dbError } = await supabase
-          .from('user')
-          .select('avatar_url, username, name')
-          .eq('id', result.userId)
-          .single();
-        
-        if (!dbError && dbUser) {
-          // Update the user state with the database avatar and username
-          setUser(prevUser => {
-            if (prevUser) {
-              return { 
-                ...prevUser, 
-                avatar: dbUser.avatar_url || prevUser.avatar,
-                name: dbUser.username || dbUser.name || prevUser.name // Prefer username over name
-              };
-            }
-            return prevUser;
-          });
-          console.log('✅ User profile updated from database:', {
-            avatar: dbUser.avatar_url,
-            username: dbUser.username,
-            name: dbUser.name
-          });
-        }
       } else {
         console.error('Failed to get/create database user:', result.error);
         setDbUserId(null);

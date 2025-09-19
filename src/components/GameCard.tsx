@@ -14,10 +14,10 @@ interface GameCardProps {
     release_date?: string;
     genre?: string;
     genres?: Array<{ name: string }>;
-    [key: string]: any;
+    [key: string]: unknown;
   };
-  onClick?: (game: any) => void;
-  onGameSelect?: (game: any) => void;
+  onClick?: (game: GameCardProps['game']) => void;
+  onGameSelect?: (game: GameCardProps['game']) => void;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
   showDetails?: boolean;
@@ -36,7 +36,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({
   ...props
 }) => {
   // Simplified wrapper - delegate to ResponsiveGameCard
-  const handleClick = (clickedGame: any) => {
+  const handleClick = (clickedGame: GameCardProps['game']) => {
     if (onClick) {
       onClick(clickedGame);
     } else if (onGameSelect) {
@@ -62,7 +62,11 @@ export const GameCard = React.memo(GameCardComponent);
 // Enhanced version with additional caching features
 export const CachedGameCard: React.FC<GameCardProps & {
   showCacheStatus?: boolean;
-  gameData?: any; // Pre-loaded game data from cache
+  gameData?: {
+    cached?: boolean;
+    isStale?: boolean;
+    timestamp?: number;
+  }; // Pre-loaded game data from cache
 }> = ({
   showCacheStatus = false,
   gameData,

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dev Server Test</title>
+</head>
+<body>
+    <h1>Testing Dev Server</h1>
+    <p>If you see this, the dev server is working!</p>
+    
+    <h2>ServiceWorker Status:</h2>
+    <div id="sw-status"></div>
+    
+    <button onclick="clearServiceWorkers()">Clear All Service Workers</button>
+    
+    <script>
+        // Check ServiceWorker status
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                const status = document.getElementById('sw-status');
+                if (registrations.length > 0) {
+                    status.innerHTML = `<p style="color: red;">Found ${registrations.length} ServiceWorker(s) registered!</p>`;
+                    registrations.forEach((reg, index) => {
+                        status.innerHTML += `<p>SW ${index + 1}: ${reg.scope}</p>`;
+                    });
+                } else {
+                    status.innerHTML = '<p style="color: green;">No ServiceWorkers registered</p>';
+                }
+            });
+        }
+        
+        function clearServiceWorkers() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    registrations.forEach(registration => {
+                        registration.unregister();
+                    });
+                    alert('All ServiceWorkers unregistered! Please refresh the page.');
+                    location.reload();
+                });
+            }
+        }
+    </script>
+</body>
+</html>

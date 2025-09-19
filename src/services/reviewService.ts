@@ -1504,50 +1504,90 @@ export const deleteReview = async (
  */
 export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>> => {
   try {
-    console.log('🔍 Fetching recent reviews:', { limit });
 
-    const { data, error, count } = await supabase
-      .from('rating')
-      .select(`
-        *,
-        user!fk_rating_user(*),
-        game(id, name, cover_url, game_id, igdb_id)
-      `, { count: 'exact' })
-      .not('review', 'is', null)  // Only fetch reviews that have written content
-      .order('post_date_time', { ascending: false })
-      .limit(limit);
+    // Use abortController for timeout
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 15000); // 15 second timeout
 
-    if (error) {
-      console.error('❌ Error fetching reviews:', error);
-      throw error;
+    try {
+      // Simplified query without deep joins to prevent timeout
+      const { data, error, count } = await supabase
+        .from('rating')
+        .select(`
+          id,
+          user_id,
+          game_id,
+          igdb_id,
+          rating,
+          review,
+          post_date_time,
+          playtime_hours,
+          is_recommended
+        `, { count: 'exact' })
+        .not('review', 'is', null)
+        .order('post_date_time', { ascending: false })
+        .limit(limit)
+        .abortSignal(abortController.signal);
+
+      clearTimeout(timeoutId);
+
+      if (error) {
+        console.error('❌ Error fetching reviews:', error);
+        throw error;
+      }
+
+      // Fetch user and game data separately to avoid complex joins
+      const userIds = [...new Set(data?.map(item => item.user_id) || [])];
+      const gameIds = [...new Set(data?.map(item => item.game_id) || [])];
+
+      const [usersData, gamesData] = await Promise.all([
+        userIds.length > 0 ? supabase
+          .from('user')
+          .select('id, username, name, avatar_url')
+          .in('id', userIds) : Promise.resolve({ data: [] }),
+        gameIds.length > 0 ? supabase
+          .from('game')
+          .select('id, name, cover_url, game_id, igdb_id')
+          .in('id', gameIds) : Promise.resolve({ data: [] })
+      ]);
+
+      // Create lookup maps for performance
+      const usersMap = new Map(usersData.data?.map(user => [user.id, user]) || []);
+      const gamesMap = new Map(gamesData.data?.map(game => [game.id, game]) || []);
+
+      const reviews: Review[] = data?.map(item => ({
+        id: item.id,
+        userId: item.user_id,
+        gameId: item.game_id,
+        igdb_id: item.igdb_id,
+        rating: item.rating,
+        review: item.review,
+        postDateTime: item.post_date_time,
+        playtimeHours: item.playtime_hours,
+        isRecommended: item.is_recommended,
+        likeCount: 0,
+        commentCount: 0,
+        user: usersMap.get(item.user_id) ? {
+          id: usersMap.get(item.user_id)!.id,
+          name: usersMap.get(item.user_id)!.username || usersMap.get(item.user_id)!.name,
+          avatar_url: usersMap.get(item.user_id)!.avatar_url
+        } : undefined,
+        game: gamesMap.get(item.game_id) ? {
+          id: gamesMap.get(item.game_id)!.id,
+          name: gamesMap.get(item.game_id)!.name,
+          cover_url: gamesMap.get(item.game_id)!.cover_url
+        } : undefined
+      })) || [];
+
+      return { success: true, data: reviews, count };
+    } catch (abortError) {
+      clearTimeout(timeoutId);
+      if (abortError.name === 'AbortError') {
+        console.error('❌ Review query timed out after 15 seconds');
+        throw new Error('Review query timed out');
+      }
+      throw abortError;
     }
-
-    const reviews: Review[] = data?.map(item => ({
-      id: item.id,
-      userId: item.user_id,
-      gameId: item.game_id,
-      igdb_id: item.igdb_id, // Include igdb_id from rating table
-      rating: item.rating,
-      review: item.review,
-      postDateTime: item.post_date_time,
-      playtimeHours: item.playtime_hours,
-      isRecommended: item.is_recommended,
-      likeCount: 0, // Will be populated by separate query if needed
-      commentCount: 0, // Will be populated by separate query if needed
-      user: item.user ? {
-        id: item.user.id,
-        name: item.user.username || item.user.name,
-        avatar_url: item.user.avatar_url
-      } : undefined,
-      game: item.game ? {
-        id: item.game.id,
-        name: item.game.name,
-        cover_url: item.game.cover_url
-      } : undefined
-    })) || [];
-
-    console.log('✅ Successfully fetched reviews:', { count: reviews.length });
-    return { success: true, data: reviews, count };
   } catch (error) {
     console.error('💥 Error fetching reviews:', error);
     return {

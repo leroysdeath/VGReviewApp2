@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        .login-container {
+            background: #2a2a2a;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 100%;
+        }
+        .login-container h1 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .login-container p {
+            color: #ccc;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 0.75rem;
+            background: #3a3a3a;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0066cc;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .login-container button:hover {
+            background: #0052a3;
+        }
+        .success {
+            background: #2a4a2a;
+            border: 1px solid #4a8a4a;
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .valid-keys {
+            background: #2a2a4a;
+            border: 1px solid #4a4a8a;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        .valid-keys h3 {
+            margin-top: 0;
+        }
+        .valid-keys code {
+            background: #3a3a3a;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div id="loginForm">
+            <h1>Search Diagnostic Tool</h1>
+            <p>Admin access required</p>
+            
+            <input 
+                type="password" 
+                id="adminKey" 
+                placeholder="Enter admin key"
+                onkeydown="if(event.key==='Enter') login()"
+            >
+            
+            <button onclick="login()">Login</button>
+            
+            <div class="valid-keys">
+                <h3>🔑 Valid Admin Keys</h3>
+                <p>Try any of these keys:</p>
+                <ul style="text-align: left;">
+                    <li><code>debug</code> (shortest)</li>
+                    <li><code>tommy-admin</code></li>
+                    <li><code>vg-admin</code></li>
+                    <li><code>diagnostic-tool</code></li>
+                    <li><code>search-diagnostic</code></li>
+                    <li><code>vg-search-admin-2024</code></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div id="successMessage" style="display: none;">
+            <div class="success">
+                <h2>✅ Login Successful!</h2>
+                <p>Admin key accepted. In the real app, you would now see the diagnostic tool interface with:</p>
+                <ul style="text-align: left; margin: 1rem 0;">
+                    <li>🔍 Single Search Analysis</li>
+                    <li>🧪 Bulk Testing</li>
+                    <li>📊 Pattern Analysis</li>
+                    <li>🔐 Admin Key Manager</li>
+                    <li>📈 IGDB Usage Statistics</li>
+                </ul>
+                <button onclick="reset()" style="margin-top: 1rem;">Reset Demo</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const validKeys = [
+            'vg-search-admin-2024',
+            'debug',
+            'diagnostic-tool',
+            'tommy-admin',
+            'search-diagnostic',
+            'vg-admin'
+        ];
+
+        function login() {
+            const key = document.getElementById('adminKey').value;
+            
+            if (validKeys.includes(key)) {
+                // Simulate successful login
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+                
+                // In real app, this would set localStorage and redirect
+                localStorage.setItem('searchDiagnosticAuth', 'true');
+                localStorage.setItem('searchDiagnosticKey', key);
+                
+                console.log('✅ Login successful with key:', key);
+            } else {
+                alert('Invalid admin key. Please try one of the valid keys shown below.');
+            }
+        }
+
+        function reset() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('adminKey').value = '';
+            localStorage.removeItem('searchDiagnosticAuth');
+            localStorage.removeItem('searchDiagnosticKey');
+        }
+
+        // Check for existing auth on load
+        window.onload = function() {
+            if (localStorage.getItem('searchDiagnosticAuth') === 'true') {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -21,7 +21,7 @@ export const AnimatedStatsSection: React.FC<AnimatedStatsProps> = ({ className =
   const [animatedValues, setAnimatedValues] = useState<Record<string, number>>({});
   const sectionRef = useRef<HTMLDivElement>(null);
 
-  const statsData: StatData[] = [
+  const statsData = React.useMemo<StatData[]>(() => [
     {
       id: 'games',
       label: 'Games Reviewed',
@@ -62,7 +62,7 @@ export const AnimatedStatsSection: React.FC<AnimatedStatsProps> = ({ className =
       icon: ThumbsUp,
       delay: 1.5
     }
-  ];
+  ], []);
 
   // Intersection Observer for scroll-triggered animations
   useEffect(() => {
@@ -70,18 +70,7 @@ export const AnimatedStatsSection: React.FC<AnimatedStatsProps> = ({ className =
     const startCounterAnimations = () => {
       statsData.forEach((stat) => {
         setTimeout(() => {
-          const targetValue = stat.value;
-          const increment = targetValue / 50;
-          let currentValue = 0;
-          
-          const interval = setInterval(() => {
-            currentValue += increment;
-            if (currentValue >= targetValue) {
-              currentValue = targetValue;
-              clearInterval(interval);
-            }
-            setCounters(prev => ({ ...prev, [stat.id]: Math.floor(currentValue) }));
-          }, 30);
+          animateCounter(stat.id, stat.value);
         }, stat.delay * 1000);
       });
     };
@@ -101,18 +90,9 @@ export const AnimatedStatsSection: React.FC<AnimatedStatsProps> = ({ className =
     }
 
     return () => observer.disconnect();
-  }, [isVisible, statsData]);
+  }, [isVisible, statsData, animateCounter]);
 
-  // Counter animation function
-  const startCounterAnimations = () => {
-    statsData.forEach((stat) => {
-      setTimeout(() => {
-        animateCounter(stat.id, stat.value);
-      }, stat.delay * 1000);
-    });
-  };
-
-  const animateCounter = (id: string, targetValue: number) => {
+  const animateCounter = React.useCallback((id: string, targetValue: number) => {
     const duration = 2000; // 2 seconds
     const steps = 60;
     const increment = targetValue / steps;
@@ -136,7 +116,7 @@ export const AnimatedStatsSection: React.FC<AnimatedStatsProps> = ({ className =
         clearInterval(timer);
       }
     }, duration / steps);
-  };
+  }, []);
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
