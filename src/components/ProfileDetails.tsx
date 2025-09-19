@@ -27,19 +27,30 @@ export const ProfileDetails: React.FC<ProfileDetailsProps> = ({
       <div className="grid grid-cols-5 gap-2 sm:gap-4 md:gap-6 w-full sm:w-auto">
         <button
           onClick={onGamesClick}
-          className="flex flex-col items-center justify-center hover:bg-gray-700 rounded-lg p-2 transition-colors min-w-0"
+          className="group relative flex flex-col items-center justify-center rounded-lg p-2 transition-all min-w-0 overflow-hidden"
           disabled={!onGamesClick}
         >
-          <div className="text-lg sm:text-xl font-bold text-white">{stats.films.toLocaleString()}</div>
-          <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors text-center">GAMES</div>
+          {/* Split border for Games */}
+          <div className="absolute inset-0 rounded-lg" style={{
+            background: 'linear-gradient(90deg, #3b82f6 50%, #10b981 50%)',
+            padding: '1px'
+          }}>
+            <div className="w-full h-full bg-gray-900 rounded-lg"></div>
+          </div>
+          <div className="absolute inset-0 flex opacity-0 group-hover:opacity-10 transition-opacity rounded-lg">
+            <div className="w-1/2 bg-blue-600"></div>
+            <div className="w-1/2 bg-green-600"></div>
+          </div>
+          <div className="relative text-lg sm:text-xl font-bold text-white">{stats.films.toLocaleString()}</div>
+          <div className="relative text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide transition-colors text-center group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-green-400 group-hover:bg-clip-text group-hover:text-transparent">GAMES</div>
         </button>
         <button
           onClick={onReviewsClick}
-          className="flex flex-col items-center justify-center hover:bg-gray-700 rounded-lg p-2 transition-colors min-w-0"
+          className="group flex flex-col items-center justify-center border border-purple-500 hover:bg-purple-600/10 rounded-lg p-2 transition-all min-w-0"
           disabled={!onReviewsClick}
         >
           <div className="text-lg sm:text-xl font-bold text-white">{stats.thisYear}</div>
-          <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors text-center">REVIEWS</div>
+          <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide group-hover:text-purple-400 transition-colors text-center">REVIEWS</div>
         </button>
         <div className="flex flex-col items-center justify-center p-2 min-w-0">
           <div className="text-lg sm:text-xl font-bold text-white">{stats.lists}</div>
@@ -47,21 +58,21 @@ export const ProfileDetails: React.FC<ProfileDetailsProps> = ({
         </div>
         <button
           onClick={onFollowingClick}
-          className="flex flex-col items-center justify-center hover:bg-gray-700 rounded-lg p-2 transition-colors min-w-0"
+          className="group flex flex-col items-center justify-center border border-[#FF6B9D] hover:bg-[#FF6B9D]/10 rounded-lg p-2 transition-all min-w-0"
           disabled={!onFollowingClick}
         >
           <div className="text-lg sm:text-xl font-bold text-white">{stats.following}</div>
-          <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors text-center">
+          <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide group-hover:text-[#FF6B9D] transition-colors text-center">
             FOLLOWING
           </div>
         </button>
         <button
           onClick={onFollowersClick}
-          className="flex flex-col items-center justify-center hover:bg-gray-700 rounded-lg p-2 transition-colors min-w-0"
+          className="group flex flex-col items-center justify-center border border-[#E8A5A5] hover:bg-[#E8A5A5]/10 rounded-lg p-2 transition-all min-w-0"
           disabled={!onFollowersClick}
         >
           <div className="text-lg sm:text-xl font-bold text-white">{stats.followers.toLocaleString()}</div>
-          <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide hover:text-purple-400 transition-colors text-center">
+          <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide group-hover:text-[#E8A5A5] transition-colors text-center">
             FOLLOWERS
           </div>
         </button>

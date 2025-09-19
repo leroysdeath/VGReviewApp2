@@ -500,86 +500,34 @@ export const ResponsiveNavbar: React.FC = () => {
                 {/* User Info Section */}
                 {isAuthenticated ? (
                   <div className="border-b border-gray-700 pb-4">
-                    <Link
-                      to={dbUserId ? `/user/${dbUserId}` : "#"}
-                      className="flex items-center space-x-3 mb-3 hover:bg-gray-700 rounded-lg p-2 transition-colors"
-                      onClick={(e) => {
-                        if (!dbUserId) {
-                          e.preventDefault();
-                          if (!dbUserIdLoading) {
-                            console.error('Database user ID not available');
-                          }
-                        } else {
-                          setIsMenuOpen(false);
-                        }
-                      }}
-                    >
-                      {user?.avatar ? (
-                        <img
-                          src={user.avatar}
-                          alt={user.name}
-                          className="h-10 w-10 rounded-full"
-                        />
-                      ) : (
-                        <div className="h-10 w-10 bg-purple-600 rounded-full flex items-center justify-center">
-                          <User className="h-6 w-6 text-white" />
+                    {/* Enhanced Search - moved to authenticated section */}
+                    <div ref={isAuthenticated ? searchRef : undefined} className="relative mb-3">
+                      <form onSubmit={handleSearch}>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <input
+                            ref={isAuthenticated ? inputRef : undefined}
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => {
+                              setSearchQuery(e.target.value);
+                              setIsSearchOpen(true);
+                            }}
+                            onFocus={() => {
+                              setIsSearchOpen(true);
+                              if (searchQuery.length >= 2) {
+                                setShowSuggestions(true);
+                              }
+                            }}
+                            placeholder={getPlaceholder()}
+                            className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+                          />
                         </div>
-                      )}
-                      <div className="flex items-center">
-                        <p className="text-white font-medium">{user?.name}</p>
-                        {dbUserIdLoading && (
-                          <Loader2 className="h-3 w-3 animate-spin ml-2 text-gray-400" />
-                        )}
-                      </div>
-                    </Link>
-                    <Link
-                      to="/review"
-                      className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors w-full"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <ScrollText className="h-5 w-5" />
-                      <span>Write Review</span>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="border-b border-gray-700 pb-4">
-                    <button
-                      onClick={handleAuthClick}
-                      className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium"
-                    >
-                      Sign In / Sign Up
-                    </button>
-                  </div>
-                )}
+                      </form>
 
-                {/* Enhanced Search */}
-                <div ref={searchRef} className="relative">
-                  <form onSubmit={handleSearch}>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => {
-                          setSearchQuery(e.target.value);
-                          setIsSearchOpen(true);
-                        }}
-                        onFocus={() => {
-                          setIsSearchOpen(true);
-                          if (searchQuery.length >= 2) {
-                            setShowSuggestions(true);
-                          }
-                        }}
-                        placeholder={getPlaceholder()}
-                        className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
-                      />
-                    </div>
-                  </form>
-
-                  {/* Mobile Search Dropdown */}
-                  {isSearchOpen && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-50 max-h-80 overflow-hidden">
+                      {/* Mobile Search Dropdown */}
+                      {isSearchOpen && isAuthenticated && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-50 max-h-80 overflow-hidden">
                       {/* Mobile Tabs */}
                       <div className="flex border-b border-gray-700 bg-gray-900/50">
                         <button
@@ -716,10 +664,233 @@ export const ResponsiveNavbar: React.FC = () => {
                             </button>
                           </div>
                         )}
+                        </div>
                       </div>
+                    )}
+                  </div>
+
+                  {/* User profile link and Write Review button */}
+                  <Link
+                    to={dbUserId ? `/user/${dbUserId}` : "#"}
+                    className="flex items-center space-x-3 mb-3 hover:bg-gray-700 rounded-lg p-2 transition-colors"
+                    onClick={(e) => {
+                      if (!dbUserId) {
+                        e.preventDefault();
+                        if (!dbUserIdLoading) {
+                          console.error('Database user ID not available');
+                        }
+                      } else {
+                        setIsMenuOpen(false);
+                      }
+                    }}
+                  >
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="h-10 w-10 rounded-full"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 bg-purple-600 rounded-full flex items-center justify-center">
+                        <User className="h-6 w-6 text-white" />
+                      </div>
+                    )}
+                    <div className="flex items-center">
+                      <p className="text-white font-medium">{user?.name}</p>
+                      {dbUserIdLoading && (
+                        <Loader2 className="h-3 w-3 animate-spin ml-2 text-gray-400" />
+                      )}
                     </div>
-                  )}
+                  </Link>
+                  <Link
+                    to="/review"
+                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors w-full"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <ScrollText className="h-5 w-5" />
+                    <span>Write Review</span>
+                  </Link>
                 </div>
+              ) : (
+                <div className="border-b border-gray-700 pb-4">
+                  {/* Enhanced Search - moved to non-authenticated section */}
+                  <div ref={!isAuthenticated ? searchRef : undefined} className="relative mb-3">
+                    <form onSubmit={handleSearch}>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          ref={!isAuthenticated ? inputRef : undefined}
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setIsSearchOpen(true);
+                          }}
+                          onFocus={() => {
+                            setIsSearchOpen(true);
+                            if (searchQuery.length >= 2) {
+                              setShowSuggestions(true);
+                            }
+                          }}
+                          placeholder={getPlaceholder()}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                    </form>
+
+                    {/* Mobile Search Dropdown for non-authenticated */}
+                    {isSearchOpen && !isAuthenticated && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-50 max-h-80 overflow-hidden">
+                        {/* Mobile Tabs */}
+                        <div className="flex border-b border-gray-700 bg-gray-900/50">
+                          <button
+                            onClick={() => handleTabChange('games')}
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                              activeTab === 'games'
+                                ? 'text-purple-400 bg-gray-800 border-b-2 border-purple-400'
+                                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'
+                            }`}
+                          >
+                            <Gamepad2 className="h-4 w-4" />
+                            Games
+                          </button>
+                          <button
+                            onClick={() => handleTabChange('users')}
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                              activeTab === 'users'
+                                ? 'text-purple-400 bg-gray-800 border-b-2 border-purple-400'
+                                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'
+                            }`}
+                          >
+                            <UserIcon className="h-4 w-4" />
+                            Users
+                          </button>
+                        </div>
+
+                        <div className="max-h-64 overflow-y-auto">
+                          {/* Game Results */}
+                          {activeTab === 'games' && showSuggestions && suggestions.length > 0 && (
+                            <div className="space-y-1 p-2">
+                              {suggestions.map((game) => (
+                                <button
+                                  key={game.id}
+                                  onClick={() => handleSuggestionClick(game)}
+                                  className="flex items-center w-full text-left p-2 hover:bg-gray-700 rounded transition-colors"
+                                >
+                                  <div className="w-8 h-10 bg-gray-700 rounded mr-3 flex-shrink-0 overflow-hidden">
+                                    {game.cover_url ? (
+                                      <img
+                                        src={game.cover_url}
+                                        alt={game.name}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center">
+                                        <Gamepad2 className="h-4 w-4 text-white" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-white font-medium truncate">
+                                      {game.name}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                                      {game.release_date && (
+                                        <span>{formatReleaseYear(game.release_date)}</span>
+                                      )}
+                                      {game.platforms && game.platforms.length > 0 && (
+                                        <>
+                                          {game.release_date && <span>•</span>}
+                                          <span className="truncate">
+                                            {(() => {
+                                              const mappedPlatforms = mapPlatformNames(game.platforms);
+                                              return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
+                                            })()}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* User Results */}
+                          {activeTab === 'users' && showSuggestions && userSuggestions.length > 0 && (
+                            <div className="space-y-1 p-2">
+                              {userSuggestions.map((user) => (
+                                <button
+                                  key={user.id}
+                                  onClick={() => handleUserClick(user)}
+                                  className="flex items-center w-full text-left p-2 hover:bg-gray-700 rounded transition-colors"
+                                >
+                                  <div className="w-10 h-10 bg-gray-700 rounded-full mr-3 flex-shrink-0 overflow-hidden">
+                                    {user.avatar_url ? (
+                                      <img
+                                        src={user.avatar_url}
+                                        alt={user.username || user.name}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center">
+                                        <UserIcon className="h-5 w-5 text-white" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-white font-medium truncate">
+                                      {user.username || user.name}
+                                    </div>
+                                    {user.bio && (
+                                      <div className="text-xs text-gray-400 truncate">
+                                        {user.bio}
+                                      </div>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Loading State */}
+                          {isLoadingSuggestions && searchQuery.length >= 2 && (
+                            <div className="p-4 text-center">
+                              <Loader2 className="h-5 w-5 text-purple-500 animate-spin mx-auto mb-2" />
+                              <div className="text-sm text-gray-400">
+                                Searching {activeTab === 'games' ? 'games' : 'users'}...
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Quick Action */}
+                          {searchQuery.trim() && (
+                            <div className="border-t border-gray-700 p-2">
+                              <button
+                                onClick={handleSearch}
+                                className="w-full flex items-center justify-center gap-2 p-2 text-sm text-purple-400 hover:text-purple-300 hover:bg-gray-700 rounded transition-colors"
+                              >
+                                <Search className="h-4 w-4" />
+                                Search all {activeTab} for "{searchQuery}"
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sign In / Sign Up button */}
+                  <button
+                    onClick={handleAuthClick}
+                    className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                  >
+                    Sign In / Sign Up
+                  </button>
+                </div>
+              )}
 
                 {/* Navigation Links */}
                 <div className="space-y-2">

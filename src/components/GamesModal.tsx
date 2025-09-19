@@ -193,13 +193,15 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         .map(item => ({
           id: item.game.id.toString(),
           igdb_id: item.game.igdb_id,
+          slug: item.game.slug,
           title: item.game.name || 'Unknown Game',
           coverImage: item.game.cover_url || '/default-cover.png',
           genre: item.game.genre || '',
           releaseDate: item.game.release_date || '',
           completed: item.completed,
           started_date: item.started_date,
-          completed_date: item.completed_date
+          completed_date: item.completed_date,
+          gameUrl: getGameUrl(item.game)
         }));
 
       setFinishedGames(gamesData);
