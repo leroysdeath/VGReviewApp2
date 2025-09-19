@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, UserPlus, UserCheck, Heart, UsersRound } from 'lucide-react';
+import { X, Users, UserPlus, UserCheck, UsersRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
@@ -207,13 +207,13 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
               {activeTab === 'following' ? (
                 <>
                   <div className="bg-[#E8A5A5] text-white w-5 h-5 rounded-full flex items-center justify-center">
-                    <Heart className="h-3 w-3 fill-current" />
+                    <UserCheck className="h-3 w-3" />
                   </div>
                   <span className="text-[#E8A5A5]">Following</span>
                 </>
               ) : (
                 <>
-                  <Heart className="h-5 w-5 text-gray-400" />
+                  <UserCheck className="h-5 w-5 text-gray-400" />
                   <span className="text-gray-400 hover:text-white transition-colors">Following</span>
                 </>
               )}
@@ -308,7 +308,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
                       {followLoading ? (
                         <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : followingUsers.includes(user.id) ? (
-                        <UserCheck className="h-4 w-4" />
+                        <UserCheck className="h-5 w-5" />
                       ) : (
                         <>
                           <UserPlus className="h-3 w-3" />
