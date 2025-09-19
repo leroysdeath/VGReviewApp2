@@ -346,8 +346,8 @@ export const ResponsiveNavbar: React.FC = () => {
       typeof_igdb_id: typeof game.igdb_id
     });
     
-    // Use slug if available, otherwise use igdb_id (not database id to avoid collision)
-    const identifier = game.slug || game.igdb_id;
+    // Use igdb_id first for consistency with SearchResultsPage, fallback to slug
+    const identifier = game.igdb_id || game.slug;
     console.error('🚀 CRITICAL - Will navigate to:', `/game/${identifier}`);
     
     setSearchQuery('');
