@@ -538,7 +538,7 @@ export const UserSearchPage: React.FC = () => {
                             <span>Loading</span>
                           </>
                         ) : followingUsers.includes(user.id) ? (
-                          <UserCheck className="h-3 w-3" />
+                          <UserCheck className="h-5 w-5" />
                         ) : (
                           <>
                             <UserPlus className="h-3 w-3" />
@@ -643,7 +643,7 @@ export const UserSearchPage: React.FC = () => {
                         <span>Loading</span>
                       </>
                     ) : followingUsers.includes(user.id) ? (
-                      <UserCheck className="h-3 w-3" />
+                      <UserCheck className="h-5 w-5" />
                     ) : (
                       <>
                         <UserPlus className="h-3 w-3" />
@@ -764,7 +764,7 @@ export const UserSearchPage: React.FC = () => {
                                 Loading...
                               </>
                             ) : followingUsers.includes(user.id) ? (
-                              <UserCheck className="h-4 w-4" />
+                              <UserCheck className="h-5 w-5" />
                             ) : (
                               <>
                                 <UserPlus className="h-4 w-4" />
@@ -869,7 +869,7 @@ export const UserSearchPage: React.FC = () => {
                               Loading...
                             </>
                           ) : followingUsers.includes(user.id) ? (
-                            <UserCheck className="h-4 w-4" />
+                            <UserCheck className="h-5 w-5" />
                           ) : (
                             <>
                               <UserPlus className="h-4 w-4" />

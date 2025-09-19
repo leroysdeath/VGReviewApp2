@@ -18,6 +18,7 @@ interface FollowersFollowingModalProps {
   userId: string;
   userName: string;
   initialTab: 'followers' | 'following';
+  topPosition?: number | null;
 }
 
 export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = ({
@@ -25,7 +26,8 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   onClose,
   userId,
   userName,
-  initialTab
+  initialTab,
+  topPosition
 }) => {
   const [activeTab, setActiveTab] = useState<'followers' | 'following'>(initialTab);
   const [followers, setFollowers] = useState<User[]>([]);
@@ -179,9 +181,39 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   const currentUsers = activeTab === 'followers' ? followers : following;
   const isLoading = activeTab === 'followers' ? loadingFollowers : loadingFollowing;
 
+  // Determine modal positioning style
+  const modalStyle: React.CSSProperties = topPosition
+    ? {
+        position: 'absolute',
+        top: `${topPosition}px`,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        maxWidth: 'min(448px, calc(100vw - 2rem))',
+        width: '100%',
+        maxHeight: `calc(100vh - ${topPosition}px - 2rem)`,
+        zIndex: 50
+      }
+    : {};
+
+  const containerStyle: React.CSSProperties = topPosition
+    ? {
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 50,
+        overflow: 'auto'
+      }
+    : {};
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] flex flex-col">
+    <div
+      className={topPosition ? '' : 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'}
+      style={containerStyle}
+    >
+      <div
+        className={topPosition ? 'bg-gray-800 rounded-lg flex flex-col' : 'bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] flex flex-col'}
+        style={modalStyle}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}</h2>

@@ -27,6 +27,7 @@ interface GamesModalProps {
   userId: string;
   userName: string;
   initialTab: 'all' | 'started' | 'finished';
+  topPosition?: number | null;
 }
 
 export const GamesModal: React.FC<GamesModalProps> = ({
@@ -34,7 +35,8 @@ export const GamesModal: React.FC<GamesModalProps> = ({
   onClose,
   userId,
   userName,
-  initialTab
+  initialTab,
+  topPosition
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'started' | 'finished'>(initialTab);
   const [allGames, setAllGames] = useState<Game[]>([]);
@@ -258,9 +260,24 @@ export const GamesModal: React.FC<GamesModalProps> = ({
   const currentGames = getCurrentGames();
   const isLoading = getCurrentLoading();
 
+  // Calculate positioning style
+  const modalStyle: React.CSSProperties = topPosition
+    ? {
+        position: 'absolute',
+        top: `${topPosition}px`,
+        left: '50%',
+        transform: 'translateX(-50%)',
+      }
+    : {};
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 p-4 overflow-y-auto">
+      <div
+        className={`bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto ${
+          topPosition ? '' : 'relative top-1/2 -translate-y-1/2'
+        }`}
+        style={modalStyle}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}'s Games</h2>

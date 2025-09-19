@@ -21,13 +21,15 @@ interface ReviewsModalProps {
   onClose: () => void;
   userId: string;
   userName: string;
+  topPosition?: number | null;
 }
 
 export const ReviewsModal: React.FC<ReviewsModalProps> = ({
   isOpen,
   onClose,
   userId,
-  userName
+  userName,
+  topPosition
 }) => {
   const [activeTab, setActiveTab] = useState<'recent' | 'oldest' | 'highest' | 'lowest'>('recent');
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -124,9 +126,39 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Determine modal positioning style
+  const modalStyle: React.CSSProperties = topPosition
+    ? {
+        position: 'absolute',
+        top: `${topPosition}px`,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        maxWidth: 'min(896px, calc(100vw - 2rem))',
+        width: '100%',
+        maxHeight: `calc(100vh - ${topPosition}px - 2rem)`,
+        zIndex: 50
+      }
+    : {};
+
+  const containerStyle: React.CSSProperties = topPosition
+    ? {
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 50,
+        overflow: 'auto'
+      }
+    : {};
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl">
+    <div
+      className={topPosition ? '' : 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'}
+      style={containerStyle}
+    >
+      <div
+        className={topPosition ? 'bg-gray-800 rounded-lg flex flex-col' : 'bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl'}
+        style={modalStyle}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}'s Reviews</h2>
