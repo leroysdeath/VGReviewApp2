@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { X, Gamepad2, Play, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Gamepad2, Play, CheckCircle, PlayCircle, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useResponsive } from '../hooks/useResponsive';
@@ -27,6 +27,7 @@ interface GamesModalProps {
   userId: string;
   userName: string;
   initialTab: 'all' | 'started' | 'finished';
+  topPosition?: number | null;
 }
 
 export const GamesModal: React.FC<GamesModalProps> = ({
@@ -34,7 +35,8 @@ export const GamesModal: React.FC<GamesModalProps> = ({
   onClose,
   userId,
   userName,
-  initialTab
+  initialTab,
+  topPosition
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'started' | 'finished'>(initialTab);
   const [allGames, setAllGames] = useState<Game[]>([]);
@@ -45,6 +47,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
   const [loadingFinished, setLoadingFinished] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isMobile } = useResponsive();
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -193,13 +196,15 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         .map(item => ({
           id: item.game.id.toString(),
           igdb_id: item.game.igdb_id,
+          slug: item.game.slug,
           title: item.game.name || 'Unknown Game',
           coverImage: item.game.cover_url || '/default-cover.png',
           genre: item.game.genre || '',
           releaseDate: item.game.release_date || '',
           completed: item.completed,
           started_date: item.started_date,
-          completed_date: item.completed_date
+          completed_date: item.completed_date,
+          gameUrl: getGameUrl(item.game)
         }));
 
       setFinishedGames(gamesData);
@@ -224,6 +229,22 @@ export const GamesModal: React.FC<GamesModalProps> = ({
       }
     }
   }, [isOpen, activeTab, userId, loadAllGames, loadStartedGames, loadFinishedGames]);
+
+  // Add escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -256,9 +277,29 @@ export const GamesModal: React.FC<GamesModalProps> = ({
   const currentGames = getCurrentGames();
   const isLoading = getCurrentLoading();
 
+  // Calculate positioning style
+  const modalStyle: React.CSSProperties = topPosition
+    ? {
+        position: 'absolute',
+        top: `${topPosition}px`,
+        left: '50%',
+        transform: 'translateX(-50%)',
+      }
+    : {};
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 z-50 p-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        ref={modalRef}
+        className={`bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto ${
+          topPosition ? '' : 'relative top-1/2 -translate-y-1/2'
+        }`}
+        style={modalStyle}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}'s Games</h2>
@@ -274,41 +315,87 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         <div className="flex border-b border-gray-700">
           <button
             onClick={() => setActiveTab('all')}
-            className={`flex-1 py-3 px-4 text-center transition-colors ${
-              activeTab === 'all'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
+            className={`flex-1 py-3 px-4 text-center transition-colors relative`}
           >
             <div className="flex items-center justify-center gap-2">
-              <Gamepad2 className="h-4 w-4" />
-              All Games
+              {activeTab === 'all' ? (
+                <div className="relative w-4 h-4 overflow-hidden">
+                  <div className="absolute inset-0 flex">
+                    <div className="w-1/2 overflow-hidden">
+                      <Gamepad2 className="h-4 w-4 text-blue-400" />
+                    </div>
+                    <div className="w-1/2 overflow-hidden">
+                      <Gamepad2 className="h-4 w-4 text-green-400" style={{ marginLeft: '-8px' }} />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Gamepad2 className="h-4 w-4 text-gray-400" />
+              )}
+              <div>
+                {activeTab === 'all' ? (
+                  <>
+                    <span className="text-blue-400">All</span>
+                    <span className="text-green-400"> Games</span>
+                  </>
+                ) : (
+                  <span className="text-gray-400 hover:text-white transition-colors">All Games</span>
+                )}
+              </div>
             </div>
+            {activeTab === 'all' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 flex">
+                <div className="flex-1 bg-blue-500"></div>
+                <div className="flex-1 bg-green-500"></div>
+              </div>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('started')}
             className={`flex-1 py-3 px-4 text-center transition-colors ${
               activeTab === 'started'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'border-b-2 border-blue-500'
+                : 'border-b-2 border-transparent'
             }`}
           >
             <div className="flex items-center justify-center gap-2">
-              <Play className="h-4 w-4" />
-              Started
+              {activeTab === 'started' ? (
+                <>
+                  <div className="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
+                    <Play className="h-3 w-3 fill-white" style={{ marginLeft: '1px' }} />
+                  </div>
+                  <span className="text-blue-400">Started</span>
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="h-5 w-5 text-gray-400" />
+                  <span className="text-gray-400 hover:text-white transition-colors">Started</span>
+                </>
+              )}
             </div>
           </button>
           <button
             onClick={() => setActiveTab('finished')}
             className={`flex-1 py-3 px-4 text-center transition-colors ${
               activeTab === 'finished'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'border-b-2 border-green-500'
+                : 'border-b-2 border-transparent'
             }`}
           >
             <div className="flex items-center justify-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Finished
+              {activeTab === 'finished' ? (
+                <>
+                  <div className="bg-green-600 text-white w-5 h-5 rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-3 w-3" />
+                  </div>
+                  <span className="text-green-400">Finished</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-5 w-5 text-gray-400" />
+                  <span className="text-gray-400 hover:text-white transition-colors">Finished</span>
+                </>
+              )}
             </div>
           </button>
         </div>
@@ -334,7 +421,13 @@ export const GamesModal: React.FC<GamesModalProps> = ({
           {/* Loading State */}
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+              <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
+                activeTab === 'started'
+                  ? 'border-blue-500'
+                  : activeTab === 'finished'
+                  ? 'border-green-500'
+                  : 'border-purple-500'
+              }`}></div>
             </div>
           ) : currentGames.length === 0 ? (
             /* Empty State */

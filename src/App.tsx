@@ -22,6 +22,7 @@ import { DebugAuthPage } from './pages/DebugAuthPage';
 import { FAQ } from './components/FAQ';
 import { Navigate } from 'react-router-dom';
 import { PrivacyConsentBanner } from './components/privacy/PrivacyConsentBanner';
+import { ScrollToTop } from './components/ScrollToTop';
 
 
 // Lazy load legal pages for better performance
@@ -93,6 +94,7 @@ const AppContent: React.FC = () => {
   return (
     <>
       <NavigationDebugger />
+      <ScrollToTop />
       <div className="min-h-screen bg-gray-900 flex flex-col">
         <SEOHead />
         <ResponsiveNavbar />

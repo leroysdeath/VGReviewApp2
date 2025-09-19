@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, TrendingUp, TrendingDown, Clock, History } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
@@ -21,13 +21,15 @@ interface ReviewsModalProps {
   onClose: () => void;
   userId: string;
   userName: string;
+  topPosition?: number | null;
 }
 
 export const ReviewsModal: React.FC<ReviewsModalProps> = ({
   isOpen,
   onClose,
   userId,
-  userName
+  userName,
+  topPosition
 }) => {
   const [activeTab, setActiveTab] = useState<'recent' | 'oldest' | 'highest' | 'lowest'>('recent');
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -36,6 +38,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
   const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // Load reviews based on active tab - optimized with foreign key syntax
   const loadReviews = useCallback(async () => {
@@ -110,6 +113,22 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
     }
   }, [isOpen, activeTab, loadReviews]);
 
+  // Add escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
+
   const toggleReviewExpansion = (reviewId: string) => {
     setExpandedReviews(prev => {
       const newSet = new Set(prev);
@@ -124,9 +143,42 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Determine modal positioning style
+  const modalStyle: React.CSSProperties = topPosition
+    ? {
+        position: 'absolute',
+        top: `${topPosition}px`,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        maxWidth: 'min(896px, calc(100vw - 2rem))',
+        width: '100%',
+        maxHeight: `calc(100vh - ${topPosition}px - 2rem)`,
+        zIndex: 50
+      }
+    : {};
+
+  const containerStyle: React.CSSProperties = topPosition
+    ? {
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 50,
+        overflow: 'auto'
+      }
+    : {};
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl">
+    <div
+      className={topPosition ? '' : 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'}
+      style={containerStyle}
+      onClick={onClose}
+    >
+      <div
+        ref={modalRef}
+        className={topPosition ? 'bg-gray-800 rounded-lg flex flex-col' : 'bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl'}
+        style={modalStyle}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}'s Reviews</h2>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Users, UserPlus, UserCheck } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Users, UserPlus, UserCheck, UsersRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
@@ -18,6 +18,7 @@ interface FollowersFollowingModalProps {
   userId: string;
   userName: string;
   initialTab: 'followers' | 'following';
+  topPosition?: number | null;
 }
 
 export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = ({
@@ -25,7 +26,8 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   onClose,
   userId,
   userName,
-  initialTab
+  initialTab,
+  topPosition
 }) => {
   const [activeTab, setActiveTab] = useState<'followers' | 'following'>(initialTab);
   const [followers, setFollowers] = useState<User[]>([]);
@@ -36,6 +38,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   
   const { toggleFollow, loading: followLoading } = useFollow();
   const { isAuthenticated, dbUserId: currentDbUserId } = useAuth();
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // Update active tab when initialTab changes
   useEffect(() => {
@@ -159,6 +162,22 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
     }
   }, [isOpen, activeTab, userId, currentDbUserId]);
 
+  // Add escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
+
   // Handle follow/unfollow
   const handleToggleFollow = async (targetUserId: string) => {
     if (!isAuthenticated) return;
@@ -179,9 +198,42 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   const currentUsers = activeTab === 'followers' ? followers : following;
   const isLoading = activeTab === 'followers' ? loadingFollowers : loadingFollowing;
 
+  // Determine modal positioning style
+  const modalStyle: React.CSSProperties = topPosition
+    ? {
+        position: 'absolute',
+        top: `${topPosition}px`,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        maxWidth: 'min(448px, calc(100vw - 2rem))',
+        width: '100%',
+        maxHeight: `calc(100vh - ${topPosition}px - 2rem)`,
+        zIndex: 50
+      }
+    : {};
+
+  const containerStyle: React.CSSProperties = topPosition
+    ? {
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 50,
+        overflow: 'auto'
+      }
+    : {};
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] flex flex-col">
+    <div
+      className={topPosition ? '' : 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'}
+      style={containerStyle}
+      onClick={onClose}
+    >
+      <div
+        ref={modalRef}
+        className={topPosition ? 'bg-gray-800 rounded-lg flex flex-col' : 'bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] flex flex-col'}
+        style={modalStyle}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}</h2>
@@ -196,29 +248,51 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
         {/* Tabs */}
         <div className="flex border-b border-gray-700">
           <button
-            onClick={() => setActiveTab('followers')}
-            className={`flex-1 py-3 px-4 text-center transition-colors ${
-              activeTab === 'followers'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <Users className="h-4 w-4" />
-              Followers
-            </div>
-          </button>
-          <button
             onClick={() => setActiveTab('following')}
             className={`flex-1 py-3 px-4 text-center transition-colors ${
               activeTab === 'following'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'border-b-2 border-[#E8A5A5]'
+                : 'border-b-2 border-transparent'
             }`}
           >
             <div className="flex items-center justify-center gap-2">
-              <Users className="h-4 w-4" />
-              Following
+              {activeTab === 'following' ? (
+                <>
+                  <div className="bg-[#E8A5A5] text-white w-8 h-8 rounded-full flex items-center justify-center">
+                    <UserCheck className="h-5 w-5" />
+                  </div>
+                  <span className="text-[#E8A5A5]">Following</span>
+                </>
+              ) : (
+                <>
+                  <UserCheck className="h-5 w-5 text-gray-400" />
+                  <span className="text-gray-400 hover:text-white transition-colors">Following</span>
+                </>
+              )}
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('followers')}
+            className={`flex-1 py-3 px-4 text-center transition-colors ${
+              activeTab === 'followers'
+                ? 'border-b-2 border-[#FF6B9D]'
+                : 'border-b-2 border-transparent'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              {activeTab === 'followers' ? (
+                <>
+                  <div className="bg-[#FF6B9D] text-white w-8 h-8 rounded-full flex items-center justify-center">
+                    <UsersRound className="h-5 w-5" />
+                  </div>
+                  <span className="text-[#FF6B9D]">Followers</span>
+                </>
+              ) : (
+                <>
+                  <UsersRound className="h-5 w-5 text-gray-400" />
+                  <span className="text-gray-400 hover:text-white transition-colors">Followers</span>
+                </>
+              )}
             </div>
           </button>
         </div>
@@ -227,7 +301,11 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
         <div className="flex-1 overflow-y-auto p-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+              <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
+                activeTab === 'following'
+                  ? 'border-[#E8A5A5]'
+                  : 'border-[#FF6B9D]'
+              }`}></div>
             </div>
           ) : currentUsers.length === 0 ? (
             <div className="text-center py-8">
@@ -275,17 +353,14 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
                         followLoading
                           ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                           : followingUsers.includes(user.id)
-                          ? 'bg-green-600 text-white hover:bg-green-700'
-                          : 'bg-purple-600 text-white hover:bg-purple-700'
+                          ? 'bg-[#E8A5A5] text-white hover:bg-[#E8A5A5]/80'
+                          : 'bg-[#FF6B9D] text-white hover:bg-[#FF6B9D]/80'
                       }`}
                     >
                       {followLoading ? (
                         <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : followingUsers.includes(user.id) ? (
-                        <>
-                          <UserCheck className="h-3 w-3" />
-                          Following
-                        </>
+                        <UserCheck className="h-5 w-5" />
                       ) : (
                         <>
                           <UserPlus className="h-3 w-3" />
