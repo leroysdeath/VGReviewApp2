@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, TrendingUp, TrendingDown, Clock, History } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
@@ -38,6 +38,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
   const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // Load reviews based on active tab - optimized with foreign key syntax
   const loadReviews = useCallback(async () => {
@@ -112,6 +113,22 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
     }
   }, [isOpen, activeTab, loadReviews]);
 
+  // Add escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
+
   const toggleReviewExpansion = (reviewId: string) => {
     setExpandedReviews(prev => {
       const newSet = new Set(prev);
@@ -154,10 +171,13 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
     <div
       className={topPosition ? '' : 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'}
       style={containerStyle}
+      onClick={onClose}
     >
       <div
+        ref={modalRef}
         className={topPosition ? 'bg-gray-800 rounded-lg flex flex-col' : 'bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl'}
         style={modalStyle}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">

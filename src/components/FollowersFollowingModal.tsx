@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Users, UserPlus, UserCheck, UsersRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
@@ -38,6 +38,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   
   const { toggleFollow, loading: followLoading } = useFollow();
   const { isAuthenticated, dbUserId: currentDbUserId } = useAuth();
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // Update active tab when initialTab changes
   useEffect(() => {
@@ -161,6 +162,22 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
     }
   }, [isOpen, activeTab, userId, currentDbUserId]);
 
+  // Add escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
+
   // Handle follow/unfollow
   const handleToggleFollow = async (targetUserId: string) => {
     if (!isAuthenticated) return;
@@ -209,10 +226,13 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
     <div
       className={topPosition ? '' : 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'}
       style={containerStyle}
+      onClick={onClose}
     >
       <div
+        ref={modalRef}
         className={topPosition ? 'bg-gray-800 rounded-lg flex flex-col' : 'bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] flex flex-col'}
         style={modalStyle}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">

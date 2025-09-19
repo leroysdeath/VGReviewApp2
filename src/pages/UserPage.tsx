@@ -217,8 +217,8 @@ export const UserPage: React.FC = () => {
     if (profileDetailsRef.current) {
       const rect = profileDetailsRef.current.getBoundingClientRect();
       const bottomPosition = rect.bottom + window.scrollY;
-      // Add small gap (16px) below the ProfileDetails
-      setModalTopPosition(bottomPosition + 16);
+      // Add small gap (4px) below the ProfileDetails
+      setModalTopPosition(bottomPosition + 4);
     }
   };
 

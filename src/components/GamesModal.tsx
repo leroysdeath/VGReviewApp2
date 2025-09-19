@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Gamepad2, Play, CheckCircle, PlayCircle, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
@@ -47,6 +47,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
   const [loadingFinished, setLoadingFinished] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isMobile } = useResponsive();
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -229,6 +230,22 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     }
   }, [isOpen, activeTab, userId, loadAllGames, loadStartedGames, loadFinishedGames]);
 
+  // Add escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const getCurrentGames = () => {
@@ -271,12 +288,17 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     : {};
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 p-4 overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 z-50 p-4 overflow-y-auto"
+      onClick={onClose}
+    >
       <div
+        ref={modalRef}
         className={`bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto ${
           topPosition ? '' : 'relative top-1/2 -translate-y-1/2'
         }`}
         style={modalStyle}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
