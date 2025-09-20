@@ -547,42 +547,18 @@ class GameSearchService {
       orderDirection = 'desc'
     } = filters
 
-    // Dynamic limit adjustment for major franchises (Phase 1)
-    let dynamicLimit = 50; // Base limit increased from 30
-    
-    // Increase limit for major franchises that have 20+ games
-    if (query) {
-      const lowerQuery = query.toLowerCase().trim();
-      const majorFranchises = [
-        'mario', 'zelda', 'pokemon', 'final fantasy', 'call of duty', 
-        'grand theft auto', 'gta', 'street fighter', 'mortal kombat',
-        'mega man', 'metal gear', 'sonic', 'dragon quest', 'elder scrolls'
-      ];
-      
-      const isMajorFranchise = majorFranchises.some(franchise => 
-        lowerQuery.includes(franchise) || franchise.includes(lowerQuery)
-      );
-      
-      if (isMajorFranchise) {
-        dynamicLimit = 75; // Extra results for major franchises
-        console.log(`🎯 MAJOR FRANCHISE DETECTED: "${query}" - increasing limit to ${dynamicLimit}`);
-      }
-    }
-    
-    const { limit = dynamicLimit, offset = 0 } = pagination
+    const { limit = 200, offset = 0 } = pagination
 
     try {
-      // Build the base query 
-      let baseQuery = supabase
-        .from('game')
-        .select(`*`, { count: 'exact' })
+      let games: GameSearchResult[] = [];
+      let totalCount = 0;
 
-      // Apply search query filter using intelligent multi-strategy search with caching
+      // OPTIMIZED: Use search results directly, no secondary queries
       if (query && query.trim()) {
         console.log(`🔍 SEARCH INITIATED: "${query.trim()}"`);
 
         const startTime = Date.now();
-        let searchResults: any[] = [];
+        let searchResults: GameSearchResult[] = [];
         let cacheHit = false;
 
         // Try cache first
@@ -592,7 +568,7 @@ class GameSearchService {
           cacheHit = true;
           console.log(`📦 CACHE HIT: Using cached results for "${query.trim()}" (${cachedResults.length} results)`);
         } else {
-          // Use intelligent search that tries multiple strategies
+          // Use optimized search function
           searchResults = await executeIntelligentSearch(query.trim());
 
           // Cache successful results
@@ -611,9 +587,10 @@ class GameSearchService {
         ).catch(error => console.error('Analytics tracking failed:', error));
 
         if (searchResults && searchResults.length > 0) {
-          const matchingIds = searchResults.map(r => r.id);
-          baseQuery = baseQuery.in('id', matchingIds);
-          console.log(`✅ SEARCH RESULTS: Found ${searchResults.length} games ${cacheHit ? '(from cache)' : '(fresh)'}, querying database for full details`);
+          // DIRECT USE: Use the search results directly, no secondary query!
+          games = searchResults;
+          totalCount = searchResults.length;
+          console.log(`✅ OPTIMIZED SEARCH: Found ${searchResults.length} games ${cacheHit ? '(from cache)' : '(fresh)'} - using directly, no extra queries`);
         } else {
           console.log(`❌ NO SEARCH RESULTS: No games found for query "${query.trim()}"`);
 
@@ -622,181 +599,91 @@ class GameSearchService {
 
           return { games: [], totalCount: 0, hasMore: false };
         }
-      }
+      } else {
+        // Non-search queries (browse all, genre filter, etc.)
+        let baseQuery = supabase
+          .from('game')
+          .select(`*`, { count: 'exact' })
 
-      // Apply release date filters
-      if (releaseDateStart) {
-        baseQuery = baseQuery.gte('release_date', releaseDateStart.toISOString().split('T')[0])
-      }
-      if (releaseDateEnd) {
-        baseQuery = baseQuery.lte('release_date', releaseDateEnd.toISOString().split('T')[0])
-      }
+        // Apply release date filters
+        if (releaseDateStart) {
+          baseQuery = baseQuery.gte('release_date', releaseDateStart.toISOString().split('T')[0])
+        }
+        if (releaseDateEnd) {
+          baseQuery = baseQuery.lte('release_date', releaseDateEnd.toISOString().split('T')[0])
+        }
 
-      // Apply genre filters using secure function
-      if (genres && genres.length > 0) {
-        const genreMatchingIds = new Set<number>();
-        
-        for (const genre of genres) {
-          const { data: genreResults, error: genreError } = await supabase
-            .rpc('search_games_by_genre', {
-              genre_name: genre,
-              limit_count: 1000
-            });
-            
-          if (genreError) {
-            console.error('Genre search error:', genreError);
-            continue; // Skip this genre but continue with others
+        // Apply genre filters
+        if (genres && genres.length > 0) {
+          // For non-search queries, we still need genre filtering
+          const genreMatchingIds = new Set<number>();
+
+          for (const genre of genres) {
+            const { data: genreResults, error: genreError } = await supabase
+              .rpc('search_games_by_genre', {
+                genre_name: genre,
+                limit_count: 1000
+              });
+
+            if (genreError) {
+              console.error('Genre search error:', genreError);
+              continue;
+            }
+
+            if (genreResults) {
+              genreResults.forEach(result => genreMatchingIds.add(result.id));
+            }
           }
-          
-          if (genreResults) {
-            genreResults.forEach(result => genreMatchingIds.add(result.id));
+
+          if (genreMatchingIds.size > 0) {
+            baseQuery = baseQuery.in('id', Array.from(genreMatchingIds));
+          } else {
+            return { games: [], totalCount: 0, hasMore: false };
           }
         }
-        
-        if (genreMatchingIds.size > 0) {
-          baseQuery = baseQuery.in('id', Array.from(genreMatchingIds));
-        } else {
-          // No genre matches found
-          return { games: [], totalCount: 0, hasMore: false };
+
+        // Execute the base query for non-search browsing
+        const { data: queryResults, error, count } = await baseQuery
+          .range(offset, offset + limit - 1)
+
+        if (error) {
+          console.error('Error fetching games:', error)
+          return { games: [], totalCount: 0, hasMore: false }
         }
+
+        games = queryResults || [];
+        totalCount = count || 0;
       }
 
-      // Execute the base query
-      const { data: games, error, count } = await baseQuery
-        .range(offset, offset + limit - 1)
-
-      if (error) {
-        console.error('Error searching games:', error)
-        return { games: [], totalCount: 0, hasMore: false }
-      }
-
-      // If we need to filter by platforms or ratings, we need additional queries
+      // SIMPLIFIED: Minimal filtering for optimized results
       let filteredGames = games || []
 
-      // Filter by platforms if specified
-      if (platformIds && platformIds.length > 0 && filteredGames.length > 0) {
-        const gameIds = filteredGames.map(g => g.id)
-        
-        const { data: platformGames } = await supabase
-          .from('platform_games')
-          .select('game_id')
-          .in('game_id', gameIds)
-          .in('platform_id', platformIds)
-
-        const gamesWithPlatform = new Set(platformGames?.map(pg => pg.game_id) || [])
-        filteredGames = filteredGames.filter(game => gamesWithPlatform.has(game.id))
-      }
-
-      // Get rating stats for filtered games
-      if (filteredGames.length > 0) {
-        const gameIds = filteredGames.map(g => g.id)
-        
-        const { data: ratingsData } = await supabase
-          .from('rating')
-          .select('game_id, rating')
-          .in('game_id', gameIds)
-
-        // Calculate average ratings and counts
-        const ratingStats = new Map<number, { sum: number, count: number }>()
-        
-        ratingsData?.forEach(rating => {
-          if (!ratingStats.has(rating.game_id)) {
-            ratingStats.set(rating.game_id, { sum: 0, count: 0 })
-          }
-          const stats = ratingStats.get(rating.game_id)!
-          stats.sum += rating.rating
-          stats.count += 1
-        })
-
-        // Add rating stats to games
-        filteredGames = filteredGames.map(game => {
-          const stats = ratingStats.get(game.id)
-          return {
-            ...game,
-            avg_user_rating: stats ? stats.sum / stats.count : undefined,
-            user_rating_count: stats?.count || 0
-          }
-        })
-
-        // Apply rating filters
-        if (minRating !== undefined) {
-          filteredGames = filteredGames.filter(game => 
-            game.avg_user_rating !== undefined && game.avg_user_rating >= minRating
-          )
-        }
-        if (maxRating !== undefined) {
-          filteredGames = filteredGames.filter(game => 
-            game.avg_user_rating !== undefined && game.avg_user_rating <= maxRating
-          )
-        }
-        if (minRatingCount !== undefined) {
-          filteredGames = filteredGames.filter(game => 
-            game.user_rating_count >= minRatingCount
-          )
-        }
-      }
-
-      // Apply strict relevance filtering to prevent unrelated games
+      // For search queries, apply minimal filtering
       if (query && query.trim()) {
-        filteredGames = filterByRelevance(filteredGames, query.trim());
-      }
-      
-      // Apply fan game and e-reader content filtering ONLY for non-official games
-      // Skip filtering for games marked as official
-      const officialGames = filteredGames.filter(game => game.is_official === true);
-      const unofficialGames = filteredGames.filter(game => game.is_official !== true);
+        // The database already sorted by relevance, no need for filterByRelevance
 
-      // Only filter unofficial games
-      const filteredUnofficialGames = filterFanGamesAndEReaderContent(unofficialGames);
+        // Apply fan game filtering ONLY for non-official games
+        const officialGames = filteredGames.filter(game => game.is_official === true);
+        const unofficialGames = filteredGames.filter(game => game.is_official !== true);
 
-      // Combine official games (unfiltered) with filtered unofficial games
-      filteredGames = [...officialGames, ...filteredUnofficialGames];
-      console.log(`🎮 FAN GAME/E-READER FILTER: ${games?.length || 0} games → ${filteredGames.length} after filtering (${officialGames.length} official preserved)`);
+        // Only filter unofficial games
+        const filteredUnofficialGames = filterFanGamesAndEReaderContent(unofficialGames);
 
-      // Sister game boost is no longer needed since the optimized search handles franchise games
-      // Removed redundant sister game expansion logic
+        // Combine official games (unfiltered) with filtered unofficial games
+        filteredGames = [...officialGames, ...filteredUnofficialGames];
+        console.log(`✅ OPTIMIZED RESULTS: ${filteredGames.length} games (${officialGames.length} official preserved)`);
 
-      // Sort the results using Phase 3 intelligent prioritization system
-      if (orderBy === 'relevance') {
-        // Use Phase 3 intelligent sorting with comprehensive prioritization
-        console.log('🧠 PHASE 3: Using intelligent prioritization system');
-        filteredGames = sortGamesIntelligently(filteredGames, query?.trim());
+        // Search results are already sorted by relevance from the database
+        // No need for additional sorting unless user explicitly changes order
+        if (orderBy !== 'relevance') {
+          filteredGames = this.sortGames(filteredGames, orderBy, orderDirection, query);
+        }
       } else {
-        // Use traditional sorting for other sort options
+        // For non-search queries, apply sorting
         filteredGames = this.sortGames(filteredGames, orderBy, orderDirection, query);
       }
 
-      // Get platforms for the final games
-      if (filteredGames.length > 0) {
-        const gameIds = filteredGames.map(g => g.id)
-        
-        const { data: platformData } = await supabase
-          .from('platform_games')
-          .select(`
-            game_id,
-            platform:platform_id (
-              name
-            )
-          `)
-          .in('game_id', gameIds)
-
-        // Group platforms by game
-        const gamePlatforms = new Map<number, string[]>()
-        platformData?.forEach((pg: any) => {
-          if (pg.platform) {
-            if (!gamePlatforms.has(pg.game_id)) {
-              gamePlatforms.set(pg.game_id, [])
-            }
-            gamePlatforms.get(pg.game_id)!.push(pg.platform.name)
-          }
-        })
-
-        // Add platforms to games
-        filteredGames = filteredGames.map(game => ({
-          ...game,
-          platforms: gamePlatforms.get(game.id) || []
-        }))
-      }
+      // REMOVED: Platform fetching - should be included in search_games_optimized if needed
 
       // Map to final result format
       const searchResults: GameSearchResult[] = filteredGames.map(game => ({
@@ -824,29 +711,15 @@ class GameSearchService {
         hypes: game.hypes
       }))
 
-      // Add intelligent search analytics for debugging in development
-      const isDev = typeof process === 'undefined' || process.env.NODE_ENV !== 'test';
-      if (query?.trim() && isDev) {
-        try {
-          const intelligentResults = getIntelligentSearchResults(filteredGames, query.trim(), 10);
-          console.log('🧠 PHASE 3 ANALYTICS:', {
-            intent: intelligentResults.intent,
-            summary: intelligentResults.summary,
-            topResults: intelligentResults.results.slice(0, 3).map(r => ({
-              name: r.game.name,
-              totalScore: r.score.totalScore,
-              breakdown: r.score.breakdown
-            }))
-          });
-        } catch (e) {
-          // Silent fail in test environments
-        }
-      }
+      // REMOVED: Analytics debugging - unnecessary processing
+
+      // Apply pagination
+      const paginatedResults = searchResults.slice(offset, offset + limit);
 
       return {
-        games: searchResults,
-        totalCount: count || 0,
-        hasMore: (offset + limit) < (count || 0)
+        games: paginatedResults,
+        totalCount: totalCount,
+        hasMore: offset + limit < totalCount
       }
     } catch (error) {
       console.error('Error in searchGames:', error)
