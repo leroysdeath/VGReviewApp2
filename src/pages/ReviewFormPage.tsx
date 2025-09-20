@@ -11,8 +11,7 @@ import { useAuth } from '../hooks/useAuth';
 import { mapPlatformNames } from '../utils/platformMapping';
 import { formatGameReleaseDate } from '../utils/dateUtils';
 import { filterProtectedContent } from '../utils/contentProtectionFilter';
-import { unifiedSearchService } from '../services/unifiedSearchService';
-import { SearchFallback } from '../components/SearchFallback';
+import { igdbService } from '../services/igdbService';
 
 // Search filters interface from SearchResultsPage
 interface SearchFilters {
@@ -68,14 +67,49 @@ export const ReviewFormPage: React.FC = () => {
     setSearchError(null);
 
     try {
-      // Use unified search service which includes IGDB fallback and intent detection
-      const results = await unifiedSearchService.search(searchTerm, {
-        includeIGDB: true,
-        limit: 50,
-        applyFilters: true
-      });
+      // First try local database
+      const localResults = await gameDataService.searchGames(searchTerm);
 
-      setSearchResults(results);
+      // If we have few local results, also search IGDB
+      if (localResults.length < 10) {
+        console.log(`📚 Few local results (${localResults.length}), searching IGDB...`);
+        try {
+          const igdbGames = await igdbService.searchGames(searchTerm, 20);
+
+          // Transform IGDB results to match local format
+          const transformedIgdbResults = igdbGames.map(game => ({
+            id: 0, // No local ID yet
+            igdb_id: game.id,
+            name: game.name,
+            slug: game.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') : undefined,
+            summary: game.summary,
+            first_release_date: game.first_release_date,
+            genres: game.genres?.map(g => g.name) || [],
+            platforms: game.platforms?.map(p => p.name) || [],
+            igdb_rating: game.rating,
+            total_rating: game.rating,
+            rating_count: 0,
+            averageRating: 0,
+            gameReviewCount: 0
+          }));
+
+          // Merge results, avoiding duplicates
+          const mergedResults = [...localResults];
+          for (const igdbResult of transformedIgdbResults) {
+            if (!mergedResults.some(r => r.igdb_id === igdbResult.igdb_id)) {
+              mergedResults.push(igdbResult);
+            }
+          }
+
+          setSearchResults(mergedResults);
+        } catch (igdbError) {
+          console.error('IGDB search failed, using local results only:', igdbError);
+          setSearchResults(localResults);
+        }
+      } else {
+        setSearchResults(localResults);
+      }
     } catch (error) {
       setSearchError('Failed to search games');
       console.error('Search error:', error);

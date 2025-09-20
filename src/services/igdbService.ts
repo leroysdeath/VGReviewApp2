@@ -147,15 +147,15 @@ function calculateSearchRelevance(game: IGDBGame | TransformedGame, searchQuery:
  */
 function getRelevanceThreshold(searchQuery: string): number {
   const franchise = detectFranchiseSearch(searchQuery);
-  
+
   // Lower threshold for franchise searches (more permissive for iconic games)
   if (franchise) {
     console.log(`🎯 Franchise search detected: "${franchise}" - Using lower relevance threshold`);
-    return 0.08; // More permissive for franchise searches
+    return 0.05; // Much more permissive for franchise searches
   }
-  
-  // Standard threshold for general searches
-  return 0.12;
+
+  // Standard threshold for general searches - reduced to be less aggressive
+  return 0.08; // Was 0.12, now more permissive
 }
 
 /**
@@ -702,10 +702,9 @@ class IGDBService {
       filteredIGDBGames = filterSeasonGames(filteredIGDBGames);
       console.log(`🎮 Post-season filter: ${filteredIGDBGames.length} games`);
       
-      // Apply pack filtering to remove bundle/pack games
-      console.log(`📦 Pre-pack filter: ${filteredIGDBGames.length} games`);
-      filteredIGDBGames = filterPackGames(filteredIGDBGames);
-      console.log(`📦 Post-pack filter: ${filteredIGDBGames.length} games`);
+      // Skip pack filtering for now - it's removing too many valid games
+      // TODO: Improve pack filtering to be less aggressive
+      console.log(`📦 Pack filtering DISABLED - keeping all ${filteredIGDBGames.length} games`);
       
       // Apply e-reader filtering to remove micro-content
       console.log(`📱 Pre-e-reader filter: ${filteredIGDBGames.length} games`);

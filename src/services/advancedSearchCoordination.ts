@@ -14,6 +14,7 @@
 const DEBUG_SEARCH_COORDINATION = false;
 
 import { GameDataServiceV2 } from './gameDataServiceV2';
+import { igdbService } from './igdbService';
 import { sortGamesIntelligently, detectSearchIntent, SearchIntent } from '../utils/intelligentPrioritization';
 import { filterProtectedContent, filterFanGamesAndEReaderContent } from '../utils/contentProtectionFilter';
 import { normalizeAccents, expandWithAccentVariations, createSearchVariants } from '../utils/accentNormalization';
@@ -435,7 +436,7 @@ export class AdvancedSearchCoordination {
   }
 
   /**
-   * Execute coordinated search with smart query prioritization and batching
+   * Execute coordinated search with smart query prioritization and IGDB fallback
    */
   private async executeCoordinatedSearch(context: SearchContext): Promise<SearchResult[]> {
     const allResults: SearchResult[] = [];
@@ -448,26 +449,25 @@ export class AdvancedSearchCoordination {
 
     if (DEBUG_SEARCH_COORDINATION) console.log(`🔍 Smart execution: Using ${selectedQueries.length} prioritized queries from ${context.expandedQueries.length} expansions:`, selectedQueries);
 
-    // CRITICAL FIX: Execute queries sequentially to prevent 406 errors
-    // Sequential execution prevents database overload while maintaining search quality
+    // First, search local database
     for (let i = 0; i < selectedQueries.length; i++) {
       const expandedQuery = selectedQueries[i];
-      
+
       try {
-        if (DEBUG_SEARCH_COORDINATION) console.log(`🔍 Sequential query ${i + 1}/${selectedQueries.length}: "${expandedQuery}"`);
-        
+        if (DEBUG_SEARCH_COORDINATION) console.log(`🔍 Local query ${i + 1}/${selectedQueries.length}: "${expandedQuery}"`);
+
         const queryResults = await this.gameDataService.searchGames(expandedQuery);
-        
+
         // Convert to SearchResult format and add source tracking
         const convertedResults: SearchResult[] = queryResults.map(game => ({
           ...game,
-          source: 'hybrid' as const,
+          source: 'database' as const,
           relevanceScore: this.calculateRelevanceScore(game.name, context.originalQuery),
           qualityScore: this.calculateQualityScore(game)
         }));
 
         // Filter out games with very low relevance scores to prevent unrelated results
-        const relevantResults = convertedResults.filter(game => 
+        const relevantResults = convertedResults.filter(game =>
           (game.relevanceScore || 0) >= 0.4 // Increased threshold to filter unrelated games
         );
 
@@ -484,15 +484,59 @@ export class AdvancedSearchCoordination {
           if (DEBUG_SEARCH_COORDINATION) console.log(`✂️ Early termination: Found ${allResults.length} results after ${i + 1} queries`);
           break;
         }
-        
+
       } catch (error) {
-        console.error(`❌ Sequential query failed for "${expandedQuery}":`, error);
+        console.error(`❌ Local query failed for "${expandedQuery}":`, error);
         // Continue with next query instead of failing completely
         continue;
       }
     }
 
-    // Smart query execution completed
+    // If we have insufficient results, search IGDB
+    if (allResults.length < 10) {
+      console.log(`🔍 Insufficient local results (${allResults.length}), searching IGDB for: "${context.originalQuery}"`);
+
+      try {
+        // Use igdbService to search IGDB
+        const igdbResults = await igdbService.searchGames(context.originalQuery, 20);
+
+        // Convert IGDB results to SearchResult format
+        const convertedIgdbResults: SearchResult[] = igdbResults.map(game => ({
+          id: game.id,
+          name: game.name,
+          summary: game.summary,
+          developer: game.involved_companies?.find(c => c.developer)?.company?.name,
+          publisher: game.involved_companies?.find(c => c.publisher)?.company?.name,
+          category: game.category,
+          genres: game.genres?.map(g => g.name) || [],
+          platforms: game.platforms?.map(p => p.name) || [],
+          release_date: game.first_release_date ? new Date(game.first_release_date * 1000).toISOString() : undefined,
+          cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') : undefined,
+          igdb_rating: game.rating,
+          igdb_id: game.id,
+          source: 'igdb' as const,
+          relevanceScore: this.calculateRelevanceScore(game.name, context.originalQuery),
+          qualityScore: this.calculateQualityScore({
+            name: game.name,
+            igdb_rating: game.rating
+          } as any)
+        }));
+
+        // Add IGDB results that aren't duplicates
+        for (const result of convertedIgdbResults) {
+          // Check by IGDB ID to avoid duplicates
+          const isDuplicate = allResults.some(r => r.igdb_id === result.igdb_id);
+          if (!isDuplicate) {
+            allResults.push(result);
+          }
+        }
+
+        console.log(`✅ Added ${convertedIgdbResults.length} IGDB results, total: ${allResults.length}`);
+      } catch (error) {
+        console.error('❌ IGDB search failed:', error);
+        // Continue with local results only
+      }
+    }
 
     // Apply advanced filtering and sorting
     return this.processSearchResults(allResults, context);
