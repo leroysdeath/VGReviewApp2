@@ -484,132 +484,47 @@ function filterByRelevance(games: any[], searchQuery?: string): any[] {
 }
 
 /**
- * Intelligent multi-strategy search that tries different approaches
- * to maximize franchise game coverage including sister games and sequels
+ * Optimized search function using the new database function.
+ * Replaces multi-strategy search with a single efficient query.
  */
 async function executeIntelligentSearch(originalQuery: string): Promise<any[]> {
-  console.log(`🧠 INTELLIGENT SEARCH: Starting multi-strategy search for "${originalQuery}"`);
-  
-  const allResults = new Map<number, any>(); // Use Map to avoid duplicates by ID
-  let totalAttempts = 0;
-  
-  // Strategy 1: Original query (primary search)
-  totalAttempts++;
+  console.log(`🧠 OPTIMIZED SEARCH: Searching for "${originalQuery}"`);
+
   try {
-    console.log(`📋 STRATEGY 1: Original query "${originalQuery}"`);
-    const { data: originalResults, error: originalError } = await supabase
-      .rpc('search_games_secure', {
-        search_query: originalQuery.trim(),
-        limit_count: 150
+    // Use the optimized database function that handles all search variations
+    const { data: searchResults, error } = await supabase
+      .rpc('search_games_optimized', {
+        search_term: originalQuery.trim(),
+        include_franchise_games: true,
+        limit_count: 200,
+        include_fan_content: false // Only get official games first
       });
-      
-    if (!originalError && originalResults) {
-      originalResults.forEach((game: any) => {
-        if (!allResults.has(game.id)) {
-          allResults.set(game.id, { ...game, _searchStrategy: 'original', _searchRank: game.search_rank });
-        }
-      });
-      console.log(`   ✅ Found ${originalResults.length} games with original query`);
-    }
-  } catch (error) {
-    console.log(`   ❌ Original query failed:`, error);
-  }
-  
-  // Strategy 2: Franchise expansions
-  const expandedQueries = expandFranchiseQuery(originalQuery);
-  for (const expandedQuery of expandedQueries) {
-    if (expandedQuery === originalQuery.toLowerCase().trim()) continue; // Skip duplicate
-    
-    totalAttempts++;
-    try {
-      console.log(`📋 STRATEGY 2: Expanded query "${expandedQuery}"`);
-      const { data: expandedResults, error: expandedError } = await supabase
+
+    if (error) {
+      console.error('❌ Search error:', error);
+      // Fallback to old search function if new one fails
+      const { data: fallbackResults } = await supabase
         .rpc('search_games_secure', {
-          search_query: expandedQuery,
-          limit_count: 120
+          search_query: originalQuery.trim(),
+          limit_count: 150
         });
-        
-      if (!expandedError && expandedResults) {
-        expandedResults.forEach((game: any) => {
-          if (!allResults.has(game.id)) {
-            allResults.set(game.id, { ...game, _searchStrategy: `expanded:${expandedQuery}`, _searchRank: game.search_rank });
-          }
-        });
-        console.log(`   ✅ Found ${expandedResults.length} additional games with "${expandedQuery}"`);
-      }
-    } catch (error) {
-      console.log(`   ❌ Expanded query "${expandedQuery}" failed:`, error);
+      return fallbackResults || [];
     }
+
+    console.log(`✅ OPTIMIZED SEARCH: Found ${searchResults?.length || 0} games in single query`);
+
+    // Add search metadata for compatibility
+    const resultsWithMetadata = (searchResults || []).map(game => ({
+      ...game,
+      _searchStrategy: 'optimized',
+      _searchRank: game.search_rank || 0
+    }));
+
+    return resultsWithMetadata;
+  } catch (error) {
+    console.error('❌ Search failed:', error);
+    return [];
   }
-  
-  // Strategy 3: Sister game and sequel expansion (Pokemon Red → Blue/Yellow, Final Fantasy 7 → other numbers)
-  const sisterGameQueries = generateSisterGameQueries(originalQuery);
-  if (sisterGameQueries.length > 0) {
-    console.log(`📋 STRATEGY 3: Sister game expansion for "${originalQuery}" (${sisterGameQueries.length} queries)`);
-    
-    for (const sisterQuery of sisterGameQueries) {
-      if (sisterQuery === originalQuery.toLowerCase().trim()) continue; // Skip duplicate
-      if (totalAttempts >= 15) break; // Respect API limits
-      
-      totalAttempts++;
-      try {
-        const { data: sisterResults, error: sisterError } = await supabase
-          .rpc('search_games_secure', {
-            search_query: sisterQuery,
-            limit_count: 50 // Lower limit for sister games to balance coverage vs performance
-          });
-          
-        if (!sisterError && sisterResults) {
-          sisterResults.forEach((game: any) => {
-            if (!allResults.has(game.id)) {
-              allResults.set(game.id, { ...game, _searchStrategy: `sister:${sisterQuery}`, _searchRank: game.search_rank });
-            }
-          });
-          console.log(`   ✅ Found ${sisterResults.length} sister games with "${sisterQuery}"`);
-        }
-      } catch (error) {
-        console.log(`   ❌ Sister game query "${sisterQuery}" failed:`, error);
-      }
-    }
-  }
-  
-  // Strategy 4: Partial matching with ILIKE as fallback (for partial matches that full-text missed)
-  // Only if we have very few results so far
-  if (allResults.size < 10) {
-    totalAttempts++;
-    try {
-      console.log(`📋 STRATEGY 4: Partial matching fallback for "${originalQuery}"`);
-      const { data: partialResults, error: partialError } = await supabase
-        .from('game')
-        .select('id, name, summary, description, release_date, pic_url, genres, igdb_id, developer, publisher')
-        .or(`name.ilike.%${originalQuery}%,summary.ilike.%${originalQuery}%,developer.ilike.%${originalQuery}%`)
-        .limit(50);
-        
-      if (!partialError && partialResults) {
-        partialResults.forEach((game: any) => {
-          if (!allResults.has(game.id)) {
-            allResults.set(game.id, { ...game, _searchStrategy: 'partial', _searchRank: 0.1 });
-          }
-        });
-        console.log(`   ✅ Found ${partialResults.length} additional games with partial matching`);
-      }
-    } catch (error) {
-      console.log(`   ❌ Partial matching failed:`, error);
-    }
-  }
-  
-  const finalResults = Array.from(allResults.values());
-  console.log(`🎯 INTELLIGENT SEARCH COMPLETE: Found ${finalResults.length} unique games across ${totalAttempts} strategies`);
-  
-  // Log strategy breakdown
-  const strategyBreakdown = finalResults.reduce((acc: any, game) => {
-    const strategy = game._searchStrategy || 'unknown';
-    acc[strategy] = (acc[strategy] || 0) + 1;
-    return acc;
-  }, {});
-  console.log(`📊 SEARCH STRATEGY BREAKDOWN:`, strategyBreakdown);
-  
-  return finalResults;
 }
 
 class GameSearchService {
@@ -794,21 +709,20 @@ class GameSearchService {
         filteredGames = filterByRelevance(filteredGames, query.trim());
       }
       
-      // Apply fan game and e-reader content filtering
-      filteredGames = filterFanGamesAndEReaderContent(filteredGames);
-      console.log(`🎮 FAN GAME/E-READER FILTER: ${games?.length || 0} games → ${filteredGames.length} after filtering`);
+      // Apply fan game and e-reader content filtering ONLY for non-official games
+      // Skip filtering for games marked as official
+      const officialGames = filteredGames.filter(game => game.is_official === true);
+      const unofficialGames = filteredGames.filter(game => game.is_official !== true);
 
-      // Apply sister game boosts for better series coverage (Pokemon Red → Blue/Yellow, etc.)
-      if (query && query.trim()) {
-        // Get the original game's genres for genre-based prioritization
-        const potentialOriginalGame = filteredGames.find(game => {
-          const titleScore = calculateTitleSimilarity(game.name, query.trim());
-          return titleScore >= 900; // High similarity suggests this is the original searched game
-        });
-        
-        const originalGameGenres = potentialOriginalGame?.genres;
-        filteredGames = applySisterGameBoost(filteredGames, query.trim(), originalGameGenres);
-      }
+      // Only filter unofficial games
+      const filteredUnofficialGames = filterFanGamesAndEReaderContent(unofficialGames);
+
+      // Combine official games (unfiltered) with filtered unofficial games
+      filteredGames = [...officialGames, ...filteredUnofficialGames];
+      console.log(`🎮 FAN GAME/E-READER FILTER: ${games?.length || 0} games → ${filteredGames.length} after filtering (${officialGames.length} official preserved)`);
+
+      // Sister game boost is no longer needed since the optimized search handles franchise games
+      // Removed redundant sister game expansion logic
 
       // Sort the results using Phase 3 intelligent prioritization system
       if (orderBy === 'relevance') {
