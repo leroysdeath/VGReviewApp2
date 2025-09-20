@@ -3,8 +3,8 @@ import { sanitizeSearchTerm } from '../utils/sqlSecurity';
 import { Database } from '../types/supabase';
 import { VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY } from './env';
 
-const supabaseUrl = VITE_SUPABASE_URL || 'https://cqufmmnguumyhbkhgwdc.supabase.co';
-const supabaseAnonKey = VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdWZtbW5ndXVteWhia2hnd2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MzU3MDUsImV4cCI6MjA2ODIxMTcwNX0.iP9jJM26Xa3-YeeB2YdYnqMK5JZyYcFY5_KXuLAZw-s';
+const supabaseUrl = VITE_SUPABASE_URL;
+const supabaseAnonKey = VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');

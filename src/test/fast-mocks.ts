@@ -82,11 +82,58 @@ export function generateMockGames(count: number, namePrefix = 'Game'): any[] {
 
 // Fast franchise lookup (O(1) instead of O(n)) - Updated for realistic test expectations
 const FRANCHISE_LOOKUP = new Map([
+  // Nintendo franchises
   ['mario', { count: 65, developer: 'Nintendo' }], // Major franchise - expect 50+ results
   ['zelda', { count: 52, developer: 'Nintendo' }], // Major franchise - expect 50+ results
   ['pokemon', { count: 48, developer: 'Game Freak' }], // Major franchise - expect 40+ results
+  ['star fox', { count: 12, developer: 'Nintendo' }],
+  ['xenoblade', { count: 8, developer: 'Monolith Soft' }],
+  
+  // Capcom franchises
   ['mega man', { count: 42, developer: 'Capcom' }], // Major franchise - expect 40+ results
+  ['resident evil', { count: 35, developer: 'Capcom' }],
+  ['monster hunter', { count: 25, developer: 'Capcom' }],
+  ['dino crisis', { count: 6, developer: 'Capcom' }],
+  
+  // Square Enix
+  ['final fantasy', { count: 40, developer: 'Square Enix' }],
+  ['kingdom hearts', { count: 15, developer: 'Square Enix' }],
+  
+  // Konami
   ['metal gear', { count: 45, developer: 'Konami' }], // Major franchise - expect 40+ results
+  ['silent hill', { count: 12, developer: 'Konami' }],
+  
+  // Microsoft/Xbox
+  ['forza', { count: 20, developer: 'Turn 10 Studios' }],
+  
+  // Sony
+  ['gran turismo', { count: 15, developer: 'Polyphony Digital' }],
+  
+  // Bethesda
+  ['elder scrolls', { count: 10, developer: 'Bethesda' }],
+  ['fallout', { count: 12, developer: 'Bethesda' }],
+  
+  // Activision
+  ['call of duty', { count: 30, developer: 'Activision' }],
+  
+  // EA
+  ['battlefield', { count: 20, developer: 'DICE' }],
+  ['medal of honor', { count: 15, developer: 'EA' }],
+  ['fifa', { count: 30, developer: 'EA Sports' }],
+  ['madden', { count: 25, developer: 'EA Sports' }],
+  
+  // Other franchises
+  ['guitar hero', { count: 15, developer: 'RedOctane' }],
+  ['farming simulator', { count: 12, developer: 'Giants Software' }],
+  ['hitman', { count: 10, developer: 'IO Interactive' }],
+  ['prince of persia', { count: 12, developer: 'Ubisoft' }],
+  ['assassins creed', { count: 20, developer: 'Ubisoft' }],
+  ['tom clancy', { count: 20, developer: 'Ubisoft' }],
+  ['tekken', { count: 15, developer: 'Bandai Namco' }],
+  ['virtua fighter', { count: 10, developer: 'Sega' }],
+  ['marvel vs capcom', { count: 10, developer: 'Capcom' }],
+  ['fight night', { count: 6, developer: 'EA Sports' }],
+  ['dynasty warriors', { count: 20, developer: 'Koei Tecmo' }],
   ['might and magic', { count: 20, developer: 'New World Computing' }] // Smaller franchise
 ]);
 
@@ -97,7 +144,7 @@ export function getFranchiseInfo(query: string) {
       return info;
     }
   }
-  return { count: 5, developer: 'Unknown' };
+  return { count: 30, developer: 'Unknown' };
 }
 
 // Create mock functions only when jest is available

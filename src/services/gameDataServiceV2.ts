@@ -643,7 +643,7 @@ export class GameDataServiceV2 {
       // Run green flag search and name search in parallel for better performance
       const [greenFlaggedGames, nameResults] = await Promise.all([
         this.searchGreenFlaggedGames(query).catch(() => []), // Don't let green flag search fail the whole operation
-        this.searchByName(query, filters, 25)
+        this.searchByName(query, filters, 25).catch(() => []) // Don't let name search fail the whole operation
       ]);
       
       if (DEBUG_GAME_DATA) console.log(`🟢 Green-flagged games: ${greenFlaggedGames.length} results`);
@@ -656,7 +656,7 @@ export class GameDataServiceV2 {
       
       // If we still don't have enough results, add summary search
       if (combinedResults.length < 15) { // Reduced threshold for faster response
-        const summaryResults = await this.searchBySummary(query, filters, 15); // Reduced from 30
+        const summaryResults = await this.searchBySummary(query, filters, 15).catch(() => []); // Don't let summary search fail
         if (DEBUG_GAME_DATA) console.log(`📝 Summary search: ${summaryResults.length} results`);
         
         // Merge results, avoiding duplicates
@@ -682,7 +682,7 @@ export class GameDataServiceV2 {
    */
   private async searchGreenFlaggedGames(query: string): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 8000); // Increased to 8 seconds like other searches
+    const timeoutId = setTimeout(() => abortController.abort(), 3000); // Reduced to 3 seconds for faster failover
     
     try {
       // Simplified query - just search green-flagged games, no complex filters
@@ -697,19 +697,24 @@ export class GameDataServiceV2 {
       clearTimeout(timeoutId);
       
       if (error) {
-        if (DEBUG_GAME_DATA) console.error('Green flag search error:', error);
+        // Don't log abort errors - they're expected
+        if (error.code !== '20' && error.message && !error.message.includes('AbortError')) {
+          console.error('Green flag search error:', error);
+        }
         return []; // Fail silently to not break regular search
       }
       
       if (DEBUG_GAME_DATA) console.log(`🟢 Green flag search found ${(data || []).length} games for "${query}"`);
       return (data || []).map(game => this.transformGameWithoutRatings(game as Game));
-    } catch (abortError) {
+    } catch (abortError: any) {
       clearTimeout(timeoutId);
-      if (abortError.name === 'AbortError') {
-        if (DEBUG_GAME_DATA) console.warn('⚠️ Green flag search timed out - continuing with regular search');
+      // Handle abort gracefully without logging
+      if (abortError.name === 'AbortError' || abortError.code === '20') {
         return []; // Return empty array to continue with regular search
       }
-      throw abortError;
+      // Only log unexpected errors
+      console.error('Unexpected green flag search error:', abortError);
+      return [];
     }
   }
   
@@ -752,18 +757,23 @@ export class GameDataServiceV2 {
       clearTimeout(timeoutId);
       
       if (error) {
-        console.error('Name search error:', error);
+        // Don't log abort errors - they're expected
+        if (error.code !== '20' && error.message && !error.message.includes('AbortError')) {
+          console.error('Name search error:', error);
+        }
         return [];
       }
       
       return (data || []).map(game => this.transformGameWithoutRatings(game as Game));
-    } catch (abortError) {
+    } catch (abortError: any) {
       clearTimeout(timeoutId);
-      if (abortError.name === 'AbortError') {
-        console.error('❌ Name search timed out after 3 seconds');
-        return [];
+      // Handle abort gracefully without logging
+      if (abortError.name === 'AbortError' || abortError.code === '20') {
+        return []; // Silently return empty array for timeouts
       }
-      throw abortError;
+      // Only log unexpected errors
+      console.error('Unexpected name search error:', abortError);
+      return [];
     }
   }
   
@@ -806,18 +816,23 @@ export class GameDataServiceV2 {
       clearTimeout(timeoutId);
       
       if (error) {
-        console.error('Summary search error:', error);
+        // Don't log abort errors - they're expected
+        if (error.code !== '20' && error.message && !error.message.includes('AbortError')) {
+          console.error('Summary search error:', error);
+        }
         return [];
       }
       
       return (data || []).map(game => this.transformGameWithoutRatings(game as Game));
-    } catch (abortError) {
+    } catch (abortError: any) {
       clearTimeout(timeoutId);
-      if (abortError.name === 'AbortError') {
-        console.error('❌ Summary search timed out after 2 seconds');
-        return [];
+      // Handle abort gracefully without logging
+      if (abortError.name === 'AbortError' || abortError.code === '20') {
+        return []; // Silently return empty array for timeouts
       }
-      throw abortError;
+      // Only log unexpected errors
+      console.error('Unexpected summary search error:', abortError);
+      return [];
     }
   }
   
