@@ -74,7 +74,7 @@ export const useGameSearch = () => {
       
       // Use Advanced Search Coordination with accent normalization
       const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
-        maxResults: searchParams.limit || 40,  // Reduced for better relevance and speed
+        maxResults: searchParams.limit || 80,  // Increased to show more franchise results
         includeMetrics: true,
         bypassCache: false // Always use cache for better performance
       });

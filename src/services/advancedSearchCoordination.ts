@@ -45,6 +45,10 @@ export interface SearchResult {
   relevanceScore?: number;
   qualityScore?: number;
   source: 'database' | 'igdb' | 'hybrid';
+  // Manual admin flags
+  greenlight_flag?: boolean;
+  redlight_flag?: boolean;
+  flag_reason?: string;
 }
 
 export interface SearchMetrics {
@@ -479,8 +483,11 @@ export class AdvancedSearchCoordination {
           }
         }
 
-        // Early termination if we have enough quality results
-        if (allResults.length >= 20) {
+        // Early termination only for non-franchise searches or when we have abundant results
+        const isFranchiseSearch = context.intent === 'franchise_browse';
+        const terminationThreshold = isFranchiseSearch ? 80 : 40;
+        
+        if (allResults.length >= terminationThreshold) {
           if (DEBUG_SEARCH_COORDINATION) console.log(`✂️ Early termination: Found ${allResults.length} results after ${i + 1} queries`);
           break;
         }
@@ -556,7 +563,11 @@ export class AdvancedSearchCoordination {
       publisher: r.publisher,
       category: r.category,
       genres: r.genres,
-      summary: r.summary
+      summary: r.summary,
+      // IMPORTANT: Preserve greenlight/redlight flags for filtering logic
+      greenlight_flag: (r as any).greenlight_flag,
+      redlight_flag: (r as any).redlight_flag,
+      flag_reason: (r as any).flag_reason
     }))).map(filteredGame => {
       return results.find(r => r.id === filteredGame.id)!;
     }).filter(Boolean);
@@ -569,7 +580,11 @@ export class AdvancedSearchCoordination {
       publisher: r.publisher,
       category: r.category,
       genres: r.genres,
-      summary: r.summary
+      summary: r.summary,
+      // IMPORTANT: Preserve greenlight/redlight flags for filtering logic
+      greenlight_flag: (r as any).greenlight_flag,
+      redlight_flag: (r as any).redlight_flag,
+      flag_reason: (r as any).flag_reason
     }))).map(filteredGame => {
       return contentFilteredResults.find(r => r.id === filteredGame.id)!;
     }).filter(Boolean);

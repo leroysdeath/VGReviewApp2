@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { gameFlagService, type FlaggedGame, type FlagSummary, type FlagType } from '../services/gameFlagService';
 import { filterProtectedContent, filterFanGamesAndEReaderContent } from '../utils/contentProtectionFilter';
+import { filteringAnalysisService, type FilteringAnalysis } from '../services/filteringAnalysisService';
 
 interface GameSearchResult {
   id: number;
@@ -31,6 +32,33 @@ interface GameSearchResult {
   follows?: number;
   popularity_score?: number;
 }
+
+// Helper functions moved outside component to be accessible by all components
+const getCategoryLabel = (category?: number) => {
+  const labels: Record<number, string> = {
+    0: 'Main game',
+    1: 'DLC/Add-on',
+    2: 'Expansion',
+    3: 'Bundle',
+    4: 'Standalone expansion',
+    5: 'Mod',
+    6: 'Episode',
+    7: 'Season',
+    8: 'Remake',
+    9: 'Remaster',
+    10: 'Expanded game',
+    11: 'Port',
+    12: 'Fork',
+    13: 'Pack',
+    14: 'Update'
+  };
+  return category !== undefined ? labels[category] || `Unknown(${category})` : 'Unknown';
+};
+
+const formatDate = (dateString?: string) => {
+  if (!dateString) return 'Never';
+  return new Date(dateString).toLocaleDateString();
+};
 
 export const ManualFlaggingPanel: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,58 +134,33 @@ export const ManualFlaggingPanel: React.FC = () => {
     return <Flag className="h-5 w-5 text-gray-400" />;
   };
 
-  const getCategoryLabel = (category?: number) => {
-    const labels: Record<number, string> = {
-      0: 'Main game',
-      1: 'DLC/Add-on',
-      2: 'Expansion',
-      3: 'Bundle',
-      4: 'Standalone expansion',
-      5: 'Mod',
-      6: 'Episode',
-      7: 'Season',
-      8: 'Remake',
-      9: 'Remaster',
-      10: 'Expanded game',
-      11: 'Port',
-      12: 'Fork',
-      13: 'Pack',
-      14: 'Update'
-    };
-    return category !== undefined ? labels[category] || `Unknown(${category})` : 'Unknown';
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  // Check if a game would be filtered out in search results
-  const checkFilteringStatus = (game: GameSearchResult | FlaggedGame) => {
-    // Convert game to the format expected by filters
-    const gameForFilter = {
+  // Comprehensive filtering analysis for admin interface
+  const getFilteringAnalysis = (game: GameSearchResult | FlaggedGame): FilteringAnalysis => {
+    // Convert to Game type for analysis
+    const gameForAnalysis = {
       id: game.id,
       name: game.name,
       developer: game.developer,
       publisher: game.publisher,
       category: game.category,
-      genres: undefined, // Not available in this interface
-      summary: undefined, // Not available in this interface
       greenlight_flag: game.greenlight_flag,
-      redlight_flag: game.redlight_flag
-    };
+      redlight_flag: game.redlight_flag,
+      flag_reason: (game as GameSearchResult).flag_reason,
+      total_rating: (game as GameSearchResult).total_rating,
+      rating_count: (game as GameSearchResult).rating_count,
+      follows: (game as GameSearchResult).follows,
+      popularity_score: (game as GameSearchResult).popularity_score
+    } as any;
+    
+    return filteringAnalysisService.analyzeGame(gameForAnalysis, searchQuery);
+  };
 
-    // Test content protection filters
-    const passesContentFilter = filterProtectedContent([gameForFilter]).length > 0;
-    const passesFanGameFilter = filterFanGamesAndEReaderContent([gameForFilter]).length > 0;
-    
-    const wouldBeFiltered = !passesContentFilter || !passesFanGameFilter;
-    
+  // Legacy compatibility function for components that still expect the old format
+  const checkFilteringStatus = (game: GameSearchResult | FlaggedGame) => {
+    const analysis = getFilteringAnalysis(game);
     return {
-      wouldBeFiltered,
-      reason: !passesContentFilter ? 'Content Protection Filter (Category/Bundle/Port)' : 
-              !passesFanGameFilter ? 'Fan Game/E-Reader Filter' : 
-              null
+      wouldBeFiltered: analysis.wouldBeFiltered,
+      reason: analysis.summary
     };
   };
 
@@ -268,7 +271,7 @@ export const ManualFlaggingPanel: React.FC = () => {
                     game={game}
                     onFlag={handleFlag}
                     showMetrics={true}
-                    filteringStatus={checkFilteringStatus(game)}
+                    filteringAnalysis={getFilteringAnalysis(game)}
                   />
                 ))}
               </div>
@@ -290,7 +293,7 @@ export const ManualFlaggingPanel: React.FC = () => {
                   key={game.id}
                   game={game}
                   onFlag={handleFlag}
-                  filteringStatus={checkFilteringStatus(game)}
+                  filteringAnalysis={getFilteringAnalysis(game)}
                 />
               ))}
             </div>
@@ -315,7 +318,7 @@ export const ManualFlaggingPanel: React.FC = () => {
                   game={game}
                   onFlag={handleFlag}
                   showConflict={true}
-                  filteringStatus={checkFilteringStatus(game)}
+                  filteringAnalysis={getFilteringAnalysis(game)}
                 />
               ))}
             </div>
@@ -331,8 +334,8 @@ const GameFlagRow: React.FC<{
   game: GameSearchResult;
   onFlag: (gameId: number, flagType: FlagType, reason?: string) => void;
   showMetrics?: boolean;
-  filteringStatus?: { wouldBeFiltered: boolean; reason: string | null };
-}> = ({ game, onFlag, showMetrics = false, filteringStatus }) => {
+  filteringAnalysis?: FilteringAnalysis;
+}> = ({ game, onFlag, showMetrics = false, filteringAnalysis }) => {
   const [reason, setReason] = useState('');
 
   const handleFlag = (flagType: FlagType) => {
@@ -369,28 +372,57 @@ const GameFlagRow: React.FC<{
               Category: {getCategoryLabel(game.category)}
             </div>
             
-            {/* Filtering Status */}
-            {filteringStatus && (
-              <div className="flex items-center gap-2 mt-2">
-                {filteringStatus.wouldBeFiltered ? (
-                  <>
-                    <EyeOff className="h-4 w-4 text-red-400" />
-                    <span className="text-red-400 text-sm font-medium">
-                      Would be filtered in search
-                    </span>
-                    {filteringStatus.reason && (
-                      <span className="text-red-300 text-xs">
-                        ({filteringStatus.reason})
+            {/* Comprehensive Filtering Analysis */}
+            {filteringAnalysis && (
+              <div className="mt-3 p-3 bg-gray-900 rounded border">
+                <div className="flex items-center gap-2 mb-2">
+                  {filteringAnalysis.wouldBeFiltered ? (
+                    <>
+                      <EyeOff className="h-4 w-4 text-red-400" />
+                      <span className="text-red-400 text-sm font-medium">
+                        Would be filtered in search
                       </span>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <Eye className="h-4 w-4 text-green-400" />
-                    <span className="text-green-400 text-sm font-medium">
-                      Visible in search results
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4 text-green-400" />
+                      <span className="text-green-400 text-sm font-medium">
+                        Visible in search results
+                      </span>
+                    </>
+                  )}
+                  {filteringAnalysis.qualityExemption && (
+                    <span className="text-yellow-400 text-xs bg-yellow-900 px-2 py-1 rounded">
+                      Quality Exemption
                     </span>
-                  </>
+                  )}
+                </div>
+                
+                <div className="text-xs text-gray-300 mb-2">
+                  {filteringAnalysis.summary}
+                </div>
+                
+                {filteringAnalysis.reasons.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="text-xs text-gray-400 font-medium">Filtering Details:</div>
+                    {filteringAnalysis.reasons.map((reason, index) => (
+                      <div key={index} className="text-xs text-gray-300 flex items-start gap-2">
+                        <span className={`inline-block w-2 h-2 rounded-full mt-1 flex-shrink-0 ${
+                          reason.severity === 'blocked' ? 'bg-red-500' :
+                          reason.severity === 'filtered' ? 'bg-orange-500' :
+                          reason.severity === 'warning' ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`}></span>
+                        <div>
+                          <div className="font-medium">{reason.title}</div>
+                          <div className="text-gray-400">{reason.description}</div>
+                          {reason.recommendation && (
+                            <div className="text-blue-300 italic">💡 {reason.recommendation}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
@@ -472,8 +504,8 @@ const FlaggedGameRow: React.FC<{
   game: FlaggedGame;
   onFlag: (gameId: number, flagType: FlagType, reason?: string) => void;
   showConflict?: boolean;
-  filteringStatus?: { wouldBeFiltered: boolean; reason: string | null };
-}> = ({ game, onFlag, showConflict = false, filteringStatus }) => {
+  filteringAnalysis?: FilteringAnalysis;
+}> = ({ game, onFlag, showConflict = false, filteringAnalysis }) => {
   const getBorderColor = () => {
     if (showConflict && game.conflict_status === 'potential_conflict') {
       return 'border-yellow-500';
@@ -499,28 +531,45 @@ const FlaggedGameRow: React.FC<{
             <div>Publisher: {game.publisher || 'Unknown'}</div>
             <div>Category: {getCategoryLabel(game.category)}</div>
             
-            {/* Filtering Status */}
-            {filteringStatus && (
-              <div className="flex items-center gap-2 mt-1">
-                {filteringStatus.wouldBeFiltered ? (
-                  <>
-                    <EyeOff className="h-4 w-4 text-red-400" />
-                    <span className="text-red-400 text-sm font-medium">
-                      Would be filtered in search
+            {/* Comprehensive Filtering Analysis */}
+            {filteringAnalysis && (
+              <div className="mt-2 p-2 bg-gray-900 rounded border text-xs">
+                <div className="flex items-center gap-2 mb-1">
+                  {filteringAnalysis.wouldBeFiltered ? (
+                    <>
+                      <EyeOff className="h-3 w-3 text-red-400" />
+                      <span className="text-red-400 font-medium">Filtered in search</span>
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-3 w-3 text-green-400" />
+                      <span className="text-green-400 font-medium">Visible in search</span>
+                    </>
+                  )}
+                  {filteringAnalysis.qualityExemption && (
+                    <span className="text-yellow-400 bg-yellow-900 px-1 py-0.5 rounded text-xs">
+                      Quality
                     </span>
-                    {filteringStatus.reason && (
-                      <span className="text-red-300 text-xs">
-                        ({filteringStatus.reason})
-                      </span>
+                  )}
+                </div>
+                <div className="text-gray-300 mb-1">{filteringAnalysis.summary}</div>
+                {filteringAnalysis.reasons.length > 0 && (
+                  <div className="space-y-1">
+                    {filteringAnalysis.reasons.slice(0, 2).map((reason, index) => (
+                      <div key={index} className="flex items-start gap-1">
+                        <span className={`inline-block w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0 ${
+                          reason.severity === 'blocked' ? 'bg-red-500' :
+                          reason.severity === 'filtered' ? 'bg-orange-500' :
+                          reason.severity === 'warning' ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`}></span>
+                        <span className="text-gray-400">{reason.title}</span>
+                      </div>
+                    ))}
+                    {filteringAnalysis.reasons.length > 2 && (
+                      <div className="text-gray-500">+{filteringAnalysis.reasons.length - 2} more reasons</div>
                     )}
-                  </>
-                ) : (
-                  <>
-                    <Eye className="h-4 w-4 text-green-400" />
-                    <span className="text-green-400 text-sm font-medium">
-                      Visible in search results
-                    </span>
-                  </>
+                  </div>
                 )}
               </div>
             )}

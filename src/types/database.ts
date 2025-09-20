@@ -44,6 +44,12 @@ export interface Game {
   follows?: number;          // Community following count
   hypes?: number;            // Pre-release buzz count
   popularity_score?: number; // Calculated popularity metric
+  // Manual flagging system
+  greenlight_flag?: boolean; // Admin override: game should never be filtered (true = always show)
+  redlight_flag?: boolean;   // Admin override: game should always be filtered (true = always hide)
+  flag_reason?: string;      // Reason for manual flagging
+  flagged_at?: string;       // When the flag was set
+  flagged_by?: string;       // User ID who set the flag
   created_at: string;
   updated_at: string;
 }
