@@ -1,4 +1,6 @@
 import { supabase } from './supabase'
+import { searchCacheService } from './searchCacheService'
+import { searchAnalyticsService } from './searchAnalyticsService'
 import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization'
 import { 
   sortGamesIntelligently, 
@@ -575,19 +577,49 @@ class GameSearchService {
         .from('game')
         .select(`*`, { count: 'exact' })
 
-      // Apply search query filter using intelligent multi-strategy search
+      // Apply search query filter using intelligent multi-strategy search with caching
       if (query && query.trim()) {
         console.log(`🔍 SEARCH INITIATED: "${query.trim()}"`);
-        
-        // Use intelligent search that tries multiple strategies
-        const searchResults = await executeIntelligentSearch(query.trim());
-        
+
+        const startTime = Date.now();
+        let searchResults: any[] = [];
+        let cacheHit = false;
+
+        // Try cache first
+        const cachedResults = searchCacheService.getCachedSearch(query.trim());
+        if (cachedResults) {
+          searchResults = cachedResults;
+          cacheHit = true;
+          console.log(`📦 CACHE HIT: Using cached results for "${query.trim()}" (${cachedResults.length} results)`);
+        } else {
+          // Use intelligent search that tries multiple strategies
+          searchResults = await executeIntelligentSearch(query.trim());
+
+          // Cache successful results
+          if (searchResults && searchResults.length > 0) {
+            searchCacheService.setCachedSearch(query.trim(), searchResults);
+          }
+        }
+
+        // Track analytics (async, don't wait)
+        const executionTime = Date.now() - startTime;
+        searchAnalyticsService.trackSearch(
+          query.trim(),
+          searchResults,
+          executionTime,
+          cacheHit
+        ).catch(error => console.error('Analytics tracking failed:', error));
+
         if (searchResults && searchResults.length > 0) {
           const matchingIds = searchResults.map(r => r.id);
           baseQuery = baseQuery.in('id', matchingIds);
-          console.log(`✅ SEARCH RESULTS: Found ${searchResults.length} games, querying database for full details`);
+          console.log(`✅ SEARCH RESULTS: Found ${searchResults.length} games ${cacheHit ? '(from cache)' : '(fresh)'}, querying database for full details`);
         } else {
           console.log(`❌ NO SEARCH RESULTS: No games found for query "${query.trim()}"`);
+
+          // Track zero-result search
+          searchAnalyticsService.trackSearch(query.trim(), [], executionTime, cacheHit);
+
           return { games: [], totalCount: 0, hasMore: false };
         }
       }
@@ -1024,6 +1056,64 @@ class GameSearchService {
     )
     return response.games
   }
+
+  /**
+   * Warm cache with popular searches
+   */
+  async warmCache(): Promise<void> {
+    await searchCacheService.warmCache(async (query) => {
+      const results = await executeIntelligentSearch(query);
+      return results || [];
+    });
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats() {
+    return searchCacheService.getCacheStats();
+  }
+
+  /**
+   * Get popular searches from local cache
+   */
+  getPopularSearches(limit: number = 10) {
+    return searchCacheService.getPopularSearches(limit);
+  }
+
+  /**
+   * Clear search cache
+   */
+  clearCache() {
+    searchCacheService.clearAllCache();
+  }
+
+  /**
+   * Get analytics performance metrics
+   */
+  async getPerformanceMetrics(timeRange: 'hour' | 'day' | 'week' = 'day') {
+    return await searchAnalyticsService.getSearchPerformanceMetrics(timeRange);
+  }
+
+  /**
+   * Get trending searches from analytics
+   */
+  async getTrendingSearches(limit: number = 10) {
+    return await searchAnalyticsService.getTrendingSearches(limit);
+  }
 }
 
 export const gameSearchService = new GameSearchService()
+
+// Warm cache on initialization (delayed to avoid blocking)
+if (typeof window !== 'undefined') {
+  // Clean expired cache on page load
+  searchCacheService.clearExpiredCache();
+
+  // Warm cache after delay
+  setTimeout(() => {
+    gameSearchService.warmCache().catch(error => {
+      console.error('Failed to warm cache:', error);
+    });
+  }, 5000); // 5 second delay
+}
