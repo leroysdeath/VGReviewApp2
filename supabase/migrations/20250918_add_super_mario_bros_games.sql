@@ -23,11 +23,15 @@ CREATE OR REPLACE FUNCTION add_mario_game(
 DECLARE
   v_existing_id INTEGER;
   v_new_id INTEGER;
+  v_unique_slug VARCHAR(500);
+  v_counter INTEGER := 1;
 BEGIN
-  -- Check if game already exists by IGDB ID
+  -- Check if game already exists by IGDB ID or name
   SELECT id INTO v_existing_id 
   FROM game 
-  WHERE igdb_id = p_igdb_id;
+  WHERE igdb_id = p_igdb_id 
+     OR LOWER(name) = LOWER(p_name)
+     OR slug = p_slug;
   
   IF v_existing_id IS NOT NULL THEN
     -- Game exists, update greenlight flag if not set
@@ -40,14 +44,21 @@ BEGIN
     
     RETURN v_existing_id;
   ELSE
-    -- Insert new game
+    -- Find a unique slug
+    v_unique_slug := p_slug;
+    WHILE EXISTS (SELECT 1 FROM game WHERE slug = v_unique_slug) LOOP
+      v_unique_slug := p_slug || '-' || v_counter;
+      v_counter := v_counter + 1;
+    END LOOP;
+    
+    -- Insert new game with unique slug
     INSERT INTO game (
       game_id, igdb_id, name, slug, release_date, description, summary,
       developer, publisher, genre, genres, platforms, igdb_rating,
       category, greenlight_flag, flag_reason, flagged_at,
       cover_url, pic_url, is_verified, created_at, updated_at
     ) VALUES (
-      p_game_id, p_igdb_id, p_name, p_slug, p_release_date, p_description, p_summary,
+      p_game_id, p_igdb_id, p_name, v_unique_slug, p_release_date, p_description, p_summary,
       p_developer, p_publisher, p_genre, p_genres, p_platforms, p_igdb_rating,
       0, true, 'Essential Super Mario Bros game', NOW(),
       p_cover_url, p_pic_url, true, NOW(), NOW()
@@ -272,5 +283,3 @@ ON game USING gin (to_tsvector('english', name || ' ' || COALESCE(developer, '')
 
 -- Add comments
 COMMENT ON INDEX idx_game_mario_search IS 'Full-text search index for Mario games and Nintendo titles';
-
-RAISE NOTICE 'Super Mario Bros games migration completed successfully!';

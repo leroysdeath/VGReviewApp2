@@ -78,7 +78,6 @@ export const useGameSearch = () => {
         includeMetrics: true,
         bypassCache: false // Always use cache for better performance
       });
-      
       // Results are already filtered by the coordination service
       const filteredResults = searchResult.results;
 

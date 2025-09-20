@@ -291,7 +291,7 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
               }`}
               style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
-              <Play className="h-5 w-5" />
+              <Play className="h-5 w-5 fill-current" style={{ marginLeft: '2px' }} />
               <span className="font-medium">
                 {isStarted ? 'Started' : 'Mark as Started'}
               </span>

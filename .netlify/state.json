@@ -1,7 +1,7 @@
 {
 	"geolocation": {
 		"data": {
-			"city": "Grand Rapids",
+			"city": "Holland",
 			"country": {
 				"code": "US",
 				"name": "United States"
@@ -11,9 +11,9 @@
 				"name": "Michigan"
 			},
 			"timezone": "America/Detroit",
-			"latitude": 42.9282,
-			"longitude": -85.5473,
-			"postalCode": "49546"
+			"latitude": 42.7686,
+			"longitude": -86.117,
+			"postalCode": "49423"
 		},
 		"timestamp": 1758314011632
 	},

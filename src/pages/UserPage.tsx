@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense, useRef } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -19,7 +19,7 @@ const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsM
 
 export const UserPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { user: authUser, isAuthenticated } = useAuth();
+  const { user: authUser, isAuthenticated, updateProfile } = useAuth();
 
   // Redirect if no ID provided - redirect to current user's profile
   if (!id) {
@@ -48,8 +48,12 @@ export const UserPage: React.FC = () => {
   const { toggleFollow, isFollowing, loading: followLoading } = useFollow();
   const [isFollowingUser, setIsFollowingUser] = useState(false);
 
+  // Ref for ProfileDetails to calculate modal position
+  const profileDetailsRef = useRef<HTMLDivElement>(null);
+  const [modalTopPosition, setModalTopPosition] = useState<number | null>(null);
+
   // Fetch user data - defined first to avoid temporal dead zone
-  const fetchUserData = useCallback(async () => {
+  const fetchUserData = useCallback(async (skipLoadingState = false) => {
     // Parse ID to integer for database queries
     const numericId = parseInt(id);
     
@@ -60,7 +64,9 @@ export const UserPage: React.FC = () => {
     }
     
     try {
-      setLoading(true);
+      if (!skipLoadingState) {
+        setLoading(true);
+      }
       
       // Fetch user data
       const { data: userData, error: userError } = await supabase
@@ -153,20 +159,68 @@ export const UserPage: React.FC = () => {
       const { mapFormToDatabase } = await import('../utils/userFieldMapping');
       const mappedData = mapFormToDatabase(profileData);
 
-      const updateResult = await userServiceSimple.updateUser(id, mappedData);
-      
-      if (!updateResult.success) {
-        throw new Error(updateResult.error || 'Profile update failed');
+      // If editing own profile, use updateProfile for global state sync
+      // This ensures ResponsiveNavbar updates immediately
+      if (isOwnProfile && authUser) {
+        // Use the auth service's updateProfile which handles both database and auth state
+        const authUpdateResult = await updateProfile({
+          username: mappedData.username || mappedData.name,
+          avatar: mappedData.avatar_url
+        });
+        
+        if (authUpdateResult.error) {
+          throw authUpdateResult.error;
+        }
+        
+        // Also update any other fields that aren't handled by updateProfile
+        // (bio, location, website, platform) using userServiceSimple
+        const otherFields = {
+          bio: mappedData.bio,
+          location: mappedData.location,
+          website: mappedData.website,
+          platform: mappedData.platform
+        };
+        
+        // Only update if there are other fields to update
+        if (Object.values(otherFields).some(val => val !== undefined)) {
+          const updateResult = await userServiceSimple.updateUser(id, otherFields);
+          if (!updateResult.success) {
+            throw new Error(updateResult.error || 'Failed to update additional profile fields');
+          }
+        }
+      } else {
+        // For non-own profiles (if that's ever allowed), use the original method
+        const updateResult = await userServiceSimple.updateUser(id, mappedData);
+        
+        if (!updateResult.success) {
+          throw new Error(updateResult.error || 'Profile update failed');
+        }
       }
 
-      // Refresh the user data after successful update
-      await fetchUserData();
+      // Close modal first before refreshing data
+      setShowSettingsModal(false);
+      
+      // Refresh the user data after successful update with a small delay
+      // to ensure modal has closed properly, skip loading state to prevent flicker
+      setTimeout(() => {
+        fetchUserData(true);
+      }, 100);
       
     } catch (error) {
       console.error('Error saving profile:', error);
       throw error;
     }
-  }, [id, fetchUserData]);
+  }, [id, fetchUserData, isOwnProfile, authUser, updateProfile]);
+
+  // Calculate modal position based on ProfileDetails
+  const calculateModalPosition = () => {
+    if (profileDetailsRef.current) {
+      const rect = profileDetailsRef.current.getBoundingClientRect();
+      const bottomPosition = rect.bottom + window.scrollY;
+      // Add small gap (4px) below the ProfileDetails
+      setModalTopPosition(bottomPosition + 4);
+    }
+  };
 
   // Modal handlers
   const handleEditClick = () => {
@@ -188,27 +242,36 @@ export const UserPage: React.FC = () => {
   };
 
   const handleFollowersClick = () => {
+    calculateModalPosition();
     setModalInitialTab('followers');
     setIsFollowersModalOpen(true);
   };
 
   const handleFollowingClick = () => {
+    calculateModalPosition();
     setModalInitialTab('following');
     setIsFollowersModalOpen(true);
   };
 
   const handleGamesClick = () => {
+    calculateModalPosition();
     setGamesModalInitialTab('all');
     setIsGamesModalOpen(true);
   };
 
   const handleReviewsClick = () => {
+    calculateModalPosition();
     setIsReviewsModalOpen(true);
   };
   
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
+
+  // Reset to Top 5 tab when navigating to a different user
+  useEffect(() => {
+    setActiveTab('top5');
+  }, [id]);
 
   // Refresh follow state when page gains focus
   useEffect(() => {
@@ -281,13 +344,15 @@ export const UserPage: React.FC = () => {
             followLoading={followLoading}
             isAuthenticated={isAuthenticated}
           />
-          <ProfileDetails 
-            stats={stats} 
-            onFollowersClick={handleFollowersClick}
-            onFollowingClick={handleFollowingClick}
-            onGamesClick={handleGamesClick}
-            onReviewsClick={handleReviewsClick}
-          />
+          <div ref={profileDetailsRef}>
+            <ProfileDetails
+              stats={stats}
+              onFollowersClick={handleFollowersClick}
+              onFollowingClick={handleFollowingClick}
+              onGamesClick={handleGamesClick}
+              onReviewsClick={handleReviewsClick}
+            />
+          </div>
         </div>
 
         {/* Tabs Navigation */}
@@ -349,7 +414,6 @@ export const UserPage: React.FC = () => {
             userId={authUser?.id || ''}
             userData={{
               username: transformedUser.username,
-              displayName: user.display_name || '',
               email: user.email || authUser?.email || '',
               bio: transformedUser.bio,
               location: transformedUser.location || '',
@@ -369,6 +433,7 @@ export const UserPage: React.FC = () => {
         userId={id!}
         userName={transformedUser.username}
         initialTab={modalInitialTab}
+        topPosition={modalTopPosition}
       />
 
       {/* Games Modal */}
@@ -378,6 +443,7 @@ export const UserPage: React.FC = () => {
         userId={id!}
         userName={transformedUser.username}
         initialTab={gamesModalInitialTab}
+        topPosition={modalTopPosition}
       />
 
       {/* Reviews Modal */}
@@ -386,6 +452,7 @@ export const UserPage: React.FC = () => {
         onClose={() => setIsReviewsModalOpen(false)}
         userId={id!}
         userName={transformedUser.username}
+        topPosition={modalTopPosition}
       />
     </div>
   );

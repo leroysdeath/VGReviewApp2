@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, Heart, MessageSquare } from 'lucide-react';
+import { Heart, MessageSquare } from 'lucide-react';
 import { ReviewInteractions } from './ReviewInteractions';
 import { useReviewInteractions } from '../hooks/useReviewInteractions';
 import { escapeHtml } from '../utils/sanitize';
+import { getRelativeTime } from '../utils/dateUtils';
 
 // TypeScript interfaces for review data
 export interface ReviewData {
@@ -88,7 +89,11 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
     error,
     toggleLike,
     loadComments,
-    postComment
+    postComment,
+    updateComment,
+    removeComment,
+    toggleCommentLike,
+    likingCommentId
   } = useReviewInteractions({
     reviewId: parseInt(review.id),
     userId: currentUserId
@@ -111,18 +116,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
     return { firstPart: title, secondPart: null };
   };
 
-  // Format date for display
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
-    return date.toLocaleDateString();
-  };
 
   // Truncate review text for compact view
   const truncateText = (text: string, maxLength: number): string => {
@@ -248,35 +241,31 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   {review.gameTitle}
                 </span>
                 
-                {/* Rating and Date */}
+                {/* Date and Rating */}
                 <div className="flex items-center gap-4 mt-2">
+                  <div className="flex items-center text-gray-500">
+                    <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
+                      {getRelativeTime(review.date)}
+                    </span>
+                  </div>
                   <span className="text-yellow-400 font-semibold">
                     {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
                   </span>
-                  
-                  <div className="flex items-center gap-1 text-gray-500">
-                    <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
-                    <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
-                      {formatDate(review.date)}
-                    </span>
-                  </div>
                 </div>
               </div>
             )}
             
-            {/* Rating and Date for when no game title is shown */}
+            {/* Date and Rating for when no game title is shown */}
             {!showGameTitle || !review.gameTitle ? (
               <div className="flex items-center gap-4 mt-2">
+                <div className="flex items-center text-gray-500">
+                  <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
+                    {getRelativeTime(review.date)}
+                  </span>
+                </div>
                 <span className="text-yellow-400 font-semibold">
                   {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
                 </span>
-                
-                <div className="flex items-center gap-1 text-gray-500">
-                  <Calendar className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
-                  <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
-                    {formatDate(review.date)}
-                  </span>
-                </div>
               </div>
             ) : null}
           </div>
@@ -285,50 +274,41 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {review.hasText && (
             <p className={`
               text-gray-300 leading-relaxed mb-4 transition-colors duration-300
-              group-hover:text-gray-200
+              group-hover:text-gray-200 whitespace-pre-line line-clamp-3
               ${compact ? 'text-sm' : 'text-base'}
             `}>
-              {compact ? escapeHtml(truncateText(review.text, 120)) : escapeHtml(review.text)}
+              {escapeHtml(truncateText(review.text, 144))}
             </p>
           )}
 
           {/* Clear float to ensure interactions appear below */}
           <div className="clear-both"></div>
 
-          {/* Compact Interactions for mobile/compact view */}
-          {compact && (
-            <div className="flex items-center gap-3 mt-2">
-              <div className="flex items-center gap-1 text-gray-400">
-                <Heart className={`h-4 w-4 ${isLiked ? 'fill-current text-red-500' : ''}`} />
-                <span className="text-xs">{likeCount}</span>
-              </div>
-              <div className="flex items-center gap-1 text-gray-400">
-                <MessageSquare className="h-4 w-4" />
-                <span className="text-xs">{commentCount}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Full Review Interactions */}
-          {!compact && (
-            <ReviewInteractions
-              reviewId={review.id}
-              initialLikeCount={review.likeCount || likeCount}
-              initialCommentCount={review.commentCount || commentCount}
-              isLiked={isLiked}
-              onLike={toggleLike}
-              onUnlike={toggleLike}
-              comments={comments}
-              onAddComment={postComment}
-              isLoadingComments={isLoadingComments}
-              isLoadingLike={isLoadingLike}
-              error={error || undefined}
-              className="mt-3"
-              reviewAuthorId={parseInt(review.userId)}
-              currentUserId={currentUserId}
-              disableCommentHover={true}
-            />
-          )}
+          {/* Review Interactions - now shown for both compact and full modes */}
+          <ReviewInteractions
+            reviewId={review.id}
+            initialLikeCount={review.likeCount || likeCount}
+            initialCommentCount={review.commentCount || commentCount}
+            isLiked={isLiked}
+            onLike={toggleLike}
+            onUnlike={toggleLike}
+            comments={comments}
+            onAddComment={postComment}
+            onEditComment={updateComment}
+            onDeleteComment={removeComment}
+            onLikeComment={toggleCommentLike}
+            onUnlikeComment={toggleCommentLike}
+            isLoadingComments={isLoadingComments}
+            isLoadingLike={isLoadingLike}
+            isLikingComment={false}
+            likingCommentId={likingCommentId}
+            error={error || undefined}
+            className="mt-3"
+            reviewAuthorId={parseInt(review.userId)}
+            currentUserId={currentUserId}
+            disableCommentHover={true}
+            disableComments={true}
+          />
         </div>
       </div>
 

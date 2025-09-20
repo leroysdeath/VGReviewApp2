@@ -314,7 +314,6 @@ const UserSettingsPage: React.FC = () => {
           userId={user?.id || ''}
           userData={userProfile ? {
             username: userProfile.username || userProfile.name || '',
-            displayName: userProfile.display_name || '',
             email: userProfile.email || '',
             bio: userProfile.bio || '',
             location: userProfile.location || '',

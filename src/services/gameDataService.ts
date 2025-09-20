@@ -86,10 +86,17 @@ class GameDataService {
         }
       }
 
-      if (error || !data) {
-        console.log(`Game with IGDB ID ${igdbId} not found in database, fetching from IGDB API...`)
+      // Check if game exists but has incomplete data
+      const needsUpdate = data && (!data.description || !data.developer || !data.publisher || !data.screenshots)
+      
+      if (error || !data || needsUpdate) {
+        if (needsUpdate) {
+          console.log(`Game with IGDB ID ${igdbId} has incomplete data, refreshing from IGDB API...`)
+        } else {
+          console.log(`Game with IGDB ID ${igdbId} not found in database, fetching from IGDB API...`)
+        }
 
-        // Game not in database, try to fetch from IGDB API
+        // Game not in database or needs update, fetch from IGDB API
         try {
           const igdbGame = await igdbService.getGameById(igdbId)
 
@@ -101,37 +108,72 @@ class GameDataService {
           // Transform IGDB game to our format
           const transformedGame = igdbService.transformGame(igdbGame)
 
-          // Add the game to database for future use with generated slug
-          const { data: insertedGame, error: insertError } = await supabase
-            .from('game')
-            .insert({
-              igdb_id: transformedGame.igdb_id,
-              game_id: transformedGame.igdb_id.toString(),
-              name: transformedGame.name,
-              slug: generateSlug(transformedGame.name), // Generate slug from name
-              summary: transformedGame.summary,
-              release_date: transformedGame.first_release_date
-                ? (typeof transformedGame.first_release_date === 'number' 
-                    ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
-                    : new Date(transformedGame.first_release_date).toISOString().split('T')[0])
-                : null,
-              cover_url: transformedGame.cover_url,
-              genres: transformedGame.genres || [],
-              platforms: transformedGame.platforms || [],
-              developer: transformedGame.developer,
-              publisher: transformedGame.publisher,
-              igdb_rating: Math.round(transformedGame.igdb_rating || 0),
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .select(`
-              *,
-              rating(rating)
-            `)
-            .single()
+          // Prepare game data
+          const gameData = {
+            igdb_id: transformedGame.igdb_id,
+            game_id: transformedGame.igdb_id.toString(),
+            name: transformedGame.name,
+            slug: data?.slug || generateSlug(transformedGame.name), // Keep existing slug if updating
+            summary: transformedGame.summary,
+            description: transformedGame.description, // Add description field
+            release_date: transformedGame.first_release_date
+              ? (typeof transformedGame.first_release_date === 'number' 
+                  ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
+                  : new Date(transformedGame.first_release_date).toISOString().split('T')[0])
+              : null,
+            cover_url: transformedGame.cover_url,
+            pic_url: transformedGame.cover_url, // Add pic_url for compatibility
+            screenshots: transformedGame.screenshots || null, // Add screenshots
+            genres: transformedGame.genres || [],
+            platforms: transformedGame.platforms || [],
+            developer: transformedGame.developer,
+            publisher: transformedGame.publisher,
+            igdb_rating: Math.round(transformedGame.igdb_rating || 0),
+            category: transformedGame.category || null, // Add category
+            alternative_names: transformedGame.alternative_names || null, // Add alternative names
+            franchise_name: transformedGame.franchise || null, // Add franchise name
+            collection_name: transformedGame.collection || null, // Add collection name
+            dlc_ids: transformedGame.dlcs || null, // Add DLC IDs
+            expansion_ids: transformedGame.expansions || null, // Add expansion IDs
+            similar_game_ids: transformedGame.similar_games || null, // Add similar game IDs
+            updated_at: new Date().toISOString()
+          }
 
-          if (insertError) {
-            console.error('Error inserting game into database:', insertError)
+          // Either insert new or update existing game
+          let upsertedGame, upsertError
+          
+          if (needsUpdate) {
+            // Update existing game
+            const { data: updated, error: updateErr } = await supabase
+              .from('game')
+              .update(gameData)
+              .eq('igdb_id', igdbId)
+              .select(`
+                *,
+                rating(rating)
+              `)
+              .single()
+            upsertedGame = updated
+            upsertError = updateErr
+          } else {
+            // Insert new game
+            const { data: inserted, error: insertErr } = await supabase
+              .from('game')
+              .insert({
+                ...gameData,
+                created_at: new Date().toISOString()
+              })
+              .select(`
+                *,
+                rating(rating)
+              `)
+              .single()
+            upsertedGame = inserted
+            upsertError = insertErr
+          }
+
+          if (upsertError) {
+            console.error(needsUpdate ? 'Error updating game in database:' : 'Error inserting game into database:', upsertError)
             // Even if insert fails, return the game data from IGDB
             return {
               ...transformedGame,
@@ -142,10 +184,12 @@ class GameDataService {
             } as GameWithCalculatedFields
           }
 
-          console.log(`✅ Game "${transformedGame.name}" added to database`)
+          console.log(needsUpdate 
+            ? `✅ Game "${transformedGame.name}" updated in database with complete data`
+            : `✅ Game "${transformedGame.name}" added to database`)
 
-          // Return the newly inserted game
-          return this.transformGameWithRatings(insertedGame as GameWithRating)
+          // Return the newly inserted/updated game
+          return this.transformGameWithRatings(upsertedGame as GameWithRating)
         } catch (igdbError) {
           console.error('Error fetching from IGDB:', igdbError)
           return null
@@ -181,6 +225,8 @@ class GameDataService {
     }>;
   }> {
     try {
+      console.log(`🔍 Looking up game with IGDB ID: ${igdbId}`);
+      
       // First check if game exists in database
       const { data: gameData, error: gameError } = await supabase
         .from('game')
@@ -188,10 +234,30 @@ class GameDataService {
         .eq('igdb_id', igdbId)
         .single()
 
-      if (gameError || !gameData) {
-        console.log(`Game with IGDB ID ${igdbId} not found in database, fetching from IGDB API...`)
+      if (gameError) {
+        console.log(`Database error for IGDB ID ${igdbId}:`, gameError);
+      }
+      
+      if (gameData) {
+        console.log(`✅ Found game in database:`, {
+          id: gameData.id,
+          igdb_id: gameData.igdb_id,
+          name: gameData.name,
+          slug: gameData.slug
+        });
+      }
 
-        // Game not in database, try to fetch from IGDB API
+      // Check if game exists but has incomplete data
+      const needsUpdate = gameData && (!gameData.description || !gameData.developer || !gameData.publisher || !gameData.screenshots)
+      
+      if (gameError || !gameData || needsUpdate) {
+        if (needsUpdate) {
+          console.log(`Game with IGDB ID ${igdbId} has incomplete data, refreshing from IGDB API...`)
+        } else {
+          console.log(`Game with IGDB ID ${igdbId} not found in database, fetching from IGDB API...`)
+        }
+
+        // Game not in database or needs update, fetch from IGDB API
         try {
           const igdbGame = await igdbService.getGameById(igdbId)
 
@@ -203,34 +269,66 @@ class GameDataService {
           // Transform IGDB game to our format
           const transformedGame = igdbService.transformGame(igdbGame)
 
-          // Add the game to database for future use with generated slug
-          const { data: insertedGame, error: insertError } = await supabase
-            .from('game')
-            .insert({
-              igdb_id: transformedGame.igdb_id,
-              game_id: transformedGame.igdb_id.toString(),
-              name: transformedGame.name,
-              slug: generateSlug(transformedGame.name), // Generate slug from name
-              summary: transformedGame.summary,
-              release_date: transformedGame.first_release_date
-                ? (typeof transformedGame.first_release_date === 'number' 
-                    ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
-                    : new Date(transformedGame.first_release_date).toISOString().split('T')[0])
-                : null,
-              cover_url: transformedGame.cover_url,
-              genres: transformedGame.genres || [],
-              platforms: transformedGame.platforms || [],
-              developer: transformedGame.developer,
-              publisher: transformedGame.publisher,
-              igdb_rating: Math.round(transformedGame.igdb_rating || 0),
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .select()
-            .single()
+          // Prepare game data
+          const preparedGameData = {
+            igdb_id: transformedGame.igdb_id,
+            game_id: transformedGame.igdb_id.toString(),
+            name: transformedGame.name,
+            slug: gameData?.slug || generateSlug(transformedGame.name), // Keep existing slug if updating
+            summary: transformedGame.summary,
+            description: transformedGame.description, // Add description field
+            release_date: transformedGame.first_release_date
+              ? (typeof transformedGame.first_release_date === 'number' 
+                  ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
+                  : new Date(transformedGame.first_release_date).toISOString().split('T')[0])
+              : null,
+            cover_url: transformedGame.cover_url,
+            pic_url: transformedGame.cover_url, // Add pic_url for compatibility
+            screenshots: transformedGame.screenshots || null, // Add screenshots
+            genres: transformedGame.genres || [],
+            platforms: transformedGame.platforms || [],
+            developer: transformedGame.developer,
+            publisher: transformedGame.publisher,
+            igdb_rating: Math.round(transformedGame.igdb_rating || 0),
+            category: transformedGame.category || null, // Add category
+            alternative_names: transformedGame.alternative_names || null, // Add alternative names
+            franchise_name: transformedGame.franchise || null, // Add franchise name
+            collection_name: transformedGame.collection || null, // Add collection name
+            dlc_ids: transformedGame.dlcs || null, // Add DLC IDs
+            expansion_ids: transformedGame.expansions || null, // Add expansion IDs
+            similar_game_ids: transformedGame.similar_games || null, // Add similar game IDs
+            updated_at: new Date().toISOString()
+          }
 
-          if (insertError) {
-            console.error('Error inserting game into database:', insertError)
+          // Either insert new or update existing game
+          let upsertedGame, upsertError
+          
+          if (needsUpdate) {
+            // Update existing game
+            const { data: updated, error: updateErr } = await supabase
+              .from('game')
+              .update(preparedGameData)
+              .eq('igdb_id', igdbId)
+              .select()
+              .single()
+            upsertedGame = updated
+            upsertError = updateErr
+          } else {
+            // Insert new game
+            const { data: inserted, error: insertErr } = await supabase
+              .from('game')
+              .insert({
+                ...preparedGameData,
+                created_at: new Date().toISOString()
+              })
+              .select()
+              .single()
+            upsertedGame = inserted
+            upsertError = insertErr
+          }
+
+          if (upsertError) {
+            console.error(needsUpdate ? 'Error updating game in database:' : 'Error inserting game into database:', upsertError)
             // Even if insert fails, return the game data from IGDB
             return {
               game: {
@@ -244,12 +342,14 @@ class GameDataService {
             }
           }
 
-          console.log(`✅ Game "${transformedGame.name}" added to database`)
+          console.log(needsUpdate 
+            ? `✅ Game "${transformedGame.name}" updated in database with complete data`
+            : `✅ Game "${transformedGame.name}" added to database`)
 
-          // Return the newly inserted game with no reviews yet
+          // Return the newly inserted/updated game with no reviews yet
           return {
             game: {
-              ...insertedGame,
+              ...upsertedGame,
               averageUserRating: 0,
               totalUserRatings: 0
             } as GameWithCalculatedFields,
@@ -559,10 +659,12 @@ class GameDataService {
    * Convert IGDB games to local format for immediate display
    */
   private convertIGDBToLocal(igdbGames: any[]): GameWithCalculatedFields[] {
-    return igdbGames.map(game => ({
-      id: -(game.id || 0), // Negative ID to indicate it's from IGDB
-      igdb_id: game.id || 0,
-      name: game.name || 'Unknown Game',
+    return igdbGames.map(game => {
+      const converted = {
+        id: -(game.id || 0), // Negative ID to indicate it's from IGDB
+        igdb_id: game.id || 0,
+        name: game.name || 'Unknown Game',
+        slug: generateSlug(game.name || 'Unknown Game'), // Generate slug for IGDB games
       summary: game.summary || null,
       release_date: game.first_release_date ? 
         new Date(game.first_release_date * 1000).toISOString().split('T')[0] : null,
@@ -582,7 +684,21 @@ class GameDataService {
       averageUserRating: 0,
       totalUserRatings: 0,
       fromIGDB: true // Track that this came from IGDB API
-    }))
+    };
+    
+    // DEBUG: Log the conversion
+    if (game.name && game.name.toLowerCase().includes('expedition')) {
+      console.error('🔄 DEBUG - Converting IGDB game:', {
+        original_id: game.id,
+        converted_id: converted.id,
+        igdb_id: converted.igdb_id,
+        slug: converted.slug,
+        name: converted.name
+      });
+    }
+    
+    return converted;
+    })
   }
 
   /**
@@ -594,6 +710,12 @@ class GameDataService {
   ): GameWithCalculatedFields[] {
     const seen = new Set<number>()
     const merged: GameWithCalculatedFields[] = []
+
+    // DEBUG: Log merge inputs
+    console.log('🔀 DEBUG - Merging results:', {
+      dbResults: dbResults.map(g => ({ name: g.name, id: g.id, igdb_id: g.igdb_id })),
+      igdbResults: igdbResults.map(g => ({ name: g.name, id: g.id, igdb_id: g.igdb_id }))
+    });
 
     // Add database results first (preferred)
     dbResults.forEach(game => {
@@ -609,6 +731,11 @@ class GameDataService {
         merged.push(game)
       }
     })
+    
+    // DEBUG: Log final merged results
+    console.log('✅ DEBUG - Final merged results:', 
+      merged.map(g => ({ name: g.name, id: g.id, igdb_id: g.igdb_id }))
+    );
 
     return merged
   }

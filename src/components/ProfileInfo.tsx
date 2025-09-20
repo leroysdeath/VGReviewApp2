@@ -77,17 +77,14 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({
                 followLoading
                   ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                   : isFollowing
-                  ? 'bg-green-600 text-white hover:bg-green-700'
-                  : 'bg-purple-600 text-white hover:bg-purple-700'
+                  ? 'bg-[#E8A5A5] text-white hover:bg-[#E8A5A5]/80'
+                  : 'bg-[#FF6B9D] text-white hover:bg-[#FF6B9D]/80'
               }`}
             >
               {followLoading ? (
                 <span className="text-xs">...</span>
               ) : isFollowing ? (
-                <>
-                  <UserCheck className="h-4 w-4" />
-                  Following
-                </>
+                <UserCheck className="h-5 w-5" />
               ) : (
                 <>
                   <UserPlus className="h-4 w-4" />

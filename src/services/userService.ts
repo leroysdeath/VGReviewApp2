@@ -196,16 +196,76 @@ export class UserService {
   }
 
   /**
+   * Generate username from email or name for OAuth users
+   */
+  private generateUsernameFromEmail(email: string): string | null {
+    if (!email) return null;
+    
+    // Extract username part from email (before @)
+    const emailParts = email.split('@');
+    if (emailParts.length !== 2) return null;
+    
+    // Clean up the username part (remove dots, special chars except underscore)
+    let username = emailParts[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '') // Remove non-alphanumeric except underscore
+      .substring(0, 18); // Leave room for potential numeric suffix
+    
+    // Ensure minimum length
+    if (username.length < 3) {
+      username = username.padEnd(3, '0');
+    }
+    
+    return username;
+  }
+
+  /**
    * User Creation Module
    */
   private async createNewUser(authUser: Session['user']): Promise<UserServiceResult> {
     try {
+      // Determine username: use metadata username, or generate from email for OAuth users
+      let username = authUser.user_metadata?.username;
+      
+      if (!username && authUser.email) {
+        // Generate username for OAuth users
+        username = this.generateUsernameFromEmail(authUser.email);
+        
+        // Check if generated username already exists and add suffix if needed
+        if (username) {
+          let finalUsername = username;
+          let suffix = 1;
+          let isUnique = false;
+          
+          while (!isUnique && suffix <= 99) {
+            const { count } = await supabase
+              .from('user')
+              .select('id', { count: 'exact', head: true })
+              .eq('username', finalUsername);
+            
+            if (count === 0) {
+              isUnique = true;
+              username = finalUsername;
+            } else {
+              finalUsername = `${username}${suffix}`;
+              suffix++;
+            }
+          }
+          
+          // If still not unique after 99 attempts, use timestamp
+          if (!isUnique) {
+            username = `${username}${Date.now().toString().slice(-4)}`;
+          }
+        }
+      }
+      
       const { data: newUser, error: insertError } = await supabase
         .from('user')
         .insert({
           provider_id: authUser.id,
           email: authUser.email || '',
           name: authUser.user_metadata?.name || authUser.user_metadata?.username || 'User',
+          username: username || null, // Use generated or provided username
           provider: 'supabase',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()

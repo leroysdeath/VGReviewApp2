@@ -2,6 +2,13 @@
 command = "npm install && npm run build"
 publish = "dist"
 
+[dev]
+command = "npm run dev"
+port = 8888
+targetPort = 5173
+autoLaunch = true
+framework = "#auto"
+
 [build.environment]
 NODE_VERSION = "20"
 
@@ -23,6 +30,25 @@ Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
 Access-Control-Allow-Headers = "Content-Type, Authorization, X-Requested-With, X-Client-Info, ApiKey"
 Access-Control-Max-Age = "86400"
 Vary = "Origin"
+
+# Vite development files
+[[headers]]
+for = "/@vite/*"
+[headers.values]
+Content-Type = "application/javascript"
+Cache-Control = "no-cache"
+
+[[headers]]
+for = "/@react-refresh"
+[headers.values]
+Content-Type = "application/javascript"
+Cache-Control = "no-cache"
+
+[[headers]]
+for = "/src/*"
+[headers.values]
+Content-Type = "application/javascript"
+Cache-Control = "no-cache"
 
 # Cache for static assets
 [[headers]]

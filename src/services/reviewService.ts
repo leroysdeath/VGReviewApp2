@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { sanitizeRich } from '../utils/sanitize';
 import { generateSlug } from '../utils/gameUrls';
+import { igdbService } from './igdbService';
 
 /**
  * Get database user ID from auth user
@@ -206,12 +207,61 @@ export const createReview = async (
       return { success: false, error: `Game lookup failed: ${gameError.message}` };
     }
 
+    let gameId: number;
+    let gameSlug: string;
+    let gameName: string;
+    
     if (!gameRecord) {
-      console.error('❌ Game not found in database for IGDB ID:', igdbId);
-      return { success: false, error: 'Game not found in database. Please select a game from the search results.' };
+      console.log('⚠️ Game not found in database for IGDB ID:', igdbId, '- fetching from IGDB');
+      
+      // Fetch game data from IGDB
+      try {
+        const igdbGame = await igdbService.getGameById(igdbId);
+        
+        if (!igdbGame) {
+          console.error('❌ Game not found in IGDB either');
+          return { success: false, error: 'Game not found. Please select a valid game from the search results.' };
+        }
+        
+        // Transform IGDB game to our format
+        const transformedGame = igdbService.transformGame(igdbGame);
+        
+        // Use ensureGameExists to add the game to database
+        const ensureResult = await ensureGameExists({
+          id: 0, // New game, no database ID yet
+          igdb_id: transformedGame.igdb_id,
+          name: transformedGame.name,
+          cover_url: transformedGame.cover_url,
+          genre: transformedGame.genres?.[0],
+          releaseDate: transformedGame.release_date
+        });
+        
+        if (!ensureResult.success || !ensureResult.data) {
+          console.error('❌ Failed to add game to database:', ensureResult.error);
+          return { success: false, error: ensureResult.error || 'Failed to add game to database' };
+        }
+        
+        console.log('✅ Game added to database with ID:', ensureResult.data.gameId);
+        gameId = ensureResult.data.gameId;
+        
+        // Fetch the newly created game record to get the slug
+        const { data: newGameRecord } = await supabase
+          .from('game')
+          .select('slug, name')
+          .eq('id', gameId)
+          .single();
+          
+        gameSlug = newGameRecord?.slug || generateSlug(transformedGame.name);
+        gameName = newGameRecord?.name || transformedGame.name;
+      } catch (error) {
+        console.error('❌ Error fetching/adding game:', error);
+        return { success: false, error: 'Failed to fetch game data. Please try again.' };
+      }
+    } else {
+      gameId = gameRecord.id;
+      gameSlug = gameRecord.slug || generateSlug(gameRecord.name);
+      gameName = gameRecord.name;
     }
-
-    const gameId = gameRecord.id;
 
     console.log('✅ Using game ID:', gameId);
 
@@ -255,7 +305,7 @@ export const createReview = async (
       user_id: userId,
       game_id: gameId, // Database game ID
       igdb_id: igdbId, // Also store IGDB ID for reference
-      slug: gameRecord.slug || generateSlug(gameRecord.name), // Get slug from game or generate if missing
+      slug: gameSlug, // Use the slug we retrieved/generated above
       rating: rating,
       review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
       post_date_time: new Date().toISOString(),
@@ -1386,6 +1436,65 @@ export const deleteComment = async (
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete comment'
+    };
+  }
+};
+
+/**
+ * Delete a review
+ */
+export const deleteReview = async (
+  reviewId: number
+): Promise<ServiceResponse<boolean>> => {
+  console.log('🗑️ deleteReview called with:', { reviewId });
+  
+  try {
+    // Validate input
+    if (!reviewId || isNaN(reviewId)) {
+      return { success: false, error: 'Invalid review ID' };
+    }
+
+    // Get current user ID to verify ownership
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // Verify the review belongs to the current user
+    const { data: existingReview, error: verifyError } = await supabase
+      .from('rating')
+      .select('id, user_id')
+      .eq('id', reviewId)
+      .eq('user_id', userId)
+      .single();
+
+    if (verifyError || !existingReview) {
+      console.error('❌ Review not found or access denied:', verifyError);
+      return { success: false, error: 'Review not found or you do not have permission to delete it' };
+    }
+
+    // Delete review (this will cascade delete related comments and likes)
+    console.log('📤 Deleting review:', { reviewId });
+    const { error } = await supabase
+      .from('rating')
+      .delete()
+      .eq('id', reviewId);
+
+    if (error) {
+      console.error('❌ Error deleting review:', error);
+      throw error;
+    }
+    console.log('✅ Review deleted successfully:', { reviewId });
+
+    return {
+      success: true,
+      data: true
+    };
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete review'
     };
   }
 };
