@@ -212,6 +212,7 @@ WHERE igdb_id = 102874 AND name = 'Pokémon Quest';
 
 -- Check if Pokemon Legends: Arceus exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -221,6 +222,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '119388',
   'Pokémon Legends: Arceus',
   'Game Freak',
   'Nintendo',
@@ -234,6 +236,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Brilliant Diamond exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -243,6 +246,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '119387',
   'Pokémon Brilliant Diamond',
   'ILCA',
   'Nintendo',
@@ -256,6 +260,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Shining Pearl exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -265,6 +270,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '131435',
   'Pokémon Shining Pearl',
   'ILCA',
   'Nintendo',
@@ -278,6 +284,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Scarlet exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -287,6 +294,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '207879',
   'Pokémon Scarlet',
   'Game Freak',
   'Nintendo',
@@ -300,6 +308,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Violet exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -309,6 +318,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '207880',
   'Pokémon Violet',
   'Game Freak',
   'Nintendo',
@@ -322,6 +332,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Gold exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -331,6 +342,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1515',
   'Pokémon Gold Version',
   'Game Freak',
   'Nintendo',
@@ -344,6 +356,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Silver exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -353,6 +366,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1516',
   'Pokémon Silver Version',
   'Game Freak',
   'Nintendo',
@@ -366,6 +380,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Ruby exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -375,6 +390,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1517',
   'Pokémon Ruby Version',
   'Game Freak',
   'Nintendo',
@@ -388,6 +404,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Sapphire exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -397,6 +414,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1518',
   'Pokémon Sapphire Version',
   'Game Freak',
   'Nintendo',
@@ -410,6 +428,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Emerald exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -419,6 +438,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1520',
   'Pokémon Emerald Version',
   'Game Freak',
   'Nintendo',
@@ -432,6 +452,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Diamond exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -441,6 +462,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1522',
   'Pokémon Diamond Version',
   'Game Freak',
   'Nintendo',
@@ -454,6 +476,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Pearl exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -463,6 +486,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1523',
   'Pokémon Pearl Version',
   'Game Freak',
   'Nintendo',
@@ -476,6 +500,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Platinum exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -485,6 +510,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1524',
   'Pokémon Platinum Version',
   'Game Freak',
   'Nintendo',
@@ -498,6 +524,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon HeartGold exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -507,6 +534,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1525',
   'Pokémon HeartGold Version',
   'Game Freak',
   'Nintendo',
@@ -520,6 +548,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon SoulSilver exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -529,6 +558,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1526',
   'Pokémon SoulSilver Version',
   'Game Freak',
   'Nintendo',
@@ -542,6 +572,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon White exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -551,6 +582,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1527',
   'Pokémon White Version',
   'Game Freak',
   'Nintendo',
@@ -564,6 +596,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon Yellow exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -573,6 +606,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1560',
   'Pokémon Yellow Version: Special Pikachu Edition',
   'Game Freak',
   'Nintendo',
@@ -586,6 +620,7 @@ WHERE NOT EXISTS (
 
 -- Check if Pokemon LeafGreen exists, if not, insert it
 INSERT INTO game (
+  game_id,
   name,
   developer,
   publisher,
@@ -595,6 +630,7 @@ INSERT INTO game (
   follows
 )
 SELECT
+  '1565',
   'Pokémon LeafGreen Version',
   'Game Freak',
   'Nintendo',
