@@ -280,7 +280,7 @@ async function findSequelsAndSeries(baseQuery: string, primaryResults: IGDBGame[
         fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ searchTerm: pattern, limit: 5 })
+          body: JSON.stringify({ searchTerm: pattern, limit: 15 })
         })
         .then(res => res.json())
         .then(data => data.success ? data.games || [] : [])
@@ -585,7 +585,7 @@ class IGDBService {
     return data.games || [];
   }
 
-  async searchGames(query: string, limit: number = 20): Promise<IGDBGame[]> {
+  async searchGames(query: string, limit: number = 30): Promise<IGDBGame[]> {
     try {
       if (!query.trim()) {
         return [];
@@ -707,7 +707,7 @@ class IGDBService {
         // Reduced API calls: Search for top 2 flagship patterns only for better performance  
         for (const pattern of flagshipPatterns.slice(0, 2)) {
           flagshipSearches.push(
-            this.performBasicSearch(pattern, 5)
+            this.performBasicSearch(pattern, 15)
               .catch(error => {
                 console.log(`⚠️ Flagship search failed for "${pattern}":`, error);
                 return [];

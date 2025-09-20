@@ -24,6 +24,10 @@ interface Game {
   avg_user_rating?: number;
   user_rating_count?: number;
   category?: number;
+  // Manual flagging system
+  greenlight_flag?: boolean;
+  redlight_flag?: boolean;
+  flag_reason?: string;
 }
 
 interface Platform {
@@ -376,9 +380,9 @@ export const SearchResultsPage: React.FC = () => {
           )}
 
           {/* Results Info */}
-          <div className="flex justify-between items-center text-gray-400">
-            <div className="flex items-center gap-4">
-              <p>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 text-gray-400">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <p className="text-sm sm:text-base">
                 Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredGames.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredGames.length)} of {filteredGames.length} games
               </p>
               {searchState.source && (
@@ -579,52 +583,84 @@ export const SearchResultsPage: React.FC = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-8">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                
-                {/* Page Numbers */}
-                <div className="flex gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum: number;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`px-4 py-2 rounded-lg transition-colors ${
-                          currentPage === pageNum
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-8">
+                {/* Mobile: Show current page info */}
+                <div className="sm:hidden text-sm text-gray-400">
+                  Page {currentPage} of {totalPages}
                 </div>
                 
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
+                <div className="flex justify-center items-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="p-2 sm:p-3 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </button>
+                  
+                  {/* Page Numbers - Show fewer on mobile */}
+                  <div className="flex gap-1">
+                    {Array.from({ length: Math.min(isMobile ? 3 : 5, totalPages) }, (_, i) => {
+                      let pageNum: number;
+                      const maxPages = isMobile ? 3 : 5;
+                      const halfRange = Math.floor(maxPages / 2);
+                      
+                      if (totalPages <= maxPages) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= halfRange + 1) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - halfRange) {
+                        pageNum = totalPages - maxPages + 1 + i;
+                      } else {
+                        pageNum = currentPage - halfRange + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base rounded-lg transition-colors ${
+                            currentPage === pageNum
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="p-2 sm:p-3 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </button>
+                </div>
+                
+                {/* Desktop: Show jump to first/last if needed */}
+                {!isMobile && totalPages > 7 && (
+                  <div className="flex gap-2">
+                    {currentPage > 4 && (
+                      <button
+                        onClick={() => handlePageChange(1)}
+                        className="px-3 py-2 text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors"
+                      >
+                        First
+                      </button>
+                    )}
+                    {currentPage < totalPages - 3 && (
+                      <button
+                        onClick={() => handlePageChange(totalPages)}
+                        className="px-3 py-2 text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors"
+                      >
+                        Last
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
