@@ -711,10 +711,21 @@ export function shouldFilterContent(game: Game): boolean {
   }
   
 
+  // Check if game has quality metrics that should exempt it from filtering
+  const hasHighQuality = (game.total_rating && game.total_rating > 70) && 
+                        (game.rating_count && game.rating_count > 50);
+  const isVeryPopular = game.follows && game.follows > 1000;
+  const hasStrongMetrics = hasHighQuality || isVeryPopular;
+  
   // Apply filtering based on copyright level
   switch (maxCopyrightLevel) {
     case CopyrightLevel.BLOCK_ALL:
       // Block ALL content from this company (extremely rare)
+      // But still respect quality exemptions for official releases
+      if (hasStrongMetrics && !hasExplicitFanIndicators) {
+        if (DEBUG_FILTERING) console.log(`⭐ QUALITY OVERRIDE: Keeping "${game.name}" despite block-all (Rating: ${game.total_rating})`);
+        return false;
+      }
       if (DEBUG_FILTERING) console.log(`🔒 BLOCKED ALL: "${game.name}" - Company: ${responsibleCompany} (${getPolicyReason(responsibleCompany)})`);
       return true;
       
@@ -747,6 +758,12 @@ export function shouldFilterContent(game: Game): boolean {
       //   if (DEBUG_FILTERING) console.log(`🛡️ ENHANCED MOD FILTER: "${game.name}" - Mod content blocked for ${responsibleCompany}`);
       //   return true;
       // }
+      
+      // Quality exemption for aggressive companies
+      if (hasStrongMetrics && game.category === 0) {
+        if (DEBUG_FILTERING) console.log(`⭐ QUALITY OVERRIDE: Keeping "${game.name}" despite aggressive copyright (Rating: ${game.total_rating}, Category: Main)`);
+        return false;
+      }
       
       // Block fan-made content for aggressive companies (re-enabled with safer logic)
       // Only filter if there are explicit fan indicators, not just protected franchises
@@ -1063,6 +1080,18 @@ export function filterProtectedContent(games: Game[]): Game[] {
     if (game.redlight_flag === true) {
       if (DEBUG_FILTERING) if (DEBUG_FILTERING) console.log(`🚫 REDLIGHT: Filtering "${game.name}" - admin override to always hide`);
       return false; // Admin explicitly wants this game hidden
+    }
+    
+    // QUALITY EXEMPTION: High-quality official games bypass most filters
+    const hasHighQuality = (game.total_rating && game.total_rating > 70) && 
+                          (game.rating_count && game.rating_count > 50);
+    const isVeryPopular = game.follows && game.follows > 1000;
+    const hasStrongMetrics = hasHighQuality || isVeryPopular;
+    
+    if (hasStrongMetrics && game.category === 0) {
+      // Main games with strong metrics always pass
+      if (DEBUG_FILTERING) console.log(`⭐ QUALITY EXEMPTION: Keeping high-quality game "${game.name}" (Rating: ${game.total_rating}, Reviews: ${game.rating_count})`);
+      return true;
     }
     // Filter out IGDB category 5 (Mods) explicitly
     if (game.category === 5) {
