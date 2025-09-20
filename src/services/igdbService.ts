@@ -324,8 +324,8 @@ async function findSequelsAndSeries(baseQuery: string, primaryResults: IGDBGame[
       id: game.id,
       name: game.name,
       allNames: [game.name, ...(game.alternative_names?.map(alt => alt.name) || [])].filter(Boolean),
-      developer: game.involved_companies?.[0]?.company?.name,
-      publisher: game.involved_companies?.[0]?.company?.name,
+      developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+      publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
       summary: game.summary,
       description: game.summary,
       category: game.category,
@@ -643,8 +643,8 @@ class IGDBService {
         id: game.id,
         name: game.name,
         allNames: [game.name, ...(game.alternative_names?.map(alt => alt.name) || [])].filter(Boolean),
-        developer: game.involved_companies?.[0]?.company?.name,
-        publisher: game.involved_companies?.[0]?.company?.name,
+        developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+        publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
         summary: game.summary,
         description: game.summary,
         category: game.category,
@@ -783,8 +783,8 @@ class IGDBService {
           id: game.id,
           name: game.name,
           allNames: [game.name, ...(game.alternative_names?.map(alt => alt.name) || [])].filter(Boolean),
-          developer: game.involved_companies?.[0]?.company?.name,
-          publisher: game.involved_companies?.[0]?.company?.name,
+          developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+          publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
           summary: game.summary,
           description: game.summary,
           category: game.category,
@@ -849,8 +849,8 @@ class IGDBService {
         const gamesForPrioritization = filteredIGDBGames.map(game => ({
           ...game,
           genres: game.genres?.map(g => g.name) || [],
-          developer: game.involved_companies?.find(c => c.company)?.company?.name,
-          publisher: game.involved_companies?.find(c => c.company)?.company?.name,
+          developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+          publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
           igdb_rating: game.rating
         }));
         
@@ -866,8 +866,8 @@ class IGDBService {
           const gameForPriority = {
             ...game,
             genres: game.genres?.map(g => g.name) || [],
-            developer: game.involved_companies?.find(c => c.company)?.company?.name,
-            publisher: game.involved_companies?.find(c => c.company)?.company?.name,
+            developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+            publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
             igdb_rating: game.rating
           };
           const priority = calculateGamePriority(gameForPriority as any);
@@ -971,8 +971,8 @@ class IGDBService {
       const gamesForFinalPrioritization = typeScoreResults.map(game => ({
         ...game,
         genres: game.genres?.map(g => g.name) || [],
-        developer: game.involved_companies?.find(c => c.company)?.company?.name,
-        publisher: game.involved_companies?.find(c => c.company)?.company?.name,
+        developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+        publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
         igdb_rating: game.rating
       }));
       
@@ -1093,8 +1093,8 @@ class IGDBService {
         id: game.id,
         name: game.name,
         allNames: [game.name, ...(game.alternative_names?.map(alt => alt.name) || [])].filter(Boolean),
-        developer: game.involved_companies?.[0]?.company?.name,
-        publisher: game.involved_companies?.[0]?.company?.name,
+        developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+        publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
         summary: game.summary,
         description: game.summary,
         category: game.category,
@@ -1140,8 +1140,8 @@ class IGDBService {
       id: igdbGame.id,
       name: igdbGame.name,
       allNames: allNames,
-      developer: igdbGame.involved_companies?.[0]?.company?.name,
-      publisher: igdbGame.involved_companies?.[0]?.company?.name,
+      developer: igdbGame.involved_companies?.find(c => c.developer)?.company?.name || igdbGame.involved_companies?.[0]?.company?.name,
+      publisher: igdbGame.involved_companies?.find(c => c.publisher)?.company?.name || igdbGame.involved_companies?.[0]?.company?.name,
       summary: igdbGame.summary,
       description: igdbGame.summary,
       category: igdbGame.category,

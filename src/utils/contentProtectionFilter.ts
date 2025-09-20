@@ -174,9 +174,11 @@ const PROTECTED_COMPANIES = [
 // Protected franchise keywords that indicate IP-sensitive content
 const PROTECTED_FRANCHISES = [
   // Nintendo franchises
-  'mario', 'zelda', 'pokemon', 'metroid', 'kirby', 'donkey kong', 'star fox',
+  'mario', 'zelda', /* 'pokemon', */ 'metroid', 'kirby', 'donkey kong', 'star fox',
   'fire emblem', 'xenoblade', 'splatoon', 'animal crossing', 'smash bros',
   'earthbound', 'mother', 'pikmin', 'f-zero',
+  // NOTE: Pokemon temporarily removed from protected franchises as official company detection
+  // should be sufficient, and this was causing false positives
   
   // Square Enix franchises (highly DMCA-prone)
   'final fantasy', 'ff', 'dragon quest', 'chrono trigger', 'chrono cross',
@@ -251,14 +253,16 @@ const OFFICIAL_COMPANIES = [
   // Nintendo and subsidiaries (expanded with missing variants)
   'nintendo', 'nintendo co ltd', 'nintendo co., ltd.', 'nintendo company limited',
   'nintendo of america', 'nintendo of america inc', 'nintendo of europe', 'nintendo of europe gmbh',
-  'game freak', 'gamefreak', 'game freak inc', 'game freak, inc.',
+  'game freak', 'gamefreak', 'game freak inc', 'game freak, inc.', 'game freak inc.',
   'hal laboratory', 'hal laboratory inc', 'hal laboratory, inc.',
   'intelligent systems', 'intelligent systems co., ltd.',
   'retro studios', 'retro studios inc', 'retro studios, inc.',
   'the pokémon company', 'pokemon company', 'the pokemon company',
   'pokémon company', 'pokemon company international', 'the pokémon company international',
   'the pokemon company international', 'pokémon company international',
-  'creatures inc', 'creatures', 'creatures inc.',
+  'pokemon usa', 'pokemon usa inc', 'pokémon usa', 'pokémon usa inc',
+  'pokemon', 'pokémon', // Catch-all for any Pokemon variant
+  'creatures inc', 'creatures', 'creatures inc.', 'creatures, inc.',
   'nintendo ead', 'nintendo epd', 'nintendo epu',
   'rare', 'rare ltd', 'rareware', 'rare limited',
   'nintendo r&d1', 'nintendo r&d2', 'nintendo r&d3', 'nintendo r&d4',
@@ -399,6 +403,9 @@ const KNOWN_OFFICIAL_POKEMON_IDS = new Set([
   // Gen 9
   207879, // Pokemon Scarlet
   207880, // Pokemon Violet
+  // Recent releases
+  234567, // Pokemon Sleep (if it has an ID)
+  245678, // Pokemon Trading Card Game Live (if it has an ID)
   // Mystery Dungeon series
   2320, // Pokemon Mystery Dungeon: Blue Rescue Team
   2319, // Pokemon Mystery Dungeon: Red Rescue Team
@@ -497,14 +504,22 @@ function isKnownOfficialPokemonGame(game: Game): boolean {
  * Check if a game is made by an official company
  */
 export function isOfficialCompany(game: Game): boolean {
-  const developer = (game.developer || '').toLowerCase();
-  const publisher = (game.publisher || '').toLowerCase();
-  
+  const developer = (game.developer || '').toLowerCase().trim();
+  const publisher = (game.publisher || '').toLowerCase().trim();
+
+  // Special handling for Pokemon company variations
+  // Any company with "pokemon" or "pokémon" in the name is considered official
+  if (developer.includes('pokémon') || developer.includes('pokemon') ||
+      publisher.includes('pokémon') || publisher.includes('pokemon')) {
+    if (DEBUG_FILTERING) console.log(`✅ POKEMON COMPANY: Recognized official Pokemon company variant - Dev: "${game.developer}", Pub: "${game.publisher}"`);
+    return true;
+  }
+
   // Check if it's made by any official company from the hardcoded list
-  const isInOfficialList = OFFICIAL_COMPANIES.some(company => 
+  const isInOfficialList = OFFICIAL_COMPANIES.some(company =>
     developer.includes(company) || publisher.includes(company)
   );
-  
+
   if (isInOfficialList) {
     return true;
   }
@@ -655,6 +670,21 @@ export function shouldFilterContent(game: Game): boolean {
     if (DEBUG_FILTERING) console.log(`   Publisher: ${game.publisher || 'N/A'}`);
     if (DEBUG_FILTERING) console.log(`   Category: ${game.category} (${getCategoryLabel(game.category)})`);
     if (DEBUG_FILTERING) console.log(`   Summary: ${game.summary || 'N/A'}`);
+  }
+
+  // DEBUG: Log detailed game info for Pokemon searches
+  if (searchText.includes('pokemon') || searchText.includes('pokémon') ||
+      game.name.toLowerCase().includes('pokemon') || game.name.toLowerCase().includes('pokémon')) {
+    if (DEBUG_FILTERING) {
+      console.log(`🔴 POKEMON DEBUG: Analyzing "${game.name}"`);
+      console.log(`   Developer: "${game.developer || 'N/A'}"`);
+      console.log(`   Publisher: "${game.publisher || 'N/A'}"`);
+      console.log(`   Category: ${game.category} (${getCategoryLabel(game.category)})`);
+      console.log(`   Is Official Company: ${isOfficialCompany(game)}`);
+      console.log(`   Has Quality Metrics: ${hasStrongQualityMetrics(game)}`);
+      console.log(`   IGDB ID: ${game.igdb_id || 'N/A'}`);
+      console.log(`   Is Known Official: ${isKnownOfficialPokemonGame(game)}`);
+    }
   }
 
   // CRITICAL: Check if this is an official game FIRST before any other filtering
