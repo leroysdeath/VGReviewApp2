@@ -4,9 +4,9 @@
 // Debug flag to control console logging (set to false to reduce verbosity)
 const DEBUG_FILTERING = true; // INVESTIGATION MODE - Enable detailed logging
 
-import { 
-  CopyrightLevel, 
-  getCompanyCopyrightLevel, 
+import {
+  CopyrightLevel,
+  getCompanyCopyrightLevel,
   hasSpecificFranchiseRestrictions,
   getPolicyReason,
   addAggressiveCompany,
@@ -14,6 +14,14 @@ import {
   isAuthorizedPublisher,
   findFranchiseOwner
 } from './copyrightPolicies';
+
+import {
+  hasStrongQualityMetrics,
+  hasGoodQualityMetrics,
+  getQualityTier,
+  evaluateCategoryQuality,
+  evaluateCollectionNameQuality
+} from './gameQualityMetrics';
 
 // Helper function for debug logging
 function getCategoryLabel(category?: number): string {
@@ -657,13 +665,7 @@ export function shouldFilterContent(game: Game): boolean {
   }
 
   // QUALITY OVERRIDE: High-quality games get special treatment
-  const hasHighQuality = (game.total_rating && game.total_rating > 70) &&
-                        (game.rating_count && game.rating_count > 50);
-  const isVeryPopular = game.follows && game.follows > 1000;
-  const hasStrongMetrics = hasHighQuality || isVeryPopular;
-
-  // Allow high-quality games even if they might be filtered otherwise
-  if (hasStrongMetrics && game.category !== 5) {
+  if (hasStrongQualityMetrics(game) && game.category !== 5) {
     if (DEBUG_FILTERING) console.log(`⭐ QUALITY OVERRIDE: Allowing "${game.name}" - High metrics (Rating: ${game.total_rating}, Follows: ${game.follows})`);
     return false;
   }
@@ -734,7 +736,7 @@ export function shouldFilterContent(game: Game): boolean {
   }
   
 
-  // Note: Quality metrics already checked above with early return
+  // Quality metrics already evaluated at function start with early return
   
   // Apply filtering based on copyright level
   switch (maxCopyrightLevel) {
@@ -1094,10 +1096,7 @@ export function filterProtectedContent(games: Game[]): Game[] {
     }
     
     // QUALITY EXEMPTION: High-quality games bypass most filters
-    const hasHighQuality = (game.total_rating && game.total_rating > 70) &&
-                          (game.rating_count && game.rating_count > 50);
-    const isVeryPopular = game.follows && game.follows > 1000;
-    const hasStrongMetrics = hasHighQuality || isVeryPopular;
+    const hasStrongMetrics = hasStrongQualityMetrics(game);
 
     // Main games with strong metrics always pass
     if (hasStrongMetrics && game.category === 0) {
@@ -1114,42 +1113,30 @@ export function filterProtectedContent(games: Game[]): Game[] {
     // Quality-based filtering for collections, remasters, and ports
     // Allow high-quality collections/bundles (Category 3)
     if (game.category === 3) {
-      if (hasStrongMetrics) {
-        if (DEBUG_FILTERING) console.log(`⭐ QUALITY COLLECTION: Keeping popular collection "${game.name}" (Rating: ${game.total_rating}, Follows: ${game.follows})`);
-        return true;
-      }
-      if (DEBUG_FILTERING) console.log(`📦 COLLECTION FILTER: Filtering low-quality collection "${game.name}" (Category 3)`);
-      return false;
+      const evaluation = evaluateCategoryQuality(game, 'Collection');
+      if (DEBUG_FILTERING) console.log(evaluation.logMessage);
+      return evaluation.keep;
     }
 
     // Allow high-quality ports (Category 11)
     if (game.category === 11) {
-      if (hasStrongMetrics) {
-        if (DEBUG_FILTERING) console.log(`⭐ QUALITY PORT: Keeping popular port "${game.name}" (Rating: ${game.total_rating}, Follows: ${game.follows})`);
-        return true;
-      }
-      if (DEBUG_FILTERING) console.log(`🔄 PORT FILTER: Filtering low-quality port "${game.name}" (Category 11)`);
-      return false;
+      const evaluation = evaluateCategoryQuality(game, 'Port');
+      if (DEBUG_FILTERING) console.log(evaluation.logMessage);
+      return evaluation.keep;
     }
 
     // Allow high-quality remasters (Category 9)
     if (game.category === 9) {
-      if (hasStrongMetrics) {
-        if (DEBUG_FILTERING) console.log(`⭐ QUALITY REMASTER: Keeping popular remaster "${game.name}" (Rating: ${game.total_rating}, Follows: ${game.follows})`);
-        return true;
-      }
-      if (DEBUG_FILTERING) console.log(`✨ REMASTER FILTER: Filtering low-quality remaster "${game.name}" (Category 9)`);
-      return false;
+      const evaluation = evaluateCategoryQuality(game, 'Remaster');
+      if (DEBUG_FILTERING) console.log(evaluation.logMessage);
+      return evaluation.keep;
     }
 
     // Allow high-quality packs (Category 13)
     if (game.category === 13) {
-      if (hasStrongMetrics) {
-        if (DEBUG_FILTERING) console.log(`⭐ QUALITY PACK: Keeping popular pack "${game.name}" (Rating: ${game.total_rating}, Follows: ${game.follows})`);
-        return true;
-      }
-      if (DEBUG_FILTERING) console.log(`📦 PACK FILTER: Filtering low-quality pack "${game.name}" (Category 13)`);
-      return false;
+      const evaluation = evaluateCategoryQuality(game, 'Pack');
+      if (DEBUG_FILTERING) console.log(evaluation.logMessage);
+      return evaluation.keep;
     }
     
     // Filter out IGDB category 1 (DLC/Add-on) UNLESS it's a major expansion
@@ -1192,18 +1179,11 @@ export function filterProtectedContent(games: Game[]): Game[] {
       'special edition', 'game of the year edition', 'goty edition'
     ];
 
-    if (collectionIndicators.some(indicator => name.includes(indicator))) {
-      // Check quality metrics before filtering
-      const hasGoodQuality = (game.total_rating && game.total_rating > 75) ||
-                            (game.follows && game.follows > 500);
-
-      if (hasGoodQuality) {
-        if (DEBUG_FILTERING) console.log(`⭐ QUALITY COLLECTION NAME: Keeping "${game.name}" - high quality metrics override name filter`);
-        return true;
-      }
-
-      if (DEBUG_FILTERING) console.log(`📦 COLLECTION NAME FILTER: Filtering low-quality collection "${game.name}"`);
-      return false;
+    const foundIndicator = collectionIndicators.find(indicator => name.includes(indicator));
+    if (foundIndicator) {
+      const evaluation = evaluateCollectionNameQuality(game, foundIndicator);
+      if (DEBUG_FILTERING) console.log(evaluation.logMessage);
+      return evaluation.keep;
     }
     
     // Use the more comprehensive filtering logic for other content
