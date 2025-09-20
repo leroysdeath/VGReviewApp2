@@ -1,6 +1,19 @@
 Action Plan to Get Missing Pokemon Games to Show
 
-  Phase 1: Verify What Actually Exists in Database
+## UPDATE: Phase 1 Results Summary
+Based on Phase 1 query results:
+- **Total Pokemon games found**: 40 games in database
+- **Key games PRESENT**: Gold, Silver, Ruby, Sapphire, Emerald, Diamond, Pearl, Platinum, HeartGold, SoulSilver, Stadium, Stadium 2, Colosseum, Snap, Scarlet, Violet, LeafGreen, Sun, Moon, White
+- **Key games MISSING**:
+  - Pokemon Trading Card Game (IGDB: 7350)
+  - Pokemon FireRed (IGDB: 1514)
+  - Pokemon Black (IGDB: 119387)
+  - Pokemon Black 2 (IGDB: 119376)
+  - Pokemon Sword
+  - Pokemon Shield
+  - Pokemon Legends: Arceus
+
+  Phase 1: Verify What Actually Exists in Database (COMPLETED)
 
   Check if these games are already there but hidden:
   -- Check if the missing games exist at all
@@ -17,31 +30,33 @@ Action Plan to Get Missing Pokemon Games to Show
      OR name ILIKE '%leafgreen%' OR name ILIKE '%sun%'
      OR name ILIKE '%moon%' OR name ILIKE '%white%';
 
-  Phase 2: Force Insert Missing Games
+  Phase 2: Force Insert Missing Games (PRIORITY)
 
   Create a more aggressive migration that:
-  1. Deletes and re-inserts to avoid constraint issues
-  2. Uses UPSERT (ON CONFLICT) instead of WHERE NOT EXISTS
-  3. Adds all missing games including:
-    - Pokemon Legends: Z-A (upcoming 2025)
-    - Pokemon Stadium 1 & 2
-    - Pokemon Colosseum
-    - Pokemon Snap (N64)
-    - Pokemon LeafGreen
-    - All missing main series games
+  1. Uses UPSERT (ON CONFLICT) to add missing games
+  2. Focus on games that are CONFIRMED MISSING:
+    - Pokemon Trading Card Game (GBC) - IGDB: 7350
+    - Pokemon FireRed Version - IGDB: 1514
+    - Pokemon Black Version - IGDB: 119387
+    - Pokemon Black Version 2 - IGDB: 119376
+    - Pokemon Sword - Need IGDB ID
+    - Pokemon Shield - Need IGDB ID
+    - Pokemon Legends: Arceus - Need IGDB ID
+    - Pokemon Legends: Z-A (upcoming 2025) - Need IGDB ID
 
-  -- Example: Use UPSERT approach
-  INSERT INTO game (game_id, name, slug, developer, publisher, igdb_id, total_rating, release_date, follows)
+  -- Priority: Insert ONLY missing games
+  INSERT INTO game (game_id, name, slug, developer, publisher, igdb_id, total_rating, release_date, follows, category)
   VALUES
-    ('1515', 'Pokémon Gold Version', 'pokemon-gold-version', 'Game Freak', 'Nintendo', 1515, 89, '1999-11-21', 0),
-    ('1516', 'Pokémon Silver Version', 'pokemon-silver-version', 'Game Freak', 'Nintendo', 1516, 89, '1999-11-21',
-  0),
-    -- ... all other games
+    ('7350', 'Pokémon Trading Card Game', 'pokemon-trading-card-game', 'Hudson Soft', 'Nintendo', 7350, 77, '1998-12-18', 100, 0),
+    ('1514', 'Pokémon FireRed Version', 'pokemon-firered-version', 'Game Freak', 'Nintendo', 1514, 88, '2004-01-29', 200, 0),
+    ('119387', 'Pokémon Black Version', 'pokemon-black-version', 'Game Freak', 'Nintendo', 119387, 87, '2010-09-18', 150, 0),
+    ('119376', 'Pokémon Black Version 2', 'pokemon-black-version-2', 'Game Freak', 'Nintendo', 119376, 80, '2012-06-23', 100, 0)
   ON CONFLICT (igdb_id)
   DO UPDATE SET
     developer = EXCLUDED.developer,
     publisher = EXCLUDED.publisher,
-    total_rating = EXCLUDED.total_rating;
+    total_rating = EXCLUDED.total_rating,
+    category = EXCLUDED.category;
 
   Phase 3: Bypass Quality Filters for Pokemon
 
@@ -92,13 +107,17 @@ Action Plan to Get Missing Pokemon Games to Show
 
   For games not in database at all, fetch from IGDB and insert:
 
-  1. Get IGDB IDs for missing games:
-    - Pokemon Stadium: 2289
-    - Pokemon Stadium 2: 2290
-    - Pokemon Colosseum: 2725
-    - Pokemon Snap (N64): 2324
-    - Pokemon Legends Z-A: TBD (not released yet)
-  2. Insert them directly with all required fields
+  1. CONFIRMED MISSING (Priority):
+    - Pokemon Trading Card Game (GBC): 7350
+    - Pokemon FireRed Version: 1514
+    - Pokemon Black Version: 119387
+    - Pokemon Black Version 2: 119376
+
+  2. Need to find IGDB IDs for:
+    - Pokemon Sword
+    - Pokemon Shield
+    - Pokemon Legends: Arceus
+    - Pokemon Legends Z-A (upcoming 2025)
 
   Phase 7: Debug Why INSERT Failed
 
@@ -111,8 +130,9 @@ Action Plan to Get Missing Pokemon Games to Show
 
   Recommended Execution Order:
 
-  1. First: Run Phase 1 query to see what's actually in the database
-  2. Second: Run Phase 5 cleanup to fix existing entries
-  3. Third: Run Phase 2 force insert for missing games
-  4. Fourth: Implement Phase 3 code changes to bypass filters
-  5. Finally: Test search and adjust as needed
+  1. ~~First: Run Phase 1 query to see what's actually in the database~~ ✅ COMPLETED
+  2. **NEXT PRIORITY**: Run Phase 2 INSERT for the 4 confirmed missing games
+  3. Third: Find IGDB IDs for Sword/Shield/Legends Arceus and add them
+  4. Fourth: Run Phase 5 cleanup to ensure all Pokemon games have proper metadata
+  5. Fifth: Implement Phase 3 code changes to bypass filters if still needed
+  6. Finally: Test search and verify all games show up
