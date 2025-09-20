@@ -10,6 +10,9 @@ import { markGameStarted, markGameCompleted, getGameProgress } from '../services
 import { useAuth } from '../hooks/useAuth';
 import { mapPlatformNames } from '../utils/platformMapping';
 import { formatGameReleaseDate } from '../utils/dateUtils';
+import { filterProtectedContent } from '../utils/contentProtectionFilter';
+import { unifiedSearchService } from '../services/unifiedSearchService';
+import { SearchFallback } from '../components/SearchFallback';
 
 // Search filters interface from SearchResultsPage
 interface SearchFilters {
@@ -60,12 +63,18 @@ export const ReviewFormPage: React.FC = () => {
       setSearchResults([]);
       return;
     }
-    
+
     setSearchLoading(true);
     setSearchError(null);
-    
+
     try {
-      const results = await gameDataService.searchGames(searchTerm);
+      // Use unified search service which includes IGDB fallback and intent detection
+      const results = await unifiedSearchService.search(searchTerm, {
+        includeIGDB: true,
+        limit: 50,
+        applyFilters: true
+      });
+
       setSearchResults(results);
     } catch (error) {
       setSearchError('Failed to search games');
@@ -349,9 +358,19 @@ export const ReviewFormPage: React.FC = () => {
   };
   
   const handleGameClick = (game: GameWithCalculatedFields) => {
-    // Prefetch game data for faster loading
-    // Game data is already loaded from Supabase
-    handleGameSelect(game);
+    // Convert game object to JSON string for handleGameSelect
+    const gameDataString = JSON.stringify({
+      igdb_id: game.igdb_id,
+      name: game.name,
+      cover_url: game.cover_url,
+      genres: game.genres || [],
+      platforms: game.platforms || [],
+      first_release_date: game.first_release_date,
+      summary: game.summary,
+      igdb_rating: game.igdb_rating
+    });
+
+    handleGameSelect(gameDataString);
   };
   
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -498,6 +517,8 @@ export const ReviewFormPage: React.FC = () => {
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      // Pass the search query to the modal
+      setSearchTerm(gameSearch);
       setShowSearchModal(true);
     }
   };
