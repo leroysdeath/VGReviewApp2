@@ -214,6 +214,7 @@ WHERE igdb_id = 102874 AND name = 'Pokémon Quest';
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -224,6 +225,7 @@ INSERT INTO game (
 SELECT
   '119388',
   'Pokémon Legends: Arceus',
+  'pokemon-legends-arceus',
   'Game Freak',
   'Nintendo',
   119388,
@@ -238,6 +240,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -248,6 +251,7 @@ INSERT INTO game (
 SELECT
   '119387',
   'Pokémon Brilliant Diamond',
+  'pokemon-brilliant-diamond',
   'ILCA',
   'Nintendo',
   119387,
@@ -262,6 +266,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -272,6 +277,7 @@ INSERT INTO game (
 SELECT
   '131435',
   'Pokémon Shining Pearl',
+  'pokemon-shining-pearl',
   'ILCA',
   'Nintendo',
   131435,
@@ -286,6 +292,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -296,6 +303,7 @@ INSERT INTO game (
 SELECT
   '207879',
   'Pokémon Scarlet',
+  'pokemon-scarlet',
   'Game Freak',
   'Nintendo',
   207879,
@@ -310,6 +318,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -320,6 +329,7 @@ INSERT INTO game (
 SELECT
   '207880',
   'Pokémon Violet',
+  'pokemon-violet',
   'Game Freak',
   'Nintendo',
   207880,
@@ -334,6 +344,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -344,6 +355,7 @@ INSERT INTO game (
 SELECT
   '1515',
   'Pokémon Gold Version',
+  'pokemon-gold-version',
   'Game Freak',
   'Nintendo',
   1515,
@@ -358,6 +370,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -368,6 +381,7 @@ INSERT INTO game (
 SELECT
   '1516',
   'Pokémon Silver Version',
+  'pokemon-silver-version',
   'Game Freak',
   'Nintendo',
   1516,
@@ -382,6 +396,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -392,6 +407,7 @@ INSERT INTO game (
 SELECT
   '1517',
   'Pokémon Ruby Version',
+  'pokemon-ruby-version',
   'Game Freak',
   'Nintendo',
   1517,
@@ -406,6 +422,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -416,6 +433,7 @@ INSERT INTO game (
 SELECT
   '1518',
   'Pokémon Sapphire Version',
+  'pokemon-sapphire-version',
   'Game Freak',
   'Nintendo',
   1518,
@@ -430,6 +448,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -440,6 +459,7 @@ INSERT INTO game (
 SELECT
   '1520',
   'Pokémon Emerald Version',
+  'pokemon-emerald-version',
   'Game Freak',
   'Nintendo',
   1520,
@@ -454,6 +474,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -464,6 +485,7 @@ INSERT INTO game (
 SELECT
   '1522',
   'Pokémon Diamond Version',
+  'pokemon-diamond-version',
   'Game Freak',
   'Nintendo',
   1522,
@@ -478,6 +500,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -488,6 +511,7 @@ INSERT INTO game (
 SELECT
   '1523',
   'Pokémon Pearl Version',
+  'pokemon-pearl-version',
   'Game Freak',
   'Nintendo',
   1523,
@@ -502,6 +526,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -512,6 +537,7 @@ INSERT INTO game (
 SELECT
   '1524',
   'Pokémon Platinum Version',
+  'pokemon-platinum-version',
   'Game Freak',
   'Nintendo',
   1524,
@@ -526,6 +552,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -536,6 +563,7 @@ INSERT INTO game (
 SELECT
   '1525',
   'Pokémon HeartGold Version',
+  'pokemon-heartgold-version',
   'Game Freak',
   'Nintendo',
   1525,
@@ -550,6 +578,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -560,6 +589,7 @@ INSERT INTO game (
 SELECT
   '1526',
   'Pokémon SoulSilver Version',
+  'pokemon-soulsilver-version',
   'Game Freak',
   'Nintendo',
   1526,
@@ -574,6 +604,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -584,6 +615,7 @@ INSERT INTO game (
 SELECT
   '1527',
   'Pokémon White Version',
+  'pokemon-white-version',
   'Game Freak',
   'Nintendo',
   1527,
@@ -598,6 +630,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -608,6 +641,7 @@ INSERT INTO game (
 SELECT
   '1560',
   'Pokémon Yellow Version: Special Pikachu Edition',
+  'pokemon-yellow-version-special-pikachu-edition',
   'Game Freak',
   'Nintendo',
   1560,
@@ -622,6 +656,7 @@ WHERE NOT EXISTS (
 INSERT INTO game (
   game_id,
   name,
+  slug,
   developer,
   publisher,
   igdb_id,
@@ -632,6 +667,7 @@ INSERT INTO game (
 SELECT
   '1565',
   'Pokémon LeafGreen Version',
+  'pokemon-leafgreen-version',
   'Game Freak',
   'Nintendo',
   1565,
