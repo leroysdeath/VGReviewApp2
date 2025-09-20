@@ -622,10 +622,24 @@ class IGDBService {
         return [];
       }
 
-      console.error('🔍 Enhanced multi-strategy search for:', query);
+      // Normalize Pokemon searches to handle accented characters
+      let normalizedQuery = query;
+      if (query.toLowerCase().includes('pokemon')) {
+        // Replace "pokemon" with "pokémon" for better IGDB matching
+        normalizedQuery = query.replace(/pokemon/gi, 'Pokémon');
+        console.log('🔴 POKEMON SEARCH NORMALIZATION:', {
+          original: query,
+          normalized: normalizedQuery,
+          willSendToAPI: normalizedQuery,
+          encoded: encodeURIComponent(normalizedQuery),
+          device: typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop'
+        });
+      }
 
-      // Get primary search results
-      const rawGames = await this.performBasicSearch(query, limit);
+      console.error('🔍 Enhanced multi-strategy search for:', normalizedQuery);
+
+      // Get primary search results - use normalized query!
+      const rawGames = await this.performBasicSearch(normalizedQuery, limit);
       console.log('✅ Primary search results:', rawGames.length, 'games found');
       
       // Debug: Check if Breath of the Wild is in raw results
@@ -727,7 +741,7 @@ class IGDBService {
       }
       
       // Check if we need flagship fallback after all filtering
-      const franchise = detectFranchiseSearch(query);
+      const franchise = detectFranchiseSearch(normalizedQuery);
       
       // Enhanced flagship fallback logic - check quality of results, not just quantity
       let needsFlagshipFallback = false;

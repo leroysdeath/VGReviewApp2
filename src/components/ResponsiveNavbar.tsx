@@ -117,13 +117,24 @@ export const ResponsiveNavbar: React.FC = () => {
         return;
       }
 
+      // Normalize Pokemon searches to match mobile keyboard auto-correction
+      let normalizedQuery = query;
+      if (query.toLowerCase().includes('pokemon')) {
+        normalizedQuery = query.replace(/pokemon/gi, 'Pokémon');
+        console.log('🔴 NAVBAR POKEMON NORMALIZATION:', {
+          original: query,
+          normalized: normalizedQuery,
+          device: isMobile ? 'mobile' : 'desktop'
+        });
+      }
+
       if (import.meta.env.DEV) {
-        console.log('🔍 ResponsiveNavbar: Fast search for:', query);
+        console.log('🔍 ResponsiveNavbar: Fast search for:', normalizedQuery);
       }
 
       // Use the same search as the search results page (no fastMode)
       // This ensures navbar shows same results as main search
-      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+      const searchResult = await searchCoordinationRef.current.coordinatedSearch(normalizedQuery.trim(), {
         maxResults: 8,
         includeMetrics: false,
         fastMode: false, // Use full search with all filtering

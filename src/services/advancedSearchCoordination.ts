@@ -205,17 +205,27 @@ export class AdvancedSearchCoordination {
    * Build comprehensive search context
    */
   private buildSearchContext(query: string, options: any): SearchContext {
-    const intent = detectSearchIntent(query);
-    const expandedQueries = this.expandQuery(query, intent);
-    
+    // Normalize Pokemon searches to match mobile keyboard auto-correction
+    let normalizedQuery = query;
+    if (query.toLowerCase().includes('pokemon')) {
+      normalizedQuery = query.replace(/pokemon/gi, 'Pokémon');
+      console.log('🔴 SEARCH CONTEXT POKEMON NORMALIZATION:', {
+        original: query,
+        normalized: normalizedQuery
+      });
+    }
+
+    const intent = detectSearchIntent(normalizedQuery);
+    const expandedQueries = this.expandQuery(normalizedQuery, intent);
+
     return {
-      originalQuery: query,
+      originalQuery: normalizedQuery,
       expandedQueries,
       searchIntent: intent,
-      qualityThreshold: this.calculateQualityThreshold(intent, query),
+      qualityThreshold: this.calculateQualityThreshold(intent, normalizedQuery),
       maxResults: options.maxResults || this.getDefaultMaxResults(intent),
       useAggressive: options.useAggressive || false,
-      cacheKey: this.buildCacheKey(query, intent, options)
+      cacheKey: this.buildCacheKey(normalizedQuery, intent, options)
     };
   }
 

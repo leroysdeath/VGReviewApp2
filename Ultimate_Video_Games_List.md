@@ -1,4 +1,8 @@
-# 500 Best Video Games of All Time
+# Ultimate Video Games List
+
+*A comprehensive compilation of the greatest video games of all time, merging multiple authoritative sources and removing duplicates.*
+
+## Top 500+ Greatest Video Games
 
 1. The Legend of Zelda: Breath of the Wild
 2. Tetris [Game Boy]
@@ -500,3 +504,44 @@
 498. Skies of Arcadia
 499. King's Quest: Quest for the Crown
 500. No Man's Sky
+
+## Additional Notable Games from Top 300 All Time List
+
+The following games were included in the Top 300 All Time list but not in the 500 Best list:
+
+501. Combat
+502. Zork
+503. Battlezone
+504. Frogger
+505. Tempest
+506. Wizardry: Proving Grounds of the Mad Overlord
+507. Joust
+508. Pitfall!
+509. Archon: The Light and the Dark
+510. Star Wars
+511. Marble Madness
+512. Ultima IV: Quest of the Avatar
+513. Out Run
+514. Dungeon Master
+515. Speedball 2: Brutal Deluxe
+516. Micro Machines
+517. Sensible Soccer
+518. Virtua Racing
+519. Gunstar Heroes
+520. Ridge Racer
+521. Samurai Shodown
+522. Syndicate
+523. Theme Park
+524. Tempest 2000
+525. MechWarrior 2: 31st Century Combat
+526. Sega Rally Championship
+527. Wipeout
+528. Worms
+529. Nights into Dreams
+530. Wipeout 2097
+531. Crash Bandicoot: Warped
+532. Vagrant Story
+
+---
+
+*This comprehensive list combines games from multiple authoritative sources, removing duplicates and maintaining chronological significance while prioritizing critical acclaim and cultural impact.*
