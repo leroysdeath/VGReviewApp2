@@ -2,11 +2,15 @@ import { describe, test, expect } from '@jest/globals';
 import { createClient } from '@supabase/supabase-js';
 import { gameFlagService } from '../services/gameFlagService';
 
-// Use production database directly
-const prodSupabase = createClient(
-  process.env.VITE_SUPABASE_URL || 'https://cqufmmnguumyhbkhgwdc.supabase.co',
-  process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxdWZtbW5ndXVteWhia2hnd2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MzU3MDUsImV4cCI6MjA2ODIxMTcwNX0.iP9jJM26Xa3-YeeB2YdYnqMK5JZyYcFY5_KXuLAZw-s'
-);
+// Use environment variables for database connection
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+}
+
+const prodSupabase = createClient(supabaseUrl, supabaseAnonKey);
 
 describe('GTA 3 Greenlight Test', () => {
   test('should find GTA 3 in database and greenlight it', async () => {
