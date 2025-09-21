@@ -478,7 +478,7 @@ export class AdvancedSearchCoordination {
       try {
         if (DEBUG_SEARCH_COORDINATION) console.log(`🔍 Local query ${i + 1}/${selectedQueries.length}: "${expandedQuery}"`);
 
-        const queryResults = await this.gameDataService.searchGames(expandedQuery);
+        const queryResults = await this.gameDataService.searchGames(expandedQuery, undefined, context.maxResults);
 
         // Convert to SearchResult format and add source tracking
         const convertedResults: SearchResult[] = queryResults.map(game => ({

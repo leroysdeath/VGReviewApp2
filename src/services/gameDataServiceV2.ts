@@ -35,7 +35,7 @@ export class GameDataServiceV2 {
   /**
    * Main search function with intelligent IGDB supplementation
    */
-  async searchGames(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
+  async searchGames(query: string, filters?: SearchFilters, maxResults: number = 200): Promise<GameWithCalculatedFields[]> {
     const sanitizedQuery = sanitizeSearchTerm(query);
     if (!sanitizedQuery) return [];
     
@@ -51,7 +51,7 @@ export class GameDataServiceV2 {
     
     try {
       // Step 1: Always get database results first (fast response)
-      const dbResults = await this.searchGamesExact(sanitizedQuery, filters);
+      const dbResults = await this.searchGamesExact(sanitizedQuery, filters, maxResults);
       if (DEBUG_GAME_DATA) console.log(`📊 Database search: ${dbResults.length} results for "${query}"`);
       
       // Step 2: Determine if we need IGDB supplementation
@@ -635,7 +635,7 @@ export class GameDataServiceV2 {
   /**
    * Search games in database (exact matching)
    */
-  private async searchGamesExact(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
+  private async searchGamesExact(query: string, filters?: SearchFilters, maxResults: number = 200): Promise<GameWithCalculatedFields[]> {
     try {
       // Strategy: Try name search first (faster), then supplement with summary search if needed
       if (DEBUG_GAME_DATA) console.log(`🔍 Database search for: "${query}"`);
@@ -643,7 +643,7 @@ export class GameDataServiceV2 {
       // Run green flag search and name search in parallel for better performance
       const [greenFlaggedGames, nameResults] = await Promise.all([
         this.searchGreenFlaggedGames(query).catch(() => []), // Don't let green flag search fail the whole operation
-        this.searchByName(query, filters, 25).catch(() => []) // Don't let name search fail the whole operation
+        this.searchByName(query, filters, maxResults).catch(() => []) // Use maxResults instead of hardcoded 25
       ]);
       
       if (DEBUG_GAME_DATA) console.log(`🟢 Green-flagged games: ${greenFlaggedGames.length} results`);
@@ -655,8 +655,8 @@ export class GameDataServiceV2 {
       let combinedResults = [...uniqueGreenFlagged, ...nameResults];
       
       // If we still don't have enough results, add summary search
-      if (combinedResults.length < 15) { // Reduced threshold for faster response
-        const summaryResults = await this.searchBySummary(query, filters, 15).catch(() => []); // Don't let summary search fail
+      if (combinedResults.length < Math.min(maxResults / 2, 50)) { // Dynamic threshold based on maxResults
+        const summaryResults = await this.searchBySummary(query, filters, Math.floor(maxResults / 2)).catch(() => []); // Use half of maxResults for summary
         if (DEBUG_GAME_DATA) console.log(`📝 Summary search: ${summaryResults.length} results`);
         
         // Merge results, avoiding duplicates
@@ -721,7 +721,7 @@ export class GameDataServiceV2 {
   /**
    * Fast name-only search
    */
-  private async searchByName(query: string, filters?: SearchFilters, limit: number = 50): Promise<GameWithCalculatedFields[]> {
+  private async searchByName(query: string, filters?: SearchFilters, limit: number = 200): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
     const timeoutId = setTimeout(() => abortController.abort(), 8000); // 8 second timeout for complex queries
     
@@ -780,7 +780,7 @@ export class GameDataServiceV2 {
   /**
    * Summary search (used as supplement)
    */
-  private async searchBySummary(query: string, filters?: SearchFilters, limit: number = 30): Promise<GameWithCalculatedFields[]> {
+  private async searchBySummary(query: string, filters?: SearchFilters, limit: number = 100): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
     const timeoutId = setTimeout(() => abortController.abort(), 6000); // 6 second timeout for summary searches
     
