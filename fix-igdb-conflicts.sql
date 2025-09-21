@@ -4,13 +4,14 @@
 -- Valorant: 126459 (currently correct)
 -- Street Fighter 6: 134988 (currently assigned to wrong game)
 
--- Step 1: Remove the incorrect game that's using Street Fighter 6's ID
+-- Step 1: Fix the incorrect game that's using Street Fighter 6's ID
 -- "Interactive Portraits: Trans People in Japan" should NOT have ID 134988
--- We need to clear BOTH game_id and igdb_id
+-- We need to either delete this game OR give it a different game_id
+-- Let's give it a temporary unique game_id based on its actual ID
 UPDATE game
 SET
   igdb_id = NULL,
-  game_id = NULL
+  game_id = 'temp_122686' -- Use a temporary unique ID based on the row ID
 WHERE id = 122686 AND name = 'Interactive Portraits: Trans People in Japan';
 
 -- Step 2: Now insert Street Fighter 6 with its correct IGDB ID (134988)
