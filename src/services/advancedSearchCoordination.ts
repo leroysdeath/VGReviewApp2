@@ -19,6 +19,12 @@ import { sortGamesIntelligently, detectSearchIntent, SearchIntent } from '../uti
 import { filterProtectedContent, filterFanGamesAndEReaderContent } from '../utils/contentProtectionFilter';
 import { normalizeAccents, expandWithAccentVariations, createSearchVariants } from '../utils/accentNormalization';
 
+// Import error handling services
+import { igdbCircuitBreaker } from './igdbCircuitBreaker';
+import { igdbFailureCache } from './igdbFailureCache';
+import { igdbHealthMonitor } from './igdbHealthMonitor';
+import { igdbTelemetry } from './igdbTelemetry';
+
 export interface SearchContext {
   originalQuery: string;
   expandedQueries: string[];
@@ -509,50 +515,115 @@ export class AdvancedSearchCoordination {
       }
     }
 
-    // If we have insufficient results, search IGDB
-    if (allResults.length < 10) {
-      console.log(`🔍 Insufficient local results (${allResults.length}), searching IGDB for: "${context.originalQuery}"`);
+    // Enhanced IGDB fallback with error handling
+    // Only attempt IGDB if we have very few results AND all services are healthy
+    const IGDB_THRESHOLD = 1; // Reduced from 10 - only use IGDB if we have NO results
+    const shouldAttemptIGDB = allResults.length < IGDB_THRESHOLD;
 
-      try {
-        // Use igdbService to search IGDB
-        const igdbResults = await igdbService.searchGames(context.originalQuery, 20);
+    if (shouldAttemptIGDB) {
+      console.log(`🔍 Minimal local results (${allResults.length}), checking if IGDB fallback is available...`);
 
-        // Convert IGDB results to SearchResult format
-        const convertedIgdbResults: SearchResult[] = igdbResults.map(game => ({
-          id: game.id,
-          name: game.name,
-          summary: game.summary,
-          developer: game.involved_companies?.find(c => c.developer)?.company?.name,
-          publisher: game.involved_companies?.find(c => c.publisher)?.company?.name,
-          category: game.category,
-          genres: game.genres?.map(g => g.name) || [],
-          platforms: game.platforms?.map(p => p.name) || [],
-          release_date: game.first_release_date ? new Date(game.first_release_date * 1000).toISOString() : undefined,
-          cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') : undefined,
-          igdb_rating: game.rating,
-          igdb_id: game.id,
-          source: 'igdb' as const,
-          relevanceScore: this.calculateRelevanceScore(game.name, context.originalQuery),
-          qualityScore: this.calculateQualityScore({
+      // Check all conditions before attempting IGDB
+      const canUseIGDB =
+        igdbHealthMonitor.isServiceHealthy() &&
+        igdbCircuitBreaker.canMakeRequest() &&
+        !igdbFailureCache.shouldSkipQuery(context.originalQuery) &&
+        !igdbTelemetry.shouldDisableIGDB();
+
+      if (!canUseIGDB) {
+        console.log('⚠️ IGDB fallback disabled due to:');
+        if (!igdbHealthMonitor.isServiceHealthy()) console.log('  - Service unhealthy');
+        if (!igdbCircuitBreaker.canMakeRequest()) console.log('  - Circuit breaker open');
+        if (igdbFailureCache.shouldSkipQuery(context.originalQuery)) console.log('  - Query recently failed');
+        if (igdbTelemetry.shouldDisableIGDB()) console.log('  - High failure rate detected');
+        console.log('📊 Using database results only');
+      } else {
+        // Attempt IGDB search with timeout and error handling
+        const startTime = Date.now();
+
+        try {
+          // Create a race between IGDB search and timeout
+          const IGDB_TIMEOUT = 2000; // 2 seconds max for search
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('IGDB search timeout')), IGDB_TIMEOUT);
+          });
+
+          const igdbPromise = igdbService.searchGames(context.originalQuery, 20);
+
+          console.log(`🔄 Attempting IGDB search with ${IGDB_TIMEOUT}ms timeout...`);
+
+          const igdbResults = await Promise.race([igdbPromise, timeoutPromise]);
+          const duration = Date.now() - startTime;
+
+          // Convert IGDB results to SearchResult format
+          const convertedIgdbResults: SearchResult[] = igdbResults.map(game => ({
+            id: game.id,
             name: game.name,
-            igdb_rating: game.rating
-          } as any)
-        }));
+            summary: game.summary,
+            developer: game.involved_companies?.find(c => c.developer)?.company?.name,
+            publisher: game.involved_companies?.find(c => c.publisher)?.company?.name,
+            category: game.category,
+            genres: game.genres?.map(g => g.name) || [],
+            platforms: game.platforms?.map(p => p.name) || [],
+            release_date: game.first_release_date ? new Date(game.first_release_date * 1000).toISOString() : undefined,
+            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') : undefined,
+            igdb_rating: game.rating,
+            igdb_id: game.id,
+            source: 'igdb' as const,
+            relevanceScore: this.calculateRelevanceScore(game.name, context.originalQuery),
+            qualityScore: this.calculateQualityScore({
+              name: game.name,
+              igdb_rating: game.rating
+            } as any)
+          }));
 
-        // Add IGDB results that aren't duplicates
-        for (const result of convertedIgdbResults) {
-          // Check by IGDB ID to avoid duplicates
-          const isDuplicate = allResults.some(r => r.igdb_id === result.igdb_id);
-          if (!isDuplicate) {
-            allResults.push(result);
+          // Add IGDB results that aren't duplicates
+          let addedCount = 0;
+          for (const result of convertedIgdbResults) {
+            // Check by IGDB ID to avoid duplicates
+            const isDuplicate = allResults.some(r => r.igdb_id === result.igdb_id);
+            if (!isDuplicate) {
+              allResults.push(result);
+              addedCount++;
+            }
           }
-        }
 
-        console.log(`✅ Added ${convertedIgdbResults.length} IGDB results, total: ${allResults.length}`);
-      } catch (error) {
-        console.error('❌ IGDB search failed:', error);
-        // Continue with local results only
+          // Record success
+          igdbCircuitBreaker.recordSuccess();
+          igdbHealthMonitor.recordOperationalSuccess();
+          igdbFailureCache.markAsSuccessful(context.originalQuery);
+          igdbTelemetry.recordCall({
+            query: context.originalQuery,
+            success: true,
+            duration,
+            timestamp: Date.now(),
+            resultCount: convertedIgdbResults.length
+          });
+
+          console.log(`✅ IGDB search succeeded in ${duration}ms - Added ${addedCount} results, total: ${allResults.length}`);
+
+        } catch (error) {
+          const duration = Date.now() - startTime;
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+          // Record failure in all services
+          igdbCircuitBreaker.recordFailure(error as Error);
+          igdbHealthMonitor.recordOperationalFailure(error as Error);
+          igdbFailureCache.markAsFailed(context.originalQuery, error as Error);
+          igdbTelemetry.recordCall({
+            query: context.originalQuery,
+            success: false,
+            duration,
+            timestamp: Date.now(),
+            error: errorMessage
+          });
+
+          console.error(`❌ IGDB search failed after ${duration}ms: ${errorMessage}`);
+          console.log('📊 Continuing with database results only');
+        }
       }
+    } else if (allResults.length >= IGDB_THRESHOLD) {
+      console.log(`✅ Sufficient database results (${allResults.length}), skipping IGDB fallback`);
     }
 
     // Apply advanced filtering and sorting
@@ -774,13 +845,45 @@ export class AdvancedSearchCoordination {
     cacheSize: number;
     cacheHitRate: number;
     averageSearchTime: number;
+    igdbHealth: any;
+    igdbTelemetry: any;
+    circuitBreakerStatus: any;
   } {
-    // This would track metrics over time in a production system
+    const igdbMetrics = igdbTelemetry.getMetrics();
+
     return {
       cacheSize: this.queryCache.size,
       cacheHitRate: 0, // Would be calculated from actual usage
-      averageSearchTime: 0 // Would be calculated from actual usage
+      averageSearchTime: 0, // Would be calculated from actual usage
+      igdbHealth: igdbHealthMonitor.getStats(),
+      igdbTelemetry: {
+        ...igdbMetrics,
+        healthSummary: igdbTelemetry.getHealthSummary()
+      },
+      circuitBreakerStatus: igdbCircuitBreaker.getStats()
     };
+  }
+
+  /**
+   * Get IGDB service health status
+   */
+  getIGDBHealth() {
+    return {
+      circuitBreaker: igdbCircuitBreaker.getStats(),
+      healthMonitor: igdbHealthMonitor.getStats(),
+      failureCache: igdbFailureCache.getStats(),
+      telemetry: igdbTelemetry.getHealthSummary()
+    };
+  }
+
+  /**
+   * Reset IGDB error handling (for recovery)
+   */
+  resetIGDBErrorHandling(): void {
+    igdbCircuitBreaker.reset();
+    igdbFailureCache.clear();
+    igdbTelemetry.reset();
+    console.log('🔄 IGDB error handling reset');
   }
 
   /**
@@ -788,7 +891,8 @@ export class AdvancedSearchCoordination {
    */
   clearCache(): void {
     this.queryCache.clear();
-    console.log('🧹 Search cache cleared');
+    igdbFailureCache.clear();
+    console.log('🧹 Search cache and failure cache cleared');
   }
 }
 
