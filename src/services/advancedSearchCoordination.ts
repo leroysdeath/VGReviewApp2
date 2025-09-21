@@ -428,31 +428,37 @@ export class AdvancedSearchCoordination {
    */
   private prioritizeQueries(expandedQueries: string[], originalQuery: string): string[] {
     const originalLower = originalQuery.toLowerCase().trim();
-    
+
     return expandedQueries.sort((a, b) => {
       const aLower = a.toLowerCase();
       const bLower = b.toLowerCase();
-      
+
       // Priority 1: Exact match to original query
       if (aLower === originalLower && bLower !== originalLower) return -1;
       if (bLower === originalLower && aLower !== originalLower) return 1;
-      
-      // Priority 2: Simple accent variations (pokemon vs pokémon)
+
+      // Priority 2: Roman numeral variations (CRITICAL for game searches)
+      const aIsRomanVariant = this.isRomanNumeralVariant(aLower, originalLower);
+      const bIsRomanVariant = this.isRomanNumeralVariant(bLower, originalLower);
+      if (aIsRomanVariant && !bIsRomanVariant) return -1;
+      if (bIsRomanVariant && !aIsRomanVariant) return 1;
+
+      // Priority 3: Simple accent variations (pokemon vs pokémon)
       const aIsSimpleVariant = this.isSimpleAccentVariant(aLower, originalLower);
       const bIsSimpleVariant = this.isSimpleAccentVariant(bLower, originalLower);
       if (aIsSimpleVariant && !bIsSimpleVariant) return -1;
       if (bIsSimpleVariant && !aIsSimpleVariant) return 1;
-      
-      // Priority 3: Shorter queries (more general)
+
+      // Priority 4: Shorter queries (more general)
       const lengthDiff = a.length - b.length;
       if (Math.abs(lengthDiff) > 5) return lengthDiff;
-      
-      // Priority 4: Contains original query as substring
+
+      // Priority 5: Contains original query as substring
       const aContains = aLower.includes(originalLower);
       const bContains = bLower.includes(originalLower);
       if (aContains && !bContains) return -1;
       if (bContains && !aContains) return 1;
-      
+
       // Default: alphabetical
       return a.localeCompare(b);
     });
@@ -463,12 +469,42 @@ export class AdvancedSearchCoordination {
    */
   private isSimpleAccentVariant(query: string, original: string): boolean {
     if (query === original) return true;
-    
+
     // Check if normalizing both makes them equal
     const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const normalizedOriginal = original.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    
+
     return normalizedQuery === normalizedOriginal;
+  }
+
+  /**
+   * Check if a query is a Roman numeral variant of the original
+   * e.g., "street fighter ii" is a variant of "street fighter 2"
+   */
+  private isRomanNumeralVariant(query: string, original: string): boolean {
+    // Check if one has a number and the other has Roman numerals
+    const numberPattern = /\b(\d{1,2})\b/g;
+    const romanPattern = /\b([IVXLivxl]{1,})\b/g;
+
+    const originalNumbers = original.match(numberPattern) || [];
+    const queryNumbers = query.match(numberPattern) || [];
+    const originalRomans = original.match(romanPattern) || [];
+    const queryRomans = query.match(romanPattern) || [];
+
+    // If original has numbers and query has Roman numerals (or vice versa)
+    if ((originalNumbers.length > 0 && queryRomans.length > 0) ||
+        (originalRomans.length > 0 && queryNumbers.length > 0)) {
+
+      // Remove numbers and Roman numerals from both and check if base is the same
+      const baseOriginal = original.replace(numberPattern, '').replace(romanPattern, '').trim();
+      const baseQuery = query.replace(numberPattern, '').replace(romanPattern, '').trim();
+
+      // If the base text is the same, it's likely a Roman numeral variant
+      return baseOriginal === baseQuery ||
+             baseOriginal.replace(/\s+/g, '') === baseQuery.replace(/\s+/g, '');
+    }
+
+    return false;
   }
 
   /**
@@ -480,7 +516,8 @@ export class AdvancedSearchCoordination {
 
     // SMART QUERY EXECUTION: Prioritize and limit queries to prevent rate limiting
     const prioritizedQueries = this.prioritizeQueries(context.expandedQueries, context.originalQuery);
-    const maxQueries = Math.min(prioritizedQueries.length, 5); // Limit to 5 queries max
+    // INCREASED LIMIT: Allow more queries to ensure Roman numeral variants are included
+    const maxQueries = Math.min(prioritizedQueries.length, 10); // Increased from 5 to 10
     const selectedQueries = prioritizedQueries.slice(0, maxQueries);
 
     if (DEBUG_SEARCH_COORDINATION) console.log(`🔍 Smart execution: Using ${selectedQueries.length} prioritized queries from ${context.expandedQueries.length} expansions:`, selectedQueries);
@@ -759,9 +796,42 @@ export class AdvancedSearchCoordination {
       'call of duty': ['activision', 'infinity ward', 'treyarch', 'sledgehammer']
     };
 
+    // EXPANDED FRANCHISE PUBLISHERS: Added more major franchises
+    const expandedFranchisePublishers: Record<string, string[]> = {
+      ...franchisePublishers,
+      'street fighter': ['capcom'],
+      'resident evil': ['capcom'],
+      'devil may cry': ['capcom'],
+      'age of empires': ['microsoft', 'ensemble studios', 'relic entertainment', 'xbox game studios'],
+      'diablo': ['blizzard', 'activision blizzard', 'blizzard entertainment'],
+      'civilization': ['firaxis', '2k games', 'microprose', 'sid meier'],
+      'grand theft auto': ['rockstar', 'rockstar games', 'rockstar north'],
+      'gta': ['rockstar', 'rockstar games', 'rockstar north'],
+      'battlefield': ['ea', 'dice', 'electronic arts'],
+      'dragon quest': ['square enix', 'enix', 'square'],
+      'metroid': ['nintendo'],
+      'kirby': ['nintendo', 'hal laboratory'],
+      'donkey kong': ['nintendo', 'rare', 'retro studios'],
+      'star wars': ['lucasarts', 'ea', 'electronic arts', 'lucasfilm'],
+      'assassin': ['ubisoft'],
+      'far cry': ['ubisoft'],
+      'fallout': ['bethesda', 'obsidian', 'interplay', 'black isle'],
+      'elder scrolls': ['bethesda', 'zenimax'],
+      'doom': ['id software', 'bethesda'],
+      'quake': ['id software'],
+      'half-life': ['valve'],
+      'portal': ['valve'],
+      'counter-strike': ['valve'],
+      'tekken': ['bandai namco', 'namco'],
+      'mortal kombat': ['netherrealm', 'midway', 'warner bros'],
+      'dark souls': ['from software', 'bandai namco'],
+      'sekiro': ['from software', 'activision'],
+      'elden ring': ['from software', 'bandai namco']
+    };
+
     // Determine which franchise we're searching for
     let searchedFranchise = '';
-    for (const franchise of Object.keys(franchisePublishers)) {
+    for (const franchise of Object.keys(expandedFranchisePublishers)) {
       if (query.includes(franchise)) {
         searchedFranchise = franchise;
         break;
@@ -769,8 +839,8 @@ export class AdvancedSearchCoordination {
     }
 
     // Check if this game has an official publisher for the franchise
-    if (searchedFranchise && franchisePublishers[searchedFranchise]) {
-      const officialPubs = franchisePublishers[searchedFranchise];
+    if (searchedFranchise && expandedFranchisePublishers[searchedFranchise]) {
+      const officialPubs = expandedFranchisePublishers[searchedFranchise];
       const hasOfficialPublisher = officialPubs.some(pub =>
         publisher.includes(pub) || developer.includes(pub)
       );

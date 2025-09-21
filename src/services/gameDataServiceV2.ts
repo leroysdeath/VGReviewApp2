@@ -719,43 +719,87 @@ export class GameDataServiceV2 {
   }
   
   /**
-   * Fast name-only search
+   * Fast name-only search with alias support
    */
   private async searchByName(query: string, filters?: SearchFilters, limit: number = 200): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
     const timeoutId = setTimeout(() => abortController.abort(), 8000); // 8 second timeout for complex queries
-    
+
     try {
+      // First, try to use the new search_games_with_aliases function if it exists
+      // This will search both names and aliases for better Roman numeral matching
+      const { data: aliasResults, error: aliasError } = await supabase
+        .rpc('search_games_with_aliases', {
+          search_query: query,
+          max_results: limit
+        })
+        .abortSignal(abortController.signal);
+
+      clearTimeout(timeoutId);
+
+      // If the function exists and returns results, use them
+      if (!aliasError && aliasResults) {
+        if (DEBUG_GAME_DATA) console.log(`🎯 Alias search found ${aliasResults.length} games for "${query}"`);
+
+        // Apply additional filters if needed
+        let filteredResults = aliasResults;
+
+        if (filters?.genres && filters.genres.length > 0) {
+          filteredResults = filteredResults.filter(game =>
+            game.genres && game.genres.some((g: string) => filters.genres!.includes(g))
+          );
+        }
+
+        if (filters?.platforms && filters.platforms.length > 0) {
+          filteredResults = filteredResults.filter(game =>
+            game.platforms && game.platforms.some((p: string) => filters.platforms!.includes(p))
+          );
+        }
+
+        if (filters?.minRating) {
+          filteredResults = filteredResults.filter(game =>
+            game.rating && game.rating >= filters.minRating!
+          );
+        }
+
+        if (filters?.releaseYear) {
+          filteredResults = filteredResults.filter(game =>
+            game.release_date && game.release_date.startsWith(filters.releaseYear!)
+          );
+        }
+
+        return filteredResults.map(game => this.transformGameWithoutRatings(game as any));
+      }
+
+      // Fallback to regular search if alias function doesn't exist
       let queryBuilder = supabase
         .from('game')
         .select('*')
         .ilike('name', `%${query}%`)
         .or('redlight_flag.is.null,redlight_flag.eq.false')  // Filter out red-flagged games
         .abortSignal(abortController.signal);
-      
+
       // Apply filters
       if (filters?.genres && filters.genres.length > 0) {
         queryBuilder = queryBuilder.contains('genres', filters.genres);
       }
-      
+
       if (filters?.platforms && filters.platforms.length > 0) {
         queryBuilder = queryBuilder.contains('platforms', filters.platforms);
       }
-      
+
       if (filters?.minRating) {
         queryBuilder = queryBuilder.gte('igdb_rating', filters.minRating);
       }
-      
+
       if (filters?.releaseYear) {
         queryBuilder = queryBuilder.like('release_date', `${filters.releaseYear}%`);
       }
-      
+
       queryBuilder = queryBuilder.limit(limit);
-      
+
       const { data, error } = await queryBuilder;
-      
-      clearTimeout(timeoutId);
-      
+
       if (error) {
         // Don't log abort errors - they're expected
         if (error.code !== '20' && error.message && !error.message.includes('AbortError')) {
@@ -763,7 +807,7 @@ export class GameDataServiceV2 {
         }
         return [];
       }
-      
+
       return (data || []).map(game => this.transformGameWithoutRatings(game as Game));
     } catch (abortError: any) {
       clearTimeout(timeoutId);
