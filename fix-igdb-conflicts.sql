@@ -6,8 +6,11 @@
 
 -- Step 1: Remove the incorrect game that's using Street Fighter 6's ID
 -- "Interactive Portraits: Trans People in Japan" should NOT have ID 134988
+-- We need to clear BOTH game_id and igdb_id
 UPDATE game
-SET igdb_id = NULL
+SET
+  igdb_id = NULL,
+  game_id = NULL
 WHERE id = 122686 AND name = 'Interactive Portraits: Trans People in Japan';
 
 -- Step 2: Now insert Street Fighter 6 with its correct IGDB ID (134988)
