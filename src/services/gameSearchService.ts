@@ -655,26 +655,20 @@ class GameSearchService {
         totalCount = count || 0;
       }
 
-      // SIMPLIFIED: Minimal filtering for optimized results
+      // OPTIMIZED: Direct use of search results with NO filtering for search queries
       let filteredGames = games || []
 
-      // For search queries, apply minimal filtering
+      // For search queries, the database has already done ALL the work
       if (query && query.trim()) {
-        // The database already sorted by relevance, no need for filterByRelevance
+        // Database already:
+        // 1. Filtered official vs fan games
+        // 2. Sorted by relevance
+        // 3. Applied franchise boosting
+        // NO additional processing needed!
 
-        // Apply fan game filtering ONLY for non-official games
-        const officialGames = filteredGames.filter(game => game.is_official === true);
-        const unofficialGames = filteredGames.filter(game => game.is_official !== true);
+        console.log(`✅ DIRECT USE: ${filteredGames.length} games from optimized search - no filtering applied`);
 
-        // Only filter unofficial games
-        const filteredUnofficialGames = filterFanGamesAndEReaderContent(unofficialGames);
-
-        // Combine official games (unfiltered) with filtered unofficial games
-        filteredGames = [...officialGames, ...filteredUnofficialGames];
-        console.log(`✅ OPTIMIZED RESULTS: ${filteredGames.length} games (${officialGames.length} official preserved)`);
-
-        // Search results are already sorted by relevance from the database
-        // No need for additional sorting unless user explicitly changes order
+        // Only sort if user explicitly changed from relevance
         if (orderBy !== 'relevance') {
           filteredGames = this.sortGames(filteredGames, orderBy, orderDirection, query);
         }
