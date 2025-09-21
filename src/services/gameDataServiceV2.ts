@@ -483,25 +483,60 @@ export class GameDataServiceV2 {
   }
   
   /**
-   * Efficiently batch insert games to database
+   * Efficiently batch insert games to database with conflict detection
    */
   private async batchInsertGames(games: IGDBGame[]): Promise<void> {
+    // First, check for existing IGDB IDs to prevent conflicts
+    const igdbIds = games.map(g => g.id).filter(Boolean);
+
+    if (igdbIds.length === 0) {
+      console.warn('No valid IGDB IDs to insert');
+      return;
+    }
+
+    // Check which IDs already exist
+    const { data: existingGames } = await supabase
+      .from('game')
+      .select('igdb_id, name')
+      .in('igdb_id', igdbIds);
+
+    const existingIgdbIds = new Set(existingGames?.map(g => g.igdb_id) || []);
+
+    // Log conflicts for debugging
+    if (existingGames && existingGames.length > 0) {
+      for (const existing of existingGames) {
+        const newGame = games.find(g => g.id === existing.igdb_id);
+        if (newGame && newGame.name !== existing.name) {
+          console.warn(`⚠️ IGDB ID Conflict: ${existing.igdb_id} is "${existing.name}" in DB, trying to insert "${newGame.name}"`);
+        }
+      }
+    }
+
+    // Process only new games
+    const newGames = games.filter(g => !existingIgdbIds.has(g.id));
+
+    if (newGames.length === 0) {
+      if (DEBUG_GAME_DATA) console.log('All games already exist in database');
+      return;
+    }
+
     // Process games sequentially to handle slug conflicts properly
     const transformedGames = [];
-    
-    for (const game of games) {
+
+    for (const game of newGames) {
       try {
-        // PERFORMANCE FIX: Use simple slug generation instead of expensive DB queries
-        // This eliminates the 406 errors and improves search performance dramatically
         const slug = generateSlug(game.name, game.id);
-        
+
+        // Ensure category is set correctly
+        const category = game.category !== undefined ? game.category : 0;
+
         transformedGames.push({
           igdb_id: game.id,
           game_id: game.id.toString(),
           name: game.name,
           slug: slug,
           summary: game.summary,
-          release_date: game.first_release_date 
+          release_date: game.first_release_date
             ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
             : null,
           cover_url: game.cover?.url ? this.transformImageUrl(game.cover.url) : null,
@@ -514,48 +549,44 @@ export class GameDataServiceV2 {
           rating_count: game.rating_count || 0,
           follows: game.follows || 0,
           hypes: game.hypes || 0,
+          category: category, // Explicitly set category
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
-      } catch (slugError) {
-        console.warn(`Failed to generate slug for game ${game.name}:`, slugError);
-        // Use fallback slug with IGDB ID
-        transformedGames.push({
-          igdb_id: game.id,
-          game_id: game.id.toString(),
-          name: game.name,
-          slug: generateSlug(game.name, game.id), // Fallback with ID
-          summary: game.summary,
-          release_date: game.first_release_date 
-            ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
-            : null,
-          cover_url: game.cover?.url ? this.transformImageUrl(game.cover.url) : null,
-          genres: game.genres?.map(g => g.name) || [],
-          platforms: game.platforms?.map(p => p.name) || [],
-          developer: game.involved_companies?.find(c => c.developer)?.company?.name,
-          publisher: game.involved_companies?.find(c => c.publisher)?.company?.name,
-          igdb_rating: Math.round(game.rating || 0),
-          total_rating: game.total_rating ? Math.round(game.total_rating) : null,
-          rating_count: game.rating_count || 0,
-          follows: game.follows || 0,
-          hypes: game.hypes || 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+
+        if (DEBUG_GAME_DATA) console.log(`✅ Prepared for insert: "${game.name}" (IGDB: ${game.id}, Category: ${category})`);
+      } catch (error) {
+        console.error(`Failed to prepare game ${game.name}:`, error);
       }
     }
-    
-    // Use batch upsert for better performance
+
+    // Use batch insert (not upsert) for new games only
     if (transformedGames.length > 0) {
       const { error } = await supabase
         .from('game')
-        .upsert(transformedGames, { 
-          onConflict: 'igdb_id',
-          ignoreDuplicates: true 
-        });
-      
-      if (error && error.code !== '23505') {
-        console.error(`Failed to batch upsert ${transformedGames.length} games:`, error);
+        .insert(transformedGames);
+
+      if (error) {
+        if (error.code === '23505') {
+          console.warn(`Some games already existed (duplicate key)`);
+        } else {
+          console.error(`Failed to insert ${transformedGames.length} games:`, error);
+
+          // Try inserting one by one to identify problematic entries
+          for (const game of transformedGames) {
+            const { error: singleError } = await supabase
+              .from('game')
+              .insert(game);
+
+            if (singleError) {
+              console.error(`Failed to insert "${game.name}":`, singleError);
+            } else {
+              if (DEBUG_GAME_DATA) console.log(`✅ Inserted: "${game.name}"`);
+            }
+          }
+        }
+      } else {
+        if (DEBUG_GAME_DATA) console.log(`💾 Successfully inserted ${transformedGames.length} new games`);
       }
     }
   }
