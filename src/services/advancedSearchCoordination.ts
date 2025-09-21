@@ -18,6 +18,7 @@ import { igdbService } from './igdbService';
 import { sortGamesIntelligently, detectSearchIntent, SearchIntent } from '../utils/intelligentPrioritization';
 import { filterProtectedContent, filterFanGamesAndEReaderContent } from '../utils/contentProtectionFilter';
 import { normalizeAccents, expandWithAccentVariations, createSearchVariants } from '../utils/accentNormalization';
+import { expandWithRomanNumerals } from '../utils/romanNumeralConverter';
 
 // Import error handling services
 import { igdbCircuitBreaker } from './igdbCircuitBreaker';
@@ -241,12 +242,25 @@ export class AdvancedSearchCoordination {
   private expandQuery(query: string, intent: SearchIntent): string[] {
     const baseQuery = query.toLowerCase().trim();
     const expansions: string[] = [baseQuery];
-    
+
     // STEP 1: Add accent-normalized variations FIRST
     const accentVariations = expandWithAccentVariations(query);
     expansions.push(...accentVariations);
-    
-    // Debug: Accent expansions for query
+
+    // STEP 2: Add Roman numeral variations (e.g., "2" ↔ "II")
+    const romanVariations = expandWithRomanNumerals(query);
+    expansions.push(...romanVariations);
+
+    // Also expand accent variations with Roman numerals
+    accentVariations.forEach(variant => {
+      const romanVariantsOfAccent = expandWithRomanNumerals(variant);
+      expansions.push(...romanVariantsOfAccent);
+    });
+
+    // Debug: Accent and Roman expansions for query
+    if (DEBUG_SEARCH_COORDINATION && romanVariations.length > 0) {
+      console.log(`🔢 Roman numeral expansions for "${query}":`, romanVariations);
+    }
 
     // Common abbreviations and alternative names
     const expansionRules: Record<string, string[]> = {
@@ -314,7 +328,7 @@ export class AdvancedSearchCoordination {
       'splatoon': ['splatoon 3', 'splatoon 2']
     };
 
-    // STEP 2: Apply expansion rules with accent-aware matching
+    // STEP 3: Apply expansion rules with accent-aware matching
     const normalizedQuery = normalizeAccents(baseQuery);
     for (const [abbrev, alternatives] of Object.entries(expansionRules)) {
       const normalizedAbbrev = normalizeAccents(abbrev);
@@ -334,7 +348,7 @@ export class AdvancedSearchCoordination {
       }
     }
 
-    // STEP 3: Intent-specific expansions (accent-aware)
+    // STEP 4: Intent-specific expansions (accent-aware)
     if (intent === SearchIntent.FRANCHISE_BROWSE) {
       // Add common franchise terms using normalized matching
       if (normalizedQuery.includes('mario') && !normalizedQuery.includes('super')) {
