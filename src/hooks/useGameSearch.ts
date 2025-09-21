@@ -37,7 +37,7 @@ export const useGameSearch = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [searchOptions, setSearchOptions] = useState<SearchOptions>({
-    limit: 40,  // Reduced for better relevance and faster search
+    limit: 200,  // Increased to show all franchise games (e.g., all 166 Pokemon)
     offset: 0,
     sortBy: 'popularity',
     sortOrder: 'desc'
@@ -74,7 +74,7 @@ export const useGameSearch = () => {
       
       // Use Advanced Search Coordination with accent normalization
       const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
-        maxResults: searchParams.limit || 80,  // Increased to show more franchise results
+        maxResults: searchParams.limit || 200,  // Default to 200 to show all franchise games
         includeMetrics: true,
         bypassCache: false // Always use cache for better performance
       });

@@ -726,10 +726,76 @@ export class AdvancedSearchCoordination {
     let canonicalBonus = 0;
     let popularityBonus = 0;
     let recencyBonus = 0;
+    let legitimacyScore = 0;
 
     // Canonical game detection (main entries vs DLC/collections)
     const gameName = result.name.toLowerCase();
     const query = context.originalQuery.toLowerCase();
+    const developer = (result.developer || '').toLowerCase();
+    const publisher = (result.publisher || '').toLowerCase();
+
+    // PUBLISHER VERIFICATION: Check for official publishers
+    const franchisePublishers: Record<string, string[]> = {
+      'pokemon': ['nintendo', 'game freak', 'the pokemon company', 'creatures inc', 'niantic'],
+      'mario': ['nintendo'],
+      'zelda': ['nintendo'],
+      'sonic': ['sega', 'sonic team'],
+      'final fantasy': ['square enix', 'square', 'squaresoft'],
+      'mega man': ['capcom'],
+      'call of duty': ['activision', 'infinity ward', 'treyarch', 'sledgehammer']
+    };
+
+    // Determine which franchise we're searching for
+    let searchedFranchise = '';
+    for (const franchise of Object.keys(franchisePublishers)) {
+      if (query.includes(franchise)) {
+        searchedFranchise = franchise;
+        break;
+      }
+    }
+
+    // Check if this game has an official publisher for the franchise
+    if (searchedFranchise && franchisePublishers[searchedFranchise]) {
+      const officialPubs = franchisePublishers[searchedFranchise];
+      const hasOfficialPublisher = officialPubs.some(pub =>
+        publisher.includes(pub) || developer.includes(pub)
+      );
+
+      if (hasOfficialPublisher) {
+        legitimacyScore = 0.3; // Big boost for official games
+      }
+    }
+
+    // FAN GAME DETECTION (as penalty instead of filter)
+    // Check for known fan game patterns
+    const fanGameIndicators = [
+      // Known fan game titles
+      'insurgence', 'uranium', 'prism', 'phoenix rising', 'sage', 'reborn',
+      'rejuvenation', 'clover', 'glazed', 'gaia', 'light platinum', 'flora sky',
+      'dark rising', 'zeta', 'omicron', 'eclipse', 'solar light', 'lunar dark',
+      // Fan game naming patterns
+      'fan made', 'fan game', 'fan-made', 'rom hack', 'homebrew',
+      // Common fan game subtitles
+      'cyan', 'orange', 'purple', 'indigo', 'turquoise', 'brown', 'gray'
+    ];
+
+    const isFanGame = fanGameIndicators.some(indicator =>
+      gameName.includes(indicator)
+    );
+
+    // Additional fan game detection: missing publisher/developer
+    const hasNoPublisher = !publisher || publisher === 'unknown' || publisher === 'n/a';
+    const hasNoDeveloper = !developer || developer === 'unknown' || developer === 'n/a';
+    const missingCredentials = hasNoPublisher && hasNoDeveloper;
+
+    // Apply fan game penalties
+    if (isFanGame) {
+      legitimacyScore -= 0.5; // Heavy penalty for known fan games
+    } else if (missingCredentials && searchedFranchise) {
+      legitimacyScore -= 0.3; // Moderate penalty for games with no publisher/developer
+    } else if (hasNoPublisher && searchedFranchise) {
+      legitimacyScore -= 0.15; // Light penalty for missing publisher only
+    }
 
     // Bonus for main/canonical entries
     if (!gameName.includes('dlc') &&
@@ -744,6 +810,21 @@ export class AdvancedSearchCoordination {
     if (gameName === query ||
         gameName.match(/\b(i{1,3}|iv|v|vi{1,3}|ix|x{1,3}|\d+)\b/)) {
       canonicalBonus += 0.1;
+    }
+
+    // Special boost for main series Pokemon games
+    if (searchedFranchise === 'pokemon') {
+      const mainSeriesPatterns = [
+        'red', 'blue', 'yellow', 'gold', 'silver', 'crystal',
+        'ruby', 'sapphire', 'emerald', 'diamond', 'pearl', 'platinum',
+        'black', 'white', 'x', 'y', 'sun', 'moon', 'ultra sun', 'ultra moon',
+        'sword', 'shield', 'scarlet', 'violet', 'legends', 'arceus',
+        'let\'s go', 'firered', 'leafgreen', 'heartgold', 'soulsilver'
+      ];
+
+      if (mainSeriesPatterns.some(pattern => gameName.includes(pattern))) {
+        canonicalBonus += 0.15; // Extra boost for main series games
+      }
     }
 
     // Popularity bonus (based on having complete metadata)
@@ -775,21 +856,34 @@ export class AdvancedSearchCoordination {
       }
     }
 
-    // Weighted composite score
+    // Weighted composite score (adjusted weights to include legitimacy)
     const weights = {
-      relevance: 0.40,  // 40% - How well it matches the search
-      quality: 0.25,    // 25% - Metadata completeness and ratings
-      canonical: 0.20,  // 20% - Whether it's a main game vs DLC
-      popularity: 0.10, // 10% - Popularity indicators
-      recency: 0.05     // 5% - Newer games get slight boost
+      relevance: 0.30,    // 30% - How well it matches the search
+      legitimacy: 0.25,   // 25% - Official vs fan game
+      quality: 0.20,      // 20% - Metadata completeness and ratings
+      canonical: 0.15,    // 15% - Whether it's a main game vs DLC
+      popularity: 0.05,   // 5% - Popularity indicators
+      recency: 0.05       // 5% - Newer games get slight boost
     };
 
     const compositeScore =
       (relevanceScore * weights.relevance) +
+      (legitimacyScore * weights.legitimacy) +
       (qualityScore * weights.quality) +
       (canonicalBonus * weights.canonical) +
       (popularityBonus * weights.popularity) +
       (recencyBonus * weights.recency);
+
+    // Log scoring for Pokemon games if debugging
+    if (DEBUG_SEARCH_COORDINATION && searchedFranchise === 'pokemon' &&
+        (gameName.includes('insurgence') || gameName.includes('uranium') || gameName.includes('scarlet'))) {
+      console.log(`🎮 Scoring "${result.name}":
+        - Relevance: ${relevanceScore.toFixed(2)}
+        - Legitimacy: ${legitimacyScore.toFixed(2)} (Publisher: ${publisher || 'NONE'})
+        - Quality: ${qualityScore.toFixed(2)}
+        - Canonical: ${canonicalBonus.toFixed(2)}
+        - Final Score: ${compositeScore.toFixed(3)}`);
+    }
 
     // Ensure score is between 0 and 1
     return Math.min(Math.max(compositeScore, 0), 1);
