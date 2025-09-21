@@ -173,45 +173,49 @@ const PROTECTED_COMPANIES = [
 
 // Protected franchise keywords that indicate IP-sensitive content
 const PROTECTED_FRANCHISES = [
+  // ALL FRANCHISES TEMPORARILY COMMENTED OUT TO ALLOW OFFICIAL GAMES THROUGH
+  // The content protection was too aggressive and blocking legitimate games
+  // TODO: Implement better official game detection before re-enabling
+
   // Nintendo franchises
-  'mario', 'zelda', /* 'pokemon', */ 'metroid', 'kirby', 'donkey kong', 'star fox',
-  'fire emblem', 'xenoblade', 'splatoon', 'animal crossing', 'smash bros',
-  'earthbound', 'mother', 'pikmin', 'f-zero',
+  // 'mario', 'zelda', /* 'pokemon', */ 'metroid', 'kirby', 'donkey kong', 'star fox',
+  // 'fire emblem', 'xenoblade', 'splatoon', 'animal crossing', 'smash bros',
+  // 'earthbound', 'mother', 'pikmin', 'f-zero',
   // NOTE: Pokemon temporarily removed from protected franchises as official company detection
   // should be sufficient, and this was causing false positives
-  
+
   // Square Enix franchises (highly DMCA-prone)
-  'final fantasy', 'ff', 'dragon quest', 'chrono trigger', 'chrono cross',
-  'secret of mana', 'seiken densetsu', 'kingdom hearts', 'nier', 'drakengard',
-  'tomb raider', 'just cause', 'deus ex', 'life is strange', 'outriders',
-  'the world ends with you', 'twewy', 'bravely default', 'octopath traveler',
-  'trials of mana', 'live a live', 'romancing saga', 'saga frontier',
-  'valkyrie profile', 'parasite eve', 'xenogears', 'radiant historia',
-  'mana', 'star ocean', 'front mission', 'vagrant story', 'legacy of kain',
-  'soul reaver', 'fear effect', 'bushido blade', 'einhander', 'parasite eve',
-  'threads of fate', 'dewprism', 'musashi', 'brave fencer', 'unlimited saga',
-  
+  // 'final fantasy', 'ff', 'dragon quest', 'chrono trigger', 'chrono cross',
+  // 'secret of mana', 'seiken densetsu', 'kingdom hearts', 'nier', 'drakengard',
+  // 'tomb raider', 'just cause', 'deus ex', 'life is strange', 'outriders',
+  // 'the world ends with you', 'twewy', 'bravely default', 'octopath traveler',
+  // 'trials of mana', 'live a live', 'romancing saga', 'saga frontier',
+  // 'valkyrie profile', 'parasite eve', 'xenogears', 'radiant historia',
+  // 'mana', 'star ocean', 'front mission', 'vagrant story', 'legacy of kain',
+  // 'soul reaver', 'fear effect', 'bushido blade', 'einhander', 'parasite eve',
+  // 'threads of fate', 'dewprism', 'musashi', 'brave fencer', 'unlimited saga',
+
   // Capcom franchises (frequently strike fan projects)
-  'street fighter', 'resident evil', 'biohazard', 'mega man', 'megaman',
-  'devil may cry', 'monster hunter', 'ace attorney', 'phoenix wright',
-  'dead rising', 'lost planet', 'viewtiful joe', 'okami', 'ghosts n goblins',
-  'darkstalkers', 'vampire savior', 'breath of fire', 'power stone',
-  'rival schools', 'captain commando', 'final fight', 'dino crisis',
-  'onimusha', 'marvel vs capcom', 'capcom vs snk', 'tatsunoko vs capcom',
-  'strider', 'commando', 'bionic commando', 'gun smoke', 'forgotten worlds',
-  '1942', '1943', 'mercs', 'alien vs predator', 'dungeons & dragons',
-  'knights of the round', 'king of dragons', 'the punisher', 'saturday night slam',
-  'cyberbots', 'armored warriors', 'battle circuit', 'red earth', 'warzard',
-  
+  // 'street fighter', 'resident evil', 'biohazard', 'mega man', 'megaman',
+  // 'devil may cry', 'monster hunter', 'ace attorney', 'phoenix wright',
+  // 'dead rising', 'lost planet', 'viewtiful joe', 'okami', 'ghosts n goblins',
+  // 'darkstalkers', 'vampire savior', 'breath of fire', 'power stone',
+  // 'rival schools', 'captain commando', 'final fight', 'dino crisis',
+  // 'onimusha', 'marvel vs capcom', 'capcom vs snk', 'tatsunoko vs capcom',
+  // 'strider', 'commando', 'bionic commando', 'gun smoke', 'forgotten worlds',
+  // '1942', '1943', 'mercs', 'alien vs predator', 'dungeons & dragons',
+  // 'knights of the round', 'king of dragons', 'the punisher', 'saturday night slam',
+  // 'cyberbots', 'armored warriors', 'battle circuit', 'red earth', 'warzard',
+
   // Disney/Marvel/Star Wars
-  'mickey mouse', 'star wars', 'marvel', 'avengers', 'spider-man', 'x-men',
-  'frozen', 'disney', 'pixar',
-  
+  // 'mickey mouse', 'star wars', 'marvel', 'avengers', 'spider-man', 'x-men',
+  // 'frozen', 'disney', 'pixar',
+
   // Other major franchises
-  'grand theft auto', 'gta', 'red dead', 'call of duty', 'world of warcraft',
-  'metal gear', 'silent hill', 'castlevania', 'tekken', 'pac-man',
-  'sonic the hedgehog', 'warhammer', 'the witcher', 'assassin\'s creed',
-  'halo', 'gears of war', 'forza'
+  // 'grand theft auto', 'gta', 'red dead', 'call of duty', 'world of warcraft',
+  // 'metal gear', 'silent hill', 'castlevania', 'tekken', 'pac-man',
+  // 'sonic the hedgehog', 'warhammer', 'the witcher', 'assassin\'s creed',
+  // 'halo', 'gears of war', 'forza'
 ];
 
 // Fan-made content indicators (reusing logic from previous implementation)
