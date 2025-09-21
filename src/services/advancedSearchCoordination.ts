@@ -357,53 +357,55 @@ export class AdvancedSearchCoordination {
 
   /**
    * Calculate dynamic quality threshold based on search context
+   * PRIORITY-BASED: Much lower thresholds to include more games
    */
   private calculateQualityThreshold(intent: SearchIntent, query: string): number {
     const baseQuery = query.toLowerCase();
-    
-    // Higher thresholds for specific searches (want exact matches)
+
+    // PRIORITY-BASED: Lower thresholds - we'll rank, not filter
     if (intent === SearchIntent.SPECIFIC_GAME) {
-      return 0.8;
+      return 0.3; // Lowered from 0.8 - show all matches, ranked by quality
     }
-    
-    // Medium thresholds for franchise browsing (balance quality and coverage)
+
+    // PRIORITY-BASED: Include all franchise games
     if (intent === SearchIntent.FRANCHISE_BROWSE) {
-      // Popular franchises can be more selective
+      // Popular franchises should show ALL their games
       const popularFranchises = ['mario', 'zelda', 'pokemon', 'final fantasy', 'call of duty'];
       if (popularFranchises.some(franchise => baseQuery.includes(franchise))) {
-        return 0.6;
+        return 0.1; // Lowered from 0.6 - show ALL Pokemon games
       }
-      return 0.4;
+      return 0.2; // Lowered from 0.4
     }
-    
-    // Lower thresholds for discovery (want more results)
+
+    // Lower thresholds for discovery
     if (intent === SearchIntent.GENRE_DISCOVERY || intent === SearchIntent.YEAR_SEARCH) {
-      return 0.3;
+      return 0.2; // Lowered from 0.3
     }
-    
-    // Default moderate threshold
-    return 0.5;
+
+    // Default lower threshold
+    return 0.3; // Lowered from 0.5
   }
 
   /**
    * Get appropriate max results based on search intent
+   * PRIORITY-BASED: Significantly increased limits to show all relevant games
    */
   private getDefaultMaxResults(intent: SearchIntent): number {
     switch (intent) {
       case SearchIntent.SPECIFIC_GAME:
-        return 20; // Focused results for specific searches
+        return 50; // Increased from 20 - show more variations
       case SearchIntent.FRANCHISE_BROWSE:
-        return 40; // Reasonable franchise coverage with better relevance
+        return 200; // Increased from 40 - show ALL franchise games (e.g., 166 Pokemon)
       case SearchIntent.GENRE_DISCOVERY:
-        return 50; // More focused discovery results
+        return 100; // Increased from 50 - more discovery
       case SearchIntent.YEAR_SEARCH:
-        return 40; // Recent games exploration
+        return 100; // Increased from 40 - comprehensive year view
       case SearchIntent.DEVELOPER_SEARCH:
-        return 40; // Developer portfolio browsing
+        return 150; // Increased from 40 - full developer catalog
       case SearchIntent.PLATFORM_SEARCH:
-        return 40; // Platform library browsing
+        return 150; // Increased from 40 - full platform library
       default:
-        return 40; // Default to focused, relevant results
+        return 100; // Increased from 40 - comprehensive results
     }
   }
 
@@ -486,9 +488,9 @@ export class AdvancedSearchCoordination {
           qualityScore: this.calculateQualityScore(game)
         }));
 
-        // Filter out games with very low relevance scores to prevent unrelated results
+        // PRIORITY-BASED: Much lower relevance filter - let ranking handle order
         const relevantResults = convertedResults.filter(game =>
-          (game.relevanceScore || 0) >= 0.4 // Increased threshold to filter unrelated games
+          (game.relevanceScore || 0) >= 0.1 // Lowered from 0.4 - include all remotely relevant
         );
 
         // Add results from this query
@@ -499,10 +501,10 @@ export class AdvancedSearchCoordination {
           }
         }
 
-        // Early termination only for non-franchise searches or when we have abundant results
+        // PRIORITY-BASED: Higher termination thresholds to get more results
         const isFranchiseSearch = context.intent === 'franchise_browse';
-        const terminationThreshold = isFranchiseSearch ? 80 : 40;
-        
+        const terminationThreshold = isFranchiseSearch ? 250 : 150; // Increased from 80/40
+
         if (allResults.length >= terminationThreshold) {
           if (DEBUG_SEARCH_COORDINATION) console.log(`✂️ Early termination: Found ${allResults.length} results after ${i + 1} queries`);
           break;
@@ -631,67 +633,166 @@ export class AdvancedSearchCoordination {
   }
 
   /**
-   * Process search results with advanced filtering and sorting
+   * Process search results with PRIORITY-BASED ranking instead of aggressive filtering
    */
   private processSearchResults(results: SearchResult[], context: SearchContext): SearchResult[] {
     // Processing raw results
 
-    // Apply content protection filtering (collections, ports, etc.)
-    const contentFilteredResults = filterProtectedContent(results.map(r => ({
-      id: r.id,
-      name: r.name,
-      developer: r.developer,
-      publisher: r.publisher,
-      category: r.category,
-      genres: r.genres,
-      summary: r.summary,
-      // IMPORTANT: Preserve greenlight/redlight flags for filtering logic
-      greenlight_flag: (r as any).greenlight_flag,
-      redlight_flag: (r as any).redlight_flag,
-      flag_reason: (r as any).flag_reason
-    }))).map(filteredGame => {
-      return results.find(r => r.id === filteredGame.id)!;
-    }).filter(Boolean);
+    // PRIORITY-BASED: Conditionally apply filters based on search intent
+    let processedResults = results;
 
-    // Apply fan game and e-reader filtering
-    const fanGameFilteredResults = filterFanGamesAndEReaderContent(contentFilteredResults.map(r => ({
-      id: r.id,
-      name: r.name,
-      developer: r.developer,
-      publisher: r.publisher,
-      category: r.category,
-      genres: r.genres,
-      summary: r.summary,
-      // IMPORTANT: Preserve greenlight/redlight flags for filtering logic
-      greenlight_flag: (r as any).greenlight_flag,
-      redlight_flag: (r as any).redlight_flag,
-      flag_reason: (r as any).flag_reason
-    }))).map(filteredGame => {
-      return contentFilteredResults.find(r => r.id === filteredGame.id)!;
-    }).filter(Boolean);
+    // For popular franchises, skip aggressive content filtering
+    const popularFranchises = ['mario', 'zelda', 'pokemon', 'final fantasy', 'call of duty', 'sonic', 'mega man'];
+    const isPopularFranchise = popularFranchises.some(franchise =>
+      context.originalQuery.toLowerCase().includes(franchise)
+    );
 
-    // Content filtering applied
+    if (!isPopularFranchise && context.searchIntent !== SearchIntent.FRANCHISE_BROWSE) {
+      // Only apply content filtering for non-franchise searches
+      processedResults = filterProtectedContent(processedResults.map(r => ({
+        id: r.id,
+        name: r.name,
+        developer: r.developer,
+        publisher: r.publisher,
+        category: r.category,
+        genres: r.genres,
+        summary: r.summary,
+        greenlight_flag: (r as any).greenlight_flag,
+        redlight_flag: (r as any).redlight_flag,
+        flag_reason: (r as any).flag_reason
+      }))).map(filteredGame => {
+        return results.find(r => r.id === filteredGame.id)!;
+      }).filter(Boolean);
 
-    // Apply quality threshold filtering
-    const qualityFilteredResults = fanGameFilteredResults.filter(result => {
+      // Only apply fan game filtering for non-franchise searches
+      processedResults = filterFanGamesAndEReaderContent(processedResults.map(r => ({
+        id: r.id,
+        name: r.name,
+        developer: r.developer,
+        publisher: r.publisher,
+        category: r.category,
+        genres: r.genres,
+        summary: r.summary,
+        greenlight_flag: (r as any).greenlight_flag,
+        redlight_flag: (r as any).redlight_flag,
+        flag_reason: (r as any).flag_reason
+      }))).map(filteredGame => {
+        return processedResults.find(r => r.id === filteredGame.id)!;
+      }).filter(Boolean);
+    }
+
+    // PRIORITY-BASED: Calculate composite scores for ranking
+    const scoredResults = processedResults.map(result => ({
+      ...result,
+      compositeScore: this.calculateCompositeScore(result, context)
+    }));
+
+    // PRIORITY-BASED: Much looser quality filtering
+    const qualityFilteredResults = scoredResults.filter(result => {
       const meetsThreshold = (result.qualityScore || 0) >= context.qualityThreshold;
       return meetsThreshold;
     });
 
-    // Quality filtering applied
+    // PRIORITY-BASED: Sort by composite score instead of just relevance
+    const sortedResults = qualityFilteredResults.sort((a, b) => {
+      return (b.compositeScore || 0) - (a.compositeScore || 0);
+    });
 
-    // Sort by intelligent prioritization
-    const sortedResults = sortGamesIntelligently(
-      qualityFilteredResults, 
-      context.originalQuery
-    );
-
-    // Apply max results limit
+    // Apply max results limit (now much higher)
     const finalResults = sortedResults.slice(0, context.maxResults);
 
-    // Final results processed
+    // Log filtering stats for debugging
+    if (DEBUG_SEARCH_COORDINATION) {
+      console.log(`📊 Search Pipeline Stats for "${context.originalQuery}":
+        - Raw results: ${results.length}
+        - After conditional filters: ${processedResults.length}
+        - After quality threshold (${context.qualityThreshold}): ${qualityFilteredResults.length}
+        - Final (max ${context.maxResults}): ${finalResults.length}`);
+    }
 
     return finalResults;
+  }
+
+  /**
+   * Calculate composite score for PRIORITY-BASED ranking
+   * Combines multiple factors to rank games instead of filtering them out
+   */
+  private calculateCompositeScore(result: SearchResult, context: SearchContext): number {
+    // Base scores (0-1 scale for each)
+    const relevanceScore = result.relevanceScore || 0;
+    const qualityScore = result.qualityScore || 0;
+
+    // Additional scoring factors
+    let canonicalBonus = 0;
+    let popularityBonus = 0;
+    let recencyBonus = 0;
+
+    // Canonical game detection (main entries vs DLC/collections)
+    const gameName = result.name.toLowerCase();
+    const query = context.originalQuery.toLowerCase();
+
+    // Bonus for main/canonical entries
+    if (!gameName.includes('dlc') &&
+        !gameName.includes('expansion') &&
+        !gameName.includes('pack') &&
+        !gameName.includes('edition') &&
+        !gameName.includes('collection')) {
+      canonicalBonus = 0.15;
+    }
+
+    // Extra bonus for exact matches or numbered entries
+    if (gameName === query ||
+        gameName.match(/\b(i{1,3}|iv|v|vi{1,3}|ix|x{1,3}|\d+)\b/)) {
+      canonicalBonus += 0.1;
+    }
+
+    // Popularity bonus (based on having complete metadata)
+    if (result.developer && result.publisher) {
+      popularityBonus += 0.05;
+    }
+    if (result.genres && result.genres.length > 0) {
+      popularityBonus += 0.05;
+    }
+    if (result.summary && result.summary.length > 100) {
+      popularityBonus += 0.05;
+    }
+    if (result.cover_url) {
+      popularityBonus += 0.05;
+    }
+
+    // Recency bonus for newer games (if they have a release date)
+    if (result.release_date) {
+      const releaseYear = new Date(result.release_date).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const yearsDiff = currentYear - releaseYear;
+
+      if (yearsDiff <= 2) {
+        recencyBonus = 0.1; // Very recent
+      } else if (yearsDiff <= 5) {
+        recencyBonus = 0.05; // Recent
+      } else if (yearsDiff <= 10) {
+        recencyBonus = 0.02; // Somewhat recent
+      }
+    }
+
+    // Weighted composite score
+    const weights = {
+      relevance: 0.40,  // 40% - How well it matches the search
+      quality: 0.25,    // 25% - Metadata completeness and ratings
+      canonical: 0.20,  // 20% - Whether it's a main game vs DLC
+      popularity: 0.10, // 10% - Popularity indicators
+      recency: 0.05     // 5% - Newer games get slight boost
+    };
+
+    const compositeScore =
+      (relevanceScore * weights.relevance) +
+      (qualityScore * weights.quality) +
+      (canonicalBonus * weights.canonical) +
+      (popularityBonus * weights.popularity) +
+      (recencyBonus * weights.recency);
+
+    // Ensure score is between 0 and 1
+    return Math.min(Math.max(compositeScore, 0), 1);
   }
 
   /**

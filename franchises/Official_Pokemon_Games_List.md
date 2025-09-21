@@ -61,7 +61,7 @@
 - Pokémon Scarlet (2022)
 - Pokémon Violet (2022)
 
-## **OFFICIAL SPIN-OFF GAMES (60+ games)**
+## **OFFICIAL SPIN-OFF GAMES Rank 1**
 
 ### Stadium/Battle Series
 - Pokémon Stadium (1999)
@@ -69,6 +69,18 @@
 - Pokémon Colosseum (2003)
 - Pokémon XD: Gale of Darkness (2005)
 - Pokémon Battle Revolution (2006)
+
+### Snap Series
+- Pokémon Snap (1999)
+- New Pokémon Snap (2021)
+
+### Trading Card Game
+- Pokémon Trading Card Game (1998)
+- Pokémon Card GB2: Great Rocket-Dan Sanjou! (2001)
+- Pokémon Trading Card Game Online (2011)
+- Pokémon Card Game: Asobikata DS (2011)
+
+## **OFFICIAL SPIN-OFF GAMES Rank 2**
 
 ### Mystery Dungeon Series
 - Pokémon Mystery Dungeon: Red Rescue Team (2005)
@@ -94,15 +106,7 @@
 - Pokémon Rumble U (2013)
 - Pokémon Rumble World (2015)
 
-### Snap Series
-- Pokémon Snap (1999)
-- New Pokémon Snap (2021)
-
-### Trading Card Game
-- Pokémon Trading Card Game (1998)
-- Pokémon Card GB2: Great Rocket-Dan Sanjou! (2001)
-- Pokémon Trading Card Game Online (2011)
-- Pokémon Card Game: Asobikata DS (2011)
+## **OFFICIAL SPIN-OFF GAMES Rank 3**
 
 ### Puzzle Games
 - Pokémon Puzzle Challenge (2000)
@@ -110,6 +114,14 @@
 - Pokémon Battle Trozei (2014)
 - Pokémon Shuffle (2015)
 - Pokémon Picross (2015)
+
+### Arcade Games
+- Pokémon Battrio (2007)
+- Pokémon Tretta (2012)
+- Pokémon Mega Get! (2015)
+- Pokémon Ga-Olé (2016)
+
+## **OFFICIAL SPIN-OFF GAMES Rank 4**
 
 ### Pokemon Mini Console Games
 - Pokémon Party Mini (2001)
@@ -132,12 +144,6 @@
 - Pokémon Box: Ruby & Sapphire (2003)
 - Pokémon Dream Radar (2012)
 - Pokémon Bank (2013)
-
-### Arcade Games
-- Pokémon Battrio (2007)
-- Pokémon Tretta (2012)
-- Pokémon Mega Get! (2015)
-- Pokémon Ga-Olé (2016)
 
 ### PC Games
 - Pokémon Project Studio Red/Blue Version (1999)
