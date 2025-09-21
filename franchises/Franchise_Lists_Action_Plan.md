@@ -1,8 +1,8 @@
 # Franchise Game Lists - Action Plan
 
-## Status: 10 of 41 Complete (24.4%)
+## Status: 13 of 41 Complete (31.7%)
 
-## ✅ COMPLETED FRANCHISES (10)
+## ✅ COMPLETED FRANCHISES (13)
 1. ✅ **Pokémon** - `Official_Pokemon_Games_List.md` - 110 official games documented
 2. ✅ **Zelda** - `Official_Zelda_Games_List.md` - 49 official games documented
 3. ✅ **Mario** - `Mario_Universe_Complete_List.md` - ~500+ games documented
@@ -13,8 +13,11 @@
 8. ✅ **Grand Theft Auto** - `Grand_Theft_Auto_Complete_List.md` - 26 games documented
 9. ✅ **Assassin's Creed** - `Assassins_Creed_Complete_List.md` - ~100+ games documented
 10. ✅ **Resident Evil** - `Resident_Evil_Complete_List.md` - ~120+ games documented
+11. ✅ **Street Fighter** - `Street_Fighter_Complete_List.md` - ~70+ games documented
+12. ✅ **Mortal Kombat** - `Mortal_Kombat_Complete_List.md` - ~60+ games documented
+13. ✅ **Tekken** - `Tekken_Complete_List.md` - ~25 games documented
 
-## 📝 TO-DO FRANCHISES (35)
+## 📝 TO-DO FRANCHISES (28)
 
 ### Racing Games (4)
 - [ ] **Forza** - Microsoft racing franchise (Motorsport & Horizon)
@@ -36,10 +39,10 @@
 - [ ] **Resident Evil** - Capcom survival horror franchise
 - [ ] **Silent Hill** *(consider adding - major horror franchise)*
 
-### Fighting Games (6)
-- [ ] **Street Fighter** - Capcom 2D fighting series
-- [ ] **Tekken** - Namco 3D fighting series
-- [ ] **Mortal Kombat** - NetherRealm Studios fighting series
+### Fighting Games (3 remaining)
+- [x] ~~**Street Fighter**~~ - ✅ Completed
+- [x] ~~**Tekken**~~ - ✅ Completed
+- [x] ~~**Mortal Kombat**~~ - ✅ Completed
 - [ ] **Virtua Fighter** - Sega 3D fighting series
 - [ ] **Dead or Alive** - Team Ninja fighting series
 - [ ] **Guilty Gear** - Arc System Works fighting series
