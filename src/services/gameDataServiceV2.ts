@@ -160,11 +160,11 @@ export class GameDataServiceV2 {
       'mario', 'super mario', 'zelda', 'pokemon', 'final fantasy', 'ff',
       'call of duty', 'cod', 'assassin', 'grand theft auto', 'gta',
       'mega man', 'megaman', 'sonic', 'halo', 'god of war',
-      'uncharted', 'last of us', 'resident evil', 'street fighter',
-      'mortal kombat', 'tekken', 'elder scrolls', 'fallout',
+      'uncharted', 'last of us', 'resident evil', 'street fighter', 'sf',
+      'mortal kombat', 'mk', 'tekken', 'elder scrolls', 'fallout',
       'witcher', 'dark souls', 'metal gear', 'silent hill'
     ];
-    
+
     return franchises.some(franchise => term.includes(franchise));
   }
   
