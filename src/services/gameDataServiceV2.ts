@@ -427,12 +427,7 @@ export class GameDataServiceV2 {
     if (game.summary && game.summary.length > 100) score += 2;
     if (game.cover_url) score += 1; // Has cover art
     if (game.totalUserRatings > 10) score += 2;
-    
-    // 7. Manual Curation Boost (150 points) - Green-flagged games get massive priority
-    // This ensures manually curated games appear at the top of search results
-    if ((game as any).greenlight_flag === true) {
-      score += 150;
-    }
+    // REMOVED: Green flag boost for performance optimization
     
     return Math.round(score * 10) / 10; // Round to 1 decimal for cleaner debug output
   }
@@ -639,35 +634,28 @@ export class GameDataServiceV2 {
     try {
       // Strategy: Try name search first (faster), then supplement with summary search if needed
       if (DEBUG_GAME_DATA) console.log(`🔍 Database search for: "${query}"`);
-      
-      // Run green flag search and name search in parallel for better performance
-      const [greenFlaggedGames, nameResults] = await Promise.all([
-        this.searchGreenFlaggedGames(query).catch(() => []), // Don't let green flag search fail the whole operation
-        this.searchByName(query, filters, maxResults).catch(() => []) // Use maxResults instead of hardcoded 25
-      ]);
-      
-      if (DEBUG_GAME_DATA) console.log(`🟢 Green-flagged games: ${greenFlaggedGames.length} results`);
+
+      // OPTIMIZED: Removed green flag search for better performance
+      const nameResults = await this.searchByName(query, filters, maxResults).catch(() => []);
+
       if (DEBUG_GAME_DATA) console.log(`📛 Name search: ${nameResults.length} results`);
-      
-      // Merge green-flagged games with regular results (avoiding duplicates)
-      const existingIds = new Set(nameResults.map(g => g.id));
-      const uniqueGreenFlagged = greenFlaggedGames.filter(g => !existingIds.has(g.id));
-      let combinedResults = [...uniqueGreenFlagged, ...nameResults];
-      
+
+      let combinedResults = nameResults;
+
       // If we still don't have enough results, add summary search
       if (combinedResults.length < Math.min(maxResults / 2, 50)) { // Dynamic threshold based on maxResults
         const summaryResults = await this.searchBySummary(query, filters, Math.floor(maxResults / 2)).catch(() => []); // Use half of maxResults for summary
         if (DEBUG_GAME_DATA) console.log(`📝 Summary search: ${summaryResults.length} results`);
-        
+
         // Merge results, avoiding duplicates
         const currentIds = new Set(combinedResults.map(g => g.id));
         const newResults = summaryResults.filter(g => !currentIds.has(g.id));
         combinedResults = [...combinedResults, ...newResults];
       }
-      
+
       if (DEBUG_GAME_DATA) console.log(`✅ Total database results: ${combinedResults.length}`);
-      
-      // Sort by enhanced relevance score using new IGDB metrics (green flags will get 150-point boost)
+
+      // Sort by enhanced relevance score
       return this.sortByRelevance(combinedResults, query);
       
     } catch (error) {
@@ -676,54 +664,14 @@ export class GameDataServiceV2 {
     }
   }
   
-  /**
-   * Search for green-flagged games that match the query
-   * These are manually curated games that should always appear
-   */
-  private async searchGreenFlaggedGames(query: string): Promise<GameWithCalculatedFields[]> {
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 3000); // Reduced to 3 seconds for faster failover
-    
-    try {
-      // Simplified query - just search green-flagged games, no complex filters
-      const { data, error } = await supabase
-        .from('game')
-        .select('*')
-        .eq('greenlight_flag', true)
-        .ilike('name', `%${query}%`)
-        .abortSignal(abortController.signal)
-        .limit(5); // Reduced limit for faster query
-      
-      clearTimeout(timeoutId);
-      
-      if (error) {
-        // Don't log abort errors - they're expected
-        if (error.code !== '20' && error.message && !error.message.includes('AbortError')) {
-          console.error('Green flag search error:', error);
-        }
-        return []; // Fail silently to not break regular search
-      }
-      
-      if (DEBUG_GAME_DATA) console.log(`🟢 Green flag search found ${(data || []).length} games for "${query}"`);
-      return (data || []).map(game => this.transformGameWithoutRatings(game as Game));
-    } catch (abortError: any) {
-      clearTimeout(timeoutId);
-      // Handle abort gracefully without logging
-      if (abortError.name === 'AbortError' || abortError.code === '20') {
-        return []; // Return empty array to continue with regular search
-      }
-      // Only log unexpected errors
-      console.error('Unexpected green flag search error:', abortError);
-      return [];
-    }
-  }
+  // REMOVED: Green flag search for performance optimization
   
   /**
    * Fast name-only search with alias support
    */
   private async searchByName(query: string, filters?: SearchFilters, limit: number = 200): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 8000); // 8 second timeout for complex queries
+    const timeoutId = setTimeout(() => abortController.abort(), 3000); // REDUCED: 3 second timeout for better performance
 
     try {
       // First, try to use the new search_games_with_aliases function if it exists
@@ -776,8 +724,7 @@ export class GameDataServiceV2 {
         .from('game')
         .select('*')
         .ilike('name', `%${query}%`)
-        .or('redlight_flag.is.null,redlight_flag.eq.false')  // Filter out red-flagged games
-        .abortSignal(abortController.signal);
+        .abortSignal(abortController.signal); // REMOVED: Red flag filtering for performance
 
       // Apply filters
       if (filters?.genres && filters.genres.length > 0) {
@@ -826,15 +773,14 @@ export class GameDataServiceV2 {
    */
   private async searchBySummary(query: string, filters?: SearchFilters, limit: number = 100): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 6000); // 6 second timeout for summary searches
+    const timeoutId = setTimeout(() => abortController.abort(), 2000); // REDUCED: 2 second timeout for better performance
     
     try {
       let queryBuilder = supabase
         .from('game')
         .select('*')
         .ilike('summary', `%${query}%`)
-        .or('redlight_flag.is.null,redlight_flag.eq.false')  // Filter out red-flagged games
-        .abortSignal(abortController.signal);
+        .abortSignal(abortController.signal); // REMOVED: Red flag filtering for performance
       
       // Apply filters
       if (filters?.genres && filters.genres.length > 0) {

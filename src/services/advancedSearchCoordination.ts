@@ -514,11 +514,22 @@ export class AdvancedSearchCoordination {
     const allResults: SearchResult[] = [];
     const seenIds = new Set<number>();
 
-    // SMART QUERY EXECUTION: Prioritize and limit queries to prevent rate limiting
+    // SMART QUERY EXECUTION: Prioritize and limit queries for performance
     const prioritizedQueries = this.prioritizeQueries(context.expandedQueries, context.originalQuery);
-    // INCREASED LIMIT: Allow more queries to ensure Roman numeral variants are included
-    const maxQueries = Math.min(prioritizedQueries.length, 10); // Increased from 5 to 10
-    const selectedQueries = prioritizedQueries.slice(0, maxQueries);
+
+    // OPTIMIZED: Reduce to 3-5 most relevant variations to improve speed
+    // Priority: 1) Original query, 2) Roman numeral variant if applicable, 3) Accent variant if applicable
+    let maxQueries = 3; // Default to 3 queries
+
+    // Check if query has numbers that could be Roman numerals
+    const hasNumbers = /\b\d+\b/.test(context.originalQuery);
+    const hasRomanNumerals = /\b[IVXLivxl]+\b/.test(context.originalQuery);
+
+    if (hasNumbers || hasRomanNumerals) {
+      maxQueries = 5; // Allow up to 5 if Roman numeral conversion is needed
+    }
+
+    const selectedQueries = prioritizedQueries.slice(0, Math.min(prioritizedQueries.length, maxQueries));
 
     if (DEBUG_SEARCH_COORDINATION) console.log(`🔍 Smart execution: Using ${selectedQueries.length} prioritized queries from ${context.expandedQueries.length} expansions:`, selectedQueries);
 
@@ -545,20 +556,33 @@ export class AdvancedSearchCoordination {
         );
 
         // Add results from this query
+        let newResultsAdded = 0;
         for (const result of relevantResults) {
           if (!seenIds.has(result.id)) {
             seenIds.add(result.id);
             allResults.push(result);
+            newResultsAdded++;
           }
         }
 
-        // PRIORITY-BASED: Higher termination thresholds to get more results
+        // OPTIMIZED: Smart early termination conditions
+        // Skip remaining queries if we have enough high-quality results
+        const hasEnoughResults = allResults.length >= 50;
+        const lowNewResultRate = newResultsAdded < 5 && i > 0; // Less than 5 new results after first query
         const isFranchiseSearch = context.intent === 'franchise_browse';
-        const terminationThreshold = isFranchiseSearch ? 250 : 150; // Increased from 80/40
 
-        if (allResults.length >= terminationThreshold) {
-          if (DEBUG_SEARCH_COORDINATION) console.log(`✂️ Early termination: Found ${allResults.length} results after ${i + 1} queries`);
-          break;
+        // For franchise searches, continue until we have lots of results
+        // For specific searches, stop early if we have good results
+        if (isFranchiseSearch) {
+          if (allResults.length >= 200 || (allResults.length >= 100 && lowNewResultRate)) {
+            if (DEBUG_SEARCH_COORDINATION) console.log(`✂️ Early termination: Found ${allResults.length} franchise results after ${i + 1} queries`);
+            break;
+          }
+        } else {
+          if (hasEnoughResults || (allResults.length >= 20 && lowNewResultRate)) {
+            if (DEBUG_SEARCH_COORDINATION) console.log(`✂️ Early termination: Found ${allResults.length} results with diminishing returns after ${i + 1} queries`);
+            break;
+          }
         }
 
       } catch (error) {
