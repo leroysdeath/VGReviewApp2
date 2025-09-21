@@ -70,7 +70,13 @@ export const SearchResultsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchStarted, setSearchStarted] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>();
-  
+
+  // Optimized debounce delays for different contexts
+  const DEBOUNCE_DELAYS = {
+    autocomplete: 150,  // Faster for responsive feel
+    detailed: 500       // Slower to prevent excessive API calls
+  };
+
   const [filters, setFilters] = useState<SearchFilters>({
     searchTerm: '',
     platformId: undefined,
@@ -129,7 +135,7 @@ export const SearchResultsPage: React.FC = () => {
       
       debounceRef.current = setTimeout(() => {
         performSearch();
-      }, 300); // Slight delay to prevent rapid-fire searches
+      }, DEBOUNCE_DELAYS.detailed); // Use optimized delay for detailed search
     }
     
     return () => {

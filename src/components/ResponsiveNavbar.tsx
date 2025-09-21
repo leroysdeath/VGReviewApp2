@@ -306,7 +306,7 @@ export const ResponsiveNavbar: React.FC = () => {
 
     debounceRef.current = setTimeout(() => {
       performQuickSearch(searchQuery);
-    }, 300); // Faster response with enhanced search
+    }, 150); // Optimized for autocomplete - faster response
 
     return () => {
       if (debounceRef.current) {
