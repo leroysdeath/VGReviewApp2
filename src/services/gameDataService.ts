@@ -86,8 +86,8 @@ class GameDataService {
         }
       }
 
-      // Check if game exists but has incomplete data
-      const needsUpdate = data && (!data.description || !data.developer || !data.publisher || !data.screenshots)
+      // Check if game exists but has incomplete data (only check fields we actually use)
+      const needsUpdate = data && (!data.summary || !data.developer || !data.publisher)
       
       if (error || !data || needsUpdate) {
         if (needsUpdate) {
@@ -108,34 +108,26 @@ class GameDataService {
           // Transform IGDB game to our format
           const transformedGame = igdbService.transformGame(igdbGame)
 
-          // Prepare game data
+          // Prepare game data - Only store what we actually fetch and use
           const gameData = {
             igdb_id: transformedGame.igdb_id,
             game_id: transformedGame.igdb_id.toString(),
             name: transformedGame.name,
             slug: data?.slug || generateSlug(transformedGame.name), // Keep existing slug if updating
             summary: transformedGame.summary,
-            description: transformedGame.description, // Add description field
             release_date: transformedGame.first_release_date
-              ? (typeof transformedGame.first_release_date === 'number' 
+              ? (typeof transformedGame.first_release_date === 'number'
                   ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
                   : new Date(transformedGame.first_release_date).toISOString().split('T')[0])
               : null,
             cover_url: transformedGame.cover_url,
             pic_url: transformedGame.cover_url, // Add pic_url for compatibility
-            screenshots: transformedGame.screenshots || null, // Add screenshots
-            genres: transformedGame.genres || [],
             platforms: transformedGame.platforms || [],
             developer: transformedGame.developer,
             publisher: transformedGame.publisher,
-            igdb_rating: Math.round(transformedGame.igdb_rating || 0),
-            category: transformedGame.category || null, // Add category
-            alternative_names: transformedGame.alternative_names || null, // Add alternative names
-            franchise_name: transformedGame.franchise || null, // Add franchise name
-            collection_name: transformedGame.collection || null, // Add collection name
-            dlc_ids: transformedGame.dlcs || null, // Add DLC IDs
-            expansion_ids: transformedGame.expansions || null, // Add expansion IDs
-            similar_game_ids: transformedGame.similar_games || null, // Add similar game IDs
+            category: transformedGame.category || null, // Add category for content filtering
+            dlc_ids: transformedGame.dlcs || null, // Add DLC IDs for DLCSection
+            expansion_ids: transformedGame.expansions || null, // Add expansion IDs for expansion section
             updated_at: new Date().toISOString()
           }
 
@@ -247,8 +239,8 @@ class GameDataService {
         });
       }
 
-      // Check if game exists but has incomplete data
-      const needsUpdate = gameData && (!gameData.description || !gameData.developer || !gameData.publisher || !gameData.screenshots)
+      // Check if game exists but has incomplete data (only check fields we actually use)
+      const needsUpdate = gameData && (!gameData.summary || !gameData.developer || !gameData.publisher)
       
       if (gameError || !gameData || needsUpdate) {
         if (needsUpdate) {

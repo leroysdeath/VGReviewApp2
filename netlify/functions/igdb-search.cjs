@@ -129,7 +129,9 @@ exports.handler = async (event, context) => {
           })
         };
       }
-      requestBody = `fields name, summary, storyline, slug, first_release_date, rating, category, cover.url, screenshots.url, genres.name, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, alternative_names.name, collection.name, franchise.name, franchises.name, parent_game, url, dlcs, expansions, similar_games, hypes, follows, total_rating, total_rating_count, rating_count; where id = ${gameId};`;
+      // MINIMAL FIELDS for GamePage - Only fetch what's actually displayed
+      // GamePage shows: name, cover, platforms, release_date, developer, publisher, summary, dlcs, expansions
+      requestBody = `fields name, slug, cover.url, first_release_date, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, summary, category, dlcs, expansions; where id = ${gameId};`;
     } else {
       // Search request
       if (!query || query.trim().length === 0) {
