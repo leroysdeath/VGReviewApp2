@@ -1,14 +1,18 @@
 # Franchise Game Lists - Action Plan
 
-## Status: 6 of 41 Complete (14.6%)
+## Status: 10 of 41 Complete (24.4%)
 
-## ✅ COMPLETED FRANCHISES (6)
+## ✅ COMPLETED FRANCHISES (10)
 1. ✅ **Pokémon** - `Official_Pokemon_Games_List.md` - 110 official games documented
 2. ✅ **Zelda** - `Official_Zelda_Games_List.md` - 49 official games documented
 3. ✅ **Mario** - `Mario_Universe_Complete_List.md` - ~500+ games documented
 4. ✅ **Donkey Kong** - Included in `Mario_Universe_Complete_List.md`
 5. ✅ **Final Fantasy** - `Final_Fantasy_Complete_List.md` - 139 games documented
 6. ✅ **Mega Man** - `Mega_Man_Series_List.md` - 85 games documented (partial)
+7. ✅ **Call of Duty** - `Call_of_Duty_Complete_List.md` - ~150+ games documented
+8. ✅ **Grand Theft Auto** - `Grand_Theft_Auto_Complete_List.md` - 26 games documented
+9. ✅ **Assassin's Creed** - `Assassins_Creed_Complete_List.md` - ~100+ games documented
+10. ✅ **Resident Evil** - `Resident_Evil_Complete_List.md` - ~120+ games documented
 
 ## 📝 TO-DO FRANCHISES (35)
 
