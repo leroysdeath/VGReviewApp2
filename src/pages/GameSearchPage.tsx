@@ -1,10 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameSearch } from '../components/GameSearch';
 import { gameDataService } from '../services/gameDataService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { useResponsive } from '../hooks/useResponsive';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, TrendingUp, Clock, Star, Filter } from 'lucide-react';
+import { Search, TrendingUp, Clock, Star, Filter, X } from 'lucide-react';
+import { FilterPanel } from '../components/FilterPanel';
+import { ActiveFilters } from '../components/ActiveFilters';
+
+// Import SearchFilters interface
+interface SearchFilters {
+  genres?: string[];
+  platforms?: string[];
+  minRating?: number;
+  releaseYear?: number;
+}
 
 export const GameSearchPage: React.FC = () => {
   const { isMobile } = useResponsive();
@@ -13,10 +23,24 @@ export const GameSearchPage: React.FC = () => {
   const [popularGames, setPopularGames] = useState<GameWithCalculatedFields[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [loadingPopular, setLoadingPopular] = useState(false);
-  
+
   // Get initial search term from URL params and maintain it in local state
   const initialSearchTerm = searchParams.get('q') || '';
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
+
+  // Filter state management
+  const [filters, setFilters] = useState<SearchFilters>({
+    genres: [],
+    platforms: [],
+    minRating: undefined,
+    releaseYear: undefined
+  });
+
+  // Track if filters are being applied
+  const [filtersApplying, setFiltersApplying] = useState(false);
+
+  // Ref for debouncing filter changes
+  const filterDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Load popular games when component mounts
@@ -104,6 +128,87 @@ export const GameSearchPage: React.FC = () => {
     localStorage.removeItem('recent_searches');
   };
 
+  // Handle filter changes with smart debouncing
+  const handleFiltersChange = useCallback((newFilters: Partial<SearchFilters>) => {
+    // Update filters immediately in UI
+    setFilters(prev => ({ ...prev, ...newFilters }));
+
+    // Show applying indicator
+    setFiltersApplying(true);
+
+    // Clear any existing debounce timer
+    if (filterDebounceRef.current) {
+      clearTimeout(filterDebounceRef.current);
+    }
+
+    // Debounce the actual search by 1.5 seconds
+    filterDebounceRef.current = setTimeout(() => {
+      setFiltersApplying(false);
+      // Trigger re-render of GameSearch with new filters
+    }, 1500);
+  }, []);
+
+  // Clear all filters
+  const handleClearFilters = useCallback(() => {
+    setFilters({
+      genres: [],
+      platforms: [],
+      minRating: undefined,
+      releaseYear: undefined
+    });
+    setFiltersApplying(false);
+    if (filterDebounceRef.current) {
+      clearTimeout(filterDebounceRef.current);
+    }
+  }, []);
+
+  // Get active filter count
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (filters.genres && filters.genres.length > 0) count += filters.genres.length;
+    if (filters.platforms && filters.platforms.length > 0) count += filters.platforms.length;
+    if (filters.minRating !== undefined) count++;
+    if (filters.releaseYear !== undefined) count++;
+    return count;
+  };
+
+  // Format active filters for display
+  const getActiveFilterLabels = (): string[] => {
+    const labels: string[] = [];
+    if (filters.genres) {
+      filters.genres.forEach(g => labels.push(`Genre: ${g}`));
+    }
+    if (filters.platforms) {
+      filters.platforms.forEach(p => labels.push(`Platform: ${p}`));
+    }
+    if (filters.minRating !== undefined) {
+      labels.push(`Min Rating: ${filters.minRating}/10`);
+    }
+    if (filters.releaseYear !== undefined) {
+      labels.push(`Year: ${filters.releaseYear}`);
+    }
+    return labels;
+  };
+
+  // Remove a specific filter
+  const handleRemoveFilter = (filterLabel: string) => {
+    const newFilters = { ...filters };
+
+    if (filterLabel.startsWith('Genre: ')) {
+      const genre = filterLabel.replace('Genre: ', '');
+      newFilters.genres = filters.genres?.filter(g => g !== genre);
+    } else if (filterLabel.startsWith('Platform: ')) {
+      const platform = filterLabel.replace('Platform: ', '');
+      newFilters.platforms = filters.platforms?.filter(p => p !== platform);
+    } else if (filterLabel.startsWith('Min Rating: ')) {
+      newFilters.minRating = undefined;
+    } else if (filterLabel.startsWith('Year: ')) {
+      newFilters.releaseYear = undefined;
+    }
+
+    handleFiltersChange(newFilters);
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 py-8">
       <div className={`mx-auto px-4 sm:px-6 lg:px-8 ${isMobile ? '' : 'max-w-7xl'}`}>
@@ -145,6 +250,20 @@ export const GameSearchPage: React.FC = () => {
           </p>
         </div>
 
+        {/* Active Filters Display */}
+        {getActiveFilterCount() > 0 && (
+          <div className="mb-4">
+            <ActiveFilters
+              filters={getActiveFilterLabels()}
+              onRemoveFilter={handleRemoveFilter}
+              onClearAll={handleClearFilters}
+            />
+            {filtersApplying && (
+              <p className="text-sm text-purple-400 mt-2">Applying filters...</p>
+            )}
+          </div>
+        )}
+
         {/* Main Search Component */}
         <div className="mb-8">
           <GameSearch
@@ -156,6 +275,8 @@ export const GameSearchPage: React.FC = () => {
             showHealthCheck={import.meta.env.DEV}
             initialQuery={searchTerm}
             showExploreButton={true}
+            filters={filters}
+            onFiltersApplying={filtersApplying}
           />
         </div>
 
@@ -248,7 +369,53 @@ export const GameSearchPage: React.FC = () => {
 
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            
+
+            {/* Filter Panel */}
+            <FilterPanel
+              filters={{
+                genres: filters.genres || [],
+                platforms: filters.platforms || [],
+                ratingRange: filters.minRating ? [filters.minRating, 10] : [0, 10],
+                releaseYearRange: filters.releaseYear ? [filters.releaseYear, filters.releaseYear] : [1980, new Date().getFullYear()],
+                sortBy: 'relevance'
+              }}
+              onFiltersChange={(newFilters) => {
+                const updatedFilters: Partial<SearchFilters> = {};
+                if (newFilters.genres !== undefined) updatedFilters.genres = newFilters.genres;
+                if (newFilters.platforms !== undefined) updatedFilters.platforms = newFilters.platforms;
+                if (newFilters.ratingRange) updatedFilters.minRating = newFilters.ratingRange[0];
+                if (newFilters.releaseYearRange && newFilters.releaseYearRange[0] !== 1980) {
+                  updatedFilters.releaseYear = newFilters.releaseYearRange[0];
+                }
+                handleFiltersChange(updatedFilters);
+              }}
+              genreOptions={[
+                { id: 'action', label: 'Action', count: 0 },
+                { id: 'adventure', label: 'Adventure', count: 0 },
+                { id: 'rpg', label: 'RPG', count: 0 },
+                { id: 'strategy', label: 'Strategy', count: 0 },
+                { id: 'simulation', label: 'Simulation', count: 0 },
+                { id: 'sports', label: 'Sports', count: 0 },
+                { id: 'racing', label: 'Racing', count: 0 },
+                { id: 'puzzle', label: 'Puzzle', count: 0 },
+                { id: 'shooter', label: 'Shooter', count: 0 },
+                { id: 'platformer', label: 'Platformer', count: 0 },
+                { id: 'fighting', label: 'Fighting', count: 0 },
+                { id: 'horror', label: 'Horror', count: 0 }
+              ]}
+              platformOptions={[
+                { id: 'pc', label: 'PC', count: 0 },
+                { id: 'playstation-5', label: 'PlayStation 5', count: 0 },
+                { id: 'playstation-4', label: 'PlayStation 4', count: 0 },
+                { id: 'xbox-series-x', label: 'Xbox Series X/S', count: 0 },
+                { id: 'xbox-one', label: 'Xbox One', count: 0 },
+                { id: 'nintendo-switch', label: 'Nintendo Switch', count: 0 },
+                { id: 'steam-deck', label: 'Steam Deck', count: 0 },
+                { id: 'ios', label: 'iOS', count: 0 },
+                { id: 'android', label: 'Android', count: 0 }
+              ]}
+            />
+
             {/* Recent Searches */}
             {recentSearches.length > 0 && (
               <div className="bg-gray-800 rounded-lg p-6">
