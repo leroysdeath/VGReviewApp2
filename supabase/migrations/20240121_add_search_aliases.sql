@@ -1,15 +1,15 @@
--- Add search aliases column to games table for improved search matching
+-- Add search aliases column to game table for improved search matching
 -- This will store alternative names/spellings for games (e.g., "Street Fighter 2" for "Street Fighter II")
 
 -- Add search_aliases column as JSONB array
-ALTER TABLE games
+ALTER TABLE game
 ADD COLUMN IF NOT EXISTS search_aliases JSONB DEFAULT '[]'::jsonb;
 
 -- Create an index on search_aliases for better query performance
-CREATE INDEX IF NOT EXISTS idx_games_search_aliases ON games USING GIN (search_aliases);
+CREATE INDEX IF NOT EXISTS idx_game_search_aliases ON game USING GIN (search_aliases);
 
 -- Add a generated column for full-text search that includes aliases
-ALTER TABLE games
+ALTER TABLE game
 ADD COLUMN IF NOT EXISTS search_vector tsvector
 GENERATED ALWAYS AS (
   to_tsvector('english',
@@ -20,11 +20,11 @@ GENERATED ALWAYS AS (
 ) STORED;
 
 -- Create index on search_vector for full-text search
-CREATE INDEX IF NOT EXISTS idx_games_search_vector ON games USING GIN (search_vector);
+CREATE INDEX IF NOT EXISTS idx_game_search_vector ON game USING GIN (search_vector);
 
--- Populate initial aliases for games with Roman numerals
+-- Populate initial aliases for game with Roman numerals
 -- This handles common patterns like II, III, IV, V, VI, etc.
-UPDATE games SET search_aliases =
+UPDATE game SET search_aliases =
   CASE
     -- Street Fighter series
     WHEN name ILIKE '%Street Fighter II%' THEN '["Street Fighter 2", "SF2", "SFII"]'::jsonb
@@ -95,9 +95,9 @@ WHERE name SIMILAR TO '%.*(II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI).
   AND (search_aliases IS NULL OR search_aliases = '[]'::jsonb);
 
 -- Add comment to explain the column purpose
-COMMENT ON COLUMN games.search_aliases IS 'Alternative names and spellings for improved search matching (e.g., numeric vs Roman numeral variations)';
+COMMENT ON COLUMN game.search_aliases IS 'Alternative names and spellings for improved search matching (e.g., numeric vs Roman numeral variations)';
 
--- Create a function to search games with aliases
+-- Create a function to search game with aliases
 CREATE OR REPLACE FUNCTION search_games_with_aliases(search_query TEXT, max_results INTEGER DEFAULT 100)
 RETURNS TABLE (
   id BIGINT,
@@ -131,7 +131,7 @@ BEGIN
       g.search_aliases,
       'direct'::TEXT as match_type,
       1.0 as relevance
-    FROM games g
+    FROM game g
     WHERE g.name ILIKE '%' || search_query || '%'
   ),
   alias_matches AS (
@@ -150,7 +150,7 @@ BEGIN
       g.search_aliases,
       'alias'::TEXT as match_type,
       0.9 as relevance
-    FROM games g
+    FROM game g
     WHERE g.id NOT IN (SELECT id FROM direct_matches)
       AND g.search_aliases::text ILIKE '%' || search_query || '%'
   ),
@@ -170,7 +170,7 @@ BEGIN
       g.search_aliases,
       'fulltext'::TEXT as match_type,
       ts_rank(g.search_vector, plainto_tsquery('english', search_query)) as relevance
-    FROM games g
+    FROM game g
     WHERE g.id NOT IN (SELECT id FROM direct_matches UNION SELECT id FROM alias_matches)
       AND g.search_vector @@ plainto_tsquery('english', search_query)
   )
