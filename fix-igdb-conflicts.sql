@@ -12,6 +12,7 @@ WHERE id = 122686 AND name = 'Interactive Portraits: Trans People in Japan';
 
 -- Step 2: Now insert Street Fighter 6 with its correct IGDB ID (134988)
 INSERT INTO game (
+  game_id,
   igdb_id,
   name,
   slug,
@@ -32,7 +33,8 @@ INSERT INTO game (
   created_at,
   updated_at
 ) VALUES (
-  134988,
+  '134988', -- game_id as string
+  134988,   -- igdb_id as integer
   'Street Fighter 6',
   'street-fighter-6',
   'Street Fighter 6 spans three distinct game modes featuring World Tour, Fighting Ground and Battle Hub. Diverse roster of 18 fighters including legendary World Warriors and exciting brand new characters add their own flair to the game at launch, with more to be added post-launch.',
@@ -52,6 +54,7 @@ INSERT INTO game (
   NOW(),
   NOW()
 ) ON CONFLICT (igdb_id) DO UPDATE SET
+  game_id = EXCLUDED.game_id,
   name = EXCLUDED.name,
   slug = EXCLUDED.slug,
   summary = EXCLUDED.summary,
