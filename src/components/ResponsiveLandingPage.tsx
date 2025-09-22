@@ -76,33 +76,36 @@ const CascadingCheckboxes: React.FC<{ isHovered: boolean; size?: 'small' | 'larg
   const iconSize = size === 'small' ? 'h-6 w-6' : 'h-7 w-7';
   const containerSize = size === 'small' ? 'h-14 w-24' : 'h-16 w-28';
   const marginBottom = size === 'small' ? 'mb-3' : 'mb-4';
-  const spacing = size === 'small' ? 24 : 28;
-  
+  const spacing = size === 'small' ? 20 : 24;
+
   // Grid positions for 3x2 layout
-  // We offset everything so the final grid is centered
   // Layout:
-  // [5] [4] [3]
-  // [6] [1] [2]
-  // Checkbox 1 is at center-bottom of the grid, so we offset by half spacing to center the whole grid
+  // [5] [4] [3]  <- Top row
+  // [6] [1] [2]  <- Bottom row
+  //
+  // For vertical centering of the entire grid:
+  // Grid height = spacing (between rows)
+  // To center the grid vertically, the midpoint between rows should be at y=0
+  // So top row is at y = -spacing/2, bottom row is at y = +spacing/2
   const offsetX = -spacing / 2;
-  const offsetY = spacing / 2;
-  
+  const gridVerticalOffset = spacing / 4; // This centers the entire grid vertically
+
   const positions = [
-    { x: offsetX, y: 0, delay: 0 },      // 1: Center (original position)
-    { x: offsetX + spacing, y: offsetY, delay: 200 },  // 2: Right bottom
-    { x: offsetX + spacing, y: offsetY - spacing, delay: 400 },  // 3: Right top
-    { x: offsetX, y: offsetY - spacing, delay: 600 }, // 4: Center top
-    { x: offsetX - spacing, y: offsetY - spacing, delay: 800 }, // 5: Left top
-    { x: offsetX - spacing, y: offsetY, delay: 1000 }    // 6: Left bottom
+    { x: offsetX, y: gridVerticalOffset, delay: 0 },      // 1: Center bottom (starting position)
+    { x: offsetX + spacing, y: gridVerticalOffset, delay: 200 },  // 2: Right bottom
+    { x: offsetX + spacing, y: gridVerticalOffset - spacing, delay: 400 },  // 3: Right top
+    { x: offsetX, y: gridVerticalOffset - spacing, delay: 600 }, // 4: Center top
+    { x: offsetX - spacing, y: gridVerticalOffset - spacing, delay: 800 }, // 5: Left top
+    { x: offsetX - spacing, y: gridVerticalOffset, delay: 1000 }    // 6: Left bottom
   ];
-  
+
   return (
     <div className={`relative ${containerSize} mx-auto ${marginBottom} flex items-center justify-center`}>
-      {/* Empty checkbox when not hovered - positioned at vertical center */}
+      {/* Empty checkbox when not hovered - positioned to match checkbox #1's position */}
       <div
         className={`absolute transition-all duration-300 ${!isHovered ? 'opacity-100' : 'opacity-0'}`}
         style={{
-          transform: `translate(${offsetX}px, 0px)`
+          transform: `translate(${offsetX}px, ${gridVerticalOffset}px)`
         }}
       >
         <Square className={`${iconSize} text-green-400`} />
