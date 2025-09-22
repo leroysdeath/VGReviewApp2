@@ -1142,7 +1142,7 @@ export const GamePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* User Actions - Wishlist, Collection, Started, Finished and Write Review */}
+              {/* User Actions - Wishlist, Backlog, Started, Finished and Write Review */}
               <div className="p-6 border-t border-gray-700">
                 {/* Mobile Action Sheet - Only visible on mobile */}
                 <div className="md:hidden">
@@ -1204,7 +1204,7 @@ export const GamePage: React.FC = () => {
                     </span>
                   </button>
 
-                  {/* Collection Button - Gray out when unavailable */}
+                  {/* Backlog Button - Gray out when unavailable */}
                   <button
                     onClick={handleToggleCollection}
                     disabled={collectionLoading || isStarted || isCompleted}
@@ -1225,17 +1225,17 @@ export const GamePage: React.FC = () => {
                       {isInCollection ? (
                         <span className="flex flex-col items-center leading-tight">
                           <span>In</span>
-                          <span>Collection</span>
+                          <span>Backlog</span>
                         </span>
                       ) : isInWishlist ? (
                         <span className="flex flex-col items-center leading-tight">
                           <span>Move to</span>
-                          <span>Collection</span>
+                          <span>Backlog</span>
                         </span>
                       ) : (
                         <span className="flex flex-col items-center leading-tight">
                           <span>Add to</span>
-                          <span>Collection</span>
+                          <span>Backlog</span>
                         </span>
                       )}
                     </span>

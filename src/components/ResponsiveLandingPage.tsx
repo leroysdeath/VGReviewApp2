@@ -98,9 +98,12 @@ const CascadingCheckboxes: React.FC<{ isHovered: boolean; size?: 'small' | 'larg
   
   return (
     <div className={`relative ${containerSize} mx-auto ${marginBottom} flex items-center justify-center`}>
-      {/* Empty checkbox when not hovered */}
-      <div 
+      {/* Empty checkbox when not hovered - positioned to match checkbox #1's position */}
+      <div
         className={`absolute transition-all duration-300 ${!isHovered ? 'opacity-100' : 'opacity-0'}`}
+        style={{
+          transform: `translate(${offsetX}px, ${offsetY}px)`
+        }}
       >
         <Square className={`${iconSize} text-green-400`} />
       </div>
@@ -234,14 +237,14 @@ export const ResponsiveLandingPage: React.FC = () => {
   }, [isMobile, user?.id, loadBulkStatus]);
 
 
-  // Handle join community button click
-  const handleJoinCommunity = () => {
+  // Handle create account / profile button click
+  const handleAuthButton = () => {
     if (!isAuthenticated) {
-      openModal(); // Use global auth modal
+      openModal('signup'); // Open auth modal on signup tab
       return;
     }
-    // Navigate to users page if already authenticated
-    navigate('/users');
+    // Navigate to user's own profile if authenticated
+    navigate(`/user/${user?.username || user?.id}`);
   };
 
   if (isMobile) {
@@ -299,34 +302,34 @@ export const ResponsiveLandingPage: React.FC = () => {
               </Link>
               {isAuthenticated ? (
                 <Link
-                  to="/users"
+                  to={`/user/${user?.username || user?.id}`}
                   className="group relative block w-full overflow-hidden rounded-lg"
                 >
                   {/* Glassmorphism background */}
                   <div className="absolute inset-0 bg-white/5 backdrop-blur-sm border border-purple-400/50 rounded-lg" />
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-active:opacity-100 transition-opacity duration-300" />
-                  
+
                   {/* Content */}
                   <div className="relative px-6 py-3 text-purple-300 font-medium">
                     <div className="flex items-center justify-center gap-2">
-                      Join Community
+                      Go to Profile
                       <ArrowRight className="h-5 w-5" />
                     </div>
                   </div>
                 </Link>
               ) : (
                 <button
-                  onClick={handleJoinCommunity}
+                  onClick={handleAuthButton}
                   className="group relative block w-full overflow-hidden rounded-lg"
                 >
                   {/* Glassmorphism background */}
                   <div className="absolute inset-0 bg-white/5 backdrop-blur-sm border border-purple-400/50 rounded-lg" />
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-active:opacity-100 transition-opacity duration-300" />
-                  
+
                   {/* Content */}
                   <div className="relative px-6 py-3 text-purple-300 font-medium">
                     <div className="flex items-center justify-center gap-2">
-                      Join Community
+                      Create Account
                       <ArrowRight className="h-5 w-5" />
                     </div>
                   </div>
@@ -339,7 +342,11 @@ export const ResponsiveLandingPage: React.FC = () => {
         {/* Mobile Features Section */}
         <div className="px-4 py-12 bg-gray-800">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-3">How GameVault Works</h2>
+            <h2 className="text-white mb-3">
+              <span className="text-lg font-normal">How </span>
+              <span className="text-2xl font-bold">GameVault</span>
+              <span className="text-lg font-normal"> Works</span>
+            </h2>
           </div>
           <div className="space-y-6">
             <div
@@ -370,7 +377,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-green-300">Track Your Games</h3>
                 <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  For games you've Started, Finished, and Want to Play.
+                  Add games you Want to Play to your Wishlist (don't own) or Backlog (own but haven't played). Mark the games you've played as Started or Finished.
                 </p>
               </div>
             </div>
@@ -512,31 +519,31 @@ export const ResponsiveLandingPage: React.FC = () => {
               </Link>
               {isAuthenticated ? (
                 <Link
-                  to="/users"
+                  to={`/user/${user?.username || user?.id}`}
                   className="group relative px-8 py-3 text-purple-300 rounded-lg flex items-center gap-2 text-lg font-medium overflow-hidden transition-all duration-300 hover:scale-105"
                 >
                   {/* Glassmorphism background - Secondary style */}
                   <div className="absolute inset-0 bg-white/5 backdrop-blur-md border border-purple-400/50 rounded-lg" />
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
+
                   {/* Content */}
                   <div className="relative flex items-center gap-2 group-hover:text-white transition-colors duration-300">
-                    Join Community
+                    Go to Profile
                     <ArrowRight className="h-5 w-5" />
                   </div>
                 </Link>
               ) : (
                 <button
-                  onClick={handleJoinCommunity}
+                  onClick={handleAuthButton}
                   className="group relative px-8 py-3 text-purple-300 rounded-lg flex items-center gap-2 text-lg font-medium overflow-hidden transition-all duration-300 hover:scale-105"
                 >
                   {/* Glassmorphism background - Secondary style */}
                   <div className="absolute inset-0 bg-white/5 backdrop-blur-md border border-purple-400/50 rounded-lg" />
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
+
                   {/* Content */}
                   <div className="relative flex items-center gap-2 group-hover:text-white transition-colors duration-300">
-                    Join Community
+                    Create Account
                     <ArrowRight className="h-5 w-5" />
                   </div>
                 </button>
@@ -550,7 +557,11 @@ export const ResponsiveLandingPage: React.FC = () => {
       <div className="py-16 bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">How GameVault Works</h2>
+            <h2 className="text-white mb-4">
+              <span className="text-2xl font-normal">How </span>
+              <span className="text-3xl font-bold">GameVault</span>
+              <span className="text-2xl font-normal"> Works</span>
+            </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div
@@ -607,7 +618,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-green-300">Track Your Games</h3>
                 <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
-                  For games you've Started, Finished, and Want to Play.
+                  Add games you Want to Play to your Wishlist (don't own) or Backlog (own but haven't played). Mark the games you've played as Started or Finished.
                 </p>
 
                 {/* Progressive disclosure - additional details on hover */}

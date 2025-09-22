@@ -126,7 +126,7 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
           }`} />
         </div>
 
-        {/* Collection Icon */}
+        {/* Backlog Icon */}
         <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
           isInCollection && showCollection
             ? 'bg-orange-600'
@@ -297,7 +297,7 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
               </span>
             </button>
 
-            {/* Collection Button - Show if not started/finished */}
+            {/* Backlog Button - Show if not started/finished */}
             {showCollection && (
               <button
                 onTouchStart={(e) => e.stopPropagation()}
@@ -331,11 +331,11 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
                   {collectionLoading ? (
                     'Loading...'
                   ) : isInCollection ? (
-                    'In Collection'
+                    'In Backlog'
                   ) : isInWishlist ? (
-                    'Move to Collection'
+                    'Move to Backlog'
                   ) : (
-                    'Add to Collection'
+                    'Add to Backlog'
                   )}
                 </span>
               </button>
