@@ -9,7 +9,7 @@ interface FAQItem {
 
 const faqData: FAQItem[] = [
   {
-    question: "What isa GameVault?",
+    question: "What is GameVault?",
     answer: "GameVault is your personal hub for tracking, reviewing, and discovering video games. Log the games you've played, share your thoughts through reviews, and connect with a community of fellow gamers."
   },
   {
