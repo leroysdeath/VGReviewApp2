@@ -11,7 +11,7 @@ import { useLikeStore } from '../store/useLikeStore';
 // Custom component for the spinning number animation
 const SpinningNumber: React.FC<{ isHovered: boolean }> = ({ isHovered }) => {
   return (
-    <div className="relative w-12 h-12 mx-auto mb-4 overflow-hidden" style={{ perspective: '1000px' }}>
+    <div className="relative w-12 h-16 mx-auto mb-4 flex items-center justify-center overflow-hidden" style={{ perspective: '1000px' }}>
       <div 
         className={`absolute inset-0 flex items-center justify-center transition-all duration-500 backface-hidden`}
         style={{ 
@@ -37,7 +37,7 @@ const SpinningNumber: React.FC<{ isHovered: boolean }> = ({ isHovered }) => {
 // Custom component for the splitting user icon animation
 const SplittingUsers: React.FC<{ isHovered: boolean; size?: 'small' | 'large' }> = ({ isHovered, size = 'large' }) => {
   const iconSize = size === 'small' ? 'h-10 w-10' : 'h-12 w-12';
-  const containerHeight = size === 'small' ? 'h-10' : 'h-12';
+  const containerHeight = size === 'small' ? 'h-10' : 'h-16';
   const marginBottom = size === 'small' ? 'mb-3' : 'mb-4';
   
   return (
@@ -76,31 +76,37 @@ const CascadingCheckboxes: React.FC<{ isHovered: boolean; size?: 'small' | 'larg
   const iconSize = size === 'small' ? 'h-6 w-6' : 'h-7 w-7';
   const containerSize = size === 'small' ? 'h-14 w-24' : 'h-16 w-28';
   const marginBottom = size === 'small' ? 'mb-3' : 'mb-4';
-  const spacing = size === 'small' ? 24 : 28;
-  
+  const spacing = size === 'small' ? 20 : 24;
+
   // Grid positions for 3x2 layout
-  // We offset everything so the final grid is centered
   // Layout:
-  // [5] [4] [3]
-  // [6] [1] [2]
-  // Checkbox 1 is at center-bottom of the grid, so we offset by half spacing to center the whole grid
+  // [5] [4] [3]  <- Top row
+  // [6] [1] [2]  <- Bottom row
+  //
+  // For vertical centering of the entire grid:
+  // Grid height = spacing (between rows)
+  // To center the grid vertically, the midpoint between rows should be at y=0
+  // So top row is at y = -spacing/2, bottom row is at y = +spacing/2
   const offsetX = -spacing / 2;
-  const offsetY = spacing / 2;
-  
+  const gridVerticalOffset = spacing / 4; // This centers the entire grid vertically
+
   const positions = [
-    { x: offsetX, y: offsetY, delay: 0 },      // 1: Center bottom (original)
-    { x: offsetX + spacing, y: offsetY, delay: 200 },  // 2: Right bottom
-    { x: offsetX + spacing, y: offsetY - spacing, delay: 400 },  // 3: Right top
-    { x: offsetX, y: offsetY - spacing, delay: 600 }, // 4: Center top
-    { x: offsetX - spacing, y: offsetY - spacing, delay: 800 }, // 5: Left top
-    { x: offsetX - spacing, y: offsetY, delay: 1000 }    // 6: Left bottom
+    { x: offsetX, y: gridVerticalOffset, delay: 0 },      // 1: Center bottom (starting position)
+    { x: offsetX + spacing, y: gridVerticalOffset, delay: 200 },  // 2: Right bottom
+    { x: offsetX + spacing, y: gridVerticalOffset - spacing, delay: 400 },  // 3: Right top
+    { x: offsetX, y: gridVerticalOffset - spacing, delay: 600 }, // 4: Center top
+    { x: offsetX - spacing, y: gridVerticalOffset - spacing, delay: 800 }, // 5: Left top
+    { x: offsetX - spacing, y: gridVerticalOffset, delay: 1000 }    // 6: Left bottom
   ];
-  
+
   return (
     <div className={`relative ${containerSize} mx-auto ${marginBottom} flex items-center justify-center`}>
-      {/* Empty checkbox when not hovered */}
-      <div 
+      {/* Empty checkbox when not hovered - positioned to match checkbox #1's position */}
+      <div
         className={`absolute transition-all duration-300 ${!isHovered ? 'opacity-100' : 'opacity-0'}`}
+        style={{
+          transform: `translate(${offsetX}px, ${gridVerticalOffset}px)`
+        }}
       >
         <Square className={`${iconSize} text-green-400`} />
       </div>
@@ -234,14 +240,14 @@ export const ResponsiveLandingPage: React.FC = () => {
   }, [isMobile, user?.id, loadBulkStatus]);
 
 
-  // Handle join community button click
-  const handleJoinCommunity = () => {
+  // Handle create account / profile button click
+  const handleAuthButton = () => {
     if (!isAuthenticated) {
-      openModal(); // Use global auth modal
+      openModal('signup'); // Open auth modal on signup tab
       return;
     }
-    // Navigate to users page if already authenticated
-    navigate('/users');
+    // Navigate to user's own profile if authenticated
+    navigate(`/user/${user?.username || user?.id}`);
   };
 
   if (isMobile) {
@@ -299,34 +305,34 @@ export const ResponsiveLandingPage: React.FC = () => {
               </Link>
               {isAuthenticated ? (
                 <Link
-                  to="/users"
+                  to={`/user/${user?.username || user?.id}`}
                   className="group relative block w-full overflow-hidden rounded-lg"
                 >
                   {/* Glassmorphism background */}
                   <div className="absolute inset-0 bg-white/5 backdrop-blur-sm border border-purple-400/50 rounded-lg" />
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-active:opacity-100 transition-opacity duration-300" />
-                  
+
                   {/* Content */}
                   <div className="relative px-6 py-3 text-purple-300 font-medium">
                     <div className="flex items-center justify-center gap-2">
-                      Join Community
+                      Go to Profile
                       <ArrowRight className="h-5 w-5" />
                     </div>
                   </div>
                 </Link>
               ) : (
                 <button
-                  onClick={handleJoinCommunity}
+                  onClick={handleAuthButton}
                   className="group relative block w-full overflow-hidden rounded-lg"
                 >
                   {/* Glassmorphism background */}
                   <div className="absolute inset-0 bg-white/5 backdrop-blur-sm border border-purple-400/50 rounded-lg" />
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-active:opacity-100 transition-opacity duration-300" />
-                  
+
                   {/* Content */}
                   <div className="relative px-6 py-3 text-purple-300 font-medium">
                     <div className="flex items-center justify-center gap-2">
-                      Join Community
+                      Create Account
                       <ArrowRight className="h-5 w-5" />
                     </div>
                   </div>
@@ -339,27 +345,14 @@ export const ResponsiveLandingPage: React.FC = () => {
         {/* Mobile Features Section */}
         <div className="px-4 py-12 bg-gray-800">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-3">GameVault</h2>
-            <p className="text-gray-400">The social gaming platform built for enthusiasts</p>
+            <h2 className="text-white mb-3">
+              <span className="text-lg font-normal">How </span>
+              <span className="text-2xl font-bold">GameVault</span>
+              <span className="text-lg font-normal"> Works</span>
+            </h2>
           </div>
           <div className="space-y-6">
-            <div 
-              className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden"
-              onMouseEnter={() => setHoveredCard('ratings-mobile')}
-              onMouseLeave={() => setHoveredCard(null)}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-purple-600/10 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative z-10">
-                <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
-                  <SpinningNumber isHovered={hoveredCard === 'ratings-mobile'} />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-purple-300">Precise Ratings</h3>
-                <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  Rate games on a 1-10 scale. Your opinions matter.
-                </p>
-              </div>
-            </div>
-            <div 
+            <div
               className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('social-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
@@ -371,11 +364,11 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-blue-300">Social Discovery</h3>
                 <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  Follow gamers with similar tastes. Or because they're funny.
+                  Follow gamers to get updates on their activity. See the games they've reviewed, added to their Wishlist, Backlog, and more.
                 </p>
               </div>
             </div>
-            <div 
+            <div
               className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('stats-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
@@ -385,9 +378,25 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
                   <CascadingCheckboxes isHovered={hoveredCard === 'stats-mobile'} size="small" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-green-300">Personal Stats</h3>
+                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-green-300">Track Your Games</h3>
                 <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  Track your gaming journey. Add games to your Wishlist, Collection, and more.
+                  Add games you haven't played to your Wishlist (don't own) or Backlog (own). Mark games you've Started or Finished.
+                </p>
+              </div>
+            </div>
+            <div
+              className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden"
+              onMouseEnter={() => setHoveredCard('ratings-mobile')}
+              onMouseLeave={() => setHoveredCard(null)}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-purple-600/10 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
+                  <SpinningNumber isHovered={hoveredCard === 'ratings-mobile'} />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-purple-300">Write Reviews</h3>
+                <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
+                  The more games you review, the more you help other players find games they'll enjoy, and avoid games they won't.
                 </p>
               </div>
             </div>
@@ -513,31 +522,31 @@ export const ResponsiveLandingPage: React.FC = () => {
               </Link>
               {isAuthenticated ? (
                 <Link
-                  to="/users"
+                  to={`/user/${user?.username || user?.id}`}
                   className="group relative px-8 py-3 text-purple-300 rounded-lg flex items-center gap-2 text-lg font-medium overflow-hidden transition-all duration-300 hover:scale-105"
                 >
                   {/* Glassmorphism background - Secondary style */}
                   <div className="absolute inset-0 bg-white/5 backdrop-blur-md border border-purple-400/50 rounded-lg" />
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
+
                   {/* Content */}
                   <div className="relative flex items-center gap-2 group-hover:text-white transition-colors duration-300">
-                    Join Community
+                    Go to Profile
                     <ArrowRight className="h-5 w-5" />
                   </div>
                 </Link>
               ) : (
                 <button
-                  onClick={handleJoinCommunity}
+                  onClick={handleAuthButton}
                   className="group relative px-8 py-3 text-purple-300 rounded-lg flex items-center gap-2 text-lg font-medium overflow-hidden transition-all duration-300 hover:scale-105"
                 >
                   {/* Glassmorphism background - Secondary style */}
                   <div className="absolute inset-0 bg-white/5 backdrop-blur-md border border-purple-400/50 rounded-lg" />
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
+
                   {/* Content */}
                   <div className="relative flex items-center gap-2 group-hover:text-white transition-colors duration-300">
-                    Join Community
+                    Create Account
                     <ArrowRight className="h-5 w-5" />
                   </div>
                 </button>
@@ -551,44 +560,14 @@ export const ResponsiveLandingPage: React.FC = () => {
       <div className="py-16 bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">GameVault</h2>
-            <p className="text-gray-400 text-lg">The social gaming platform built for enthusiasts</p>
+            <h2 className="text-white mb-4">
+              <span className="text-2xl font-normal">How </span>
+              <span className="text-3xl font-bold">GameVault</span>
+              <span className="text-2xl font-normal"> Works</span>
+            </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
-            <div 
-              className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
-              onMouseEnter={() => setHoveredCard('ratings')}
-              onMouseLeave={() => setHoveredCard(null)}
-            >
-              {/* Animated gradient border */}
-              <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                <div className="absolute inset-[-2px] bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-lg animate-pulse"></div>
-                <div className="absolute inset-0 bg-gray-900/80 rounded-lg"></div>
-              </div>
-              
-              {/* Background effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/0 via-purple-600/20 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-lg"></div>
-              
-              {/* Content */}
-              <div className="relative z-10">
-                <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
-                  <SpinningNumber isHovered={hoveredCard === 'ratings'} />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-purple-300">Precise Ratings</h3>
-                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
-                  Rate games on a 1-10 scale. Your opinions matter.
-                </p>
-                
-                {/* Progressive disclosure - additional details on hover */}
-                <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'ratings' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <p className="text-sm text-purple-300 border-t border-gray-600 pt-3">
-                    Personal rating history • Compare with friends
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div 
+            <div
               className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
               onMouseEnter={() => setHoveredCard('social')}
               onMouseLeave={() => setHoveredCard(null)}
@@ -598,30 +577,23 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="absolute inset-[-2px] bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 rounded-lg animate-pulse"></div>
                 <div className="absolute inset-0 bg-gray-900/80 rounded-lg"></div>
               </div>
-              
+
               {/* Background effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-blue-600/0 via-blue-600/20 to-blue-600/0 opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-lg"></div>
-              
+
               {/* Content */}
               <div className="relative z-10">
                 <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
                   <SplittingUsers isHovered={hoveredCard === 'social'} />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-blue-300">Social Discovery</h3>
-                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
-                  Follow gamers with similar tastes. Or because they're funny.
+                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
+                  Follow gamers to get updates on their activity. See the games they've reviewed, added to their Wishlist, Backlog, and more.
                 </p>
-                
-                {/* Progressive disclosure - additional details on hover */}
-                <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'social' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <p className="text-sm text-blue-300 border-t border-gray-600 pt-3">
-                    Build connections • Find recommendations
-                  </p>
-                </div>
               </div>
             </div>
-            
-            <div 
+
+            <div
               className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
               onMouseEnter={() => setHoveredCard('stats')}
               onMouseLeave={() => setHoveredCard(null)}
@@ -631,26 +603,45 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="absolute inset-[-2px] bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 rounded-lg animate-pulse"></div>
                 <div className="absolute inset-0 bg-gray-900/80 rounded-lg"></div>
               </div>
-              
+
               {/* Background effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-green-600/0 via-green-600/20 to-green-600/0 opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-lg"></div>
-              
+
               {/* Content */}
               <div className="relative z-10">
                 <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
                   <CascadingCheckboxes isHovered={hoveredCard === 'stats'} />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-green-300">Personal Stats</h3>
-                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
-                  Track your gaming journey. Add games to your Wishlist, Collection, and more.
+                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-green-300">Track Your Games</h3>
+                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
+                  Add games you haven't played to your Wishlist (don't own) or Backlog (own). Mark games you've Started or Finished.
                 </p>
-                
-                {/* Progressive disclosure - additional details on hover */}
-                <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'stats' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <p className="text-sm text-green-300 border-t border-gray-600 pt-3">
-                    Gaming insights • Progress tracking
-                  </p>
+              </div>
+            </div>
+
+            <div
+              className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
+              onMouseEnter={() => setHoveredCard('ratings')}
+              onMouseLeave={() => setHoveredCard(null)}
+            >
+              {/* Animated gradient border */}
+              <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="absolute inset-[-2px] bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-lg animate-pulse"></div>
+                <div className="absolute inset-0 bg-gray-900/80 rounded-lg"></div>
+              </div>
+
+              {/* Background effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/0 via-purple-600/20 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-lg"></div>
+
+              {/* Content */}
+              <div className="relative z-10">
+                <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
+                  <SpinningNumber isHovered={hoveredCard === 'ratings'} />
                 </div>
+                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-purple-300">Write Reviews</h3>
+                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
+                  The more games you review, the more you help other players find games they'll enjoy, and avoid games they won't.
+                </p>
               </div>
             </div>
           </div>
