@@ -61,7 +61,7 @@ export const DEFAULT_FILTERS: GameSearchFilters = {
   genres: [],
   platforms: [],
   ratingRange: [1, 10],
-  releaseYearRange: [1977, new Date().getFullYear()],
+  releaseYearRange: [1977, 2026],
   sortBy: ''
 };
 

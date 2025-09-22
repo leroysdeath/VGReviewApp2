@@ -182,13 +182,27 @@ export const SearchResultsPage: React.FC = () => {
       const { data, error } = await supabase
         .from('platform')
         .select('id, name')
-        .or('id.gte.1,id.lte.33', 'id.gte.44,id.lte.55', 'id.eq.71')
+        .or('id.gte.1.lte.33,id.gte.44.lte.55,id.eq.71')
         .order('name');
 
-      if (error) throw error;
-      setPlatforms(data || []);
+      if (error) {
+        console.error('Platform filter query error:', error);
+        throw error;
+      }
+
+      // Filter in JavaScript as a safety measure
+      const filteredData = data?.filter(p =>
+        (p.id >= 1 && p.id <= 33) ||
+        (p.id >= 44 && p.id <= 55) ||
+        p.id === 71
+      ) || [];
+
+      console.log(`Loaded ${filteredData.length} platforms (filtered from ${data?.length || 0})`);
+      setPlatforms(filteredData);
     } catch (err) {
       console.error('Error loading platforms:', err);
+      // Don't set platforms on error - keep empty array
+      setPlatforms([]);
     }
   };
 
@@ -297,12 +311,15 @@ export const SearchResultsPage: React.FC = () => {
   const activeFilterLabels = useMemo(() => {
     const labels: string[] = [];
 
+    // Platform filters temporarily disabled
+    /*
     if (filters.platforms && filters.platforms.length > 0) {
       const platformNames = filters.platforms
         .map(id => platforms.find(p => p.id.toString() === id)?.name)
         .filter(Boolean);
       platformNames.forEach(name => labels.push(`Platform: ${name}`));
     }
+    */
 
     if (filters.minRating) {
       labels.push(`Min Rating: ${filters.minRating}/10`);
@@ -319,13 +336,15 @@ export const SearchResultsPage: React.FC = () => {
   const handleRemoveFilter = (filterLabel: string) => {
     const newFilters = { ...filters };
 
+    // Platform filter removal temporarily disabled
+    /*
     if (filterLabel.startsWith('Platform:')) {
       const platformName = filterLabel.replace('Platform: ', '');
       const platform = platforms.find(p => p.name === platformName);
       if (platform && newFilters.platforms) {
         newFilters.platforms = newFilters.platforms.filter(id => id !== platform.id.toString());
       }
-    } else if (filterLabel.startsWith('Min Rating:')) {
+    } else */ if (filterLabel.startsWith('Min Rating:')) {
       newFilters.minRating = undefined;
     } else if (filterLabel.startsWith('Year:')) {
       newFilters.releaseYear = undefined;
@@ -726,13 +745,7 @@ export const SearchResultsPage: React.FC = () => {
                                       {mapPlatformNames(game.platforms).join(', ')}
                                     </span>
                                   )}
-                                  {/* Developer in wide mode only */}
-                                  {!isNarrowMode && game.developer && (
-                                    <>
-                                      <span>•</span>
-                                      <span>{game.developer}</span>
-                                    </>
-                                  )}
+                                  {/* Developer info removed - only loaded on game detail page */}
                                 </div>
                               </div>
 

@@ -170,7 +170,10 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           </div>
         )}
 
-        {/* Platforms */}
+        {/* Platforms - TEMPORARILY DISABLED */}
+        {/* Platform filters are temporarily disabled pending investigation of the filtering issue */}
+        {/* TODO: Re-enable once platform ID filtering is working correctly in production */}
+        {/*
         <div>
           <button
             onClick={() => toggleSection('platforms')}
@@ -183,7 +186,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               <ChevronDown className="h-4 w-4 text-gray-400" />
             )}
           </button>
-          
+
           {expandedSections.platforms && (
             <div className="mt-2 max-h-60 overflow-y-auto pr-2 space-y-2">
               {platformOptions.map(platform => (
@@ -201,8 +204,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                     />
                     <div className={`
                       w-5 h-5 rounded border transition-colors
-                      ${filters.platforms.includes(platform.id) 
-                        ? 'bg-purple-600 border-purple-600' 
+                      ${filters.platforms.includes(platform.id)
+                        ? 'bg-purple-600 border-purple-600'
                         : 'bg-gray-700 border-gray-600'}
                     `}>
                       {filters.platforms.includes(platform.id) && (
@@ -219,6 +222,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             </div>
           )}
         </div>
+        */}
 
         {/* Rating Range */}
         <div>
@@ -292,7 +296,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                 value={filters.releaseYearRange}
                 onChange={handleReleaseYearChange}
                 min={1977}
-                max={new Date().getFullYear()}
+                max={2026}
                 step={1}
                 pearling
                 minDistance={1}
