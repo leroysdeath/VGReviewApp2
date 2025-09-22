@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Grid, List, Loader, AlertCircle, Star, RefreshCw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Grid, List, Loader, AlertCircle, Star, RefreshCw, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { useGameSearch } from '../hooks/useGameSearch';
 import { SmartImage } from '../components/SmartImage';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { shouldShowCategoryLabel, getCategoryLabel, getCategoryStyles } from '../utils/gameCategoryLabels';
 import { mapPlatformNames } from '../utils/platformMapping';
+import { FilterPanel } from '../components/FilterPanel';
+import { ActiveFilters } from '../components/ActiveFilters';
+import { GameSearchFilters, PlatformOption, DEFAULT_FILTERS } from '../types/search';
 
 interface Game {
   id: number;
@@ -39,7 +42,8 @@ interface Platform {
 
 interface SearchFilters {
   searchTerm?: string;
-  platformId?: number;
+  platforms?: string[];
+  minRating?: number;
   releaseYear?: number;
   sortBy: 'name' | 'release_date' | 'avg_rating' | 'rating_count';
   sortOrder: 'asc' | 'desc';
@@ -70,6 +74,7 @@ export const SearchResultsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchStarted, setSearchStarted] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>();
+  const filterDebounceRef = useRef<NodeJS.Timeout>();
 
   // Optimized debounce delays for different contexts
   const DEBOUNCE_DELAYS = {
@@ -79,10 +84,19 @@ export const SearchResultsPage: React.FC = () => {
 
   const [filters, setFilters] = useState<SearchFilters>({
     searchTerm: '',
-    platformId: undefined,
+    platforms: [],
+    minRating: undefined,
     releaseYear: undefined,
     sortBy: 'name',
     sortOrder: 'asc'
+  });
+
+  // Filter panel state
+  const [gameSearchFilters, setGameSearchFilters] = useState<GameSearchFilters>({
+    ...DEFAULT_FILTERS,
+    query: '',
+    genres: [], // Will not be used
+    platforms: []
   });
 
   // Set view mode based on device type
@@ -92,30 +106,48 @@ export const SearchResultsPage: React.FC = () => {
     }
   }, [isMobile]);
 
-  // Load platforms for filter dropdown
+  // Load platforms for filter dropdown - only IDs 1-33 and 44-55
   useEffect(() => {
     loadPlatforms();
   }, []);
 
+  // Platform options for FilterPanel
+  const platformOptions = useMemo<PlatformOption[]>(() => {
+    return platforms.map(p => ({
+      id: p.id.toString(),
+      label: p.name
+    }));
+  }, [platforms]);
+
   // Extract parameters from URL and update state
   useEffect(() => {
     const query = searchParams.get('q') || '';
-    const platform = searchParams.get('platform');
+    const platformIds = searchParams.get('platforms')?.split(',').filter(Boolean) || [];
+    const minRating = searchParams.get('minRating');
     const year = searchParams.get('year');
     const sort = searchParams.get('sort') || 'name:asc';
     const page = searchParams.get('page');
     const [sortField, sortOrder] = sort.split(':');
-    
+
     setFilters({
       searchTerm: query,
-      platformId: platform ? parseInt(platform) : undefined,
+      platforms: platformIds,
+      minRating: minRating ? parseFloat(minRating) : undefined,
       releaseYear: year ? parseInt(year) : undefined,
       sortBy: sortField as any || 'name',
       sortOrder: sortOrder as any || 'asc'
     });
 
+    // Update GameSearchFilters for FilterPanel
+    setGameSearchFilters(prev => ({
+      ...prev,
+      query,
+      platforms: platformIds,
+      ratingRange: minRating ? [minRating ? parseFloat(minRating) : 0, 10] : [0, 10]
+    }));
+
     setCurrentPage(page ? parseInt(page) : 1);
-    
+
     // CRITICAL FIX: Set search term and let the unified search handler take over
     // This prevents dual search triggers that were causing 406 errors
     if (query.trim()) {
@@ -132,24 +164,25 @@ export const SearchResultsPage: React.FC = () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
-      
+
       debounceRef.current = setTimeout(() => {
         performSearch();
       }, DEBOUNCE_DELAYS.detailed); // Use optimized delay for detailed search
     }
-    
+
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [filters.searchTerm, filters.platformId, filters.releaseYear, filters.sortBy, filters.sortOrder]);
+  }, [filters.searchTerm, filters.platforms?.join(','), filters.minRating, filters.releaseYear, filters.sortBy, filters.sortOrder]);
 
   const loadPlatforms = async () => {
     try {
       const { data, error } = await supabase
         .from('platform')
         .select('id, name')
+        .or('id.gte.1,id.lte.33', 'id.gte.44,id.lte.55')
         .order('name');
 
       if (error) throw error;
@@ -171,9 +204,10 @@ export const SearchResultsPage: React.FC = () => {
       setSearchStarted(true);
       
       await searchGames(filters.searchTerm, {
-        genres: filters.platformId ? [filters.platformId.toString()] : undefined,
-        sortBy: filters.sortBy === 'name' ? 'name' : 
-               filters.sortBy === 'release_date' ? 'release_date' : 
+        platforms: filters.platforms,
+        minRating: filters.minRating,
+        sortBy: filters.sortBy === 'name' ? 'name' :
+               filters.sortBy === 'release_date' ? 'release_date' :
                filters.sortBy === 'avg_rating' ? 'rating' : 'popularity',
         sortOrder: filters.sortOrder
       });
@@ -198,17 +232,124 @@ export const SearchResultsPage: React.FC = () => {
     const updatedFilters = { ...filters, ...newFilters };
     setFilters(updatedFilters);
     setCurrentPage(1); // Reset to first page when filters change
-    
+
     // Search is now handled by the consolidated useEffect handler
     // No need for additional debouncing here since it's centralized
-    
+
     // Update URL params
     const params = new URLSearchParams();
     if (updatedFilters.searchTerm) params.set('q', updatedFilters.searchTerm);
-    if (updatedFilters.platformId) params.set('platform', updatedFilters.platformId.toString());
+    if (updatedFilters.platforms && updatedFilters.platforms.length > 0) {
+      params.set('platforms', updatedFilters.platforms.join(','));
+    }
+    if (updatedFilters.minRating) params.set('minRating', updatedFilters.minRating.toString());
     if (updatedFilters.releaseYear) params.set('year', updatedFilters.releaseYear.toString());
     params.set('sort', `${updatedFilters.sortBy}:${updatedFilters.sortOrder}`);
-    
+
+    setSearchParams(params);
+  };
+
+  // Handle FilterPanel changes with auto-apply and debouncing
+  const handleFilterPanelChange = useCallback((newFilters: Partial<GameSearchFilters>) => {
+    const updated = { ...gameSearchFilters, ...newFilters };
+    setGameSearchFilters(updated);
+
+    // Clear existing debounce timer
+    if (filterDebounceRef.current) {
+      clearTimeout(filterDebounceRef.current);
+    }
+
+    // Auto-apply filters after 1.5 seconds
+    filterDebounceRef.current = setTimeout(() => {
+      // Convert GameSearchFilters to SearchFilters format
+      const searchFilters: Partial<SearchFilters> = {
+        platforms: updated.platforms,
+        minRating: updated.ratingRange[0] > 0 ? updated.ratingRange[0] : undefined,
+      };
+
+      // Convert sort option
+      if (updated.sortBy === 'newest') {
+        searchFilters.sortBy = 'release_date';
+        searchFilters.sortOrder = 'desc';
+      } else if (updated.sortBy === 'oldest') {
+        searchFilters.sortBy = 'release_date';
+        searchFilters.sortOrder = 'asc';
+      } else if (updated.sortBy === 'highest_rated') {
+        searchFilters.sortBy = 'avg_rating';
+        searchFilters.sortOrder = 'desc';
+      } else if (updated.sortBy === 'lowest_rated') {
+        searchFilters.sortBy = 'avg_rating';
+        searchFilters.sortOrder = 'asc';
+      } else if (updated.sortBy === 'most_reviewed') {
+        searchFilters.sortBy = 'rating_count';
+        searchFilters.sortOrder = 'desc';
+      }
+
+      handleFilterChange(searchFilters);
+    }, 1500);
+  }, [gameSearchFilters, handleFilterChange]);
+
+  // Generate active filter labels
+  const activeFilterLabels = useMemo(() => {
+    const labels: string[] = [];
+
+    if (filters.platforms && filters.platforms.length > 0) {
+      const platformNames = filters.platforms
+        .map(id => platforms.find(p => p.id.toString() === id)?.name)
+        .filter(Boolean);
+      platformNames.forEach(name => labels.push(`Platform: ${name}`));
+    }
+
+    if (filters.minRating) {
+      labels.push(`Min Rating: ${filters.minRating}/10`);
+    }
+
+    if (filters.releaseYear) {
+      labels.push(`Year: ${filters.releaseYear}`);
+    }
+
+    return labels;
+  }, [filters, platforms]);
+
+  // Handle removing individual filter
+  const handleRemoveFilter = (filterLabel: string) => {
+    const newFilters = { ...filters };
+
+    if (filterLabel.startsWith('Platform:')) {
+      const platformName = filterLabel.replace('Platform: ', '');
+      const platform = platforms.find(p => p.name === platformName);
+      if (platform && newFilters.platforms) {
+        newFilters.platforms = newFilters.platforms.filter(id => id !== platform.id.toString());
+      }
+    } else if (filterLabel.startsWith('Min Rating:')) {
+      newFilters.minRating = undefined;
+    } else if (filterLabel.startsWith('Year:')) {
+      newFilters.releaseYear = undefined;
+    }
+
+    handleFilterChange(newFilters);
+  };
+
+  // Clear all filters but keep search term
+  const handleClearAllFilters = () => {
+    const clearedFilters: SearchFilters = {
+      searchTerm: filters.searchTerm,
+      platforms: [],
+      minRating: undefined,
+      releaseYear: undefined,
+      sortBy: 'name',
+      sortOrder: 'asc'
+    };
+
+    setFilters(clearedFilters);
+    setGameSearchFilters({
+      ...DEFAULT_FILTERS,
+      query: filters.searchTerm || ''
+    });
+
+    // Update URL to keep search term but clear filters
+    const params = new URLSearchParams();
+    if (filters.searchTerm) params.set('q', filters.searchTerm);
     setSearchParams(params);
   };
 
@@ -297,92 +438,32 @@ export const SearchResultsPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Active Filters Display */}
+          {activeFilterLabels.length > 0 && (
+            <ActiveFilters
+              filters={activeFilterLabels}
+              onRemoveFilter={handleRemoveFilter}
+              onClearAll={handleClearAllFilters}
+              className="mb-6"
+            />
+          )}
+
           {/* Filters Panel */}
           {showFilters && (
-            <div className="bg-gray-800 rounded-lg p-6 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Platform Filter */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Platform</label>
-                  <select
-                    value={filters.platformId || ''}
-                    onChange={(e) => handleFilterChange({ 
-                      platformId: e.target.value ? parseInt(e.target.value) : undefined 
-                    })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="">All Platforms</option>
-                    {platforms.map(platform => (
-                      <option key={platform.id} value={platform.id}>
-                        {platform.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Release Year Filter */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Release Year</label>
-                  <select
-                    value={filters.releaseYear || ''}
-                    onChange={(e) => handleFilterChange({ 
-                      releaseYear: e.target.value ? parseInt(e.target.value) : undefined 
-                    })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="">All Years</option>
-                    {yearOptions.map(year => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
-                  </select>
-                </div>
-
-
-                {/* Sort By */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Sort By</label>
-                  <select
-                    value={filters.sortBy}
-                    onChange={(e) => handleFilterChange({ sortBy: e.target.value as any })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="name">Name</option>
-                    <option value="release_date">Release Date</option>
-                    <option value="avg_rating">Average Rating</option>
-                    <option value="rating_count">Most Reviewed</option>
-                  </select>
-                </div>
-
-                {/* Sort Order */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Order</label>
-                  <select
-                    value={filters.sortOrder}
-                    onChange={(e) => handleFilterChange({ sortOrder: e.target.value as any })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
-                  </select>
-                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+              <div className="lg:col-span-1">
+                <FilterPanel
+                  filters={gameSearchFilters}
+                  onFiltersChange={handleFilterPanelChange}
+                  genreOptions={[]} // No genre filters
+                  platformOptions={platformOptions}
+                />
               </div>
-
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => {
-                    setFilters({
-                      searchTerm: '',
-                      platformId: undefined,
-                      releaseYear: undefined,
-                      sortBy: 'name',
-                      sortOrder: 'asc'
-                    });
-                    setSearchParams(new URLSearchParams());
-                  }}
-                  className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
-                >
-                  Clear Filters
-                </button>
+              <div className="lg:col-span-3">
+                {/* Results will be shown here */}
+                <div className="text-gray-400 text-sm mb-4">
+                  <p>Filters auto-apply after 1.5 seconds of inactivity</p>
+                </div>
               </div>
             </div>
           )}
@@ -695,16 +776,7 @@ export const SearchResultsPage: React.FC = () => {
               <p className="text-gray-400 text-lg mb-4">No games found matching your criteria</p>
             )}
             <button
-              onClick={() => {
-                setFilters({
-                  searchTerm: '',
-                  platformId: undefined,
-                  releaseYear: undefined,
-                  sortBy: 'name',
-                  sortOrder: 'asc'
-                });
-                setSearchParams(new URLSearchParams());
-              }}
+              onClick={handleClearAllFilters}
               className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
             >
               Clear Filters

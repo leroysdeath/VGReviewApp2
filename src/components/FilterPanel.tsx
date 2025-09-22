@@ -118,55 +118,57 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           )}
         </div>
 
-        {/* Genres */}
-        <div>
-          <button
-            onClick={() => toggleSection('genres')}
-            className="flex items-center justify-between w-full text-left mb-2"
-          >
-            <h3 className="text-white font-medium">Genres</h3>
-            {expandedSections.genres ? (
-              <ChevronUp className="h-4 w-4 text-gray-400" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-gray-400" />
-            )}
-          </button>
-          
-          {expandedSections.genres && (
-            <div className="mt-2 max-h-60 overflow-y-auto pr-2 space-y-2">
-              {genreOptions.map(genre => (
-                <label
-                  key={genre.id}
-                  className="flex items-center gap-3 p-2 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
-                >
-                  <div className="relative flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      checked={filters.genres.includes(genre.id)}
-                      onChange={(e) => handleGenreChange(genre.id, e.target.checked)}
-                      className="sr-only"
-                      aria-label={`Genre: ${genre.label}`}
-                    />
-                    <div className={`
-                      w-5 h-5 rounded border transition-colors
-                      ${filters.genres.includes(genre.id) 
-                        ? 'bg-purple-600 border-purple-600' 
-                        : 'bg-gray-700 border-gray-600'}
-                    `}>
-                      {filters.genres.includes(genre.id) && (
-                        <Check className="h-4 w-4 text-white" />
-                      )}
+        {/* Genres - Only show if genre options are provided */}
+        {genreOptions.length > 0 && (
+          <div>
+            <button
+              onClick={() => toggleSection('genres')}
+              className="flex items-center justify-between w-full text-left mb-2"
+            >
+              <h3 className="text-white font-medium">Genres</h3>
+              {expandedSections.genres ? (
+                <ChevronUp className="h-4 w-4 text-gray-400" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-gray-400" />
+              )}
+            </button>
+
+            {expandedSections.genres && (
+              <div className="mt-2 max-h-60 overflow-y-auto pr-2 space-y-2">
+                {genreOptions.map(genre => (
+                  <label
+                    key={genre.id}
+                    className="flex items-center gap-3 p-2 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
+                  >
+                    <div className="relative flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={filters.genres.includes(genre.id)}
+                        onChange={(e) => handleGenreChange(genre.id, e.target.checked)}
+                        className="sr-only"
+                        aria-label={`Genre: ${genre.label}`}
+                      />
+                      <div className={`
+                        w-5 h-5 rounded border transition-colors
+                        ${filters.genres.includes(genre.id)
+                          ? 'bg-purple-600 border-purple-600'
+                          : 'bg-gray-700 border-gray-600'}
+                      `}>
+                        {filters.genres.includes(genre.id) && (
+                          <Check className="h-4 w-4 text-white" />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-white">{genre.label}</span>
-                  {genre.count !== undefined && (
-                    <span className="text-gray-400 text-sm ml-auto">{genre.count}</span>
-                  )}
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
+                    <span className="text-white">{genre.label}</span>
+                    {genre.count !== undefined && (
+                      <span className="text-gray-400 text-sm ml-auto">{genre.count}</span>
+                    )}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Platforms */}
         <div>

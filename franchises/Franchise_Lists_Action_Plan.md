@@ -1,8 +1,8 @@
 # Franchise Game Lists - Action Plan
 
-## Status: 23 of 41 Complete (56.1%)
+## Status: 31 of 41 Complete (75.6%)
 
-## ✅ COMPLETED FRANCHISES (23)
+## ✅ COMPLETED FRANCHISES (29)
 1. ✅ **Pokémon** - `Official_Pokemon_Games_List.md` - 110 official games documented
 2. ✅ **Zelda** - `Official_Zelda_Games_List.md` - 49 official games documented
 3. ✅ **Mario** - `Mario_Universe_Complete_List.md` - ~500+ games documented
@@ -26,15 +26,21 @@
 21. ✅ **Splinter Cell** - `Splinter_Cell_Complete_List.md` - ~19 games documented
 22. ✅ **Hitman** - `Hitman_Complete_List.md` - ~55+ games documented
 23. ✅ **Ninja Gaiden** - `Ninja_Gaiden_Complete_List.md` - ~27 games documented
+24. ✅ **FIFA** - `FIFA_Complete_List.md` - ~80+ games documented
+25. ✅ **Madden** - `Madden_Complete_List.md` - ~50 games documented
+26. ✅ **NBA 2K** - `NBA_2K_Complete_List.md` - ~43 games documented
+27. ✅ **NHL** - `NHL_Complete_List.md` - ~60+ games documented
+28. ✅ **Red Dead** - `Red_Dead_Complete_List.md` - ~11 games documented
+29. ✅ **God of War** - `God_of_War_Complete_List.md` - ~16 games documented
+30. ✅ **Monster Hunter** - `Monster_Hunter_Complete_List.md` - ~50 games documented
+31. ✅ **Digimon** - `Digimon_Complete_List.md` - ~53 games documented
 
-## 📝 TO-DO FRANCHISES (18)
+## 📝 TO-DO FRANCHISES (10)
 
 ### Racing Games (1)
 - [ ] **SSX** - EA snowboarding/extreme sports franchise
 
-### Action/Adventure (3)
-- [ ] **God of War** - Sony action mythology series
-- [ ] **Red Dead** - Rockstar western action series
+### Action/Adventure (1)
 - [ ] **007** - James Bond licensed games
 
 ### Horror/Survival (1)
@@ -51,18 +57,13 @@
 ### Nintendo Franchises (1)
 - [ ] **Pikmin** - Currently only mainline documented, needs full list
 
-### Monster Collection (2)
-- [ ] **Digimon** - Digital monsters multimedia franchise
-- [ ] **Monster Hunter** - Capcom action RPG series
+### Monster Collection (0)
+- ✅ Completed
 
 ### Shooters (0)
 - ✅ Completed
 
-### Sports Games (5)
-- [ ] **FIFA** - EA soccer/football series
-- [ ] **NBA 2K** - 2K Sports basketball series
-- [ ] **Madden** - EA American football series
-- [ ] **NHL** - EA ice hockey series
+### Sports Games (1)
 - [ ] **WWE 2K** *(consider adding - major sports entertainment franchise)*
 
 ### Stealth/Action (0)
@@ -179,4 +180,4 @@ Each franchise list should include:
 
 ---
 *Last Updated: September 21, 2025*
-*Progress: 23/41 franchises documented (56.1% complete)*
+*Progress: 31/41 franchises documented (75.6% complete)*
