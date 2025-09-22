@@ -112,7 +112,9 @@ exports.handler = async (event, context) => {
 
     const igdbUrl = `https://api.igdb.com/v4/${endpoint}`;
     let requestBody = '';
-    let limit = requestData.limit || queryParams.limit || 20;
+    // Determine limit based on request type - autocomplete needs fewer results
+    const isAutocomplete = requestData.type === 'autocomplete' || queryParams.type === 'autocomplete';
+    let limit = requestData.limit || queryParams.limit || (isAutocomplete ? 6 : 20);
 
     if (requestType === 'bulk') {
       requestBody = customRequestBody;
@@ -127,7 +129,9 @@ exports.handler = async (event, context) => {
           })
         };
       }
-      requestBody = `fields name, summary, storyline, slug, first_release_date, rating, category, cover.url, screenshots.url, genres.name, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, alternative_names.name, collection.name, franchise.name, franchises.name, parent_game, url, dlcs, expansions, similar_games, hypes, follows, total_rating, total_rating_count, rating_count; where id = ${gameId};`;
+      // MINIMAL FIELDS for GamePage - Only fetch what's actually displayed
+      // GamePage shows: name, cover, platforms, release_date, developer, publisher, summary, dlcs, expansions
+      requestBody = `fields name, slug, cover.url, first_release_date, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, summary, category, dlcs, expansions; where id = ${gameId};`;
     } else {
       // Search request
       if (!query || query.trim().length === 0) {
@@ -141,8 +145,16 @@ exports.handler = async (event, context) => {
         };
       }
 
-      // Build IGDB query for game search (using alternative engagement metrics)
-      requestBody = `fields name, summary, storyline, slug, first_release_date, rating, category, cover.url, screenshots.url, genres.name, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, alternative_names.name, collection.name, franchise.name, franchises.name, parent_game, url, dlcs, expansions, similar_games, hypes, follows, total_rating, total_rating_count, rating_count; search "${query.trim()}"; limit ${limit};`;
+      // Check if minimal mode is requested (for search results page)
+      const isMinimalMode = requestData.minimal || queryParams.minimal === 'true';
+
+      if (isMinimalMode) {
+        // MINIMAL FIELDS - Only what SearchResultsPage actually displays
+        requestBody = `fields name, slug, cover.url, first_release_date, platforms.name, category; search "${query.trim()}"; limit ${limit}; where category = (0,4,8,9,10,11) & version_parent = null;`;
+      } else {
+        // FULL FIELDS - For backward compatibility and detailed views
+        requestBody = `fields name, summary, storyline, slug, first_release_date, rating, category, cover.url, screenshots.url, genres.name, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, alternative_names.name, collection.name, franchise.name, franchises.name, parent_game, url, dlcs, expansions, similar_games, hypes, follows, total_rating, total_rating_count, rating_count; search "${query.trim()}"; limit ${limit};`;
+      }
     }
 
     console.log('IGDB Request Body:', requestBody);

@@ -35,7 +35,7 @@ export class GameDataServiceV2 {
   /**
    * Main search function with intelligent IGDB supplementation
    */
-  async searchGames(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
+  async searchGames(query: string, filters?: SearchFilters, maxResults: number = 200): Promise<GameWithCalculatedFields[]> {
     const sanitizedQuery = sanitizeSearchTerm(query);
     if (!sanitizedQuery) return [];
     
@@ -51,7 +51,7 @@ export class GameDataServiceV2 {
     
     try {
       // Step 1: Always get database results first (fast response)
-      const dbResults = await this.searchGamesExact(sanitizedQuery, filters);
+      const dbResults = await this.searchGamesExact(sanitizedQuery, filters, maxResults);
       if (DEBUG_GAME_DATA) console.log(`📊 Database search: ${dbResults.length} results for "${query}"`);
       
       // Step 2: Determine if we need IGDB supplementation
@@ -160,11 +160,11 @@ export class GameDataServiceV2 {
       'mario', 'super mario', 'zelda', 'pokemon', 'final fantasy', 'ff',
       'call of duty', 'cod', 'assassin', 'grand theft auto', 'gta',
       'mega man', 'megaman', 'sonic', 'halo', 'god of war',
-      'uncharted', 'last of us', 'resident evil', 'street fighter',
-      'mortal kombat', 'tekken', 'elder scrolls', 'fallout',
+      'uncharted', 'last of us', 'resident evil', 'street fighter', 'sf',
+      'mortal kombat', 'mk', 'tekken', 'elder scrolls', 'fallout',
       'witcher', 'dark souls', 'metal gear', 'silent hill'
     ];
-    
+
     return franchises.some(franchise => term.includes(franchise));
   }
   
@@ -427,12 +427,7 @@ export class GameDataServiceV2 {
     if (game.summary && game.summary.length > 100) score += 2;
     if (game.cover_url) score += 1; // Has cover art
     if (game.totalUserRatings > 10) score += 2;
-    
-    // 7. Manual Curation Boost (150 points) - Green-flagged games get massive priority
-    // This ensures manually curated games appear at the top of search results
-    if ((game as any).greenlight_flag === true) {
-      score += 150;
-    }
+    // REMOVED: Green flag boost for performance optimization
     
     return Math.round(score * 10) / 10; // Round to 1 decimal for cleaner debug output
   }
@@ -488,25 +483,60 @@ export class GameDataServiceV2 {
   }
   
   /**
-   * Efficiently batch insert games to database
+   * Efficiently batch insert games to database with conflict detection
    */
   private async batchInsertGames(games: IGDBGame[]): Promise<void> {
+    // First, check for existing IGDB IDs to prevent conflicts
+    const igdbIds = games.map(g => g.id).filter(Boolean);
+
+    if (igdbIds.length === 0) {
+      console.warn('No valid IGDB IDs to insert');
+      return;
+    }
+
+    // Check which IDs already exist
+    const { data: existingGames } = await supabase
+      .from('game')
+      .select('igdb_id, name')
+      .in('igdb_id', igdbIds);
+
+    const existingIgdbIds = new Set(existingGames?.map(g => g.igdb_id) || []);
+
+    // Log conflicts for debugging
+    if (existingGames && existingGames.length > 0) {
+      for (const existing of existingGames) {
+        const newGame = games.find(g => g.id === existing.igdb_id);
+        if (newGame && newGame.name !== existing.name) {
+          console.warn(`⚠️ IGDB ID Conflict: ${existing.igdb_id} is "${existing.name}" in DB, trying to insert "${newGame.name}"`);
+        }
+      }
+    }
+
+    // Process only new games
+    const newGames = games.filter(g => !existingIgdbIds.has(g.id));
+
+    if (newGames.length === 0) {
+      if (DEBUG_GAME_DATA) console.log('All games already exist in database');
+      return;
+    }
+
     // Process games sequentially to handle slug conflicts properly
     const transformedGames = [];
-    
-    for (const game of games) {
+
+    for (const game of newGames) {
       try {
-        // PERFORMANCE FIX: Use simple slug generation instead of expensive DB queries
-        // This eliminates the 406 errors and improves search performance dramatically
         const slug = generateSlug(game.name, game.id);
-        
+
+        // Ensure category is set correctly
+        const category = game.category !== undefined ? game.category : 0;
+
         transformedGames.push({
           igdb_id: game.id,
           game_id: game.id.toString(),
           name: game.name,
           slug: slug,
           summary: game.summary,
-          release_date: game.first_release_date 
+          release_date: game.first_release_date
             ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
             : null,
           cover_url: game.cover?.url ? this.transformImageUrl(game.cover.url) : null,
@@ -519,48 +549,44 @@ export class GameDataServiceV2 {
           rating_count: game.rating_count || 0,
           follows: game.follows || 0,
           hypes: game.hypes || 0,
+          category: category, // Explicitly set category
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
-      } catch (slugError) {
-        console.warn(`Failed to generate slug for game ${game.name}:`, slugError);
-        // Use fallback slug with IGDB ID
-        transformedGames.push({
-          igdb_id: game.id,
-          game_id: game.id.toString(),
-          name: game.name,
-          slug: generateSlug(game.name, game.id), // Fallback with ID
-          summary: game.summary,
-          release_date: game.first_release_date 
-            ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
-            : null,
-          cover_url: game.cover?.url ? this.transformImageUrl(game.cover.url) : null,
-          genres: game.genres?.map(g => g.name) || [],
-          platforms: game.platforms?.map(p => p.name) || [],
-          developer: game.involved_companies?.find(c => c.developer)?.company?.name,
-          publisher: game.involved_companies?.find(c => c.publisher)?.company?.name,
-          igdb_rating: Math.round(game.rating || 0),
-          total_rating: game.total_rating ? Math.round(game.total_rating) : null,
-          rating_count: game.rating_count || 0,
-          follows: game.follows || 0,
-          hypes: game.hypes || 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+
+        if (DEBUG_GAME_DATA) console.log(`✅ Prepared for insert: "${game.name}" (IGDB: ${game.id}, Category: ${category})`);
+      } catch (error) {
+        console.error(`Failed to prepare game ${game.name}:`, error);
       }
     }
-    
-    // Use batch upsert for better performance
+
+    // Use batch insert (not upsert) for new games only
     if (transformedGames.length > 0) {
       const { error } = await supabase
         .from('game')
-        .upsert(transformedGames, { 
-          onConflict: 'igdb_id',
-          ignoreDuplicates: true 
-        });
-      
-      if (error && error.code !== '23505') {
-        console.error(`Failed to batch upsert ${transformedGames.length} games:`, error);
+        .insert(transformedGames);
+
+      if (error) {
+        if (error.code === '23505') {
+          console.warn(`Some games already existed (duplicate key)`);
+        } else {
+          console.error(`Failed to insert ${transformedGames.length} games:`, error);
+
+          // Try inserting one by one to identify problematic entries
+          for (const game of transformedGames) {
+            const { error: singleError } = await supabase
+              .from('game')
+              .insert(game);
+
+            if (singleError) {
+              console.error(`Failed to insert "${game.name}":`, singleError);
+            } else {
+              if (DEBUG_GAME_DATA) console.log(`✅ Inserted: "${game.name}"`);
+            }
+          }
+        }
+      } else {
+        if (DEBUG_GAME_DATA) console.log(`💾 Successfully inserted ${transformedGames.length} new games`);
       }
     }
   }
@@ -635,39 +661,32 @@ export class GameDataServiceV2 {
   /**
    * Search games in database (exact matching)
    */
-  private async searchGamesExact(query: string, filters?: SearchFilters): Promise<GameWithCalculatedFields[]> {
+  private async searchGamesExact(query: string, filters?: SearchFilters, maxResults: number = 200): Promise<GameWithCalculatedFields[]> {
     try {
       // Strategy: Try name search first (faster), then supplement with summary search if needed
       if (DEBUG_GAME_DATA) console.log(`🔍 Database search for: "${query}"`);
-      
-      // Run green flag search and name search in parallel for better performance
-      const [greenFlaggedGames, nameResults] = await Promise.all([
-        this.searchGreenFlaggedGames(query).catch(() => []), // Don't let green flag search fail the whole operation
-        this.searchByName(query, filters, 25).catch(() => []) // Don't let name search fail the whole operation
-      ]);
-      
-      if (DEBUG_GAME_DATA) console.log(`🟢 Green-flagged games: ${greenFlaggedGames.length} results`);
+
+      // OPTIMIZED: Removed green flag search for better performance
+      const nameResults = await this.searchByName(query, filters, maxResults).catch(() => []);
+
       if (DEBUG_GAME_DATA) console.log(`📛 Name search: ${nameResults.length} results`);
-      
-      // Merge green-flagged games with regular results (avoiding duplicates)
-      const existingIds = new Set(nameResults.map(g => g.id));
-      const uniqueGreenFlagged = greenFlaggedGames.filter(g => !existingIds.has(g.id));
-      let combinedResults = [...uniqueGreenFlagged, ...nameResults];
-      
+
+      let combinedResults = nameResults;
+
       // If we still don't have enough results, add summary search
-      if (combinedResults.length < 15) { // Reduced threshold for faster response
-        const summaryResults = await this.searchBySummary(query, filters, 15).catch(() => []); // Don't let summary search fail
+      if (combinedResults.length < Math.min(maxResults / 2, 50)) { // Dynamic threshold based on maxResults
+        const summaryResults = await this.searchBySummary(query, filters, Math.floor(maxResults / 2)).catch(() => []); // Use half of maxResults for summary
         if (DEBUG_GAME_DATA) console.log(`📝 Summary search: ${summaryResults.length} results`);
-        
+
         // Merge results, avoiding duplicates
         const currentIds = new Set(combinedResults.map(g => g.id));
         const newResults = summaryResults.filter(g => !currentIds.has(g.id));
         combinedResults = [...combinedResults, ...newResults];
       }
-      
+
       if (DEBUG_GAME_DATA) console.log(`✅ Total database results: ${combinedResults.length}`);
-      
-      // Sort by enhanced relevance score using new IGDB metrics (green flags will get 150-point boost)
+
+      // Sort by enhanced relevance score
       return this.sortByRelevance(combinedResults, query);
       
     } catch (error) {
@@ -676,86 +695,89 @@ export class GameDataServiceV2 {
     }
   }
   
-  /**
-   * Search for green-flagged games that match the query
-   * These are manually curated games that should always appear
-   */
-  private async searchGreenFlaggedGames(query: string): Promise<GameWithCalculatedFields[]> {
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 3000); // Reduced to 3 seconds for faster failover
-    
-    try {
-      // Simplified query - just search green-flagged games, no complex filters
-      const { data, error } = await supabase
-        .from('game')
-        .select('*')
-        .eq('greenlight_flag', true)
-        .ilike('name', `%${query}%`)
-        .abortSignal(abortController.signal)
-        .limit(5); // Reduced limit for faster query
-      
-      clearTimeout(timeoutId);
-      
-      if (error) {
-        // Don't log abort errors - they're expected
-        if (error.code !== '20' && error.message && !error.message.includes('AbortError')) {
-          console.error('Green flag search error:', error);
-        }
-        return []; // Fail silently to not break regular search
-      }
-      
-      if (DEBUG_GAME_DATA) console.log(`🟢 Green flag search found ${(data || []).length} games for "${query}"`);
-      return (data || []).map(game => this.transformGameWithoutRatings(game as Game));
-    } catch (abortError: any) {
-      clearTimeout(timeoutId);
-      // Handle abort gracefully without logging
-      if (abortError.name === 'AbortError' || abortError.code === '20') {
-        return []; // Return empty array to continue with regular search
-      }
-      // Only log unexpected errors
-      console.error('Unexpected green flag search error:', abortError);
-      return [];
-    }
-  }
+  // REMOVED: Green flag search for performance optimization
   
   /**
-   * Fast name-only search
+   * Fast name-only search with alias support
    */
-  private async searchByName(query: string, filters?: SearchFilters, limit: number = 50): Promise<GameWithCalculatedFields[]> {
+  private async searchByName(query: string, filters?: SearchFilters, limit: number = 200): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 8000); // 8 second timeout for complex queries
-    
+    const timeoutId = setTimeout(() => abortController.abort(), 3000); // REDUCED: 3 second timeout for better performance
+
     try {
+      // First, try to use the new search_games_with_aliases function if it exists
+      // This will search both names and aliases for better Roman numeral matching
+      const { data: aliasResults, error: aliasError } = await supabase
+        .rpc('search_games_with_aliases', {
+          search_query: query,
+          max_results: limit
+        })
+        .abortSignal(abortController.signal);
+
+      clearTimeout(timeoutId);
+
+      // If the function exists and returns results, use them
+      if (!aliasError && aliasResults) {
+        if (DEBUG_GAME_DATA) console.log(`🎯 Alias search found ${aliasResults.length} games for "${query}"`);
+
+        // Apply additional filters if needed
+        let filteredResults = aliasResults;
+
+        if (filters?.genres && filters.genres.length > 0) {
+          filteredResults = filteredResults.filter(game =>
+            game.genres && game.genres.some((g: string) => filters.genres!.includes(g))
+          );
+        }
+
+        if (filters?.platforms && filters.platforms.length > 0) {
+          filteredResults = filteredResults.filter(game =>
+            game.platforms && game.platforms.some((p: string) => filters.platforms!.includes(p))
+          );
+        }
+
+        if (filters?.minRating) {
+          filteredResults = filteredResults.filter(game =>
+            game.rating && game.rating >= filters.minRating!
+          );
+        }
+
+        if (filters?.releaseYear) {
+          filteredResults = filteredResults.filter(game =>
+            game.release_date && game.release_date.startsWith(filters.releaseYear!)
+          );
+        }
+
+        return filteredResults.map(game => this.transformGameWithoutRatings(game as any));
+      }
+
+      // Fallback to regular search if alias function doesn't exist
       let queryBuilder = supabase
         .from('game')
         .select('*')
         .ilike('name', `%${query}%`)
-        .or('redlight_flag.is.null,redlight_flag.eq.false')  // Filter out red-flagged games
-        .abortSignal(abortController.signal);
-      
+        .abortSignal(abortController.signal); // REMOVED: Red flag filtering for performance
+
       // Apply filters
       if (filters?.genres && filters.genres.length > 0) {
         queryBuilder = queryBuilder.contains('genres', filters.genres);
       }
-      
+
       if (filters?.platforms && filters.platforms.length > 0) {
         queryBuilder = queryBuilder.contains('platforms', filters.platforms);
       }
-      
+
       if (filters?.minRating) {
         queryBuilder = queryBuilder.gte('igdb_rating', filters.minRating);
       }
-      
+
       if (filters?.releaseYear) {
         queryBuilder = queryBuilder.like('release_date', `${filters.releaseYear}%`);
       }
-      
+
       queryBuilder = queryBuilder.limit(limit);
-      
+
       const { data, error } = await queryBuilder;
-      
-      clearTimeout(timeoutId);
-      
+
       if (error) {
         // Don't log abort errors - they're expected
         if (error.code !== '20' && error.message && !error.message.includes('AbortError')) {
@@ -763,7 +785,7 @@ export class GameDataServiceV2 {
         }
         return [];
       }
-      
+
       return (data || []).map(game => this.transformGameWithoutRatings(game as Game));
     } catch (abortError: any) {
       clearTimeout(timeoutId);
@@ -780,17 +802,16 @@ export class GameDataServiceV2 {
   /**
    * Summary search (used as supplement)
    */
-  private async searchBySummary(query: string, filters?: SearchFilters, limit: number = 30): Promise<GameWithCalculatedFields[]> {
+  private async searchBySummary(query: string, filters?: SearchFilters, limit: number = 100): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 6000); // 6 second timeout for summary searches
+    const timeoutId = setTimeout(() => abortController.abort(), 2000); // REDUCED: 2 second timeout for better performance
     
     try {
       let queryBuilder = supabase
         .from('game')
         .select('*')
         .ilike('summary', `%${query}%`)
-        .or('redlight_flag.is.null,redlight_flag.eq.false')  // Filter out red-flagged games
-        .abortSignal(abortController.signal);
+        .abortSignal(abortController.signal); // REMOVED: Red flag filtering for performance
       
       // Apply filters
       if (filters?.genres && filters.genres.length > 0) {

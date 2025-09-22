@@ -10,6 +10,8 @@ import { markGameStarted, markGameCompleted, getGameProgress } from '../services
 import { useAuth } from '../hooks/useAuth';
 import { mapPlatformNames } from '../utils/platformMapping';
 import { formatGameReleaseDate } from '../utils/dateUtils';
+import { filterProtectedContent } from '../utils/contentProtectionFilter';
+import { igdbService } from '../services/igdbService';
 
 // Search filters interface from SearchResultsPage
 interface SearchFilters {
@@ -60,13 +62,54 @@ export const ReviewFormPage: React.FC = () => {
       setSearchResults([]);
       return;
     }
-    
+
     setSearchLoading(true);
     setSearchError(null);
-    
+
     try {
-      const results = await gameDataService.searchGames(searchTerm);
-      setSearchResults(results);
+      // First try local database
+      const localResults = await gameDataService.searchGames(searchTerm);
+
+      // If we have few local results, also search IGDB
+      if (localResults.length < 10) {
+        console.log(`📚 Few local results (${localResults.length}), searching IGDB...`);
+        try {
+          const igdbGames = await igdbService.searchGames(searchTerm, 20);
+
+          // Transform IGDB results to match local format
+          const transformedIgdbResults = igdbGames.map(game => ({
+            id: 0, // No local ID yet
+            igdb_id: game.id,
+            name: game.name,
+            slug: game.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') : undefined,
+            summary: game.summary,
+            first_release_date: game.first_release_date,
+            genres: game.genres?.map(g => g.name) || [],
+            platforms: game.platforms?.map(p => p.name) || [],
+            igdb_rating: game.rating,
+            total_rating: game.rating,
+            rating_count: 0,
+            averageRating: 0,
+            gameReviewCount: 0
+          }));
+
+          // Merge results, avoiding duplicates
+          const mergedResults = [...localResults];
+          for (const igdbResult of transformedIgdbResults) {
+            if (!mergedResults.some(r => r.igdb_id === igdbResult.igdb_id)) {
+              mergedResults.push(igdbResult);
+            }
+          }
+
+          setSearchResults(mergedResults);
+        } catch (igdbError) {
+          console.error('IGDB search failed, using local results only:', igdbError);
+          setSearchResults(localResults);
+        }
+      } else {
+        setSearchResults(localResults);
+      }
     } catch (error) {
       setSearchError('Failed to search games');
       console.error('Search error:', error);
@@ -349,9 +392,19 @@ export const ReviewFormPage: React.FC = () => {
   };
   
   const handleGameClick = (game: GameWithCalculatedFields) => {
-    // Prefetch game data for faster loading
-    // Game data is already loaded from Supabase
-    handleGameSelect(game);
+    // Convert game object to JSON string for handleGameSelect
+    const gameDataString = JSON.stringify({
+      igdb_id: game.igdb_id,
+      name: game.name,
+      cover_url: game.cover_url,
+      genres: game.genres || [],
+      platforms: game.platforms || [],
+      first_release_date: game.first_release_date,
+      summary: game.summary,
+      igdb_rating: game.igdb_rating
+    });
+
+    handleGameSelect(gameDataString);
   };
   
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -498,6 +551,8 @@ export const ReviewFormPage: React.FC = () => {
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      // Pass the search query to the modal
+      setSearchTerm(gameSearch);
       setShowSearchModal(true);
     }
   };

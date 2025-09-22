@@ -1,4 +1,6 @@
 import { supabase } from './supabase'
+import { searchCacheService } from './searchCacheService'
+import { searchAnalyticsService } from './searchAnalyticsService'
 import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization'
 import { 
   sortGamesIntelligently, 
@@ -484,132 +486,47 @@ function filterByRelevance(games: any[], searchQuery?: string): any[] {
 }
 
 /**
- * Intelligent multi-strategy search that tries different approaches
- * to maximize franchise game coverage including sister games and sequels
+ * Optimized search function using the new database function.
+ * Replaces multi-strategy search with a single efficient query.
  */
 async function executeIntelligentSearch(originalQuery: string): Promise<any[]> {
-  console.log(`🧠 INTELLIGENT SEARCH: Starting multi-strategy search for "${originalQuery}"`);
-  
-  const allResults = new Map<number, any>(); // Use Map to avoid duplicates by ID
-  let totalAttempts = 0;
-  
-  // Strategy 1: Original query (primary search)
-  totalAttempts++;
+  console.log(`🧠 OPTIMIZED SEARCH: Searching for "${originalQuery}"`);
+
   try {
-    console.log(`📋 STRATEGY 1: Original query "${originalQuery}"`);
-    const { data: originalResults, error: originalError } = await supabase
-      .rpc('search_games_secure', {
-        search_query: originalQuery.trim(),
-        limit_count: 150
+    // Use the optimized database function that handles all search variations
+    const { data: searchResults, error } = await supabase
+      .rpc('search_games_optimized', {
+        search_term: originalQuery.trim(),
+        include_franchise_games: true,
+        limit_count: 200,
+        include_fan_content: false // Only get official games first
       });
-      
-    if (!originalError && originalResults) {
-      originalResults.forEach((game: any) => {
-        if (!allResults.has(game.id)) {
-          allResults.set(game.id, { ...game, _searchStrategy: 'original', _searchRank: game.search_rank });
-        }
-      });
-      console.log(`   ✅ Found ${originalResults.length} games with original query`);
-    }
-  } catch (error) {
-    console.log(`   ❌ Original query failed:`, error);
-  }
-  
-  // Strategy 2: Franchise expansions
-  const expandedQueries = expandFranchiseQuery(originalQuery);
-  for (const expandedQuery of expandedQueries) {
-    if (expandedQuery === originalQuery.toLowerCase().trim()) continue; // Skip duplicate
-    
-    totalAttempts++;
-    try {
-      console.log(`📋 STRATEGY 2: Expanded query "${expandedQuery}"`);
-      const { data: expandedResults, error: expandedError } = await supabase
+
+    if (error) {
+      console.error('❌ Search error:', error);
+      // Fallback to old search function if new one fails
+      const { data: fallbackResults } = await supabase
         .rpc('search_games_secure', {
-          search_query: expandedQuery,
-          limit_count: 120
+          search_query: originalQuery.trim(),
+          limit_count: 150
         });
-        
-      if (!expandedError && expandedResults) {
-        expandedResults.forEach((game: any) => {
-          if (!allResults.has(game.id)) {
-            allResults.set(game.id, { ...game, _searchStrategy: `expanded:${expandedQuery}`, _searchRank: game.search_rank });
-          }
-        });
-        console.log(`   ✅ Found ${expandedResults.length} additional games with "${expandedQuery}"`);
-      }
-    } catch (error) {
-      console.log(`   ❌ Expanded query "${expandedQuery}" failed:`, error);
+      return fallbackResults || [];
     }
+
+    console.log(`✅ OPTIMIZED SEARCH: Found ${searchResults?.length || 0} games in single query`);
+
+    // Add search metadata for compatibility
+    const resultsWithMetadata = (searchResults || []).map(game => ({
+      ...game,
+      _searchStrategy: 'optimized',
+      _searchRank: game.search_rank || 0
+    }));
+
+    return resultsWithMetadata;
+  } catch (error) {
+    console.error('❌ Search failed:', error);
+    return [];
   }
-  
-  // Strategy 3: Sister game and sequel expansion (Pokemon Red → Blue/Yellow, Final Fantasy 7 → other numbers)
-  const sisterGameQueries = generateSisterGameQueries(originalQuery);
-  if (sisterGameQueries.length > 0) {
-    console.log(`📋 STRATEGY 3: Sister game expansion for "${originalQuery}" (${sisterGameQueries.length} queries)`);
-    
-    for (const sisterQuery of sisterGameQueries) {
-      if (sisterQuery === originalQuery.toLowerCase().trim()) continue; // Skip duplicate
-      if (totalAttempts >= 15) break; // Respect API limits
-      
-      totalAttempts++;
-      try {
-        const { data: sisterResults, error: sisterError } = await supabase
-          .rpc('search_games_secure', {
-            search_query: sisterQuery,
-            limit_count: 50 // Lower limit for sister games to balance coverage vs performance
-          });
-          
-        if (!sisterError && sisterResults) {
-          sisterResults.forEach((game: any) => {
-            if (!allResults.has(game.id)) {
-              allResults.set(game.id, { ...game, _searchStrategy: `sister:${sisterQuery}`, _searchRank: game.search_rank });
-            }
-          });
-          console.log(`   ✅ Found ${sisterResults.length} sister games with "${sisterQuery}"`);
-        }
-      } catch (error) {
-        console.log(`   ❌ Sister game query "${sisterQuery}" failed:`, error);
-      }
-    }
-  }
-  
-  // Strategy 4: Partial matching with ILIKE as fallback (for partial matches that full-text missed)
-  // Only if we have very few results so far
-  if (allResults.size < 10) {
-    totalAttempts++;
-    try {
-      console.log(`📋 STRATEGY 4: Partial matching fallback for "${originalQuery}"`);
-      const { data: partialResults, error: partialError } = await supabase
-        .from('game')
-        .select('id, name, summary, description, release_date, pic_url, genres, igdb_id, developer, publisher')
-        .or(`name.ilike.%${originalQuery}%,summary.ilike.%${originalQuery}%,developer.ilike.%${originalQuery}%`)
-        .limit(50);
-        
-      if (!partialError && partialResults) {
-        partialResults.forEach((game: any) => {
-          if (!allResults.has(game.id)) {
-            allResults.set(game.id, { ...game, _searchStrategy: 'partial', _searchRank: 0.1 });
-          }
-        });
-        console.log(`   ✅ Found ${partialResults.length} additional games with partial matching`);
-      }
-    } catch (error) {
-      console.log(`   ❌ Partial matching failed:`, error);
-    }
-  }
-  
-  const finalResults = Array.from(allResults.values());
-  console.log(`🎯 INTELLIGENT SEARCH COMPLETE: Found ${finalResults.length} unique games across ${totalAttempts} strategies`);
-  
-  // Log strategy breakdown
-  const strategyBreakdown = finalResults.reduce((acc: any, game) => {
-    const strategy = game._searchStrategy || 'unknown';
-    acc[strategy] = (acc[strategy] || 0) + 1;
-    return acc;
-  }, {});
-  console.log(`📊 SEARCH STRATEGY BREAKDOWN:`, strategyBreakdown);
-  
-  return finalResults;
 }
 
 class GameSearchService {
@@ -630,227 +547,137 @@ class GameSearchService {
       orderDirection = 'desc'
     } = filters
 
-    // Dynamic limit adjustment for major franchises (Phase 1)
-    let dynamicLimit = 50; // Base limit increased from 30
-    
-    // Increase limit for major franchises that have 20+ games
-    if (query) {
-      const lowerQuery = query.toLowerCase().trim();
-      const majorFranchises = [
-        'mario', 'zelda', 'pokemon', 'final fantasy', 'call of duty', 
-        'grand theft auto', 'gta', 'street fighter', 'mortal kombat',
-        'mega man', 'metal gear', 'sonic', 'dragon quest', 'elder scrolls'
-      ];
-      
-      const isMajorFranchise = majorFranchises.some(franchise => 
-        lowerQuery.includes(franchise) || franchise.includes(lowerQuery)
-      );
-      
-      if (isMajorFranchise) {
-        dynamicLimit = 75; // Extra results for major franchises
-        console.log(`🎯 MAJOR FRANCHISE DETECTED: "${query}" - increasing limit to ${dynamicLimit}`);
-      }
-    }
-    
-    const { limit = dynamicLimit, offset = 0 } = pagination
+    const { limit = 200, offset = 0 } = pagination
 
     try {
-      // Build the base query 
-      let baseQuery = supabase
-        .from('game')
-        .select(`*`, { count: 'exact' })
+      let games: GameSearchResult[] = [];
+      let totalCount = 0;
 
-      // Apply search query filter using intelligent multi-strategy search
+      // OPTIMIZED: Use search results directly, no secondary queries
       if (query && query.trim()) {
         console.log(`🔍 SEARCH INITIATED: "${query.trim()}"`);
-        
-        // Use intelligent search that tries multiple strategies
-        const searchResults = await executeIntelligentSearch(query.trim());
-        
+
+        const startTime = Date.now();
+        let searchResults: GameSearchResult[] = [];
+        let cacheHit = false;
+
+        // Try cache first
+        const cachedResults = searchCacheService.getCachedSearch(query.trim());
+        if (cachedResults) {
+          searchResults = cachedResults;
+          cacheHit = true;
+          console.log(`📦 CACHE HIT: Using cached results for "${query.trim()}" (${cachedResults.length} results)`);
+        } else {
+          // Use optimized search function
+          searchResults = await executeIntelligentSearch(query.trim());
+
+          // Cache successful results
+          if (searchResults && searchResults.length > 0) {
+            searchCacheService.setCachedSearch(query.trim(), searchResults);
+          }
+        }
+
+        // Track analytics (async, don't wait)
+        const executionTime = Date.now() - startTime;
+        searchAnalyticsService.trackSearch(
+          query.trim(),
+          searchResults,
+          executionTime,
+          cacheHit
+        ).catch(error => console.error('Analytics tracking failed:', error));
+
         if (searchResults && searchResults.length > 0) {
-          const matchingIds = searchResults.map(r => r.id);
-          baseQuery = baseQuery.in('id', matchingIds);
-          console.log(`✅ SEARCH RESULTS: Found ${searchResults.length} games, querying database for full details`);
+          // DIRECT USE: Use the search results directly, no secondary query!
+          games = searchResults;
+          totalCount = searchResults.length;
+          console.log(`✅ OPTIMIZED SEARCH: Found ${searchResults.length} games ${cacheHit ? '(from cache)' : '(fresh)'} - using directly, no extra queries`);
         } else {
           console.log(`❌ NO SEARCH RESULTS: No games found for query "${query.trim()}"`);
+
+          // Track zero-result search
+          searchAnalyticsService.trackSearch(query.trim(), [], executionTime, cacheHit);
+
           return { games: [], totalCount: 0, hasMore: false };
         }
-      }
+      } else {
+        // Non-search queries (browse all, genre filter, etc.)
+        let baseQuery = supabase
+          .from('game')
+          .select(`*`, { count: 'exact' })
 
-      // Apply release date filters
-      if (releaseDateStart) {
-        baseQuery = baseQuery.gte('release_date', releaseDateStart.toISOString().split('T')[0])
-      }
-      if (releaseDateEnd) {
-        baseQuery = baseQuery.lte('release_date', releaseDateEnd.toISOString().split('T')[0])
-      }
+        // Apply release date filters
+        if (releaseDateStart) {
+          baseQuery = baseQuery.gte('release_date', releaseDateStart.toISOString().split('T')[0])
+        }
+        if (releaseDateEnd) {
+          baseQuery = baseQuery.lte('release_date', releaseDateEnd.toISOString().split('T')[0])
+        }
 
-      // Apply genre filters using secure function
-      if (genres && genres.length > 0) {
-        const genreMatchingIds = new Set<number>();
-        
-        for (const genre of genres) {
-          const { data: genreResults, error: genreError } = await supabase
-            .rpc('search_games_by_genre', {
-              genre_name: genre,
-              limit_count: 1000
-            });
-            
-          if (genreError) {
-            console.error('Genre search error:', genreError);
-            continue; // Skip this genre but continue with others
+        // Apply genre filters
+        if (genres && genres.length > 0) {
+          // For non-search queries, we still need genre filtering
+          const genreMatchingIds = new Set<number>();
+
+          for (const genre of genres) {
+            const { data: genreResults, error: genreError } = await supabase
+              .rpc('search_games_by_genre', {
+                genre_name: genre,
+                limit_count: 1000
+              });
+
+            if (genreError) {
+              console.error('Genre search error:', genreError);
+              continue;
+            }
+
+            if (genreResults) {
+              genreResults.forEach(result => genreMatchingIds.add(result.id));
+            }
           }
-          
-          if (genreResults) {
-            genreResults.forEach(result => genreMatchingIds.add(result.id));
+
+          if (genreMatchingIds.size > 0) {
+            baseQuery = baseQuery.in('id', Array.from(genreMatchingIds));
+          } else {
+            return { games: [], totalCount: 0, hasMore: false };
           }
         }
-        
-        if (genreMatchingIds.size > 0) {
-          baseQuery = baseQuery.in('id', Array.from(genreMatchingIds));
-        } else {
-          // No genre matches found
-          return { games: [], totalCount: 0, hasMore: false };
+
+        // Execute the base query for non-search browsing
+        const { data: queryResults, error, count } = await baseQuery
+          .range(offset, offset + limit - 1)
+
+        if (error) {
+          console.error('Error fetching games:', error)
+          return { games: [], totalCount: 0, hasMore: false }
         }
+
+        games = queryResults || [];
+        totalCount = count || 0;
       }
 
-      // Execute the base query
-      const { data: games, error, count } = await baseQuery
-        .range(offset, offset + limit - 1)
-
-      if (error) {
-        console.error('Error searching games:', error)
-        return { games: [], totalCount: 0, hasMore: false }
-      }
-
-      // If we need to filter by platforms or ratings, we need additional queries
+      // OPTIMIZED: Direct use of search results with NO filtering for search queries
       let filteredGames = games || []
 
-      // Filter by platforms if specified
-      if (platformIds && platformIds.length > 0 && filteredGames.length > 0) {
-        const gameIds = filteredGames.map(g => g.id)
-        
-        const { data: platformGames } = await supabase
-          .from('platform_games')
-          .select('game_id')
-          .in('game_id', gameIds)
-          .in('platform_id', platformIds)
-
-        const gamesWithPlatform = new Set(platformGames?.map(pg => pg.game_id) || [])
-        filteredGames = filteredGames.filter(game => gamesWithPlatform.has(game.id))
-      }
-
-      // Get rating stats for filtered games
-      if (filteredGames.length > 0) {
-        const gameIds = filteredGames.map(g => g.id)
-        
-        const { data: ratingsData } = await supabase
-          .from('rating')
-          .select('game_id, rating')
-          .in('game_id', gameIds)
-
-        // Calculate average ratings and counts
-        const ratingStats = new Map<number, { sum: number, count: number }>()
-        
-        ratingsData?.forEach(rating => {
-          if (!ratingStats.has(rating.game_id)) {
-            ratingStats.set(rating.game_id, { sum: 0, count: 0 })
-          }
-          const stats = ratingStats.get(rating.game_id)!
-          stats.sum += rating.rating
-          stats.count += 1
-        })
-
-        // Add rating stats to games
-        filteredGames = filteredGames.map(game => {
-          const stats = ratingStats.get(game.id)
-          return {
-            ...game,
-            avg_user_rating: stats ? stats.sum / stats.count : undefined,
-            user_rating_count: stats?.count || 0
-          }
-        })
-
-        // Apply rating filters
-        if (minRating !== undefined) {
-          filteredGames = filteredGames.filter(game => 
-            game.avg_user_rating !== undefined && game.avg_user_rating >= minRating
-          )
-        }
-        if (maxRating !== undefined) {
-          filteredGames = filteredGames.filter(game => 
-            game.avg_user_rating !== undefined && game.avg_user_rating <= maxRating
-          )
-        }
-        if (minRatingCount !== undefined) {
-          filteredGames = filteredGames.filter(game => 
-            game.user_rating_count >= minRatingCount
-          )
-        }
-      }
-
-      // Apply strict relevance filtering to prevent unrelated games
+      // For search queries, the database has already done ALL the work
       if (query && query.trim()) {
-        filteredGames = filterByRelevance(filteredGames, query.trim());
-      }
-      
-      // Apply fan game and e-reader content filtering
-      filteredGames = filterFanGamesAndEReaderContent(filteredGames);
-      console.log(`🎮 FAN GAME/E-READER FILTER: ${games?.length || 0} games → ${filteredGames.length} after filtering`);
+        // Database already:
+        // 1. Filtered official vs fan games
+        // 2. Sorted by relevance
+        // 3. Applied franchise boosting
+        // NO additional processing needed!
 
-      // Apply sister game boosts for better series coverage (Pokemon Red → Blue/Yellow, etc.)
-      if (query && query.trim()) {
-        // Get the original game's genres for genre-based prioritization
-        const potentialOriginalGame = filteredGames.find(game => {
-          const titleScore = calculateTitleSimilarity(game.name, query.trim());
-          return titleScore >= 900; // High similarity suggests this is the original searched game
-        });
-        
-        const originalGameGenres = potentialOriginalGame?.genres;
-        filteredGames = applySisterGameBoost(filteredGames, query.trim(), originalGameGenres);
-      }
+        console.log(`✅ DIRECT USE: ${filteredGames.length} games from optimized search - no filtering applied`);
 
-      // Sort the results using Phase 3 intelligent prioritization system
-      if (orderBy === 'relevance') {
-        // Use Phase 3 intelligent sorting with comprehensive prioritization
-        console.log('🧠 PHASE 3: Using intelligent prioritization system');
-        filteredGames = sortGamesIntelligently(filteredGames, query?.trim());
+        // Only sort if user explicitly changed from relevance
+        if (orderBy !== 'relevance') {
+          filteredGames = this.sortGames(filteredGames, orderBy, orderDirection, query);
+        }
       } else {
-        // Use traditional sorting for other sort options
+        // For non-search queries, apply sorting
         filteredGames = this.sortGames(filteredGames, orderBy, orderDirection, query);
       }
 
-      // Get platforms for the final games
-      if (filteredGames.length > 0) {
-        const gameIds = filteredGames.map(g => g.id)
-        
-        const { data: platformData } = await supabase
-          .from('platform_games')
-          .select(`
-            game_id,
-            platform:platform_id (
-              name
-            )
-          `)
-          .in('game_id', gameIds)
-
-        // Group platforms by game
-        const gamePlatforms = new Map<number, string[]>()
-        platformData?.forEach((pg: any) => {
-          if (pg.platform) {
-            if (!gamePlatforms.has(pg.game_id)) {
-              gamePlatforms.set(pg.game_id, [])
-            }
-            gamePlatforms.get(pg.game_id)!.push(pg.platform.name)
-          }
-        })
-
-        // Add platforms to games
-        filteredGames = filteredGames.map(game => ({
-          ...game,
-          platforms: gamePlatforms.get(game.id) || []
-        }))
-      }
+      // REMOVED: Platform fetching - should be included in search_games_optimized if needed
 
       // Map to final result format
       const searchResults: GameSearchResult[] = filteredGames.map(game => ({
@@ -878,29 +705,15 @@ class GameSearchService {
         hypes: game.hypes
       }))
 
-      // Add intelligent search analytics for debugging in development
-      const isDev = typeof process === 'undefined' || process.env.NODE_ENV !== 'test';
-      if (query?.trim() && isDev) {
-        try {
-          const intelligentResults = getIntelligentSearchResults(filteredGames, query.trim(), 10);
-          console.log('🧠 PHASE 3 ANALYTICS:', {
-            intent: intelligentResults.intent,
-            summary: intelligentResults.summary,
-            topResults: intelligentResults.results.slice(0, 3).map(r => ({
-              name: r.game.name,
-              totalScore: r.score.totalScore,
-              breakdown: r.score.breakdown
-            }))
-          });
-        } catch (e) {
-          // Silent fail in test environments
-        }
-      }
+      // REMOVED: Analytics debugging - unnecessary processing
+
+      // Apply pagination
+      const paginatedResults = searchResults.slice(offset, offset + limit);
 
       return {
-        games: searchResults,
-        totalCount: count || 0,
-        hasMore: (offset + limit) < (count || 0)
+        games: paginatedResults,
+        totalCount: totalCount,
+        hasMore: offset + limit < totalCount
       }
     } catch (error) {
       console.error('Error in searchGames:', error)
@@ -1110,6 +923,64 @@ class GameSearchService {
     )
     return response.games
   }
+
+  /**
+   * Warm cache with popular searches
+   */
+  async warmCache(): Promise<void> {
+    await searchCacheService.warmCache(async (query) => {
+      const results = await executeIntelligentSearch(query);
+      return results || [];
+    });
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats() {
+    return searchCacheService.getCacheStats();
+  }
+
+  /**
+   * Get popular searches from local cache
+   */
+  getPopularSearches(limit: number = 10) {
+    return searchCacheService.getPopularSearches(limit);
+  }
+
+  /**
+   * Clear search cache
+   */
+  clearCache() {
+    searchCacheService.clearAllCache();
+  }
+
+  /**
+   * Get analytics performance metrics
+   */
+  async getPerformanceMetrics(timeRange: 'hour' | 'day' | 'week' = 'day') {
+    return await searchAnalyticsService.getSearchPerformanceMetrics(timeRange);
+  }
+
+  /**
+   * Get trending searches from analytics
+   */
+  async getTrendingSearches(limit: number = 10) {
+    return await searchAnalyticsService.getTrendingSearches(limit);
+  }
 }
 
 export const gameSearchService = new GameSearchService()
+
+// Warm cache on initialization (delayed to avoid blocking)
+if (typeof window !== 'undefined') {
+  // Clean expired cache on page load
+  searchCacheService.clearExpiredCache();
+
+  // Warm cache after delay
+  setTimeout(() => {
+    gameSearchService.warmCache().catch(error => {
+      console.error('Failed to warm cache:', error);
+    });
+  }, 5000); // 5 second delay
+}

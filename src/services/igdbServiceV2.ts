@@ -340,9 +340,10 @@ export class IGDBServiceV2 {
     const franchises = [
       'mario', 'zelda', 'pokemon', 'final fantasy', 'call of duty',
       'assassin', 'grand theft auto', 'mega man', 'sonic', 'halo',
-      'god of war', 'uncharted', 'last of us', 'resident evil'
+      'god of war', 'uncharted', 'last of us', 'resident evil',
+      'street fighter', 'mortal kombat', 'tekken'
     ];
-    
+
     return franchises.some(f => term.includes(f));
   }
   

@@ -118,57 +118,62 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           )}
         </div>
 
-        {/* Genres */}
-        <div>
-          <button
-            onClick={() => toggleSection('genres')}
-            className="flex items-center justify-between w-full text-left mb-2"
-          >
-            <h3 className="text-white font-medium">Genres</h3>
-            {expandedSections.genres ? (
-              <ChevronUp className="h-4 w-4 text-gray-400" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-gray-400" />
-            )}
-          </button>
-          
-          {expandedSections.genres && (
-            <div className="mt-2 max-h-60 overflow-y-auto pr-2 space-y-2">
-              {genreOptions.map(genre => (
-                <label
-                  key={genre.id}
-                  className="flex items-center gap-3 p-2 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
-                >
-                  <div className="relative flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      checked={filters.genres.includes(genre.id)}
-                      onChange={(e) => handleGenreChange(genre.id, e.target.checked)}
-                      className="sr-only"
-                      aria-label={`Genre: ${genre.label}`}
-                    />
-                    <div className={`
-                      w-5 h-5 rounded border transition-colors
-                      ${filters.genres.includes(genre.id) 
-                        ? 'bg-purple-600 border-purple-600' 
-                        : 'bg-gray-700 border-gray-600'}
-                    `}>
-                      {filters.genres.includes(genre.id) && (
-                        <Check className="h-4 w-4 text-white" />
-                      )}
-                    </div>
-                  </div>
-                  <span className="text-white">{genre.label}</span>
-                  {genre.count !== undefined && (
-                    <span className="text-gray-400 text-sm ml-auto">{genre.count}</span>
-                  )}
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Genres - Only show if genre options are provided */}
+        {genreOptions.length > 0 && (
+          <div>
+            <button
+              onClick={() => toggleSection('genres')}
+              className="flex items-center justify-between w-full text-left mb-2"
+            >
+              <h3 className="text-white font-medium">Genres</h3>
+              {expandedSections.genres ? (
+                <ChevronUp className="h-4 w-4 text-gray-400" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-gray-400" />
+              )}
+            </button>
 
-        {/* Platforms */}
+            {expandedSections.genres && (
+              <div className="mt-2 max-h-60 overflow-y-auto pr-2 space-y-2">
+                {genreOptions.map(genre => (
+                  <label
+                    key={genre.id}
+                    className="flex items-center gap-3 p-2 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
+                  >
+                    <div className="relative flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={filters.genres.includes(genre.id)}
+                        onChange={(e) => handleGenreChange(genre.id, e.target.checked)}
+                        className="sr-only"
+                        aria-label={`Genre: ${genre.label}`}
+                      />
+                      <div className={`
+                        w-5 h-5 rounded border transition-colors
+                        ${filters.genres.includes(genre.id)
+                          ? 'bg-purple-600 border-purple-600'
+                          : 'bg-gray-700 border-gray-600'}
+                      `}>
+                        {filters.genres.includes(genre.id) && (
+                          <Check className="h-4 w-4 text-white" />
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-white">{genre.label}</span>
+                    {genre.count !== undefined && (
+                      <span className="text-gray-400 text-sm ml-auto">{genre.count}</span>
+                    )}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Platforms - TEMPORARILY DISABLED */}
+        {/* Platform filters are temporarily disabled pending investigation of the filtering issue */}
+        {/* TODO: Re-enable once platform ID filtering is working correctly in production */}
+        {/*
         <div>
           <button
             onClick={() => toggleSection('platforms')}
@@ -181,7 +186,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               <ChevronDown className="h-4 w-4 text-gray-400" />
             )}
           </button>
-          
+
           {expandedSections.platforms && (
             <div className="mt-2 max-h-60 overflow-y-auto pr-2 space-y-2">
               {platformOptions.map(platform => (
@@ -199,8 +204,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                     />
                     <div className={`
                       w-5 h-5 rounded border transition-colors
-                      ${filters.platforms.includes(platform.id) 
-                        ? 'bg-purple-600 border-purple-600' 
+                      ${filters.platforms.includes(platform.id)
+                        ? 'bg-purple-600 border-purple-600'
                         : 'bg-gray-700 border-gray-600'}
                     `}>
                       {filters.platforms.includes(platform.id) && (
@@ -217,6 +222,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             </div>
           )}
         </div>
+        */}
 
         {/* Rating Range */}
         <div>
@@ -224,7 +230,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             onClick={() => toggleSection('rating')}
             className="flex items-center justify-between w-full text-left mb-2"
           >
-            <h3 className="text-white font-medium">Rating</h3>
+            <h3 className="text-white font-medium">Average User Rating</h3>
             {expandedSections.rating ? (
               <ChevronUp className="h-4 w-4 text-gray-400" />
             ) : (
@@ -245,7 +251,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                 trackClassName="h-2 bg-purple-600 rounded-full"
                 value={filters.ratingRange}
                 onChange={handleRatingChange}
-                min={0}
+                min={1}
                 max={10}
                 step={0.5}
                 pearling
@@ -289,8 +295,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                 trackClassName="h-2 bg-purple-600 rounded-full"
                 value={filters.releaseYearRange}
                 onChange={handleReleaseYearChange}
-                min={1990}
-                max={new Date().getFullYear()}
+                min={1977}
+                max={2026}
                 step={1}
                 pearling
                 minDistance={1}

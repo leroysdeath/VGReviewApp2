@@ -31,6 +31,7 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const EnhancedSearchTestPage = lazy(() => import('./pages/EnhancedSearchTestPage'));
 const DiagnosticPage = lazy(() => import('./pages/DiagnosticPage'));
+const SearchPerformanceDashboard = lazy(() => import('./components/SearchPerformanceDashboard').then(m => ({ default: m.SearchPerformanceDashboard })));
 
 // Navigation debugging component
 const NavigationDebugger: React.FC = () => {
@@ -112,8 +113,8 @@ const AppContent: React.FC = () => {
                         </Suspense>
                       } 
                     />
-                    <Route 
-                      path="/admin/diagnostic" 
+                    <Route
+                      path="/admin/diagnostic"
                       element={
                         <Suspense fallback={
                           <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -122,9 +123,21 @@ const AppContent: React.FC = () => {
                         }>
                           <DiagnosticPage />
                         </Suspense>
-                      } 
+                      }
                     />
-                    <Route 
+                    <Route
+                      path="/search-performance"
+                      element={
+                        <Suspense fallback={
+                          <div className="flex items-center justify-center h-64">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                          </div>
+                        }>
+                          <SearchPerformanceDashboard />
+                        </Suspense>
+                      }
+                    />
+                    <Route
                       path="/review/:gameId?" 
                       element={
                         <ProtectedRoute showModal={true}>
