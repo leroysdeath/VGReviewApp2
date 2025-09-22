@@ -45,7 +45,7 @@ interface SearchFilters {
   platforms?: string[];
   minRating?: number;
   releaseYear?: number;
-  sortBy: 'name' | 'release_date' | 'avg_rating' | 'rating_count';
+  sortBy: '' | 'name' | 'release_date' | 'avg_rating' | 'rating_count';
   sortOrder: 'asc' | 'desc';
 }
 
@@ -87,7 +87,7 @@ export const SearchResultsPage: React.FC = () => {
     platforms: [],
     minRating: undefined,
     releaseYear: undefined,
-    sortBy: 'name',
+    sortBy: '',
     sortOrder: 'asc'
   });
 
@@ -143,7 +143,7 @@ export const SearchResultsPage: React.FC = () => {
       ...prev,
       query,
       platforms: platformIds,
-      ratingRange: minRating ? [minRating ? parseFloat(minRating) : 0, 10] : [0, 10]
+      ratingRange: minRating ? [minRating ? parseFloat(minRating) : 1, 10] : [1, 10]
     }));
 
     setCurrentPage(page ? parseInt(page) : 1);
@@ -182,7 +182,7 @@ export const SearchResultsPage: React.FC = () => {
       const { data, error } = await supabase
         .from('platform')
         .select('id, name')
-        .or('id.gte.1,id.lte.33', 'id.gte.44,id.lte.55')
+        .or('id.gte.1,id.lte.33', 'id.gte.44,id.lte.55', 'id.eq.71')
         .order('name');
 
       if (error) throw error;
@@ -206,7 +206,8 @@ export const SearchResultsPage: React.FC = () => {
       await searchGames(filters.searchTerm, {
         platforms: filters.platforms,
         minRating: filters.minRating,
-        sortBy: filters.sortBy === 'name' ? 'name' :
+        sortBy: filters.sortBy === '' ? undefined :
+               filters.sortBy === 'name' ? 'name' :
                filters.sortBy === 'release_date' ? 'release_date' :
                filters.sortBy === 'avg_rating' ? 'rating' : 'popularity',
         sortOrder: filters.sortOrder
@@ -268,7 +269,10 @@ export const SearchResultsPage: React.FC = () => {
       };
 
       // Convert sort option
-      if (updated.sortBy === 'newest') {
+      if (updated.sortBy === '') {
+        searchFilters.sortBy = '';
+        searchFilters.sortOrder = 'asc';
+      } else if (updated.sortBy === 'newest') {
         searchFilters.sortBy = 'release_date';
         searchFilters.sortOrder = 'desc';
       } else if (updated.sortBy === 'oldest') {
@@ -337,7 +341,7 @@ export const SearchResultsPage: React.FC = () => {
       platforms: [],
       minRating: undefined,
       releaseYear: undefined,
-      sortBy: 'name',
+      sortBy: '',
       sortOrder: 'asc'
     };
 
@@ -439,7 +443,7 @@ export const SearchResultsPage: React.FC = () => {
           </div>
 
           {/* Active Filters Display */}
-          {activeFilterLabels.length > 0 && (
+          {activeFilterLabels.length > 0 && !showFilters && (
             <ActiveFilters
               filters={activeFilterLabels}
               onRemoveFilter={handleRemoveFilter}
@@ -448,96 +452,150 @@ export const SearchResultsPage: React.FC = () => {
             />
           )}
 
-          {/* Filters Panel */}
-          {showFilters && (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-              <div className="lg:col-span-1">
-                <FilterPanel
-                  filters={gameSearchFilters}
-                  onFiltersChange={handleFilterPanelChange}
-                  genreOptions={[]} // No genre filters
-                  platformOptions={platformOptions}
+          {/* Results Info - Only show when filters are hidden or on mobile */}
+          {(!showFilters || isMobile) && (
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 text-gray-400">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <p className="text-sm sm:text-base">
+                  Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredGames.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredGames.length)} of {filteredGames.length} games
+                </p>
+                {searchState.source && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className={`
+                      px-2 py-1 rounded-full text-xs font-medium
+                      ${searchState.source === 'database' ? 'bg-green-900/30 text-green-400' :
+                        searchState.source === 'igdb' ? 'bg-blue-900/30 text-blue-400' :
+                        'bg-purple-900/30 text-purple-400'}
+                    `}>
+                      {searchState.source === 'database' ? 'Database' :
+                       searchState.source === 'igdb' ? 'IGDB API' :
+                       'Mixed Sources'}
+                    </div>
+                    {searchState.source === 'igdb' && (
+                      <span className="text-gray-500 text-xs">
+                        High-quality game data
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  if (filters.searchTerm?.trim()) {
+                    performSearch();
+                  }
+                }}
+                className="flex items-center gap-2 hover:text-white transition-colors"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Refresh
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Main Content Area - Filters and Results */}
+        <div className={showFilters && !isMobile ? "grid grid-cols-1 lg:grid-cols-4 gap-6" : ""}>
+          {/* Filter Panel - Desktop Sidebar */}
+          {showFilters && !isMobile && (
+            <div className="lg:col-span-1">
+              <FilterPanel
+                filters={gameSearchFilters}
+                onFiltersChange={handleFilterPanelChange}
+                genreOptions={[]} // No genre filters
+                platformOptions={platformOptions}
+              />
+              <div className="mt-4">
+                <ActiveFilters
+                  filters={activeFilterLabels}
+                  onRemoveFilter={handleRemoveFilter}
+                  onClearAll={handleClearAllFilters}
                 />
               </div>
-              <div className="lg:col-span-3">
-                {/* Results will be shown here */}
-                <div className="text-gray-400 text-sm mb-4">
-                  <p>Filters auto-apply after 1.5 seconds of inactivity</p>
-                </div>
+              <div className="text-gray-400 text-xs mt-4">
+                <p>Filters auto-apply after 1.5s</p>
               </div>
             </div>
           )}
 
-          {/* Results Info */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 text-gray-400">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <p className="text-sm sm:text-base">
-                Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredGames.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredGames.length)} of {filteredGames.length} games
-              </p>
-              {searchState.source && (
-                <div className="flex items-center gap-2 text-xs">
-                  <div className={`
-                    px-2 py-1 rounded-full text-xs font-medium
-                    ${searchState.source === 'database' ? 'bg-green-900/30 text-green-400' :
-                      searchState.source === 'igdb' ? 'bg-blue-900/30 text-blue-400' :
-                      'bg-purple-900/30 text-purple-400'}
-                  `}>
-                    {searchState.source === 'database' ? 'Database' :
-                     searchState.source === 'igdb' ? 'IGDB API' :
-                     'Mixed Sources'}
-                  </div>
-                  {searchState.source === 'igdb' && (
-                    <span className="text-gray-500 text-xs">
-                      High-quality game data
-                    </span>
-                  )}
+          {/* Filter Panel - Mobile Dropdown */}
+          {showFilters && isMobile && (
+            <div className="mb-6">
+              <FilterPanel
+                filters={gameSearchFilters}
+                onFiltersChange={handleFilterPanelChange}
+                genreOptions={[]} // No genre filters
+                platformOptions={platformOptions}
+              />
+              <div className="mt-4">
+                <ActiveFilters
+                  filters={activeFilterLabels}
+                  onRemoveFilter={handleRemoveFilter}
+                  onClearAll={handleClearAllFilters}
+                />
+              </div>
+              <div className="text-gray-400 text-xs mt-4">
+                <p>Filters auto-apply after 1.5 seconds</p>
+              </div>
+            </div>
+          )}
+
+          {/* Results Container - Adjusts width based on filter visibility */}
+          <div className={showFilters && !isMobile ? "lg:col-span-3" : ""}>
+            {/* Results Info for desktop with filters */}
+            {showFilters && !isMobile && (
+              <div className="flex justify-between items-center mb-4 text-gray-400">
+                <p className="text-sm">
+                  Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredGames.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredGames.length)} of {filteredGames.length} games
+                </p>
+                <button
+                  onClick={() => {
+                    if (filters.searchTerm?.trim()) {
+                      performSearch();
+                    }
+                  }}
+                  className="flex items-center gap-2 hover:text-white transition-colors"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
+                </button>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {searchState.loading && searchStarted && (
+              <div className="flex justify-center items-center gap-3 mb-6 p-4 bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700">
+                <Loader className="h-5 w-5 animate-spin text-purple-500" />
+                <span className="text-gray-300">Searching for "{filters.searchTerm}"...</span>
+              </div>
+            )}
+
+            {/* Initial Loading State - show when no results yet */}
+            {searchState.loading && searchStarted && filteredGames.length === 0 && (
+              <div className="flex justify-center items-center py-20">
+                <Loader className="h-8 w-8 animate-spin text-purple-500" />
+              </div>
+            )}
+
+            {/* Error State */}
+            {searchState.error && (
+              <div className="bg-red-900/20 border border-red-700 rounded-lg p-4 mb-8">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-500" />
+                  <p className="text-red-300">{searchState.error}</p>
                 </div>
-              )}
-            </div>
-            <button
-              onClick={() => {
-                if (filters.searchTerm?.trim()) {
-                  performSearch();
-                }
-              }}
-              className="flex items-center gap-2 hover:text-white transition-colors"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </button>
-          </div>
-        </div>
+              </div>
+            )}
 
-        {/* Loading State */}
-        {searchState.loading && searchStarted && (
-          <div className="flex justify-center items-center gap-3 mb-6 p-4 bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700">
-            <Loader className="h-5 w-5 animate-spin text-purple-500" />
-            <span className="text-gray-300">Searching for "{filters.searchTerm}"...</span>
-          </div>
-        )}
-
-        {/* Initial Loading State - show when no results yet */}
-        {searchState.loading && searchStarted && filteredGames.length === 0 && (
-          <div className="flex justify-center items-center py-20">
-            <Loader className="h-8 w-8 animate-spin text-purple-500" />
-          </div>
-        )}
-
-        {/* Error State */}
-        {searchState.error && (
-          <div className="bg-red-900/20 border border-red-700 rounded-lg p-4 mb-8">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-              <p className="text-red-300">{searchState.error}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Games Results */}
-        {!searchState.error && filteredGames.length > 0 && (
-          <div className="transition-opacity duration-300 ease-in-out">
-            {viewMode === 'grid' ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
+            {/* Games Results */}
+            {!searchState.error && filteredGames.length > 0 && (
+              <div className="transition-opacity duration-300 ease-in-out">
+                {viewMode === 'grid' ? (
+                  <div className={`grid gap-2 sm:gap-3 md:gap-4 ${
+                    showFilters && !isMobile
+                      ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+                      : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+                  }`}>
                 {filteredGames.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(game => (
                   <div
                     key={game.id}
@@ -585,11 +643,8 @@ export const SearchResultsPage: React.FC = () => {
                           )}
                           {game.release_date && game.platforms && game.platforms.length > 0 && <span>•</span>}
                           {game.platforms && game.platforms.length > 0 && (
-                            <span>
-                              {(() => {
-                                const mappedPlatforms = mapPlatformNames(game.platforms);
-                                return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
-                              })()}
+                            <span className="truncate inline-block max-w-[300px] md:max-w-[400px] lg:max-w-[500px]">
+                              {mapPlatformNames(game.platforms).join(', ')}
                             </span>
                           )}
                         </div>
@@ -602,84 +657,112 @@ export const SearchResultsPage: React.FC = () => {
                     </div>
                   </div>
                 ))}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredGames.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(game => (
-                  <div
-                    key={game.id}
-                    onClick={() => handleGameClick(game)}
-                    className="bg-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-750 transition-colors flex gap-4"
-                  >
-                    <SmartImage
-                      src={getCoverUrl(game)}
-                      alt={game.name}
-                      className="w-24 h-32 object-cover rounded-lg"
-                      optimization={{ width: 200, height: 300, quality: 85 }}
-                      fallback="/placeholder-game.jpg"
-                      lazy={true}
-                      lazyStrategy="both"
-                      showLoadingSpinner={false}
-                      showLoadingSkeleton={true}
-                    />
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-xl">{game.name}</h3>
-                            {shouldShowCategoryLabel(game.category) && (
-                              (() => {
-                                const label = getCategoryLabel(game.category);
-                                const styles = getCategoryStyles(game.category);
-                                return label && styles ? (
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles.text} ${styles.bg} border border-current/30`}>
-                                    {label}
-                                  </span>
-                                ) : null;
-                              })()
-                            )}
-                          </div>
-                          <p className="text-gray-400 text-sm mb-2 line-clamp-2">
-                            {game.summary || game.description || 'No description available'}
-                          </p>
-                          <div className="flex items-center gap-2 text-sm text-gray-400">
-                            {game.release_date && (
-                              <span>{new Date(game.release_date).getFullYear()}</span>
-                            )}
-                            {game.release_date && game.platforms && game.platforms.length > 0 && <span>•</span>}
-                            {game.platforms && game.platforms.length > 0 && (
-                              <span>
-                                {(() => {
-                                  const mappedPlatforms = mapPlatformNames(game.platforms);
-                                  return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
-                                })()}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          {game.avg_user_rating && (
-                            <div className="flex items-center gap-1 mb-1">
-                              <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                              <span className="text-lg font-bold">{game.avg_user_rating.toFixed(1)}</span>
-                            </div>
-                          )}
-                          {game.user_rating_count > 0 && (
-                            <p className="text-sm text-gray-400">
-                              {game.user_rating_count} reviews
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
                   </div>
-                ))}
-              </div>
-            )}
+                ) : (
+                  <div className="space-y-4">
+                    {filteredGames.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(game => {
+                      // Determine if we're in narrow mode (beside filters)
+                      const isNarrowMode = showFilters && !isMobile;
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-8">
+                      return (
+                        <div
+                          key={game.id}
+                          onClick={() => handleGameClick(game)}
+                          className="bg-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-750 transition-colors flex gap-4"
+                        >
+                          {/* Cover Image - Slightly smaller in narrow mode */}
+                          <SmartImage
+                            src={getCoverUrl(game)}
+                            alt={game.name}
+                            className={isNarrowMode ? "w-20 h-28 object-cover rounded-lg" : "w-24 h-32 object-cover rounded-lg"}
+                            optimization={{ width: 200, height: 300, quality: 85 }}
+                            fallback="/placeholder-game.jpg"
+                            lazy={true}
+                            lazyStrategy="both"
+                            showLoadingSpinner={false}
+                            showLoadingSkeleton={true}
+                          />
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                {/* Title and Category - Always show */}
+                                <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                  <h3 className={`font-semibold ${isNarrowMode ? 'text-lg' : 'text-xl'}`}>
+                                    {game.name}
+                                  </h3>
+                                  {shouldShowCategoryLabel(game.category) && (
+                                    (() => {
+                                      const label = getCategoryLabel(game.category);
+                                      const styles = getCategoryStyles(game.category);
+                                      return label && styles ? (
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles.text} ${styles.bg} border border-current/30`}>
+                                          {label}
+                                        </span>
+                                      ) : null;
+                                    })()
+                                  )}
+                                </div>
+
+                                {/* Description - Responsive: 1 line in narrow, 2 lines in wide */}
+                                {!isNarrowMode && (
+                                  <p className="text-gray-400 text-sm mb-2 line-clamp-2">
+                                    {game.summary || game.description || 'No description available'}
+                                  </p>
+                                )}
+                                {isNarrowMode && (game.summary || game.description) && (
+                                  <p className="text-gray-400 text-sm mb-2 line-clamp-1">
+                                    {game.summary || game.description}
+                                  </p>
+                                )}
+
+                                {/* Metadata - Always show but more compact in narrow */}
+                                <div className="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
+                                  {game.release_date && (
+                                    <span>{new Date(game.release_date).getFullYear()}</span>
+                                  )}
+                                  {game.release_date && game.platforms && game.platforms.length > 0 && <span>•</span>}
+                                  {game.platforms && game.platforms.length > 0 && (
+                                    <span className="truncate inline-block max-w-full">
+                                      {mapPlatformNames(game.platforms).join(', ')}
+                                    </span>
+                                  )}
+                                  {/* Developer in wide mode only */}
+                                  {!isNarrowMode && game.developer && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{game.developer}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Rating - More compact in narrow mode */}
+                              <div className={`text-right ${isNarrowMode ? 'ml-2' : 'ml-4'}`}>
+                                {game.avg_user_rating && (
+                                  <div className="flex items-center gap-1 mb-1">
+                                    <Star className={`text-yellow-400 fill-current ${isNarrowMode ? 'h-4 w-4' : 'h-5 w-5'}`} />
+                                    <span className={`font-bold ${isNarrowMode ? 'text-base' : 'text-lg'}`}>
+                                      {game.avg_user_rating.toFixed(1)}
+                                    </span>
+                                  </div>
+                                )}
+                                {game.user_rating_count > 0 && (
+                                  <p className={`text-gray-400 ${isNarrowMode ? 'text-xs' : 'text-sm'}`}>
+                                    {game.user_rating_count} {isNarrowMode ? '' : 'reviews'}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-8">
                 {/* Mobile: Show current page info */}
                 <div className="sm:hidden text-sm text-gray-400">
                   Page {currentPage} of {totalPages}
@@ -757,14 +840,14 @@ export const SearchResultsPage: React.FC = () => {
                     )}
                   </div>
                 )}
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {/* No Results */}
-        {!searchState.loading && !searchState.error && filteredGames.length === 0 && searchStarted && (
-          <div className="text-center py-20">
+            {/* No Results */}
+            {!searchState.loading && !searchState.error && filteredGames.length === 0 && searchStarted && (
+              <div className="text-center py-20">
             {searchState.games.length > 0 ? (
               <>
                 <p className="text-gray-400 text-lg mb-2">Search results were filtered for content protection</p>
@@ -775,14 +858,16 @@ export const SearchResultsPage: React.FC = () => {
             ) : (
               <p className="text-gray-400 text-lg mb-4">No games found matching your criteria</p>
             )}
-            <button
-              onClick={handleClearAllFilters}
-              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-            >
-              Clear Filters
-            </button>
+                <button
+                  onClick={handleClearAllFilters}
+                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

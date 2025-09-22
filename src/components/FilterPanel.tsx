@@ -226,7 +226,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             onClick={() => toggleSection('rating')}
             className="flex items-center justify-between w-full text-left mb-2"
           >
-            <h3 className="text-white font-medium">Rating</h3>
+            <h3 className="text-white font-medium">Average User Rating</h3>
             {expandedSections.rating ? (
               <ChevronUp className="h-4 w-4 text-gray-400" />
             ) : (
@@ -247,7 +247,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                 trackClassName="h-2 bg-purple-600 rounded-full"
                 value={filters.ratingRange}
                 onChange={handleRatingChange}
-                min={0}
+                min={1}
                 max={10}
                 step={0.5}
                 pearling
@@ -291,7 +291,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                 trackClassName="h-2 bg-purple-600 rounded-full"
                 value={filters.releaseYearRange}
                 onChange={handleReleaseYearChange}
-                min={1990}
+                min={1977}
                 max={new Date().getFullYear()}
                 step={1}
                 pearling

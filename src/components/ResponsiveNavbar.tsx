@@ -605,11 +605,8 @@ export const ResponsiveNavbar: React.FC = () => {
                                     {game.platforms && game.platforms.length > 0 && (
                                       <>
                                         {game.release_date && <span>•</span>}
-                                        <span className="truncate">
-                                          {(() => {
-                                            const mappedPlatforms = mapPlatformNames(game.platforms);
-                                            return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
-                                          })()}
+                                        <span className="truncate max-w-[150px] sm:max-w-[200px]">
+                                          {mapPlatformNames(game.platforms).join(', ')}
                                         </span>
                                       </>
                                     )}
@@ -818,11 +815,8 @@ export const ResponsiveNavbar: React.FC = () => {
                                       {game.platforms && game.platforms.length > 0 && (
                                         <>
                                           {game.release_date && <span>•</span>}
-                                          <span className="truncate">
-                                            {(() => {
-                                              const mappedPlatforms = mapPlatformNames(game.platforms);
-                                              return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
-                                            })()}
+                                          <span className="truncate max-w-[150px] sm:max-w-[200px]">
+                                            {mapPlatformNames(game.platforms).join(', ')}
                                           </span>
                                         </>
                                       )}
@@ -1112,11 +1106,8 @@ export const ResponsiveNavbar: React.FC = () => {
                                 {game.platforms && game.platforms.length > 0 && (
                                   <>
                                     {game.release_date && <span>•</span>}
-                                    <span className="truncate">
-                                      {(() => {
-                                        const mappedPlatforms = mapPlatformNames(game.platforms);
-                                        return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
-                                      })()}
+                                    <span className="truncate max-w-[150px] sm:max-w-[200px]">
+                                      {mapPlatformNames(game.platforms).join(', ')}
                                     </span>
                                   </>
                                 )}

@@ -8,7 +8,7 @@ export interface GameSearchFilters {
   sortBy: SortOption;
 }
 
-export type SortOption = 'newest' | 'oldest' | 'highest_rated' | 'lowest_rated' | 'most_reviewed';
+export type SortOption = '' | 'newest' | 'oldest' | 'highest_rated' | 'lowest_rated' | 'most_reviewed';
 
 export interface SearchSuggestion {
   id: string;
@@ -47,6 +47,7 @@ export interface GenreOption extends FilterOption {}
 export interface PlatformOption extends FilterOption {}
 
 export const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: '', label: '' },
   { value: 'newest', label: 'Newest First' },
   { value: 'oldest', label: 'Oldest First' },
   { value: 'highest_rated', label: 'Highest Rated' },
@@ -59,9 +60,9 @@ export const DEFAULT_FILTERS: GameSearchFilters = {
   query: '',
   genres: [],
   platforms: [],
-  ratingRange: [0, 10],
-  releaseYearRange: [1990, new Date().getFullYear()],
-  sortBy: 'newest'
+  ratingRange: [1, 10],
+  releaseYearRange: [1977, new Date().getFullYear()],
+  sortBy: ''
 };
 
 // Mock data for development
