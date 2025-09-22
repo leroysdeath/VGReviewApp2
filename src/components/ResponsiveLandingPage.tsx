@@ -88,7 +88,7 @@ const CascadingCheckboxes: React.FC<{ isHovered: boolean; size?: 'small' | 'larg
   const offsetY = spacing / 2;
   
   const positions = [
-    { x: offsetX, y: offsetY, delay: 0 },      // 1: Center bottom (original)
+    { x: offsetX, y: 0, delay: 0 },      // 1: Center (original position)
     { x: offsetX + spacing, y: offsetY, delay: 200 },  // 2: Right bottom
     { x: offsetX + spacing, y: offsetY - spacing, delay: 400 },  // 3: Right top
     { x: offsetX, y: offsetY - spacing, delay: 600 }, // 4: Center top
@@ -98,11 +98,11 @@ const CascadingCheckboxes: React.FC<{ isHovered: boolean; size?: 'small' | 'larg
   
   return (
     <div className={`relative ${containerSize} mx-auto ${marginBottom} flex items-center justify-center`}>
-      {/* Empty checkbox when not hovered - positioned to match checkbox #1's position */}
+      {/* Empty checkbox when not hovered - positioned at vertical center */}
       <div
         className={`absolute transition-all duration-300 ${!isHovered ? 'opacity-100' : 'opacity-0'}`}
         style={{
-          transform: `translate(${offsetX}px, ${offsetY}px)`
+          transform: `translate(${offsetX}px, 0px)`
         }}
       >
         <Square className={`${iconSize} text-green-400`} />
