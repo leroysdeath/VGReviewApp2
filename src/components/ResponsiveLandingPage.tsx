@@ -11,7 +11,7 @@ import { useLikeStore } from '../store/useLikeStore';
 // Custom component for the spinning number animation
 const SpinningNumber: React.FC<{ isHovered: boolean }> = ({ isHovered }) => {
   return (
-    <div className="relative w-12 h-12 mx-auto mb-4 overflow-hidden" style={{ perspective: '1000px' }}>
+    <div className="relative w-12 h-16 mx-auto mb-4 flex items-center justify-center overflow-hidden" style={{ perspective: '1000px' }}>
       <div 
         className={`absolute inset-0 flex items-center justify-center transition-all duration-500 backface-hidden`}
         style={{ 
@@ -37,7 +37,7 @@ const SpinningNumber: React.FC<{ isHovered: boolean }> = ({ isHovered }) => {
 // Custom component for the splitting user icon animation
 const SplittingUsers: React.FC<{ isHovered: boolean; size?: 'small' | 'large' }> = ({ isHovered, size = 'large' }) => {
   const iconSize = size === 'small' ? 'h-10 w-10' : 'h-12 w-12';
-  const containerHeight = size === 'small' ? 'h-10' : 'h-12';
+  const containerHeight = size === 'small' ? 'h-10' : 'h-16';
   const marginBottom = size === 'small' ? 'mb-3' : 'mb-4';
   
   return (
@@ -573,7 +573,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                   <SplittingUsers isHovered={hoveredCard === 'social'} />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-blue-300">Social Discovery</h3>
-                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
+                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
                   Follow gamers to get updates on their activity. See the games they've reviewed, added to their Wishlist, Backlog, and more.
                 </p>
 
@@ -606,7 +606,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                   <CascadingCheckboxes isHovered={hoveredCard === 'stats'} />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-green-300">Track Your Games</h3>
-                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
+                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
                   For games you've Started, Finished, and Want to Play.
                 </p>
 
@@ -639,7 +639,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                   <SpinningNumber isHovered={hoveredCard === 'ratings'} />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-purple-300">Review Games</h3>
-                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
+                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
                   The more games you review, the more you help other players find games they'll enjoy, and avoid games they won't. That's the power of community.
                 </p>
 
