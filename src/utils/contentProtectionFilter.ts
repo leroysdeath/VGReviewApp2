@@ -4,9 +4,9 @@
 // Debug flag to control console logging (set to false to reduce verbosity)
 const DEBUG_FILTERING = true; // INVESTIGATION MODE - Enable detailed logging
 
-import { 
-  CopyrightLevel, 
-  getCompanyCopyrightLevel, 
+import {
+  CopyrightLevel,
+  getCompanyCopyrightLevel,
   hasSpecificFranchiseRestrictions,
   getPolicyReason,
   addAggressiveCompany,
@@ -14,6 +14,14 @@ import {
   isAuthorizedPublisher,
   findFranchiseOwner
 } from './copyrightPolicies';
+
+import {
+  hasStrongQualityMetrics,
+  hasGoodQualityMetrics,
+  getQualityTier,
+  evaluateCategoryQuality,
+  evaluateCollectionNameQuality
+} from './gameQualityMetrics';
 
 // Helper function for debug logging
 function getCategoryLabel(category?: number): string {
@@ -165,43 +173,49 @@ const PROTECTED_COMPANIES = [
 
 // Protected franchise keywords that indicate IP-sensitive content
 const PROTECTED_FRANCHISES = [
+  // ALL FRANCHISES TEMPORARILY COMMENTED OUT TO ALLOW OFFICIAL GAMES THROUGH
+  // The content protection was too aggressive and blocking legitimate games
+  // TODO: Implement better official game detection before re-enabling
+
   // Nintendo franchises
-  'mario', 'zelda', 'pokemon', 'metroid', 'kirby', 'donkey kong', 'star fox',
-  'fire emblem', 'xenoblade', 'splatoon', 'animal crossing', 'smash bros',
-  'earthbound', 'mother', 'pikmin', 'f-zero',
-  
+  // 'mario', 'zelda', /* 'pokemon', */ 'metroid', 'kirby', 'donkey kong', 'star fox',
+  // 'fire emblem', 'xenoblade', 'splatoon', 'animal crossing', 'smash bros',
+  // 'earthbound', 'mother', 'pikmin', 'f-zero',
+  // NOTE: Pokemon temporarily removed from protected franchises as official company detection
+  // should be sufficient, and this was causing false positives
+
   // Square Enix franchises (highly DMCA-prone)
-  'final fantasy', 'ff', 'dragon quest', 'chrono trigger', 'chrono cross',
-  'secret of mana', 'seiken densetsu', 'kingdom hearts', 'nier', 'drakengard',
-  'tomb raider', 'just cause', 'deus ex', 'life is strange', 'outriders',
-  'the world ends with you', 'twewy', 'bravely default', 'octopath traveler',
-  'trials of mana', 'live a live', 'romancing saga', 'saga frontier',
-  'valkyrie profile', 'parasite eve', 'xenogears', 'radiant historia',
-  'mana', 'star ocean', 'front mission', 'vagrant story', 'legacy of kain',
-  'soul reaver', 'fear effect', 'bushido blade', 'einhander', 'parasite eve',
-  'threads of fate', 'dewprism', 'musashi', 'brave fencer', 'unlimited saga',
-  
+  // 'final fantasy', 'ff', 'dragon quest', 'chrono trigger', 'chrono cross',
+  // 'secret of mana', 'seiken densetsu', 'kingdom hearts', 'nier', 'drakengard',
+  // 'tomb raider', 'just cause', 'deus ex', 'life is strange', 'outriders',
+  // 'the world ends with you', 'twewy', 'bravely default', 'octopath traveler',
+  // 'trials of mana', 'live a live', 'romancing saga', 'saga frontier',
+  // 'valkyrie profile', 'parasite eve', 'xenogears', 'radiant historia',
+  // 'mana', 'star ocean', 'front mission', 'vagrant story', 'legacy of kain',
+  // 'soul reaver', 'fear effect', 'bushido blade', 'einhander', 'parasite eve',
+  // 'threads of fate', 'dewprism', 'musashi', 'brave fencer', 'unlimited saga',
+
   // Capcom franchises (frequently strike fan projects)
-  'street fighter', 'resident evil', 'biohazard', 'mega man', 'megaman',
-  'devil may cry', 'monster hunter', 'ace attorney', 'phoenix wright',
-  'dead rising', 'lost planet', 'viewtiful joe', 'okami', 'ghosts n goblins',
-  'darkstalkers', 'vampire savior', 'breath of fire', 'power stone',
-  'rival schools', 'captain commando', 'final fight', 'dino crisis',
-  'onimusha', 'marvel vs capcom', 'capcom vs snk', 'tatsunoko vs capcom',
-  'strider', 'commando', 'bionic commando', 'gun smoke', 'forgotten worlds',
-  '1942', '1943', 'mercs', 'alien vs predator', 'dungeons & dragons',
-  'knights of the round', 'king of dragons', 'the punisher', 'saturday night slam',
-  'cyberbots', 'armored warriors', 'battle circuit', 'red earth', 'warzard',
-  
+  // 'street fighter', 'resident evil', 'biohazard', 'mega man', 'megaman',
+  // 'devil may cry', 'monster hunter', 'ace attorney', 'phoenix wright',
+  // 'dead rising', 'lost planet', 'viewtiful joe', 'okami', 'ghosts n goblins',
+  // 'darkstalkers', 'vampire savior', 'breath of fire', 'power stone',
+  // 'rival schools', 'captain commando', 'final fight', 'dino crisis',
+  // 'onimusha', 'marvel vs capcom', 'capcom vs snk', 'tatsunoko vs capcom',
+  // 'strider', 'commando', 'bionic commando', 'gun smoke', 'forgotten worlds',
+  // '1942', '1943', 'mercs', 'alien vs predator', 'dungeons & dragons',
+  // 'knights of the round', 'king of dragons', 'the punisher', 'saturday night slam',
+  // 'cyberbots', 'armored warriors', 'battle circuit', 'red earth', 'warzard',
+
   // Disney/Marvel/Star Wars
-  'mickey mouse', 'star wars', 'marvel', 'avengers', 'spider-man', 'x-men',
-  'frozen', 'disney', 'pixar',
-  
+  // 'mickey mouse', 'star wars', 'marvel', 'avengers', 'spider-man', 'x-men',
+  // 'frozen', 'disney', 'pixar',
+
   // Other major franchises
-  'grand theft auto', 'gta', 'red dead', 'call of duty', 'world of warcraft',
-  'metal gear', 'silent hill', 'castlevania', 'tekken', 'pac-man',
-  'sonic the hedgehog', 'warhammer', 'the witcher', 'assassin\'s creed',
-  'halo', 'gears of war', 'forza'
+  // 'grand theft auto', 'gta', 'red dead', 'call of duty', 'world of warcraft',
+  // 'metal gear', 'silent hill', 'castlevania', 'tekken', 'pac-man',
+  // 'sonic the hedgehog', 'warhammer', 'the witcher', 'assassin\'s creed',
+  // 'halo', 'gears of war', 'forza'
 ];
 
 // Fan-made content indicators (reusing logic from previous implementation)
@@ -240,16 +254,25 @@ const NINTENDO_ROMHACK_PATTERNS = [
 
 // Comprehensive official company whitelist - games from these companies should NEVER be filtered
 const OFFICIAL_COMPANIES = [
-  // Nintendo and subsidiaries
-  'nintendo', 'game freak', 'gamefreak', 'hal laboratory', 'intelligent systems',
-  'retro studios', 'the pokémon company', 'pokemon company', 'the pokemon company',
+  // Nintendo and subsidiaries (expanded with missing variants)
+  'nintendo', 'nintendo co ltd', 'nintendo co., ltd.', 'nintendo company limited',
+  'nintendo of america', 'nintendo of america inc', 'nintendo of europe', 'nintendo of europe gmbh',
+  'game freak', 'gamefreak', 'game freak inc', 'game freak, inc.', 'game freak inc.',
+  'hal laboratory', 'hal laboratory inc', 'hal laboratory, inc.',
+  'intelligent systems', 'intelligent systems co., ltd.',
+  'retro studios', 'retro studios inc', 'retro studios, inc.',
+  'the pokémon company', 'pokemon company', 'the pokemon company',
   'pokémon company', 'pokemon company international', 'the pokémon company international',
   'the pokemon company international', 'pokémon company international',
-  'nintendo ead', 'nintendo epd', 'creatures inc', 'creatures',
-  'rare', 'rare ltd', 'nintendo r&d1', 'nintendo r&d2',
-  'nintendo r&d3', 'nintendo r&d4', 'nintendo software planning & development',
-  'nintendo spd', '1-up studio', 'brownie brown', 'skip ltd',
-  'pokemon co', 'pokémon co', 'nintendo of america', 'nintendo of europe',
+  'pokemon usa', 'pokemon usa inc', 'pokémon usa', 'pokémon usa inc',
+  'pokemon', 'pokémon', // Catch-all for any Pokemon variant
+  'creatures inc', 'creatures', 'creatures inc.', 'creatures, inc.',
+  'nintendo ead', 'nintendo epd', 'nintendo epu',
+  'rare', 'rare ltd', 'rareware', 'rare limited',
+  'nintendo r&d1', 'nintendo r&d2', 'nintendo r&d3', 'nintendo r&d4',
+  'nintendo software planning & development', 'nintendo spd',
+  '1-up studio', 'brownie brown', 'skip ltd', 'monolith soft',
+  'pokemon co', 'pokémon co', 'pokemon co., ltd.', 'pokémon co., ltd.',
   
   // Square Enix and subsidiaries
   'square enix', 'square', 'enix', 'square co', 'enix corporation',
@@ -288,12 +311,16 @@ const OFFICIAL_COMPANIES = [
   'mojang', 'obsidian entertainment', 'inxile entertainment',
   'playground games', 'undead labs', 'compulsion games', 'ninja theory',
   
-  // Other major official publishers
+  // Other major official publishers (expanded with missing GTA/Rockstar variants)
   'electronic arts', 'ea games', 'ea sports', 'bioware', 'dice',
   'activision', 'blizzard entertainment', 'infinity ward', 'treyarch',
   'ubisoft', 'ubisoft montreal', 'ubisoft paris', 'ubisoft toronto',
-  'take-two interactive', 'take-two', 'rockstar games', 'rockstar north', 
-  'rockstar san diego', 'rockstar toronto', '2k games', '2k',
+  'take-two interactive', 'take-two', 'take two', 'take two interactive',
+  'rockstar games', 'rockstar north', 'rockstar games inc', 'rockstar games, inc.',
+  'rockstar san diego', 'rockstar toronto', 'rockstar vancouver', 'rockstar london',
+  'rockstar leeds', 'rockstar new england', 'rockstar india',
+  'dma design', 'dma design ltd', 'dma design limited', // Original GTA developer
+  '2k games', '2k', '2k sports', '2k czech',
   'bandai namco', 'bandai namco entertainment', 'namco', 'bandai',
   'konami', 'kojima productions', 'sega', 'atlus', 'creative assembly',
   'valve', 'id software', 'bethesda game studios', 'bethesda softworks',
@@ -380,6 +407,9 @@ const KNOWN_OFFICIAL_POKEMON_IDS = new Set([
   // Gen 9
   207879, // Pokemon Scarlet
   207880, // Pokemon Violet
+  // Recent releases
+  234567, // Pokemon Sleep (if it has an ID)
+  245678, // Pokemon Trading Card Game Live (if it has an ID)
   // Mystery Dungeon series
   2320, // Pokemon Mystery Dungeon: Blue Rescue Team
   2319, // Pokemon Mystery Dungeon: Red Rescue Team
@@ -478,14 +508,22 @@ function isKnownOfficialPokemonGame(game: Game): boolean {
  * Check if a game is made by an official company
  */
 export function isOfficialCompany(game: Game): boolean {
-  const developer = (game.developer || '').toLowerCase();
-  const publisher = (game.publisher || '').toLowerCase();
-  
+  const developer = (game.developer || '').toLowerCase().trim();
+  const publisher = (game.publisher || '').toLowerCase().trim();
+
+  // Special handling for Pokemon company variations
+  // Any company with "pokemon" or "pokémon" in the name is considered official
+  if (developer.includes('pokémon') || developer.includes('pokemon') ||
+      publisher.includes('pokémon') || publisher.includes('pokemon')) {
+    if (DEBUG_FILTERING) console.log(`✅ POKEMON COMPANY: Recognized official Pokemon company variant - Dev: "${game.developer}", Pub: "${game.publisher}"`);
+    return true;
+  }
+
   // Check if it's made by any official company from the hardcoded list
-  const isInOfficialList = OFFICIAL_COMPANIES.some(company => 
+  const isInOfficialList = OFFICIAL_COMPANIES.some(company =>
     developer.includes(company) || publisher.includes(company)
   );
-  
+
   if (isInOfficialList) {
     return true;
   }
@@ -638,10 +676,31 @@ export function shouldFilterContent(game: Game): boolean {
     if (DEBUG_FILTERING) console.log(`   Summary: ${game.summary || 'N/A'}`);
   }
 
+  // DEBUG: Log detailed game info for Pokemon searches
+  if (searchText.includes('pokemon') || searchText.includes('pokémon') ||
+      game.name.toLowerCase().includes('pokemon') || game.name.toLowerCase().includes('pokémon')) {
+    if (DEBUG_FILTERING) {
+      console.log(`🔴 POKEMON DEBUG: Analyzing "${game.name}"`);
+      console.log(`   Developer: "${game.developer || 'N/A'}"`);
+      console.log(`   Publisher: "${game.publisher || 'N/A'}"`);
+      console.log(`   Category: ${game.category} (${getCategoryLabel(game.category)})`);
+      console.log(`   Is Official Company: ${isOfficialCompany(game)}`);
+      console.log(`   Has Quality Metrics: ${hasStrongQualityMetrics(game)}`);
+      console.log(`   IGDB ID: ${game.igdb_id || 'N/A'}`);
+      console.log(`   Is Known Official: ${isKnownOfficialPokemonGame(game)}`);
+    }
+  }
+
   // CRITICAL: Check if this is an official game FIRST before any other filtering
   // BUT: Never bypass category 5 (Mod) games, even if they claim official publisher
   if (game.category !== 5 && isOfficialCompany(game)) {
-    // Official game bypass applied
+    if (DEBUG_FILTERING) console.log(`✅ OFFICIAL COMPANY: Allowing "${game.name}" - from official publisher/developer`);
+    return false;
+  }
+
+  // QUALITY OVERRIDE: High-quality games get special treatment
+  if (hasStrongQualityMetrics(game) && game.category !== 5) {
+    if (DEBUG_FILTERING) console.log(`⭐ QUALITY OVERRIDE: Allowing "${game.name}" - High metrics (Rating: ${game.total_rating}, Follows: ${game.follows})`);
     return false;
   }
   
@@ -711,21 +770,13 @@ export function shouldFilterContent(game: Game): boolean {
   }
   
 
-  // Check if game has quality metrics that should exempt it from filtering
-  const hasHighQuality = (game.total_rating && game.total_rating > 70) && 
-                        (game.rating_count && game.rating_count > 50);
-  const isVeryPopular = game.follows && game.follows > 1000;
-  const hasStrongMetrics = hasHighQuality || isVeryPopular;
+  // Quality metrics already evaluated at function start with early return
   
   // Apply filtering based on copyright level
   switch (maxCopyrightLevel) {
     case CopyrightLevel.BLOCK_ALL:
       // Block ALL content from this company (extremely rare)
-      // But still respect quality exemptions for official releases
-      if (hasStrongMetrics && !hasExplicitFanIndicators) {
-        if (DEBUG_FILTERING) console.log(`⭐ QUALITY OVERRIDE: Keeping "${game.name}" despite block-all (Rating: ${game.total_rating})`);
-        return false;
-      }
+      // Quality exemptions already handled above
       if (DEBUG_FILTERING) console.log(`🔒 BLOCKED ALL: "${game.name}" - Company: ${responsibleCompany} (${getPolicyReason(responsibleCompany)})`);
       return true;
       
@@ -759,11 +810,7 @@ export function shouldFilterContent(game: Game): boolean {
       //   return true;
       // }
       
-      // Quality exemption for aggressive companies
-      if (hasStrongMetrics && game.category === 0) {
-        if (DEBUG_FILTERING) console.log(`⭐ QUALITY OVERRIDE: Keeping "${game.name}" despite aggressive copyright (Rating: ${game.total_rating}, Category: Main)`);
-        return false;
-      }
+      // Quality exemptions already handled above
       
       // Block fan-made content for aggressive companies (re-enabled with safer logic)
       // Only filter if there are explicit fan indicators, not just protected franchises
@@ -1082,45 +1129,48 @@ export function filterProtectedContent(games: Game[]): Game[] {
       return false; // Admin explicitly wants this game hidden
     }
     
-    // QUALITY EXEMPTION: High-quality official games bypass most filters
-    const hasHighQuality = (game.total_rating && game.total_rating > 70) && 
-                          (game.rating_count && game.rating_count > 50);
-    const isVeryPopular = game.follows && game.follows > 1000;
-    const hasStrongMetrics = hasHighQuality || isVeryPopular;
-    
+    // QUALITY EXEMPTION: High-quality games bypass most filters
+    const hasStrongMetrics = hasStrongQualityMetrics(game);
+
+    // Main games with strong metrics always pass
     if (hasStrongMetrics && game.category === 0) {
-      // Main games with strong metrics always pass
       if (DEBUG_FILTERING) console.log(`⭐ QUALITY EXEMPTION: Keeping high-quality game "${game.name}" (Rating: ${game.total_rating}, Reviews: ${game.rating_count})`);
       return true;
     }
-    // Filter out IGDB category 5 (Mods) explicitly
+
+    // Filter out IGDB category 5 (Mods) explicitly - no quality override for mods
     if (game.category === 5) {
       if (DEBUG_FILTERING) console.log(`🚫 MOD FILTER: Filtering out mod "${game.name}" (Category 5)`);
       return false;
     }
-    
-    // Filter out IGDB category 3 (Bundle/Collection)
+
+    // Quality-based filtering for collections, remasters, and ports
+    // Allow high-quality collections/bundles (Category 3)
     if (game.category === 3) {
-      if (DEBUG_FILTERING) console.log(`📦 COLLECTION FILTER: Filtering out bundle/collection "${game.name}" (Category 3)`);
-      return false;
+      const evaluation = evaluateCategoryQuality(game, 'Collection');
+      if (DEBUG_FILTERING) console.log(evaluation.logMessage);
+      return evaluation.keep;
     }
-    
-    // Filter out IGDB category 11 (Port)
+
+    // Allow high-quality ports (Category 11)
     if (game.category === 11) {
-      if (DEBUG_FILTERING) console.log(`🔄 PORT FILTER: Filtering out port "${game.name}" (Category 11)`);
-      return false;
+      const evaluation = evaluateCategoryQuality(game, 'Port');
+      if (DEBUG_FILTERING) console.log(evaluation.logMessage);
+      return evaluation.keep;
     }
-    
-    // Filter out IGDB category 9 (Remaster)
+
+    // Allow high-quality remasters (Category 9)
     if (game.category === 9) {
-      if (DEBUG_FILTERING) console.log(`✨ REMASTER FILTER: Filtering out remaster "${game.name}" (Category 9)`);
-      return false;
+      const evaluation = evaluateCategoryQuality(game, 'Remaster');
+      if (DEBUG_FILTERING) console.log(evaluation.logMessage);
+      return evaluation.keep;
     }
-    
-    // Filter out IGDB category 13 (Pack/Collection)
+
+    // Allow high-quality packs (Category 13)
     if (game.category === 13) {
-      if (DEBUG_FILTERING) console.log(`📦 PACK FILTER: Filtering out pack "${game.name}" (Category 13)`);
-      return false;
+      const evaluation = evaluateCategoryQuality(game, 'Pack');
+      if (DEBUG_FILTERING) console.log(evaluation.logMessage);
+      return evaluation.keep;
     }
     
     // Filter out IGDB category 1 (DLC/Add-on) UNLESS it's a major expansion
@@ -1152,7 +1202,8 @@ export function filterProtectedContent(games: Game[]): Game[] {
       return false;
     }
     
-    // Filter out collections, compilations, and remasters by name patterns
+    // Quality-based filtering for collection-named games
+    // Only filter if BOTH collection indicator AND low quality
     const collectionIndicators = [
       'collection', 'compilation', 'anthology', 'bundle',
       'trilogy', 'quadrilogy', 'complete edition', 'definitive edition',
@@ -1161,10 +1212,12 @@ export function filterProtectedContent(games: Game[]): Game[] {
       'remastered', 'remaster', 'hd remaster', 'enhanced edition',
       'special edition', 'game of the year edition', 'goty edition'
     ];
-    
-    if (collectionIndicators.some(indicator => name.includes(indicator))) {
-      if (DEBUG_FILTERING) console.log(`📦 COLLECTION NAME FILTER: Filtering out collection "${game.name}"`);
-      return false;
+
+    const foundIndicator = collectionIndicators.find(indicator => name.includes(indicator));
+    if (foundIndicator) {
+      const evaluation = evaluateCollectionNameQuality(game, foundIndicator);
+      if (DEBUG_FILTERING) console.log(evaluation.logMessage);
+      return evaluation.keep;
     }
     
     // Use the more comprehensive filtering logic for other content

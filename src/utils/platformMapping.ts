@@ -40,6 +40,27 @@ export const PLATFORM_MAP: Record<string, string> = {
   'Android': 'Android',
   'iOS': 'iOS',
   'Web browser': 'Browser',
+
+  // Japanese platform mappings
+  '64DD': 'N64',
+  'Satellaview': 'SNES',
+  'Super Famicom': 'SNES',
+
+  // Sega platforms
+  'Sega Mega Drive/Genesis': 'Genesis',
+  'Sega Master System/Mark III': 'Master System',
+  'Sega Game Gear': 'Game Gear',
+  'Sega Saturn': 'Saturn',
+  'Sega CD': 'Sega CD',
+  'Sega 32X': '32X',
+  'SG-1000': 'SG-1000',
+
+  // Other platform variants
+  'TurboGrafx-16/PC Engine': 'TurboGrafx-16',
+  'Turbografx-16/PC Engine CD': 'PC Engine CD',
+  'Odyssey 2 / Videopac G7000': 'Odyssey 2',
+  'Commodore C64/128/MAX': 'C64',
+  'Mega Duck/Cougar Boy': 'Mega Duck',
 };
 
 /**

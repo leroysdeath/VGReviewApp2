@@ -9,6 +9,14 @@ import { SearchMode } from '../constants/search';
 // Import search debugger for frontend testing
 import '../utils/searchDebugger';
 
+// Import SearchFilters interface
+interface SearchFilters {
+  genres?: string[];
+  platforms?: string[];
+  minRating?: number;
+  releaseYear?: number;
+}
+
 interface GameSearchProps {
   onGameSelect?: (game: GameWithCalculatedFields) => void;
   placeholder?: string;
@@ -19,6 +27,8 @@ interface GameSearchProps {
   showHealthCheck?: boolean;
   showExploreButton?: boolean;
   initialQuery?: string;
+  filters?: SearchFilters;
+  onFiltersApplying?: boolean;
 }
 
 interface SearchState {
@@ -38,7 +48,9 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   className = '',
   showHealthCheck = false,
   showExploreButton = true,
-  initialQuery = ''
+  initialQuery = '',
+  filters,
+  onFiltersApplying = false
 }) => {
   const [searchState, setSearchState] = useState<SearchState>({
     query: initialQuery,
@@ -99,7 +111,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
   }, [searchState.results]);
   
   // Search function with request cancellation to prevent race conditions
-  const performSearch = useCallback(async (searchTerm: string) => {
+  const performSearch = useCallback(async (searchTerm: string, searchFilters?: SearchFilters) => {
     // Cancel any existing request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -131,13 +143,18 @@ export const GameSearch: React.FC<GameSearchProps> = ({
     const searchId = searchMetricsService.startSearch(searchTerm);
 
     try {
-      console.log('🔍 Performing search for:', searchTerm);
+      console.log('🔍 Performing search for:', searchTerm, 'with filters:', searchFilters);
       if (DEBUG_MODE) {
-        console.log('🐛 [DEBUG] Search context:', { searchTerm, maxResults, timestamp: new Date().toISOString() });
+        console.log('🐛 [DEBUG] Search context:', { searchTerm, maxResults, filters: searchFilters, timestamp: new Date().toISOString() });
         console.log('🐛 [DEBUG] Current URL:', window.location.href);
       }
-      
-      const games = await gameDataService.searchGames(searchTerm);
+
+      // Import GameDataServiceV2 for filter support
+      const { GameDataServiceV2 } = await import('../services/gameDataServiceV2');
+      const service = new GameDataServiceV2();
+
+      // Use the V2 service with filters
+      const games = await service.searchGames(searchTerm, searchFilters, maxResults);
       
       // Check if this request was cancelled
       if (abortController.signal.aborted) {
@@ -238,7 +255,13 @@ export const GameSearch: React.FC<GameSearchProps> = ({
 
         try {
           console.log('🔍 Performing initial search for:', initialQuery);
-          const games = await gameDataService.searchGames(initialQuery);
+
+          // Import gameDataServiceV2 for filter support
+          const { gameDataServiceV2 } = await import('../services/gameDataServiceV2');
+          const service = new gameDataServiceV2();
+
+          // Use the V2 service with filters
+          const games = await service.searchGames(initialQuery, filters, maxResults);
           
           setSearchState(prev => ({
             ...prev,
@@ -277,7 +300,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
 
       searchInitialQuery();
     }
-  }, [initialQuery, maxResults, generateSuggestions]); // Safe dependencies without performSearch
+  }, [initialQuery, maxResults, generateSuggestions, filters]); // Safe dependencies without performSearch
 
   // Handle input change with debouncing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -300,7 +323,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
     // Set new timer for debounced search (increased to 4000ms to prevent rapid searches)
     debounceTimerRef.current = setTimeout(() => {
       setShowSuggestions(true);
-      performSearch(newQuery);
+      performSearch(newQuery, filters);
     }, 4000);
   };
 
@@ -318,7 +341,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         ...prev,
         query: suggestion.title
       }));
-      performSearch(suggestion.title);
+      performSearch(suggestion.title, filters);
     }
     setShowSuggestions(false);
   };

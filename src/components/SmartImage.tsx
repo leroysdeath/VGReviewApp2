@@ -164,6 +164,8 @@ export const SmartImage: React.FC<SmartImageProps> = ({
           onLoad={handleLoad}
           onError={handleError}
           loading={lazy && !priority ? 'lazy' : 'eager'}
+          decoding="async"
+          fetchpriority={priority ? 'high' : 'low'}
           className={`w-full h-full object-cover transition-opacity duration-300 ${
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}

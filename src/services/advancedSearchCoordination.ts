@@ -14,9 +14,17 @@
 const DEBUG_SEARCH_COORDINATION = false;
 
 import { GameDataServiceV2 } from './gameDataServiceV2';
+import { igdbService } from './igdbService';
 import { sortGamesIntelligently, detectSearchIntent, SearchIntent } from '../utils/intelligentPrioritization';
 import { filterProtectedContent, filterFanGamesAndEReaderContent } from '../utils/contentProtectionFilter';
 import { normalizeAccents, expandWithAccentVariations, createSearchVariants } from '../utils/accentNormalization';
+import { expandWithRomanNumerals } from '../utils/romanNumeralConverter';
+
+// Import error handling services
+import { igdbCircuitBreaker } from './igdbCircuitBreaker';
+import { igdbFailureCache } from './igdbFailureCache';
+import { igdbHealthMonitor } from './igdbHealthMonitor';
+import { igdbTelemetry } from './igdbTelemetry';
 
 export interface SearchContext {
   originalQuery: string;
@@ -204,17 +212,27 @@ export class AdvancedSearchCoordination {
    * Build comprehensive search context
    */
   private buildSearchContext(query: string, options: any): SearchContext {
-    const intent = detectSearchIntent(query);
-    const expandedQueries = this.expandQuery(query, intent);
-    
+    // Normalize Pokemon searches to match mobile keyboard auto-correction
+    let normalizedQuery = query;
+    if (query.toLowerCase().includes('pokemon')) {
+      normalizedQuery = query.replace(/pokemon/gi, 'Pokémon');
+      console.log('🔴 SEARCH CONTEXT POKEMON NORMALIZATION:', {
+        original: query,
+        normalized: normalizedQuery
+      });
+    }
+
+    const intent = detectSearchIntent(normalizedQuery);
+    const expandedQueries = this.expandQuery(normalizedQuery, intent);
+
     return {
-      originalQuery: query,
+      originalQuery: normalizedQuery,
       expandedQueries,
       searchIntent: intent,
-      qualityThreshold: this.calculateQualityThreshold(intent, query),
+      qualityThreshold: this.calculateQualityThreshold(intent, normalizedQuery),
       maxResults: options.maxResults || this.getDefaultMaxResults(intent),
       useAggressive: options.useAggressive || false,
-      cacheKey: this.buildCacheKey(query, intent, options)
+      cacheKey: this.buildCacheKey(normalizedQuery, intent, options)
     };
   }
 
@@ -224,12 +242,25 @@ export class AdvancedSearchCoordination {
   private expandQuery(query: string, intent: SearchIntent): string[] {
     const baseQuery = query.toLowerCase().trim();
     const expansions: string[] = [baseQuery];
-    
+
     // STEP 1: Add accent-normalized variations FIRST
     const accentVariations = expandWithAccentVariations(query);
     expansions.push(...accentVariations);
-    
-    // Debug: Accent expansions for query
+
+    // STEP 2: Add Roman numeral variations (e.g., "2" ↔ "II")
+    const romanVariations = expandWithRomanNumerals(query);
+    expansions.push(...romanVariations);
+
+    // Also expand accent variations with Roman numerals
+    accentVariations.forEach(variant => {
+      const romanVariantsOfAccent = expandWithRomanNumerals(variant);
+      expansions.push(...romanVariantsOfAccent);
+    });
+
+    // Debug: Accent and Roman expansions for query
+    if (DEBUG_SEARCH_COORDINATION && romanVariations.length > 0) {
+      console.log(`🔢 Roman numeral expansions for "${query}":`, romanVariations);
+    }
 
     // Common abbreviations and alternative names
     const expansionRules: Record<string, string[]> = {
@@ -297,7 +328,7 @@ export class AdvancedSearchCoordination {
       'splatoon': ['splatoon 3', 'splatoon 2']
     };
 
-    // STEP 2: Apply expansion rules with accent-aware matching
+    // STEP 3: Apply expansion rules with accent-aware matching
     const normalizedQuery = normalizeAccents(baseQuery);
     for (const [abbrev, alternatives] of Object.entries(expansionRules)) {
       const normalizedAbbrev = normalizeAccents(abbrev);
@@ -317,7 +348,7 @@ export class AdvancedSearchCoordination {
       }
     }
 
-    // STEP 3: Intent-specific expansions (accent-aware)
+    // STEP 4: Intent-specific expansions (accent-aware)
     if (intent === SearchIntent.FRANCHISE_BROWSE) {
       // Add common franchise terms using normalized matching
       if (normalizedQuery.includes('mario') && !normalizedQuery.includes('super')) {
@@ -340,53 +371,55 @@ export class AdvancedSearchCoordination {
 
   /**
    * Calculate dynamic quality threshold based on search context
+   * PRIORITY-BASED: Much lower thresholds to include more games
    */
   private calculateQualityThreshold(intent: SearchIntent, query: string): number {
     const baseQuery = query.toLowerCase();
-    
-    // Higher thresholds for specific searches (want exact matches)
+
+    // PRIORITY-BASED: Lower thresholds - we'll rank, not filter
     if (intent === SearchIntent.SPECIFIC_GAME) {
-      return 0.8;
+      return 0.3; // Lowered from 0.8 - show all matches, ranked by quality
     }
-    
-    // Medium thresholds for franchise browsing (balance quality and coverage)
+
+    // PRIORITY-BASED: Include all franchise games
     if (intent === SearchIntent.FRANCHISE_BROWSE) {
-      // Popular franchises can be more selective
+      // Popular franchises should show ALL their games
       const popularFranchises = ['mario', 'zelda', 'pokemon', 'final fantasy', 'call of duty'];
       if (popularFranchises.some(franchise => baseQuery.includes(franchise))) {
-        return 0.6;
+        return 0.1; // Lowered from 0.6 - show ALL Pokemon games
       }
-      return 0.4;
+      return 0.2; // Lowered from 0.4
     }
-    
-    // Lower thresholds for discovery (want more results)
+
+    // Lower thresholds for discovery
     if (intent === SearchIntent.GENRE_DISCOVERY || intent === SearchIntent.YEAR_SEARCH) {
-      return 0.3;
+      return 0.2; // Lowered from 0.3
     }
-    
-    // Default moderate threshold
-    return 0.5;
+
+    // Default lower threshold
+    return 0.3; // Lowered from 0.5
   }
 
   /**
    * Get appropriate max results based on search intent
+   * PRIORITY-BASED: Significantly increased limits to show all relevant games
    */
   private getDefaultMaxResults(intent: SearchIntent): number {
     switch (intent) {
       case SearchIntent.SPECIFIC_GAME:
-        return 20; // Focused results for specific searches
+        return 50; // Increased from 20 - show more variations
       case SearchIntent.FRANCHISE_BROWSE:
-        return 40; // Reasonable franchise coverage with better relevance
+        return 200; // Increased from 40 - show ALL franchise games (e.g., 166 Pokemon)
       case SearchIntent.GENRE_DISCOVERY:
-        return 50; // More focused discovery results
+        return 100; // Increased from 50 - more discovery
       case SearchIntent.YEAR_SEARCH:
-        return 40; // Recent games exploration
+        return 100; // Increased from 40 - comprehensive year view
       case SearchIntent.DEVELOPER_SEARCH:
-        return 40; // Developer portfolio browsing
+        return 150; // Increased from 40 - full developer catalog
       case SearchIntent.PLATFORM_SEARCH:
-        return 40; // Platform library browsing
+        return 150; // Increased from 40 - full platform library
       default:
-        return 40; // Default to focused, relevant results
+        return 100; // Increased from 40 - comprehensive results
     }
   }
 
@@ -395,31 +428,37 @@ export class AdvancedSearchCoordination {
    */
   private prioritizeQueries(expandedQueries: string[], originalQuery: string): string[] {
     const originalLower = originalQuery.toLowerCase().trim();
-    
+
     return expandedQueries.sort((a, b) => {
       const aLower = a.toLowerCase();
       const bLower = b.toLowerCase();
-      
+
       // Priority 1: Exact match to original query
       if (aLower === originalLower && bLower !== originalLower) return -1;
       if (bLower === originalLower && aLower !== originalLower) return 1;
-      
-      // Priority 2: Simple accent variations (pokemon vs pokémon)
+
+      // Priority 2: Roman numeral variations (CRITICAL for game searches)
+      const aIsRomanVariant = this.isRomanNumeralVariant(aLower, originalLower);
+      const bIsRomanVariant = this.isRomanNumeralVariant(bLower, originalLower);
+      if (aIsRomanVariant && !bIsRomanVariant) return -1;
+      if (bIsRomanVariant && !aIsRomanVariant) return 1;
+
+      // Priority 3: Simple accent variations (pokemon vs pokémon)
       const aIsSimpleVariant = this.isSimpleAccentVariant(aLower, originalLower);
       const bIsSimpleVariant = this.isSimpleAccentVariant(bLower, originalLower);
       if (aIsSimpleVariant && !bIsSimpleVariant) return -1;
       if (bIsSimpleVariant && !aIsSimpleVariant) return 1;
-      
-      // Priority 3: Shorter queries (more general)
+
+      // Priority 4: Shorter queries (more general)
       const lengthDiff = a.length - b.length;
       if (Math.abs(lengthDiff) > 5) return lengthDiff;
-      
-      // Priority 4: Contains original query as substring
+
+      // Priority 5: Contains original query as substring
       const aContains = aLower.includes(originalLower);
       const bContains = bLower.includes(originalLower);
       if (aContains && !bContains) return -1;
       if (bContains && !aContains) return 1;
-      
+
       // Default: alphabetical
       return a.localeCompare(b);
     });
@@ -430,143 +469,532 @@ export class AdvancedSearchCoordination {
    */
   private isSimpleAccentVariant(query: string, original: string): boolean {
     if (query === original) return true;
-    
+
     // Check if normalizing both makes them equal
     const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const normalizedOriginal = original.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    
+
     return normalizedQuery === normalizedOriginal;
   }
 
   /**
-   * Execute coordinated search with smart query prioritization and batching
+   * Check if a query is a Roman numeral variant of the original
+   * e.g., "street fighter ii" is a variant of "street fighter 2"
+   */
+  private isRomanNumeralVariant(query: string, original: string): boolean {
+    // Check if one has a number and the other has Roman numerals
+    const numberPattern = /\b(\d{1,2})\b/g;
+    const romanPattern = /\b([IVXLivxl]{1,})\b/g;
+
+    const originalNumbers = original.match(numberPattern) || [];
+    const queryNumbers = query.match(numberPattern) || [];
+    const originalRomans = original.match(romanPattern) || [];
+    const queryRomans = query.match(romanPattern) || [];
+
+    // If original has numbers and query has Roman numerals (or vice versa)
+    if ((originalNumbers.length > 0 && queryRomans.length > 0) ||
+        (originalRomans.length > 0 && queryNumbers.length > 0)) {
+
+      // Remove numbers and Roman numerals from both and check if base is the same
+      const baseOriginal = original.replace(numberPattern, '').replace(romanPattern, '').trim();
+      const baseQuery = query.replace(numberPattern, '').replace(romanPattern, '').trim();
+
+      // If the base text is the same, it's likely a Roman numeral variant
+      return baseOriginal === baseQuery ||
+             baseOriginal.replace(/\s+/g, '') === baseQuery.replace(/\s+/g, '');
+    }
+
+    return false;
+  }
+
+  /**
+   * Execute coordinated search with smart query prioritization and IGDB fallback
    */
   private async executeCoordinatedSearch(context: SearchContext): Promise<SearchResult[]> {
     const allResults: SearchResult[] = [];
     const seenIds = new Set<number>();
 
-    // SMART QUERY EXECUTION: Prioritize and limit queries to prevent rate limiting
+    // SMART QUERY EXECUTION: Prioritize and limit queries for performance
     const prioritizedQueries = this.prioritizeQueries(context.expandedQueries, context.originalQuery);
-    const maxQueries = Math.min(prioritizedQueries.length, 5); // Limit to 5 queries max
-    const selectedQueries = prioritizedQueries.slice(0, maxQueries);
+
+    // OPTIMIZED: Reduce to 3-5 most relevant variations to improve speed
+    // Priority: 1) Original query, 2) Roman numeral variant if applicable, 3) Accent variant if applicable
+    let maxQueries = 3; // Default to 3 queries
+
+    // Check if query has numbers that could be Roman numerals
+    const hasNumbers = /\b\d+\b/.test(context.originalQuery);
+    const hasRomanNumerals = /\b[IVXLivxl]+\b/.test(context.originalQuery);
+
+    if (hasNumbers || hasRomanNumerals) {
+      maxQueries = 5; // Allow up to 5 if Roman numeral conversion is needed
+    }
+
+    const selectedQueries = prioritizedQueries.slice(0, Math.min(prioritizedQueries.length, maxQueries));
 
     if (DEBUG_SEARCH_COORDINATION) console.log(`🔍 Smart execution: Using ${selectedQueries.length} prioritized queries from ${context.expandedQueries.length} expansions:`, selectedQueries);
 
-    // CRITICAL FIX: Execute queries sequentially to prevent 406 errors
-    // Sequential execution prevents database overload while maintaining search quality
+    // First, search local database
     for (let i = 0; i < selectedQueries.length; i++) {
       const expandedQuery = selectedQueries[i];
-      
+
       try {
-        if (DEBUG_SEARCH_COORDINATION) console.log(`🔍 Sequential query ${i + 1}/${selectedQueries.length}: "${expandedQuery}"`);
-        
-        const queryResults = await this.gameDataService.searchGames(expandedQuery);
-        
+        if (DEBUG_SEARCH_COORDINATION) console.log(`🔍 Local query ${i + 1}/${selectedQueries.length}: "${expandedQuery}"`);
+
+        const queryResults = await this.gameDataService.searchGames(expandedQuery, undefined, context.maxResults);
+
         // Convert to SearchResult format and add source tracking
         const convertedResults: SearchResult[] = queryResults.map(game => ({
           ...game,
-          source: 'hybrid' as const,
+          source: 'database' as const,
           relevanceScore: this.calculateRelevanceScore(game.name, context.originalQuery),
           qualityScore: this.calculateQualityScore(game)
         }));
 
-        // Filter out games with very low relevance scores to prevent unrelated results
-        const relevantResults = convertedResults.filter(game => 
-          (game.relevanceScore || 0) >= 0.4 // Increased threshold to filter unrelated games
+        // PRIORITY-BASED: Much lower relevance filter - let ranking handle order
+        const relevantResults = convertedResults.filter(game =>
+          (game.relevanceScore || 0) >= 0.1 // Lowered from 0.4 - include all remotely relevant
         );
 
         // Add results from this query
+        let newResultsAdded = 0;
         for (const result of relevantResults) {
           if (!seenIds.has(result.id)) {
             seenIds.add(result.id);
             allResults.push(result);
+            newResultsAdded++;
           }
         }
 
-        // Early termination only for non-franchise searches or when we have abundant results
+        // OPTIMIZED: Smart early termination conditions
+        // Skip remaining queries if we have enough high-quality results
+        const hasEnoughResults = allResults.length >= 50;
+        const lowNewResultRate = newResultsAdded < 5 && i > 0; // Less than 5 new results after first query
         const isFranchiseSearch = context.intent === 'franchise_browse';
-        const terminationThreshold = isFranchiseSearch ? 80 : 40;
-        
-        if (allResults.length >= terminationThreshold) {
-          if (DEBUG_SEARCH_COORDINATION) console.log(`✂️ Early termination: Found ${allResults.length} results after ${i + 1} queries`);
-          break;
+
+        // For franchise searches, continue until we have lots of results
+        // For specific searches, stop early if we have good results
+        if (isFranchiseSearch) {
+          if (allResults.length >= 200 || (allResults.length >= 100 && lowNewResultRate)) {
+            if (DEBUG_SEARCH_COORDINATION) console.log(`✂️ Early termination: Found ${allResults.length} franchise results after ${i + 1} queries`);
+            break;
+          }
+        } else {
+          if (hasEnoughResults || (allResults.length >= 20 && lowNewResultRate)) {
+            if (DEBUG_SEARCH_COORDINATION) console.log(`✂️ Early termination: Found ${allResults.length} results with diminishing returns after ${i + 1} queries`);
+            break;
+          }
         }
-        
+
       } catch (error) {
-        console.error(`❌ Sequential query failed for "${expandedQuery}":`, error);
+        console.error(`❌ Local query failed for "${expandedQuery}":`, error);
         // Continue with next query instead of failing completely
         continue;
       }
     }
 
-    // Smart query execution completed
+    // Enhanced IGDB fallback with error handling
+    // Only attempt IGDB if we have very few results AND all services are healthy
+    const IGDB_THRESHOLD = 1; // Reduced from 10 - only use IGDB if we have NO results
+    const shouldAttemptIGDB = allResults.length < IGDB_THRESHOLD;
+
+    if (shouldAttemptIGDB) {
+      console.log(`🔍 Minimal local results (${allResults.length}), checking if IGDB fallback is available...`);
+
+      // Check all conditions before attempting IGDB
+      const canUseIGDB =
+        igdbHealthMonitor.isServiceHealthy() &&
+        igdbCircuitBreaker.canMakeRequest() &&
+        !igdbFailureCache.shouldSkipQuery(context.originalQuery) &&
+        !igdbTelemetry.shouldDisableIGDB();
+
+      if (!canUseIGDB) {
+        console.log('⚠️ IGDB fallback disabled due to:');
+        if (!igdbHealthMonitor.isServiceHealthy()) console.log('  - Service unhealthy');
+        if (!igdbCircuitBreaker.canMakeRequest()) console.log('  - Circuit breaker open');
+        if (igdbFailureCache.shouldSkipQuery(context.originalQuery)) console.log('  - Query recently failed');
+        if (igdbTelemetry.shouldDisableIGDB()) console.log('  - High failure rate detected');
+        console.log('📊 Using database results only');
+      } else {
+        // Attempt IGDB search with timeout and error handling
+        const startTime = Date.now();
+
+        try {
+          // Create a race between IGDB search and timeout
+          const IGDB_TIMEOUT = 2000; // 2 seconds max for search
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('IGDB search timeout')), IGDB_TIMEOUT);
+          });
+
+          const igdbPromise = igdbService.searchGames(context.originalQuery, 20);
+
+          console.log(`🔄 Attempting IGDB search with ${IGDB_TIMEOUT}ms timeout...`);
+
+          const igdbResults = await Promise.race([igdbPromise, timeoutPromise]);
+          const duration = Date.now() - startTime;
+
+          // Convert IGDB results to SearchResult format
+          const convertedIgdbResults: SearchResult[] = igdbResults.map(game => ({
+            id: game.id,
+            name: game.name,
+            summary: game.summary,
+            developer: game.involved_companies?.find(c => c.developer)?.company?.name,
+            publisher: game.involved_companies?.find(c => c.publisher)?.company?.name,
+            category: game.category,
+            genres: game.genres?.map(g => g.name) || [],
+            platforms: game.platforms?.map(p => p.name) || [],
+            release_date: game.first_release_date ? new Date(game.first_release_date * 1000).toISOString() : undefined,
+            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') : undefined,
+            igdb_rating: game.rating,
+            igdb_id: game.id,
+            source: 'igdb' as const,
+            relevanceScore: this.calculateRelevanceScore(game.name, context.originalQuery),
+            qualityScore: this.calculateQualityScore({
+              name: game.name,
+              igdb_rating: game.rating
+            } as any)
+          }));
+
+          // Add IGDB results that aren't duplicates
+          let addedCount = 0;
+          for (const result of convertedIgdbResults) {
+            // Check by IGDB ID to avoid duplicates
+            const isDuplicate = allResults.some(r => r.igdb_id === result.igdb_id);
+            if (!isDuplicate) {
+              allResults.push(result);
+              addedCount++;
+            }
+          }
+
+          // Record success
+          igdbCircuitBreaker.recordSuccess();
+          igdbHealthMonitor.recordOperationalSuccess();
+          igdbFailureCache.markAsSuccessful(context.originalQuery);
+          igdbTelemetry.recordCall({
+            query: context.originalQuery,
+            success: true,
+            duration,
+            timestamp: Date.now(),
+            resultCount: convertedIgdbResults.length
+          });
+
+          console.log(`✅ IGDB search succeeded in ${duration}ms - Added ${addedCount} results, total: ${allResults.length}`);
+
+        } catch (error) {
+          const duration = Date.now() - startTime;
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+          // Record failure in all services
+          igdbCircuitBreaker.recordFailure(error as Error);
+          igdbHealthMonitor.recordOperationalFailure(error as Error);
+          igdbFailureCache.markAsFailed(context.originalQuery, error as Error);
+          igdbTelemetry.recordCall({
+            query: context.originalQuery,
+            success: false,
+            duration,
+            timestamp: Date.now(),
+            error: errorMessage
+          });
+
+          console.error(`❌ IGDB search failed after ${duration}ms: ${errorMessage}`);
+          console.log('📊 Continuing with database results only');
+        }
+      }
+    } else if (allResults.length >= IGDB_THRESHOLD) {
+      console.log(`✅ Sufficient database results (${allResults.length}), skipping IGDB fallback`);
+    }
 
     // Apply advanced filtering and sorting
     return this.processSearchResults(allResults, context);
   }
 
   /**
-   * Process search results with advanced filtering and sorting
+   * Process search results with PRIORITY-BASED ranking instead of aggressive filtering
    */
   private processSearchResults(results: SearchResult[], context: SearchContext): SearchResult[] {
     // Processing raw results
 
-    // Apply content protection filtering (collections, ports, etc.)
-    const contentFilteredResults = filterProtectedContent(results.map(r => ({
-      id: r.id,
-      name: r.name,
-      developer: r.developer,
-      publisher: r.publisher,
-      category: r.category,
-      genres: r.genres,
-      summary: r.summary,
-      // IMPORTANT: Preserve greenlight/redlight flags for filtering logic
-      greenlight_flag: (r as any).greenlight_flag,
-      redlight_flag: (r as any).redlight_flag,
-      flag_reason: (r as any).flag_reason
-    }))).map(filteredGame => {
-      return results.find(r => r.id === filteredGame.id)!;
-    }).filter(Boolean);
+    // PRIORITY-BASED: Conditionally apply filters based on search intent
+    let processedResults = results;
 
-    // Apply fan game and e-reader filtering
-    const fanGameFilteredResults = filterFanGamesAndEReaderContent(contentFilteredResults.map(r => ({
-      id: r.id,
-      name: r.name,
-      developer: r.developer,
-      publisher: r.publisher,
-      category: r.category,
-      genres: r.genres,
-      summary: r.summary,
-      // IMPORTANT: Preserve greenlight/redlight flags for filtering logic
-      greenlight_flag: (r as any).greenlight_flag,
-      redlight_flag: (r as any).redlight_flag,
-      flag_reason: (r as any).flag_reason
-    }))).map(filteredGame => {
-      return contentFilteredResults.find(r => r.id === filteredGame.id)!;
-    }).filter(Boolean);
+    // For popular franchises, skip aggressive content filtering
+    const popularFranchises = ['mario', 'zelda', 'pokemon', 'final fantasy', 'call of duty', 'sonic', 'mega man'];
+    const isPopularFranchise = popularFranchises.some(franchise =>
+      context.originalQuery.toLowerCase().includes(franchise)
+    );
 
-    // Content filtering applied
+    if (!isPopularFranchise && context.searchIntent !== SearchIntent.FRANCHISE_BROWSE) {
+      // Only apply content filtering for non-franchise searches
+      processedResults = filterProtectedContent(processedResults.map(r => ({
+        id: r.id,
+        name: r.name,
+        developer: r.developer,
+        publisher: r.publisher,
+        category: r.category,
+        genres: r.genres,
+        summary: r.summary,
+        greenlight_flag: (r as any).greenlight_flag,
+        redlight_flag: (r as any).redlight_flag,
+        flag_reason: (r as any).flag_reason
+      }))).map(filteredGame => {
+        return results.find(r => r.id === filteredGame.id)!;
+      }).filter(Boolean);
 
-    // Apply quality threshold filtering
-    const qualityFilteredResults = fanGameFilteredResults.filter(result => {
+      // Only apply fan game filtering for non-franchise searches
+      processedResults = filterFanGamesAndEReaderContent(processedResults.map(r => ({
+        id: r.id,
+        name: r.name,
+        developer: r.developer,
+        publisher: r.publisher,
+        category: r.category,
+        genres: r.genres,
+        summary: r.summary,
+        greenlight_flag: (r as any).greenlight_flag,
+        redlight_flag: (r as any).redlight_flag,
+        flag_reason: (r as any).flag_reason
+      }))).map(filteredGame => {
+        return processedResults.find(r => r.id === filteredGame.id)!;
+      }).filter(Boolean);
+    }
+
+    // PRIORITY-BASED: Calculate composite scores for ranking
+    const scoredResults = processedResults.map(result => ({
+      ...result,
+      compositeScore: this.calculateCompositeScore(result, context)
+    }));
+
+    // PRIORITY-BASED: Much looser quality filtering
+    const qualityFilteredResults = scoredResults.filter(result => {
       const meetsThreshold = (result.qualityScore || 0) >= context.qualityThreshold;
       return meetsThreshold;
     });
 
-    // Quality filtering applied
+    // PRIORITY-BASED: Sort by composite score instead of just relevance
+    const sortedResults = qualityFilteredResults.sort((a, b) => {
+      return (b.compositeScore || 0) - (a.compositeScore || 0);
+    });
 
-    // Sort by intelligent prioritization
-    const sortedResults = sortGamesIntelligently(
-      qualityFilteredResults, 
-      context.originalQuery
-    );
-
-    // Apply max results limit
+    // Apply max results limit (now much higher)
     const finalResults = sortedResults.slice(0, context.maxResults);
 
-    // Final results processed
+    // Log filtering stats for debugging
+    if (DEBUG_SEARCH_COORDINATION) {
+      console.log(`📊 Search Pipeline Stats for "${context.originalQuery}":
+        - Raw results: ${results.length}
+        - After conditional filters: ${processedResults.length}
+        - After quality threshold (${context.qualityThreshold}): ${qualityFilteredResults.length}
+        - Final (max ${context.maxResults}): ${finalResults.length}`);
+    }
 
     return finalResults;
+  }
+
+  /**
+   * Calculate composite score for PRIORITY-BASED ranking
+   * Combines multiple factors to rank games instead of filtering them out
+   */
+  private calculateCompositeScore(result: SearchResult, context: SearchContext): number {
+    // Base scores (0-1 scale for each)
+    const relevanceScore = result.relevanceScore || 0;
+    const qualityScore = result.qualityScore || 0;
+
+    // Additional scoring factors
+    let canonicalBonus = 0;
+    let popularityBonus = 0;
+    let recencyBonus = 0;
+    let legitimacyScore = 0;
+
+    // Canonical game detection (main entries vs DLC/collections)
+    const gameName = result.name.toLowerCase();
+    const query = context.originalQuery.toLowerCase();
+    const developer = (result.developer || '').toLowerCase();
+    const publisher = (result.publisher || '').toLowerCase();
+
+    // PUBLISHER VERIFICATION: Check for official publishers
+    const franchisePublishers: Record<string, string[]> = {
+      'pokemon': ['nintendo', 'game freak', 'the pokemon company', 'creatures inc', 'niantic'],
+      'mario': ['nintendo'],
+      'zelda': ['nintendo'],
+      'sonic': ['sega', 'sonic team'],
+      'final fantasy': ['square enix', 'square', 'squaresoft'],
+      'mega man': ['capcom'],
+      'call of duty': ['activision', 'infinity ward', 'treyarch', 'sledgehammer']
+    };
+
+    // EXPANDED FRANCHISE PUBLISHERS: Added more major franchises
+    const expandedFranchisePublishers: Record<string, string[]> = {
+      ...franchisePublishers,
+      'street fighter': ['capcom'],
+      'resident evil': ['capcom'],
+      'devil may cry': ['capcom'],
+      'age of empires': ['microsoft', 'ensemble studios', 'relic entertainment', 'xbox game studios'],
+      'diablo': ['blizzard', 'activision blizzard', 'blizzard entertainment'],
+      'civilization': ['firaxis', '2k games', 'microprose', 'sid meier'],
+      'grand theft auto': ['rockstar', 'rockstar games', 'rockstar north'],
+      'gta': ['rockstar', 'rockstar games', 'rockstar north'],
+      'battlefield': ['ea', 'dice', 'electronic arts'],
+      'dragon quest': ['square enix', 'enix', 'square'],
+      'metroid': ['nintendo'],
+      'kirby': ['nintendo', 'hal laboratory'],
+      'donkey kong': ['nintendo', 'rare', 'retro studios'],
+      'star wars': ['lucasarts', 'ea', 'electronic arts', 'lucasfilm'],
+      'assassin': ['ubisoft'],
+      'far cry': ['ubisoft'],
+      'fallout': ['bethesda', 'obsidian', 'interplay', 'black isle'],
+      'elder scrolls': ['bethesda', 'zenimax'],
+      'doom': ['id software', 'bethesda'],
+      'quake': ['id software'],
+      'half-life': ['valve'],
+      'portal': ['valve'],
+      'counter-strike': ['valve'],
+      'tekken': ['bandai namco', 'namco'],
+      'mortal kombat': ['netherrealm', 'midway', 'warner bros'],
+      'dark souls': ['from software', 'bandai namco'],
+      'sekiro': ['from software', 'activision'],
+      'elden ring': ['from software', 'bandai namco']
+    };
+
+    // Determine which franchise we're searching for
+    let searchedFranchise = '';
+    for (const franchise of Object.keys(expandedFranchisePublishers)) {
+      if (query.includes(franchise)) {
+        searchedFranchise = franchise;
+        break;
+      }
+    }
+
+    // Check if this game has an official publisher for the franchise
+    if (searchedFranchise && expandedFranchisePublishers[searchedFranchise]) {
+      const officialPubs = expandedFranchisePublishers[searchedFranchise];
+      const hasOfficialPublisher = officialPubs.some(pub =>
+        publisher.includes(pub) || developer.includes(pub)
+      );
+
+      if (hasOfficialPublisher) {
+        legitimacyScore = 0.3; // Big boost for official games
+      }
+    }
+
+    // FAN GAME DETECTION (as penalty instead of filter)
+    // Check for known fan game patterns
+    const fanGameIndicators = [
+      // Known fan game titles
+      'insurgence', 'uranium', 'prism', 'phoenix rising', 'sage', 'reborn',
+      'rejuvenation', 'clover', 'glazed', 'gaia', 'light platinum', 'flora sky',
+      'dark rising', 'zeta', 'omicron', 'eclipse', 'solar light', 'lunar dark',
+      // Fan game naming patterns
+      'fan made', 'fan game', 'fan-made', 'rom hack', 'homebrew',
+      // Common fan game subtitles
+      'cyan', 'orange', 'purple', 'indigo', 'turquoise', 'brown', 'gray'
+    ];
+
+    const isFanGame = fanGameIndicators.some(indicator =>
+      gameName.includes(indicator)
+    );
+
+    // Additional fan game detection: missing publisher/developer
+    const hasNoPublisher = !publisher || publisher === 'unknown' || publisher === 'n/a';
+    const hasNoDeveloper = !developer || developer === 'unknown' || developer === 'n/a';
+    const missingCredentials = hasNoPublisher && hasNoDeveloper;
+
+    // Apply fan game penalties
+    if (isFanGame) {
+      legitimacyScore -= 0.5; // Heavy penalty for known fan games
+    } else if (missingCredentials && searchedFranchise) {
+      legitimacyScore -= 0.3; // Moderate penalty for games with no publisher/developer
+    } else if (hasNoPublisher && searchedFranchise) {
+      legitimacyScore -= 0.15; // Light penalty for missing publisher only
+    }
+
+    // Bonus for main/canonical entries
+    if (!gameName.includes('dlc') &&
+        !gameName.includes('expansion') &&
+        !gameName.includes('pack') &&
+        !gameName.includes('edition') &&
+        !gameName.includes('collection')) {
+      canonicalBonus = 0.15;
+    }
+
+    // Extra bonus for exact matches or numbered entries
+    if (gameName === query ||
+        gameName.match(/\b(i{1,3}|iv|v|vi{1,3}|ix|x{1,3}|\d+)\b/)) {
+      canonicalBonus += 0.1;
+    }
+
+    // Special boost for main series Pokemon games
+    if (searchedFranchise === 'pokemon') {
+      const mainSeriesPatterns = [
+        'red', 'blue', 'yellow', 'gold', 'silver', 'crystal',
+        'ruby', 'sapphire', 'emerald', 'diamond', 'pearl', 'platinum',
+        'black', 'white', 'x', 'y', 'sun', 'moon', 'ultra sun', 'ultra moon',
+        'sword', 'shield', 'scarlet', 'violet', 'legends', 'arceus',
+        'let\'s go', 'firered', 'leafgreen', 'heartgold', 'soulsilver'
+      ];
+
+      if (mainSeriesPatterns.some(pattern => gameName.includes(pattern))) {
+        canonicalBonus += 0.15; // Extra boost for main series games
+      }
+    }
+
+    // Popularity bonus (based on having complete metadata)
+    if (result.developer && result.publisher) {
+      popularityBonus += 0.05;
+    }
+    if (result.genres && result.genres.length > 0) {
+      popularityBonus += 0.05;
+    }
+    if (result.summary && result.summary.length > 100) {
+      popularityBonus += 0.05;
+    }
+    if (result.cover_url) {
+      popularityBonus += 0.05;
+    }
+
+    // Recency bonus for newer games (if they have a release date)
+    if (result.release_date) {
+      const releaseYear = new Date(result.release_date).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const yearsDiff = currentYear - releaseYear;
+
+      if (yearsDiff <= 2) {
+        recencyBonus = 0.1; // Very recent
+      } else if (yearsDiff <= 5) {
+        recencyBonus = 0.05; // Recent
+      } else if (yearsDiff <= 10) {
+        recencyBonus = 0.02; // Somewhat recent
+      }
+    }
+
+    // Weighted composite score (adjusted weights to include legitimacy)
+    const weights = {
+      relevance: 0.30,    // 30% - How well it matches the search
+      legitimacy: 0.25,   // 25% - Official vs fan game
+      quality: 0.20,      // 20% - Metadata completeness and ratings
+      canonical: 0.15,    // 15% - Whether it's a main game vs DLC
+      popularity: 0.05,   // 5% - Popularity indicators
+      recency: 0.05       // 5% - Newer games get slight boost
+    };
+
+    const compositeScore =
+      (relevanceScore * weights.relevance) +
+      (legitimacyScore * weights.legitimacy) +
+      (qualityScore * weights.quality) +
+      (canonicalBonus * weights.canonical) +
+      (popularityBonus * weights.popularity) +
+      (recencyBonus * weights.recency);
+
+    // Log scoring for Pokemon games if debugging
+    if (DEBUG_SEARCH_COORDINATION && searchedFranchise === 'pokemon' &&
+        (gameName.includes('insurgence') || gameName.includes('uranium') || gameName.includes('scarlet'))) {
+      console.log(`🎮 Scoring "${result.name}":
+        - Relevance: ${relevanceScore.toFixed(2)}
+        - Legitimacy: ${legitimacyScore.toFixed(2)} (Publisher: ${publisher || 'NONE'})
+        - Quality: ${qualityScore.toFixed(2)}
+        - Canonical: ${canonicalBonus.toFixed(2)}
+        - Final Score: ${compositeScore.toFixed(3)}`);
+    }
+
+    // Ensure score is between 0 and 1
+    return Math.min(Math.max(compositeScore, 0), 1);
   }
 
   /**
@@ -720,13 +1148,45 @@ export class AdvancedSearchCoordination {
     cacheSize: number;
     cacheHitRate: number;
     averageSearchTime: number;
+    igdbHealth: any;
+    igdbTelemetry: any;
+    circuitBreakerStatus: any;
   } {
-    // This would track metrics over time in a production system
+    const igdbMetrics = igdbTelemetry.getMetrics();
+
     return {
       cacheSize: this.queryCache.size,
       cacheHitRate: 0, // Would be calculated from actual usage
-      averageSearchTime: 0 // Would be calculated from actual usage
+      averageSearchTime: 0, // Would be calculated from actual usage
+      igdbHealth: igdbHealthMonitor.getStats(),
+      igdbTelemetry: {
+        ...igdbMetrics,
+        healthSummary: igdbTelemetry.getHealthSummary()
+      },
+      circuitBreakerStatus: igdbCircuitBreaker.getStats()
     };
+  }
+
+  /**
+   * Get IGDB service health status
+   */
+  getIGDBHealth() {
+    return {
+      circuitBreaker: igdbCircuitBreaker.getStats(),
+      healthMonitor: igdbHealthMonitor.getStats(),
+      failureCache: igdbFailureCache.getStats(),
+      telemetry: igdbTelemetry.getHealthSummary()
+    };
+  }
+
+  /**
+   * Reset IGDB error handling (for recovery)
+   */
+  resetIGDBErrorHandling(): void {
+    igdbCircuitBreaker.reset();
+    igdbFailureCache.clear();
+    igdbTelemetry.reset();
+    console.log('🔄 IGDB error handling reset');
   }
 
   /**
@@ -734,7 +1194,8 @@ export class AdvancedSearchCoordination {
    */
   clearCache(): void {
     this.queryCache.clear();
-    console.log('🧹 Search cache cleared');
+    igdbFailureCache.clear();
+    console.log('🧹 Search cache and failure cache cleared');
   }
 }
 

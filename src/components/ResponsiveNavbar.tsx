@@ -117,13 +117,24 @@ export const ResponsiveNavbar: React.FC = () => {
         return;
       }
 
+      // Normalize Pokemon searches to match mobile keyboard auto-correction
+      let normalizedQuery = query;
+      if (query.toLowerCase().includes('pokemon')) {
+        normalizedQuery = query.replace(/pokemon/gi, 'Pokémon');
+        console.log('🔴 NAVBAR POKEMON NORMALIZATION:', {
+          original: query,
+          normalized: normalizedQuery,
+          device: isMobile ? 'mobile' : 'desktop'
+        });
+      }
+
       if (import.meta.env.DEV) {
-        console.log('🔍 ResponsiveNavbar: Fast search for:', query);
+        console.log('🔍 ResponsiveNavbar: Fast search for:', normalizedQuery);
       }
 
       // Use the same search as the search results page (no fastMode)
       // This ensures navbar shows same results as main search
-      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+      const searchResult = await searchCoordinationRef.current.coordinatedSearch(normalizedQuery.trim(), {
         maxResults: 8,
         includeMetrics: false,
         fastMode: false, // Use full search with all filtering
@@ -295,7 +306,7 @@ export const ResponsiveNavbar: React.FC = () => {
 
     debounceRef.current = setTimeout(() => {
       performQuickSearch(searchQuery);
-    }, 300); // Faster response with enhanced search
+    }, 150); // Optimized for autocomplete - faster response
 
     return () => {
       if (debounceRef.current) {
@@ -594,11 +605,8 @@ export const ResponsiveNavbar: React.FC = () => {
                                     {game.platforms && game.platforms.length > 0 && (
                                       <>
                                         {game.release_date && <span>•</span>}
-                                        <span className="truncate">
-                                          {(() => {
-                                            const mappedPlatforms = mapPlatformNames(game.platforms);
-                                            return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
-                                          })()}
+                                        <span className="truncate max-w-[150px] sm:max-w-[200px]">
+                                          {mapPlatformNames(game.platforms).join(', ')}
                                         </span>
                                       </>
                                     )}
@@ -807,11 +815,8 @@ export const ResponsiveNavbar: React.FC = () => {
                                       {game.platforms && game.platforms.length > 0 && (
                                         <>
                                           {game.release_date && <span>•</span>}
-                                          <span className="truncate">
-                                            {(() => {
-                                              const mappedPlatforms = mapPlatformNames(game.platforms);
-                                              return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
-                                            })()}
+                                          <span className="truncate max-w-[150px] sm:max-w-[200px]">
+                                            {mapPlatformNames(game.platforms).join(', ')}
                                           </span>
                                         </>
                                       )}
@@ -1101,11 +1106,8 @@ export const ResponsiveNavbar: React.FC = () => {
                                 {game.platforms && game.platforms.length > 0 && (
                                   <>
                                     {game.release_date && <span>•</span>}
-                                    <span className="truncate">
-                                      {(() => {
-                                        const mappedPlatforms = mapPlatformNames(game.platforms);
-                                        return mappedPlatforms.slice(0, 5).join(', ') + (mappedPlatforms.length > 5 ? '...' : '');
-                                      })()}
+                                    <span className="truncate max-w-[150px] sm:max-w-[200px]">
+                                      {mapPlatformNames(game.platforms).join(', ')}
                                     </span>
                                   </>
                                 )}

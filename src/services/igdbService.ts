@@ -147,15 +147,15 @@ function calculateSearchRelevance(game: IGDBGame | TransformedGame, searchQuery:
  */
 function getRelevanceThreshold(searchQuery: string): number {
   const franchise = detectFranchiseSearch(searchQuery);
-  
+
   // Lower threshold for franchise searches (more permissive for iconic games)
   if (franchise) {
     console.log(`🎯 Franchise search detected: "${franchise}" - Using lower relevance threshold`);
-    return 0.08; // More permissive for franchise searches
+    return 0.05; // Much more permissive for franchise searches
   }
-  
-  // Standard threshold for general searches
-  return 0.12;
+
+  // Standard threshold for general searches - reduced to be less aggressive
+  return 0.08; // Was 0.12, now more permissive
 }
 
 /**
@@ -324,8 +324,8 @@ async function findSequelsAndSeries(baseQuery: string, primaryResults: IGDBGame[
       id: game.id,
       name: game.name,
       allNames: [game.name, ...(game.alternative_names?.map(alt => alt.name) || [])].filter(Boolean),
-      developer: game.involved_companies?.[0]?.company?.name,
-      publisher: game.involved_companies?.[0]?.company?.name,
+      developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+      publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
       summary: game.summary,
       description: game.summary,
       category: game.category,
@@ -622,10 +622,24 @@ class IGDBService {
         return [];
       }
 
-      console.error('🔍 Enhanced multi-strategy search for:', query);
+      // Normalize Pokemon searches to handle accented characters
+      let normalizedQuery = query;
+      if (query.toLowerCase().includes('pokemon')) {
+        // Replace "pokemon" with "pokémon" for better IGDB matching
+        normalizedQuery = query.replace(/pokemon/gi, 'Pokémon');
+        console.log('🔴 POKEMON SEARCH NORMALIZATION:', {
+          original: query,
+          normalized: normalizedQuery,
+          willSendToAPI: normalizedQuery,
+          encoded: encodeURIComponent(normalizedQuery),
+          device: typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop'
+        });
+      }
 
-      // Get primary search results
-      const rawGames = await this.performBasicSearch(query, limit);
+      console.error('🔍 Enhanced multi-strategy search for:', normalizedQuery);
+
+      // Get primary search results - use normalized query!
+      const rawGames = await this.performBasicSearch(normalizedQuery, limit);
       console.log('✅ Primary search results:', rawGames.length, 'games found');
       
       // Debug: Check if Breath of the Wild is in raw results
@@ -643,8 +657,8 @@ class IGDBService {
         id: game.id,
         name: game.name,
         allNames: [game.name, ...(game.alternative_names?.map(alt => alt.name) || [])].filter(Boolean),
-        developer: game.involved_companies?.[0]?.company?.name,
-        publisher: game.involved_companies?.[0]?.company?.name,
+        developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+        publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
         summary: game.summary,
         description: game.summary,
         category: game.category,
@@ -702,10 +716,9 @@ class IGDBService {
       filteredIGDBGames = filterSeasonGames(filteredIGDBGames);
       console.log(`🎮 Post-season filter: ${filteredIGDBGames.length} games`);
       
-      // Apply pack filtering to remove bundle/pack games
-      console.log(`📦 Pre-pack filter: ${filteredIGDBGames.length} games`);
-      filteredIGDBGames = filterPackGames(filteredIGDBGames);
-      console.log(`📦 Post-pack filter: ${filteredIGDBGames.length} games`);
+      // Skip pack filtering for now - it's removing too many valid games
+      // TODO: Improve pack filtering to be less aggressive
+      console.log(`📦 Pack filtering DISABLED - keeping all ${filteredIGDBGames.length} games`);
       
       // Apply e-reader filtering to remove micro-content
       console.log(`📱 Pre-e-reader filter: ${filteredIGDBGames.length} games`);
@@ -728,7 +741,7 @@ class IGDBService {
       }
       
       // Check if we need flagship fallback after all filtering
-      const franchise = detectFranchiseSearch(query);
+      const franchise = detectFranchiseSearch(normalizedQuery);
       
       // Enhanced flagship fallback logic - check quality of results, not just quantity
       let needsFlagshipFallback = false;
@@ -784,8 +797,8 @@ class IGDBService {
           id: game.id,
           name: game.name,
           allNames: [game.name, ...(game.alternative_names?.map(alt => alt.name) || [])].filter(Boolean),
-          developer: game.involved_companies?.[0]?.company?.name,
-          publisher: game.involved_companies?.[0]?.company?.name,
+          developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+          publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
           summary: game.summary,
           description: game.summary,
           category: game.category,
@@ -850,8 +863,8 @@ class IGDBService {
         const gamesForPrioritization = filteredIGDBGames.map(game => ({
           ...game,
           genres: game.genres?.map(g => g.name) || [],
-          developer: game.involved_companies?.find(c => c.company)?.company?.name,
-          publisher: game.involved_companies?.find(c => c.company)?.company?.name,
+          developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+          publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
           igdb_rating: game.rating
         }));
         
@@ -867,8 +880,8 @@ class IGDBService {
           const gameForPriority = {
             ...game,
             genres: game.genres?.map(g => g.name) || [],
-            developer: game.involved_companies?.find(c => c.company)?.company?.name,
-            publisher: game.involved_companies?.find(c => c.company)?.company?.name,
+            developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+            publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
             igdb_rating: game.rating
           };
           const priority = calculateGamePriority(gameForPriority as any);
@@ -972,8 +985,8 @@ class IGDBService {
       const gamesForFinalPrioritization = typeScoreResults.map(game => ({
         ...game,
         genres: game.genres?.map(g => g.name) || [],
-        developer: game.involved_companies?.find(c => c.company)?.company?.name,
-        publisher: game.involved_companies?.find(c => c.company)?.company?.name,
+        developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+        publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
         igdb_rating: game.rating
       }));
       
@@ -1094,8 +1107,8 @@ class IGDBService {
         id: game.id,
         name: game.name,
         allNames: [game.name, ...(game.alternative_names?.map(alt => alt.name) || [])].filter(Boolean),
-        developer: game.involved_companies?.[0]?.company?.name,
-        publisher: game.involved_companies?.[0]?.company?.name,
+        developer: game.involved_companies?.find(c => c.developer)?.company?.name || game.involved_companies?.[0]?.company?.name,
+        publisher: game.involved_companies?.find(c => c.publisher)?.company?.name || game.involved_companies?.[0]?.company?.name,
         summary: game.summary,
         description: game.summary,
         category: game.category,
@@ -1141,8 +1154,8 @@ class IGDBService {
       id: igdbGame.id,
       name: igdbGame.name,
       allNames: allNames,
-      developer: igdbGame.involved_companies?.[0]?.company?.name,
-      publisher: igdbGame.involved_companies?.[0]?.company?.name,
+      developer: igdbGame.involved_companies?.find(c => c.developer)?.company?.name || igdbGame.involved_companies?.[0]?.company?.name,
+      publisher: igdbGame.involved_companies?.find(c => c.publisher)?.company?.name || igdbGame.involved_companies?.[0]?.company?.name,
       summary: igdbGame.summary,
       description: igdbGame.summary,
       category: igdbGame.category,
