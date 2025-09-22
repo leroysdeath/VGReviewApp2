@@ -373,7 +373,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">
             {title || (
-              mode === 'collection' ? 'Add to Collection' :
+              mode === 'collection' ? 'Add to Backlog' :
               mode === 'wishlist' ? 'Add to Wishlist' :
               mode === 'review' ? 'Select Game to Review' :
               `Select Game for Top 5${position ? ` - Position #${position}` : ''}`
@@ -490,7 +490,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                             {mode === 'collection' ? <BookOpen className="h-4 w-4" /> : 
                              mode === 'wishlist' ? <Gift className="h-4 w-4" /> : 
                              mode === 'review' ? <Gamepad2 className="h-4 w-4" /> : null}
-                            {mode === 'review' ? 'Select Game' : `Add to ${mode === 'collection' ? 'Collection' : 'Wishlist'}`}
+                            {mode === 'review' ? 'Select Game' : `Add to ${mode === 'collection' ? 'Backlog' : 'Wishlist'}`}
                           </>
                         )}
                         </button>
@@ -562,7 +562,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                             {mode === 'collection' ? <BookOpen className="h-4 w-4" /> : 
                              mode === 'wishlist' ? <Gift className="h-4 w-4" /> : 
                              mode === 'review' ? <Gamepad2 className="h-4 w-4" /> : null}
-                            {mode === 'review' ? 'Select Game' : `Add to ${mode === 'collection' ? 'Collection' : 'Wishlist'}`}
+                            {mode === 'review' ? 'Select Game' : `Add to ${mode === 'collection' ? 'Backlog' : 'Wishlist'}`}
                           </>
                         )}
                       </button>

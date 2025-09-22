@@ -371,9 +371,15 @@ export const UserPage: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('playlist')}
-            className={`pb-2 ${activeTab === 'playlist' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
+            className={`pb-2 relative ${activeTab === 'playlist' ? 'text-white' : 'text-gray-400'}`}
           >
             Want to Play
+            {activeTab === 'playlist' && (
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] flex">
+                <div className="w-1/2 bg-orange-600"></div>
+                <div className="w-1/2 bg-red-600"></div>
+              </div>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('activity')}
