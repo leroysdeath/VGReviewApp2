@@ -1,9 +1,9 @@
 // VGReviewApp Service Worker
-// Version: 1.0.0
+// Version: 1.0.1
 // Last Updated: September 2025
 
-const CACHE_NAME = 'vgreview-v1';
-const DYNAMIC_CACHE = 'vgreview-dynamic-v1';
+const CACHE_NAME = 'vgreview-v1.0.1';
+const DYNAMIC_CACHE = 'vgreview-dynamic-v1.0.1';
 const MAX_DYNAMIC_CACHE_ITEMS = 50;
 
 // Assets to cache on install
@@ -113,6 +113,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-first for JS chunks (always get latest)
+  if (url.pathname.includes('/assets/') && url.pathname.endsWith('.js')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Return network response immediately
+          return response;
+        })
+        .catch(() => {
+          // If network fails, try cache as fallback
+          return caches.match(request);
+        })
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
@@ -133,18 +149,23 @@ self.addEventListener('fetch', (event) => {
               return response;
             }
 
+            // Skip caching for Vite chunked assets (they have hashes in filenames)
+            // These files are already cache-busted by their hash
+            const isViteChunk = url.pathname.includes('/assets/') &&
+                               (url.pathname.includes('-') || url.pathname.includes('.'));
+
             // Check if this should be cached
-            const shouldCache = 
+            const shouldCache =
               CACHE_PATTERNS.images.test(url.pathname) ||
               CACHE_PATTERNS.fonts.test(url.pathname) ||
               CACHE_PATTERNS.styles.test(url.pathname) ||
-              CACHE_PATTERNS.scripts.test(url.pathname) ||
+              (CACHE_PATTERNS.scripts.test(url.pathname) && !isViteChunk) || // Don't cache Vite chunks
               CACHE_PATTERNS.igdb.test(url.hostname);
 
             if (shouldCache) {
               // Clone the response before caching
               const responseToCache = response.clone();
-              
+
               caches.open(DYNAMIC_CACHE)
                 .then((cache) => {
                   cache.put(request, responseToCache);
