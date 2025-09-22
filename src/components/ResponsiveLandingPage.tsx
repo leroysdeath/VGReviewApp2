@@ -377,7 +377,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-green-300">Track Your Games</h3>
                 <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  Add games you Want to Play to your Wishlist (don't own) or Backlog (own but haven't played). Mark the games you've played as Started or Finished.
+                  Add games you haven't played to your Wishlist (don't own) or Backlog (own). Mark games you've Started or Finished.
                 </p>
               </div>
             </div>
@@ -391,9 +391,9 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
                   <SpinningNumber isHovered={hoveredCard === 'ratings-mobile'} />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-purple-300">Review Games</h3>
+                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-purple-300">Write Reviews</h3>
                 <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  The more games you review, the more you help other players find games they'll enjoy, and avoid games they won't. That's the power of community.
+                  The more games you review, the more you help other players find games they'll enjoy, and avoid games they won't.
                 </p>
               </div>
             </div>
@@ -587,13 +587,6 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
                   Follow gamers to get updates on their activity. See the games they've reviewed, added to their Wishlist, Backlog, and more.
                 </p>
-
-                {/* Progressive disclosure - additional details on hover */}
-                <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'social' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <p className="text-sm text-blue-300 border-t border-gray-600 pt-3">
-                    Build connections • Find recommendations
-                  </p>
-                </div>
               </div>
             </div>
 
@@ -618,15 +611,8 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-green-300">Track Your Games</h3>
                 <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
-                  Add games you Want to Play to your Wishlist (don't own) or Backlog (own but haven't played). Mark the games you've played as Started or Finished.
+                  Add games you haven't played to your Wishlist (don't own) or Backlog (own). Mark games you've Started or Finished.
                 </p>
-
-                {/* Progressive disclosure - additional details on hover */}
-                <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'stats' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <p className="text-sm text-green-300 border-t border-gray-600 pt-3">
-                    Gaming insights • Progress tracking
-                  </p>
-                </div>
               </div>
             </div>
 
@@ -649,17 +635,10 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
                   <SpinningNumber isHovered={hoveredCard === 'ratings'} />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-purple-300">Review Games</h3>
+                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-purple-300">Write Reviews</h3>
                 <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
-                  The more games you review, the more you help other players find games they'll enjoy, and avoid games they won't. That's the power of community.
+                  The more games you review, the more you help other players find games they'll enjoy, and avoid games they won't.
                 </p>
-
-                {/* Progressive disclosure - additional details on hover */}
-                <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'ratings' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <p className="text-sm text-purple-300 border-t border-gray-600 pt-3">
-                    Personal rating history • Compare with friends
-                  </p>
-                </div>
               </div>
             </div>
           </div>
