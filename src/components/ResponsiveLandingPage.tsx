@@ -339,27 +339,10 @@ export const ResponsiveLandingPage: React.FC = () => {
         {/* Mobile Features Section */}
         <div className="px-4 py-12 bg-gray-800">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-3">GameVault</h2>
-            <p className="text-gray-400">The social gaming platform built for enthusiasts</p>
+            <h2 className="text-2xl font-bold text-white mb-3">How GameVault Works</h2>
           </div>
           <div className="space-y-6">
-            <div 
-              className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden"
-              onMouseEnter={() => setHoveredCard('ratings-mobile')}
-              onMouseLeave={() => setHoveredCard(null)}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-purple-600/10 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative z-10">
-                <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
-                  <SpinningNumber isHovered={hoveredCard === 'ratings-mobile'} />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-purple-300">Precise Ratings</h3>
-                <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  Rate games on a 1-10 scale. Your opinions matter.
-                </p>
-              </div>
-            </div>
-            <div 
+            <div
               className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('social-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
@@ -371,11 +354,11 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-blue-300">Social Discovery</h3>
                 <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  Follow gamers with similar tastes. Or because they're funny.
+                  Follow gamers to get updates on their activity. See the games they've reviewed, added to their Wishlist, Backlog, and more.
                 </p>
               </div>
             </div>
-            <div 
+            <div
               className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('stats-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
@@ -385,9 +368,25 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
                   <CascadingCheckboxes isHovered={hoveredCard === 'stats-mobile'} size="small" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-green-300">Personal Stats</h3>
+                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-green-300">Track Your Games</h3>
                 <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  Track your gaming journey. Add games to your Wishlist, Collection, and more.
+                  For games you've Started, Finished, and Want to Play.
+                </p>
+              </div>
+            </div>
+            <div
+              className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden"
+              onMouseEnter={() => setHoveredCard('ratings-mobile')}
+              onMouseLeave={() => setHoveredCard(null)}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-purple-600/10 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
+                  <SpinningNumber isHovered={hoveredCard === 'ratings-mobile'} />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-purple-300">Review Games</h3>
+                <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
+                  The more games you review, the more you help other players find games they'll enjoy, and avoid games they won't. That's the power of community.
                 </p>
               </div>
             </div>
@@ -551,44 +550,10 @@ export const ResponsiveLandingPage: React.FC = () => {
       <div className="py-16 bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">GameVault</h2>
-            <p className="text-gray-400 text-lg">The social gaming platform built for enthusiasts</p>
+            <h2 className="text-3xl font-bold text-white mb-4">How GameVault Works</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
-            <div 
-              className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
-              onMouseEnter={() => setHoveredCard('ratings')}
-              onMouseLeave={() => setHoveredCard(null)}
-            >
-              {/* Animated gradient border */}
-              <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                <div className="absolute inset-[-2px] bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-lg animate-pulse"></div>
-                <div className="absolute inset-0 bg-gray-900/80 rounded-lg"></div>
-              </div>
-              
-              {/* Background effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/0 via-purple-600/20 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-lg"></div>
-              
-              {/* Content */}
-              <div className="relative z-10">
-                <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
-                  <SpinningNumber isHovered={hoveredCard === 'ratings'} />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-purple-300">Precise Ratings</h3>
-                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
-                  Rate games on a 1-10 scale. Your opinions matter.
-                </p>
-                
-                {/* Progressive disclosure - additional details on hover */}
-                <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'ratings' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <p className="text-sm text-purple-300 border-t border-gray-600 pt-3">
-                    Personal rating history • Compare with friends
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div 
+            <div
               className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
               onMouseEnter={() => setHoveredCard('social')}
               onMouseLeave={() => setHoveredCard(null)}
@@ -598,10 +563,10 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="absolute inset-[-2px] bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 rounded-lg animate-pulse"></div>
                 <div className="absolute inset-0 bg-gray-900/80 rounded-lg"></div>
               </div>
-              
+
               {/* Background effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-blue-600/0 via-blue-600/20 to-blue-600/0 opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-lg"></div>
-              
+
               {/* Content */}
               <div className="relative z-10">
                 <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
@@ -609,9 +574,9 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-blue-300">Social Discovery</h3>
                 <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
-                  Follow gamers with similar tastes. Or because they're funny.
+                  Follow gamers to get updates on their activity. See the games they've reviewed, added to their Wishlist, Backlog, and more.
                 </p>
-                
+
                 {/* Progressive disclosure - additional details on hover */}
                 <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'social' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
                   <p className="text-sm text-blue-300 border-t border-gray-600 pt-3">
@@ -620,8 +585,8 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            
-            <div 
+
+            <div
               className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
               onMouseEnter={() => setHoveredCard('stats')}
               onMouseLeave={() => setHoveredCard(null)}
@@ -631,24 +596,57 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="absolute inset-[-2px] bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 rounded-lg animate-pulse"></div>
                 <div className="absolute inset-0 bg-gray-900/80 rounded-lg"></div>
               </div>
-              
+
               {/* Background effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-green-600/0 via-green-600/20 to-green-600/0 opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-lg"></div>
-              
+
               {/* Content */}
               <div className="relative z-10">
                 <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
                   <CascadingCheckboxes isHovered={hoveredCard === 'stats'} />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-green-300">Personal Stats</h3>
+                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-green-300">Track Your Games</h3>
                 <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
-                  Track your gaming journey. Add games to your Wishlist, Collection, and more.
+                  For games you've Started, Finished, and Want to Play.
                 </p>
-                
+
                 {/* Progressive disclosure - additional details on hover */}
                 <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'stats' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
                   <p className="text-sm text-green-300 border-t border-gray-600 pt-3">
                     Gaming insights • Progress tracking
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="relative text-center p-6 bg-gray-900/80 backdrop-blur-lg rounded-lg transition-all duration-300 hover:bg-gray-900/90 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
+              onMouseEnter={() => setHoveredCard('ratings')}
+              onMouseLeave={() => setHoveredCard(null)}
+            >
+              {/* Animated gradient border */}
+              <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="absolute inset-[-2px] bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-lg animate-pulse"></div>
+                <div className="absolute inset-0 bg-gray-900/80 rounded-lg"></div>
+              </div>
+
+              {/* Background effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/0 via-purple-600/20 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-lg"></div>
+
+              {/* Content */}
+              <div className="relative z-10">
+                <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
+                  <SpinningNumber isHovered={hoveredCard === 'ratings'} />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-purple-300">Review Games</h3>
+                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200">
+                  The more games you review, the more you help other players find games they'll enjoy, and avoid games they won't. That's the power of community.
+                </p>
+
+                {/* Progressive disclosure - additional details on hover */}
+                <div className={`mt-4 overflow-hidden transition-all duration-500 ${hoveredCard === 'ratings' ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <p className="text-sm text-purple-300 border-t border-gray-600 pt-3">
+                    Personal rating history • Compare with friends
                   </p>
                 </div>
               </div>
