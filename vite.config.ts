@@ -30,26 +30,20 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        // Simplified and working chunk splitting strategy
-        manualChunks: {
-          // React core (always needed)
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          // Supabase SDK
-          'supabase': ['@supabase/supabase-js'],
-          // UI libraries
-          'ui-vendor': ['lucide-react', 'react-icons'],
-          // State management
-          'state': ['zustand', 'immer'],
-          // Forms and validation
-          'forms': ['react-hook-form', 'zod'],
-          // Data fetching
-          'data': ['swr']
-        },
+        // Code splitting strategy - let Vite handle it automatically for now
+        // Manual chunks can cause issues with lazy loading
+        manualChunks: undefined,
         // Optimize chunk names for caching
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
         // Optimize entry file name
         entryFileNames: 'assets/[name]-[hash].js'
+      },
+      // Enable tree shaking optimizations
+      treeshake: {
+        moduleSideEffects: false,
+        propertyReadSideEffects: false,
+        tryCatchDeoptimization: false
       }
     },
     // Additional optimizations

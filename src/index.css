@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Font loading optimization - prevent layout shift */
+@font-face {
+  font-family: 'Space Grotesk';
+  font-display: swap; /* Prevent layout shift during font loading */
+  font-weight: 300 700;
+  font-style: normal;
+}
+
+/* Ensure critical text is visible during webfont load */
+body {
+  font-synthesis: weight style;
+}
+
 @layer utilities {
   .glow-button {
     position: relative;
