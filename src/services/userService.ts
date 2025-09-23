@@ -12,6 +12,8 @@ export interface UserProfile {
   provider_id: string;
   email: string;
   name: string;
+  username?: string;
+  avatar_url?: string;
   provider: string;
   created_at: string;
   updated_at: string;

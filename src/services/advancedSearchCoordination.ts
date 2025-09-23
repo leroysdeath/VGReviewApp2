@@ -630,12 +630,34 @@ export class AdvancedSearchCoordination {
     }
 
     // Enhanced IGDB fallback with error handling
-    // Only attempt IGDB if we have very few results AND all services are healthy
-    const IGDB_THRESHOLD = 1; // Reduced from 10 - only use IGDB if we have NO results
+    // Attempt IGDB for better coverage - especially for franchise searches
+    const isFranchiseSearch = context.searchIntent === SearchIntent.FRANCHISE_BROWSE;
+
+    // Popular franchises that should ALWAYS check IGDB for complete coverage
+    const popularFranchises = [
+      'mario', 'zelda', 'pokemon', 'pokémon', 'final fantasy', 'call of duty',
+      'sonic', 'mega man', 'megaman', 'pikmin', 'metroid', 'kirby',
+      'donkey kong', 'fire emblem', 'animal crossing', 'splatoon',
+      'street fighter', 'resident evil', 'devil may cry', 'monster hunter',
+      'dragon quest', 'kingdom hearts', 'persona', 'dark souls', 'elden ring'
+    ];
+    const queryLower = context.originalQuery.toLowerCase();
+    const isPopularFranchise = popularFranchises.some(franchise => queryLower.includes(franchise));
+
+    // Determine IGDB threshold - always check for franchises and popular series
+    const IGDB_THRESHOLD = (isFranchiseSearch || isPopularFranchise) ? 1000 : 20;
     const shouldAttemptIGDB = allResults.length < IGDB_THRESHOLD;
 
     if (shouldAttemptIGDB) {
-      console.log(`🔍 Minimal local results (${allResults.length}), checking if IGDB fallback is available...`);
+      let searchReason;
+      if (isPopularFranchise) {
+        searchReason = `Popular franchise "${context.originalQuery}" detected - checking IGDB for complete coverage`;
+      } else if (isFranchiseSearch) {
+        searchReason = `Franchise search detected - checking IGDB for complete coverage`;
+      } else {
+        searchReason = `Database results (${allResults.length}) below threshold (${IGDB_THRESHOLD})`;
+      }
+      console.log(`🔍 ${searchReason}, checking if IGDB is available...`);
 
       // Check all conditions before attempting IGDB
       const canUseIGDB =
@@ -680,7 +702,7 @@ export class AdvancedSearchCoordination {
             genres: game.genres?.map(g => g.name) || [],
             platforms: game.platforms?.map(p => p.name) || [],
             release_date: game.first_release_date ? new Date(game.first_release_date * 1000).toISOString() : undefined,
-            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') : undefined,
+            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_1080p').replace('//', 'https://') : undefined,
             igdb_rating: game.rating,
             igdb_id: game.id,
             source: 'igdb' as const,
@@ -714,7 +736,7 @@ export class AdvancedSearchCoordination {
             resultCount: convertedIgdbResults.length
           });
 
-          console.log(`✅ IGDB search succeeded in ${duration}ms - Added ${addedCount} results, total: ${allResults.length}`);
+          console.log(`✅ IGDB search succeeded in ${duration}ms - Added ${addedCount} new results, total: ${allResults.length}`);
 
         } catch (error) {
           const duration = Date.now() - startTime;
@@ -736,8 +758,12 @@ export class AdvancedSearchCoordination {
           console.log('📊 Continuing with database results only');
         }
       }
-    } else if (allResults.length >= IGDB_THRESHOLD) {
-      console.log(`✅ Sufficient database results (${allResults.length}), skipping IGDB fallback`);
+    } else {
+      // Not attempting IGDB - we have sufficient results
+      const skipReason = isFranchiseSearch
+        ? `Franchise search has ${allResults.length} database results (unusual - threshold is ${IGDB_THRESHOLD})`
+        : `Sufficient database results (${allResults.length} >= ${IGDB_THRESHOLD} threshold)`;
+      console.log(`✅ ${skipReason}, skipping IGDB`);
     }
 
     // Apply advanced filtering and sorting

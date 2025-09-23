@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart, Trash2 } from 'lucide-react';
+import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart, Trash2, Gamepad2, ScrollText } from 'lucide-react';
 import { gameDataService } from '../services/gameDataService';
 import { gameSearchService } from '../services/gameSearchService';
 import type { Game, GameWithCalculatedFields } from '../types/database';
-import { GamePickerModal } from '../components/GamePickerModal';
 import { createReview, getUserReviewForGameByIGDBId, updateReview, deleteReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
 import { useAuth } from '../hooks/useAuth';
@@ -37,18 +36,12 @@ export const ReviewFormPage: React.FC = () => {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [availablePlatforms, setAvailablePlatforms] = useState<string[]>([]);
   const [platformsLoading, setPlatformsLoading] = useState(false);
-  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchDebounceRef = useRef<NodeJS.Timeout>();
   
-  // Enhanced search state from SearchResultsPage
+  // Search state
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<SearchFilters>({
-    genres: [],
-    platforms: [],
-    sortBy: 'popularity',
-    sortOrder: 'desc'
-  });
   
   const { isAuthenticated, user } = useAuth();
   
@@ -57,24 +50,26 @@ export const ReviewFormPage: React.FC = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   
-  const refetchSearch = useCallback(async () => {
-    if (!searchTerm || searchTerm.length === 0) {
+  const performSearch = useCallback(async (query: string) => {
+    if (!query || query.length < 2) {
       setSearchResults([]);
+      setShowSearchResults(false);
       return;
     }
 
     setSearchLoading(true);
     setSearchError(null);
+    setShowSearchResults(true);
 
     try {
       // First try local database
-      const localResults = await gameDataService.searchGames(searchTerm);
+      const localResults = await gameDataService.searchGames(query);
 
       // If we have few local results, also search IGDB
       if (localResults.length < 10) {
         console.log(`📚 Few local results (${localResults.length}), searching IGDB...`);
         try {
-          const igdbGames = await igdbService.searchGames(searchTerm, 20);
+          const igdbGames = await igdbService.searchGames(query, 20);
 
           // Transform IGDB results to match local format
           const transformedIgdbResults = igdbGames.map(game => ({
@@ -82,7 +77,7 @@ export const ReviewFormPage: React.FC = () => {
             igdb_id: game.id,
             name: game.name,
             slug: game.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') : undefined,
+            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_1080p').replace('//', 'https://') : undefined,
             summary: game.summary,
             first_release_date: game.first_release_date,
             genres: game.genres?.map(g => g.name) || [],
@@ -102,13 +97,14 @@ export const ReviewFormPage: React.FC = () => {
             }
           }
 
-          setSearchResults(mergedResults);
+          // Limit to 20 results
+          setSearchResults(mergedResults.slice(0, 20));
         } catch (igdbError) {
           console.error('IGDB search failed, using local results only:', igdbError);
-          setSearchResults(localResults);
+          setSearchResults(localResults.slice(0, 20));
         }
       } else {
-        setSearchResults(localResults);
+        setSearchResults(localResults.slice(0, 20));
       }
     } catch (error) {
       setSearchError('Failed to search games');
@@ -116,16 +112,55 @@ export const ReviewFormPage: React.FC = () => {
     } finally {
       setSearchLoading(false);
     }
-  }, [searchTerm]);
+  }, []);
   
-  // Trigger search when searchTerm changes
-  useEffect(() => {
-    if (showSearchModal && searchTerm.length > 0) {
-      refetchSearch();
+  // Handle search input with debounce (300ms like GamePickerModal)
+  const handleSearchInput = useCallback((value: string) => {
+    setGameSearch(value);
+
+    // Clear existing debounce timer
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+
+    // Set new debounce timer
+    if (value.length >= 2) {
+      searchDebounceRef.current = setTimeout(() => {
+        performSearch(value);
+      }, 300); // Same debounce as GamePickerModal
     } else {
       setSearchResults([]);
+      setShowSearchResults(false);
     }
-  }, [showSearchModal, searchTerm, refetchSearch]);
+  }, [performSearch]);
+
+  // Handle click outside to close search results
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowSearchResults(false);
+      }
+    };
+
+    if (showSearchResults) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showSearchResults]);
+
+  // Handle escape key to close search results
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showSearchResults) {
+        setShowSearchResults(false);
+      }
+    };
+
+    if (showSearchResults) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showSearchResults]);
   
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -352,70 +387,34 @@ export const ReviewFormPage: React.FC = () => {
     }
   }, [selectedGame, availablePlatforms]);
 
-  const handleGameSelect = (gameDataString: string) => {
-    try {
-      const gameData = JSON.parse(gameDataString);
-      const game: GameWithCalculatedFields = {
-        id: 0, // Will be set when saved to database
-        igdb_id: gameData.igdb_id,
-        name: gameData.name,
-        cover_url: gameData.cover_url,
-        genres: gameData.genres || [],
-        platforms: gameData.platforms || [],
-        first_release_date: gameData.first_release_date,
-        summary: gameData.summary,
-        igdb_rating: gameData.igdb_rating,
-        // Add calculated fields with defaults
-        averageRating: 0,
-        gameReviewCount: 0
-      };
-      
-      setSelectedGame(game);
-      setGameSearch('');
-      setSearchTerm('');
-      setShowSearchModal(false);
-      
-      // Load available platforms for this game
-      if (game.platforms && game.platforms.length > 0) {
-        const mappedPlatforms = mapPlatformNames(game.platforms);
-        setAvailablePlatforms(mappedPlatforms);
-        // Reset selected platforms when changing games
-        setSelectedPlatforms([]);
-      } else {
-        // Fallback to common platforms if no data
-        setAvailablePlatforms(['PC', 'PS5', 'Xbox Series X/S', 'Switch']);
-        setSelectedPlatforms([]);
-      }
-    } catch (error) {
-      console.error('Error parsing game data:', error);
+  const handleGameSelect = (game: GameWithCalculatedFields) => {
+    setSelectedGame(game);
+    setGameSearch('');
+    setSearchResults([]);
+    setShowSearchResults(false);
+
+    // Load available platforms for this game
+    if (game.platforms && game.platforms.length > 0) {
+      const mappedPlatforms = mapPlatformNames(game.platforms);
+      setAvailablePlatforms(mappedPlatforms);
+      // Reset selected platforms when changing games
+      setSelectedPlatforms([]);
+    } else {
+      // Fallback to common platforms if no data
+      setAvailablePlatforms(['PC', 'PS5', 'Xbox Series X/S', 'Switch']);
+      setSelectedPlatforms([]);
     }
   };
-  
-  const handleGameClick = (game: GameWithCalculatedFields) => {
-    // Convert game object to JSON string for handleGameSelect
-    const gameDataString = JSON.stringify({
-      igdb_id: game.igdb_id,
-      name: game.name,
-      cover_url: game.cover_url,
-      genres: game.genres || [],
-      platforms: game.platforms || [],
-      first_release_date: game.first_release_date,
-      summary: game.summary,
-      igdb_rating: game.igdb_rating
-    });
 
-    handleGameSelect(gameDataString);
+  const handleChangeGame = () => {
+    setSelectedGame(null);
+    setGameSearch('');
+    setSearchResults([]);
+    setShowSearchResults(false);
+    setSelectedPlatforms([]);
   };
   
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-  };
   
-  const updateFilters = (newFilters: Partial<SearchFilters>) => {
-    const updatedFilters = { ...filters, ...newFilters };
-    setFilters(updatedFilters);
-  };
 
   const handlePlatformToggle = (platform: string) => {
     // Single platform selection only
@@ -445,117 +444,7 @@ export const ReviewFormPage: React.FC = () => {
     return 'TBA';
   };
 
-  // Game Card Component for Grid View
-  const GameCard: React.FC<{ game: GameWithCalculatedFields }> = ({ game }) => (
-    <div
-      onClick={() => handleGameClick(game)}
-      className="bg-gray-700 rounded-lg overflow-hidden hover:bg-gray-600 transition-all duration-200 cursor-pointer group hover:scale-105 relative"
-    >
-      <div className="aspect-[3/4] relative overflow-hidden">
-        {game.cover_url ? (
-          <img
-            src={game.cover_url}
-            alt={game.name}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full bg-gray-600 flex items-center justify-center">
-            <span className="text-gray-500 text-sm">No Image</span>
-          </div>
-        )}
-        {game.igdb_rating && (
-          <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded-lg text-sm flex items-center">
-            <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
-            {Math.round(game.igdb_rating / 10)}
-          </div>
-        )}
-      </div>
-      <div className="p-4">
-        <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors line-clamp-2">
-          {game.name}
-        </h3>
-        {game.first_release_date && (
-          <p className="text-gray-400 text-sm mt-1 flex items-center">
-            <Calendar className="w-3 h-3 mr-1" />
-            {formatDate(game.first_release_date)}
-          </p>
-        )}
-        {game.genres && game.genres.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            <span className="bg-purple-600 bg-opacity-20 text-purple-300 px-2 py-1 rounded text-xs">
-              {game.genres[0]}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-  
-  // Game List Item Component for List View
-  const GameListItem: React.FC<{ game: GameWithCalculatedFields }> = ({ game }) => (
-    <div
-      onClick={() => handleGameClick(game)}
-      className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer group flex gap-4 relative"
-    >
-      <div className="w-16 h-20 flex-shrink-0 overflow-hidden rounded">
-        {game.cover_url ? (
-          <img
-            src={game.cover_url}
-            alt={game.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full bg-gray-600 flex items-center justify-center">
-            <span className="text-gray-500 text-xs">No Image</span>
-          </div>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors truncate">
-          {game.name}
-        </h3>
-        {game.first_release_date && (
-          <p className="text-gray-400 text-sm mt-1 flex items-center">
-            <Calendar className="w-3 h-3 mr-1" />
-            {formatDate(game.first_release_date)}
-          </p>
-        )}
-        {game.summary && (
-          <p className="text-gray-300 text-sm mt-2 line-clamp-2">
-            {game.summary}
-          </p>
-        )}
-        {game.genres && game.genres.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            <span className="bg-purple-600 bg-opacity-20 text-purple-300 px-2 py-1 rounded text-xs">
-              {game.genres[0]}
-            </span>
-          </div>
-        )}
-      </div>
-      {game.rating && (
-        <div className="flex-shrink-0 text-right">
-          <div className="flex items-center text-yellow-400">
-            <Star className="w-4 h-4 mr-1 fill-current" />
-            <span className="text-white font-semibold">
-              {Math.round(game.igdb_rating / 10)}
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      // Pass the search query to the modal
-      setSearchTerm(gameSearch);
-      setShowSearchModal(true);
-    }
-  };
 
   const handleDelete = async () => {
     if (!existingReviewId) return;
@@ -761,7 +650,7 @@ export const ReviewFormPage: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Game Selection */}
             {!selectedGame && (
-              <div>
+              <div ref={searchContainerRef}>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Select Game
                 </label>
@@ -770,12 +659,100 @@ export const ReviewFormPage: React.FC = () => {
                   <input
                     type="text"
                     value={gameSearch}
-                    onChange={(e) => setGameSearch(e.target.value)}
-                    onKeyDown={handleSearchKeyDown}
+                    onChange={(e) => handleSearchInput(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                    placeholder="Search for a game and press Enter..."
+                    placeholder="Search for a game..."
                   />
                 </div>
+
+                {/* Search Results Container */}
+                {showSearchResults && (
+                  <div className="mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl overflow-hidden">
+                    {/* Results Header */}
+                    <div className="flex items-center justify-between p-3 border-b border-gray-700">
+                      <span className="text-sm text-gray-400">
+                        {searchLoading ? 'Searching...' : `${searchResults.length} results`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowSearchResults(false)}
+                        className="text-gray-400 hover:text-white transition-colors"
+                        aria-label="Close search results"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {/* Results Content */}
+                    <div className="max-h-96 md:max-h-[42rem] overflow-y-auto">
+                      {searchLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                          <Loader className="h-8 w-8 animate-spin text-purple-500" />
+                        </div>
+                      ) : searchError ? (
+                        <div className="p-4 text-center">
+                          <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                          <p className="text-red-400">{searchError}</p>
+                        </div>
+                      ) : searchResults.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3">
+                          {searchResults.map((game) => (
+                            <div
+                              key={game.igdb_id || game.id}
+                              className="bg-gray-700 rounded-lg overflow-hidden hover:ring-2 hover:ring-purple-500 transition-all flex flex-col"
+                            >
+                              {/* Game Cover */}
+                              <div className="relative aspect-[3/4]">
+                                <img
+                                  src={game.cover_url || '/placeholder-game.jpg'}
+                                  alt={game.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.src = '/placeholder-game.jpg';
+                                  }}
+                                />
+                              </div>
+
+                              {/* Game Info */}
+                              <div className="p-3 flex flex-col flex-grow">
+                                <h3 className="text-white font-medium text-sm line-clamp-2 mb-2">
+                                  {game.name}
+                                </h3>
+
+                                {game.first_release_date && (
+                                  <p className="text-gray-400 text-xs mb-2">
+                                    {typeof game.first_release_date === 'number'
+                                      ? new Date(game.first_release_date * 1000).getFullYear()
+                                      : new Date(game.first_release_date).getFullYear()
+                                    }
+                                  </p>
+                                )}
+
+                                <div className="mt-auto">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleGameSelect(game)}
+                                    className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                                  >
+                                    <ScrollText className="h-4 w-4" />
+                                    Select Game
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <Gamepad2 className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                          <p className="text-gray-400">
+                            No eligible games found. Try a different search.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -786,7 +763,7 @@ export const ReviewFormPage: React.FC = () => {
                   <h3 className="text-xl font-semibold text-white">{selectedGame.name}</h3>
                   <button
                     type="button"
-                    onClick={() => setSelectedGame(null)}
+                    onClick={handleChangeGame}
                     className="text-sm text-gray-400 hover:text-white transition-colors"
                   >
                     Change Game
@@ -1152,16 +1129,6 @@ export const ReviewFormPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Game Picker Modal */}
-      {user && (
-        <GamePickerModal
-          isOpen={showSearchModal}
-          onClose={() => setShowSearchModal(false)}
-          onSelect={handleGameSelect}
-          userId={user.id.toString()}
-          mode="review"
-        />
-      )}
 
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (
