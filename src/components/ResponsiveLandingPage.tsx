@@ -247,7 +247,7 @@ export const ResponsiveLandingPage: React.FC = () => {
       return;
     }
     // Navigate to user's own profile if authenticated
-    navigate(`/user/${user?.username || user?.id}`);
+    navigate(`/user/${dbUserId || user?.id}`);
   };
 
   if (isMobile) {
@@ -305,7 +305,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               </Link>
               {isAuthenticated ? (
                 <Link
-                  to={`/user/${user?.username || user?.id}`}
+                  to={`/user/${dbUserId || user?.id}`}
                   className="group relative block w-full overflow-hidden rounded-lg"
                 >
                   {/* Glassmorphism background */}
@@ -522,7 +522,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               </Link>
               {isAuthenticated ? (
                 <Link
-                  to={`/user/${user?.username || user?.id}`}
+                  to={`/user/${dbUserId || user?.id}`}
                   className="group relative px-8 py-3 text-purple-300 rounded-lg flex items-center gap-2 text-lg font-medium overflow-hidden transition-all duration-300 hover:scale-105"
                 >
                   {/* Glassmorphism background - Secondary style */}

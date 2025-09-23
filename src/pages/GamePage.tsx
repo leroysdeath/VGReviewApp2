@@ -732,8 +732,13 @@ export const GamePage: React.FC = () => {
     [transformedReviews]
   );
 
-  // Recommendation 3: Use game's calculated average from service
-  const averageRating = game?.averageUserRating || 0;
+  // Calculate average rating from actual loaded reviews (client-side calculation)
+  // This bypasses the broken server-side calculation in game.averageUserRating
+  const averageRating = useMemo(() => {
+    if (validRatings.length === 0) return 0;
+    const sum = validRatings.reduce((acc, r) => acc + r.rating, 0);
+    return sum / validRatings.length;
+  }, [validRatings]);
 
   // Recommendation 5: Memoize expensive calculations
   // Recommendation 7: Add error boundaries for distribution
@@ -1389,7 +1394,7 @@ export const GamePage: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-green-400">
-                    {averageRating > 0 ? averageRating.toFixed(1) : '-'}
+                    {averageRating > 0 ? averageRating.toFixed(1) : 'N/A'}
                   </div>
                 </div>
               )}

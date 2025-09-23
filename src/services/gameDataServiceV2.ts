@@ -410,7 +410,8 @@ export class GameDataServiceV2 {
    */
   private transformImageUrl(url: string): string {
     if (!url) return '';
-    return url.replace('t_thumb', 't_cover_big').replace('//', 'https://');
+    // Use t_1080p for high quality images instead of t_cover_big (264x374)
+    return url.replace('t_thumb', 't_1080p').replace('//', 'https://');
   }
   
   /**

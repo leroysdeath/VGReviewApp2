@@ -1202,10 +1202,11 @@ class IGDBService {
   // Transform IGDB image URL to higher quality
   private transformImageUrl(url: string): string {
     if (!url) return '';
-    
+
     // IGDB URLs come as //images.igdb.com/igdb/image/upload/t_thumb/imageid.jpg
-    // We want to change t_thumb to a higher quality size
-    return url.replace('t_thumb', 't_cover_big').replace('//', 'https://');
+    // Change to t_1080p for high quality (1920x1080) images
+    // t_cover_big is only 264x374 which appears blurry on modern displays
+    return url.replace('t_thumb', 't_1080p').replace('//', 'https://');
   }
 
   // Test API connection
