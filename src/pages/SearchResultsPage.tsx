@@ -55,7 +55,7 @@ export const SearchResultsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { searchState, searchGames, searchTerm, setSearchTerm } = useGameSearch();
+  const { searchState, searchGames, searchTerm, setSearchTerm, searchGamesProgressive } = useGameSearch();
   
   // Detect mobile and set default view mode accordingly
   const [isMobile, setIsMobile] = useState(false);
@@ -73,6 +73,7 @@ export const SearchResultsPage: React.FC = () => {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchStarted, setSearchStarted] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>();
   const filterDebounceRef = useRef<NodeJS.Timeout>();
 
@@ -211,24 +212,60 @@ export const SearchResultsPage: React.FC = () => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
-    
+
     if (!filters.searchTerm?.trim()) return;
-    
+
     try {
       setSearchStarted(true);
-      
-      await searchGames(filters.searchTerm, {
-        platforms: filters.platforms,
-        minRating: filters.minRating,
-        sortBy: filters.sortBy === '' ? undefined :
-               filters.sortBy === 'name' ? 'name' :
-               filters.sortBy === 'release_date' ? 'release_date' :
-               filters.sortBy === 'avg_rating' ? 'rating' : 'popularity',
-        sortOrder: filters.sortOrder
-      });
-      
+      setIsEnhancing(false);
+
+      // Use progressive search if available
+      if (searchGamesProgressive) {
+        // Phase 1: Get database results immediately
+        const dbResults = await searchGamesProgressive(filters.searchTerm, {
+          platforms: filters.platforms,
+          minRating: filters.minRating,
+          sortBy: filters.sortBy === '' ? undefined :
+                 filters.sortBy === 'name' ? 'name' :
+                 filters.sortBy === 'release_date' ? 'release_date' :
+                 filters.sortBy === 'avg_rating' ? 'rating' : 'popularity',
+          sortOrder: filters.sortOrder
+        }, 'database');
+
+        // Only proceed to IGDB if we have few database results
+        if (dbResults && dbResults.length < 10) {
+          setIsEnhancing(true);
+          // Phase 2: Enhance with IGDB results asynchronously
+          searchGamesProgressive(filters.searchTerm, {
+            platforms: filters.platforms,
+            minRating: filters.minRating,
+            sortBy: filters.sortBy === '' ? undefined :
+                   filters.sortBy === 'name' ? 'name' :
+                   filters.sortBy === 'release_date' ? 'release_date' :
+                   filters.sortBy === 'avg_rating' ? 'rating' : 'popularity',
+            sortOrder: filters.sortOrder
+          }, 'enhance').then(() => {
+            setIsEnhancing(false);
+          }).catch(() => {
+            setIsEnhancing(false);
+          });
+        }
+      } else {
+        // Fallback to regular search
+        await searchGames(filters.searchTerm, {
+          platforms: filters.platforms,
+          minRating: filters.minRating,
+          sortBy: filters.sortBy === '' ? undefined :
+                 filters.sortBy === 'name' ? 'name' :
+                 filters.sortBy === 'release_date' ? 'release_date' :
+                 filters.sortBy === 'avg_rating' ? 'rating' : 'popularity',
+          sortOrder: filters.sortOrder
+        });
+      }
+
     } catch (err) {
       console.error('SearchResultsPage: Search failed:', err);
+      setIsEnhancing(false);
     }
   };
 
@@ -495,6 +532,11 @@ export const SearchResultsPage: React.FC = () => {
                         High-quality game data
                       </span>
                     )}
+                    {isEnhancing && (
+                      <span className="text-yellow-400 text-xs animate-pulse">
+                        Loading more results...
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -581,11 +623,13 @@ export const SearchResultsPage: React.FC = () => {
               </div>
             )}
 
-            {/* Loading State */}
-            {searchState.loading && searchStarted && (
+            {/* Loading State - Show different messages for initial vs enhancement */}
+            {(searchState.loading || isEnhancing) && searchStarted && (
               <div className="flex justify-center items-center gap-3 mb-6 p-4 bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700">
                 <Loader className="h-5 w-5 animate-spin text-purple-500" />
-                <span className="text-gray-300">Searching for "{filters.searchTerm}"...</span>
+                <span className="text-gray-300">
+                  {isEnhancing ? `Finding more results for "${filters.searchTerm}"...` : `Searching for "${filters.searchTerm}"...`}
+                </span>
               </div>
             )}
 

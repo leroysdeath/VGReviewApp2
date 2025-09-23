@@ -94,6 +94,8 @@ export class AdvancedSearchCoordination {
       bypassCache?: boolean;
       includeMetrics?: boolean;
       fastMode?: boolean; // New option for dropdown searches
+      databaseOnly?: boolean; // Phase 1: Only query database
+      igdbOnly?: boolean; // Phase 2: Only query IGDB
     } = {}
   ): Promise<{
     results: SearchResult[];
@@ -102,11 +104,11 @@ export class AdvancedSearchCoordination {
   }> {
     const startTime = Date.now();
     
-    // Fast path for dropdown searches - bypass all complex logic
-    if (options.fastMode) {
-      if (DEBUG_SEARCH_COORDINATION) console.log(`⚡ FAST MODE: Quick search for dropdown: "${query}"`);
+    // Fast path for dropdown searches or database-only mode
+    if (options.fastMode || options.databaseOnly) {
+      if (DEBUG_SEARCH_COORDINATION) console.log(`⚡ ${options.databaseOnly ? 'DATABASE-ONLY' : 'FAST'} MODE: Quick search for "${query}"`);
       try {
-        const fastResults = await this.gameDataService.searchGamesFast(query, options.maxResults || 8);
+        const fastResults = await this.gameDataService.searchGamesFast(query, options.maxResults || (options.databaseOnly ? 200 : 8));
         return {
           results: fastResults.map(game => ({
             ...game,
@@ -130,6 +132,41 @@ export class AdvancedSearchCoordination {
       } catch (error) {
         console.error('Fast mode search failed:', error);
         // Fall through to normal search if fast mode fails
+      }
+    }
+
+    // IGDB-only mode for enhancement phase
+    if (options.igdbOnly) {
+      if (DEBUG_SEARCH_COORDINATION) console.log(`🌐 IGDB-ONLY MODE: Enhancing results for "${query}"`);
+      const context = this.buildSearchContext(query, options);
+
+      try {
+        // Only query IGDB, skip database
+        const igdbResults = await this.fetchFromIGDB(context);
+        const processedResults = this.processSearchResults(igdbResults, context);
+
+        return {
+          results: processedResults,
+          context,
+          metrics: options.includeMetrics ? {
+            totalSearchTime: Date.now() - startTime,
+            dbQueryTime: 0,
+            igdbQueryTime: Date.now() - startTime,
+            processingTime: 0,
+            cacheHit: false,
+            resultCount: processedResults.length,
+            qualityFiltered: 0,
+            contentFiltered: 0,
+            queriesExpanded: context.expandedQueries.length
+          } : undefined
+        };
+      } catch (error) {
+        console.error('IGDB-only search failed:', error);
+        return {
+          results: [],
+          context,
+          metrics: undefined
+        };
       }
     }
     
@@ -620,7 +657,7 @@ export class AdvancedSearchCoordination {
 
         try {
           // Create a race between IGDB search and timeout
-          const IGDB_TIMEOUT = 2000; // 2 seconds max for search
+          const IGDB_TIMEOUT = 1000; // OPTIMIZED: 1 second max for fast response
           const timeoutPromise = new Promise<never>((_, reject) => {
             setTimeout(() => reject(new Error('IGDB search timeout')), IGDB_TIMEOUT);
           });
