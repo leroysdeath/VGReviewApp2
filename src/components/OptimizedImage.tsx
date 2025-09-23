@@ -38,7 +38,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
   // Use low-quality placeholder for game covers if not provided
   const defaultPlaceholder = src.includes('game') || src.includes('cover')
-    ? '/placeholder-game.jpg'
+    ? '/placeholder-game.svg'
     : undefined;
 
   return (
@@ -76,7 +76,7 @@ export const GameCoverImage: React.FC<{
       aspectRatio="3/4"
       layout="third"
       priority={priority}
-      placeholder="/placeholder-game.jpg"
+      placeholder="/placeholder-game.svg"
     />
   );
 };
@@ -115,7 +115,7 @@ export const AvatarImage: React.FC<{
       aspectRatio="1/1"
       sizes={`${sizePixels[size]}px`}
       priority={size === 'xl'} // Prioritize larger avatars
-      fallback="/default-avatar.png"
+      fallback="/default-avatar.svg"
       disableModernFormats={src.includes('gravatar') || src.includes('github')} // External avatars
     />
   );
