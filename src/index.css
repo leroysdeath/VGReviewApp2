@@ -2,12 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Font loading optimization - prevent layout shift */
+/* Font loading optimization - Self-hosted fonts */
 @font-face {
   font-family: 'Space Grotesk';
-  font-display: swap; /* Prevent layout shift during font loading */
-  font-weight: 300 700;
+  src: url('/fonts/SpaceGrotesk-300.woff2') format('woff2');
+  font-weight: 300;
   font-style: normal;
+  font-display: swap; /* Prevent layout shift during font loading */
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
 }
 
 /* Ensure critical text is visible during webfont load */
