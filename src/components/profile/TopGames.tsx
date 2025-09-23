@@ -542,28 +542,54 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
               <div className="flex flex-col items-center gap-3 mb-4 transition-all duration-300">
                 {/* When viewing other users, only show games they have */}
                 {!editable ? (
-                  // Non-editable view - only show existing games
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
-                    {userTopGames.filter(g => g.game).map((gameData) => (
-                      <div key={gameData.position} className="relative group">
-                        <Link to={getGameUrl(gameData.game!)}>
-                          <div className="relative aspect-[3/4]">
-                            <img
-                              src={gameData.game!.cover_url}
-                              alt={gameData.game!.name}
-                              className="w-full h-full object-cover rounded-lg"
-                              onError={(e) => {
-                                e.currentTarget.src = '/default-cover.png';
-                              }}
-                            />
-                            <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
-                              {gameData.position}
+                  // Non-editable view - use same 1+4 layout
+                  <>
+                    {/* Top row - 1 game centered */}
+                    <div className="flex justify-center gap-3">
+                      {userTopGames.filter(g => g.position === 1 && g.game).map((gameData) => (
+                        <div key={gameData.position} className="relative group w-[180px]">
+                          <Link to={getGameUrl(gameData.game!)}>
+                            <div className="relative aspect-[3/4]">
+                              <img
+                                src={gameData.game!.cover_url}
+                                alt={gameData.game!.name}
+                                className="w-full h-full object-cover rounded-lg"
+                                onError={(e) => {
+                                  e.currentTarget.src = '/default-cover.png';
+                                }}
+                              />
+                              <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                                {gameData.position}
+                              </div>
                             </div>
-                          </div>
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Bottom row - 4 games */}
+                    <div className="grid grid-cols-4 gap-2 px-2">
+                      {userTopGames.filter(g => g.position >= 2 && g.game).map((gameData) => (
+                        <div key={gameData.position} className="relative group">
+                          <Link to={getGameUrl(gameData.game!)}>
+                            <div className="relative aspect-[3/4]">
+                              <img
+                                src={gameData.game!.cover_url}
+                                alt={gameData.game!.name}
+                                className="w-full h-full object-cover rounded-lg"
+                                onError={(e) => {
+                                  e.currentTarget.src = '/default-cover.png';
+                                }}
+                              />
+                              <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">
+                                {gameData.position}
+                              </div>
+                            </div>
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 ) : (
                   <>
                 {/* Top row - 1 game centered */}
