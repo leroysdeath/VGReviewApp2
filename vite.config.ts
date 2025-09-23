@@ -30,20 +30,10 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        // Code splitting strategy - let Vite handle it automatically for now
-        // Manual chunks can cause issues with lazy loading
-        manualChunks: undefined,
-        // Optimize chunk names for caching
+        // Standard chunk naming for caching
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
-        // Optimize entry file name
         entryFileNames: 'assets/[name]-[hash].js'
-      },
-      // Enable tree shaking optimizations
-      treeshake: {
-        moduleSideEffects: false,
-        propertyReadSideEffects: false,
-        tryCatchDeoptimization: false
       }
     },
     // Additional optimizations
