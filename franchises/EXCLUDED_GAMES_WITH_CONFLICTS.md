@@ -2,10 +2,16 @@
 
 ## Summary
 **Phase 1**: 75 games excluded from initial migration
-**Phase 1 Batch 2**: 111 games excluded from Batch 2 migration
-**Total Excluded**: 186 games
+**Phase 1 Batch 2**: 127 games excluded from Batch 2 migration (was 111, found 16 more)
+**Total Excluded**: 202 games
 
 All excluded games already exist in the database with IGDB IDs from previous imports.
+
+**UPDATE**: Found 16 additional Batch 2 conflicts during final testing:
+- 5 more Gundam games
+- 4 more Oregon Trail games
+- 2 more Dragon Ball games
+- 1 SingStar game
 
 ## Review Options
 For each game below, you can:
@@ -229,7 +235,7 @@ This would be more efficient than re-importing the games and would preserve the 
 
 ## Phase 1 Batch 2 Conflicts (111 games)
 
-### Gundam Franchise (15 conflicts)
+### Gundam Franchise (20 conflicts - was 15, +5 found)
 | Game Name | IGDB ID | Our Data | Action Needed |
 |-----------|---------|----------|---------------|
 | Mobile Suit Gundam: Crossfire | 4165 | Release: 2006-11-11, Platform: PS3 | Review/Skip |
@@ -247,8 +253,13 @@ This would be more efficient than re-importing the games and would preserve the 
 | Gundam: The Battle Master 2 | 45515 | Release: 1998-03-12, Platform: PSX | Review/Skip |
 | SD Gundam G Generation | 50445 | Release: 1998-08-06, Platform: PSX | Review/Skip |
 | SD Gundam G Generation Wars | 20220 | Release: 2009-08-06, Platform: PS2/Wii | Review/Skip |
+| **Mobile Suit Gundam: Journey to Jaburo** | **43461** | **Release: 2000-06-29, Platform: PS2** | **Review/Skip** |
+| **Mobile Suit Gundam: Zeonic Front** | **43594** | **Release: 2001-09-06, Platform: PS2** | **Review/Skip** |
+| **Mobile Suit Gundam: Encounters in Space** | **43392** | **Release: 2003-09-04, Platform: PS2** | **Review/Skip** |
+| **Mobile Suit Gundam: Climax U.C.** | **68012** | **Release: 2006-03-02, Platform: PS2** | **Review/Skip** |
+| **Gundam Breaker** | **45290** | **Release: 2013-06-27, Platform: PS3/Vita** | **Review/Skip** |
 
-### SingStar Franchise (21 conflicts - 95% conflict rate!)
+### SingStar Franchise (22 conflicts - 100% conflict rate! was 21, +1 found)
 | Game Name | IGDB ID | Our Data | Action Needed |
 |-----------|---------|----------|---------------|
 | SingStar '80s | 12901 | Release: 2005-04-15, Platform: PS2 | Review/Skip |
@@ -272,6 +283,7 @@ This would be more efficient than re-importing the games and would preserve the 
 | SingStar The Beatles | 12671 | Release: (Cancelled), Platform: PS2/PS3 | Review/Skip |
 | SingStar Turkish Party | 78652 | Release: 2009-11-01, Platform: PS2/PS3 | Review/Skip |
 | SingStar Vol. 3 | 3866 | Release: 2009-12-01, Platform: PS3 | Review/Skip |
+| **SingStar: Celebration** | **52828** | **Release: 2017-10-24, Platform: PS4** | **Review/Skip** |
 
 ### Duck Hunt (3 conflicts - all games conflicted)
 | Game Name | IGDB ID | Our Data | Action Needed |
@@ -280,7 +292,7 @@ This would be more efficient than re-importing the games and would preserve the 
 | Super Duck Hunt | 95133 | Release: 1984-04-21, Platform: NES | Review/Skip |
 | Duck Hunt Duo | 225061 | Release: 1984-04-21, Platform: NES | Review/Skip |
 
-### Oregon Trail (6 conflicts)
+### Oregon Trail (10 conflicts - was 6, +4 found)
 | Game Name | IGDB ID | Our Data | Action Needed |
 |-----------|---------|----------|---------------|
 | Oregon Trail 2 | 96613 | Release: 1995-06-01, Platform: PC | Review/Skip |
@@ -290,8 +302,11 @@ This would be more efficient than re-importing the games and would preserve the 
 | Oregon Trail: American Settler | 68871 | Release: 2011-11-29, Platform: Mobile | Review/Skip |
 | Oregon Trail: Hunt for Food | 68873 | Release: 2012-03-01, Platform: Mobile | Review/Skip |
 | Oregon Trail: Gold Rush | 68872 | Release: 2012-01-31, Platform: Mobile | Review/Skip |
+| **Oregon Trail II** | **47099** | **Release: 1995-01-01, Platform: PC** | **Review/Skip** |
+| **Amazon Trail II** | **65850** | **Release: 1996-01-01, Platform: PC** | **Review/Skip** |
+| **Africa Trail** | **93262** | **Release: 1995-01-01, Platform: PC** | **Review/Skip** |
 
-### Dragon Ball (6 conflicts)
+### Dragon Ball (8 conflicts - was 6, +2 found)
 | Game Name | IGDB ID | Our Data | Action Needed |
 |-----------|---------|----------|---------------|
 | Dragon Ball Z 2: Super Battle | 2562 | Release: 1994-12-17, Platform: Arcade | Review/Skip |
@@ -300,6 +315,8 @@ This would be more efficient than re-importing the games and would preserve the 
 | Dragon Ball Z: Hyper Dimension | 2557 | Release: 1996-03-29, Platform: SNES | Review/Skip |
 | Dragon Ball Z III: Ressen Jinzou Ningen | 48680 | Release: 1992-08-07, Platform: NES | Review/Skip |
 | Dragon Ball Z: The Legend | 2579 | Release: 1996-11-15, Platform: PlayStation | Review/Skip |
+| **Dragon Ball: Daimaou Fukkatsu** | **72395** | **Release: 1988-08-12, Platform: NES** | **Review/Skip** |
+| **Dragon Ball 3: Goku-den** | **48679** | **Release: 1989-10-27, Platform: NES** | **Review/Skip** |
 
 ### NBA Live (5 conflicts)
 | Game Name | IGDB ID | Our Data | Action Needed |
@@ -424,16 +441,16 @@ This would be more efficient than re-importing the games and would preserve the 
 - Dragon Quest: 7 conflicts
 - Other franchises: 33 conflicts
 
-### Phase 1 Batch 2 Conflicts (111 games)
+### Phase 1 Batch 2 Conflicts (127 games)
 **Batch 2 By Franchise**:
-- SingStar: 21 conflicts (95% conflict rate!)
-- Gundam: 15 conflicts (60% conflict rate)
+- SingStar: 22 conflicts (100% conflict rate!)
+- Gundam: 20 conflicts (80% conflict rate)
+- Oregon Trail: 10 conflicts (50% conflict rate)
 - PGA Tour: 9 conflicts (69% conflict rate)
-- Dragon Ball: 6 conflicts (32% conflict rate)
-- Oregon Trail: 6 conflicts (30% conflict rate)
+- Dragon Ball: 8 conflicts (42% conflict rate)
 - NBA Live: 5 conflicts (63% conflict rate)
 - NHL: 4 conflicts (33% conflict rate)
 - Duck Hunt: 3 conflicts (100% conflict rate)
-- Other franchises: 42 conflicts (100% for these franchises)
+- Other franchises: 46 conflicts (100% for these franchises)
 
-### Combined Total: 186 games excluded
+### Combined Total: 202 games excluded
