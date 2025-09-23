@@ -38,7 +38,7 @@ const SpinningNumber: React.FC<{ isHovered: boolean }> = ({ isHovered }) => {
 const SplittingUsers: React.FC<{ isHovered: boolean; size?: 'small' | 'large' }> = ({ isHovered, size = 'large' }) => {
   const iconSize = size === 'small' ? 'h-10 w-10' : 'h-12 w-12';
   const containerHeight = size === 'small' ? 'h-10' : 'h-16';
-  const marginBottom = size === 'small' ? 'mb-3' : 'mb-4';
+  const marginBottom = size === 'small' ? 'mb-4' : 'mb-6';
   
   return (
     <div className={`relative ${containerHeight} w-24 mx-auto ${marginBottom} flex items-center justify-center`}>
@@ -75,7 +75,7 @@ const SplittingUsers: React.FC<{ isHovered: boolean; size?: 'small' | 'large' }>
 const CascadingCheckboxes: React.FC<{ isHovered: boolean; size?: 'small' | 'large' }> = ({ isHovered, size = 'large' }) => {
   const iconSize = size === 'small' ? 'h-6 w-6' : 'h-7 w-7';
   const containerSize = size === 'small' ? 'h-14 w-24' : 'h-16 w-28';
-  const marginBottom = size === 'small' ? 'mb-3' : 'mb-4';
+  const marginBottom = size === 'small' ? 'mb-4' : 'mb-6';
   const spacing = size === 'small' ? 20 : 24;
 
   // Grid positions for 3x2 layout
@@ -332,7 +332,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                   {/* Content */}
                   <div className="relative px-6 py-3 text-purple-300 font-medium">
                     <div className="flex items-center justify-center gap-2">
-                      Create Account
+                      Join GameVault
                       <ArrowRight className="h-5 w-5" />
                     </div>
                   </div>
@@ -362,9 +362,9 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
                   <SplittingUsers isHovered={hoveredCard === 'social-mobile'} size="small" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-blue-300">Social Discovery</h3>
-                <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  Follow gamers to get updates on their activity. See the games they've reviewed, added to their Wishlist, Backlog, and more.
+                <h3 className="text-lg font-semibold text-white mb-3 transition-colors duration-300 group-hover:text-blue-300">Social Discovery</h3>
+                <p className="text-gray-300 text-sm font-medium leading-relaxed transition-all duration-300 group-hover:text-gray-200">
+                  Follow gamers to discover games through their activity and reviews.
                 </p>
               </div>
             </div>
@@ -378,9 +378,9 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
                   <CascadingCheckboxes isHovered={hoveredCard === 'stats-mobile'} size="small" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-green-300">Track Your Games</h3>
-                <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  Add games you haven't played to your Wishlist (don't own) or Backlog (own). Mark games you've Started or Finished.
+                <h3 className="text-lg font-semibold text-white mb-3 transition-colors duration-300 group-hover:text-green-300">Track Your Games</h3>
+                <p className="text-gray-300 text-sm font-medium leading-relaxed transition-all duration-300 group-hover:text-gray-200">
+                  Organize your gaming library with Wishlist, Backlog, Started, and Finished.
                 </p>
               </div>
             </div>
@@ -394,9 +394,9 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
                   <SpinningNumber isHovered={hoveredCard === 'ratings-mobile'} />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2 transition-colors duration-300 group-hover:text-purple-300">Write Reviews</h3>
-                <p className="text-gray-400 text-sm transition-all duration-300 group-hover:text-gray-300">
-                  The more games you review, the more you help other players find games they'll enjoy, and avoid games they won't.
+                <h3 className="text-lg font-semibold text-white mb-3 transition-colors duration-300 group-hover:text-purple-300">Write Reviews</h3>
+                <p className="text-gray-300 text-sm font-medium leading-relaxed transition-all duration-300 group-hover:text-gray-200">
+                  Share your gaming experiences to help others find games they'll enjoy and avoid disappointments.
                 </p>
               </div>
             </div>
@@ -546,7 +546,7 @@ export const ResponsiveLandingPage: React.FC = () => {
 
                   {/* Content */}
                   <div className="relative flex items-center gap-2 group-hover:text-white transition-colors duration-300">
-                    Create Account
+                    Join GameVault
                     <ArrowRight className="h-5 w-5" />
                   </div>
                 </button>
@@ -586,9 +586,9 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
                   <SplittingUsers isHovered={hoveredCard === 'social'} />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-blue-300">Social Discovery</h3>
-                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
-                  Follow gamers to get updates on their activity. See the games they've reviewed, added to their Wishlist, Backlog, and more.
+                <h3 className="text-xl font-semibold text-white mb-3 transition-all duration-300 group-hover:text-blue-300">Social Discovery</h3>
+                <p className="text-gray-300 text-base font-medium leading-relaxed transition-all duration-300 group-hover:text-gray-100 min-h-[72px]">
+                  Follow gamers to discover games through their activity and reviews.
                 </p>
               </div>
             </div>
@@ -612,9 +612,9 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
                   <CascadingCheckboxes isHovered={hoveredCard === 'stats'} />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-green-300">Track Your Games</h3>
-                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
-                  Add games you haven't played to your Wishlist (don't own) or Backlog (own). Mark games you've Started or Finished.
+                <h3 className="text-xl font-semibold text-white mb-3 transition-all duration-300 group-hover:text-green-300">Track Your Games</h3>
+                <p className="text-gray-300 text-base font-medium leading-relaxed transition-all duration-300 group-hover:text-gray-100 min-h-[72px]">
+                  Organize your gaming library with Wishlist, Backlog, Started, and Finished.
                 </p>
               </div>
             </div>
@@ -638,9 +638,9 @@ export const ResponsiveLandingPage: React.FC = () => {
                 <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
                   <SpinningNumber isHovered={hoveredCard === 'ratings'} />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 transition-all duration-300 group-hover:text-purple-300">Write Reviews</h3>
-                <p className="text-gray-400 transition-all duration-300 group-hover:text-gray-200 min-h-[72px]">
-                  The more games you review, the more you help other players find games they'll enjoy, and avoid games they won't.
+                <h3 className="text-xl font-semibold text-white mb-3 transition-all duration-300 group-hover:text-purple-300">Write Reviews</h3>
+                <p className="text-gray-300 text-base font-medium leading-relaxed transition-all duration-300 group-hover:text-gray-100 min-h-[72px]">
+                  Share your gaming experiences to help others find games they'll enjoy and avoid disappointments.
                 </p>
               </div>
             </div>
