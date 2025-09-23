@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart, Trash2, Gamepad2, Scroll } from 'lucide-react';
+import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart, Trash2, Gamepad2, ScrollText } from 'lucide-react';
 import { gameDataService } from '../services/gameDataService';
 import { gameSearchService } from '../services/gameSearchService';
 import type { Game, GameWithCalculatedFields } from '../types/database';
@@ -695,7 +695,7 @@ export const ReviewFormPage: React.FC = () => {
                           <p className="text-red-400">{searchError}</p>
                         </div>
                       ) : searchResults.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-3 p-3">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3">
                           {searchResults.map((game) => (
                             <div
                               key={game.igdb_id || game.id}
@@ -711,14 +711,6 @@ export const ReviewFormPage: React.FC = () => {
                                     e.currentTarget.src = '/placeholder-game.jpg';
                                   }}
                                 />
-                                {game.igdb_rating && (
-                                  <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded px-2 py-1 flex items-center gap-1">
-                                    <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                                    <span className="text-xs font-bold text-white">
-                                      {Math.round(game.igdb_rating / 10)}
-                                    </span>
-                                  </div>
-                                )}
                               </div>
 
                               {/* Game Info */}
@@ -740,9 +732,9 @@ export const ReviewFormPage: React.FC = () => {
                                   <button
                                     type="button"
                                     onClick={() => handleGameSelect(game)}
-                                    className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded transition-colors flex items-center justify-center gap-2"
+                                    className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
                                   >
-                                    <Scroll className="h-4 w-4" />
+                                    <ScrollText className="h-4 w-4" />
                                     Select Game
                                   </button>
                                 </div>
