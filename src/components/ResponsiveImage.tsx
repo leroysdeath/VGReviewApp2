@@ -1,5 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useInView } from '../hooks/useInView';
+import {
+  isIGDBImage,
+  isExternalImage,
+  shouldOptimizeImage,
+  getOptimizedImageUrl,
+  generateResponsiveSrcSet
+} from '../utils/imageImports';
 
 interface ResponsiveImageProps extends React.HTMLAttributes<HTMLDivElement> {
   src: string;
@@ -35,7 +42,7 @@ export const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   className = '',
   imgClassName = '',
   placeholder,
-  fallback = '/placeholder-game.jpg',
+  fallback = '/placeholder-game.svg',
   onLoad,
   onError,
   disableModernFormats = false,
@@ -49,10 +56,10 @@ export const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   // Determine if we should load the image
   const shouldLoad = priority || isInView || loading === 'eager';
 
-  // Generate modern format URLs
+  // Generate modern format URLs using our utility
   const generateModernFormats = (originalSrc: string) => {
-    // Skip modern formats for external URLs or if disabled
-    if (disableModernFormats || originalSrc.startsWith('http') || originalSrc.startsWith('//')) {
+    // Skip if disabled or not optimizable
+    if (disableModernFormats || !shouldOptimizeImage(originalSrc)) {
       return {
         avif: null,
         webp: null,
@@ -60,50 +67,17 @@ export const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
       };
     }
 
-    // Extract file extension
-    const lastDotIndex = originalSrc.lastIndexOf('.');
-    if (lastDotIndex === -1) {
-      return {
-        avif: null,
-        webp: null,
-        original: originalSrc
-      };
-    }
-
-    const basePath = originalSrc.substring(0, lastDotIndex);
-    const extension = originalSrc.substring(lastDotIndex + 1).toLowerCase();
-
-    // Only convert certain formats
-    if (!['jpg', 'jpeg', 'png'].includes(extension)) {
-      return {
-        avif: null,
-        webp: null,
-        original: originalSrc
-      };
-    }
-
+    // Use utility to get optimized URLs
     return {
-      avif: `${basePath}.avif`,
-      webp: `${basePath}.webp`,
+      avif: getOptimizedImageUrl(originalSrc, 'avif'),
+      webp: getOptimizedImageUrl(originalSrc, 'webp'),
       original: originalSrc
     };
   };
 
-  // Generate srcSet for responsive images
+  // Generate srcSet for responsive images using utility
   const generateSrcSet = (baseSrc: string): string => {
-    // For IGDB images, use their sizing parameters
-    if (baseSrc.includes('igdb.com')) {
-      return baseSrc; // IGDB handles its own responsive sizing
-    }
-
-    // For local images, generate multiple sizes
-    const sizes = [320, 640, 768, 1024, 1280, 1920];
-    const extension = baseSrc.substring(baseSrc.lastIndexOf('.'));
-    const basePath = baseSrc.substring(0, baseSrc.lastIndexOf('.'));
-
-    return sizes
-      .map(size => `${basePath}-${size}w${extension} ${size}w`)
-      .join(', ');
+    return generateResponsiveSrcSet(baseSrc);
   };
 
   const formats = generateModernFormats(src);

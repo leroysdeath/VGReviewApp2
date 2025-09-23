@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { imagetools } from 'vite-imagetools'
 
 // Image optimization configuration
 const imageOptimizationConfig = {
@@ -18,7 +19,32 @@ const imageOptimizationConfig = {
 
 export default defineConfig({
   plugins: [
-    react()
+    react(),
+    // Progressive image optimization:
+    // - IGDB images are already optimized via their CDN
+    // - Local images (heroes, placeholders) are processed at build time
+    imagetools({
+      // Default output formats for imported images
+      defaultDirectives: () => {
+        return new URLSearchParams({
+          format: 'webp;avif;original',
+          quality: '85',
+          // Generate multiple widths for responsive images
+          w: '320;640;768;1024;1280;1920',
+          as: 'picture'
+        })
+      },
+      // Exclude IGDB and external URLs from processing
+      exclude: [
+        '**/*.svg', // SVGs don't need conversion
+        '**/node_modules/**',
+        '**/*.{woff,woff2,ttf,otf,eot}', // Fonts
+        /igdb\.com/, // IGDB images already optimized
+        /^https?:\/\// // External URLs
+      ],
+      // Remove default query params from output filenames for cleaner URLs
+      removeMetadata: true
+    })
   ],
   server: {
     port: 5173,
