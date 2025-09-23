@@ -82,7 +82,7 @@ export const ReviewFormPage: React.FC = () => {
             igdb_id: game.id,
             name: game.name,
             slug: game.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') : undefined,
+            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_1080p').replace('//', 'https://') : undefined,
             summary: game.summary,
             first_release_date: game.first_release_date,
             genres: game.genres?.map(g => g.name) || [],

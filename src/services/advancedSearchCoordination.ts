@@ -702,7 +702,7 @@ export class AdvancedSearchCoordination {
             genres: game.genres?.map(g => g.name) || [],
             platforms: game.platforms?.map(p => p.name) || [],
             release_date: game.first_release_date ? new Date(game.first_release_date * 1000).toISOString() : undefined,
-            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') : undefined,
+            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_1080p').replace('//', 'https://') : undefined,
             igdb_rating: game.rating,
             igdb_id: game.id,
             source: 'igdb' as const,

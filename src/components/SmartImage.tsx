@@ -114,9 +114,11 @@ export const SmartImage: React.FC<SmartImageProps> = ({
     if (retryCount < retryAttempts) {
       // Try with different URL variants for IGDB images
       const retryVariants = [
-        currentSrc.replace('/t_cover_big/', '/t_cover_small/'),
-        currentSrc.replace('f_webp', 'f_jpg'),
-        currentSrc.replace(',q_85', ',q_75'),
+        currentSrc.replace('/t_1080p/', '/t_720p/'), // Try 720p if 1080p fails
+        currentSrc.replace('/t_1080p/', '/t_cover_big/'), // Fall back to old size
+        currentSrc.replace('/t_cover_big/', '/t_cover_small/'), // Even smaller fallback
+        currentSrc.replace('f_webp', 'f_jpg'), // Try different format
+        currentSrc.replace(',q_85', ',q_75'), // Lower quality
         src // Original source as last resort
       ];
       

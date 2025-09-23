@@ -252,7 +252,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
           id: 0, // New game, no database ID yet
           igdb_id: igdbId,
           name: gameData.name,
-          cover_url: gameData.cover?.url?.replace('t_thumb', 't_cover_big'),
+          cover_url: gameData.cover?.url?.replace('t_thumb', 't_1080p'),
           genre: gameData.genres?.[0]?.name,
           releaseDate: gameData.first_release_date 
             ? new Date(gameData.first_release_date * 1000).toISOString()
@@ -281,7 +281,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
       const gameInfo = {
         igdb_id: igdbId,
         name: gameData?.name,
-        cover_url: gameData?.cover?.url?.replace('t_thumb', 't_cover_big'),
+        cover_url: gameData?.cover?.url?.replace('t_thumb', 't_1080p'),
         genres: gameData?.genres?.map((g: any) => g.name),
         platforms: gameData?.platforms?.map((p: any) => p.name),
         first_release_date: gameData?.first_release_date,
@@ -303,7 +303,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
     try {
       const gameInfo = gameData ? {
         name: gameData.name,
-        cover_url: gameData.cover?.url?.replace('t_thumb', 't_cover_big'),
+        cover_url: gameData.cover?.url?.replace('t_thumb', 't_1080p'),
         genre: gameData.genres?.[0]?.name,
         release_date: gameData.first_release_date 
           ? new Date(gameData.first_release_date * 1000).toISOString()
@@ -438,7 +438,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
             /* IGDB Games Grid */
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {igdbGames.map((game) => {
-                const coverUrl = game.cover?.url?.replace('t_thumb', 't_cover_big') || '/default-cover.png';
+                const coverUrl = game.cover?.url?.replace('t_thumb', 't_1080p') || '/default-cover.png';
                 return (
                   <div
                     key={game.id}
