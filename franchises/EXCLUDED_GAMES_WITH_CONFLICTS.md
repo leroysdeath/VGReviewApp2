@@ -1,7 +1,11 @@
 # Excluded Games with Slug Conflicts
 
 ## Summary
-These 72 games were excluded from the Phase 1 migration because they already exist in the database. All have IGDB IDs and were previously imported.
+**Phase 1**: 75 games excluded from initial migration
+**Phase 1 Batch 2**: 111 games excluded from Batch 2 migration
+**Total Excluded**: 186 games
+
+All excluded games already exist in the database with IGDB IDs from previous imports.
 
 ## Review Options
 For each game below, you can:
@@ -49,18 +53,20 @@ For each game below, you can:
 | LEGO Star Wars: Microfighters | 20937 | Release: 2014-01-30, Platform: Mobile | Review/Skip |
 | LEGO Universe | 21092 | Release: 2010-10-26, Platform: PC | Review/Skip |
 
-## Megami Tensei Franchise (7 games)
+## Megami Tensei Franchise (9 games - was 7, now +2)
 | Game Name | IGDB ID | Our Data | Action Needed |
 |-----------|---------|----------|---------------|
 | DemiKids: Dark Version | 19884 | Release: 2002-10-07, Platform: GBA | Review/Skip |
 | DemiKids: Light Version | 49185 | Release: 2002-10-07, Platform: GBA | Review/Skip |
 | Jack Bros. | 20384 | Release: 1995-09-29, Platform: Virtual Boy | Review/Skip |
 | Majin Tensei | 38231 | Release: 1994-01-28, Platform: SNES | Review/Skip |
+| **Majin Tensei: Blind Thinker** | **112319** | **Release: 2007-08-20, Platform: Mobile** | **Review/Skip** |
 | Ronde | 78016 | Release: 1997-10-30, Platform: Saturn | Review/Skip |
+| **Shin Megami Tensei: Devil Summoner** | **23088** | **Release: 1995-12-25, Platform: Saturn/PSP** | **Review/Skip** |
 | Shin Megami Tensei: Imagine | 72672 | Release: 2007-03-30, Platform: PC | Review/Skip |
 | Shin Megami Tensei: Nine | 6050 | Release: 2002-12-05, Platform: Xbox | Review/Skip |
 
-## Tales Franchise (7 games)
+## Tales Franchise (8 games - was 7, now +1)
 | Game Name | IGDB ID | Our Data | Action Needed |
 |-----------|---------|----------|---------------|
 | Tales of Asteria | 61863 | Release: 2014-04-03, Platform: Mobile | Review/Skip |
@@ -68,6 +74,7 @@ For each game below, you can:
 | Tales of Destiny: Director's Cut | 80500 | Release: 2008-01-31, Platform: PS2 | Review/Skip |
 | Tales of Innocence R | 42673 | Release: 2012-01-26, Platform: Vita | Review/Skip |
 | Tales of Link | 18813 | Release: 2014-03-03, Platform: Mobile | Review/Skip |
+| **Tales of Phantasia: Narikiri Dungeon** | **69114** | **Release: 2000-11-10, Platform: GBC** | **Review/Skip** |
 | Tales of the Rays | 26906 | Release: 2017-02-28, Platform: Mobile | Review/Skip |
 | Tales of VS. | 42723 | Release: 2009-08-06, Platform: PSP | Review/Skip |
 
@@ -205,7 +212,228 @@ UPDATE game
 SET franchise = 'Dragon Quest'
 WHERE slug IN ('dragon-quest-monster-battle-road', ...);
 
+UPDATE game
+SET franchise = 'Megami Tensei'
+WHERE slug IN ('majin-tensei-blind-thinker', 'shin-megami-tensei-devil-summoner', ...);
+
+UPDATE game
+SET franchise = 'Tales'
+WHERE slug IN ('tales-of-phantasia-narikiri-dungeon', ...);
+
 -- etc. for each franchise
 ```
 
 This would be more efficient than re-importing the games and would preserve the IGDB data while adding our franchise categorization.
+
+---
+
+## Phase 1 Batch 2 Conflicts (111 games)
+
+### Gundam Franchise (15 conflicts)
+| Game Name | IGDB ID | Our Data | Action Needed |
+|-----------|---------|----------|---------------|
+| Mobile Suit Gundam: Crossfire | 4165 | Release: 2006-11-11, Platform: PS3 | Review/Skip |
+| Mobile Suit Gundam: Federation vs. Zeon | 5459 | Release: 2001-03-14, Platform: PS2 | Review/Skip |
+| Mobile Suit Gundam Seed: Never Ending Tomorrow | 45522 | Release: 2004-05-06, Platform: PS2 | Review/Skip |
+| Mobile Suit Gundam Seed Destiny: Generation of C.E. | 5467 | Release: 2005-08-25, Platform: PS2 | Review/Skip |
+| Mobile Suit Gundam: Gundam vs. Zeta Gundam | 45524 | Release: 2004-12-09, Platform: PS2 | Review/Skip |
+| Gundam Battle Assault | 20216 | Release: 2002-06-11, Platform: PSX | Review/Skip |
+| Gundam Battle Assault 2 | 23251 | Release: 2002-07-17, Platform: PS2 | Review/Skip |
+| Gundam Battle Assault 3 | 45517 | Release: 2004-12-07, Platform: PS2 | Review/Skip |
+| Gundam Battle Tactics | 45521 | Release: 2005-09-07, Platform: PSP | Review/Skip |
+| Gundam Battle Universe | 45520 | Release: 2008-07-17, Platform: PSP | Review/Skip |
+| Gundam Assault Survive | 45519 | Release: 2010-03-18, Platform: PSP | Review/Skip |
+| Gundam: The Battle Master | 45516 | Release: 1997-06-20, Platform: PSX | Review/Skip |
+| Gundam: The Battle Master 2 | 45515 | Release: 1998-03-12, Platform: PSX | Review/Skip |
+| SD Gundam G Generation | 50445 | Release: 1998-08-06, Platform: PSX | Review/Skip |
+| SD Gundam G Generation Wars | 20220 | Release: 2009-08-06, Platform: PS2/Wii | Review/Skip |
+
+### SingStar Franchise (21 conflicts - 95% conflict rate!)
+| Game Name | IGDB ID | Our Data | Action Needed |
+|-----------|---------|----------|---------------|
+| SingStar '80s | 12901 | Release: 2005-04-15, Platform: PS2 | Review/Skip |
+| SingStar '90s | 12907 | Release: 2007-09-24, Platform: PS2 | Review/Skip |
+| SingStar ABBA | 3859 | Release: 2008-12-02, Platform: PS2/PS3 | Review/Skip |
+| SingStar Amped | 12903 | Release: 2007-03-27, Platform: PS2 | Review/Skip |
+| SingStar Anthems | 12895 | Release: 2006-05-01, Platform: PS2 | Review/Skip |
+| SingStar Boy Bands vs Girl Bands | 12900 | Release: 2008-10-24, Platform: PS2 | Review/Skip |
+| SingStar Country | 12904 | Release: 2006-10-03, Platform: PS2 | Review/Skip |
+| SingStar Legends | 12897 | Release: 2006-11-13, Platform: PS2 | Review/Skip |
+| SingStar Motown | 3865 | Release: 2009-03-17, Platform: PS2/PS3 | Review/Skip |
+| SingStar Party | 12898 | Release: 2004-11-19, Platform: PS2 | Review/Skip |
+| SingStar Pop | 12899 | Release: 2005-01-21, Platform: PS2 | Review/Skip |
+| SingStar Pop Hits | 12905 | Release: 2007-09-25, Platform: PS2 | Review/Skip |
+| SingStar Pop Vol. 2 | 12906 | Release: 2009-09-08, Platform: PS2/PS3 | Review/Skip |
+| SingStar Queen | 3862 | Release: 2009-11-17, Platform: PS2/PS3 | Review/Skip |
+| SingStar R&B | 12908 | Release: 2007-08-14, Platform: PS2 | Review/Skip |
+| SingStar Rock Ballads | 12902 | Release: 2007-09-22, Platform: PS2 | Review/Skip |
+| SingStar Rocks! | 12896 | Release: 2006-10-20, Platform: PS2 | Review/Skip |
+| SingStar Take That | 3861 | Release: 2009-11-06, Platform: PS3 | Review/Skip |
+| SingStar The Beatles | 12671 | Release: (Cancelled), Platform: PS2/PS3 | Review/Skip |
+| SingStar Turkish Party | 78652 | Release: 2009-11-01, Platform: PS2/PS3 | Review/Skip |
+| SingStar Vol. 3 | 3866 | Release: 2009-12-01, Platform: PS3 | Review/Skip |
+
+### Duck Hunt (3 conflicts - all games conflicted)
+| Game Name | IGDB ID | Our Data | Action Needed |
+|-----------|---------|----------|---------------|
+| Duck Hunt | 3028 | Release: 1984-04-21, Platform: NES | Review/Skip |
+| Super Duck Hunt | 95133 | Release: 1984-04-21, Platform: NES | Review/Skip |
+| Duck Hunt Duo | 225061 | Release: 1984-04-21, Platform: NES | Review/Skip |
+
+### Oregon Trail (6 conflicts)
+| Game Name | IGDB ID | Our Data | Action Needed |
+|-----------|---------|----------|---------------|
+| Oregon Trail 2 | 96613 | Release: 1995-06-01, Platform: PC | Review/Skip |
+| Oregon Trail 3rd Edition | 96612 | Release: 1997-01-01, Platform: PC | Review/Skip |
+| Oregon Trail 4th Edition | 96614 | Release: 1999-01-01, Platform: PC | Review/Skip |
+| Oregon Trail 5th Edition | 132076 | Release: 2001-01-01, Platform: PC | Review/Skip |
+| Oregon Trail: American Settler | 68871 | Release: 2011-11-29, Platform: Mobile | Review/Skip |
+| Oregon Trail: Hunt for Food | 68873 | Release: 2012-03-01, Platform: Mobile | Review/Skip |
+| Oregon Trail: Gold Rush | 68872 | Release: 2012-01-31, Platform: Mobile | Review/Skip |
+
+### Dragon Ball (6 conflicts)
+| Game Name | IGDB ID | Our Data | Action Needed |
+|-----------|---------|----------|---------------|
+| Dragon Ball Z 2: Super Battle | 2562 | Release: 1994-12-17, Platform: Arcade | Review/Skip |
+| Dragon Ball Z: Buyuu Retsuden | 2548 | Release: 1993-10-01, Platform: SNES | Review/Skip |
+| Dragon Ball Z Gaiden: Saiya-jin Zetsumetsu Keikaku | 48681 | Release: 1993-08-06, Platform: NES | Review/Skip |
+| Dragon Ball Z: Hyper Dimension | 2557 | Release: 1996-03-29, Platform: SNES | Review/Skip |
+| Dragon Ball Z III: Ressen Jinzou Ningen | 48680 | Release: 1992-08-07, Platform: NES | Review/Skip |
+| Dragon Ball Z: The Legend | 2579 | Release: 1996-11-15, Platform: PlayStation | Review/Skip |
+
+### NBA Live (5 conflicts)
+| Game Name | IGDB ID | Our Data | Action Needed |
+|-----------|---------|----------|---------------|
+| NBA Live 95 | 37285 | Release: 1994-11-04, Platform: Multi | Review/Skip |
+| NBA Live 97 | 20134 | Release: 1996-10-31, Platform: Multi | Review/Skip |
+| NBA Live 98 | 26013 | Release: 1997-10-31, Platform: Multi | Review/Skip |
+| NBA Live 2001 | 43861 | Release: 2000-10-17, Platform: Multi | Review/Skip |
+| NBA Live 2002 | 5950 | Release: 2001-10-30, Platform: Multi | Review/Skip |
+
+### NHL (4 conflicts)
+| Game Name | IGDB ID | Our Data | Action Needed |
+|-----------|---------|----------|---------------|
+| NHL '94 | 5405 | Release: 1993-10-01, Platform: Multi | Review/Skip |
+| NHL 95 | 4509 | Release: 1994-09-01, Platform: Multi | Review/Skip |
+| NHL 96 | 11650 | Release: 1995-09-01, Platform: Multi | Review/Skip |
+| NHL Face Off '97 | 43696 | Release: 1996-09-01, Platform: PSX | Review/Skip |
+
+### PGA Tour (9 conflicts)
+| Game Name | IGDB ID | Our Data | Action Needed |
+|-----------|---------|----------|---------------|
+| PGA Tour Golf | 12714 | Release: 1990-03-05, Platform: Multi | Review/Skip |
+| PGA Tour Golf II | 46343 | Release: 1992-01-01, Platform: Multi | Review/Skip |
+| PGA Tour Golf III | 45781 | Release: 1994-03-01, Platform: Multi | Review/Skip |
+| PGA Tour 96 | 4285 | Release: 1995-08-31, Platform: Multi | Review/Skip |
+| PGA Tour 97 | 45484 | Release: 1996-08-31, Platform: Multi | Review/Skip |
+| PGA Tour '98 | 43734 | Release: 1997-06-01, Platform: Multi | Review/Skip |
+| Tiger Woods PGA Tour 2000 | 8811 | Release: 1999-10-28, Platform: Multi | Review/Skip |
+| Tiger Woods PGA Tour 2001 | 8812 | Release: 2000-10-30, Platform: Multi | Review/Skip |
+| Tiger Woods PGA Tour 2002 | 8813 | Release: 2001-10-28, Platform: Multi | Review/Skip |
+
+### Other Franchises with All Games Conflicting (42 games)
+
+#### Batman (1 conflict)
+- Batman: The Enemy Within | 51525
+
+#### Bioshock (2 conflicts)
+- BioShock 4 | 96406
+- BioShock Vita | 95001
+
+#### Counter-Strike (3 conflicts)
+- Counter-Strike Neo | 76822
+- Counter-Strike Online | 77251
+- Counter-Strike Online 2 | 76823
+
+#### Crash Bandicoot (1 conflict)
+- Crash Bandicoot Nitro Kart 3D | 80155
+
+#### Far Cry (1 conflict)
+- Far Cry 4: Arena Master | 51481
+
+#### Gears of War (1 conflict)
+- Gears Pop! | 103290
+
+#### Halo (3 conflicts)
+- Halo: Fireteam Raven | 102066
+- Halo Online | 60459
+- Halo: Recruit | 72766
+
+#### Harry Potter (2 conflicts)
+- Harry Potter: Magic Awakened | 125209
+- Harry Potter: Wizards Unite | 75563
+
+#### Kingdom Hearts (1 conflict)
+- Kingdom Hearts Dark Road | 130408
+
+#### Marvel (3 conflicts)
+- Marvel Heroes | 50867
+- Marvel: Powers United VR | 51411
+- Marvel Realm of Champions | 122756
+
+#### Minecraft (2 conflicts)
+- Minecraft Earth | 118711
+- Minecraft: Story Mode | 8339
+
+#### Need for Speed (2 conflicts)
+- Need for Speed Hot Pursuit HD | 95247
+- Need for Speed: Most Wanted - Ultimate Edition | 99929
+
+#### PUBG (1 conflict)
+- PUBG Lite | 124036
+
+#### Star Wars (1 conflict)
+- Star Wars: Commander | 19429
+
+#### Tetris (1 conflict)
+- Tetris Blitz | 63150
+
+#### The Witcher (1 conflict)
+- The Witcher: Adventure Game | 8765
+
+#### Tomb Raider (2 conflicts)
+- Tomb Raider: Gold | 2537
+- Tomb Raider II: Gold | 27554
+
+#### Tony Hawk (3 conflicts)
+- Tony Hawk's Motion | 21929
+- Tony Hawk's Shred Session | 79819
+- Tony Hawk's Skate Jam | 112920
+
+#### WWE (3 conflicts)
+- WWE Crush Hour | 4570
+- WWE Immortals | 8736
+- WWE Tap Mania | 69501
+
+---
+
+## Summary Statistics
+
+### Phase 1 Conflicts (75 games)
+- **Original conflicts found**: 72
+- **Additional conflicts discovered**: 3
+  - Majin Tensei: Blind Thinker (imported Aug 2025)
+  - Shin Megami Tensei: Devil Summoner (imported Aug 2025)
+  - Tales of Phantasia: Narikiri Dungeon (imported Aug 2025)
+
+**Phase 1 By Franchise**:
+- LEGO Games: 11 conflicts
+- Megami Tensei: 9 conflicts (was 7, +2)
+- Tales: 8 conflicts (was 7, +1)
+- Game & Watch: 7 conflicts
+- Dragon Quest: 7 conflicts
+- Other franchises: 33 conflicts
+
+### Phase 1 Batch 2 Conflicts (111 games)
+**Batch 2 By Franchise**:
+- SingStar: 21 conflicts (95% conflict rate!)
+- Gundam: 15 conflicts (60% conflict rate)
+- PGA Tour: 9 conflicts (69% conflict rate)
+- Dragon Ball: 6 conflicts (32% conflict rate)
+- Oregon Trail: 6 conflicts (30% conflict rate)
+- NBA Live: 5 conflicts (63% conflict rate)
+- NHL: 4 conflicts (33% conflict rate)
+- Duck Hunt: 3 conflicts (100% conflict rate)
+- Other franchises: 42 conflicts (100% for these franchises)
+
+### Combined Total: 186 games excluded
