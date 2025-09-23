@@ -184,14 +184,35 @@ export const useAuth = (): UseAuthReturn => {
       const timeoutPromise = new Promise<{ success: false, error: string }>((resolve) => {
         setTimeout(() => resolve({ success: false, error: 'Database operation timeout' }), 5000);
       });
-      
+
       const result = await Promise.race([
         userService.getOrCreateDatabaseUser(session.user),
         timeoutPromise
       ]);
-      
+
       if (result.success && result.userId) {
         setDbUserId(result.userId);
+
+        // Fetch the user profile to get the avatar_url and other database fields
+        try {
+          const profile = await userService.getUserProfile(result.userId);
+          if (profile && profile.avatar_url) {
+            // Update the user state with the database avatar
+            setUser(prevUser => {
+              if (prevUser) {
+                return {
+                  ...prevUser,
+                  avatar: profile.avatar_url,
+                  name: profile.username || profile.name || prevUser.name
+                };
+              }
+              return prevUser;
+            });
+          }
+        } catch (profileError) {
+          console.error('Error fetching user profile:', profileError);
+          // Continue with auth metadata avatar if profile fetch fails
+        }
       } else {
         console.error('Failed to get/create database user:', result.error);
         setDbUserId(null);

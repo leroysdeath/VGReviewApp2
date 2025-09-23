@@ -684,7 +684,7 @@ export const ReviewFormPage: React.FC = () => {
                     </div>
 
                     {/* Results Content */}
-                    <div className="max-h-96 overflow-y-auto">
+                    <div className="max-h-96 md:max-h-[42rem] overflow-y-auto">
                       {searchLoading ? (
                         <div className="flex items-center justify-center py-12">
                           <Loader className="h-8 w-8 animate-spin text-purple-500" />
