@@ -74,25 +74,6 @@ export default defineConfig({
         // Standard chunk naming for caching
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
-        // Manual chunks to ensure proper code splitting
-        manualChunks: (id) => {
-          // Core vendor libraries
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor';
-            }
-            if (id.includes('@supabase')) {
-              return 'supabase';
-            }
-            if (id.includes('lucide-react') || id.includes('zustand')) {
-              return 'ui';
-            }
-          }
-          // Profile components including settings - ensure they're bundled together
-          if (id.includes('/components/profile/UserSettings')) {
-            return 'profile-settings';
-          }
-        },
         // Organize assets by type
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name?.split('.');
