@@ -11,6 +11,7 @@ import { AdminProvider } from './context/AdminContext';
 // Import heavy page components directly (not lazy-loaded for now due to build issues)
 import { GamePage } from './pages/GamePage';
 import { SearchResultsPage } from './pages/SearchResultsPage';
+import { ExplorePage } from './pages/ExplorePage';
 import { UserPage } from './pages/UserPage';
 import { UserSearchPage } from './pages/UserSearchPage';
 import { ReviewFormPage } from './pages/ReviewFormPage';
@@ -93,7 +94,13 @@ const AppContent: React.FC = () => {
                     <Route path="/game/:identifier" element={<GamePage />} />
                     <Route path="/search" element={<SearchResultsPage />} />
                     <Route path="/search-results" element={<SearchResultsPage />} />
-                    <Route path="/user/:id" element={<UserPage />} />
+                    <Route path="/explore" element={<ExplorePage />} />
+                    <Route path="/user/:id" element={
+                      <>
+                        <UserPage />
+                      </>
+                    } />
+
                     <Route path="/users" element={<UserSearchPage />} />
                     <Route path="/debug-auth" element={<DebugAuthPage />} />
                     <Route path="/reset-password" element={<ResetPasswordPage />} />

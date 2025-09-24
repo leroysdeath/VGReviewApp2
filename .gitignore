@@ -191,3 +191,15 @@ typings/
 .netlify
 
 settings.local.json
+
+# Test and debug files
+test-*.js
+test-*.html
+debug-*.js
+debug-*.html
+verify_*.js
+*-test-data.js
+
+# Never commit files with hardcoded credentials
+*-with-keys.js
+*-with-credentials.*
