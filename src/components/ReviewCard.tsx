@@ -33,37 +33,42 @@ interface ReviewCardProps {
   currentUserId?: number;
 }
 
-// Theme configurations for border colors
+// Theme configurations for border colors and backgrounds
 const themeConfig = {
   purple: {
-    border: 'border-purple-500/50',
-    hoverBorder: 'hover:border-purple-400',
+    border: 'border-gray-700/30',
+    hoverBorder: 'hover:border-purple-500/50',
     accent: 'text-purple-400',
-    gradient: 'from-purple-600 to-purple-800'
+    gradient: 'from-purple-600 to-purple-800',
+    background: 'bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80'
   },
   green: {
-    border: 'border-green-500/50',
-    hoverBorder: 'hover:border-green-400',
+    border: 'border-gray-700/30',
+    hoverBorder: 'hover:border-green-500/50',
     accent: 'text-green-400',
-    gradient: 'from-green-600 to-green-800'
+    gradient: 'from-green-600 to-green-800',
+    background: 'bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80'
   },
   orange: {
     border: 'border-orange-500/50',
     hoverBorder: 'hover:border-orange-400',
     accent: 'text-orange-400',
-    gradient: 'from-orange-600 to-orange-800'
+    gradient: 'from-orange-600 to-orange-800',
+    background: 'bg-gradient-to-br from-gray-900/90 via-orange-900/10 to-gray-800/80'
   },
   blue: {
-    border: 'border-blue-500/50',
-    hoverBorder: 'hover:border-blue-400',
+    border: 'border-gray-700/30',
+    hoverBorder: 'hover:border-blue-500/50',
     accent: 'text-blue-400',
-    gradient: 'from-blue-600 to-blue-800'
+    gradient: 'from-blue-600 to-blue-800',
+    background: 'bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80'
   },
   red: {
     border: 'border-red-500/50',
     hoverBorder: 'hover:border-red-400',
     accent: 'text-red-400',
-    gradient: 'from-red-600 to-red-800'
+    gradient: 'from-red-600 to-red-800',
+    background: 'bg-gradient-to-br from-gray-900/90 via-red-900/10 to-gray-800/80'
   }
 };
 
@@ -142,12 +147,12 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
   const reviewUrl = generateReviewUrl(review);
 
   return (
-    <Link 
+    <Link
       to={reviewUrl}
       className={`
-        group relative overflow-hidden rounded-xl border-2 block
-        bg-gray-900/80 backdrop-blur-lg
-        transition-all duration-500 ease-out
+        group relative overflow-hidden rounded-lg border block
+        ${themeStyles.background} backdrop-blur-lg
+        transition-all duration-300
         hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-900/50
         ${themeStyles.border} ${themeStyles.hoverBorder}
         ${compact ? 'p-4' : 'p-6'}

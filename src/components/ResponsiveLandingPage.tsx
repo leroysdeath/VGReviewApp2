@@ -181,7 +181,7 @@ export const ResponsiveLandingPage: React.FC = () => {
 
   // Transform Review to ReviewData interface
   const transformReviewData = (review: Review): ReviewData => {
-    const theme: ReviewData['theme'] = ['purple', 'green', 'orange', 'blue', 'red'][review.id % 5] as ReviewData['theme'];
+    const theme: ReviewData['theme'] = ['purple', 'green', 'blue'][review.id % 3] as ReviewData['theme'];
     
     const igdbId = getReliableIgdbId(review);
     
