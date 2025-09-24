@@ -28,9 +28,51 @@ interface GameWithRating extends Game {
 /**
  * Enhanced Game Data Service V2 - Fixes Database Threshold Issue
  */
+/**
+ * OPTIMIZED: Smart cache with size limits and LRU eviction
+ */
+class SearchCache {
+  private cache = new Map<string, { results: GameWithCalculatedFields[], timestamp: number, hits: number }>();
+  private readonly maxSize = 50; // Max cached searches
+  private readonly ttl = 5 * 60 * 1000; // 5 minutes
+
+  get(key: string): GameWithCalculatedFields[] | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    // Check if expired
+    if (Date.now() - entry.timestamp > this.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    // Update hit count for LRU
+    entry.hits++;
+    return entry.results;
+  }
+
+  set(key: string, results: GameWithCalculatedFields[]): void {
+    // Evict least recently used if at capacity
+    if (this.cache.size >= this.maxSize) {
+      const lru = Array.from(this.cache.entries())
+        .sort((a, b) => a[1].hits - b[1].hits)[0];
+      if (lru) this.cache.delete(lru[0]);
+    }
+
+    this.cache.set(key, {
+      results,
+      timestamp: Date.now(),
+      hits: 0
+    });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
 export class GameDataServiceV2 {
-  private queryCache = new Map<string, { results: GameWithCalculatedFields[], timestamp: number }>();
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private queryCache = new SearchCache();
   
   /**
    * Main search function with intelligent IGDB supplementation
@@ -39,67 +81,66 @@ export class GameDataServiceV2 {
     const sanitizedQuery = sanitizeSearchTerm(query);
     if (!sanitizedQuery) return [];
     
-    // Check cache first (only for simple queries without filters)
-    if (!filters || Object.keys(filters).length === 0) {
-      const cacheKey = sanitizedQuery.toLowerCase();
-      const cached = this.queryCache.get(cacheKey);
-      if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL) {
-        if (DEBUG_GAME_DATA) console.log(`🚀 Cache hit for "${query}" (${cached.results.length} results)`);
-        return cached.results;
-      }
+    // OPTIMIZED: Smart cache check
+    const cacheKey = this.generateCacheKey(sanitizedQuery, filters);
+    const cached = this.queryCache.get(cacheKey);
+    if (cached) {
+      if (DEBUG_GAME_DATA) console.log(`🚀 Cache hit for "${query}" (${cached.length} results)`);
+      return cached;
     }
     
     try {
-      // Step 1: Always get database results first (fast response)
-      const dbResults = await this.searchGamesExact(sanitizedQuery, filters, maxResults);
-      if (DEBUG_GAME_DATA) console.log(`📊 Database search: ${dbResults.length} results for "${query}"`);
-      
-      // Step 2: Determine if we need IGDB supplementation
-      const shouldQueryIGDB = this.shouldQueryIGDB(dbResults, query, filters);
-      
-      if (shouldQueryIGDB) {
-        try {
-          if (DEBUG_GAME_DATA) console.log(`🚀 Supplementing with IGDB results...`);
-          
-          // Step 3: Get fresh IGDB results using Layer 1 improvements
-          const igdbGames = await this.getIGDBResults(query);
-          
-          if (igdbGames && igdbGames.length > 0) {
-            if (DEBUG_GAME_DATA) console.log(`✅ IGDB returned ${igdbGames.length} additional results`);
-            
-            // Step 4: Smart merge strategy
-            const mergedResults = await this.smartMerge(dbResults, igdbGames, query);
-            
-            // Step 5: Update database asynchronously (non-blocking)
-            this.updateDatabaseAsync(igdbGames, query);
-            
-            // Cache results for future requests (no filters only)
-            if (!filters || Object.keys(filters).length === 0) {
-              this.queryCache.set(sanitizedQuery.toLowerCase(), {
-                results: mergedResults,
-                timestamp: Date.now()
-              });
-            }
-            
-            return mergedResults;
-          }
-        } catch (igdbError) {
-          console.error('IGDB supplement failed:', igdbError);
-          // Continue with database results only
-        }
-      } else {
-        if (DEBUG_GAME_DATA) console.log(`📋 Using database results only (${dbResults.length} games)`);
+      // OPTIMIZED: Run database and IGDB queries in parallel
+      const startTime = Date.now();
+
+      // Start both queries simultaneously
+      const dbPromise = this.searchGamesExact(sanitizedQuery, filters, maxResults);
+
+      // Conditionally start IGDB query based on common searches
+      const isCommonSearch = this.isCommonSearch(query);
+      const igdbPromise = isCommonSearch
+        ? Promise.resolve(null) // Skip IGDB for common searches with good DB coverage
+        : this.getIGDBResultsConditionally(query);
+
+      // Wait for both to complete
+      const [dbResults, igdbGames] = await Promise.allSettled([dbPromise, igdbPromise]);
+
+      // Extract results from settled promises
+      const dbGames = dbResults.status === 'fulfilled' ? dbResults.value : [];
+      const igdbResults = igdbGames.status === 'fulfilled' && igdbGames.value ? igdbGames.value : null;
+
+      if (DEBUG_GAME_DATA) {
+        const elapsed = Date.now() - startTime;
+        console.log(`⚡ Parallel search completed in ${elapsed}ms`);
+        console.log(`📊 Database: ${dbGames.length} results`);
+        console.log(`🌐 IGDB: ${igdbResults ? igdbResults.length : 'skipped'} results`);
       }
-      
-      // Cache database-only results too (no filters only)
-      if (!filters || Object.keys(filters).length === 0) {
-        this.queryCache.set(sanitizedQuery.toLowerCase(), {
-          results: dbResults,
-          timestamp: Date.now()
-        });
+
+      // Decide if we should use IGDB results
+      const shouldUseIGDB = igdbResults &&
+                           igdbResults.length > 0 &&
+                           this.shouldQueryIGDB(dbGames, query, filters);
+
+      if (shouldUseIGDB && igdbResults) {
+        // Smart merge strategy
+        const mergedResults = await this.smartMerge(dbGames, igdbResults, query);
+
+        // Update database asynchronously (non-blocking)
+        this.updateDatabaseAsync(igdbResults, query);
+
+        // Cache merged results
+        this.queryCache.set(cacheKey, mergedResults);
+
+        return mergedResults;
       }
-      
-      return dbResults;
+
+      // Use database results only
+      if (DEBUG_GAME_DATA) console.log(`📋 Using database results only (${dbGames.length} games)`);
+
+      // Cache database results
+      this.queryCache.set(cacheKey, dbGames);
+
+      return dbGames;
       
     } catch (error) {
       console.error('Error in searchGames:', error);
@@ -152,6 +193,55 @@ export class GameDataServiceV2 {
   }
   
   /**
+   * Generate cache key including filters
+   */
+  private generateCacheKey(query: string, filters?: SearchFilters): string {
+    const parts = [query.toLowerCase()];
+    if (filters) {
+      if (filters.genres?.length) parts.push(`g:${filters.genres.sort().join(',')}`);
+      if (filters.platforms?.length) parts.push(`p:${filters.platforms.sort().join(',')}`);
+      if (filters.minRating) parts.push(`r:${filters.minRating}`);
+      if (filters.releaseYear) parts.push(`y:${filters.releaseYear}`);
+    }
+    return parts.join('|');
+  }
+
+  /**
+   * OPTIMIZED: Single-pass filter application
+   */
+  private applyFiltersOptimized(games: any[], filters?: SearchFilters): any[] {
+    if (!filters || Object.keys(filters).length === 0) {
+      return games;
+    }
+
+    // Single pass through the array
+    return games.filter(game => {
+      // All conditions must pass
+      if (filters.genres?.length &&
+          (!game.genres || !game.genres.some((g: string) => filters.genres!.includes(g)))) {
+        return false;
+      }
+
+      if (filters.platforms?.length &&
+          (!game.platforms || !game.platforms.some((p: string) => filters.platforms!.includes(p)))) {
+        return false;
+      }
+
+      if (filters.minRating !== undefined &&
+          (!game.rating || game.rating < filters.minRating)) {
+        return false;
+      }
+
+      if (filters.releaseYear &&
+          (!game.release_date || !game.release_date.startsWith(filters.releaseYear.toString()))) {
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  /**
    * Check if this is a franchise search
    */
   private isFranchiseQuery(query: string): boolean {
@@ -166,6 +256,39 @@ export class GameDataServiceV2 {
     ];
 
     return franchises.some(franchise => term.includes(franchise));
+  }
+
+  /**
+   * OPTIMIZED: Check if this is a common search with good DB coverage
+   */
+  private isCommonSearch(query: string): boolean {
+    const term = query.toLowerCase().trim();
+    const commonSearches = [
+      'mario', 'pokemon', 'zelda', 'final fantasy',
+      'sonic', 'mega man', 'street fighter', 'resident evil'
+    ];
+    return commonSearches.includes(term);
+  }
+
+  /**
+   * OPTIMIZED: Conditionally get IGDB results
+   */
+  private async getIGDBResultsConditionally(query: string): Promise<IGDBGame[] | null> {
+    try {
+      // Quick check - don't wait for IGDB if taking too long
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), 1000); // 1 second max
+      });
+
+      const igdbPromise = this.getIGDBResults(query);
+
+      // Race between IGDB and timeout
+      const result = await Promise.race([igdbPromise, timeoutPromise]);
+      return result;
+    } catch (error) {
+      console.error('IGDB query failed/timed out:', error);
+      return null;
+    }
   }
   
   /**
@@ -287,7 +410,8 @@ export class GameDataServiceV2 {
    */
   private transformImageUrl(url: string): string {
     if (!url) return '';
-    return url.replace('t_thumb', 't_cover_big').replace('//', 'https://');
+    // Use t_1080p for high quality images instead of t_cover_big (264x374)
+    return url.replace('t_thumb', 't_1080p').replace('//', 'https://');
   }
   
   /**
@@ -702,7 +826,7 @@ export class GameDataServiceV2 {
    */
   private async searchByName(query: string, filters?: SearchFilters, limit: number = 200): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 3000); // REDUCED: 3 second timeout for better performance
+    const timeoutId = setTimeout(() => abortController.abort(), 1000); // OPTIMIZED: 1 second timeout for fast response
 
     try {
       // First, try to use the new search_games_with_aliases function if it exists
@@ -720,32 +844,8 @@ export class GameDataServiceV2 {
       if (!aliasError && aliasResults) {
         if (DEBUG_GAME_DATA) console.log(`🎯 Alias search found ${aliasResults.length} games for "${query}"`);
 
-        // Apply additional filters if needed
-        let filteredResults = aliasResults;
-
-        if (filters?.genres && filters.genres.length > 0) {
-          filteredResults = filteredResults.filter(game =>
-            game.genres && game.genres.some((g: string) => filters.genres!.includes(g))
-          );
-        }
-
-        if (filters?.platforms && filters.platforms.length > 0) {
-          filteredResults = filteredResults.filter(game =>
-            game.platforms && game.platforms.some((p: string) => filters.platforms!.includes(p))
-          );
-        }
-
-        if (filters?.minRating) {
-          filteredResults = filteredResults.filter(game =>
-            game.rating && game.rating >= filters.minRating!
-          );
-        }
-
-        if (filters?.releaseYear) {
-          filteredResults = filteredResults.filter(game =>
-            game.release_date && game.release_date.startsWith(filters.releaseYear!)
-          );
-        }
+        // OPTIMIZED: Single-pass filtering
+        const filteredResults = this.applyFiltersOptimized(aliasResults, filters);
 
         return filteredResults.map(game => this.transformGameWithoutRatings(game as any));
       }
@@ -804,7 +904,7 @@ export class GameDataServiceV2 {
    */
   private async searchBySummary(query: string, filters?: SearchFilters, limit: number = 100): Promise<GameWithCalculatedFields[]> {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 2000); // REDUCED: 2 second timeout for better performance
+    const timeoutId = setTimeout(() => abortController.abort(), 1000); // OPTIMIZED: 1 second timeout for fast response
     
     try {
       let queryBuilder = supabase

@@ -4,25 +4,30 @@ import { useOptimizedImage, ImageOptions } from '../utils/imageOptimization';
 interface SmartImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
   alt: string;
-  
+
+  // Dimension reservation for CLS prevention
+  width?: number | string;
+  height?: number | string;
+  aspectRatio?: string; // e.g., "16/9", "4/3", "1/1"
+
   // Lazy loading options
   lazy?: boolean;
   rootMargin?: string;
   threshold?: number;
-  
+
   // Optimization options
   optimize?: boolean;
   optimization?: ImageOptions;
-  
+
   // Error handling
   fallback?: string;
   onError?: () => void;
   retryAttempts?: number;
-  
+
   // Loading states
   showLoadingSpinner?: boolean;
   placeholder?: string;
-  
+
   // Performance
   preload?: boolean;
   priority?: boolean;
@@ -31,6 +36,9 @@ interface SmartImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 export const SmartImage: React.FC<SmartImageProps> = ({
   src,
   alt,
+  width,
+  height,
+  aspectRatio,
   lazy = true,
   rootMargin = '50px',
   threshold = 0.1,
@@ -114,9 +122,11 @@ export const SmartImage: React.FC<SmartImageProps> = ({
     if (retryCount < retryAttempts) {
       // Try with different URL variants for IGDB images
       const retryVariants = [
-        currentSrc.replace('/t_cover_big/', '/t_cover_small/'),
-        currentSrc.replace('f_webp', 'f_jpg'),
-        currentSrc.replace(',q_85', ',q_75'),
+        currentSrc.replace('/t_1080p/', '/t_720p/'), // Try 720p if 1080p fails
+        currentSrc.replace('/t_1080p/', '/t_cover_big/'), // Fall back to old size
+        currentSrc.replace('/t_cover_big/', '/t_cover_small/'), // Even smaller fallback
+        currentSrc.replace('f_webp', 'f_jpg'), // Try different format
+        currentSrc.replace(',q_85', ',q_75'), // Lower quality
         src // Original source as last resort
       ];
       
@@ -137,8 +147,20 @@ export const SmartImage: React.FC<SmartImageProps> = ({
   const shouldShowPlaceholder = !isLoaded && !hasError && (isLoading || !shouldShowImage);
   const shouldShowSpinner = showLoadingSpinner && (isLoading || (!isLoaded && shouldShowImage));
 
+  // Calculate container styles for CLS prevention
+  const containerStyle: React.CSSProperties = {};
+  if (aspectRatio) {
+    containerStyle.aspectRatio = aspectRatio;
+  } else if (width && height) {
+    const w = typeof width === 'number' ? width : parseInt(width as string, 10);
+    const h = typeof height === 'number' ? height : parseInt(height as string, 10);
+    if (!isNaN(w) && !isNaN(h)) {
+      containerStyle.aspectRatio = `${w} / ${h}`;
+    }
+  }
+
   return (
-    <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
+    <div ref={imgRef} className={`relative overflow-hidden ${className}`} style={containerStyle}>
       {/* Placeholder image */}
       {shouldShowPlaceholder && placeholder && (
         <img
@@ -161,6 +183,8 @@ export const SmartImage: React.FC<SmartImageProps> = ({
         <img
           src={finalSrc}
           alt={alt}
+          width={width}
+          height={height}
           onLoad={handleLoad}
           onError={handleError}
           loading={lazy && !priority ? 'lazy' : 'eager'}

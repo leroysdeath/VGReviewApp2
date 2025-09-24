@@ -742,8 +742,13 @@ export const GamePage: React.FC = () => {
     [transformedReviews]
   );
 
-  // Recommendation 3: Use game's calculated average from service
-  const averageRating = game?.averageUserRating || 0;
+  // Calculate average rating from actual loaded reviews (client-side calculation)
+  // This bypasses the broken server-side calculation in game.averageUserRating
+  const averageRating = useMemo(() => {
+    if (validRatings.length === 0) return 0;
+    const sum = validRatings.reduce((acc, r) => acc + r.rating, 0);
+    return sum / validRatings.length;
+  }, [validRatings]);
 
   // Recommendation 5: Memoize expensive calculations
   // Recommendation 7: Add error boundaries for distribution
@@ -1019,7 +1024,7 @@ export const GamePage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
           {/* Game Cover and Info */}
           <div className="lg:col-span-2">
-            <div className="bg-gray-800 rounded-lg overflow-hidden">
+            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg overflow-hidden">
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
                   <SmartImage
@@ -1152,7 +1157,7 @@ export const GamePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* User Actions - Wishlist, Collection, Started, Finished and Write Review */}
+              {/* User Actions - Wishlist, Backlog, Started, Finished and Write Review */}
               <div className="p-6 border-t border-gray-700">
                 {/* Mobile Action Sheet - Only visible on mobile */}
                 <div className="md:hidden">
@@ -1214,7 +1219,7 @@ export const GamePage: React.FC = () => {
                     </span>
                   </button>
 
-                  {/* Collection Button - Gray out when unavailable */}
+                  {/* Backlog Button - Gray out when unavailable */}
                   <button
                     onClick={handleToggleCollection}
                     disabled={collectionLoading || isStarted || isCompleted}
@@ -1235,17 +1240,17 @@ export const GamePage: React.FC = () => {
                       {isInCollection ? (
                         <span className="flex flex-col items-center leading-tight">
                           <span>In</span>
-                          <span>Collection</span>
+                          <span>Backlog</span>
                         </span>
                       ) : isInWishlist ? (
                         <span className="flex flex-col items-center leading-tight">
                           <span>Move to</span>
-                          <span>Collection</span>
+                          <span>Backlog</span>
                         </span>
                       ) : (
                         <span className="flex flex-col items-center leading-tight">
                           <span>Add to</span>
-                          <span>Collection</span>
+                          <span>Backlog</span>
                         </span>
                       )}
                     </span>
@@ -1353,7 +1358,7 @@ export const GamePage: React.FC = () => {
 
           {/* Rating Summary */}
           <div className="space-y-6">
-            <div className="bg-gray-800 rounded-lg p-6">
+            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-6">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
                 <div className="text-sm">
@@ -1399,7 +1404,7 @@ export const GamePage: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-green-400">
-                    {averageRating > 0 ? averageRating.toFixed(1) : '-'}
+                    {averageRating > 0 ? averageRating.toFixed(1) : 'N/A'}
                   </div>
                 </div>
               )}
@@ -1441,7 +1446,7 @@ export const GamePage: React.FC = () => {
                 <Link 
                   key={review.id} 
                   to={`/review/${review.userId}/${review.igdbGameId || review.gameId}`}
-                  className="bg-gray-800 rounded-lg p-4 block hover:bg-gray-700 transition-colors"
+                  className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-4 block hover:from-slate-800/90 hover:to-slate-700/80 transition-all"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <img
