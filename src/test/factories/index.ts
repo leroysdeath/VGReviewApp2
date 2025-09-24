@@ -253,3 +253,39 @@ export const createMockSession = (overrides: Partial<any> = {}) => ({
   user: createMockAuthUser(),
   ...overrides
 });
+
+// ============================================
+// ExploreGame Factory for ExplorePage Testing
+// ============================================
+
+export const createMockExploreGame = (overrides: Partial<any> = {}) => ({
+  id: faker.number.int({ min: 1, max: 100000 }),
+  igdb_id: faker.number.int({ min: 1000, max: 99999 }),
+  name: faker.commerce.productName(),
+  description: faker.lorem.paragraphs(2),
+  summary: faker.lorem.paragraph(),
+  release_date: faker.date.past({ years: 5 }).toISOString().split('T')[0],
+  cover_url: `https://images.igdb.com/igdb/image/upload/t_cover_big/${faker.string.alphanumeric(12)}.jpg`,
+  platforms: faker.helpers.arrayElements(['PC', 'PlayStation 5', 'Xbox Series X', 'Nintendo Switch'], 2),
+  avg_user_rating: faker.number.float({ min: 1, max: 10, multipleOf: 0.1 }),
+  user_rating_count: faker.number.int({ min: 1, max: 500 }),
+  category: faker.helpers.arrayElement([0, 1, 2, 8, 9]),
+  greenlight_flag: faker.datatype.boolean({ probability: 0.8 }),
+  redlight_flag: false, // Should always be false in results
+  ...overrides,
+});
+
+export const createMockExploreGamesList = (count: number = 10) => {
+  return Array.from({ length: count }, (_, index) => {
+    // Create games with decreasing unified scores for proper ranking
+    const baseScore = 0.9 - (index * 0.1);
+    const avgRating = 8.5 - (index * 0.3);
+    const reviewCount = 100 - (index * 8);
+    
+    return createMockExploreGame({
+      name: `Top Game #${index + 1}`,
+      avg_user_rating: Math.max(1, avgRating),
+      user_rating_count: Math.max(1, reviewCount),
+    });
+  });
+};

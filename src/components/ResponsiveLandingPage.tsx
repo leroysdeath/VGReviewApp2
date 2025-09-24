@@ -282,7 +282,7 @@ export const ResponsiveLandingPage: React.FC = () => {
             </p>
             <div className="space-y-3">
               <Link
-                to="/search"
+                to="/explore"
                 className="group relative block w-full overflow-hidden rounded-lg"
               >
                 {/* Glassmorphism background */}
@@ -498,7 +498,7 @@ export const ResponsiveLandingPage: React.FC = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
-                to="/search"
+                to="/explore"
                 className="group relative px-8 py-3 text-white rounded-lg flex items-center gap-2 text-lg font-medium overflow-hidden transition-all duration-300 hover:scale-105"
               >
                 {/* Glassmorphism background - Primary style */}
