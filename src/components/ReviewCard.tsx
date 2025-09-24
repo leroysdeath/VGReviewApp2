@@ -36,14 +36,14 @@ interface ReviewCardProps {
 // Theme configurations for border colors and backgrounds
 const themeConfig = {
   purple: {
-    border: 'border-gray-700/30',
+    border: 'border-gray-700/60',
     hoverBorder: 'hover:border-purple-500/50',
     accent: 'text-purple-400',
     gradient: 'from-purple-600 to-purple-800',
     background: 'bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80'
   },
   green: {
-    border: 'border-gray-700/30',
+    border: 'border-gray-700/60',
     hoverBorder: 'hover:border-green-500/50',
     accent: 'text-green-400',
     gradient: 'from-green-600 to-green-800',
@@ -57,7 +57,7 @@ const themeConfig = {
     background: 'bg-gradient-to-br from-gray-900/90 via-orange-900/10 to-gray-800/80'
   },
   blue: {
-    border: 'border-gray-700/30',
+    border: 'border-gray-700/60',
     hoverBorder: 'hover:border-blue-500/50',
     accent: 'text-blue-400',
     gradient: 'from-blue-600 to-blue-800',
