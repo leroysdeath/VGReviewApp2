@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -14,31 +14,8 @@ import { ReviewsModal } from '../components/ReviewsModal';
 import { userServiceSimple, UserUpdate } from '../services/userServiceSimple';
 import { useFollow } from '../hooks/useFollow';
 
-// Lazy load UserSettingsModal with error handling
-const UserSettingsModal = lazy(() =>
-  import('../components/profile/UserSettingsModal').catch((error) => {
-    console.error('Failed to load UserSettingsModal:', error);
-    // Return a fallback component if the module fails to load
-    return {
-      default: ({ onClose }: any) => (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 p-8 rounded-lg max-w-md">
-            <h2 className="text-white text-xl font-bold mb-4">Error Loading Settings</h2>
-            <p className="text-gray-300 mb-6">
-              Unable to load the settings panel. Please refresh the page and try again.
-            </p>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )
-    };
-  })
-);
+// Import UserSettingsModal directly to avoid dynamic import issues
+import UserSettingsModal from '../components/profile/UserSettingsModal';
 
 export const UserPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -429,30 +406,21 @@ export const UserPage: React.FC = () => {
 
       {/* User Settings Modal */}
       {showSettingsModal && (
-        <Suspense fallback={
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-gray-900 p-8 rounded-lg">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
-              <p className="text-white mt-4">Loading settings...</p>
-            </div>
-          </div>
-        }>
-          <UserSettingsModal
-            isOpen={showSettingsModal}
-            onClose={() => setShowSettingsModal(false)}
-            userId={authUser?.id || ''}
-            userData={{
-              username: transformedUser.username,
-              email: user.email || authUser?.email || '',
-              bio: transformedUser.bio,
-              location: transformedUser.location || '',
-              website: transformedUser.website || '',
-              platform: transformedUser.platform || '',
-              avatar: transformedUser.avatar
-            }}
-            onSave={handleSaveProfile}
-          />
-        </Suspense>
+        <UserSettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          userId={authUser?.id || ''}
+          userData={{
+            username: transformedUser.username,
+            email: user.email || authUser?.email || '',
+            bio: transformedUser.bio,
+            location: transformedUser.location || '',
+            website: transformedUser.website || '',
+            platform: transformedUser.platform || '',
+            avatar: transformedUser.avatar
+          }}
+          onSave={handleSaveProfile}
+        />
       )}
 
       {/* Followers/Following Modal */}
