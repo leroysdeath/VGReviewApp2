@@ -37,14 +37,14 @@ interface ReviewCardProps {
 const themeConfig = {
   purple: {
     border: 'border-gray-700/60',
-    hoverBorder: 'hover:border-purple-500/50',
+    hoverBorder: 'hover:border-purple-700/50',
     accent: 'text-purple-400',
     gradient: 'from-purple-600 to-purple-800',
     background: 'bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80'
   },
   green: {
     border: 'border-gray-700/60',
-    hoverBorder: 'hover:border-green-500/50',
+    hoverBorder: 'hover:border-green-700/50',
     accent: 'text-green-400',
     gradient: 'from-green-600 to-green-800',
     background: 'bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80'
@@ -58,7 +58,7 @@ const themeConfig = {
   },
   blue: {
     border: 'border-gray-700/60',
-    hoverBorder: 'hover:border-blue-500/50',
+    hoverBorder: 'hover:border-blue-700/50',
     accent: 'text-blue-400',
     gradient: 'from-blue-600 to-blue-800',
     background: 'bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80'
