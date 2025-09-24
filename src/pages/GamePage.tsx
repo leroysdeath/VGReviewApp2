@@ -849,7 +849,7 @@ export const GamePage: React.FC = () => {
 
   if (gameLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 py-8">
+      <div className="min-h-screen bg-gray-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
             <div className="lg:col-span-2">
@@ -897,7 +897,7 @@ export const GamePage: React.FC = () => {
 
   if (gameError || !game) {
     return (
-      <div className="min-h-screen bg-slate-900 py-8">
+      <div className="min-h-screen bg-gray-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold text-white mb-4">
@@ -1006,7 +1006,7 @@ export const GamePage: React.FC = () => {
         <meta name="author" content="VGReviewApp" />
       </Helmet>
       
-      <div className="min-h-screen bg-slate-900 py-8">
+      <div className="min-h-screen bg-gray-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
 
@@ -1014,7 +1014,7 @@ export const GamePage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
           {/* Game Cover and Info */}
           <div className="lg:col-span-2">
-            <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/80 rounded-lg overflow-hidden">
+            <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-lg overflow-hidden">
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
                   <SmartImage
@@ -1348,7 +1348,7 @@ export const GamePage: React.FC = () => {
 
           {/* Rating Summary */}
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/80 rounded-lg p-6">
+            <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-lg p-6">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
                 <div className="text-sm">
@@ -1436,7 +1436,7 @@ export const GamePage: React.FC = () => {
                 <Link 
                   key={review.id} 
                   to={`/review/${review.userId}/${review.igdbGameId || review.gameId}`}
-                  className="bg-gradient-to-br from-slate-900/90 to-slate-800/80 rounded-lg p-4 block hover:from-slate-800/90 hover:to-slate-700/80 transition-all"
+                  className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-lg p-4 block hover:from-slate-800/90 hover:to-slate-700/80 transition-all"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <img
