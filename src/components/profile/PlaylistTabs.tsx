@@ -113,7 +113,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
             )}
           </div>
           <h3 className="text-lg font-medium text-white mb-2">
-            {type === 'collection' ? 'Game Collection' : 'Game Wishlist'}
+            {type === 'collection' ? 'Game Backlog' : 'Game Wishlist'}
           </h3>
           <p className="text-gray-400 text-sm sm:text-base mb-4">
             {type === 'collection' 
@@ -235,7 +235,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
               : 'text-gray-400 hover:text-gray-300'
           }`}
         >
-          Collection
+          Backlog
         </button>
         <button
           onClick={() => setActiveSubTab('wishlist')}

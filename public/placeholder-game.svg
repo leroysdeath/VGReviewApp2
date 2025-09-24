@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 264 374" width="264" height="374">
+  <rect width="264" height="374" fill="#1f2937"/>
+  <g transform="translate(132, 187)">
+    <rect x="-40" y="-40" width="80" height="80" fill="none" stroke="#4b5563" stroke-width="2" rx="8"/>
+    <rect x="-25" y="-25" width="20" height="20" fill="#4b5563" rx="2"/>
+    <rect x="5" y="-25" width="20" height="20" fill="#4b5563" rx="2"/>
+    <rect x="-25" y="5" width="20" height="20" fill="#4b5563" rx="2"/>
+    <rect x="5" y="5" width="20" height="20" fill="#4b5563" rx="2"/>
+  </g>
+  <text x="132" y="300" font-family="system-ui" font-size="14" fill="#6b7280" text-anchor="middle">No Cover</text>
+</svg>

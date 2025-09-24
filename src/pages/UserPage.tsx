@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -14,8 +14,8 @@ import { ReviewsModal } from '../components/ReviewsModal';
 import { userServiceSimple, UserUpdate } from '../services/userServiceSimple';
 import { useFollow } from '../hooks/useFollow';
 
-// Lazy load UserSettingsModal to avoid initialization issues
-const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsModal'));
+// Import UserSettingsModal directly to avoid dynamic import issues
+import UserSettingsModal from '../components/profile/UserSettingsModal';
 
 export const UserPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -371,9 +371,15 @@ export const UserPage: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('playlist')}
-            className={`pb-2 ${activeTab === 'playlist' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
+            className={`pb-2 relative ${activeTab === 'playlist' ? 'text-white' : 'text-gray-400'}`}
           >
             Want to Play
+            {activeTab === 'playlist' && (
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] flex">
+                <div className="w-1/2 bg-orange-600"></div>
+                <div className="w-1/2 bg-red-600"></div>
+              </div>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('activity')}
@@ -400,30 +406,21 @@ export const UserPage: React.FC = () => {
 
       {/* User Settings Modal */}
       {showSettingsModal && (
-        <Suspense fallback={
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-gray-900 p-8 rounded-lg">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
-              <p className="text-white mt-4">Loading settings...</p>
-            </div>
-          </div>
-        }>
-          <UserSettingsModal
-            isOpen={showSettingsModal}
-            onClose={() => setShowSettingsModal(false)}
-            userId={authUser?.id || ''}
-            userData={{
-              username: transformedUser.username,
-              email: user.email || authUser?.email || '',
-              bio: transformedUser.bio,
-              location: transformedUser.location || '',
-              website: transformedUser.website || '',
-              platform: transformedUser.platform || '',
-              avatar: transformedUser.avatar
-            }}
-            onSave={handleSaveProfile}
-          />
-        </Suspense>
+        <UserSettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          userId={authUser?.id || ''}
+          userData={{
+            username: transformedUser.username,
+            email: user.email || authUser?.email || '',
+            bio: transformedUser.bio,
+            location: transformedUser.location || '',
+            website: transformedUser.website || '',
+            platform: transformedUser.platform || '',
+            avatar: transformedUser.avatar
+          }}
+          onSave={handleSaveProfile}
+        />
       )}
 
       {/* Followers/Following Modal */}

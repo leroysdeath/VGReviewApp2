@@ -4,7 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-VGReviewApp2 is a gaming community platform built with React, TypeScript, Supabase, and IGDB API integration. It allows users to discover games, write reviews, rate games, and interact with the gaming community.
+VGReviewApp2 is a mature gaming community platform built with React, TypeScript, Supabase, and IGDB API integration. It allows users to discover games, write reviews, rate games, and interact with the gaming community.
+
+**Current Scale:**
+- **185K+ Games**: Comprehensive database with IGDB integration and automated sync
+- **~103K Lines**: TypeScript/TSX codebase with 50+ services and comprehensive architecture
+- **Active Development**: On `main` branch with recent search and sync improvements
+- **Production Ready**: Deployed on Netlify with Supabase backend
 
 ## Design Philosophy & Architecture Pattern
 
@@ -112,6 +118,18 @@ npm run preview
 
 # Clean build artifacts
 npm run clean
+
+# IGDB Database Sync (requires netlify dev running)
+npm run sync-igdb          # Live sync - adds new games to database
+npm run sync-igdb:dry      # Test sync - shows what would be added
+npm run sync-igdb:help     # Show sync options and documentation
+
+# Testing (comprehensive test suite)
+npm run test               # Run all tests
+npm run test:watch         # Watch mode for development
+npm run test:coverage      # Generate coverage report
+npm run test:fast          # Quick tests only
+npm run test:ci            # CI-optimized test run
 ```
 
 ## Architecture Overview
@@ -119,9 +137,11 @@ npm run clean
 ### Tech Stack
 - **Frontend**: React 18 with TypeScript, Tailwind CSS, React Router v6
 - **State Management**: Zustand for stores, React Context for auth/reviews, SWR for data fetching
-- **Backend**: Supabase (PostgreSQL database, Auth, Edge Functions)
-- **API Integration**: IGDB via Netlify Functions (primary) or Supabase Edge Functions (fallback)
-- **Deployment**: Netlify with serverless functions
+- **Backend**: Supabase (PostgreSQL database, Auth, Row Level Security, Real-time subscriptions)
+- **API Integration**: IGDB via Netlify Functions with comprehensive sync system
+- **Testing**: Jest with React Testing Library setup (30+ test configurations)
+- **Build Tools**: Vite with bundle analysis and optimizations
+- **Deployment**: Netlify with serverless functions and CI/CD
 
 ### Key Architectural Patterns
 
@@ -142,19 +162,28 @@ npm run clean
 
 ### Directory Structure
 
-**Current Structure:**
-- `/src/components/` - React components organized by feature
-  - `/auth/` - Authentication components
-  - `/profile/` - User profile components
-  - `/comments/` - Comment system components
-  - `/user/` - User-specific components
-- `/src/pages/` - Route page components
-- `/src/hooks/` - Custom React hooks for data fetching and utilities
-- `/src/services/` - API services and business logic
-- `/src/context/` - React Context providers
-- `/src/store/` - Zustand stores for global state
-- `/netlify/functions/` - Serverless functions for IGDB API proxy
-- `/supabase/` - Database migrations and edge functions
+**Current Structure (Mature Codebase):**
+- `/src/components/` (~150 components) - Feature-organized React components
+  - `/auth/` - Authentication modals and guards
+  - `/profile/` - User profile management and display
+  - `/comments/` - Threaded comment system
+  - Core UI components (GameCard, SearchResults, etc.)
+- `/src/pages/` (~30 pages) - Route page components with SSR optimization
+- `/src/hooks/` (~25 hooks) - Custom React hooks for data fetching and utilities
+- `/src/services/` (**50+ services**) - Comprehensive API services and business logic
+  - Game data services (`gameDataServiceV2.ts`, `igdbServiceV2.ts`)
+  - Search services with caching and analytics
+  - User management and authentication
+  - Real-time features and notifications
+  - Privacy and GDPR compliance services
+- `/src/context/` - React Context providers for auth and reviews
+- `/src/store/` - Zustand stores for global state management
+- `/src/features/` - Feature-based organization (activity feeds, etc.)
+- `/src/utils/` - Utility functions for security, formatting, and performance
+- `/src/test/` - Test utilities and factories
+- `/netlify/functions/` - IGDB API proxy functions
+- `/supabase/` - Database migrations and infrastructure
+- `/scripts/` - Database sync and maintenance scripts
 
 **Optimal Structure (per Design Philosophy):**
 ```
@@ -172,13 +201,41 @@ npm run clean
 
 ### Database Schema
 
-The app uses Supabase PostgreSQL with Row Level Security (RLS). Key tables include:
-- `users` - User profiles with automatic creation on auth signup
-- `reviews` - Game reviews and ratings
-- `comments` - Review comments
-- `activities` - User activity feed
-- `game_progress` - User game progress tracking
-- `notifications` - User notifications
+The app uses Supabase PostgreSQL with Row Level Security (RLS) and comprehensive data architecture:
+
+**Core Tables:**
+- `game` (185K+ records) - Main game database with IGDB sync, search optimization, and metadata
+- `user` - User profiles with automatic creation on auth signup
+- `rating` - Game reviews and ratings with playtime tracking
+- `comment` - Review comments with threading support
+- `notification` - User notification system
+
+**Game Management:**
+- `game_progress` - User game completion tracking
+- `user_collection` / `user_wishlist` - Game ownership and want-to-play lists
+- `game_state_history` - Audit log for all game state transitions
+- `user_top_games` - User's favorite games (top 5)
+
+**Content & Social:**
+- `content_like` - Likes for reviews and comments
+- `user_follow` - User following system
+- `tag` / `game_tag` - Game tagging system
+
+**Performance & Analytics:**
+- `search_cache` / `igdb_cache` / `games_cache` - Multi-layer caching system
+- `search_analytics` - Search behavior tracking
+- `game_views` / `game_metrics_daily` - Privacy-compliant view tracking
+- `cache_statistics` - Cache performance monitoring
+
+**Data Management:**
+- `game_import_queue` - IGDB sync queue management
+- `game_requests` - User requests for missing games
+- `game_backfill_log` - Data sync audit trail
+
+**Privacy & Security:**
+- `user_preferences` - GDPR-compliant privacy settings
+- `privacy_audit_log` - Privacy action audit trail
+- `security_guidelines` - Database security best practices
 
 ### Environment Configuration
 
@@ -190,10 +247,25 @@ Required environment variables:
 
 ### Testing Approach
 
-Currently, the project does not have a test suite implemented. When adding tests:
-- Use Vitest for unit tests (React Testing Library compatible)
-- Consider Playwright for E2E tests
-- Mock Supabase client and IGDB API responses
+Comprehensive testing infrastructure is implemented:
+
+**Current Setup:**
+- **Jest** with React Testing Library for component and integration tests
+- **30+ test configurations** (jest.config.*.js files) for different test scenarios:
+  - `npm run test:unit` - Fast unit tests
+  - `npm run test:integration` - Database and API integration tests
+  - `npm run test:search` - Search functionality tests
+  - `npm run test:advanced` - Comprehensive test runner with analytics
+- **Mock Service Worker (MSW)** for API mocking
+- **@faker-js/faker** for test data generation
+- **Test utilities** in `/src/test/` for reusable test helpers
+
+**Test Coverage Areas:**
+- Authentication flows and modals
+- Game search and data services
+- User profile and social features
+- Database operations with Supabase mocking
+- IGDB API integration testing
 
 ### Common Development Tasks
 
@@ -204,13 +276,29 @@ Currently, the project does not have a test suite implemented. When adding tests
 
 ### Important Conventions
 
-- All API calls should go through service layers in `/src/services/`
-- Use TypeScript strict mode - ensure proper typing
-- Follow existing component patterns - check similar components first
-- Image URLs from IGDB need transformation via `igdb.ts` service
+**Architecture:**
+- All API calls go through service layers in `/src/services/` (50+ services available)
+- Use TypeScript strict mode - comprehensive typing throughout codebase
+- Follow established patterns - check existing similar components/services first
+- Leverage the mature service ecosystem rather than creating new services
+
+**Data & API:**
+- Image URLs from IGDB use `t_1080p` quality (recently upgraded from `t_cover_big`)
+- Database operations use Supabase RLS and optimized queries
+- IGDB sync runs through `scripts/sync-igdb.js` with comprehensive error handling
+- Search operations use multi-tier caching (browser, Supabase, IGDB)
+
+**UI & UX:**
 - Use Tailwind CSS for styling - avoid inline styles
-- Implement error boundaries for robust error handling
-- Always validate and sanitize user inputs
+- Implement error boundaries (`ReviewErrorBoundary.tsx`) for robust error handling
+- Components support mobile-first responsive design
+- Use established UI patterns from existing component library
+
+**Security & Privacy:**
+- Always validate and sanitize user inputs (comprehensive utils available)
+- GDPR compliance through `privacyService.ts` and `gdprService.ts`
+- Row Level Security (RLS) enforced on all database tables
+- Privacy-compliant analytics and tracking
 
 ### Code Modification Guidelines
 
@@ -274,3 +362,42 @@ When refactoring variables or functions:
 - **CI/CD checks**: Automated production build testing
 
 Remember: If an error only appears in production, it's almost always about the build process, not the business logic. Focus on compilation, bundling, and optimization issues first.
+
+## IGDB Sync System
+
+Comprehensive database synchronization system for maintaining current game data:
+
+**Current Sync Infrastructure:**
+- **Manual Sync Script**: `scripts/sync-igdb.js` - Well-structured Node.js sync process
+- **Database Scale**: 185K+ games with 99.9% from IGDB
+- **Smart Integration**: `gameDataServiceV2.ts` with on-demand IGDB supplementation
+- **Multi-Strategy Queries**: Handles `updated_at`, franchise searches, and targeted imports
+
+**Sync Commands:**
+```bash
+# Test what would be synced (recommended first step)
+npm run sync-igdb:dry
+
+# Run actual sync (adds games to database)
+npm run sync-igdb
+
+# Custom sync options
+node scripts/sync-igdb.js --days 14 --limit 100
+```
+
+**Current Sync Gaps:**
+- **Manual Only**: No automated scheduling (requires manual execution)
+- **Coverage Gaps**: Recent games (2023+: 1,069 vs expected 3,000+)
+- **Single Strategy**: Only syncs by `updated_at`, misses new releases
+- **No Franchise Monitoring**: Missing targeted franchise updates for popular series
+
+**Sync Documentation**: See `/docs/IGDB_SYNC.md` for detailed sync system documentation
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+With 50+ services and 185K+ games, functionality likely already exists - check first.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+
+      IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task.
