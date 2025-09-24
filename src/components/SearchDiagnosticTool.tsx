@@ -8,6 +8,7 @@ import { searchDiagnosticService } from '../services/searchDiagnosticService';
 import { AdminKeyManager } from './AdminKeyManager';
 import { SearchResultsTable } from './SearchResultsTable';
 import { ManualFlaggingPanel } from './ManualFlaggingPanel';
+import { DMCAManagementPanel } from './DMCAManagementPanel';
 
 interface DiagnosticResult {
   query: string;
@@ -66,7 +67,7 @@ export const SearchDiagnosticTool: React.FC = () => {
   const [bulkResults, setBulkResults] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [igdbStats, setIgdbStats] = useState<any>(null);
-  const [selectedTab, setSelectedTab] = useState<'single' | 'bulk' | 'patterns' | 'results' | 'flags'>('single');
+  const [selectedTab, setSelectedTab] = useState<'single' | 'bulk' | 'patterns' | 'results' | 'flags' | 'dmca'>('single');
 
   useEffect(() => {
     // Update IGDB stats periodically
@@ -207,7 +208,7 @@ export const SearchDiagnosticTool: React.FC = () => {
         {/* Navigation */}
         <nav className="mb-8">
           <div className="flex space-x-4">
-            {(['single', 'bulk', 'patterns', 'results', 'flags'] as const).map((tab) => (
+            {(['single', 'bulk', 'patterns', 'results', 'flags', 'dmca'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setSelectedTab(tab)}
@@ -222,6 +223,7 @@ export const SearchDiagnosticTool: React.FC = () => {
                 {tab === 'patterns' && '📊 Pattern Analysis'}
                 {tab === 'results' && '📋 Results Table'}
                 {tab === 'flags' && '🏷️ Manual Flags'}
+                {tab === 'dmca' && '🛡️ DMCA Management'}
               </button>
             ))}
           </div>
@@ -378,6 +380,13 @@ export const SearchDiagnosticTool: React.FC = () => {
               </p>
               <ManualFlaggingPanel />
             </div>
+          </div>
+        )}
+
+        {/* DMCA Management Tab */}
+        {selectedTab === 'dmca' && (
+          <div className="space-y-6">
+            <DMCAManagementPanel />
           </div>
         )}
       </div>

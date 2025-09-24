@@ -22,6 +22,7 @@ import { isNumericIdentifier } from '../utils/gameUrls';
 import { collectionWishlistService } from '../services/collectionWishlistService';
 import { mapPlatformNames } from '../utils/platformMapping';
 import { GameActionSheet } from '../components/GameActionSheet';
+import { useTrackGameView } from '../hooks/useTrackGameView';
 
 // Interface for review data from database
 interface GameReview {
@@ -187,6 +188,15 @@ export const GamePage: React.FC = () => {
     gameCategory,
     categoryLoading
   } = state;
+
+  // Track game view for analytics (privacy-compliant)
+  const gameIdForTracking = game?.igdb_id || game?.id;
+  const { trackView, isBot, stats } = useTrackGameView({
+    gameId: gameIdForTracking,
+    source: 'direct',
+    autoTrack: true,
+    enabled: !!gameIdForTracking && !gameLoading && !gameError
+  });
 
   // Refetch function using the new consolidated service method
   const refetchGame = async () => {
