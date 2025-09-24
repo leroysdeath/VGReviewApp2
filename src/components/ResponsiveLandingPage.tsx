@@ -353,7 +353,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           </div>
           <div className="space-y-6">
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/30 transition-all duration-300 hover:border-blue-500/50 group overflow-hidden"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-blue-500/50 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('social-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
             >
@@ -369,7 +369,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               </div>
             </div>
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/30 transition-all duration-300 hover:border-green-500/50 group overflow-hidden"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-green-500/50 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('stats-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
             >
@@ -385,7 +385,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               </div>
             </div>
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/30 transition-all duration-300 hover:border-purple-500/50 group overflow-hidden"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-purple-500/50 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('ratings-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
             >
@@ -568,7 +568,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/30 transition-all duration-300 hover:border-blue-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-blue-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
               onMouseEnter={() => setHoveredCard('social')}
               onMouseLeave={() => setHoveredCard(null)}
             >
@@ -594,7 +594,7 @@ export const ResponsiveLandingPage: React.FC = () => {
             </div>
 
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/30 transition-all duration-300 hover:border-green-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-green-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
               onMouseEnter={() => setHoveredCard('stats')}
               onMouseLeave={() => setHoveredCard(null)}
             >
@@ -620,7 +620,7 @@ export const ResponsiveLandingPage: React.FC = () => {
             </div>
 
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/30 transition-all duration-300 hover:border-purple-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-purple-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
               onMouseEnter={() => setHoveredCard('ratings')}
               onMouseLeave={() => setHoveredCard(null)}
             >
