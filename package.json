@@ -8,13 +8,17 @@
     "npm": ">=8.0.0"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run cleanup && vite",
+    "dev:clean": "npm run cleanup && netlify dev",
     "build": "tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "build:analyze": "vite build --mode analyze",
     "clean": "rm -rf dist node_modules/.vite",
+    "cleanup": "node scripts/cleanup-node-processes.js",
+    "cleanup:ports": "node scripts/cleanup-node-processes.js",
+    "kill-dev": "node scripts/cleanup-node-processes.js",
     "sync-igdb": "node scripts/sync-igdb.js",
     "sync-igdb:dry": "node scripts/sync-igdb.js --dry-run",
     "sync-igdb:help": "node scripts/sync-igdb.js --help",
