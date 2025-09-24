@@ -40,35 +40,35 @@ const themeConfig = {
     hoverBorder: 'hover:border-purple-700/50',
     accent: 'text-purple-400',
     gradient: 'from-purple-600 to-purple-800',
-    background: 'bg-gradient-to-br from-gray-900/90 via-purple-900/5 to-gray-900/85'
+    background: 'bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-900/80'
   },
   green: {
     border: 'border-gray-700/60',
     hoverBorder: 'hover:border-green-700/50',
     accent: 'text-green-400',
     gradient: 'from-green-600 to-green-800',
-    background: 'bg-gradient-to-br from-gray-900/90 via-green-900/5 to-gray-900/85'
+    background: 'bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-900/80'
   },
   orange: {
     border: 'border-orange-500/50',
     hoverBorder: 'hover:border-orange-400',
     accent: 'text-orange-400',
     gradient: 'from-orange-600 to-orange-800',
-    background: 'bg-gradient-to-br from-gray-900/90 via-orange-900/5 to-gray-900/85'
+    background: 'bg-gradient-to-br from-gray-900/90 via-orange-900/10 to-gray-900/80'
   },
   blue: {
     border: 'border-gray-700/60',
     hoverBorder: 'hover:border-blue-700/50',
     accent: 'text-blue-400',
     gradient: 'from-blue-600 to-blue-800',
-    background: 'bg-gradient-to-br from-gray-900/90 via-blue-900/5 to-gray-900/85'
+    background: 'bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-900/80'
   },
   red: {
     border: 'border-red-500/50',
     hoverBorder: 'hover:border-red-400',
     accent: 'text-red-400',
     gradient: 'from-red-600 to-red-800',
-    background: 'bg-gradient-to-br from-gray-900/90 via-red-900/5 to-gray-900/85'
+    background: 'bg-gradient-to-br from-gray-900/90 via-red-900/10 to-gray-900/80'
   }
 };
 
