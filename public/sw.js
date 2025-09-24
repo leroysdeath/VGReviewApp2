@@ -1,18 +1,21 @@
-// VGReviewApp Service Worker
-// Version: 1.0.1
-// Last Updated: September 2025
+// GameVault Service Worker
+// Version: 1.0.2
+// Last Updated: December 2024
 
-const CACHE_NAME = 'vgreview-v1.0.1';
-const DYNAMIC_CACHE = 'vgreview-dynamic-v1.0.1';
+const CACHE_NAME = 'gamevault-v1.0.2';
+const DYNAMIC_CACHE = 'gamevault-dynamic-v1.0.2';
 const MAX_DYNAMIC_CACHE_ITEMS = 50;
 
 // Assets to cache on install
 const STATIC_ASSETS = [
   '/',
+  '/index.html',
   '/offline.html',
   '/manifest.json',
-  '/favicon.ico'
-  // Icons will be cached dynamically when available
+  '/favicon.ico',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
+  // Other icons will be cached dynamically when available
 ];
 
 // Patterns to cache dynamically
@@ -108,8 +111,32 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Skip Supabase auth and realtime requests (always fresh)
-  if (url.hostname.includes('supabase.co') && 
+  if (url.hostname.includes('supabase.co') &&
       (url.pathname.includes('/auth/') || url.pathname.includes('/realtime/'))) {
+    return;
+  }
+
+  // Special handling for start_url to ensure PWA compliance
+  if (url.pathname === '/' || url.pathname === '/index.html') {
+    event.respondWith(
+      caches.match('/')
+        .then((response) => {
+          return response || fetch(request).then((fetchResponse) => {
+            // Cache the start_url response
+            if (fetchResponse && fetchResponse.status === 200) {
+              const responseToCache = fetchResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put('/', responseToCache);
+              });
+            }
+            return fetchResponse;
+          });
+        })
+        .catch(() => {
+          // If both cache and network fail, return offline page
+          return caches.match('/offline.html');
+        })
+    );
     return;
   }
 

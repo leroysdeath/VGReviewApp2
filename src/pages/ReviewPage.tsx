@@ -330,7 +330,7 @@ export const ReviewPage: React.FC = () => {
         <div className="grid lg:grid-cols-3 gap-8 mb-12">
           {/* Game Cover and Info */}
           <div className="lg:col-span-2">
-            <div className="bg-gray-800 rounded-lg overflow-hidden">
+            <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-lg overflow-hidden">
               <div className="md:flex">
                 <div className="md:flex-shrink-0">
                   <Link to={`/game/${gameId}`}>
@@ -414,7 +414,7 @@ export const ReviewPage: React.FC = () => {
 
           {/* Review Score Box */}
           <div className="space-y-6">
-            <div className="bg-gray-800 rounded-lg p-6">
+            <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-lg p-6">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
                   {review.user.username || review.user.name}'s rating
@@ -477,7 +477,7 @@ export const ReviewPage: React.FC = () => {
       {/* Full Review Modal */}
       {showFullReview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+          <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
               <h3 className="text-lg font-bold text-white">Full Review</h3>
               <button
