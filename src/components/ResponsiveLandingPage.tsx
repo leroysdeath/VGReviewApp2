@@ -252,9 +252,9 @@ export const ResponsiveLandingPage: React.FC = () => {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-gray-900">
+      <div className="min-h-screen bg-slate-900">
         {/* Mobile Hero Section */}
-        <div className="relative bg-gray-900 overflow-hidden px-4 py-12">
+        <div className="relative bg-slate-900 overflow-hidden px-4 py-12">
           {/* Simplified multi-layered background for mobile */}
           {/* Layer 1: Subtle gradient */}
           <div 
@@ -343,7 +343,7 @@ export const ResponsiveLandingPage: React.FC = () => {
         </div>
 
         {/* Mobile Features Section */}
-        <div className="px-4 py-12 bg-gray-800">
+        <div className="px-4 py-12 bg-slate-800">
           <div className="text-center mb-8">
             <h2 className="text-white mb-3">
               <span className="text-lg font-normal">How </span>
@@ -405,7 +405,7 @@ export const ResponsiveLandingPage: React.FC = () => {
 
 
         {/* Mobile Recent Reviews Section */}
-        <div className="px-4 py-12 bg-gray-800">
+        <div className="px-4 py-12 bg-slate-800">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-white">Recent Reviews</h2>
             <Link
@@ -458,9 +458,9 @@ export const ResponsiveLandingPage: React.FC = () => {
 
   // Desktop version
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-slate-900">
       {/* Hero Section */}
-      <div className="relative bg-gray-900 overflow-hidden">
+      <div className="relative bg-slate-900 overflow-hidden">
         {/* Multi-layered background */}
         {/* Layer 1: Base gradient - subtle radial gradients */}
         <div 
@@ -557,7 +557,7 @@ export const ResponsiveLandingPage: React.FC = () => {
       </div>
 
       {/* Features Section */}
-      <div className="py-16 bg-gray-800">
+      <div className="py-16 bg-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-white mb-4">
@@ -650,7 +650,7 @@ export const ResponsiveLandingPage: React.FC = () => {
 
 
       {/* Recent Reviews Section */}
-      <div className="py-16 bg-gray-800">
+      <div className="py-16 bg-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-white">Recent Reviews</h2>
