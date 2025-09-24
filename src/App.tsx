@@ -33,6 +33,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const EnhancedSearchTestPage = lazy(() => import('./pages/EnhancedSearchTestPage'));
 const DiagnosticPage = lazy(() => import('./pages/DiagnosticPage'));
 const SearchPerformanceDashboard = lazy(() => import('./components/SearchPerformanceDashboard').then(m => ({ default: m.SearchPerformanceDashboard })));
+const PrivacyDashboard = lazy(() => import('./components/admin/PrivacyDashboard').then(m => ({ default: m.PrivacyDashboard })));
 
 // Navigation debugging component
 const NavigationDebugger: React.FC = () => {
@@ -124,6 +125,18 @@ const AppContent: React.FC = () => {
                           </div>
                         }>
                           <DiagnosticPage />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/privacy"
+                      element={
+                        <Suspense fallback={
+                          <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                            <div className="text-white">Loading Privacy Dashboard...</div>
+                          </div>
+                        }>
+                          <PrivacyDashboard />
                         </Suspense>
                       }
                     />
