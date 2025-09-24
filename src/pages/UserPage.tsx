@@ -14,8 +14,31 @@ import { ReviewsModal } from '../components/ReviewsModal';
 import { userServiceSimple, UserUpdate } from '../services/userServiceSimple';
 import { useFollow } from '../hooks/useFollow';
 
-// Lazy load UserSettingsModal to avoid initialization issues
-const UserSettingsModal = lazy(() => import('../components/profile/UserSettingsModal'));
+// Lazy load UserSettingsModal with error handling
+const UserSettingsModal = lazy(() =>
+  import('../components/profile/UserSettingsModal').catch((error) => {
+    console.error('Failed to load UserSettingsModal:', error);
+    // Return a fallback component if the module fails to load
+    return {
+      default: ({ onClose }: any) => (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-8 rounded-lg max-w-md">
+            <h2 className="text-white text-xl font-bold mb-4">Error Loading Settings</h2>
+            <p className="text-gray-300 mb-6">
+              Unable to load the settings panel. Please refresh the page and try again.
+            </p>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )
+    };
+  })
+);
 
 export const UserPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
