@@ -462,7 +462,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId, isOwnProfile
                 {activity.game?.name}
               </Link>
             )}
-            {' '}to collection
+            {' '}to backlog
           </span>
         );
       case 'started':

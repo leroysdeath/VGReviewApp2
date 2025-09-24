@@ -211,12 +211,14 @@ export const SearchResultsPage: React.FC = () => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
-    
+
     if (!filters.searchTerm?.trim()) return;
-    
+
     try {
       setSearchStarted(true);
-      
+
+      // Use the regular search which already has all the optimizations
+      // (parallel queries, caching, reduced timeouts)
       await searchGames(filters.searchTerm, {
         platforms: filters.platforms,
         minRating: filters.minRating,
@@ -226,7 +228,7 @@ export const SearchResultsPage: React.FC = () => {
                filters.sortBy === 'avg_rating' ? 'rating' : 'popularity',
         sortOrder: filters.sortOrder
       });
-      
+
     } catch (err) {
       console.error('SearchResultsPage: Search failed:', err);
     }
