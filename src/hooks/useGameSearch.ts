@@ -192,14 +192,115 @@ export const useGameSearch = () => {
     setSearchOptions(prev => ({ ...prev, ...newOptions }));
   }, []);
 
+  // Progressive search function for two-phase loading
+  const searchGamesProgressive = useCallback(async (
+    query: string,
+    options: SearchOptions = {},
+    phase: 'database' | 'enhance' = 'database'
+  ) => {
+    // Cancel any existing search for enhancement phase
+    if (phase === 'enhance' && abortControllerRef.current) {
+      // Don't cancel if we're in database phase
+      return;
+    }
+
+    if (phase === 'database') {
+      // Cancel any existing search
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+    }
+
+    try {
+      if (phase === 'database') {
+        // Phase 1: Get database results immediately
+        setSearchState(prev => ({
+          ...prev,
+          loading: true,
+          error: null,
+          games: [],
+          totalResults: 0,
+          source: 'database'
+        }));
+
+        const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+          maxResults: options.limit || 200,
+          includeMetrics: false, // Skip metrics for speed
+          bypassCache: false,
+          fastMode: true, // Use fast mode for database-only results
+          databaseOnly: true // New flag to only query database
+        });
+
+        const data = {
+          games: searchResult.results,
+          hasMore: searchResult.results.length === (options.limit || 200),
+          total: searchResult.results.length,
+          source: 'database' as const
+        };
+
+        setSearchState({
+          games: data.games,
+          loading: false,
+          error: null,
+          hasMore: data.hasMore,
+          totalResults: data.total,
+          source: data.source
+        });
+
+        return data.games;
+      } else {
+        // Phase 2: Enhance with IGDB results
+        const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+          maxResults: options.limit || 200,
+          includeMetrics: true,
+          bypassCache: false,
+          fastMode: false,
+          igdbOnly: true // New flag to only query IGDB
+        });
+
+        // Merge with existing database results
+        setSearchState(prev => {
+          const existingIds = new Set(prev.games.map(g => g.igdb_id || g.id));
+          const newGames = searchResult.results.filter(g => !existingIds.has(g.igdb_id || g.id));
+          const mergedGames = [...prev.games, ...newGames];
+
+          return {
+            games: mergedGames,
+            loading: false,
+            error: null,
+            hasMore: false,
+            totalResults: mergedGames.length,
+            source: 'mixed'
+          };
+        });
+
+        return searchState.games;
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError' || phase === 'enhance') {
+        return; // Don't update state for cancelled or enhancement errors
+      }
+
+      setSearchState(prev => ({
+        ...prev,
+        loading: false,
+        error: error.message || 'Search failed. Please try again.'
+      }));
+
+      throw error;
+    }
+  }, [searchOptions]);
+
   return {
     // State
     searchState,
     searchTerm,
     searchOptions,
-    
+
     // Actions
     searchGames,
+    searchGamesProgressive,
     quickSearch,
     navigateToSearch,
     loadMore,

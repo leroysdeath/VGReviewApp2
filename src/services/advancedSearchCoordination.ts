@@ -94,6 +94,8 @@ export class AdvancedSearchCoordination {
       bypassCache?: boolean;
       includeMetrics?: boolean;
       fastMode?: boolean; // New option for dropdown searches
+      databaseOnly?: boolean; // Phase 1: Only query database
+      igdbOnly?: boolean; // Phase 2: Only query IGDB
     } = {}
   ): Promise<{
     results: SearchResult[];
@@ -102,11 +104,11 @@ export class AdvancedSearchCoordination {
   }> {
     const startTime = Date.now();
     
-    // Fast path for dropdown searches - bypass all complex logic
-    if (options.fastMode) {
-      if (DEBUG_SEARCH_COORDINATION) console.log(`⚡ FAST MODE: Quick search for dropdown: "${query}"`);
+    // Fast path for dropdown searches or database-only mode
+    if (options.fastMode || options.databaseOnly) {
+      if (DEBUG_SEARCH_COORDINATION) console.log(`⚡ ${options.databaseOnly ? 'DATABASE-ONLY' : 'FAST'} MODE: Quick search for "${query}"`);
       try {
-        const fastResults = await this.gameDataService.searchGamesFast(query, options.maxResults || 8);
+        const fastResults = await this.gameDataService.searchGamesFast(query, options.maxResults || (options.databaseOnly ? 200 : 8));
         return {
           results: fastResults.map(game => ({
             ...game,
@@ -130,6 +132,41 @@ export class AdvancedSearchCoordination {
       } catch (error) {
         console.error('Fast mode search failed:', error);
         // Fall through to normal search if fast mode fails
+      }
+    }
+
+    // IGDB-only mode for enhancement phase
+    if (options.igdbOnly) {
+      if (DEBUG_SEARCH_COORDINATION) console.log(`🌐 IGDB-ONLY MODE: Enhancing results for "${query}"`);
+      const context = this.buildSearchContext(query, options);
+
+      try {
+        // Only query IGDB, skip database
+        const igdbResults = await this.fetchFromIGDB(context);
+        const processedResults = this.processSearchResults(igdbResults, context);
+
+        return {
+          results: processedResults,
+          context,
+          metrics: options.includeMetrics ? {
+            totalSearchTime: Date.now() - startTime,
+            dbQueryTime: 0,
+            igdbQueryTime: Date.now() - startTime,
+            processingTime: 0,
+            cacheHit: false,
+            resultCount: processedResults.length,
+            qualityFiltered: 0,
+            contentFiltered: 0,
+            queriesExpanded: context.expandedQueries.length
+          } : undefined
+        };
+      } catch (error) {
+        console.error('IGDB-only search failed:', error);
+        return {
+          results: [],
+          context,
+          metrics: undefined
+        };
       }
     }
     
@@ -593,12 +630,34 @@ export class AdvancedSearchCoordination {
     }
 
     // Enhanced IGDB fallback with error handling
-    // Only attempt IGDB if we have very few results AND all services are healthy
-    const IGDB_THRESHOLD = 1; // Reduced from 10 - only use IGDB if we have NO results
+    // Attempt IGDB for better coverage - especially for franchise searches
+    const isFranchiseSearch = context.searchIntent === SearchIntent.FRANCHISE_BROWSE;
+
+    // Popular franchises that should ALWAYS check IGDB for complete coverage
+    const popularFranchises = [
+      'mario', 'zelda', 'pokemon', 'pokémon', 'final fantasy', 'call of duty',
+      'sonic', 'mega man', 'megaman', 'pikmin', 'metroid', 'kirby',
+      'donkey kong', 'fire emblem', 'animal crossing', 'splatoon',
+      'street fighter', 'resident evil', 'devil may cry', 'monster hunter',
+      'dragon quest', 'kingdom hearts', 'persona', 'dark souls', 'elden ring'
+    ];
+    const queryLower = context.originalQuery.toLowerCase();
+    const isPopularFranchise = popularFranchises.some(franchise => queryLower.includes(franchise));
+
+    // Determine IGDB threshold - always check for franchises and popular series
+    const IGDB_THRESHOLD = (isFranchiseSearch || isPopularFranchise) ? 1000 : 20;
     const shouldAttemptIGDB = allResults.length < IGDB_THRESHOLD;
 
     if (shouldAttemptIGDB) {
-      console.log(`🔍 Minimal local results (${allResults.length}), checking if IGDB fallback is available...`);
+      let searchReason;
+      if (isPopularFranchise) {
+        searchReason = `Popular franchise "${context.originalQuery}" detected - checking IGDB for complete coverage`;
+      } else if (isFranchiseSearch) {
+        searchReason = `Franchise search detected - checking IGDB for complete coverage`;
+      } else {
+        searchReason = `Database results (${allResults.length}) below threshold (${IGDB_THRESHOLD})`;
+      }
+      console.log(`🔍 ${searchReason}, checking if IGDB is available...`);
 
       // Check all conditions before attempting IGDB
       const canUseIGDB =
@@ -620,7 +679,7 @@ export class AdvancedSearchCoordination {
 
         try {
           // Create a race between IGDB search and timeout
-          const IGDB_TIMEOUT = 2000; // 2 seconds max for search
+          const IGDB_TIMEOUT = 1000; // OPTIMIZED: 1 second max for fast response
           const timeoutPromise = new Promise<never>((_, reject) => {
             setTimeout(() => reject(new Error('IGDB search timeout')), IGDB_TIMEOUT);
           });
@@ -643,7 +702,7 @@ export class AdvancedSearchCoordination {
             genres: game.genres?.map(g => g.name) || [],
             platforms: game.platforms?.map(p => p.name) || [],
             release_date: game.first_release_date ? new Date(game.first_release_date * 1000).toISOString() : undefined,
-            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') : undefined,
+            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_1080p').replace('//', 'https://') : undefined,
             igdb_rating: game.rating,
             igdb_id: game.id,
             source: 'igdb' as const,
@@ -677,7 +736,7 @@ export class AdvancedSearchCoordination {
             resultCount: convertedIgdbResults.length
           });
 
-          console.log(`✅ IGDB search succeeded in ${duration}ms - Added ${addedCount} results, total: ${allResults.length}`);
+          console.log(`✅ IGDB search succeeded in ${duration}ms - Added ${addedCount} new results, total: ${allResults.length}`);
 
         } catch (error) {
           const duration = Date.now() - startTime;
@@ -699,8 +758,12 @@ export class AdvancedSearchCoordination {
           console.log('📊 Continuing with database results only');
         }
       }
-    } else if (allResults.length >= IGDB_THRESHOLD) {
-      console.log(`✅ Sufficient database results (${allResults.length}), skipping IGDB fallback`);
+    } else {
+      // Not attempting IGDB - we have sufficient results
+      const skipReason = isFranchiseSearch
+        ? `Franchise search has ${allResults.length} database results (unusual - threshold is ${IGDB_THRESHOLD})`
+        : `Sufficient database results (${allResults.length} >= ${IGDB_THRESHOLD} threshold)`;
+      console.log(`✅ ${skipReason}, skipping IGDB`);
     }
 
     // Apply advanced filtering and sorting

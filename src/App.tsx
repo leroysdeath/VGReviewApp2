@@ -8,6 +8,7 @@ import { Footer } from './components/Footer';
 import { AuthModalProvider } from './context/AuthModalContext';
 import { AuthModal } from './components/auth/AuthModal';
 import { AdminProvider } from './context/AdminContext';
+// Import heavy page components directly (not lazy-loaded for now due to build issues)
 import { GamePage } from './pages/GamePage';
 import { SearchResultsPage } from './pages/SearchResultsPage';
 import { ExplorePage } from './pages/ExplorePage';
@@ -27,13 +28,12 @@ import { PrivacyConsentBanner } from './components/privacy/PrivacyConsentBanner'
 import { ScrollToTop } from './components/ScrollToTop';
 
 
-// Lazy load legal pages for better performance
-const TermsPage = lazy(() => import('./pages/TermsPage'));
-const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
-const EnhancedSearchTestPage = lazy(() => import('./pages/EnhancedSearchTestPage'));
-const DiagnosticPage = lazy(() => import('./pages/DiagnosticPage'));
-const SearchPerformanceDashboard = lazy(() => import('./components/SearchPerformanceDashboard').then(m => ({ default: m.SearchPerformanceDashboard })));
-const PrivacyDashboard = lazy(() => import('./components/admin/PrivacyDashboard').then(m => ({ default: m.PrivacyDashboard })));
+// Import non-critical pages directly to avoid build issues
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import EnhancedSearchTestPage from './pages/EnhancedSearchTestPage';
+import DiagnosticPage from './pages/DiagnosticPage';
+import { SearchPerformanceDashboard } from './components/SearchPerformanceDashboard';
 
 // Navigation debugging component
 const NavigationDebugger: React.FC = () => {
@@ -100,57 +100,22 @@ const AppContent: React.FC = () => {
                         <UserPage />
                       </>
                     } />
+
                     <Route path="/users" element={<UserSearchPage />} />
                     <Route path="/debug-auth" element={<DebugAuthPage />} />
                     <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                    <Route 
-                      path="/enhanced-search-test" 
-                      element={
-                        <Suspense fallback={
-                          <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                            <div className="text-white">Loading Enhanced Search Test...</div>
-                          </div>
-                        }>
-                          <EnhancedSearchTestPage />
-                        </Suspense>
-                      } 
+                    <Route
+                      path="/enhanced-search-test"
+                      element={<EnhancedSearchTestPage />}
                     />
                     <Route
                       path="/admin/diagnostic"
-                      element={
-                        <Suspense fallback={
-                          <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                            <div className="text-white">Loading Search Diagnostic Tool...</div>
-                          </div>
-                        }>
-                          <DiagnosticPage />
-                        </Suspense>
-                      }
-                    />
-                    <Route
-                      path="/admin/privacy"
-                      element={
-                        <Suspense fallback={
-                          <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                            <div className="text-white">Loading Privacy Dashboard...</div>
-                          </div>
-                        }>
-                          <PrivacyDashboard />
-                        </Suspense>
-                      }
+                      element={<DiagnosticPage />}
                     />
                     <Route
                       path="/search-performance"
-                      element={
-                        <Suspense fallback={
-                          <div className="flex items-center justify-center h-64">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                          </div>
-                        }>
-                          <SearchPerformanceDashboard />
-                        </Suspense>
-                      }
+                      element={<SearchPerformanceDashboard />}
                     />
                     <Route
                       path="/review/:gameId?" 
@@ -192,29 +157,13 @@ const AppContent: React.FC = () => {
                       path="/faq" 
                       element={<FAQ />} 
                     />
-                    <Route 
-                      path="/terms" 
-                      element={
-                        <Suspense fallback={
-                          <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                            <div className="text-white">Loading Terms of Service...</div>
-                          </div>
-                        }>
-                          <TermsPage />
-                        </Suspense>
-                      } 
+                    <Route
+                      path="/terms"
+                      element={<TermsPage />}
                     />
-                    <Route 
-                      path="/privacy" 
-                      element={
-                        <Suspense fallback={
-                          <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                            <div className="text-white">Loading Privacy Policy...</div>
-                          </div>
-                        }>
-                          <PrivacyPage />
-                        </Suspense>
-                      } 
+                    <Route
+                      path="/privacy"
+                      element={<PrivacyPage />}
                     />
                     {/* Catch-all route for debugging */}
                     <Route path="*" element={
