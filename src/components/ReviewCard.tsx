@@ -159,13 +159,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
         ${className}
       `}
     >
-      {/* Background gradient overlay on hover */}
-      <div className={`
-        absolute inset-0 opacity-0 group-hover:opacity-10 
-        bg-gradient-to-br ${themeStyles.gradient}
-        transition-opacity duration-500 pointer-events-none
-      `} />
-
       {/* Card content */}
       <div className="relative flex items-start gap-4">
         {/* User Avatar */}
