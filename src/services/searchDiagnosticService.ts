@@ -69,15 +69,38 @@ interface SearchDiagnostic {
       redlight: number;
       unflagged: number;
     };
+    // New: Content filtering analysis
+    contentFilteringAnalysis: {
+      totalBeforeFiltering: number;
+      filteredByContentProtection: number;
+      filteredByFanGameDetection: number;
+      bypassedForPopularFranchise: boolean;
+      modGames: number;
+      dlcGames: number;
+      officialGames: number;
+    };
+    // New: Composite scoring analysis
+    compositeScoringAnalysis: {
+      averageLegitimacyScore: number;
+      averageCanonicalScore: number;
+      averagePopularityScore: number;
+      averageRecencyScore: number;
+      officialGameCount: number;
+      fanGameCount: number;
+      suspiciousGameCount: number;
+    };
   };
   
-  // Sorting analysis
+  // Sorting analysis (updated for composite scoring)
   sortingAnalysis: {
     originalOrder: string[];
     sortedByRating: string[];
     sortedByRelevance: string[];
+    sortedByCompositeScore: string[];
     topRatedGame: string;
+    topScoredGame: string;
     averageRating: number;
+    averageCompositeScore: number;
   };
   
   // Performance metrics
@@ -210,7 +233,7 @@ export class SearchDiagnosticService {
     
     // Step 4: Analyze filters and sorting on final results
     const finalResults = coordinatedSearchResult.results || [];
-    const filterAnalysis = this.analyzeFilters(finalResults);
+    const filterAnalysis = this.analyzeFilters(finalResults, query);
     const sortingAnalysis = this.analyzeSorting(finalResults, query);
     const resultAnalysis = resultAnalysisService.analyzeSearchResults(
       query,
@@ -336,9 +359,9 @@ export class SearchDiagnosticService {
   }
   
   /**
-   * Analyze filter distributions with new IGDB metrics and manual flags
+   * Analyze filter distributions with new IGDB metrics, manual flags, and relaxed filtering
    */
-  private analyzeFilters(games: GameWithCalculatedFields[]) {
+  private analyzeFilters(games: GameWithCalculatedFields[], query?: string) {
     const genreDistribution: Record<string, number> = {};
     const platformDistribution: Record<string, number> = {};
     const releaseYearDistribution: Record<string, number> = {};
@@ -433,6 +456,12 @@ export class SearchDiagnosticService {
         flagAnalysis.unflagged++;
       }
     });
+
+    // NEW: Advanced content filtering analysis
+    const contentFilteringAnalysis = this.analyzeContentFiltering(games, query || '');
+    
+    // NEW: Composite scoring analysis
+    const compositeScoringAnalysis = this.analyzeCompositeScoring(games, query || '');
     
     return {
       genreDistribution,
@@ -441,12 +470,188 @@ export class SearchDiagnosticService {
       ratingDistribution,
       totalRatingDistribution,
       popularityDistribution,
-      flagAnalysis
+      flagAnalysis,
+      contentFilteringAnalysis,
+      compositeScoringAnalysis
     };
   }
   
   /**
-   * Analyze sorting effectiveness
+   * NEW: Analyze content filtering behavior (relaxed filtering)
+   */
+  private analyzeContentFiltering(games: GameWithCalculatedFields[], query: string) {
+    const totalBeforeFiltering = games.length;
+    
+    // Check if this would be a popular franchise search (bypasses filtering)
+    const popularFranchises = ['mario', 'zelda', 'pokemon', 'final fantasy', 'call of duty', 'sonic', 'mega man'];
+    const isPopularFranchise = popularFranchises.some(franchise =>
+      query.toLowerCase().includes(franchise)
+    );
+    
+    // Count different game types
+    let modGames = 0;
+    let dlcGames = 0;
+    let officialGames = 0;
+    let filteredByContentProtection = 0;
+    let filteredByFanGameDetection = 0;
+    
+    games.forEach(game => {
+      if (game.category === 5) modGames++; // Mod category
+      else if (game.category === 1 || game.category === 2) dlcGames++; // DLC/Expansion
+      else if (game.category === 0) officialGames++; // Main game
+      
+      // Simulate content protection filtering
+      const name = game.name.toLowerCase();
+      const fanGameIndicators = [
+        'insurgence', 'uranium', 'prism', 'phoenix rising', 'sage', 'reborn',
+        'rejuvenation', 'clover', 'glazed', 'gaia', 'light platinum', 'flora sky',
+        'fan made', 'fan game', 'rom hack', 'homebrew'
+      ];
+      
+      if (fanGameIndicators.some(indicator => name.includes(indicator))) {
+        filteredByFanGameDetection++;
+      }
+      
+      // Check for copyright protected content patterns
+      const protectedPatterns = ['super mario world', 'pokemon', 'zelda'];
+      if (protectedPatterns.some(pattern => name.includes(pattern)) && 
+          fanGameIndicators.some(indicator => name.includes(indicator))) {
+        filteredByContentProtection++;
+      }
+    });
+    
+    return {
+      totalBeforeFiltering,
+      filteredByContentProtection: isPopularFranchise ? 0 : filteredByContentProtection,
+      filteredByFanGameDetection: isPopularFranchise ? 0 : filteredByFanGameDetection,
+      bypassedForPopularFranchise: isPopularFranchise,
+      modGames,
+      dlcGames,
+      officialGames
+    };
+  }
+
+  /**
+   * NEW: Analyze composite scoring factors
+   */
+  private analyzeCompositeScoring(games: GameWithCalculatedFields[], query: string) {
+    if (games.length === 0) {
+      return {
+        averageLegitimacyScore: 0,
+        averageCanonicalScore: 0,
+        averagePopularityScore: 0,
+        averageRecencyScore: 0,
+        officialGameCount: 0,
+        fanGameCount: 0,
+        suspiciousGameCount: 0
+      };
+    }
+    
+    let totalLegitimacyScore = 0;
+    let totalCanonicalScore = 0;
+    let totalPopularityScore = 0;
+    let totalRecencyScore = 0;
+    let officialGameCount = 0;
+    let fanGameCount = 0;
+    let suspiciousGameCount = 0;
+    
+    // Franchise publisher detection
+    const franchisePublishers: Record<string, string[]> = {
+      'pokemon': ['nintendo', 'game freak', 'the pokemon company', 'creatures inc'],
+      'mario': ['nintendo'],
+      'zelda': ['nintendo'],
+      'sonic': ['sega', 'sonic team'],
+      'final fantasy': ['square enix', 'square', 'squaresoft']
+    };
+    
+    let searchedFranchise = '';
+    for (const franchise of Object.keys(franchisePublishers)) {
+      if (query.toLowerCase().includes(franchise)) {
+        searchedFranchise = franchise;
+        break;
+      }
+    }
+    
+    games.forEach(game => {
+      const gameName = game.name.toLowerCase();
+      const publisher = (game.publisher || '').toLowerCase();
+      const developer = (game.developer || '').toLowerCase();
+      
+      // Calculate legitimacy score
+      let legitimacyScore = 0;
+      if (searchedFranchise && franchisePublishers[searchedFranchise]) {
+        const officialPubs = franchisePublishers[searchedFranchise];
+        const hasOfficialPublisher = officialPubs.some(pub =>
+          publisher.includes(pub) || developer.includes(pub)
+        );
+        
+        if (hasOfficialPublisher) {
+          legitimacyScore = 0.3;
+          officialGameCount++;
+        } else {
+          // Check for fan game indicators
+          const fanGameIndicators = ['insurgence', 'uranium', 'prism', 'fan made', 'rom hack'];
+          const isFanGame = fanGameIndicators.some(indicator => gameName.includes(indicator));
+          
+          if (isFanGame) {
+            legitimacyScore = -0.5;
+            fanGameCount++;
+          } else if (!publisher || publisher === 'unknown') {
+            legitimacyScore = -0.3;
+            suspiciousGameCount++;
+          }
+        }
+      }
+      
+      // Calculate canonical score
+      let canonicalScore = 0;
+      if (!gameName.includes('dlc') && !gameName.includes('expansion') && 
+          !gameName.includes('pack') && !gameName.includes('edition')) {
+        canonicalScore = 0.15;
+        
+        if (gameName === query.toLowerCase() || 
+            gameName.match(/\b(i{1,3}|iv|v|vi{1,3}|ix|x{1,3}|\d+)\b/)) {
+          canonicalScore += 0.1;
+        }
+      }
+      
+      // Calculate popularity score
+      let popularityScore = 0;
+      if (game.developer && game.publisher) popularityScore += 0.05;
+      if (game.genres && game.genres.length > 0) popularityScore += 0.05;
+      if (game.summary && game.summary.length > 100) popularityScore += 0.05;
+      
+      // Calculate recency score
+      let recencyScore = 0;
+      if (game.release_date) {
+        const releaseYear = new Date(game.release_date).getFullYear();
+        const currentYear = new Date().getFullYear();
+        const yearsDiff = currentYear - releaseYear;
+        
+        if (yearsDiff <= 2) recencyScore = 0.1;
+        else if (yearsDiff <= 5) recencyScore = 0.05;
+        else if (yearsDiff <= 10) recencyScore = 0.02;
+      }
+      
+      totalLegitimacyScore += legitimacyScore;
+      totalCanonicalScore += canonicalScore;
+      totalPopularityScore += popularityScore;
+      totalRecencyScore += recencyScore;
+    });
+    
+    return {
+      averageLegitimacyScore: totalLegitimacyScore / games.length,
+      averageCanonicalScore: totalCanonicalScore / games.length,
+      averagePopularityScore: totalPopularityScore / games.length,
+      averageRecencyScore: totalRecencyScore / games.length,
+      officialGameCount,
+      fanGameCount,
+      suspiciousGameCount
+    };
+  }
+
+  /**
+   * Analyze sorting effectiveness with new composite scoring
    */
   private analyzeSorting(games: GameWithCalculatedFields[], query: string) {
     if (games.length === 0) {
@@ -454,8 +659,11 @@ export class SearchDiagnosticService {
         originalOrder: [],
         sortedByRating: [],
         sortedByRelevance: [],
+        sortedByCompositeScore: [],
         topRatedGame: 'None',
-        averageRating: 0
+        topScoredGame: 'None',
+        averageRating: 0,
+        averageCompositeScore: 0
       };
     }
     
@@ -475,22 +683,43 @@ export class SearchDiagnosticService {
       .sort((a, b) => this.calculateRelevanceScore(b, query) - this.calculateRelevanceScore(a, query))
       .map(g => g.name);
     
+    // NEW: Sort by composite score (mimicking the new ranking system)
+    const gamesWithCompositeScore = games.map(game => ({
+      ...game,
+      compositeScore: this.calculateCompositeScoreForAnalysis(game, query)
+    }));
+    
+    const sortedByCompositeScore = [...gamesWithCompositeScore]
+      .sort((a, b) => b.compositeScore - a.compositeScore)
+      .map(g => g.name);
+    
     const topRatedGame = games.reduce((top, game) => {
       const gameRating = (game as any).total_rating || game.igdb_rating || 0;
       const topRating = (top as any).total_rating || top.igdb_rating || 0;
       return gameRating > topRating ? game : top;
     }).name;
     
+    const topScoredGame = gamesWithCompositeScore.reduce((top, game) => {
+      return game.compositeScore > top.compositeScore ? game : top;
+    }).name;
+    
     const averageRating = games.reduce((sum, game) => 
       sum + ((game as any).total_rating || game.igdb_rating || 0), 0
     ) / games.length;
+    
+    const averageCompositeScore = gamesWithCompositeScore.reduce((sum, game) => 
+      sum + game.compositeScore, 0
+    ) / gamesWithCompositeScore.length;
     
     return {
       originalOrder,
       sortedByRating,
       sortedByRelevance,
+      sortedByCompositeScore,
       topRatedGame,
-      averageRating: Math.round(averageRating * 100) / 100
+      topScoredGame,
+      averageRating: Math.round(averageRating * 100) / 100,
+      averageCompositeScore: Math.round(averageCompositeScore * 1000) / 1000
     };
   }
   
@@ -532,6 +761,110 @@ export class SearchDiagnosticService {
     if (game.summary && game.summary.length > 50) score += 5;
     
     return score;
+  }
+
+  /**
+   * NEW: Calculate composite score for analysis (mirrors advanced search coordination)
+   */
+  private calculateCompositeScoreForAnalysis(game: GameWithCalculatedFields, query: string): number {
+    const relevanceScore = this.calculateRelevanceScore(game, query) / 100; // Normalize to 0-1
+    const qualityScore = this.calculateQualityScore(game);
+    
+    // Legitimacy score calculation
+    let legitimacyScore = 0;
+    const gameName = game.name.toLowerCase();
+    const publisher = (game.publisher || '').toLowerCase();
+    const developer = (game.developer || '').toLowerCase();
+    
+    // Check for official publishers
+    const franchisePublishers: Record<string, string[]> = {
+      'pokemon': ['nintendo', 'game freak', 'the pokemon company'],
+      'mario': ['nintendo'],
+      'zelda': ['nintendo'],
+      'sonic': ['sega', 'sonic team'],
+      'final fantasy': ['square enix', 'square', 'squaresoft']
+    };
+    
+    let searchedFranchise = '';
+    for (const franchise of Object.keys(franchisePublishers)) {
+      if (query.toLowerCase().includes(franchise)) {
+        searchedFranchise = franchise;
+        break;
+      }
+    }
+    
+    if (searchedFranchise && franchisePublishers[searchedFranchise]) {
+      const officialPubs = franchisePublishers[searchedFranchise];
+      const hasOfficialPublisher = officialPubs.some(pub =>
+        publisher.includes(pub) || developer.includes(pub)
+      );
+      
+      if (hasOfficialPublisher) {
+        legitimacyScore = 0.3;
+      } else {
+        const fanGameIndicators = ['insurgence', 'uranium', 'fan made', 'rom hack'];
+        const isFanGame = fanGameIndicators.some(indicator => gameName.includes(indicator));
+        if (isFanGame) legitimacyScore = -0.5;
+        else if (!publisher || publisher === 'unknown') legitimacyScore = -0.3;
+      }
+    }
+    
+    // Canonical bonus
+    let canonicalBonus = 0;
+    if (!gameName.includes('dlc') && !gameName.includes('expansion')) {
+      canonicalBonus = 0.15;
+      if (gameName === query.toLowerCase()) canonicalBonus += 0.1;
+    }
+    
+    // Popularity bonus
+    let popularityBonus = 0;
+    if (game.developer && game.publisher) popularityBonus += 0.05;
+    if (game.genres && game.genres.length > 0) popularityBonus += 0.05;
+    if (game.summary && game.summary.length > 100) popularityBonus += 0.05;
+    
+    // Recency bonus
+    let recencyBonus = 0;
+    if (game.release_date) {
+      const releaseYear = new Date(game.release_date).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const yearsDiff = currentYear - releaseYear;
+      if (yearsDiff <= 2) recencyBonus = 0.1;
+      else if (yearsDiff <= 5) recencyBonus = 0.05;
+      else if (yearsDiff <= 10) recencyBonus = 0.02;
+    }
+    
+    // Weighted composite score
+    const compositeScore =
+      (relevanceScore * 0.30) +
+      (legitimacyScore * 0.25) +
+      (qualityScore * 0.20) +
+      (canonicalBonus * 0.15) +
+      (popularityBonus * 0.05) +
+      (recencyBonus * 0.05);
+    
+    return Math.min(Math.max(compositeScore, 0), 1);
+  }
+
+  /**
+   * Calculate quality score for a game
+   */
+  private calculateQualityScore(game: GameWithCalculatedFields): number {
+    let score = 0;
+    
+    // Base score from ratings
+    const totalRating = (game as any).total_rating || game.igdb_rating || 0;
+    if (totalRating > 0) {
+      score += totalRating / 100; // Normalize to 0-1
+    }
+    
+    // Metadata completeness bonus
+    if (game.summary && game.summary.length > 50) score += 0.1;
+    if (game.developer) score += 0.05;
+    if (game.publisher) score += 0.05;
+    if (game.genres && game.genres.length > 0) score += 0.05;
+    if (game.release_date) score += 0.05;
+    
+    return Math.min(score, 1);
   }
   
   /**
