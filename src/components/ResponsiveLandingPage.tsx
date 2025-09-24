@@ -91,21 +91,21 @@ const CascadingCheckboxes: React.FC<{ isHovered: boolean; size?: 'small' | 'larg
   const gridVerticalOffset = spacing / 4; // This centers the entire grid vertically
 
   const positions = [
-    { x: offsetX, y: gridVerticalOffset, delay: 0 },      // 1: Center bottom (starting position)
-    { x: offsetX + spacing, y: gridVerticalOffset, delay: 200 },  // 2: Right bottom
-    { x: offsetX + spacing, y: gridVerticalOffset - spacing, delay: 400 },  // 3: Right top
-    { x: offsetX, y: gridVerticalOffset - spacing, delay: 600 }, // 4: Center top
-    { x: offsetX - spacing, y: gridVerticalOffset - spacing, delay: 800 }, // 5: Left top
-    { x: offsetX - spacing, y: gridVerticalOffset, delay: 1000 }    // 6: Left bottom
+    { x: 0, y: 0, delay: 0 },      // 1: Center (starting position)
+    { x: spacing / 2, y: spacing / 2, delay: 200 },  // 2: Right bottom
+    { x: spacing / 2, y: -spacing / 2, delay: 400 },  // 3: Right top
+    { x: 0, y: -spacing / 2, delay: 600 }, // 4: Center top
+    { x: -spacing / 2, y: -spacing / 2, delay: 800 }, // 5: Left top
+    { x: -spacing / 2, y: spacing / 2, delay: 1000 }    // 6: Left bottom
   ];
 
   return (
     <div className={`relative ${containerSize} mx-auto ${marginBottom} flex items-center justify-center`}>
-      {/* Empty checkbox when not hovered - positioned to match checkbox #1's position */}
+      {/* Empty checkbox when not hovered - positioned at center (0,0) */}
       <div
         className={`absolute transition-all duration-300 ${!isHovered ? 'opacity-100' : 'opacity-0'}`}
         style={{
-          transform: `translate(${offsetX}px, ${gridVerticalOffset}px)`
+          transform: `translate(0px, 0px)`
         }}
       >
         <Square className={`${iconSize} text-green-400`} />
@@ -364,7 +364,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-3 transition-colors duration-300 group-hover:text-blue-300">Social Discovery</h3>
                 <p className="text-gray-300 text-sm font-medium leading-relaxed transition-all duration-300 group-hover:text-gray-200">
-                  Follow gamers to discover games through their activity and reviews.
+                  Follow players to discover games through their activity and reviews.
                 </p>
               </div>
             </div>
@@ -396,7 +396,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-3 transition-colors duration-300 group-hover:text-purple-300">Write Reviews</h3>
                 <p className="text-gray-300 text-sm font-medium leading-relaxed transition-all duration-300 group-hover:text-gray-200">
-                  Share your gaming experiences to help others find games they'll enjoy and avoid disappointments.
+                  Share your gaming experiences to help others find games to enjoy and avoid.
                 </p>
               </div>
             </div>
@@ -588,7 +588,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-3 transition-all duration-300 group-hover:text-blue-300">Social Discovery</h3>
                 <p className="text-gray-300 text-base font-medium leading-relaxed transition-all duration-300 group-hover:text-gray-100 min-h-[72px]">
-                  Follow gamers to discover games through their activity and reviews.
+                  Follow players to discover games through their activity and reviews.
                 </p>
               </div>
             </div>
@@ -640,7 +640,7 @@ export const ResponsiveLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-3 transition-all duration-300 group-hover:text-purple-300">Write Reviews</h3>
                 <p className="text-gray-300 text-base font-medium leading-relaxed transition-all duration-300 group-hover:text-gray-100 min-h-[72px]">
-                  Share your gaming experiences to help others find games they'll enjoy and avoid disappointments.
+                  Share your gaming experiences to help others find games to enjoy and avoid.
                 </p>
               </div>
             </div>
