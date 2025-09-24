@@ -91,12 +91,12 @@ const CascadingCheckboxes: React.FC<{ isHovered: boolean; size?: 'small' | 'larg
   const gridVerticalOffset = spacing / 4; // This centers the entire grid vertically
 
   const positions = [
-    { x: 0, y: 0, delay: 0 },      // 1: Center (starting position)
-    { x: spacing / 2, y: spacing / 2, delay: 200 },  // 2: Right bottom
-    { x: spacing / 2, y: -spacing / 2, delay: 400 },  // 3: Right top
-    { x: 0, y: -spacing / 2, delay: 600 }, // 4: Center top
-    { x: -spacing / 2, y: -spacing / 2, delay: 800 }, // 5: Left top
-    { x: -spacing / 2, y: spacing / 2, delay: 1000 }    // 6: Left bottom
+    { x: offsetX, y: gridVerticalOffset, delay: 0 },      // 1: Center bottom (starting position)
+    { x: offsetX + spacing, y: gridVerticalOffset, delay: 200 },  // 2: Right bottom
+    { x: offsetX + spacing, y: gridVerticalOffset - spacing, delay: 400 },  // 3: Right top
+    { x: offsetX, y: gridVerticalOffset - spacing, delay: 600 }, // 4: Center top
+    { x: offsetX - spacing, y: gridVerticalOffset - spacing, delay: 800 }, // 5: Left top
+    { x: offsetX - spacing, y: gridVerticalOffset, delay: 1000 }    // 6: Left bottom
   ];
 
   return (
