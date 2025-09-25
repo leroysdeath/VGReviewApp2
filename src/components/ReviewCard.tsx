@@ -150,12 +150,8 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
     <Link
       to={reviewUrl}
       className={`
-        group relative overflow-hidden rounded-lg border block
-        ${themeStyles.background} backdrop-blur-lg
-        transition-all duration-300
-        hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-900/50
-        ${themeStyles.border} ${themeStyles.hoverBorder}
-        ${compact ? 'p-4' : 'p-6'}
+        block p-8 bg-gray-900/95 border border-gray-700/60
+        rounded-lg hover:border-gray-600 transition-all duration-200
         ${className}
       `}
     >
@@ -216,65 +212,48 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </div>
           )}
 
-          {/* Header with username and game title */}
-          <div className="mb-3">
-            <span
-              className={`
-                font-semibold transition-colors duration-300 cursor-pointer
-                text-white hover:${themeStyles.accent.replace('text-', 'text-')}
-                ${compact ? 'text-sm' : 'text-base'}
-              `}
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/user/${review.userId}`);
-              }}
-            >
-              {review.author}
-            </span>
-            
-            {showGameTitle && review.gameTitle && (
-              <div className={`${compact ? 'text-xs' : 'text-sm'} text-gray-400 mt-1`}>
-                reviewed{' '}
-                <span className="text-gray-300 font-medium">
-                  {review.gameTitle}
-                </span>
-                
-                {/* Date and Rating */}
-                <div className="flex items-center gap-4 mt-2">
-                  <div className="flex items-center text-gray-500">
-                    <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
-                      {getRelativeTime(review.date)}
-                    </span>
-                  </div>
-                  <span className="text-yellow-400 font-semibold">
-                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+          {/* Header with improved hierarchy */}
+          <div className="mb-4">
+            <div className="flex items-center flex-wrap gap-2 text-base">
+              <span
+                className="font-semibold text-white hover:text-purple-400 cursor-pointer transition-colors duration-200"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/user/${review.userId}`);
+                }}
+              >
+                {review.author}
+              </span>
+              {showGameTitle && review.gameTitle && (
+                <>
+                  <span className="text-gray-400">reviewed</span>
+                  <span className="text-gray-300 font-medium">
+                    {review.gameTitle}
                   </span>
-                </div>
-              </div>
-            )}
-            
-            {/* Date and Rating for when no game title is shown */}
-            {!showGameTitle || !review.gameTitle ? (
-              <div className="flex items-center gap-4 mt-2">
-                <div className="flex items-center text-gray-500">
-                  <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
-                    {getRelativeTime(review.date)}
-                  </span>
-                </div>
-                <span className="text-yellow-400 font-semibold">
-                  {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-                </span>
-              </div>
-            ) : null}
-          </div>
+                </>
+              )}
+              <span className="text-sm text-gray-400">• {getRelativeTime(review.date)}</span>
+            </div>
 
-          {/* Review Text - wraps around the floated image */}
+            {/* Rating */}
+            <div className="flex items-center gap-2 mt-2">
+              <div className="flex text-yellow-400">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-lg">
+                    {i < Math.floor(review.rating / 2) ? '★' : '☆'}
+                  </span>
+                ))}
+              </div>
+              <span className="text-sm text-gray-400 font-medium">
+                {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+              </span>
+            </div>
+          </div>
+            
+
+          {/* Review Text - improved typography */}
           {review.hasText && (
-            <p className={`
-              text-gray-300 leading-relaxed mb-4 transition-colors duration-300
-              group-hover:text-gray-200 whitespace-pre-line line-clamp-3
-              ${compact ? 'text-sm' : 'text-base'}
-            `}>
+            <p className="text-base text-gray-300 leading-relaxed mb-4 whitespace-pre-line line-clamp-3">
               {escapeHtml(truncateText(review.text, 144))}
             </p>
           )}
@@ -310,12 +289,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
         </div>
       </div>
 
-      {/* Hover glow effect */}
-      <div className={`
-        absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100
-        transition-opacity duration-500 pointer-events-none -z-10
-        bg-gradient-to-r ${themeStyles.gradient} blur-xl
-      `} />
     </Link>
   );
 };
