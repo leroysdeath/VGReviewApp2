@@ -5,9 +5,13 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Use the real Supabase instance for testing
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://cqufmmnguumyhbkhgwdc.supabase.co';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+// Use environment variables for Supabase configuration
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set');
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
