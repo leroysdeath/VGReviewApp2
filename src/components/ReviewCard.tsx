@@ -217,7 +217,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   {review.gameTitle}
                 </span>
               </div>
-              <div className="h-px bg-gradient-to-r from-transparent from-10% via-gray-600 to-transparent to-90% mb-2"></div>
+              <div className="h-px bg-gradient-to-r from-transparent from-5% via-gray-600 to-transparent to-95% mb-2"></div>
             </>
           )}
 
@@ -272,125 +272,130 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
         </div>
 
         {/* DESKTOP LAYOUT */}
-        <div className="hidden md:flex items-start gap-4">
-          {/* User Avatar */}
-          <div className="flex-shrink-0">
-            <div
-              className="group/avatar cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/user/${review.userId}`);
-              }}
-            >
-              {review.authorAvatar ? (
-                <img
-                  src={review.authorAvatar}
-                  alt={review.author}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-gray-600
-                    transition-all duration-300 group-hover/avatar:border-gray-400
-                    group-hover/avatar:scale-110"
-                />
-              ) : (
-                <div className={`
-                  w-16 h-16 rounded-full border-2 border-gray-600
-                  bg-gradient-to-br ${themeStyles.gradient}
-                  flex items-center justify-center font-bold text-white text-xl
-                  transition-all duration-300 group-hover/avatar:border-gray-400
-                  group-hover/avatar:scale-110
-                `}>
-                  {getUserInitial(review.author)}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Review Content */}
-          <div className="flex-1 min-w-0">
-            {/* Row 1: Author */}
-            <div className="mb-2">
-              <span
-                className="font-semibold text-white cursor-pointer"
+        <div className="hidden md:block">
+          <div className="flex items-start gap-4">
+            {/* User Avatar */}
+            <div className="flex-shrink-0">
+              <div
+                className="group/avatar cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/user/${review.userId}`);
                 }}
               >
-                {review.author}
-              </span>
+                {review.authorAvatar ? (
+                  <img
+                    src={review.authorAvatar}
+                    alt={review.author}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-600
+                      transition-all duration-300 group-hover/avatar:border-gray-400
+                      group-hover/avatar:scale-110"
+                  />
+                ) : (
+                  <div className={`
+                    w-16 h-16 rounded-full border-2 border-gray-600
+                    bg-gradient-to-br ${themeStyles.gradient}
+                    flex items-center justify-center font-bold text-white text-xl
+                    transition-all duration-300 group-hover/avatar:border-gray-400
+                    group-hover/avatar:scale-110
+                  `}>
+                    {getUserInitial(review.author)}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Row 2: Date + Rating */}
-            <div className="flex items-center gap-4 mb-2 text-sm">
-              <span className="text-gray-400">{getRelativeTime(review.date)}</span>
-              <span className="text-yellow-400 font-medium">
-                {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-              </span>
-            </div>
+            {/* Review Content */}
+            <div className="flex-1 min-w-0">
+              {/* Row 1: Author */}
+              <div className="mb-2">
+                <span
+                  className="font-semibold text-white cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/user/${review.userId}`);
+                  }}
+                >
+                  {review.author}
+                </span>
+              </div>
 
-            {/* Row 3: Game Title */}
-            {showGameTitle && review.gameTitle && (
-              <>
+              {/* Row 2: Date + Rating */}
+              <div className="flex items-center gap-4 mb-2 text-sm">
+                <span className="text-gray-400">{getRelativeTime(review.date)}</span>
+                <span className="text-yellow-400 font-medium">
+                  {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                </span>
+              </div>
+
+              {/* Row 3: Game Title */}
+              {showGameTitle && review.gameTitle && (
                 <div className="mb-2">
                   <span className="text-gray-300 font-medium">
                     {review.gameTitle}
                   </span>
                 </div>
-                <div className="h-px bg-gradient-to-r from-transparent from-10% via-gray-600 to-transparent to-90% mb-2"></div>
-              </>
+              )}
+            </div>
+          </div>
+
+          {/* Full-width separator (outside the flex container) */}
+          {showGameTitle && review.gameTitle && (
+            <div className="h-px bg-gradient-to-r from-transparent from-5% via-gray-600 to-transparent to-95% mb-2"></div>
+          )}
+
+          {/* Row 4: Game Cover + Review Text (text wraps around cover) */}
+          <div className="relative">
+            {/* Game Cover floated to the right */}
+            {showGameTitle && review.gameTitle && review.gameCoverUrl && (
+              <img
+                src={review.gameCoverUrl}
+                alt={review.gameTitle}
+                className={`
+                  float-right ml-4 mb-2 object-cover rounded
+                  ${compact ? 'w-16 h-20' : 'w-20 h-28'}
+                `}
+                loading="lazy"
+              />
             )}
 
-            {/* Row 4: Game Cover + Review Text (text wraps around cover) */}
-            <div className="relative">
-              {/* Game Cover floated to the right */}
-              {showGameTitle && review.gameTitle && review.gameCoverUrl && (
-                <img
-                  src={review.gameCoverUrl}
-                  alt={review.gameTitle}
-                  className={`
-                    float-right ml-4 mb-2 object-cover rounded
-                    ${compact ? 'w-16 h-20' : 'w-20 h-28'}
-                  `}
-                  loading="lazy"
-                />
-              )}
+            {/* Review Text that wraps around the cover */}
+            {review.hasText && (
+              <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line">
+                {escapeHtml(truncateText(review.text, 144))}
+              </p>
+            )}
 
-              {/* Review Text that wraps around the cover */}
-              {review.hasText && (
-                <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line">
-                  {escapeHtml(truncateText(review.text, 144))}
-                </p>
-              )}
-
-              {/* Clear the float */}
-              <div className="clear-both"></div>
-            </div>
-
-            {/* Review Interactions */}
-            <ReviewInteractions
-              reviewId={review.id}
-              initialLikeCount={review.likeCount || likeCount}
-              initialCommentCount={review.commentCount || commentCount}
-              isLiked={isLiked}
-              onLike={toggleLike}
-              onUnlike={toggleLike}
-              comments={comments}
-              onAddComment={postComment}
-              onEditComment={updateComment}
-              onDeleteComment={removeComment}
-              onLikeComment={toggleCommentLike}
-              onUnlikeComment={toggleCommentLike}
-              isLoadingComments={isLoadingComments}
-              isLoadingLike={isLoadingLike}
-              isLikingComment={false}
-              likingCommentId={likingCommentId}
-              error={error || undefined}
-              className="mt-3"
-              reviewAuthorId={parseInt(review.userId)}
-              currentUserId={currentUserId}
-              disableCommentHover={true}
-              disableComments={true}
-            />
+            {/* Clear the float */}
+            <div className="clear-both"></div>
           </div>
+
+          {/* Review Interactions */}
+          <ReviewInteractions
+            reviewId={review.id}
+            initialLikeCount={review.likeCount || likeCount}
+            initialCommentCount={review.commentCount || commentCount}
+            isLiked={isLiked}
+            onLike={toggleLike}
+            onUnlike={toggleLike}
+            comments={comments}
+            onAddComment={postComment}
+            onEditComment={updateComment}
+            onDeleteComment={removeComment}
+            onLikeComment={toggleCommentLike}
+            onUnlikeComment={toggleCommentLike}
+            isLoadingComments={isLoadingComments}
+            isLoadingLike={isLoadingLike}
+            isLikingComment={false}
+            likingCommentId={likingCommentId}
+            error={error || undefined}
+            className="mt-3"
+            reviewAuthorId={parseInt(review.userId)}
+            currentUserId={currentUserId}
+            disableCommentHover={true}
+            disableComments={true}
+          />
+        </div>
         </div>
       </div>
 
