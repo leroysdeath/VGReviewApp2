@@ -205,6 +205,13 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Row 2: Game Title with wrapping for cover + Separator */}
           {showGameTitle && review.gameTitle && (
             <div className="relative">
+              {/* Rating Badge - positioned above game cover */}
+              <div className="absolute right-0 -bottom-20 z-10 w-20 flex justify-center">
+                <div className="bg-yellow-400 text-gray-900 px-2 py-1 rounded-md font-bold text-sm">
+                  {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                </div>
+              </div>
+
               {/* Game Cover positioned to center on separator */}
               {review.gameCoverUrl && (
                 <div className="absolute right-0 -bottom-14 z-10">
@@ -229,26 +236,15 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </div>
           )}
 
-          {/* Row 3: Review Text with Rating */}
+          {/* Row 3: Review Text */}
           <div className="relative">
-            <div className="h-28 flex flex-col pt-2">
+            <div className="flex-1 pt-2 pr-24">
               {/* Review Text - with padding to avoid cover */}
-              <div className="flex-1 overflow-hidden pr-24">
-                {review.hasText && (
-                  <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">
-                    {escapeHtml(truncateText(review.text, 144))}
-                  </p>
-                )}
-              </div>
-
-              {/* Rating - centered at bottom, full width minus cover space */}
-              <div className="pr-24">
-                <div className="text-center pb-1">
-                  <span className="text-sm text-yellow-400 font-medium">
-                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-                  </span>
-                </div>
-              </div>
+              {review.hasText && (
+                <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">
+                  {escapeHtml(truncateText(review.text, 144))}
+                </p>
+              )}
             </div>
           </div>
 
@@ -347,6 +343,13 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Separator and Cover Container */}
           {showGameTitle && review.gameTitle && (
             <div className="relative">
+              {/* Rating Badge - positioned above game cover */}
+              <div className="absolute right-0 -top-20 z-10 w-20 flex justify-center">
+                <div className="bg-yellow-400 text-gray-900 px-2 py-1 rounded-md font-bold text-sm">
+                  {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                </div>
+              </div>
+
               {/* Game Cover positioned to center on separator */}
               {review.gameCoverUrl && (
                 <div className="absolute right-0 -top-14 z-10">
@@ -367,26 +370,15 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </div>
           )}
 
-          {/* Row 4: Review Text with Rating */}
+          {/* Row 4: Review Text */}
           <div className="relative">
-            <div className="h-28 flex flex-col pt-2">
+            <div className="flex-1 pt-2 pr-24">
               {/* Review Text - with padding to avoid cover */}
-              <div className="flex-1 overflow-hidden pr-24">
-                {review.hasText && (
-                  <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line">
-                    {escapeHtml(truncateText(review.text, 144))}
-                  </p>
-                )}
-              </div>
-
-              {/* Rating - centered at bottom, full width minus cover space */}
-              <div className="pr-24">
-                <div className="text-center pb-1">
-                  <span className="text-sm text-yellow-400 font-medium">
-                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-                  </span>
-                </div>
-              </div>
+              {review.hasText && (
+                <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line">
+                  {escapeHtml(truncateText(review.text, 144))}
+                </p>
+              )}
             </div>
           </div>
 
