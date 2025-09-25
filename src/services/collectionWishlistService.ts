@@ -41,7 +41,7 @@ class CollectionWishlistService {
         .select('started, completed')
         .eq('user_id', userId)
         .eq('igdb_id', igdbId)
-        .single();
+        .maybeSingle();
       
       return data && (data.started || data.completed);
     } catch (error) {
@@ -69,6 +69,7 @@ class CollectionWishlistService {
       let gameId: number | undefined;
       if (gameData) {
         const ensureResult = await ensureGameExists({
+          id: 0, // New game, no database ID yet
           igdb_id: igdbId,
           name: gameData.name || '',
           cover_url: gameData.cover_url,
@@ -77,7 +78,7 @@ class CollectionWishlistService {
         });
         
         if (ensureResult.success && ensureResult.data) {
-          gameId = ensureResult.data.id;
+          gameId = ensureResult.data.gameId; // Fixed: use correct field name
         }
       }
 
@@ -87,7 +88,7 @@ class CollectionWishlistService {
           .from('game')
           .select('id')
           .eq('igdb_id', igdbId)
-          .single();
+          .maybeSingle();
         
         if (existingGame) {
           gameId = existingGame.id;
@@ -113,16 +114,42 @@ class CollectionWishlistService {
 
       if (error) {
         console.error(`Error adding to ${table}:`, error);
-        return { success: false, error: error.message };
+
+        // Provide more user-friendly error messages
+        let userMessage = 'Failed to add game. Please try again.';
+
+        if (error.code === '23505') { // Unique constraint violation
+          userMessage = table === 'user_collection'
+            ? 'This game is already in your collection.'
+            : 'This game is already in your wishlist.';
+        } else if (error.code === 'PGRST116') { // Not found
+          userMessage = 'Unable to verify game status. Please refresh and try again.';
+        } else if (error.message?.includes('JWT')) {
+          userMessage = 'Your session has expired. Please sign in again.';
+        }
+
+        return { success: false, error: userMessage };
       }
 
       console.log(`✅ Added to ${table}:`, data);
       return { success: true, data };
     } catch (error) {
       console.error(`Failed to add to ${table}:`, error);
+
+      // Provide user-friendly error message for unexpected errors
+      let userMessage = 'An unexpected error occurred. Please try again.';
+
+      if (error instanceof Error) {
+        if (error.message?.includes('network')) {
+          userMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message?.includes('timeout')) {
+          userMessage = 'Request timed out. Please try again.';
+        }
+      }
+
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to add game'
+        error: userMessage
       };
     }
   }
@@ -148,7 +175,17 @@ class CollectionWishlistService {
 
       if (error) {
         console.error(`Error removing from ${table}:`, error);
-        return { success: false, error: error.message };
+
+        // User-friendly error message for removal
+        let userMessage = 'Failed to remove game. Please try again.';
+
+        if (error.code === 'PGRST116') {
+          userMessage = 'Game not found in your list.';
+        } else if (error.message?.includes('JWT')) {
+          userMessage = 'Your session has expired. Please sign in again.';
+        }
+
+        return { success: false, error: userMessage };
       }
 
       console.log(`✅ Removed from ${table}, igdb_id:`, igdbId);
@@ -169,9 +206,9 @@ class CollectionWishlistService {
     // Check if already started/completed
     const inProgress = await this.checkGameProgress(igdbId);
     if (inProgress) {
-      return { 
-        success: false, 
-        error: 'Cannot add to collection: game already started or completed' 
+      return {
+        success: false,
+        error: 'This game is already in your progress list. Remove it from there first to add it to your collection.'
       };
     }
     
@@ -197,9 +234,9 @@ class CollectionWishlistService {
     // Check if already started/completed
     const inProgress = await this.checkGameProgress(igdbId);
     if (inProgress) {
-      return { 
-        success: false, 
-        error: 'Cannot add to wishlist: game already started or completed' 
+      return {
+        success: false,
+        error: 'This game is already in your progress list. Remove it from there first to add it to your wishlist.'
       };
     }
     
