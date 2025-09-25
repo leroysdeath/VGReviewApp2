@@ -212,7 +212,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Row 2: Game Title (full width) */}
           {showGameTitle && review.gameTitle && (
             <div className="mb-3">
-              <span className="text-gray-300 font-medium pr-16">
+              <span className="text-gray-300 font-medium">
                 {review.gameTitle}
               </span>
             </div>
@@ -316,29 +316,48 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               </span>
             </div>
 
-            {/* Row 2: Game Title */}
-            {showGameTitle && review.gameTitle && (
-              <div className="mb-2">
-                <span className="text-gray-300 font-medium">
-                  {review.gameTitle}
-                </span>
-              </div>
-            )}
-
-            {/* Row 3: Date + Rating */}
-            <div className="flex items-center gap-4 mb-3 text-sm">
+            {/* Row 2: Date + Rating */}
+            <div className="flex items-center gap-4 mb-2 text-sm">
               <span className="text-gray-400">{getRelativeTime(review.date)}</span>
               <span className="text-yellow-400 font-medium">
                 {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
               </span>
             </div>
 
-            {/* Row 4: Review Text (full width) */}
-            {review.hasText && (
-              <p className="text-base text-gray-300 leading-relaxed mb-4 whitespace-pre-line line-clamp-3">
-                {escapeHtml(truncateText(review.text, 144))}
-              </p>
+            {/* Row 3: Game Title */}
+            {showGameTitle && review.gameTitle && (
+              <div className="mb-3">
+                <span className="text-gray-300 font-medium">
+                  {review.gameTitle}
+                </span>
+              </div>
             )}
+
+            {/* Row 4: Game Cover + Review Text (text wraps around cover) */}
+            <div className="relative">
+              {/* Game Cover floated to the right */}
+              {showGameTitle && review.gameTitle && review.gameCoverUrl && (
+                <img
+                  src={review.gameCoverUrl}
+                  alt={review.gameTitle}
+                  className={`
+                    float-right ml-4 mb-2 object-cover rounded
+                    ${compact ? 'w-16 h-20' : 'w-20 h-28'}
+                  `}
+                  loading="lazy"
+                />
+              )}
+
+              {/* Review Text that wraps around the cover */}
+              {review.hasText && (
+                <p className="text-base text-gray-300 leading-relaxed whitespace-pre-line">
+                  {escapeHtml(truncateText(review.text, 144))}
+                </p>
+              )}
+
+              {/* Clear the float */}
+              <div className="clear-both"></div>
+            </div>
 
             {/* Review Interactions */}
             <ReviewInteractions
@@ -366,21 +385,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               disableComments={true}
             />
           </div>
-
-          {/* Game Cover - Desktop only, on the right */}
-          {showGameTitle && review.gameTitle && review.gameCoverUrl && (
-            <div className="flex-shrink-0">
-              <img
-                src={review.gameCoverUrl}
-                alt={review.gameTitle}
-                className={`
-                  object-cover rounded
-                  ${compact ? 'w-16 h-20' : 'w-20 h-28'}
-                `}
-                loading="lazy"
-              />
-            </div>
-          )}
         </div>
       </div>
 
