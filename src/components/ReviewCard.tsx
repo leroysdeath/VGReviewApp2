@@ -158,14 +158,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
       {/* Card content with responsive layout */}
       <div className="relative">
         {/* MOBILE LAYOUT (default) */}
-        <div className="md:hidden relative">
-          {/* Rating positioned in upper right corner */}
-          <div className="absolute top-0 right-0 z-10">
-            <span className="text-sm text-yellow-400 font-medium whitespace-nowrap">
-              {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-            </span>
-          </div>
-
+        <div className="md:hidden">
           {/* Row 1: Avatar + Author */}
           <div className="flex items-center gap-3 mb-3">
             <div
@@ -209,39 +202,67 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </div>
           </div>
 
-          {/* Row 2: Game Title (full width, centered) */}
+          {/* Row 2: Game Title with wrapping for cover + Separator */}
           {showGameTitle && review.gameTitle && (
-            <>
-              <div className="mb-2 text-center">
+            <div className="relative">
+              {/* Right-side content stack: Rating + Cover */}
+              <div className="absolute right-0 -bottom-14 z-10 w-20">
+                {/* Rating badge */}
+                <div className="flex justify-center mb-2">
+                  <div className="bg-yellow-400 text-gray-700 px-2 py-1 rounded-md font-bold text-sm">
+                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                  </div>
+                </div>
+
+                {/* Game cover */}
+                {review.gameCoverUrl && (
+                  <img
+                    src={review.gameCoverUrl}
+                    alt={review.gameTitle}
+                    className="w-20 h-28 object-cover rounded shadow-lg"
+                    loading="lazy"
+                  />
+                )}
+              </div>
+
+              {/* Game Title - wraps around cover if needed */}
+              <div className="mb-2 text-center pr-24">
                 <span className="text-gray-300 font-medium">
                   {review.gameTitle}
                 </span>
               </div>
-              <div className="h-px bg-gradient-to-r from-transparent from-2% via-gray-600 to-transparent to-98% mb-2"></div>
-            </>
+
+              {/* Separator line */}
+              <div className="h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99%"></div>
+            </div>
           )}
 
-          {/* Row 3: Game Cover + Review Text (text wraps around cover) */}
+          {/* Row 3: Review Text */}
           <div className="relative">
-            {/* Game Cover floated to the right */}
-            {showGameTitle && review.gameTitle && review.gameCoverUrl && (
-              <img
-                src={review.gameCoverUrl}
-                alt={review.gameTitle}
-                className="float-right ml-3 mb-2 w-20 h-28 object-cover rounded"
-                loading="lazy"
-              />
-            )}
-
-            {/* Review Text that wraps around the cover */}
-            {review.hasText && (
-              <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">
-                {escapeHtml(truncateText(review.text, 144))}
-              </p>
-            )}
-
-            {/* Clear the float */}
-            <div className="clear-both"></div>
+            <div className="flex-1 pt-2 pr-24">
+              {/* Review Text - limited to 2.5 lines with gradient fade */}
+              {review.hasText && (
+                <div className="relative">
+                  <p
+                    className="text-sm text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
+                    style={{
+                      height: '3.75rem', // 2.5 lines at 1.5rem line height
+                      maxHeight: '3.75rem'
+                    }}
+                  >
+                    {escapeHtml(truncateText(review.text, 144))}
+                  </p>
+                  {/* Gradient fade overlay for bottom quarter of third line */}
+                  <div
+                    className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                    style={{
+                      height: '0.375rem', // Quarter the height of one line
+                      background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.9) 100%)'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Review Interactions */}
@@ -320,12 +341,9 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                 </span>
               </div>
 
-              {/* Row 2: Date + Rating */}
-              <div className="flex items-center gap-4 mb-2 text-sm">
+              {/* Row 2: Date (rating moved to bottom) */}
+              <div className="mb-2 text-sm">
                 <span className="text-gray-400">{getRelativeTime(review.date)}</span>
-                <span className="text-yellow-400 font-medium">
-                  {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-                </span>
               </div>
 
               {/* Row 3: Game Title */}
@@ -339,35 +357,63 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </div>
           </div>
 
-          {/* Full-width separator (outside the flex container) */}
+          {/* Separator and Cover Container */}
           {showGameTitle && review.gameTitle && (
-            <div className="h-px bg-gradient-to-r from-transparent from-5% via-gray-600 to-transparent to-95% mb-2"></div>
+            <div className="relative">
+              {/* Right-side content stack: Rating + Cover */}
+              <div className="absolute right-0 -top-20 z-10 w-20">
+                {/* Rating badge */}
+                <div className="flex justify-center mb-2">
+                  <div className="bg-yellow-400 text-gray-700 px-2 py-1 rounded-md font-bold text-sm">
+                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                  </div>
+                </div>
+
+                {/* Game cover */}
+                {review.gameCoverUrl && (
+                  <img
+                    src={review.gameCoverUrl}
+                    alt={review.gameTitle}
+                    className={`
+                      object-cover rounded shadow-lg
+                      ${compact ? 'w-16 h-20' : 'w-20 h-28'}
+                    `}
+                    loading="lazy"
+                  />
+                )}
+              </div>
+
+              {/* Full-width separator */}
+              <div className="h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99%"></div>
+            </div>
           )}
 
-          {/* Row 4: Game Cover + Review Text (text wraps around cover) */}
+          {/* Row 4: Review Text */}
           <div className="relative">
-            {/* Game Cover floated to the right */}
-            {showGameTitle && review.gameTitle && review.gameCoverUrl && (
-              <img
-                src={review.gameCoverUrl}
-                alt={review.gameTitle}
-                className={`
-                  float-right ml-4 mb-2 object-cover rounded
-                  ${compact ? 'w-16 h-20' : 'w-20 h-28'}
-                `}
-                loading="lazy"
-              />
-            )}
-
-            {/* Review Text that wraps around the cover */}
-            {review.hasText && (
-              <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line">
-                {escapeHtml(truncateText(review.text, 144))}
-              </p>
-            )}
-
-            {/* Clear the float */}
-            <div className="clear-both"></div>
+            <div className="flex-1 pt-2 pr-24">
+              {/* Review Text - limited to 2.5 lines with gradient fade */}
+              {review.hasText && (
+                <div className="relative">
+                  <p
+                    className="text-base text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
+                    style={{
+                      height: '4rem', // 2.5 lines at 1.6rem line height for text-base
+                      maxHeight: '4rem'
+                    }}
+                  >
+                    {escapeHtml(truncateText(review.text, 144))}
+                  </p>
+                  {/* Gradient fade overlay for bottom quarter of third line */}
+                  <div
+                    className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                    style={{
+                      height: '0.4rem', // Quarter the height of one line for text-base
+                      background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.9) 100%)'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Review Interactions */}

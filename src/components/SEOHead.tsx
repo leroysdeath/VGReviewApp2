@@ -19,8 +19,8 @@ interface SEOHeadProps {
 }
 
 export const SEOHead: React.FC<SEOHeadProps> = ({
-  title = 'GameVault - Discover Your Next Gaming Adventure',
-  description = 'Join the ultimate gaming community. Rate, review, and discover games through the power of social gaming.',
+  title = 'GameVault - The Social Library for Gamers',
+  description = 'Track your games, discover your next obsession, and share your gaming journey with a community that gets you.',
   image = '/og-image.jpg',
   url = window.location.href,
   type = 'website',
