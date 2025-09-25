@@ -210,18 +210,18 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   {review.gameTitle}
                 </span>
               </div>
-              <div className="h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% mb-2"></div>
+              <div className="h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99%"></div>
             </>
           )}
 
           {/* Row 3: Game Cover + Review Text with Rating */}
           <div className="relative flex">
             {/* Text and Rating Container - constrained height */}
-            <div className="flex-1 h-28 flex flex-col">
+            <div className="flex-1 h-28 flex flex-col pt-3">
               {/* Review Text - grows to fill available space */}
               <div className="flex-1 overflow-hidden">
                 {review.hasText && (
-                  <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line indent-4">
+                  <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">
                     {escapeHtml(truncateText(review.text, 144))}
                   </p>
                 )}
@@ -235,13 +235,13 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               </div>
             </div>
 
-            {/* Game Cover on the right */}
+            {/* Game Cover on the right - offset to overlap separator */}
             {showGameTitle && review.gameTitle && review.gameCoverUrl && (
-              <div className="ml-3 flex-shrink-0">
+              <div className="ml-3 flex-shrink-0 -mt-3 z-10 relative">
                 <img
                   src={review.gameCoverUrl}
                   alt={review.gameTitle}
-                  className="w-20 h-28 object-cover rounded"
+                  className="w-20 h-28 object-cover rounded shadow-lg"
                   loading="lazy"
                 />
               </div>
@@ -342,17 +342,17 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
           {/* Full-width separator (outside the flex container) */}
           {showGameTitle && review.gameTitle && (
-            <div className="h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% mb-2"></div>
+            <div className="h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99%"></div>
           )}
 
           {/* Row 4: Game Cover + Review Text with Rating */}
           <div className="relative flex">
             {/* Text and Rating Container - constrained height */}
-            <div className="flex-1 h-28 flex flex-col">
+            <div className="flex-1 h-28 flex flex-col pt-3">
               {/* Review Text - grows to fill available space */}
               <div className="flex-1 overflow-hidden">
                 {review.hasText && (
-                  <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line indent-4">
+                  <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line">
                     {escapeHtml(truncateText(review.text, 144))}
                   </p>
                 )}
@@ -366,14 +366,14 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               </div>
             </div>
 
-            {/* Game Cover on the right */}
+            {/* Game Cover on the right - offset to overlap separator */}
             {showGameTitle && review.gameTitle && review.gameCoverUrl && (
-              <div className="ml-4 flex-shrink-0">
+              <div className="ml-4 flex-shrink-0 -mt-3 z-10 relative">
                 <img
                   src={review.gameCoverUrl}
                   alt={review.gameTitle}
                   className={`
-                    object-cover rounded
+                    object-cover rounded shadow-lg
                     ${compact ? 'w-16 h-20' : 'w-20 h-28'}
                   `}
                   loading="lazy"
