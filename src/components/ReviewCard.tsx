@@ -209,9 +209,9 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </div>
           </div>
 
-          {/* Row 2: Game Title (full width) */}
+          {/* Row 2: Game Title (full width, centered) */}
           {showGameTitle && review.gameTitle && (
-            <div className="mb-3">
+            <div className="mb-2 pb-2 border-b border-gray-700/30 text-center">
               <span className="text-gray-300 font-medium">
                 {review.gameTitle}
               </span>
@@ -232,7 +232,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
             {/* Review Text that wraps around the cover */}
             {review.hasText && (
-              <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">
+              <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">
                 {escapeHtml(truncateText(review.text, 144))}
               </p>
             )}
@@ -306,7 +306,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             {/* Row 1: Author */}
             <div className="mb-2">
               <span
-                className="font-semibold text-white hover:text-purple-400 cursor-pointer transition-colors duration-200"
+                className="font-semibold text-white cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/user/${review.userId}`);
@@ -326,7 +326,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
             {/* Row 3: Game Title */}
             {showGameTitle && review.gameTitle && (
-              <div className="mb-3">
+              <div className="mb-2 pb-2 border-b border-gray-700/30">
                 <span className="text-gray-300 font-medium">
                   {review.gameTitle}
                 </span>
@@ -350,7 +350,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
               {/* Review Text that wraps around the cover */}
               {review.hasText && (
-                <p className="text-base text-gray-300 leading-relaxed whitespace-pre-line">
+                <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line">
                   {escapeHtml(truncateText(review.text, 144))}
                 </p>
               )}
