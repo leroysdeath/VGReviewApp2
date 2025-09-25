@@ -206,7 +206,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {showGameTitle && review.gameTitle && (
             <div className="relative">
               {/* Right-side content stack: Rating + Cover */}
-              <div className="absolute right-0 -bottom-20 z-10 w-20">
+              <div className="absolute right-0 -bottom-14 z-10 w-20">
                 {/* Rating badge */}
                 <div className="flex justify-center mb-2">
                   <div className="bg-yellow-400 text-gray-900 px-2 py-1 rounded-md font-bold text-sm">
@@ -240,11 +240,27 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Row 3: Review Text */}
           <div className="relative">
             <div className="flex-1 pt-2 pr-24">
-              {/* Review Text - with padding to avoid cover */}
+              {/* Review Text - limited to 2.5 lines with gradient fade */}
               {review.hasText && (
-                <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">
-                  {escapeHtml(truncateText(review.text, 144))}
-                </p>
+                <div className="relative">
+                  <p
+                    className="text-sm text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
+                    style={{
+                      height: '3.75rem', // 2.5 lines at 1.5rem line height
+                      maxHeight: '3.75rem'
+                    }}
+                  >
+                    {escapeHtml(truncateText(review.text, 144))}
+                  </p>
+                  {/* Gradient fade overlay for third line */}
+                  <div
+                    className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                    style={{
+                      height: '1.5rem', // Height of one line
+                      background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.95) 100%)'
+                    }}
+                  />
+                </div>
               )}
             </div>
           </div>
@@ -375,11 +391,27 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Row 4: Review Text */}
           <div className="relative">
             <div className="flex-1 pt-2 pr-24">
-              {/* Review Text - with padding to avoid cover */}
+              {/* Review Text - limited to 2.5 lines with gradient fade */}
               {review.hasText && (
-                <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line">
-                  {escapeHtml(truncateText(review.text, 144))}
-                </p>
+                <div className="relative">
+                  <p
+                    className="text-base text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
+                    style={{
+                      height: '4rem', // 2.5 lines at 1.6rem line height for text-base
+                      maxHeight: '4rem'
+                    }}
+                  >
+                    {escapeHtml(truncateText(review.text, 144))}
+                  </p>
+                  {/* Gradient fade overlay for third line */}
+                  <div
+                    className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                    style={{
+                      height: '1.6rem', // Height of one line for text-base
+                      background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.95) 100%)'
+                    }}
+                  />
+                </div>
               )}
             </div>
           </div>
