@@ -231,7 +231,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
           {/* Row 3: Review Text with Rating */}
           <div className="relative">
-            <div className="h-28 flex flex-col pt-16">
+            <div className="h-28 flex flex-col pt-2">
               {/* Review Text - with padding to avoid cover */}
               <div className="flex-1 overflow-hidden pr-24">
                 {review.hasText && (
@@ -369,7 +369,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
           {/* Row 4: Review Text with Rating */}
           <div className="relative">
-            <div className="h-28 flex flex-col pt-16">
+            <div className="h-28 flex flex-col pt-2">
               {/* Review Text - with padding to avoid cover */}
               <div className="flex-1 overflow-hidden pr-24">
                 {review.hasText && (
