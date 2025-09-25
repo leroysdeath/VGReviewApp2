@@ -211,11 +211,14 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
           {/* Row 2: Game Title (full width, centered) */}
           {showGameTitle && review.gameTitle && (
-            <div className="mb-2 pb-2 border-b border-gray-700/30 text-center">
-              <span className="text-gray-300 font-medium">
-                {review.gameTitle}
-              </span>
-            </div>
+            <>
+              <div className="mb-2 text-center">
+                <span className="text-gray-300 font-medium">
+                  {review.gameTitle}
+                </span>
+              </div>
+              <div className="h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent mb-2"></div>
+            </>
           )}
 
           {/* Row 3: Game Cover + Review Text (text wraps around cover) */}
@@ -326,11 +329,14 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
             {/* Row 3: Game Title */}
             {showGameTitle && review.gameTitle && (
-              <div className="mb-2 pb-2 border-b border-gray-700/30">
-                <span className="text-gray-300 font-medium">
-                  {review.gameTitle}
-                </span>
-              </div>
+              <>
+                <div className="mb-2">
+                  <span className="text-gray-300 font-medium">
+                    {review.gameTitle}
+                  </span>
+                </div>
+                <div className="h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent mb-2"></div>
+              </>
             )}
 
             {/* Row 4: Game Cover + Review Text (text wraps around cover) */}
