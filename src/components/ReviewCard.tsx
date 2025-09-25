@@ -221,7 +221,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               {/* Review Text - grows to fill available space */}
               <div className="flex-1 overflow-hidden">
                 {review.hasText && (
-                  <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">
+                  <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line indent-4">
                     {escapeHtml(truncateText(review.text, 144))}
                   </p>
                 )}
@@ -352,7 +352,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               {/* Review Text - grows to fill available space */}
               <div className="flex-1 overflow-hidden">
                 {review.hasText && (
-                  <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line">
+                  <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line indent-4">
                     {escapeHtml(truncateText(review.text, 144))}
                   </p>
                 )}

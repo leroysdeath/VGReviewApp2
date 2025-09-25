@@ -284,7 +284,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               </span>
             </h1>
             <p className="text-gray-300 mb-8 leading-relaxed">
-              Rate, review, and discover games through the power of social gaming.
+              The social library for gamers
             </p>
             <div className="space-y-3">
               <Link
@@ -503,7 +503,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               </span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Rate, review, and discover games through the power of social gaming.
+              The social library for gamers
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
