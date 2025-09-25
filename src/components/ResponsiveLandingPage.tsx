@@ -282,7 +282,7 @@ export const ResponsiveLandingPage: React.FC = () => {
             </div>
             <h1 className="text-3xl font-bold text-white mb-8">
               <span className="block mb-2">Track Your Games</span>
-              <span className="text-[2rem] text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block">
+              <span className="text-[2rem] leading-normal text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block drop-shadow-[0_0_30px_rgba(168,85,247,0.5)]">
                 Find the Next
               </span>
             </h1>
@@ -501,7 +501,7 @@ export const ResponsiveLandingPage: React.FC = () => {
             </div>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-8">
               <span className="block mb-2 md:mb-3">Track Your Games</span>
-              <span className="text-3xl md:text-[3.5rem] text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block">
+              <span className="text-3xl md:text-[3.5rem] leading-normal text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block drop-shadow-[0_0_30px_rgba(168,85,247,0.5)]">
                 Find the Next
               </span>
             </h1>
