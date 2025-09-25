@@ -209,7 +209,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               <div className="absolute right-0 -bottom-14 z-10 w-20">
                 {/* Rating badge */}
                 <div className="flex justify-center mb-2">
-                  <div className="bg-yellow-400 text-gray-900 px-2 py-1 rounded-md font-bold text-sm">
+                  <div className="bg-yellow-400 text-gray-700 px-2 py-1 rounded-md font-bold text-sm">
                     {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
                   </div>
                 </div>
@@ -252,12 +252,12 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   >
                     {escapeHtml(truncateText(review.text, 144))}
                   </p>
-                  {/* Gradient fade overlay for third line */}
+                  {/* Gradient fade overlay for bottom half of third line */}
                   <div
                     className="absolute bottom-0 left-0 right-0 pointer-events-none"
                     style={{
-                      height: '1.5rem', // Height of one line
-                      background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.95) 100%)'
+                      height: '0.75rem', // Half the height of one line
+                      background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.9) 100%)'
                     }}
                   />
                 </div>
@@ -364,7 +364,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               <div className="absolute right-0 -top-20 z-10 w-20">
                 {/* Rating badge */}
                 <div className="flex justify-center mb-2">
-                  <div className="bg-yellow-400 text-gray-900 px-2 py-1 rounded-md font-bold text-sm">
+                  <div className="bg-yellow-400 text-gray-700 px-2 py-1 rounded-md font-bold text-sm">
                     {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
                   </div>
                 </div>
@@ -403,12 +403,12 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   >
                     {escapeHtml(truncateText(review.text, 144))}
                   </p>
-                  {/* Gradient fade overlay for third line */}
+                  {/* Gradient fade overlay for bottom half of third line */}
                   <div
                     className="absolute bottom-0 left-0 right-0 pointer-events-none"
                     style={{
-                      height: '1.6rem', // Height of one line for text-base
-                      background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.95) 100%)'
+                      height: '0.8rem', // Half the height of one line for text-base
+                      background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.9) 100%)'
                     }}
                   />
                 </div>
