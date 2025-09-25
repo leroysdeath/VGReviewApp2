@@ -194,11 +194,13 @@ settings.local.json
 
 # Test and debug files
 test-*.js
+test-*.mjs
 test-*.html
 debug-*.js
 debug-*.html
 verify_*.js
 *-test-data.js
+test-supabase-config.mjs
 
 # Never commit files with hardcoded credentials
 *-with-keys.js
