@@ -181,7 +181,7 @@ export const ResponsiveLandingPage: React.FC = () => {
 
   // Transform Review to ReviewData interface
   const transformReviewData = (review: Review): ReviewData => {
-    const theme: ReviewData['theme'] = ['purple', 'green', 'orange', 'blue', 'red'][review.id % 5] as ReviewData['theme'];
+    const theme: ReviewData['theme'] = ['purple', 'green', 'blue'][review.id % 3] as ReviewData['theme'];
     
     const igdbId = getReliableIgdbId(review);
     
@@ -254,7 +254,7 @@ export const ResponsiveLandingPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-900">
         {/* Mobile Hero Section */}
-        <div className="relative bg-gray-900 overflow-hidden px-4 py-12">
+        <div className="relative bg-gray-900 overflow-hidden px-4 py-12 border-b border-gray-700/50">
           {/* Simplified multi-layered background for mobile */}
           {/* Layer 1: Subtle gradient */}
           <div 
@@ -343,7 +343,7 @@ export const ResponsiveLandingPage: React.FC = () => {
         </div>
 
         {/* Mobile Features Section */}
-        <div className="px-4 py-12 bg-gray-800">
+        <div className="px-4 py-12 bg-gray-900">
           <div className="text-center mb-8">
             <h2 className="text-white mb-3">
               <span className="text-lg font-normal">How </span>
@@ -353,7 +353,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           </div>
           <div className="space-y-6">
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/30 transition-all duration-300 hover:border-blue-500/50 group overflow-hidden"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-blue-500/50 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('social-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
             >
@@ -369,7 +369,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               </div>
             </div>
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/30 transition-all duration-300 hover:border-green-500/50 group overflow-hidden"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-green-500/50 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('stats-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
             >
@@ -385,7 +385,7 @@ export const ResponsiveLandingPage: React.FC = () => {
               </div>
             </div>
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/30 transition-all duration-300 hover:border-purple-500/50 group overflow-hidden"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-purple-500/50 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('ratings-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
             >
@@ -405,7 +405,7 @@ export const ResponsiveLandingPage: React.FC = () => {
 
 
         {/* Mobile Recent Reviews Section */}
-        <div className="px-4 py-12 bg-gray-800">
+        <div className="px-4 py-12 bg-gray-900 border-b border-gray-700">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-white">Recent Reviews</h2>
             <Link
@@ -460,7 +460,7 @@ export const ResponsiveLandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900">
       {/* Hero Section */}
-      <div className="relative bg-gray-900 overflow-hidden">
+      <div className="relative bg-gray-900 overflow-hidden border-b border-gray-700/50">
         {/* Multi-layered background */}
         {/* Layer 1: Base gradient - subtle radial gradients */}
         <div 
@@ -557,7 +557,7 @@ export const ResponsiveLandingPage: React.FC = () => {
       </div>
 
       {/* Features Section */}
-      <div className="py-16 bg-gray-800">
+      <div className="py-16 bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-white mb-4">
@@ -568,7 +568,7 @@ export const ResponsiveLandingPage: React.FC = () => {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/30 transition-all duration-300 hover:border-blue-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-blue-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
               onMouseEnter={() => setHoveredCard('social')}
               onMouseLeave={() => setHoveredCard(null)}
             >
@@ -594,7 +594,7 @@ export const ResponsiveLandingPage: React.FC = () => {
             </div>
 
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/30 transition-all duration-300 hover:border-green-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-green-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
               onMouseEnter={() => setHoveredCard('stats')}
               onMouseLeave={() => setHoveredCard(null)}
             >
@@ -620,7 +620,7 @@ export const ResponsiveLandingPage: React.FC = () => {
             </div>
 
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/30 transition-all duration-300 hover:border-purple-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-purple-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
               onMouseEnter={() => setHoveredCard('ratings')}
               onMouseLeave={() => setHoveredCard(null)}
             >
@@ -650,7 +650,7 @@ export const ResponsiveLandingPage: React.FC = () => {
 
 
       {/* Recent Reviews Section */}
-      <div className="py-16 bg-gray-800">
+      <div className="py-16 bg-gray-900 border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-white">Recent Reviews</h2>
