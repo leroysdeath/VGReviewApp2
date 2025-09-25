@@ -469,7 +469,7 @@ export const ResponsiveNavbar: React.FC = () => {
     return (
       <>
         {/* Mobile Navbar */}
-        <nav className="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+        <nav className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
           <div className="px-4 py-3">
             <div className="flex items-center justify-between">
               {/* Logo */}
@@ -493,7 +493,7 @@ export const ResponsiveNavbar: React.FC = () => {
         {/* Mobile Menu Overlay */}
         {isMenuOpen && (
           <div className="fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsMenuOpen(false)}>
-            <div className="bg-gray-800 w-full max-w-sm h-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gray-900 w-full max-w-sm h-full shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="p-4 border-b border-gray-700">
                 <div className="flex items-center justify-between">
                   <Link 
@@ -972,7 +972,7 @@ export const ResponsiveNavbar: React.FC = () => {
 
   // Desktop Navbar
   return (
-    <nav className="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+    <nav className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
@@ -1364,7 +1364,7 @@ export const ResponsiveNavbar: React.FC = () => {
       {/* Mobile Navigation */}
       {isMenuOpen && (
         <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-800 border-t border-gray-700">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-900 border-t border-gray-700">
             {/* Mobile Search */}
             <form onSubmit={handleSearch} className="relative mb-4">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
