@@ -33,37 +33,42 @@ interface ReviewCardProps {
   currentUserId?: number;
 }
 
-// Theme configurations for border colors
+// Theme configurations for border colors and backgrounds
 const themeConfig = {
   purple: {
-    border: 'border-purple-500/50',
-    hoverBorder: 'hover:border-purple-400',
+    border: 'border-gray-700/60',
+    hoverBorder: 'hover:border-purple-500/50',
     accent: 'text-purple-400',
-    gradient: 'from-purple-600 to-purple-800'
+    gradient: 'from-purple-600 to-purple-800',
+    background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-purple-900/10'
   },
   green: {
-    border: 'border-green-500/50',
-    hoverBorder: 'hover:border-green-400',
+    border: 'border-gray-700/60',
+    hoverBorder: 'hover:border-green-500/50',
     accent: 'text-green-400',
-    gradient: 'from-green-600 to-green-800'
+    gradient: 'from-green-600 to-green-800',
+    background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-green-900/10'
   },
   orange: {
     border: 'border-orange-500/50',
     hoverBorder: 'hover:border-orange-400',
     accent: 'text-orange-400',
-    gradient: 'from-orange-600 to-orange-800'
+    gradient: 'from-orange-600 to-orange-800',
+    background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-orange-900/10'
   },
   blue: {
-    border: 'border-blue-500/50',
-    hoverBorder: 'hover:border-blue-400',
+    border: 'border-gray-700/60',
+    hoverBorder: 'hover:border-blue-500/50',
     accent: 'text-blue-400',
-    gradient: 'from-blue-600 to-blue-800'
+    gradient: 'from-blue-600 to-blue-800',
+    background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-blue-900/10'
   },
   red: {
     border: 'border-red-500/50',
     hoverBorder: 'hover:border-red-400',
     accent: 'text-red-400',
-    gradient: 'from-red-600 to-red-800'
+    gradient: 'from-red-600 to-red-800',
+    background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-red-900/10'
   }
 };
 
@@ -142,25 +147,14 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
   const reviewUrl = generateReviewUrl(review);
 
   return (
-    <Link 
+    <Link
       to={reviewUrl}
       className={`
-        group relative overflow-hidden rounded-xl border-2 block
-        bg-gray-900/80 backdrop-blur-lg
-        transition-all duration-500 ease-out
-        hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-900/50
-        ${themeStyles.border} ${themeStyles.hoverBorder}
-        ${compact ? 'p-4' : 'p-6'}
+        block p-8 bg-gray-900/95 border border-gray-700/60
+        rounded-lg ${themeStyles.hoverBorder} transition-all duration-300
         ${className}
       `}
     >
-      {/* Background gradient overlay on hover */}
-      <div className={`
-        absolute inset-0 opacity-0 group-hover:opacity-10 
-        bg-gradient-to-br ${themeStyles.gradient}
-        transition-opacity duration-500 pointer-events-none
-      `} />
-
       {/* Card content */}
       <div className="relative flex items-start gap-4">
         {/* User Avatar */}
@@ -176,21 +170,17 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               <img
                 src={review.authorAvatar}
                 alt={review.author}
-                className={`
-                  rounded-full object-cover border-2 border-gray-600
+                className="w-16 h-16 rounded-full object-cover border-2 border-gray-600
                   transition-all duration-300 group-hover/avatar:border-gray-400
-                  group-hover/avatar:scale-110
-                  ${compact ? 'w-10 h-10' : 'w-12 h-12'}
-                `}
+                  group-hover/avatar:scale-110"
               />
             ) : (
               <div className={`
-                rounded-full border-2 border-gray-600
+                w-16 h-16 rounded-full border-2 border-gray-600
                 bg-gradient-to-br ${themeStyles.gradient}
-                flex items-center justify-center font-bold text-white
+                flex items-center justify-center font-bold text-white text-xl
                 transition-all duration-300 group-hover/avatar:border-gray-400
                 group-hover/avatar:scale-110
-                ${compact ? 'w-10 h-10 text-sm' : 'w-12 h-12 text-lg'}
               `}>
                 {getUserInitial(review.author)}
               </div>
@@ -218,65 +208,41 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </div>
           )}
 
-          {/* Header with username and game title */}
-          <div className="mb-3">
-            <span
-              className={`
-                font-semibold transition-colors duration-300 cursor-pointer
-                text-white hover:${themeStyles.accent.replace('text-', 'text-')}
-                ${compact ? 'text-sm' : 'text-base'}
-              `}
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/user/${review.userId}`);
-              }}
-            >
-              {review.author}
-            </span>
-            
-            {showGameTitle && review.gameTitle && (
-              <div className={`${compact ? 'text-xs' : 'text-sm'} text-gray-400 mt-1`}>
-                reviewed{' '}
-                <span className="text-gray-300 font-medium">
-                  {review.gameTitle}
-                </span>
-                
-                {/* Date and Rating */}
-                <div className="flex items-center gap-4 mt-2">
-                  <div className="flex items-center text-gray-500">
-                    <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
-                      {getRelativeTime(review.date)}
-                    </span>
-                  </div>
-                  <span className="text-yellow-400 font-semibold">
-                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+          {/* Header with improved hierarchy */}
+          <div className="mb-4">
+            <div className="flex items-center flex-wrap gap-2 text-base">
+              <span
+                className="font-semibold text-white hover:text-purple-400 cursor-pointer transition-colors duration-200"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/user/${review.userId}`);
+                }}
+              >
+                {review.author}
+              </span>
+              {showGameTitle && review.gameTitle && (
+                <>
+                  <span className="text-gray-400">reviewed</span>
+                  <span className="text-gray-300 font-medium">
+                    {review.gameTitle}
                   </span>
-                </div>
-              </div>
-            )}
-            
-            {/* Date and Rating for when no game title is shown */}
-            {!showGameTitle || !review.gameTitle ? (
-              <div className="flex items-center gap-4 mt-2">
-                <div className="flex items-center text-gray-500">
-                  <span className={`${compact ? 'text-xs' : 'text-sm'}`}>
-                    {getRelativeTime(review.date)}
-                  </span>
-                </div>
-                <span className="text-yellow-400 font-semibold">
-                  {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-                </span>
-              </div>
-            ) : null}
-          </div>
+                </>
+              )}
+              <span className="text-sm text-gray-400">• {getRelativeTime(review.date)}</span>
+            </div>
 
-          {/* Review Text - wraps around the floated image */}
+            {/* Rating */}
+            <div className="mt-2">
+              <span className="text-sm text-yellow-400 font-medium">
+                {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+              </span>
+            </div>
+          </div>
+            
+
+          {/* Review Text - improved typography */}
           {review.hasText && (
-            <p className={`
-              text-gray-300 leading-relaxed mb-4 transition-colors duration-300
-              group-hover:text-gray-200 whitespace-pre-line line-clamp-3
-              ${compact ? 'text-sm' : 'text-base'}
-            `}>
+            <p className="text-base text-gray-300 leading-relaxed mb-4 whitespace-pre-line line-clamp-3">
               {escapeHtml(truncateText(review.text, 144))}
             </p>
           )}
@@ -312,12 +278,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
         </div>
       </div>
 
-      {/* Hover glow effect */}
-      <div className={`
-        absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100
-        transition-opacity duration-500 pointer-events-none -z-10
-        bg-gradient-to-r ${themeStyles.gradient} blur-xl
-      `} />
     </Link>
   );
 };
