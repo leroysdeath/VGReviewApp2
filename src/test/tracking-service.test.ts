@@ -3,33 +3,33 @@
  * Tests privacy-compliant game view tracking functionality
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { trackingService, ViewSource } from '../services/trackingService';
 
 // Mock privacyService
 const mockPrivacyService = {
-  shouldTrack: vi.fn(),
-  getCurrentSessionHash: vi.fn()
+  shouldTrack: jest.fn(),
+  getCurrentSessionHash: jest.fn()
 };
 
 // Mock supabase
 const mockSupabase = {
-  from: vi.fn(() => ({
-    insert: vi.fn(() => ({ error: null })),
-    select: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        gte: vi.fn(() => ({ data: [], error: null }))
+  from: jest.fn(() => ({
+    insert: jest.fn(() => ({ error: null })),
+    select: jest.fn(() => ({
+      eq: jest.fn(() => ({
+        gte: jest.fn(() => ({ data: [], error: null }))
       }))
     }))
   }))
 };
 
 // Mock sendBeacon
-const mockSendBeacon = vi.fn();
+const mockSendBeacon = jest.fn();
 
 describe('Tracking Service', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     
     // Mock navigator.sendBeacon
     Object.defineProperty(navigator, 'sendBeacon', {
@@ -38,16 +38,17 @@ describe('Tracking Service', () => {
     });
 
     // Mock environment variables
-    vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
-    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-key');
+    process.env.VITE_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.VITE_SUPABASE_ANON_KEY = 'test-key';
 
     // Reset service state by clearing any internal timers/caches
     // Note: In a real implementation, we might expose a reset() method
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
-    vi.unstubAllEnvs();
+    jest.restoreAllMocks();
+    delete process.env.VITE_SUPABASE_URL;
+    delete process.env.VITE_SUPABASE_ANON_KEY;
   });
 
   describe('Basic Tracking', () => {
