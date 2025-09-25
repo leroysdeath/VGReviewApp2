@@ -159,7 +159,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
       <div className="relative flex items-start gap-4">
         {/* User Avatar */}
         <div className="flex-shrink-0">
-          <div 
+          <div
             className="group/avatar cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
@@ -238,7 +238,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               </span>
             </div>
           </div>
-            
+
 
           {/* Review Text - improved typography */}
           {review.hasText && (
@@ -247,10 +247,186 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </p>
           )}
 
-          {/* Clear float to ensure interactions appear below */}
-          <div className="clear-both"></div>
+          {/* Row 3: Review Text */}
+          <div className="relative">
+            <div className="flex-1 pt-2 pr-24">
+              {/* Review Text - limited to 2.5 lines with gradient fade */}
+              {review.hasText && (
+                <div className="relative">
+                  <p
+                    className="text-sm text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
+                    style={{
+                      height: '3.75rem', // 2.5 lines at 1.5rem line height
+                      maxHeight: '3.75rem'
+                    }}
+                  >
+                    {escapeHtml(truncateText(review.text, 144))}
+                  </p>
+                  {/* Gradient fade overlay for bottom quarter of third line */}
+                  <div
+                    className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                    style={{
+                      height: '0.375rem', // Quarter the height of one line
+                      background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.9) 100%)'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
 
-          {/* Review Interactions - now shown for both compact and full modes */}
+          {/* Review Interactions */}
+          <ReviewInteractions
+            reviewId={review.id}
+            initialLikeCount={review.likeCount || likeCount}
+            initialCommentCount={review.commentCount || commentCount}
+            isLiked={isLiked}
+            onLike={toggleLike}
+            onUnlike={toggleLike}
+            comments={comments}
+            onAddComment={postComment}
+            onEditComment={updateComment}
+            onDeleteComment={removeComment}
+            onLikeComment={toggleCommentLike}
+            onUnlikeComment={toggleCommentLike}
+            isLoadingComments={isLoadingComments}
+            isLoadingLike={isLoadingLike}
+            isLikingComment={false}
+            likingCommentId={likingCommentId}
+            error={error || undefined}
+            className="mt-2"
+            reviewAuthorId={parseInt(review.userId)}
+            currentUserId={currentUserId}
+            disableCommentHover={true}
+            disableComments={true}
+          />
+        </div>
+
+        {/* DESKTOP LAYOUT */}
+        <div className="hidden md:block">
+          <div className="flex items-start gap-4">
+            {/* User Avatar */}
+            <div className="flex-shrink-0">
+              <div
+                className="group/avatar cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/user/${review.userId}`);
+                }}
+              >
+                {review.authorAvatar ? (
+                  <img
+                    src={review.authorAvatar}
+                    alt={review.author}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-600
+                      transition-all duration-300 group-hover/avatar:border-gray-400
+                      group-hover/avatar:scale-110"
+                  />
+                ) : (
+                  <div className={`
+                    w-16 h-16 rounded-full border-2 border-gray-600
+                    bg-gradient-to-br ${themeStyles.gradient}
+                    flex items-center justify-center font-bold text-white text-xl
+                    transition-all duration-300 group-hover/avatar:border-gray-400
+                    group-hover/avatar:scale-110
+                  `}>
+                    {getUserInitial(review.author)}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Review Content */}
+            <div className="flex-1 min-w-0">
+              {/* Row 1: Author */}
+              <div className="mb-2">
+                <span
+                  className="font-semibold text-white cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/user/${review.userId}`);
+                  }}
+                >
+                  {review.author}
+                </span>
+              </div>
+
+              {/* Row 2: Date (rating moved to bottom) */}
+              <div className="mb-2 text-sm">
+                <span className="text-gray-400">{getRelativeTime(review.date)}</span>
+              </div>
+
+              {/* Row 3: Game Title */}
+              {showGameTitle && review.gameTitle && (
+                <div className="mb-2">
+                  <span className="text-gray-300 font-medium">
+                    {review.gameTitle}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Separator and Cover Container */}
+          {showGameTitle && review.gameTitle && (
+            <div className="relative">
+              {/* Right-side content stack: Rating + Cover */}
+              <div className="absolute right-0 -top-20 z-10 w-20">
+                {/* Rating badge */}
+                <div className="flex justify-center mb-2">
+                  <div className="bg-yellow-400 text-gray-700 px-2 py-1 rounded-md font-bold text-sm">
+                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                  </div>
+                </div>
+
+                {/* Game cover */}
+                {review.gameCoverUrl && (
+                  <img
+                    src={review.gameCoverUrl}
+                    alt={review.gameTitle}
+                    className={`
+                      object-cover rounded shadow-lg
+                      ${compact ? 'w-16 h-20' : 'w-20 h-28'}
+                    `}
+                    loading="lazy"
+                  />
+                )}
+              </div>
+
+              {/* Full-width separator */}
+              <div className="h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99%"></div>
+            </div>
+          )}
+
+          {/* Row 4: Review Text */}
+          <div className="relative">
+            <div className="flex-1 pt-2 pr-24">
+              {/* Review Text - limited to 2.5 lines with gradient fade */}
+              {review.hasText && (
+                <div className="relative">
+                  <p
+                    className="text-base text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
+                    style={{
+                      height: '4rem', // 2.5 lines at 1.6rem line height for text-base
+                      maxHeight: '4rem'
+                    }}
+                  >
+                    {escapeHtml(truncateText(review.text, 144))}
+                  </p>
+                  {/* Gradient fade overlay for bottom quarter of third line */}
+                  <div
+                    className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                    style={{
+                      height: '0.4rem', // Quarter the height of one line for text-base
+                      background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.9) 100%)'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Review Interactions */}
           <ReviewInteractions
             reviewId={review.id}
             initialLikeCount={review.likeCount || likeCount}

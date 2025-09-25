@@ -313,14 +313,8 @@ export const ExplorePage: React.FC = () => {
                         lazy={true}
                         showLoadingSpinner={true}
                       />
-                      {/* Ranking Badge - Only show in explore mode, not search mode */}
-                      {!isSearchMode && (
-                        <div className="absolute top-2 left-2 bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg">
-                          {index + 1}
-                        </div>
-                      )}
                       {shouldShowCategoryLabel(game.category) && (
-                        <div className={`absolute top-2 ${!isSearchMode ? 'left-12' : 'left-2'}`}>
+                        <div className="absolute top-2 left-2">
                           {(() => {
                             const label = getCategoryLabel(game.category);
                             const styles = getCategoryStyles(game.category);
@@ -357,17 +351,6 @@ export const ExplorePage: React.FC = () => {
                     onClick={() => handleGameClick(game)}
                     className="bg-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-750 transition-colors flex gap-4"
                   >
-                    {/* Ranking Number - Only show in explore mode, not search mode */}
-                    {!isSearchMode && (
-                      <div className="flex flex-col items-center justify-start mr-4">
-                        <div className="bg-purple-600 text-white rounded-full w-10 h-10 flex items-center justify-center text-lg font-bold shadow-lg mb-2">
-                          {index + 1}
-                        </div>
-                        <div className="text-xs text-gray-400 font-medium">
-                          RANK
-                        </div>
-                      </div>
-                    )}
                     <SmartImage
                       src={getCoverUrl(game)}
                       alt={game.name}

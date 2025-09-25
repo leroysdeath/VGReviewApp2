@@ -277,15 +277,15 @@ export const ResponsiveLandingPage: React.FC = () => {
           
           {/* Content */}
           <div className="relative text-center">
-            <h1 className="text-3xl font-bold text-white mb-4">
-              Track Your Games
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block">
+            <div className="text-purple-400/80 text-xs font-semibold tracking-wider uppercase mb-3">
+              The Social Library for Gamers
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-8">
+              <span className="block mb-2">Track Your Games</span>
+              <span className="text-[2rem] leading-normal text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block drop-shadow-[0_0_30px_rgba(168,85,247,0.5)]">
                 Find the Next
               </span>
             </h1>
-            <p className="text-gray-300 mb-8 leading-relaxed">
-              Rate, review, and discover games through the power of social gaming.
-            </p>
             <div className="space-y-3">
               <Link
                 to="/explore"
@@ -496,15 +496,15 @@ export const ResponsiveLandingPage: React.FC = () => {
         {/* Content */}
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              Track Your Games
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
-                {' '}Find the Next
+            <div className="text-purple-400/80 text-sm font-semibold tracking-wider uppercase mb-4">
+              The Social Library for Gamers
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-8">
+              <span className="block mb-2 md:mb-3">Track Your Games</span>
+              <span className="text-3xl md:text-[3.5rem] leading-normal text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block drop-shadow-[0_0_30px_rgba(168,85,247,0.5)]">
+                Find the Next
               </span>
             </h1>
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Rate, review, and discover games through the power of social gaming.
-            </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 to="/explore"

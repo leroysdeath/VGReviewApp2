@@ -1,0 +1,35 @@
+# robots.txt for GameVault
+# https://www.robotstxt.org/
+
+# Allow all bots to crawl the site
+User-agent: *
+Allow: /
+
+# Disallow access to API endpoints and functions
+Disallow: /.netlify/
+Disallow: /api/
+Disallow: /_app_immutable/
+Disallow: /_app_version_json
+
+# Disallow test/debug pages
+Disallow: /test.html
+Disallow: /test-*.html
+Disallow: /debug-*.html
+Disallow: /run-seeding.html
+Disallow: /*-test.html
+Disallow: /*-analysis.html
+
+# Sitemap location (if you have one)
+# Sitemap: https://yourdomain.com/sitemap.xml
+
+# Crawl-delay (optional - in seconds between requests)
+# Crawl-delay: 1
+
+# Specific bot rules (optional)
+# Google
+User-agent: Googlebot
+Allow: /
+
+# Bing
+User-agent: Bingbot
+Allow: /
