@@ -31,6 +31,7 @@ import { ScrollToTop } from './components/ScrollToTop';
 // Import non-critical pages directly to avoid build issues
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import { PrivacySettingsPage } from './pages/PrivacySettingsPage';
 import EnhancedSearchTestPage from './pages/EnhancedSearchTestPage';
 import DiagnosticPage from './pages/DiagnosticPage';
 import { SearchPerformanceDashboard } from './components/SearchPerformanceDashboard';
@@ -164,6 +165,22 @@ const AppContent: React.FC = () => {
                     <Route
                       path="/privacy"
                       element={<PrivacyPage />}
+                    />
+                    <Route
+                      path="/privacy-settings"
+                      element={
+                        <ProtectedRoute showModal={true}>
+                          <PrivacySettingsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/privacy-settings/:userId"
+                      element={
+                        <ProtectedRoute showModal={true}>
+                          <PrivacySettingsPage />
+                        </ProtectedRoute>
+                      }
                     />
                     {/* Catch-all route for debugging */}
                     <Route path="*" element={
