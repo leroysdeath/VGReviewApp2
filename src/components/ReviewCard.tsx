@@ -158,7 +158,14 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
       {/* Card content with responsive layout */}
       <div className="relative">
         {/* MOBILE LAYOUT (default) */}
-        <div className="md:hidden">
+        <div className="md:hidden relative">
+          {/* Rating positioned in upper right corner */}
+          <div className="absolute top-0 right-0 z-10">
+            <span className="text-sm text-yellow-400 font-medium whitespace-nowrap">
+              {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+            </span>
+          </div>
+
           {/* Row 1: Avatar + Author */}
           <div className="flex items-center gap-3 mb-3">
             <div
@@ -202,23 +209,18 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </div>
           </div>
 
-          {/* Row 2: Game Title + Rating (full width) */}
+          {/* Row 2: Game Title (full width) */}
           {showGameTitle && review.gameTitle && (
             <div className="mb-3">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-300 font-medium flex-1 mr-2">
-                  {review.gameTitle}
-                </span>
-                <span className="text-sm text-yellow-400 font-medium whitespace-nowrap">
-                  {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
-                </span>
-              </div>
+              <span className="text-gray-300 font-medium pr-16">
+                {review.gameTitle}
+              </span>
             </div>
           )}
 
-          {/* Row 3: Game Cover (below title) */}
+          {/* Row 3: Game Cover (positioned on far right) */}
           {showGameTitle && review.gameTitle && review.gameCoverUrl && (
-            <div className="mb-3">
+            <div className="flex justify-end mb-3">
               <img
                 src={review.gameCoverUrl}
                 alt={review.gameTitle}
