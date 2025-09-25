@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Environment Variables</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #065f46;
+        }
+        .error {
+            background: #7f1d1d;
+        }
+        .warning {
+            background: #78350f;
+        }
+        pre {
+            background: #374151;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug Environment Variables</h1>
+    
+    <div id="status"></div>
+    <div id="results"></div>
+
+    <script type="module">
+        const statusDiv = document.getElementById('status');
+        const resultsDiv = document.getElementById('results');
+        
+        function addStatus(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            statusDiv.appendChild(div);
+        }
+
+        function addResult(title, content) {
+            const div = document.createElement('div');
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            resultsDiv.appendChild(div);
+        }
+
+        try {
+            addStatus('Testing environment variables...', 'info');
+            
+            // Check if import.meta.env is available
+            if (typeof import.meta !== 'undefined' && import.meta.env) {
+                addStatus('✅ import.meta.env is available', 'success');
+                
+                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+                
+                addResult('VITE_SUPABASE_URL', supabaseUrl || 'NOT SET');
+                addResult('VITE_SUPABASE_ANON_KEY', supabaseKey ? 'SET (hidden)' : 'NOT SET');
+                
+                if (supabaseUrl && supabaseKey) {
+                    addStatus('✅ Both environment variables are set', 'success');
+                    
+                    // Test Supabase client creation
+                    import('@supabase/supabase-js').then(({ createClient }) => {
+                        try {
+                            const supabase = createClient(supabaseUrl, supabaseKey);
+                            addStatus('✅ Supabase client created successfully', 'success');
+                            
+                            // Test basic query
+                            supabase
+                                .from('game')
+                                .select('id, name')
+                                .limit(1)
+                                .then(({ data, error }) => {
+                                    if (error) {
+                                        addStatus(`❌ Database query failed: ${error.message}`, 'error');
+                                        addResult('Error Details', JSON.stringify(error, null, 2));
+                                        
+                                        if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                                            addStatus('❌ This appears to be a 401 authentication error', 'error');
+                                            addStatus('Check your Supabase anon key and RLS policies', 'warning');
+                                        }
+                                    } else {
+                                        addStatus('✅ Database query successful!', 'success');
+                                        addResult('Query Result', JSON.stringify(data, null, 2));
+                                    }
+                                });
+                        } catch (error) {
+                            addStatus(`❌ Failed to create Supabase client: ${error.message}`, 'error');
+                        }
+                    }).catch(error => {
+                        addStatus(`❌ Failed to import Supabase: ${error.message}`, 'error');
+                    });
+                    
+                } else {
+                    addStatus('❌ Missing environment variables', 'error');
+                    if (!supabaseUrl) addStatus('   - VITE_SUPABASE_URL not set', 'error');
+                    if (!supabaseKey) addStatus('   - VITE_SUPABASE_ANON_KEY not set', 'error');
+                }
+                
+            } else {
+                addStatus('❌ import.meta.env is not available', 'error');
+                addResult('Available globals', Object.keys(window).join(', '));
+            }
+            
+        } catch (error) {
+            addStatus(`❌ Error during testing: ${error.message}`, 'error');
+            addResult('Error Stack', error.stack);
+        }
+    </script>
+</body>
+</html>

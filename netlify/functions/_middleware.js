@@ -64,7 +64,7 @@ const getCorsHeaders = (origin = null) => {
   return headers;
 };
 
-export default async (request, context) => {
+export const onRequest = async (request, context) => {
   const origin = request.headers.get('origin');
   
   // Handle preflight OPTIONS requests

@@ -91,12 +91,13 @@ function killNodeProcesses() {
   });
 }
 
-function killPortProcesses() {
+function killPortProcesses(forcePorts = false) {
   return new Promise((resolve) => {
-    console.log('🔌 Cleaning up processes on common development ports...');
+    console.log('🔌 Cleaning up processes on development ports...');
     
-    const ports = [3000, 5173, 8888, 4000, 8000, 9000];
+    const ports = forcePorts || [3000, 5173, 8888, 4000, 8000, 9000];
     let completed = 0;
+    let killed = 0;
     
     ports.forEach(port => {
       exec(`netstat -ano | findstr :${port}`, (error, stdout) => {
@@ -109,6 +110,7 @@ function killPortProcesses() {
               exec(`taskkill /PID ${pid} /F`, (killError) => {
                 if (!killError) {
                   console.log(`✅ Freed port ${port} (killed PID ${pid})`);
+                  killed++;
                 }
               });
             }
@@ -117,6 +119,11 @@ function killPortProcesses() {
         
         completed++;
         if (completed === ports.length) {
+          if (killed > 0) {
+            console.log(`🎯 Successfully freed ${killed} port(s)`);
+          } else {
+            console.log('✨ All ports are already free');
+          }
           resolve();
         }
       });
