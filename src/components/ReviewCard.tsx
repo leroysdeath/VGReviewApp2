@@ -205,24 +205,25 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Row 2: Game Title with wrapping for cover + Separator */}
           {showGameTitle && review.gameTitle && (
             <div className="relative">
-              {/* Rating Badge - positioned above game cover */}
-              <div className="absolute right-0 -bottom-20 z-10 w-20 flex justify-center">
-                <div className="bg-yellow-400 text-gray-900 px-2 py-1 rounded-md font-bold text-sm">
-                  {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+              {/* Right-side content stack: Rating + Cover */}
+              <div className="absolute right-0 -bottom-14 z-10 w-20">
+                {/* Rating badge */}
+                <div className="flex justify-center mb-2">
+                  <div className="bg-yellow-400 text-gray-900 px-2 py-1 rounded-md font-bold text-sm">
+                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                  </div>
                 </div>
-              </div>
 
-              {/* Game Cover positioned to center on separator */}
-              {review.gameCoverUrl && (
-                <div className="absolute right-0 -bottom-14 z-10">
+                {/* Game cover */}
+                {review.gameCoverUrl && (
                   <img
                     src={review.gameCoverUrl}
                     alt={review.gameTitle}
                     className="w-20 h-28 object-cover rounded shadow-lg"
                     loading="lazy"
                   />
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Game Title - wraps around cover if needed */}
               <div className="mb-2 text-center pr-24">
@@ -239,9 +240,12 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Row 3: Review Text */}
           <div className="relative">
             <div className="flex-1 pt-2 pr-24">
-              {/* Review Text - with padding to avoid cover */}
+              {/* Review Text - first line indented to align with username (avatar: 48px + gap: 12px = 60px) */}
               {review.hasText && (
-                <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">
+                <p
+                  className="text-sm text-gray-400 leading-relaxed whitespace-pre-line"
+                  style={{ textIndent: '60px', paddingLeft: '0' }}
+                >
                   {escapeHtml(truncateText(review.text, 144))}
                 </p>
               )}
@@ -343,16 +347,17 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Separator and Cover Container */}
           {showGameTitle && review.gameTitle && (
             <div className="relative">
-              {/* Rating Badge - positioned above game cover */}
-              <div className="absolute right-0 -top-20 z-10 w-20 flex justify-center">
-                <div className="bg-yellow-400 text-gray-900 px-2 py-1 rounded-md font-bold text-sm">
-                  {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+              {/* Right-side content stack: Rating + Cover */}
+              <div className="absolute right-0 -top-14 z-10 w-20">
+                {/* Rating badge */}
+                <div className="flex justify-center mb-2">
+                  <div className="bg-yellow-400 text-gray-900 px-2 py-1 rounded-md font-bold text-sm">
+                    {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
+                  </div>
                 </div>
-              </div>
 
-              {/* Game Cover positioned to center on separator */}
-              {review.gameCoverUrl && (
-                <div className="absolute right-0 -top-14 z-10">
+                {/* Game cover */}
+                {review.gameCoverUrl && (
                   <img
                     src={review.gameCoverUrl}
                     alt={review.gameTitle}
@@ -362,8 +367,8 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                     `}
                     loading="lazy"
                   />
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Full-width separator */}
               <div className="h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99%"></div>
@@ -373,9 +378,12 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Row 4: Review Text */}
           <div className="relative">
             <div className="flex-1 pt-2 pr-24">
-              {/* Review Text - with padding to avoid cover */}
+              {/* Review Text - first line indented to align with username (avatar: 64px + gap: 16px = 80px) */}
               {review.hasText && (
-                <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line">
+                <p
+                  className="text-base text-gray-400 leading-relaxed whitespace-pre-line"
+                  style={{ textIndent: '80px', paddingLeft: '0' }}
+                >
                   {escapeHtml(truncateText(review.text, 144))}
                 </p>
               )}
