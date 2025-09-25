@@ -170,21 +170,17 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               <img
                 src={review.authorAvatar}
                 alt={review.author}
-                className={`
-                  rounded-full object-cover border-2 border-gray-600
+                className="w-16 h-16 rounded-full object-cover border-2 border-gray-600
                   transition-all duration-300 group-hover/avatar:border-gray-400
-                  group-hover/avatar:scale-110
-                  ${compact ? 'w-10 h-10' : 'w-12 h-12'}
-                `}
+                  group-hover/avatar:scale-110"
               />
             ) : (
               <div className={`
-                rounded-full border-2 border-gray-600
+                w-16 h-16 rounded-full border-2 border-gray-600
                 bg-gradient-to-br ${themeStyles.gradient}
-                flex items-center justify-center font-bold text-white
+                flex items-center justify-center font-bold text-white text-xl
                 transition-all duration-300 group-hover/avatar:border-gray-400
                 group-hover/avatar:scale-110
-                ${compact ? 'w-10 h-10 text-sm' : 'w-12 h-12 text-lg'}
               `}>
                 {getUserInitial(review.author)}
               </div>
@@ -236,15 +232,8 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </div>
 
             {/* Rating */}
-            <div className="flex items-center gap-2 mt-2">
-              <div className="flex text-yellow-400">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-lg">
-                    {i < Math.floor(review.rating / 2) ? '★' : '☆'}
-                  </span>
-                ))}
-              </div>
-              <span className="text-sm text-gray-400 font-medium">
+            <div className="mt-2">
+              <span className="text-sm text-yellow-400 font-medium">
                 {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
               </span>
             </div>
