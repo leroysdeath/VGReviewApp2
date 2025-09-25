@@ -396,7 +396,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             disableComments={true}
           />
         </div>
-        </div>
       </div>
 
     </Link>
