@@ -217,7 +217,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   {review.gameTitle}
                 </span>
               </div>
-              <div className="h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent mb-2"></div>
+              <div className="h-px bg-gradient-to-r from-transparent from-10% via-gray-600 to-transparent to-90% mb-2"></div>
             </>
           )}
 
@@ -335,7 +335,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                     {review.gameTitle}
                   </span>
                 </div>
-                <div className="h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent mb-2"></div>
+                <div className="h-px bg-gradient-to-r from-transparent from-10% via-gray-600 to-transparent to-90% mb-2"></div>
               </>
             )}
 
