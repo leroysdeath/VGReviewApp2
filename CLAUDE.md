@@ -400,4 +400,8 @@ NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
 
+## 🔐 CRITICAL SECURITY REQUIREMENT
+NEVER include hardcoded JWT tokens, API keys, or secrets in ANY code. ALWAYS use environment variables. 
+See SECURITY_PREFERENCES.md for complete security guidelines that MUST be followed at all times.
+
       IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task.
