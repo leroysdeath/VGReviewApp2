@@ -281,8 +281,8 @@ export const ResponsiveLandingPage: React.FC = () => {
               The Social Library for Gamers
             </div>
             <h1 className="text-3xl font-bold text-white mb-8">
-              <span className="block">Track Your Games</span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block">
+              <span className="block mb-3">Track Your Games</span>
+              <span className="text-2xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block">
                 Find the Next
               </span>
             </h1>
@@ -500,8 +500,8 @@ export const ResponsiveLandingPage: React.FC = () => {
               The Social Library for Gamers
             </div>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-8">
-              <span className="block">Track Your Games</span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block">
+              <span className="block mb-3 md:mb-6">Track Your Games</span>
+              <span className="text-3xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 block">
                 Find the Next
               </span>
             </h1>
