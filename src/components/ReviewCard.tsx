@@ -218,24 +218,28 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </div>
           )}
 
-          {/* Row 3: Game Cover (positioned on far right) */}
-          {showGameTitle && review.gameTitle && review.gameCoverUrl && (
-            <div className="flex justify-end mb-3">
+          {/* Row 3: Game Cover + Review Text (text wraps around cover) */}
+          <div className="relative">
+            {/* Game Cover floated to the right */}
+            {showGameTitle && review.gameTitle && review.gameCoverUrl && (
               <img
                 src={review.gameCoverUrl}
                 alt={review.gameTitle}
-                className="w-20 h-28 object-cover rounded"
+                className="float-right ml-3 mb-2 w-20 h-28 object-cover rounded"
                 loading="lazy"
               />
-            </div>
-          )}
+            )}
 
-          {/* Row 4: Review Text (full width) */}
-          {review.hasText && (
-            <p className="text-sm text-gray-300 leading-relaxed mb-3 whitespace-pre-line line-clamp-3">
-              {escapeHtml(truncateText(review.text, 144))}
-            </p>
-          )}
+            {/* Review Text that wraps around the cover */}
+            {review.hasText && (
+              <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">
+                {escapeHtml(truncateText(review.text, 144))}
+              </p>
+            )}
+
+            {/* Clear the float */}
+            <div className="clear-both"></div>
+          </div>
 
           {/* Review Interactions */}
           <ReviewInteractions
