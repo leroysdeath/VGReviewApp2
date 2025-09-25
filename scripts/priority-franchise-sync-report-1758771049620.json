@@ -1,0 +1,63 @@
+{
+  "timestamp": "2025-09-25T03:30:49.618Z",
+  "isDryRun": false,
+  "franchises": [
+    {
+      "name": "Xenogears",
+      "priority": "CRITICAL",
+      "previousCoverage": 0,
+      "gamesFound": 0,
+      "expectedGames": [
+        "Xenogears"
+      ],
+      "gameList": []
+    },
+    {
+      "name": "Front Mission",
+      "priority": "HIGH",
+      "previousCoverage": 50,
+      "gamesFound": 0,
+      "expectedGames": [
+        "Front Mission",
+        "Front Mission 2",
+        "Front Mission 3",
+        "Front Mission 4",
+        "Front Mission 5",
+        "Front Mission Evolved"
+      ],
+      "gameList": []
+    },
+    {
+      "name": "Secret of Mana / Mana Series",
+      "priority": "HIGH",
+      "previousCoverage": 50,
+      "gamesFound": 0,
+      "expectedGames": [
+        "Secret of Mana",
+        "Dawn of Mana",
+        "Children of Mana",
+        "Heroes of Mana",
+        "Sword of Mana",
+        "Adventures of Mana"
+      ],
+      "gameList": []
+    },
+    {
+      "name": "Live A Live",
+      "priority": "MEDIUM",
+      "previousCoverage": 50,
+      "gamesFound": 0,
+      "expectedGames": [
+        "Live A Live",
+        "Live A Live (2022)"
+      ],
+      "gameList": []
+    }
+  ],
+  "summary": {
+    "totalFranchises": 4,
+    "totalGamesFound": 0,
+    "criticalFranchises": 1,
+    "highPriorityFranchises": 2
+  }
+}

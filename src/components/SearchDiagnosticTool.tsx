@@ -9,6 +9,7 @@ import { AdminKeyManager } from './AdminKeyManager';
 import { SearchResultsTable } from './SearchResultsTable';
 import { ManualFlaggingPanel } from './ManualFlaggingPanel';
 import { DMCAManagementPanel } from './DMCAManagementPanel';
+import { PrivacyDashboard } from './admin/PrivacyDashboard';
 
 interface DiagnosticResult {
   query: string;
@@ -67,7 +68,7 @@ export const SearchDiagnosticTool: React.FC = () => {
   const [bulkResults, setBulkResults] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [igdbStats, setIgdbStats] = useState<any>(null);
-  const [selectedTab, setSelectedTab] = useState<'single' | 'bulk' | 'patterns' | 'results' | 'flags' | 'dmca'>('single');
+  const [selectedTab, setSelectedTab] = useState<'single' | 'bulk' | 'patterns' | 'results' | 'flags' | 'dmca' | 'privacy'>('single');
 
   useEffect(() => {
     // Update IGDB stats periodically
@@ -208,7 +209,7 @@ export const SearchDiagnosticTool: React.FC = () => {
         {/* Navigation */}
         <nav className="mb-8">
           <div className="flex space-x-4">
-            {(['single', 'bulk', 'patterns', 'results', 'flags', 'dmca'] as const).map((tab) => (
+            {(['single', 'bulk', 'patterns', 'results', 'flags', 'dmca', 'privacy'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setSelectedTab(tab)}
@@ -224,6 +225,7 @@ export const SearchDiagnosticTool: React.FC = () => {
                 {tab === 'results' && '📋 Results Table'}
                 {tab === 'flags' && '🏷️ Manual Flags'}
                 {tab === 'dmca' && '🛡️ DMCA Management'}
+                {tab === 'privacy' && '🔒 Privacy & Tracking'}
               </button>
             ))}
           </div>
@@ -387,6 +389,13 @@ export const SearchDiagnosticTool: React.FC = () => {
         {selectedTab === 'dmca' && (
           <div className="space-y-6">
             <DMCAManagementPanel />
+          </div>
+        )}
+
+        {/* Privacy & Tracking Tab */}
+        {selectedTab === 'privacy' && (
+          <div className="space-y-6">
+            <PrivacyDashboard standalone={false} />
           </div>
         )}
       </div>

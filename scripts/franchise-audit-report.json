@@ -1,12 +1,4110 @@
 {
-  "timestamp": "2025-09-24T03:14:43.179Z",
+  "timestamp": "2025-09-25T03:17:51.150Z",
   "summary": {
     "totalFranchises": 19,
-    "fullyCovered": 0,
-    "partiallyCovered": 0,
-    "poorlyCovered": 0,
-    "totalGamesFound": 0,
-    "totalGamesExpected": 0
+    "fullyCovered": 16,
+    "partiallyCovered": 2,
+    "poorlyCovered": 1,
+    "totalGamesFound": 634,
+    "totalGamesExpected": 81
   },
-  "franchises": []
+  "franchises": [
+    {
+      "franchise": "Xenogears",
+      "gameCount": 0,
+      "expectedMin": 1,
+      "status": "⚠️",
+      "coverage": 0,
+      "foundNotableGames": [],
+      "missingNotableGames": [
+        "Xenogears"
+      ],
+      "games": []
+    },
+    {
+      "franchise": "Live A Live",
+      "gameCount": 1,
+      "expectedMin": 2,
+      "status": "⚠️",
+      "coverage": 50,
+      "foundNotableGames": [
+        "Live A Live (1994)",
+        "Live A Live (2022)"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 13205,
+          "name": "Live A Live",
+          "igdb_id": 15835,
+          "release_date": "1994-09-02"
+        }
+      ]
+    },
+    {
+      "franchise": "Front Mission",
+      "gameCount": 3,
+      "expectedMin": 6,
+      "status": "⚠️",
+      "coverage": 50,
+      "foundNotableGames": [
+        "Front Mission",
+        "Front Mission 2",
+        "Front Mission 3",
+        "Front Mission 4",
+        "Front Mission 5",
+        "Front Mission Evolved"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 18064,
+          "name": "Front Mission 1st",
+          "igdb_id": 21541,
+          "release_date": "2003-10-23"
+        },
+        {
+          "id": 42182,
+          "name": "Front Mission",
+          "igdb_id": 47718,
+          "release_date": "2007-03-22"
+        },
+        {
+          "id": 64989,
+          "name": "Front Mission 2089: Border of Madness",
+          "igdb_id": 72662,
+          "release_date": "2008-05-29"
+        }
+      ]
+    },
+    {
+      "franchise": "Drakengard",
+      "gameCount": 3,
+      "expectedMin": 3,
+      "status": "✅",
+      "coverage": 100,
+      "foundNotableGames": [
+        "Drakengard",
+        "Drakengard 2",
+        "Drakengard 3"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 6393,
+          "name": "Drakengard 3",
+          "igdb_id": 8576,
+          "release_date": "2013-12-19"
+        },
+        {
+          "id": 9346,
+          "name": "Drakengard",
+          "igdb_id": 11635,
+          "release_date": "2003-09-11"
+        },
+        {
+          "id": 9371,
+          "name": "Drakengard 2",
+          "igdb_id": 11663,
+          "release_date": "2005-06-16"
+        }
+      ]
+    },
+    {
+      "franchise": "Outriders",
+      "gameCount": 2,
+      "expectedMin": 2,
+      "status": "✅",
+      "coverage": 100,
+      "foundNotableGames": [
+        "Outriders",
+        "Outriders Worldslayer"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 91959,
+          "name": "Outriders",
+          "igdb_id": 102058,
+          "release_date": "2021-04-01"
+        },
+        {
+          "id": 127204,
+          "name": "Outriders: Day One Edition",
+          "igdb_id": 139917,
+          "release_date": "2021-04-01"
+        }
+      ]
+    },
+    {
+      "franchise": "The World Ends with You",
+      "gameCount": 2,
+      "expectedMin": 2,
+      "status": "✅",
+      "coverage": 100,
+      "foundNotableGames": [
+        "The World Ends with You"
+      ],
+      "missingNotableGames": [
+        "NEO: The World Ends with You"
+      ],
+      "games": [
+        {
+          "id": 110378,
+          "name": "The World Ends with You: Solo Remix",
+          "igdb_id": 121612,
+          "release_date": "2012-08-27"
+        },
+        {
+          "id": 72646,
+          "name": "The World Ends with You: Final Remix",
+          "igdb_id": 81143,
+          "release_date": "2018-09-27"
+        }
+      ]
+    },
+    {
+      "franchise": "Romancing SaGa",
+      "gameCount": 5,
+      "expectedMin": 5,
+      "status": "✅",
+      "coverage": 100,
+      "foundNotableGames": [
+        "Romancing SaGa",
+        "Romancing SaGa 2",
+        "Romancing SaGa 3",
+        "Romancing SaGa: Minstrel Song"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 99099,
+          "name": "Romancing SaGa 3",
+          "igdb_id": 109592,
+          "release_date": "2019-10-28"
+        },
+        {
+          "id": 99100,
+          "name": "Romancing SaGa Re;UniverSe",
+          "igdb_id": 109593,
+          "release_date": "2018-12-06"
+        },
+        {
+          "id": 9038,
+          "name": "Romancing SaGa",
+          "igdb_id": 11311,
+          "release_date": "1992-01-28"
+        },
+        {
+          "id": 9039,
+          "name": "Romancing SaGa 2",
+          "igdb_id": 11312,
+          "release_date": "1993-12-10"
+        },
+        {
+          "id": 9040,
+          "name": "Romancing SaGa 3",
+          "igdb_id": 11313,
+          "release_date": "1995-11-11"
+        }
+      ]
+    },
+    {
+      "franchise": "Parasite Eve",
+      "gameCount": 3,
+      "expectedMin": 3,
+      "status": "✅",
+      "coverage": 100,
+      "foundNotableGames": [
+        "Parasite Eve",
+        "Parasite Eve II",
+        "The 3rd Birthday"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 5218,
+          "name": "Parasite Eve II",
+          "igdb_id": 7358,
+          "release_date": "1999-12-16"
+        },
+        {
+          "id": 5219,
+          "name": "The 3rd Birthday",
+          "igdb_id": 7359,
+          "release_date": "2010-12-22"
+        },
+        {
+          "id": 5217,
+          "name": "Parasite Eve",
+          "igdb_id": 7357,
+          "release_date": "1998-03-29"
+        }
+      ]
+    },
+    {
+      "franchise": "Vagrant Story",
+      "gameCount": 1,
+      "expectedMin": 1,
+      "status": "✅",
+      "coverage": 100,
+      "foundNotableGames": [
+        "Vagrant Story"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 271,
+          "name": "Vagrant Story",
+          "igdb_id": 2216,
+          "release_date": "2000-02-10"
+        }
+      ]
+    },
+    {
+      "franchise": "Legacy of Kain",
+      "gameCount": 5,
+      "expectedMin": 5,
+      "status": "✅",
+      "coverage": 100,
+      "foundNotableGames": [
+        "Blood Omen: Legacy of Kain",
+        "Legacy of Kain: Soul Reaver",
+        "Soul Reaver 2",
+        "Legacy of Kain: Defiance"
+      ],
+      "missingNotableGames": [
+        "Blood Omen 2"
+      ],
+      "games": [
+        {
+          "id": 5732,
+          "name": "Legacy of Kain: Soul Reaver 2",
+          "igdb_id": 7893,
+          "release_date": "2001-10-31"
+        },
+        {
+          "id": 5733,
+          "name": "Blood Omen: Legacy of Kain",
+          "igdb_id": 7894,
+          "release_date": "1996-11-01"
+        },
+        {
+          "id": 44959,
+          "name": "Legacy of Kain: Anthology",
+          "igdb_id": 50762,
+          "release_date": "2015-12-31"
+        },
+        {
+          "id": 3811,
+          "name": "Legacy of Kain: Defiance",
+          "igdb_id": 5901,
+          "release_date": "2003-11-11"
+        },
+        {
+          "id": 6112,
+          "name": "Legacy of Kain: The Dark Prophecy",
+          "igdb_id": 8289,
+          "release_date": null
+        }
+      ]
+    },
+    {
+      "franchise": "Splatoon",
+      "gameCount": 4,
+      "expectedMin": 3,
+      "status": "✅",
+      "coverage": 133,
+      "foundNotableGames": [
+        "Splatoon",
+        "Splatoon 2",
+        "Splatoon 3"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 22911,
+          "name": "Splatoon 2",
+          "igdb_id": 26761,
+          "release_date": "2017-07-21"
+        },
+        {
+          "id": 123936,
+          "name": "Splatoon 2 + Splatoon 2 Octo Expansion Bundle",
+          "igdb_id": 136382,
+          "release_date": "2018-03-08"
+        },
+        {
+          "id": 93200,
+          "name": "Splatoon 2: Octo Expansion",
+          "igdb_id": 103364,
+          "release_date": "2018-06-13"
+        },
+        {
+          "id": 5195,
+          "name": "Splatoon",
+          "igdb_id": 7335,
+          "release_date": "2015-05-28"
+        }
+      ]
+    },
+    {
+      "franchise": "Star Fox",
+      "gameCount": 15,
+      "expectedMin": 10,
+      "status": "✅",
+      "coverage": 150,
+      "foundNotableGames": [
+        "Star Fox",
+        "Star Fox 64",
+        "Star Fox Adventures",
+        "Star Fox Assault",
+        "Star Fox Zero"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 338798,
+          "name": "Star Fox",
+          "igdb_id": 234945,
+          "release_date": null
+        },
+        {
+          "id": 338799,
+          "name": "Star Fox",
+          "igdb_id": 308046,
+          "release_date": null
+        },
+        {
+          "id": 16310,
+          "name": "Star Fox Guard",
+          "igdb_id": 19687,
+          "release_date": "2016-04-21"
+        },
+        {
+          "id": 17144,
+          "name": "Star Fox Command",
+          "igdb_id": 20556,
+          "release_date": "2006-08-03"
+        },
+        {
+          "id": 19780,
+          "name": "Star Fox Zero: Limited First Print Edition",
+          "igdb_id": 23382,
+          "release_date": null
+        },
+        {
+          "id": 20216,
+          "name": "Star Fox",
+          "igdb_id": 23854,
+          "release_date": "1983-12-31"
+        },
+        {
+          "id": 37537,
+          "name": "Star Fox: Super Weekend",
+          "igdb_id": 42365,
+          "release_date": "1994-01-31"
+        },
+        {
+          "id": 123775,
+          "name": "Star Fox Zero + Star Fox Guard",
+          "igdb_id": 136202,
+          "release_date": "2016-04-21"
+        },
+        {
+          "id": 45300,
+          "name": "Star Fox Zero and Star Fox Guard: First Print Edition",
+          "igdb_id": 51144,
+          "release_date": "2016-05-22"
+        },
+        {
+          "id": 4760,
+          "name": "Star Fox 64 3D",
+          "igdb_id": 6890,
+          "release_date": "2011-07-17"
+        },
+        {
+          "id": 636,
+          "name": "Star Fox 64",
+          "igdb_id": 2591,
+          "release_date": "1997-04-27"
+        },
+        {
+          "id": 729,
+          "name": "Star Fox Adventures",
+          "igdb_id": 2686,
+          "release_date": "2002-09-22"
+        },
+        {
+          "id": 6398,
+          "name": "Star Fox",
+          "igdb_id": 8581,
+          "release_date": "1993-02-21"
+        },
+        {
+          "id": 7457,
+          "name": "Star Fox 2",
+          "igdb_id": 9674,
+          "release_date": "2017-09-29"
+        },
+        {
+          "id": 8927,
+          "name": "Star Fox Zero",
+          "igdb_id": 11196,
+          "release_date": "2016-04-21"
+        }
+      ]
+    },
+    {
+      "franchise": "Star Ocean",
+      "gameCount": 13,
+      "expectedMin": 8,
+      "status": "✅",
+      "coverage": 163,
+      "foundNotableGames": [
+        "Star Ocean",
+        "Star Ocean: Till the End of Time",
+        "Star Ocean: The Last Hope",
+        "Star Ocean: The Divine Force"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 18267,
+          "name": "Star Ocean: The Last Hope - International",
+          "igdb_id": 21750,
+          "release_date": "2010-02-04"
+        },
+        {
+          "id": 20623,
+          "name": "Star Ocean: First Departure",
+          "igdb_id": 24299,
+          "release_date": "2007-12-27"
+        },
+        {
+          "id": 21353,
+          "name": "Star Ocean: Anamnesis",
+          "igdb_id": 25078,
+          "release_date": "2016-12-07"
+        },
+        {
+          "id": 66606,
+          "name": "Star Ocean: The Last Hope - 4K & Full HD Remaster",
+          "igdb_id": 74384,
+          "release_date": "2017-11-28"
+        },
+        {
+          "id": 107984,
+          "name": "Star Ocean: First Departure R",
+          "igdb_id": 119057,
+          "release_date": "2019-12-04"
+        },
+        {
+          "id": 38071,
+          "name": "Star Ocean: Integrity and Faithlessness - Limited Edition",
+          "igdb_id": 42956,
+          "release_date": "2016-07-28"
+        },
+        {
+          "id": 72101,
+          "name": "Star Ocean: Second Evolution",
+          "igdb_id": 80504,
+          "release_date": "2008-04-02"
+        },
+        {
+          "id": 5057,
+          "name": "Star Ocean: The Last Hope",
+          "igdb_id": 7192,
+          "release_date": "2009-02-19"
+        },
+        {
+          "id": 8940,
+          "name": "Star Ocean",
+          "igdb_id": 11209,
+          "release_date": "1996-07-19"
+        },
+        {
+          "id": 8941,
+          "name": "Star Ocean: The Second Story",
+          "igdb_id": 11210,
+          "release_date": "1998-07-30"
+        },
+        {
+          "id": 8942,
+          "name": "Star Ocean: Blue Sphere",
+          "igdb_id": 11211,
+          "release_date": "2001-06-28"
+        },
+        {
+          "id": 8943,
+          "name": "Star Ocean: Till the End of Time",
+          "igdb_id": 11212,
+          "release_date": "2003-02-27"
+        },
+        {
+          "id": 8944,
+          "name": "Star Ocean: Integrity and Faithlessness",
+          "igdb_id": 11213,
+          "release_date": "2016-03-31"
+        }
+      ]
+    },
+    {
+      "franchise": "Xenoblade Chronicles",
+      "gameCount": 13,
+      "expectedMin": 7,
+      "status": "✅",
+      "coverage": 186,
+      "foundNotableGames": [
+        "Xenoblade Chronicles",
+        "Xenoblade Chronicles X",
+        "Xenoblade Chronicles 2",
+        "Xenoblade Chronicles 3"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 415,
+          "name": "Xenoblade Chronicles",
+          "igdb_id": 2364,
+          "release_date": "2010-06-10"
+        },
+        {
+          "id": 417,
+          "name": "Xenoblade Chronicles X",
+          "igdb_id": 2366,
+          "release_date": "2015-04-29"
+        },
+        {
+          "id": 110945,
+          "name": "Xenoblade Chronicles: Definitive Edition",
+          "igdb_id": 122238,
+          "release_date": "2020-05-29"
+        },
+        {
+          "id": 45299,
+          "name": "Xenoblade Chronicles X: Special Edition",
+          "igdb_id": 51143,
+          "release_date": "2015-12-03"
+        },
+        {
+          "id": 45301,
+          "name": "Xenoblade Chronicles X: Limited Edition",
+          "igdb_id": 51145,
+          "release_date": "2015-12-03"
+        },
+        {
+          "id": 23393,
+          "name": "Xenoblade Chronicles 2: Special Edition",
+          "igdb_id": 27298,
+          "release_date": "2017-12-01"
+        },
+        {
+          "id": 123609,
+          "name": "Xenoblade Chronicles 2: Collector's Edition",
+          "igdb_id": 136021,
+          "release_date": "2017-12-01"
+        },
+        {
+          "id": 124293,
+          "name": "Xenoblade Chronicles: Definitive Edition - Collector's Set",
+          "igdb_id": 136777,
+          "release_date": "2020-05-29"
+        },
+        {
+          "id": 93179,
+          "name": "Xenoblade Chronicles 2: Torna - The Golden Country",
+          "igdb_id": 103340,
+          "release_date": "2018-09-14"
+        },
+        {
+          "id": 122067,
+          "name": "Xenoblade Chronicles: Future Connected",
+          "igdb_id": 134328,
+          "release_date": "2020-05-29"
+        },
+        {
+          "id": 7344,
+          "name": "Xenoblade Chronicles 3D",
+          "igdb_id": 9553,
+          "release_date": "2015-04-02"
+        },
+        {
+          "id": 22916,
+          "name": "Xenoblade Chronicles 2",
+          "igdb_id": 26766,
+          "release_date": "2017-12-01"
+        },
+        {
+          "id": 44802,
+          "name": "Xenoblade Chronicles: Collector's Edition",
+          "igdb_id": 50591,
+          "release_date": null
+        }
+      ]
+    },
+    {
+      "franchise": "Bravely Default",
+      "gameCount": 11,
+      "expectedMin": 3,
+      "status": "✅",
+      "coverage": 367,
+      "foundNotableGames": [
+        "Bravely Default",
+        "Bravely Second",
+        "Bravely Default II"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 115707,
+          "name": "Bravely Default II",
+          "igdb_id": 127344,
+          "release_date": "2021-02-25"
+        },
+        {
+          "id": 80440,
+          "name": "Bravely Default: Flying Fairy Collector's Pack",
+          "igdb_id": 89878,
+          "release_date": "2012-10-11"
+        },
+        {
+          "id": 21980,
+          "name": "Bravely Default: Fairy's Effect",
+          "igdb_id": 25739,
+          "release_date": "2017-03-23"
+        },
+        {
+          "id": 70191,
+          "name": "Bravely Default: Flying Fairy",
+          "igdb_id": 78326,
+          "release_date": "2012-10-11"
+        },
+        {
+          "id": 56018,
+          "name": "Bravely Default: Praying Brage",
+          "igdb_id": 62889,
+          "release_date": "2012-11-01"
+        },
+        {
+          "id": 39028,
+          "name": "Bravely Second: End Layer - Collector's Edition",
+          "igdb_id": 44017,
+          "release_date": "2016-05-15"
+        },
+        {
+          "id": 39029,
+          "name": "Bravely Default: Collector's Edition",
+          "igdb_id": 44018,
+          "release_date": "2014-02-07"
+        },
+        {
+          "id": 42135,
+          "name": "Bravely Second: End Layer - Deluxe Collector's Edition",
+          "igdb_id": 47664,
+          "release_date": "2016-05-15"
+        },
+        {
+          "id": 25784,
+          "name": "Final Bravely",
+          "igdb_id": 29899,
+          "release_date": "2017-01-05"
+        },
+        {
+          "id": 2655,
+          "name": "Bravely Default",
+          "igdb_id": 4700,
+          "release_date": "2013-12-05"
+        },
+        {
+          "id": 8986,
+          "name": "Bravely Second: End Layer",
+          "igdb_id": 11256,
+          "release_date": "2015-04-23"
+        }
+      ]
+    },
+    {
+      "franchise": "Just Cause",
+      "gameCount": 19,
+      "expectedMin": 4,
+      "status": "✅",
+      "coverage": 475,
+      "foundNotableGames": [
+        "Just Cause",
+        "Just Cause 2",
+        "Just Cause 3",
+        "Just Cause 4"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 107655,
+          "name": "Just Cause 3: XXL Edition",
+          "igdb_id": 118703,
+          "release_date": "2018-10-24"
+        },
+        {
+          "id": 32130,
+          "name": "Just Cause 3: XL Edition",
+          "igdb_id": 36448,
+          "release_date": "2015-12-01"
+        },
+        {
+          "id": 14776,
+          "name": "Just Cause 3: Sky Fortress",
+          "igdb_id": 18043,
+          "release_date": "2016-03-01"
+        },
+        {
+          "id": 16475,
+          "name": "Just Cause 3: Mech Land Assault",
+          "igdb_id": 19855,
+          "release_date": "2016-06-03"
+        },
+        {
+          "id": 18960,
+          "name": "Just Cause 3: Bavarium Sea Heist",
+          "igdb_id": 22505,
+          "release_date": "2016-08-18"
+        },
+        {
+          "id": 21742,
+          "name": "Just Cause 3: Gold Edition",
+          "igdb_id": 25483,
+          "release_date": "2017-12-31"
+        },
+        {
+          "id": 80407,
+          "name": "Just Cause 3: Day One Edition",
+          "igdb_id": 89844,
+          "release_date": "2015-12-01"
+        },
+        {
+          "id": 84218,
+          "name": "Just Cause 2: Multiplayer Mod",
+          "igdb_id": 93898,
+          "release_date": "2013-12-16"
+        },
+        {
+          "id": 93104,
+          "name": "Just Cause 4",
+          "igdb_id": 103261,
+          "release_date": "2018-12-04"
+        },
+        {
+          "id": 93151,
+          "name": "Just Cause 4: Gold Edition",
+          "igdb_id": 103311,
+          "release_date": "2019-11-06"
+        },
+        {
+          "id": 107855,
+          "name": "Just Cause 4: Los Demonios",
+          "igdb_id": 118919,
+          "release_date": "2019-06-26"
+        },
+        {
+          "id": 110296,
+          "name": "Just Cause 4: Danger Rising",
+          "igdb_id": 121529,
+          "release_date": "2019-09-05"
+        },
+        {
+          "id": 114121,
+          "name": "Just Cause 4: Reloaded",
+          "igdb_id": 125637,
+          "release_date": "2019-11-07"
+        },
+        {
+          "id": 114122,
+          "name": "Just Cause 4: Complete Edition",
+          "igdb_id": 125638,
+          "release_date": "2019-11-07"
+        },
+        {
+          "id": 41981,
+          "name": "Just Cause 3: Collector's Edition",
+          "igdb_id": 47488,
+          "release_date": "2015-12-31"
+        },
+        {
+          "id": 47170,
+          "name": "Just Cause Collection",
+          "igdb_id": 53245,
+          "release_date": "2013-12-12"
+        },
+        {
+          "id": 93150,
+          "name": "Just Cause 4: Digital Deluxe",
+          "igdb_id": 103310,
+          "release_date": "2018-12-04"
+        },
+        {
+          "id": 106523,
+          "name": "Just Cause 4: Dare Devils of Destruction",
+          "igdb_id": 117492,
+          "release_date": "2019-04-30"
+        },
+        {
+          "id": 6014,
+          "name": "Just Cause 3",
+          "igdb_id": 8187,
+          "release_date": "2015-11-30"
+        }
+      ]
+    },
+    {
+      "franchise": "Valkyrie Profile",
+      "gameCount": 33,
+      "expectedMin": 3,
+      "status": "✅",
+      "coverage": 1100,
+      "foundNotableGames": [
+        "Valkyrie Profile",
+        "Valkyrie Profile 2: Silmeria",
+        "Valkyrie Profile: Covenant of the Plume"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 84630,
+          "name": "Valkyrie",
+          "igdb_id": 94342,
+          "release_date": "1993-12-31"
+        },
+        {
+          "id": 108176,
+          "name": "Valkyrie of Phantasm",
+          "igdb_id": 119265,
+          "release_date": "2024-10-18"
+        },
+        {
+          "id": 111003,
+          "name": "Beauty and Violence: Valkyries",
+          "igdb_id": 122299,
+          "release_date": null
+        },
+        {
+          "id": 25833,
+          "name": "Xenon Valkyrie",
+          "igdb_id": 29949,
+          "release_date": "2017-02-03"
+        },
+        {
+          "id": 36357,
+          "name": "The Legend of Valkyrie",
+          "igdb_id": 41081,
+          "release_date": "1989-04-01"
+        },
+        {
+          "id": 37694,
+          "name": "Choujikuu Yousai Macross: Scrambled Valkyrie",
+          "igdb_id": 42537,
+          "release_date": "1993-11-29"
+        },
+        {
+          "id": 37826,
+          "name": "Valkyrie Drive: Bhikkhuni - Liberator's Edition",
+          "igdb_id": 42678,
+          "release_date": "2016-11-11"
+        },
+        {
+          "id": 42987,
+          "name": "Valkyrie no Bouken: Toki no Kagi Densetsu",
+          "igdb_id": 48592,
+          "release_date": "1986-08-01"
+        },
+        {
+          "id": 19201,
+          "name": "Valkyrie Profile: Lenneth",
+          "igdb_id": 22756,
+          "release_date": "2006-03-02"
+        },
+        {
+          "id": 58656,
+          "name": "Bakukyuu Renpatsu!! Super B-Daman Gekitan! Rising Valkyrie!",
+          "igdb_id": 65669,
+          "release_date": "2000-03-24"
+        },
+        {
+          "id": 13173,
+          "name": "A Stroke of Fate: Operation Valkyrie",
+          "igdb_id": 15768,
+          "release_date": "2011-09-05"
+        },
+        {
+          "id": 4468,
+          "name": "Valkyrie Profile: Covenant of the Plume",
+          "igdb_id": 6579,
+          "release_date": "2008-11-01"
+        },
+        {
+          "id": 7064,
+          "name": "EVE: Valkyrie",
+          "igdb_id": 9267,
+          "release_date": "2016-03-25"
+        },
+        {
+          "id": 9241,
+          "name": "Valkyrie Drive: Bhikkhuni",
+          "igdb_id": 11527,
+          "release_date": "2015-12-10"
+        },
+        {
+          "id": 9497,
+          "name": "Valkyrie Profile 2: Silmeria",
+          "igdb_id": 11793,
+          "release_date": "2006-06-22"
+        },
+        {
+          "id": 20788,
+          "name": "Valkyrie Anatomia: The Origin",
+          "igdb_id": 24479,
+          "release_date": "2016-04-28"
+        },
+        {
+          "id": 21986,
+          "name": "Dark Rose Valkyrie",
+          "igdb_id": 25746,
+          "release_date": "2016-07-21"
+        },
+        {
+          "id": 23533,
+          "name": "Ascension to the Throne: Valkyrie",
+          "igdb_id": 27455,
+          "release_date": "2008-08-29"
+        },
+        {
+          "id": 24413,
+          "name": "Valkyrie 17",
+          "igdb_id": 28438,
+          "release_date": "1984-12-31"
+        },
+        {
+          "id": 50968,
+          "name": "Valkyrie Connect",
+          "igdb_id": 57537,
+          "release_date": "2020-04-02"
+        },
+        {
+          "id": 55722,
+          "name": "Valkyrie Crusade",
+          "igdb_id": 62574,
+          "release_date": "2013-02-18"
+        },
+        {
+          "id": 56567,
+          "name": "Valkyrie no Densetsu Gaiden: Rosa no Bouken",
+          "igdb_id": 63477,
+          "release_date": "1996-04-26"
+        },
+        {
+          "id": 61019,
+          "name": "EVE: Valkyrie - Warzone",
+          "igdb_id": 68444,
+          "release_date": "2017-09-26"
+        },
+        {
+          "id": 69866,
+          "name": "Xenon Valkyrie+",
+          "igdb_id": 77957,
+          "release_date": "2017-12-19"
+        },
+        {
+          "id": 21168,
+          "name": "Voyage of the Valkyrie",
+          "igdb_id": 24882,
+          "release_date": "1981-12-31"
+        },
+        {
+          "id": 56735,
+          "name": "Ragnarok Online: Valkyrie Uprising",
+          "igdb_id": 63655,
+          "release_date": null
+        },
+        {
+          "id": 61586,
+          "name": "Valkyrie Complex",
+          "igdb_id": 69035,
+          "release_date": null
+        },
+        {
+          "id": 98557,
+          "name": "Valkyrie Svia",
+          "igdb_id": 109002,
+          "release_date": null
+        },
+        {
+          "id": 99117,
+          "name": "Heartomics: Valkyries",
+          "igdb_id": 109610,
+          "release_date": "2018-09-17"
+        },
+        {
+          "id": 109174,
+          "name": "Valkyrie Galaxy",
+          "igdb_id": 120340,
+          "release_date": null
+        },
+        {
+          "id": 124562,
+          "name": "Black Rose Valkyrie",
+          "igdb_id": 137079,
+          "release_date": null
+        },
+        {
+          "id": 24803,
+          "name": "Valkyrie Blade VR",
+          "igdb_id": 28891,
+          "release_date": "2017-04-12"
+        },
+        {
+          "id": 7999,
+          "name": "Gunvalkyrie",
+          "igdb_id": 10234,
+          "release_date": "2002-03-18"
+        }
+      ]
+    },
+    {
+      "franchise": "EarthBound/Mother",
+      "gameCount": 53,
+      "expectedMin": 3,
+      "status": "✅",
+      "coverage": 1767,
+      "foundNotableGames": [
+        "EarthBound Beginnings",
+        "EarthBound",
+        "Mother 3"
+      ],
+      "missingNotableGames": [],
+      "games": [
+        {
+          "id": 8160,
+          "name": "Hearts of Iron III: For the Motherland",
+          "igdb_id": 10400,
+          "release_date": "2011-06-28"
+        },
+        {
+          "id": 22762,
+          "name": "12 Labours of Hercules IV: Mother Nature",
+          "igdb_id": 26601,
+          "release_date": "2015-12-25"
+        },
+        {
+          "id": 53552,
+          "name": "Didi & Ditto Preschool: Mother Nature's Visit",
+          "igdb_id": 60292,
+          "release_date": "2008-11-17"
+        },
+        {
+          "id": 90922,
+          "name": "Virtual Family Working Mom: Virtual Mother Game",
+          "igdb_id": 100973,
+          "release_date": null
+        },
+        {
+          "id": 127022,
+          "name": "Fairy Godmother Stories: Cinderella",
+          "igdb_id": 139725,
+          "release_date": "2019-11-19"
+        },
+        {
+          "id": 73528,
+          "name": "Mothers of the Animal Kingdom",
+          "igdb_id": 82194,
+          "release_date": null
+        },
+        {
+          "id": 74683,
+          "name": "Hidden Object: Mother Nature",
+          "igdb_id": 83624,
+          "release_date": null
+        },
+        {
+          "id": 85943,
+          "name": "Virtual Mother Game: Family Mom Simulator",
+          "igdb_id": 95738,
+          "release_date": null
+        },
+        {
+          "id": 88576,
+          "name": "Cuckoldry Festival: Former Pro Wrestler Mother Trifled by the Huge Dick of her Son's Friend",
+          "igdb_id": 98497,
+          "release_date": null
+        },
+        {
+          "id": 88680,
+          "name": "Indiscreet Mother: Yukari's After Story",
+          "igdb_id": 98602,
+          "release_date": null
+        },
+        {
+          "id": 91473,
+          "name": "Virtual Mother New Baby Twins Family Simulator",
+          "igdb_id": 101558,
+          "release_date": null
+        },
+        {
+          "id": 91502,
+          "name": "Virtual Mother Family Game: Working Mom Simulator",
+          "igdb_id": 101587,
+          "release_date": null
+        },
+        {
+          "id": 91736,
+          "name": "The mother of the bird men",
+          "igdb_id": 101831,
+          "release_date": null
+        },
+        {
+          "id": 95512,
+          "name": "Real Mother Simulator",
+          "igdb_id": 105783,
+          "release_date": null
+        },
+        {
+          "id": 93713,
+          "name": "Virtual Mother Home Chef Family Simulator",
+          "igdb_id": 103903,
+          "release_date": null
+        },
+        {
+          "id": 23319,
+          "name": "Mothership",
+          "igdb_id": 27211,
+          "release_date": null
+        },
+        {
+          "id": 28464,
+          "name": "Eclipse: Defending the motherland",
+          "igdb_id": 32643,
+          "release_date": "2016-05-26"
+        },
+        {
+          "id": 16387,
+          "name": "Zaxxon's Motherbase 2000",
+          "igdb_id": 19764,
+          "release_date": "1995-06-01"
+        },
+        {
+          "id": 16692,
+          "name": "Super Motherload",
+          "igdb_id": 20078,
+          "release_date": "2013-11-15"
+        },
+        {
+          "id": 23316,
+          "name": "Mothergunship",
+          "igdb_id": 27208,
+          "release_date": "2018-07-17"
+        },
+        {
+          "id": 61205,
+          "name": "Fairy Godmother Tycoon",
+          "igdb_id": 68634,
+          "release_date": "2007-04-30"
+        },
+        {
+          "id": 65458,
+          "name": "Twister: Mother of Charlotte",
+          "igdb_id": 73188,
+          "release_date": "1986-12-31"
+        },
+        {
+          "id": 68593,
+          "name": "Botanica: Earthbound - Collector's Edition",
+          "igdb_id": 76480,
+          "release_date": "2018-01-08"
+        },
+        {
+          "id": 70395,
+          "name": "Earthbound",
+          "igdb_id": 78559,
+          "release_date": "1983-12-31"
+        },
+        {
+          "id": 70421,
+          "name": "Mother 1+2",
+          "igdb_id": 78585,
+          "release_date": "2003-06-20"
+        },
+        {
+          "id": 80528,
+          "name": "Mother Simulator",
+          "igdb_id": 89974,
+          "release_date": "2018-05-22"
+        },
+        {
+          "id": 86647,
+          "name": "Arkham Horror: Mother's Embrace",
+          "igdb_id": 96482,
+          "release_date": "2021-03-03"
+        },
+        {
+          "id": 90549,
+          "name": "Macrotis: A Mother's Journey",
+          "igdb_id": 100581,
+          "release_date": "2019-02-08"
+        },
+        {
+          "id": 106350,
+          "name": "Remothered: Broken Porcelain",
+          "igdb_id": 117309,
+          "release_date": "2020-10-12"
+        },
+        {
+          "id": 122441,
+          "name": "Desert Mothers",
+          "igdb_id": 134738,
+          "release_date": "2019-09-15"
+        },
+        {
+          "id": 115281,
+          "name": "Fairy Godmother Stories: Cinderella - Collector's Edition",
+          "igdb_id": 126866,
+          "release_date": "2019-11-22"
+        },
+        {
+          "id": 116062,
+          "name": "Dead Motherland: Zombie Co-op",
+          "igdb_id": 127731,
+          "release_date": "2020-09-21"
+        },
+        {
+          "id": 119943,
+          "name": "Motherflakker",
+          "igdb_id": 132018,
+          "release_date": null
+        },
+        {
+          "id": 121152,
+          "name": "EarthBound 64",
+          "igdb_id": 133324,
+          "release_date": null
+        },
+        {
+          "id": 121523,
+          "name": "Mother",
+          "igdb_id": 133707,
+          "release_date": "2020-02-05"
+        },
+        {
+          "id": 123078,
+          "name": "The Wake: Mourning Father, Mourning Mother",
+          "igdb_id": 135439,
+          "release_date": "2020-07-10"
+        },
+        {
+          "id": 29732,
+          "name": "Save Your Mother",
+          "igdb_id": 33944,
+          "release_date": "2015-12-03"
+        },
+        {
+          "id": 42956,
+          "name": "Mother 25th Anniversary Edition",
+          "igdb_id": 48561,
+          "release_date": "2014-11-05"
+        },
+        {
+          "id": 45068,
+          "name": "Mixed-Up Mother Goose",
+          "igdb_id": 50899,
+          "release_date": "1987-12-31"
+        },
+        {
+          "id": 45911,
+          "name": "Mother Russia Bleeds: Dealer Edition",
+          "igdb_id": 51834,
+          "release_date": "2016-09-05"
+        },
+        {
+          "id": 50905,
+          "name": "Yes, my mother is...",
+          "igdb_id": 57473,
+          "release_date": null
+        },
+        {
+          "id": 15749,
+          "name": "Motherload",
+          "igdb_id": 19070,
+          "release_date": "2004-09-29"
+        },
+        {
+          "id": 16272,
+          "name": "Mother of Myth",
+          "igdb_id": 19643,
+          "release_date": null
+        },
+        {
+          "id": 24516,
+          "name": "Remothered: Tormented Fathers",
+          "igdb_id": 28548,
+          "release_date": "2018-01-30"
+        },
+        {
+          "id": 125773,
+          "name": "Mother: Cognitive Dissonance",
+          "igdb_id": 138374,
+          "release_date": "2009-12-31"
+        },
+        {
+          "id": 126669,
+          "name": "Earthbound Halloween Hack",
+          "igdb_id": 139353,
+          "release_date": "2008-10-31"
+        },
+        {
+          "id": 127262,
+          "name": "Remothered: Tormented Fathers & Broken Porcelain - Double Pack",
+          "igdb_id": 139977,
+          "release_date": "2020-12-03"
+        },
+        {
+          "id": 92675,
+          "name": "Mother of All Battles",
+          "igdb_id": 102823,
+          "release_date": "2011-12-31"
+        },
+        {
+          "id": 8922,
+          "name": "EarthBound Beginnings",
+          "igdb_id": 11191,
+          "release_date": "2015-06-14"
+        },
+        {
+          "id": 941,
+          "name": "EarthBound",
+          "igdb_id": 2899,
+          "release_date": "1994-08-27"
+        },
+        {
+          "id": 53110,
+          "name": "Botanica: Earthbound",
+          "igdb_id": 59824,
+          "release_date": null
+        },
+        {
+          "id": 4543,
+          "name": "Mother Russia Bleeds",
+          "igdb_id": 6655,
+          "release_date": "2016-09-05"
+        },
+        {
+          "id": 8064,
+          "name": "Fallout 3: Mothership Zeta",
+          "igdb_id": 10300,
+          "release_date": "2009-08-03"
+        }
+      ]
+    },
+    {
+      "franchise": "Secret of Mana/Seiken Densetsu",
+      "gameCount": 448,
+      "expectedMin": 10,
+      "status": "✅",
+      "coverage": 4480,
+      "foundNotableGames": [
+        "Trials of Mana",
+        "Legend of Mana",
+        "Dawn of Mana",
+        "Children of Mana"
+      ],
+      "missingNotableGames": [
+        "Secret of Mana"
+      ],
+      "games": [
+        {
+          "id": 47059,
+          "name": "World Basketball Manager 2014",
+          "igdb_id": 53113,
+          "release_date": null
+        },
+        {
+          "id": 44772,
+          "name": "O'Leary Manager 2000",
+          "igdb_id": 50550,
+          "release_date": "2000-10-15"
+        },
+        {
+          "id": 118449,
+          "name": "BBOnline Manager",
+          "igdb_id": 130316,
+          "release_date": null
+        },
+        {
+          "id": 83582,
+          "name": "Gianluca Vialli's European Manager",
+          "igdb_id": 93211,
+          "release_date": "2001-12-31"
+        },
+        {
+          "id": 33296,
+          "name": "Top Management II",
+          "igdb_id": 37785,
+          "release_date": "1994-02-11"
+        },
+        {
+          "id": 19636,
+          "name": "Football Manager Classic",
+          "igdb_id": 23223,
+          "release_date": null
+        },
+        {
+          "id": 71954,
+          "name": "TV Station Manager",
+          "igdb_id": 80320,
+          "release_date": "2007-04-10"
+        },
+        {
+          "id": 48997,
+          "name": "Dungeon Manager ZV: Resurrection",
+          "igdb_id": 55446,
+          "release_date": "2017-08-15"
+        },
+        {
+          "id": 121139,
+          "name": "Manacrest Online",
+          "igdb_id": 133310,
+          "release_date": null
+        },
+        {
+          "id": 25629,
+          "name": "Dungeon Manager ZV 2",
+          "igdb_id": 29739,
+          "release_date": "2017-02-17"
+        },
+        {
+          "id": 35336,
+          "name": "Vimana",
+          "igdb_id": 39997,
+          "release_date": "1991-02-01"
+        },
+        {
+          "id": 57943,
+          "name": "Val d'Isère Ski Park Manager: Edition 2003",
+          "igdb_id": 64919,
+          "release_date": null
+        },
+        {
+          "id": 57944,
+          "name": "Val d'Isère Ski Park Manager",
+          "igdb_id": 64920,
+          "release_date": "2002-02-28"
+        },
+        {
+          "id": 61580,
+          "name": "20th Century Video Almanac",
+          "igdb_id": 69029,
+          "release_date": "1993-07-14"
+        },
+        {
+          "id": 63198,
+          "name": "Michael Vaughan's Championship Cricket Manager",
+          "igdb_id": 70755,
+          "release_date": null
+        },
+        {
+          "id": 65677,
+          "name": "Manage that Waste",
+          "igdb_id": 73416,
+          "release_date": null
+        },
+        {
+          "id": 75399,
+          "name": "Manage Your Football Club",
+          "igdb_id": 84411,
+          "release_date": null
+        },
+        {
+          "id": 47786,
+          "name": "Traffic Manager",
+          "igdb_id": 53945,
+          "release_date": null
+        },
+        {
+          "id": 47841,
+          "name": "Euroleague Basketball Manager",
+          "igdb_id": 54007,
+          "release_date": null
+        },
+        {
+          "id": 99388,
+          "name": "Soccer Manager Crypto",
+          "igdb_id": 109908,
+          "release_date": null
+        },
+        {
+          "id": 47950,
+          "name": "International Basketball Manager Season 2010/11",
+          "igdb_id": 54123,
+          "release_date": null
+        },
+        {
+          "id": 72519,
+          "name": "National Rugby Manager",
+          "igdb_id": 81005,
+          "release_date": "2018-02-16"
+        },
+        {
+          "id": 50729,
+          "name": "The Mana World",
+          "igdb_id": 57290,
+          "release_date": "2004-04-11"
+        },
+        {
+          "id": 54653,
+          "name": "Gakuen Utopia Manabi Straight! Kira-kira Happy Festa!",
+          "igdb_id": 61449,
+          "release_date": null
+        },
+        {
+          "id": 57814,
+          "name": "Soccer Manager Pro",
+          "igdb_id": 64784,
+          "release_date": null
+        },
+        {
+          "id": 61274,
+          "name": "Rugby League Team Manager 2018",
+          "igdb_id": 68707,
+          "release_date": "2017-10-13"
+        },
+        {
+          "id": 61814,
+          "name": "England Team Manager",
+          "igdb_id": 69289,
+          "release_date": null
+        },
+        {
+          "id": 62617,
+          "name": "Major League Manager",
+          "igdb_id": 70126,
+          "release_date": null
+        },
+        {
+          "id": 63641,
+          "name": "Championship Rugby Manager",
+          "igdb_id": 71223,
+          "release_date": null
+        },
+        {
+          "id": 63932,
+          "name": "The Second Kids' World Almanac Adventure",
+          "igdb_id": 71531,
+          "release_date": null
+        },
+        {
+          "id": 64079,
+          "name": "Kama Sutra: Manara",
+          "igdb_id": 71691,
+          "release_date": null
+        },
+        {
+          "id": 65614,
+          "name": "Championship Manager: End of Season Edition",
+          "igdb_id": 73351,
+          "release_date": null
+        },
+        {
+          "id": 65744,
+          "name": "Premier Manager 3 De-Luxe",
+          "igdb_id": 73484,
+          "release_date": null
+        },
+        {
+          "id": 66235,
+          "name": "Fantasy Manager: The Computer Game",
+          "igdb_id": 73997,
+          "release_date": null
+        },
+        {
+          "id": 68188,
+          "name": "Music Awards Manager",
+          "igdb_id": 76049,
+          "release_date": "2017-12-06"
+        },
+        {
+          "id": 69390,
+          "name": "Jimmy's Soccer Manager",
+          "igdb_id": 77377,
+          "release_date": null
+        },
+        {
+          "id": 70432,
+          "name": "Software Manager",
+          "igdb_id": 78597,
+          "release_date": null
+        },
+        {
+          "id": 75226,
+          "name": "Sports Game Pack (Manager Edition)",
+          "igdb_id": 84231,
+          "release_date": null
+        },
+        {
+          "id": 78863,
+          "name": "Restaurant Island: The Fun Family Game! Manage your staff & expand your gourmet paradise!",
+          "igdb_id": 88206,
+          "release_date": null
+        },
+        {
+          "id": 76861,
+          "name": "5 A Side Legends Football Manager",
+          "igdb_id": 86020,
+          "release_date": "2017-07-11"
+        },
+        {
+          "id": 76745,
+          "name": "Premier Manager 2011",
+          "igdb_id": 85884,
+          "release_date": null
+        },
+        {
+          "id": 77036,
+          "name": "World Cup Manager",
+          "igdb_id": 86221,
+          "release_date": null
+        },
+        {
+          "id": 77847,
+          "name": "Supermarket Management 2",
+          "igdb_id": 87115,
+          "release_date": null
+        },
+        {
+          "id": 78231,
+          "name": "Basketball General Manager",
+          "igdb_id": 87526,
+          "release_date": null
+        },
+        {
+          "id": 78814,
+          "name": "Supermarket Management",
+          "igdb_id": 88156,
+          "release_date": null
+        },
+        {
+          "id": 79192,
+          "name": "Baseball General Manager",
+          "igdb_id": 88555,
+          "release_date": null
+        },
+        {
+          "id": 79495,
+          "name": "World Hockey Manager",
+          "igdb_id": 88883,
+          "release_date": null
+        },
+        {
+          "id": 80446,
+          "name": "New LovePlus: New Manaka Deluxe",
+          "igdb_id": 89884,
+          "release_date": null
+        },
+        {
+          "id": 80448,
+          "name": "New LovePlus: Manaka Complete Set",
+          "igdb_id": 89886,
+          "release_date": null
+        },
+        {
+          "id": 80449,
+          "name": "New LovePlus+: Manaka Artbook Limited Edition",
+          "igdb_id": 89887,
+          "release_date": null
+        },
+        {
+          "id": 85207,
+          "name": "Steigenberger Hotelmanager",
+          "igdb_id": 94947,
+          "release_date": null
+        },
+        {
+          "id": 80750,
+          "name": "Football General Manager",
+          "igdb_id": 90206,
+          "release_date": null
+        },
+        {
+          "id": 80946,
+          "name": "Manaya",
+          "igdb_id": 90411,
+          "release_date": "2018-02-26"
+        },
+        {
+          "id": 80988,
+          "name": "Handball Manager: Team",
+          "igdb_id": 90454,
+          "release_date": "2017-05-05"
+        },
+        {
+          "id": 81238,
+          "name": "Hockey General Manager",
+          "igdb_id": 90729,
+          "release_date": null
+        },
+        {
+          "id": 81766,
+          "name": "Premier Manager 2010",
+          "igdb_id": 91301,
+          "release_date": null
+        },
+        {
+          "id": 83258,
+          "name": "1-0 Soccer Manager",
+          "igdb_id": 92875,
+          "release_date": "1992-04-01"
+        },
+        {
+          "id": 83744,
+          "name": "Soccer Team Manager: English and Italian Leagues",
+          "igdb_id": 93376,
+          "release_date": null
+        },
+        {
+          "id": 83484,
+          "name": "UEFA Manager 2000",
+          "igdb_id": 93107,
+          "release_date": null
+        },
+        {
+          "id": 83462,
+          "name": "Kenny Dalglish Soccer Manager",
+          "igdb_id": 93085,
+          "release_date": null
+        },
+        {
+          "id": 83542,
+          "name": "Cup Manager",
+          "igdb_id": 93170,
+          "release_date": null
+        },
+        {
+          "id": 84274,
+          "name": "ManagerLeague",
+          "igdb_id": 93957,
+          "release_date": null
+        },
+        {
+          "id": 84318,
+          "name": "Sky Sports Football Manager",
+          "igdb_id": 94003,
+          "release_date": null
+        },
+        {
+          "id": 84768,
+          "name": "Eishockey Manager",
+          "igdb_id": 94488,
+          "release_date": null
+        },
+        {
+          "id": 88509,
+          "name": "Global Soccer Manager 2015",
+          "igdb_id": 98428,
+          "release_date": null
+        },
+        {
+          "id": 84935,
+          "name": "Energie-Manager",
+          "igdb_id": 94659,
+          "release_date": null
+        },
+        {
+          "id": 84982,
+          "name": "Euro Club Manager 2003-04",
+          "igdb_id": 94706,
+          "release_date": null
+        },
+        {
+          "id": 85145,
+          "name": "Campaign Manager: An Election Simulator",
+          "igdb_id": 94882,
+          "release_date": null
+        },
+        {
+          "id": 85150,
+          "name": "Election Manager 2016",
+          "igdb_id": 94887,
+          "release_date": null
+        },
+        {
+          "id": 89228,
+          "name": "Basketball Dynasty Manager 16",
+          "igdb_id": 99175,
+          "release_date": "2015-05-25"
+        },
+        {
+          "id": 86114,
+          "name": "MLB Manager 2017",
+          "igdb_id": 95918,
+          "release_date": "2017-03-29"
+        },
+        {
+          "id": 86446,
+          "name": "MLB Manager 2018",
+          "igdb_id": 96270,
+          "release_date": "2018-03-28"
+        },
+        {
+          "id": 86494,
+          "name": "Restaurant Manager",
+          "igdb_id": 96321,
+          "release_date": "2018-04-24"
+        },
+        {
+          "id": 86879,
+          "name": "NY City Bank Manager 2018",
+          "igdb_id": 96725,
+          "release_date": null
+        },
+        {
+          "id": 88531,
+          "name": "GF Becomes SexCare Manager of Baseball Club: Cucked In Sportsmen's Sex",
+          "igdb_id": 98451,
+          "release_date": null
+        },
+        {
+          "id": 89002,
+          "name": "Prime T!me: Der Fernsehmanager",
+          "igdb_id": 98938,
+          "release_date": null
+        },
+        {
+          "id": 89053,
+          "name": "Commanager Tycoon",
+          "igdb_id": 98992,
+          "release_date": "2018-05-01"
+        },
+        {
+          "id": 90619,
+          "name": "Horse Racing Manager 2018",
+          "igdb_id": 100652,
+          "release_date": null
+        },
+        {
+          "id": 90862,
+          "name": "Horse Racing Manager 2018",
+          "igdb_id": 100907,
+          "release_date": null
+        },
+        {
+          "id": 91760,
+          "name": "Idle Car Manager",
+          "igdb_id": 101856,
+          "release_date": null
+        },
+        {
+          "id": 92307,
+          "name": "Sega Pocket Club Manager",
+          "igdb_id": 102430,
+          "release_date": null
+        },
+        {
+          "id": 92354,
+          "name": "Darkest Mana : Master of the Table",
+          "igdb_id": 102479,
+          "release_date": "2018-05-31"
+        },
+        {
+          "id": 92749,
+          "name": "Women's Soccer Manager",
+          "igdb_id": 102899,
+          "release_date": "2018-07-16"
+        },
+        {
+          "id": 93727,
+          "name": "Air Manager",
+          "igdb_id": 103918,
+          "release_date": "2016-02-16"
+        },
+        {
+          "id": 94496,
+          "name": "11x11: Soccer Club Manager",
+          "igdb_id": 104716,
+          "release_date": "2018-06-07"
+        },
+        {
+          "id": 95994,
+          "name": "Factory Manager",
+          "igdb_id": 106317,
+          "release_date": "2018-08-17"
+        },
+        {
+          "id": 96319,
+          "name": "Scary Manager In Supermarket",
+          "igdb_id": 106657,
+          "release_date": null
+        },
+        {
+          "id": 96569,
+          "name": "Supermarket Management 2 HD",
+          "igdb_id": 106921,
+          "release_date": null
+        },
+        {
+          "id": 97052,
+          "name": "Click and Manage Tycoon",
+          "igdb_id": 107440,
+          "release_date": "2018-09-19"
+        },
+        {
+          "id": 98037,
+          "name": "Soccer Star Manager",
+          "igdb_id": 108467,
+          "release_date": null
+        },
+        {
+          "id": 98868,
+          "name": "Shop Manager : Video Game Tycoon",
+          "igdb_id": 109341,
+          "release_date": "2019-03-27"
+        },
+        {
+          "id": 99092,
+          "name": "New Star Soccer Manager",
+          "igdb_id": 109583,
+          "release_date": null
+        },
+        {
+          "id": 99404,
+          "name": "Team: Basketball Manager",
+          "igdb_id": 109925,
+          "release_date": null
+        },
+        {
+          "id": 100917,
+          "name": "MMA Team Manager",
+          "igdb_id": 111518,
+          "release_date": "2019-03-11"
+        },
+        {
+          "id": 102675,
+          "name": "Soccer Manager 2019",
+          "igdb_id": 113394,
+          "release_date": "2018-12-19"
+        },
+        {
+          "id": 103302,
+          "name": "Train Manager",
+          "igdb_id": 114062,
+          "release_date": "2019-02-11"
+        },
+        {
+          "id": 105315,
+          "name": "Mana Balls",
+          "igdb_id": 116190,
+          "release_date": null
+        },
+        {
+          "id": 105338,
+          "name": "Gladiators: Ludus Manager",
+          "igdb_id": 116213,
+          "release_date": null
+        },
+        {
+          "id": 107372,
+          "name": "Fantasy Hero Manager",
+          "igdb_id": 118396,
+          "release_date": "2019-05-23"
+        },
+        {
+          "id": 113891,
+          "name": "Ork Manager: Coal & Top hats",
+          "igdb_id": 125400,
+          "release_date": null
+        },
+        {
+          "id": 114546,
+          "name": "Rugby Manager",
+          "igdb_id": 126086,
+          "release_date": null
+        },
+        {
+          "id": 117042,
+          "name": "CityManager",
+          "igdb_id": 128833,
+          "release_date": null
+        },
+        {
+          "id": 125813,
+          "name": "Mana Blast",
+          "igdb_id": 138415,
+          "release_date": null
+        },
+        {
+          "id": 7792,
+          "name": "Basketball Pro Management 2013",
+          "igdb_id": 10025,
+          "release_date": null
+        },
+        {
+          "id": 8102,
+          "name": "FX Football: The Manager for Every Football Fan",
+          "igdb_id": 10340,
+          "release_date": "2014-01-31"
+        },
+        {
+          "id": 14689,
+          "name": "Rugby Union Team Manager 2015",
+          "igdb_id": 17946,
+          "release_date": "2014-11-03"
+        },
+        {
+          "id": 14839,
+          "name": "BrothelManager",
+          "igdb_id": 18109,
+          "release_date": "2015-09-01"
+        },
+        {
+          "id": 24569,
+          "name": "Soccer Manager Arena",
+          "igdb_id": 28632,
+          "release_date": "2017-05-09"
+        },
+        {
+          "id": 26165,
+          "name": "World Boxing Manager",
+          "igdb_id": 30292,
+          "release_date": "2016-12-09"
+        },
+        {
+          "id": 26573,
+          "name": "Manastorm",
+          "igdb_id": 30709,
+          "release_date": "2017-01-03"
+        },
+        {
+          "id": 26786,
+          "name": "Pro Basketball Manager 2017",
+          "igdb_id": 30926,
+          "release_date": "2017-01-19"
+        },
+        {
+          "id": 27158,
+          "name": "Rugby Union Team Manager 2017",
+          "igdb_id": 31304,
+          "release_date": "2016-11-25"
+        },
+        {
+          "id": 27655,
+          "name": "Soccer Manager 2017",
+          "igdb_id": 31824,
+          "release_date": "2016-09-16"
+        },
+        {
+          "id": 28389,
+          "name": "Global Soccer Manager",
+          "igdb_id": 32568,
+          "release_date": "2016-06-14"
+        },
+        {
+          "id": 29002,
+          "name": "Ultimate Fight Manager 2016",
+          "igdb_id": 33207,
+          "release_date": "2016-04-28"
+        },
+        {
+          "id": 29376,
+          "name": "Soccer Manager",
+          "igdb_id": 33584,
+          "release_date": "2016-02-09"
+        },
+        {
+          "id": 29933,
+          "name": "Pro Basketball Manager 2016: US Edition",
+          "igdb_id": 34160,
+          "release_date": "2016-02-18"
+        },
+        {
+          "id": 30099,
+          "name": "Soccer Manager 2016",
+          "igdb_id": 34335,
+          "release_date": "2015-10-07"
+        },
+        {
+          "id": 30101,
+          "name": "Club Manager 2016",
+          "igdb_id": 34337,
+          "release_date": "2015-11-19"
+        },
+        {
+          "id": 30223,
+          "name": "Dungeon Manager ZV",
+          "igdb_id": 34466,
+          "release_date": "2015-10-16"
+        },
+        {
+          "id": 31318,
+          "name": "Soccer Manager 2015",
+          "igdb_id": 35594,
+          "release_date": "2015-07-16"
+        },
+        {
+          "id": 33901,
+          "name": "Champ Manager 2006",
+          "igdb_id": 38459,
+          "release_date": "2006-11-01"
+        },
+        {
+          "id": 72855,
+          "name": "Anpfiff: Der RTL Fussball-Manager",
+          "igdb_id": 81449,
+          "release_date": null
+        },
+        {
+          "id": 37386,
+          "name": "Household Budget Management",
+          "igdb_id": 42197,
+          "release_date": null
+        },
+        {
+          "id": 37857,
+          "name": "Mimana Iyar Chronicle: First Edition",
+          "igdb_id": 42711,
+          "release_date": "2010-04-30"
+        },
+        {
+          "id": 38804,
+          "name": "Player Manager 98/99",
+          "igdb_id": 43765,
+          "release_date": "1998-12-31"
+        },
+        {
+          "id": 70871,
+          "name": "Graeme Souness Soccer Manager",
+          "igdb_id": 79084,
+          "release_date": null
+        },
+        {
+          "id": 71950,
+          "name": "Euro Club Manager 2005-2006",
+          "igdb_id": 80316,
+          "release_date": null
+        },
+        {
+          "id": 43913,
+          "name": "Dream Management",
+          "igdb_id": 49608,
+          "release_date": "2003-04-20"
+        },
+        {
+          "id": 43670,
+          "name": "Total Soccer Manager",
+          "igdb_id": 49343,
+          "release_date": "2001-06-16"
+        },
+        {
+          "id": 44584,
+          "name": "Cockpit Manager '14",
+          "igdb_id": 50330,
+          "release_date": "2014-05-11"
+        },
+        {
+          "id": 46909,
+          "name": "Dungeon Manager ZV - Collection",
+          "igdb_id": 52936,
+          "release_date": null
+        },
+        {
+          "id": 21024,
+          "name": "TV Manager 2: Premium version",
+          "igdb_id": 24733,
+          "release_date": null
+        },
+        {
+          "id": 21696,
+          "name": "Ice Hockey Club Manager 2005",
+          "igdb_id": 25433,
+          "release_date": null
+        },
+        {
+          "id": 84895,
+          "name": "Cycling Manager",
+          "igdb_id": 94619,
+          "release_date": "2001-06-01"
+        },
+        {
+          "id": 18996,
+          "name": "LMA Manager 2001",
+          "igdb_id": 22543,
+          "release_date": null
+        },
+        {
+          "id": 18999,
+          "name": "Manchester United Manager 2005",
+          "igdb_id": 22546,
+          "release_date": null
+        },
+        {
+          "id": 17258,
+          "name": "FIFA Manager 06",
+          "igdb_id": 20675,
+          "release_date": "2005-10-07"
+        },
+        {
+          "id": 11849,
+          "name": "500 c.c MotoManager",
+          "igdb_id": 14196,
+          "release_date": "1991-12-31"
+        },
+        {
+          "id": 12077,
+          "name": "Premier Manager 3",
+          "igdb_id": 14426,
+          "release_date": "1994-12-31"
+        },
+        {
+          "id": 12261,
+          "name": "Championship Manager Italia",
+          "igdb_id": 14616,
+          "release_date": "1993-12-31"
+        },
+        {
+          "id": 12485,
+          "name": "Championship Manager 2007",
+          "igdb_id": 14887,
+          "release_date": "2006-10-13"
+        },
+        {
+          "id": 12486,
+          "name": "Championship Manager 2010",
+          "igdb_id": 14888,
+          "release_date": "2009-09-11"
+        },
+        {
+          "id": 12455,
+          "name": "Championship Manager 2008",
+          "igdb_id": 14840,
+          "release_date": "2007-10-05"
+        },
+        {
+          "id": 12487,
+          "name": "Championship Manager 2011",
+          "igdb_id": 14889,
+          "release_date": "2010-10-14"
+        },
+        {
+          "id": 12552,
+          "name": "Legend of Mana",
+          "igdb_id": 14986,
+          "release_date": "1999-07-15"
+        },
+        {
+          "id": 12554,
+          "name": "Children of Mana",
+          "igdb_id": 14988,
+          "release_date": "2006-03-02"
+        },
+        {
+          "id": 12555,
+          "name": "Dawn of Mana",
+          "igdb_id": 14989,
+          "release_date": "2006-12-21"
+        },
+        {
+          "id": 12556,
+          "name": "Heroes of Mana",
+          "igdb_id": 14990,
+          "release_date": "2007-03-08"
+        },
+        {
+          "id": 12735,
+          "name": "Football Manager 2",
+          "igdb_id": 15222,
+          "release_date": "1990-12-31"
+        },
+        {
+          "id": 12721,
+          "name": "Championship Manager",
+          "igdb_id": 15208,
+          "release_date": "1992-12-31"
+        },
+        {
+          "id": 14381,
+          "name": "Buzz Aldrin's Space Program Manager",
+          "igdb_id": 17557,
+          "release_date": "2014-09-05"
+        },
+        {
+          "id": 14602,
+          "name": "Pro Cycling Manager 2015",
+          "igdb_id": 17837,
+          "release_date": "2015-05-04"
+        },
+        {
+          "id": 14660,
+          "name": "Club Manager 2015",
+          "igdb_id": 17909,
+          "release_date": "2014-11-04"
+        },
+        {
+          "id": 15562,
+          "name": "Championship Manager: Season 99/00",
+          "igdb_id": 18872,
+          "release_date": "1999-12-31"
+        },
+        {
+          "id": 15959,
+          "name": "Motorsport Manager",
+          "igdb_id": 19293,
+          "release_date": "2014-08-15"
+        },
+        {
+          "id": 16264,
+          "name": "Atelier Iris: Eternal Mana",
+          "igdb_id": 19634,
+          "release_date": "2004-05-27"
+        },
+        {
+          "id": 16410,
+          "name": "Pro Cycling Manager 2016",
+          "igdb_id": 19787,
+          "release_date": "2016-06-16"
+        },
+        {
+          "id": 16484,
+          "name": "Adventures of Mana",
+          "igdb_id": 19865,
+          "release_date": "2016-02-03"
+        },
+        {
+          "id": 16494,
+          "name": "Football Manager 2016",
+          "igdb_id": 19875,
+          "release_date": "2015-11-13"
+        },
+        {
+          "id": 17149,
+          "name": "LMA Manager 2007",
+          "igdb_id": 20561,
+          "release_date": "2006-09-22"
+        },
+        {
+          "id": 17259,
+          "name": "FIFA Manager 07",
+          "igdb_id": 20676,
+          "release_date": "2006-12-31"
+        },
+        {
+          "id": 17261,
+          "name": "FIFA Manager 08",
+          "igdb_id": 20678,
+          "release_date": "2007-11-02"
+        },
+        {
+          "id": 17262,
+          "name": "FIFA Manager 09",
+          "igdb_id": 20679,
+          "release_date": "2008-10-30"
+        },
+        {
+          "id": 17263,
+          "name": "FIFA Manager 10",
+          "igdb_id": 20680,
+          "release_date": "2009-10-30"
+        },
+        {
+          "id": 17265,
+          "name": "FIFA Manager 11",
+          "igdb_id": 20682,
+          "release_date": "2010-10-28"
+        },
+        {
+          "id": 17267,
+          "name": "FIFA Manager 12",
+          "igdb_id": 20684,
+          "release_date": "2011-10-21"
+        },
+        {
+          "id": 17269,
+          "name": "FIFA Manager 13",
+          "igdb_id": 20686,
+          "release_date": "2012-10-25"
+        },
+        {
+          "id": 17270,
+          "name": "FIFA Manager 14",
+          "igdb_id": 20687,
+          "release_date": "2013-10-24"
+        },
+        {
+          "id": 20641,
+          "name": "Mana Khemia 2: Fall of Alchemy",
+          "igdb_id": 24320,
+          "release_date": "2008-05-29"
+        },
+        {
+          "id": 17560,
+          "name": "Mana Khemia: Alchemists of Al-Revis",
+          "igdb_id": 20996,
+          "release_date": "2007-06-21"
+        },
+        {
+          "id": 17795,
+          "name": "Football Manager Live",
+          "igdb_id": 21249,
+          "release_date": "2008-11-04"
+        },
+        {
+          "id": 18442,
+          "name": "Pro Cycling Manager 2008",
+          "igdb_id": 21940,
+          "release_date": "2008-06-27"
+        },
+        {
+          "id": 18551,
+          "name": "Rock Manager",
+          "igdb_id": 22055,
+          "release_date": "2001-11-26"
+        },
+        {
+          "id": 18772,
+          "name": "LMA Manager 2005",
+          "igdb_id": 22299,
+          "release_date": "2004-11-22"
+        },
+        {
+          "id": 18994,
+          "name": "LMA Manager",
+          "igdb_id": 22541,
+          "release_date": "1999-09-15"
+        },
+        {
+          "id": 18995,
+          "name": "LMA Manager 2002",
+          "igdb_id": 22542,
+          "release_date": "2001-11-02"
+        },
+        {
+          "id": 18997,
+          "name": "LMA Manager 2003",
+          "igdb_id": 22544,
+          "release_date": "2002-11-15"
+        },
+        {
+          "id": 18998,
+          "name": "LMA Manager 2004",
+          "igdb_id": 22545,
+          "release_date": "2004-04-12"
+        },
+        {
+          "id": 19000,
+          "name": "LMA Professional Manager 2005",
+          "igdb_id": 22547,
+          "release_date": null
+        },
+        {
+          "id": 19001,
+          "name": "LMA Manager 2006",
+          "igdb_id": 22548,
+          "release_date": "2005-12-18"
+        },
+        {
+          "id": 19258,
+          "name": "Championship Manager 17",
+          "igdb_id": 22814,
+          "release_date": "2016-08-02"
+        },
+        {
+          "id": 57067,
+          "name": "Lifestyle Manager",
+          "igdb_id": 64007,
+          "release_date": null
+        },
+        {
+          "id": 19490,
+          "name": "Football Manager",
+          "igdb_id": 23064,
+          "release_date": "1982-01-01"
+        },
+        {
+          "id": 19561,
+          "name": "Take Command: 2nd Manassas",
+          "igdb_id": 23144,
+          "release_date": "2016-10-28"
+        },
+        {
+          "id": 20515,
+          "name": "Championship Manager: Season 00/01",
+          "igdb_id": 24170,
+          "release_date": "2000-10-27"
+        },
+        {
+          "id": 20630,
+          "name": "Mana Khemia: Student Alliance",
+          "igdb_id": 24307,
+          "release_date": "2008-09-25"
+        },
+        {
+          "id": 20669,
+          "name": "Franchise Hockey Manager 2",
+          "igdb_id": 24350,
+          "release_date": "2015-09-28"
+        },
+        {
+          "id": 20790,
+          "name": "Football Manager 2017",
+          "igdb_id": 24481,
+          "release_date": "2016-11-04"
+        },
+        {
+          "id": 21716,
+          "name": "Tactical Manager 2006",
+          "igdb_id": 25454,
+          "release_date": "2006-07-31"
+        },
+        {
+          "id": 21901,
+          "name": "Franchise Hockey Manager 3",
+          "igdb_id": 25655,
+          "release_date": "2016-10-31"
+        },
+        {
+          "id": 22046,
+          "name": "Industry Manager: Future Technologies",
+          "igdb_id": 25808,
+          "release_date": "2016-10-06"
+        },
+        {
+          "id": 22716,
+          "name": "Epic Manager - Create Your Own Adventuring Agency",
+          "igdb_id": 26553,
+          "release_date": "2016-12-12"
+        },
+        {
+          "id": 63606,
+          "name": "Slizer Battle Management System",
+          "igdb_id": 71188,
+          "release_date": "2018-05-07"
+        },
+        {
+          "id": 23351,
+          "name": "Premier Manager 2003-04",
+          "igdb_id": 27250,
+          "release_date": "2003-11-22"
+        },
+        {
+          "id": 50260,
+          "name": "Fiz: The Brewery Management Game",
+          "igdb_id": 56789,
+          "release_date": "2013-12-12"
+        },
+        {
+          "id": 51258,
+          "name": "Happy Manager",
+          "igdb_id": 57838,
+          "release_date": "2018-12-31"
+        },
+        {
+          "id": 51744,
+          "name": "AutoRaid RPG manager",
+          "igdb_id": 58347,
+          "release_date": null
+        },
+        {
+          "id": 52664,
+          "name": "iGP Manager",
+          "igdb_id": 59353,
+          "release_date": "2011-12-11"
+        },
+        {
+          "id": 53966,
+          "name": "Quidditch Manager",
+          "igdb_id": 60730,
+          "release_date": null
+        },
+        {
+          "id": 53826,
+          "name": "Office Management 101",
+          "igdb_id": 60585,
+          "release_date": "2022-03-16"
+        },
+        {
+          "id": 55226,
+          "name": "The F.A. Premier League Manager 2002",
+          "igdb_id": 62041,
+          "release_date": "2001-09-14"
+        },
+        {
+          "id": 55677,
+          "name": "Football Manager Handheld 2014",
+          "igdb_id": 62519,
+          "release_date": "2013-12-31"
+        },
+        {
+          "id": 56448,
+          "name": "Franchise Hockey Manager 2013",
+          "igdb_id": 63352,
+          "release_date": "2013-09-03"
+        },
+        {
+          "id": 57909,
+          "name": "Championship Manager 2009",
+          "igdb_id": 64883,
+          "release_date": null
+        },
+        {
+          "id": 59401,
+          "name": "The F.A. Premier League Football Manager 2001",
+          "igdb_id": 66505,
+          "release_date": "2000-12-31"
+        },
+        {
+          "id": 59827,
+          "name": "This is Football Management",
+          "igdb_id": 66974,
+          "release_date": null
+        },
+        {
+          "id": 60100,
+          "name": "Pro Cycling Manager 2010",
+          "igdb_id": 67311,
+          "release_date": "2010-06-25"
+        },
+        {
+          "id": 60112,
+          "name": "Honki de Manabu LEC de Goukakuru: Hishou Boki 3-Kyuu Portable",
+          "igdb_id": 67324,
+          "release_date": null
+        },
+        {
+          "id": 60113,
+          "name": "Honki de Manabu LEC de Goukakuru: Takuchi Tatemono Torihiki Shuninsha Portable",
+          "igdb_id": 67325,
+          "release_date": null
+        },
+        {
+          "id": 60580,
+          "name": "Pro Rugby Manager 2",
+          "igdb_id": 67949,
+          "release_date": null
+        },
+        {
+          "id": 60621,
+          "name": "Horse Racing Manager 2",
+          "igdb_id": 67994,
+          "release_date": "2006-12-31"
+        },
+        {
+          "id": 60807,
+          "name": "Pro Cycling Manager 2009",
+          "igdb_id": 68219,
+          "release_date": "2009-07-10"
+        },
+        {
+          "id": 60808,
+          "name": "Pro Cycling Manager 2007",
+          "igdb_id": 68220,
+          "release_date": "2007-07-06"
+        },
+        {
+          "id": 60809,
+          "name": "Cycling Manager 2",
+          "igdb_id": 68221,
+          "release_date": "2002-06-21"
+        },
+        {
+          "id": 60810,
+          "name": "Pro Cycling Manager",
+          "igdb_id": 68222,
+          "release_date": "2005-06-23"
+        },
+        {
+          "id": 60888,
+          "name": "Playboy Manager",
+          "igdb_id": 68309,
+          "release_date": null
+        },
+        {
+          "id": 61304,
+          "name": "Championship Manager 2: Scandinavian Leagues",
+          "igdb_id": 68737,
+          "release_date": null
+        },
+        {
+          "id": 61941,
+          "name": "Franchise Hockey Manager 4",
+          "igdb_id": 69422,
+          "release_date": "2017-10-06"
+        },
+        {
+          "id": 62479,
+          "name": "Klomanager: Spül mir das Lied vom Kot",
+          "igdb_id": 69979,
+          "release_date": null
+        },
+        {
+          "id": 62569,
+          "name": "Pax Romana: Romulus",
+          "igdb_id": 70076,
+          "release_date": "2019-05-05"
+        },
+        {
+          "id": 62700,
+          "name": "Tactical Manager 2",
+          "igdb_id": 70211,
+          "release_date": "1995-12-31"
+        },
+        {
+          "id": 62746,
+          "name": "Championship Manager: Season 96/97",
+          "igdb_id": 70258,
+          "release_date": null
+        },
+        {
+          "id": 62933,
+          "name": "NHL Eastside Hockey Manager 2007",
+          "igdb_id": 70454,
+          "release_date": null
+        },
+        {
+          "id": 63159,
+          "name": "PES Club Manager",
+          "igdb_id": 70709,
+          "release_date": "2015-06-03"
+        },
+        {
+          "id": 63370,
+          "name": "Universal Boxing Manager",
+          "igdb_id": 70942,
+          "release_date": "2004-12-31"
+        },
+        {
+          "id": 63379,
+          "name": "Casino Inc: The Management",
+          "igdb_id": 70951,
+          "release_date": "2003-03-26"
+        },
+        {
+          "id": 63402,
+          "name": "The F.A. Premier League Football Manager 2000",
+          "igdb_id": 70974,
+          "release_date": "1999-10-29"
+        },
+        {
+          "id": 63788,
+          "name": "Championship Manager: Season 1999/2000",
+          "igdb_id": 71378,
+          "release_date": null
+        },
+        {
+          "id": 63822,
+          "name": "Eastside Hockey Manager",
+          "igdb_id": 71414,
+          "release_date": null
+        },
+        {
+          "id": 63847,
+          "name": "Grand Prix Manager 2",
+          "igdb_id": 71439,
+          "release_date": "1996-12-31"
+        },
+        {
+          "id": 64202,
+          "name": "Ultimate Soccer Manager 98-99",
+          "igdb_id": 71826,
+          "release_date": "1999-12-31"
+        },
+        {
+          "id": 64346,
+          "name": "Mortadelo y Filemón: Mamelucos a la Romana",
+          "igdb_id": 71979,
+          "release_date": "2024-01-25"
+        },
+        {
+          "id": 64351,
+          "name": "Bundesliga Manager",
+          "igdb_id": 71985,
+          "release_date": "1989-12-31"
+        },
+        {
+          "id": 64655,
+          "name": "Bundesliga Manager Professional",
+          "igdb_id": 72301,
+          "release_date": "1991-12-31"
+        },
+        {
+          "id": 65872,
+          "name": "Premier Manager 2",
+          "igdb_id": 73617,
+          "release_date": "1993-01-01"
+        },
+        {
+          "id": 66273,
+          "name": "NHL Eastside Hockey Manager",
+          "igdb_id": 74037,
+          "release_date": null
+        },
+        {
+          "id": 66507,
+          "name": "Station Manager",
+          "igdb_id": 74280,
+          "release_date": "2016-06-09"
+        },
+        {
+          "id": 67298,
+          "name": "Pro Farm Manager",
+          "igdb_id": 75108,
+          "release_date": "2017-11-20"
+        },
+        {
+          "id": 68129,
+          "name": "Playfield.Earth / Urban Management",
+          "igdb_id": 75989,
+          "release_date": null
+        },
+        {
+          "id": 69201,
+          "name": "ManaRocks",
+          "igdb_id": 77163,
+          "release_date": "2020-05-29"
+        },
+        {
+          "id": 69569,
+          "name": "Online Soccer Manager",
+          "igdb_id": 77576,
+          "release_date": "2010-11-06"
+        },
+        {
+          "id": 69921,
+          "name": "Grand Prix Manager",
+          "igdb_id": 78019,
+          "release_date": null
+        },
+        {
+          "id": 70741,
+          "name": "Band Manager",
+          "igdb_id": 78934,
+          "release_date": null
+        },
+        {
+          "id": 73641,
+          "name": "Music Band Manager",
+          "igdb_id": 82312,
+          "release_date": "2017-12-07"
+        },
+        {
+          "id": 73975,
+          "name": "Motorsport Manager Mobile 2",
+          "igdb_id": 82726,
+          "release_date": "2017-07-13"
+        },
+        {
+          "id": 74312,
+          "name": "Our Baseball Club Manager Girl Was Framed in a Bunk Bed so I Banged Her",
+          "igdb_id": 83220,
+          "release_date": null
+        },
+        {
+          "id": 74771,
+          "name": "1984: A Game of Government Management",
+          "igdb_id": 83716,
+          "release_date": "1984-09-30"
+        },
+        {
+          "id": 75600,
+          "name": "My Health Coach: Weight Management",
+          "igdb_id": 84628,
+          "release_date": "2008-06-20"
+        },
+        {
+          "id": 77035,
+          "name": "Tactical Manager",
+          "igdb_id": 86220,
+          "release_date": "1994-12-31"
+        },
+        {
+          "id": 77697,
+          "name": "My Hospital: Build and Manage",
+          "igdb_id": 86956,
+          "release_date": "2017-01-18"
+        },
+        {
+          "id": 80000,
+          "name": "Global Soccer Manager 2018",
+          "igdb_id": 89413,
+          "release_date": "2018-04-06"
+        },
+        {
+          "id": 84920,
+          "name": "Cycling Manager 3",
+          "igdb_id": 94644,
+          "release_date": "2003-06-16"
+        },
+        {
+          "id": 83075,
+          "name": "F.1 Manager",
+          "igdb_id": 92689,
+          "release_date": "1990-12-31"
+        },
+        {
+          "id": 83522,
+          "name": "Championship Manager 3",
+          "igdb_id": 93149,
+          "release_date": "1999-12-31"
+        },
+        {
+          "id": 83622,
+          "name": "Super League Manager",
+          "igdb_id": 93251,
+          "release_date": "1995-12-31"
+        },
+        {
+          "id": 84024,
+          "name": "Winions: Mana Champions",
+          "igdb_id": 93686,
+          "release_date": "2018-04-12"
+        },
+        {
+          "id": 84608,
+          "name": "Total Football Management",
+          "igdb_id": 94320,
+          "release_date": "1996-12-31"
+        },
+        {
+          "id": 84672,
+          "name": "Pro Rugby Manager",
+          "igdb_id": 94388,
+          "release_date": "2004-03-26"
+        },
+        {
+          "id": 84713,
+          "name": "Player Manager 2",
+          "igdb_id": 94430,
+          "release_date": "1995-12-31"
+        },
+        {
+          "id": 84790,
+          "name": "Pro Cycling Manager 2006",
+          "igdb_id": 94512,
+          "release_date": "2006-06-16"
+        },
+        {
+          "id": 85450,
+          "name": "Idol Manager",
+          "igdb_id": 95215,
+          "release_date": "2021-07-27"
+        },
+        {
+          "id": 85650,
+          "name": "Premier Manager 2002-03",
+          "igdb_id": 95428,
+          "release_date": "2002-11-03"
+        },
+        {
+          "id": 89607,
+          "name": "Tennis Elbow Manager 2",
+          "igdb_id": 99576,
+          "release_date": "2019-07-07"
+        },
+        {
+          "id": 90449,
+          "name": "Present for Manager",
+          "igdb_id": 100475,
+          "release_date": "2019-01-22"
+        },
+        {
+          "id": 90805,
+          "name": "Wild Park Manager",
+          "igdb_id": 100848,
+          "release_date": "2017-07-13"
+        },
+        {
+          "id": 92010,
+          "name": "Megaplex Manager",
+          "igdb_id": 102116,
+          "release_date": null
+        },
+        {
+          "id": 92911,
+          "name": "Pro Cycling Manager 2018",
+          "igdb_id": 103062,
+          "release_date": "2018-06-28"
+        },
+        {
+          "id": 94747,
+          "name": "Anstoss Premier Manager",
+          "igdb_id": 104973,
+          "release_date": "2000-03-31"
+        },
+        {
+          "id": 95501,
+          "name": "Motorsport Manager Mobile 3",
+          "igdb_id": 105772,
+          "release_date": "2018-07-17"
+        },
+        {
+          "id": 96226,
+          "name": "International Basketball Manager",
+          "igdb_id": 106559,
+          "release_date": "2021-01-28"
+        },
+        {
+          "id": 96866,
+          "name": "Football Manager 2019 Touch",
+          "igdb_id": 107242,
+          "release_date": "2018-11-01"
+        },
+        {
+          "id": 99139,
+          "name": "New Star Manager",
+          "igdb_id": 109634,
+          "release_date": "2018-09-25"
+        },
+        {
+          "id": 99906,
+          "name": "Franchise Hockey Manager 5",
+          "igdb_id": 110453,
+          "release_date": "2018-10-05"
+        },
+        {
+          "id": 99975,
+          "name": "Cattle Call: Hollywood Talent Manager",
+          "igdb_id": 110525,
+          "release_date": "2018-11-22"
+        },
+        {
+          "id": 100914,
+          "name": "Evil Bank Manager",
+          "igdb_id": 111513,
+          "release_date": "2018-12-08"
+        },
+        {
+          "id": 100971,
+          "name": "Pro Basketball Manager 2019",
+          "igdb_id": 111574,
+          "release_date": "2018-11-21"
+        },
+        {
+          "id": 104685,
+          "name": "Pax Romana",
+          "igdb_id": 115512,
+          "release_date": "2003-11-06"
+        },
+        {
+          "id": 105074,
+          "name": "Motorsport Manager for Nintendo Switch",
+          "igdb_id": 115934,
+          "release_date": "2019-03-14"
+        },
+        {
+          "id": 105220,
+          "name": "Abyss Manager",
+          "igdb_id": 116089,
+          "release_date": "2019-11-03"
+        },
+        {
+          "id": 105554,
+          "name": "Airlines Manager",
+          "igdb_id": 116437,
+          "release_date": "2014-05-15"
+        },
+        {
+          "id": 105936,
+          "name": "Global Soccer Manager 2019",
+          "igdb_id": 116870,
+          "release_date": "2019-05-31"
+        },
+        {
+          "id": 106094,
+          "name": "Total Esports Action Manager",
+          "igdb_id": 117036,
+          "release_date": "2019-04-02"
+        },
+        {
+          "id": 106324,
+          "name": "Motorsport Manager Racing",
+          "igdb_id": 117282,
+          "release_date": "2020-03-03"
+        },
+        {
+          "id": 106635,
+          "name": "Open Wheel Manager",
+          "igdb_id": 117611,
+          "release_date": "2019-09-20"
+        },
+        {
+          "id": 107317,
+          "name": "Easter Clicker: Idle Manager",
+          "igdb_id": 118339,
+          "release_date": "2019-05-21"
+        },
+        {
+          "id": 107421,
+          "name": "Mind Your Manas",
+          "igdb_id": 118447,
+          "release_date": null
+        },
+        {
+          "id": 107854,
+          "name": "Championship Manager 2010 Express",
+          "igdb_id": 118918,
+          "release_date": "2010-07-14"
+        },
+        {
+          "id": 107962,
+          "name": "Pro Cycling Manager 2019",
+          "igdb_id": 119029,
+          "release_date": "2019-06-27"
+        },
+        {
+          "id": 108286,
+          "name": "Trials of Mana",
+          "igdb_id": 119391,
+          "release_date": "2020-04-24"
+        },
+        {
+          "id": 109201,
+          "name": "AOS Manager",
+          "igdb_id": 120367,
+          "release_date": null
+        },
+        {
+          "id": 110508,
+          "name": "Fish Simulator: Aquarium Manager",
+          "igdb_id": 121785,
+          "release_date": "2020-02-10"
+        },
+        {
+          "id": 110794,
+          "name": "Football Manager 2020",
+          "igdb_id": 122080,
+          "release_date": "2019-11-19"
+        },
+        {
+          "id": 110870,
+          "name": "Football Manager 2020 Touch",
+          "igdb_id": 122160,
+          "release_date": "2019-11-18"
+        },
+        {
+          "id": 111488,
+          "name": "Franchise Hockey Manager 6",
+          "igdb_id": 122838,
+          "release_date": "2019-10-11"
+        },
+        {
+          "id": 111975,
+          "name": "Soccer Manager 2020",
+          "igdb_id": 123351,
+          "release_date": "2019-08-08"
+        },
+        {
+          "id": 112503,
+          "name": "Galatic Management",
+          "igdb_id": 123898,
+          "release_date": "2020-01-03"
+        },
+        {
+          "id": 113359,
+          "name": "Offworld Trading Company: Almanac",
+          "igdb_id": 124802,
+          "release_date": "2016-04-28"
+        },
+        {
+          "id": 113766,
+          "name": "Magic: ManaStrike",
+          "igdb_id": 125270,
+          "release_date": "2020-01-29"
+        },
+        {
+          "id": 114705,
+          "name": "Blackout Rugby Manager",
+          "igdb_id": 126260,
+          "release_date": "2022-07-14"
+        },
+        {
+          "id": 115039,
+          "name": "Music Club Manager",
+          "igdb_id": 126616,
+          "release_date": null
+        },
+        {
+          "id": 115788,
+          "name": "Farm Manager 2020",
+          "igdb_id": 127430,
+          "release_date": null
+        },
+        {
+          "id": 116560,
+          "name": "Rugby League Team Manager 3",
+          "igdb_id": 128263,
+          "release_date": "2020-05-28"
+        },
+        {
+          "id": 117890,
+          "name": "Manaforge",
+          "igdb_id": 129730,
+          "release_date": null
+        },
+        {
+          "id": 118130,
+          "name": "Hockey Manager 20|20",
+          "igdb_id": 129979,
+          "release_date": "2020-01-31"
+        },
+        {
+          "id": 118599,
+          "name": "Bae Yong-joon to Manabu Kankokugo DS",
+          "igdb_id": 130480,
+          "release_date": "2009-09-19"
+        },
+        {
+          "id": 118653,
+          "name": "Minna no Romana 2",
+          "igdb_id": 130540,
+          "release_date": "1999-04-29"
+        },
+        {
+          "id": 118654,
+          "name": "Minna no Romana 3",
+          "igdb_id": 130541,
+          "release_date": "1999-04-29"
+        },
+        {
+          "id": 118672,
+          "name": "Minna no Romana 1",
+          "igdb_id": 130559,
+          "release_date": "1999-04-29"
+        },
+        {
+          "id": 119399,
+          "name": "Almanac of Girlswampwar Territory & The Girls Who Swim as Fertilizer Through the Warm Soil Cloaking the Roots of the Glorious Tree of Eugenics: Giving Birth to a Black Hole in a Walmart Parking Lot at 1am",
+          "igdb_id": 131413,
+          "release_date": "2018-10-24"
+        },
+        {
+          "id": 120195,
+          "name": "Space Station Manager",
+          "igdb_id": 132301,
+          "release_date": null
+        },
+        {
+          "id": 120229,
+          "name": "Pro Cycling Manager 2020",
+          "igdb_id": 132335,
+          "release_date": "2020-06-04"
+        },
+        {
+          "id": 120285,
+          "name": "Premier Manager 10",
+          "igdb_id": 132394,
+          "release_date": "2009-12-31"
+        },
+        {
+          "id": 120354,
+          "name": "Lammana: The Looe Island Mystery",
+          "igdb_id": 132466,
+          "release_date": null
+        },
+        {
+          "id": 120748,
+          "name": "Path of the Sramana",
+          "igdb_id": 132883,
+          "release_date": "2020-03-11"
+        },
+        {
+          "id": 120832,
+          "name": "ManaTech",
+          "igdb_id": 132970,
+          "release_date": "2020-03-26"
+        },
+        {
+          "id": 121072,
+          "name": "Shelter Manager",
+          "igdb_id": 133219,
+          "release_date": "2021-10-08"
+        },
+        {
+          "id": 122152,
+          "name": "Soccer Manager",
+          "igdb_id": 134421,
+          "release_date": "1987-12-31"
+        },
+        {
+          "id": 54985,
+          "name": "Sudoku of Mana",
+          "igdb_id": 61795,
+          "release_date": null
+        },
+        {
+          "id": 25499,
+          "name": "Greyhound Manager 2 Rebooted",
+          "igdb_id": 29606,
+          "release_date": "2017-02-09"
+        },
+        {
+          "id": 26776,
+          "name": "Sacred Almanac Traces of Greed",
+          "igdb_id": 30915,
+          "release_date": "2016-12-07"
+        },
+        {
+          "id": 27145,
+          "name": "Tennis Elbow Manager",
+          "igdb_id": 31291,
+          "release_date": "2009-02-19"
+        },
+        {
+          "id": 27787,
+          "name": "Club Manager 2017",
+          "igdb_id": 31957,
+          "release_date": "2017-03-24"
+        },
+        {
+          "id": 29794,
+          "name": "Store Manager: Cellular Edition",
+          "igdb_id": 34019,
+          "release_date": "2017-03-31"
+        },
+        {
+          "id": 29882,
+          "name": "Cyber Team Manager",
+          "igdb_id": 34108,
+          "release_date": "2016-01-18"
+        },
+        {
+          "id": 30323,
+          "name": "Car Mechanic Manager",
+          "igdb_id": 34569,
+          "release_date": "2015-09-23"
+        },
+        {
+          "id": 30084,
+          "name": "Pro Gamer Manager",
+          "igdb_id": 34320,
+          "release_date": "2016-04-28"
+        },
+        {
+          "id": 31050,
+          "name": "Rugby League Team Manager 2015",
+          "igdb_id": 35315,
+          "release_date": "2015-06-19"
+        },
+        {
+          "id": 31750,
+          "name": "Football Manager 2018: Limited Edition",
+          "igdb_id": 36035,
+          "release_date": "2017-11-09"
+        },
+        {
+          "id": 31494,
+          "name": "Hospital Manager",
+          "igdb_id": 35777,
+          "release_date": "2015-03-25"
+        },
+        {
+          "id": 31514,
+          "name": "Pro Basketball Manager 2016",
+          "igdb_id": 35797,
+          "release_date": "2016-01-14"
+        },
+        {
+          "id": 31538,
+          "name": "Trackday Manager",
+          "igdb_id": 35821,
+          "release_date": "2015-05-27"
+        },
+        {
+          "id": 32722,
+          "name": "Championship Manager 2",
+          "igdb_id": 37133,
+          "release_date": "1995-09-22"
+        },
+        {
+          "id": 32939,
+          "name": "Pro Cycling Manager 2017",
+          "igdb_id": 37385,
+          "release_date": "2017-06-15"
+        },
+        {
+          "id": 33891,
+          "name": "Football Manager Handheld 2009",
+          "igdb_id": 38447,
+          "release_date": "2008-12-14"
+        },
+        {
+          "id": 12834,
+          "name": "Player Manager",
+          "igdb_id": 15342,
+          "release_date": "1990-12-31"
+        },
+        {
+          "id": 36288,
+          "name": "Football Manager: World Cup Edition",
+          "igdb_id": 41003,
+          "release_date": null
+        },
+        {
+          "id": 36520,
+          "name": "Almana no Kiseki",
+          "igdb_id": 41255,
+          "release_date": "1987-08-11"
+        },
+        {
+          "id": 36848,
+          "name": "Football Manager 2019",
+          "igdb_id": 41621,
+          "release_date": "2018-11-02"
+        },
+        {
+          "id": 37769,
+          "name": "Kevin Keegan's Player Manager",
+          "igdb_id": 42618,
+          "release_date": "1993-02-01"
+        },
+        {
+          "id": 37871,
+          "name": "Football Manager Handheld 2011",
+          "igdb_id": 42726,
+          "release_date": "2011-01-06"
+        },
+        {
+          "id": 37884,
+          "name": "Mana Khemia 2: Fall of Alchemy Portable Plus",
+          "igdb_id": 42740,
+          "release_date": "2009-10-01"
+        },
+        {
+          "id": 37999,
+          "name": "Football Manager Handheld 2013",
+          "igdb_id": 42867,
+          "release_date": "2012-11-30"
+        },
+        {
+          "id": 38390,
+          "name": "Mana Khemia: Alchemists of Al-Revis - Premium Edition",
+          "igdb_id": 43308,
+          "release_date": "2008-03-31"
+        },
+        {
+          "id": 38450,
+          "name": "Premier Manager 09",
+          "igdb_id": 43372,
+          "release_date": "2008-09-15"
+        },
+        {
+          "id": 38700,
+          "name": "Alex Ferguson's Player Manager 2001",
+          "igdb_id": 43650,
+          "release_date": "2000-11-24"
+        },
+        {
+          "id": 38767,
+          "name": "Premier Manager 2000",
+          "igdb_id": 43725,
+          "release_date": "2000-03-31"
+        },
+        {
+          "id": 38824,
+          "name": "Championship Manager Quiz",
+          "igdb_id": 43786,
+          "release_date": null
+        },
+        {
+          "id": 71297,
+          "name": "The Manager",
+          "igdb_id": 79581,
+          "release_date": "1992-12-31"
+        },
+        {
+          "id": 71641,
+          "name": "FIFA Soccer Manager",
+          "igdb_id": 79955,
+          "release_date": "1997-12-31"
+        },
+        {
+          "id": 40156,
+          "name": "Air Management '96",
+          "igdb_id": 45431,
+          "release_date": "1996-03-22"
+        },
+        {
+          "id": 71824,
+          "name": "Mimana Iyar Chronicle",
+          "igdb_id": 80165,
+          "release_date": "2009-02-26"
+        },
+        {
+          "id": 71917,
+          "name": "Match Day Manager",
+          "igdb_id": 80273,
+          "release_date": null
+        },
+        {
+          "id": 71965,
+          "name": "NHL Eastside Hockey Manager 2005",
+          "igdb_id": 80334,
+          "release_date": null
+        },
+        {
+          "id": 40326,
+          "name": "Blue Almanac",
+          "igdb_id": 45645,
+          "release_date": "1991-07-21"
+        },
+        {
+          "id": 40379,
+          "name": "Premier Manager 97",
+          "igdb_id": 45706,
+          "release_date": "1996-12-31"
+        },
+        {
+          "id": 41054,
+          "name": "F1 Manager",
+          "igdb_id": 46448,
+          "release_date": "2000-11-13"
+        },
+        {
+          "id": 41564,
+          "name": "Ultimate Soccer Manager '98",
+          "igdb_id": 47011,
+          "release_date": "1999-12-31"
+        },
+        {
+          "id": 66264,
+          "name": "Tracksuit Manager",
+          "igdb_id": 74027,
+          "release_date": "1989-12-31"
+        },
+        {
+          "id": 47842,
+          "name": "European Football Manager",
+          "igdb_id": 54008,
+          "release_date": null
+        },
+        {
+          "id": 58430,
+          "name": "Premier Manager 2012",
+          "igdb_id": 65430,
+          "release_date": "2011-11-09"
+        },
+        {
+          "id": 23614,
+          "name": "Horse Racing Manager",
+          "igdb_id": 27539,
+          "release_date": null
+        },
+        {
+          "id": 43097,
+          "name": "Famicom Top Management",
+          "igdb_id": 48712,
+          "release_date": "1990-12-12"
+        },
+        {
+          "id": 43462,
+          "name": "Aa Harimanada",
+          "igdb_id": 49121,
+          "release_date": "1993-07-02"
+        },
+        {
+          "id": 43680,
+          "name": "Premier Manager 2005-2006",
+          "igdb_id": 49354,
+          "release_date": "2005-09-11"
+        },
+        {
+          "id": 43681,
+          "name": "Premier Manager 2004-2005",
+          "igdb_id": 49355,
+          "release_date": "2004-11-05"
+        },
+        {
+          "id": 44313,
+          "name": "Player Manager 2001",
+          "igdb_id": 50025,
+          "release_date": "2001-10-21"
+        },
+        {
+          "id": 44407,
+          "name": "Championship Manager: Season 97/98",
+          "igdb_id": 50125,
+          "release_date": "1997-12-31"
+        },
+        {
+          "id": 44942,
+          "name": "Mana Spark",
+          "igdb_id": 50745,
+          "release_date": "2018-09-27"
+        },
+        {
+          "id": 51770,
+          "name": "Football Manager Mobile 2016",
+          "igdb_id": 58378,
+          "release_date": "2015-12-31"
+        },
+        {
+          "id": 45787,
+          "name": "The Book of Unwritten Tales 2: Almanac Edition",
+          "igdb_id": 51703,
+          "release_date": null
+        },
+        {
+          "id": 46276,
+          "name": "Football Manager Handheld 2010",
+          "igdb_id": 52218,
+          "release_date": "2009-10-30"
+        },
+        {
+          "id": 46512,
+          "name": "Camping Manager 2012",
+          "igdb_id": 52486,
+          "release_date": null
+        },
+        {
+          "id": 47053,
+          "name": "Worldwide Boxing Manager",
+          "igdb_id": 53106,
+          "release_date": null
+        },
+        {
+          "id": 48863,
+          "name": "Farm Manager 2018",
+          "igdb_id": 55308,
+          "release_date": "2018-04-06"
+        },
+        {
+          "id": 49030,
+          "name": "Great eSports Manager",
+          "igdb_id": 55485,
+          "release_date": "2017-08-16"
+        },
+        {
+          "id": 51344,
+          "name": "Ministry of Sound: Club Manager",
+          "igdb_id": 57933,
+          "release_date": null
+        },
+        {
+          "id": 72607,
+          "name": "Soccer Manager 2018",
+          "igdb_id": 81102,
+          "release_date": "2017-12-22"
+        },
+        {
+          "id": 49126,
+          "name": "Pro Gamer Manager 2",
+          "igdb_id": 55581,
+          "release_date": "2018-12-31"
+        },
+        {
+          "id": 50080,
+          "name": "Ultimate Soccer Manager 2",
+          "igdb_id": 56597,
+          "release_date": "1996-12-31"
+        },
+        {
+          "id": 54408,
+          "name": "Seiken Densetsu: Circle of Mana",
+          "igdb_id": 61192,
+          "release_date": null
+        },
+        {
+          "id": 72652,
+          "name": "ESport Manager",
+          "igdb_id": 81150,
+          "release_date": "2018-06-18"
+        },
+        {
+          "id": 117126,
+          "name": "Gladiator Guild Manager",
+          "igdb_id": 128930,
+          "release_date": "2024-06-22"
+        },
+        {
+          "id": 68274,
+          "name": "World Championship Boxing Manager",
+          "igdb_id": 76142,
+          "release_date": "1990-01-01"
+        },
+        {
+          "id": 4104,
+          "name": "Total Club Manager 2004",
+          "igdb_id": 6207,
+          "release_date": "2003-11-21"
+        },
+        {
+          "id": 12265,
+          "name": "Club Football: The Manager",
+          "igdb_id": 14620,
+          "release_date": "1994-12-31"
+        },
+        {
+          "id": 14248,
+          "name": "Eastside Hockey Manager",
+          "igdb_id": 17396,
+          "release_date": "2015-02-04"
+        },
+        {
+          "id": 17509,
+          "name": "Football Manager Classic 2014",
+          "igdb_id": 20943,
+          "release_date": "2014-04-11"
+        },
+        {
+          "id": 24576,
+          "name": "Global Soccer Manager 2017",
+          "igdb_id": 28646,
+          "release_date": "2017-05-01"
+        },
+        {
+          "id": 38788,
+          "name": "Player Manager 2000",
+          "igdb_id": 43748,
+          "release_date": "2000-07-20"
+        },
+        {
+          "id": 123288,
+          "name": "No Cortarás a tu Hermana con el Filo de Esta Espada",
+          "igdb_id": 135690,
+          "release_date": "2018-05-06"
+        },
+        {
+          "id": 123865,
+          "name": "Premier Manager 2006-07",
+          "igdb_id": 136304,
+          "release_date": "2006-01-01"
+        },
+        {
+          "id": 124483,
+          "name": "Sven-Göran Eriksson's World Manager",
+          "igdb_id": 136991,
+          "release_date": null
+        },
+        {
+          "id": 63972,
+          "name": "Cycling Manager 4",
+          "igdb_id": 71573,
+          "release_date": "2004-06-25"
+        },
+        {
+          "id": 125981,
+          "name": "Toilet Management Simulator",
+          "igdb_id": 138586,
+          "release_date": "2020-07-27"
+        },
+        {
+          "id": 126420,
+          "name": "Football Manager 2021",
+          "igdb_id": 139077,
+          "release_date": "2020-11-23"
+        },
+        {
+          "id": 126583,
+          "name": "Football Manager 2021 Touch",
+          "igdb_id": 139257,
+          "release_date": "2020-12-01"
+        },
+        {
+          "id": 58615,
+          "name": "Wrestling Manager",
+          "igdb_id": 65625,
+          "release_date": null
+        },
+        {
+          "id": 126770,
+          "name": "Farm Manager 2021",
+          "igdb_id": 139459,
+          "release_date": "2021-04-07"
+        },
+        {
+          "id": 127249,
+          "name": "Football Manager 2021: Limited Edition",
+          "igdb_id": 139962,
+          "release_date": "2020-11-23"
+        },
+        {
+          "id": 19079,
+          "name": "Football Manager Handheld",
+          "igdb_id": 22629,
+          "release_date": "2005-10-21"
+        },
+        {
+          "id": 63973,
+          "name": "Ultimate Soccer Manager",
+          "igdb_id": 71574,
+          "release_date": null
+        },
+        {
+          "id": 68473,
+          "name": "Football Manager 2018 Touch",
+          "igdb_id": 76356,
+          "release_date": "2017-11-09"
+        },
+        {
+          "id": 69000,
+          "name": "Football Manager Mobile 2018",
+          "igdb_id": 76927,
+          "release_date": "2017-11-09"
+        },
+        {
+          "id": 28318,
+          "name": "Football Manager Touch 2017",
+          "igdb_id": 32494,
+          "release_date": "2016-11-03"
+        },
+        {
+          "id": 72247,
+          "name": "FIFA Manager 07: Extra Time",
+          "igdb_id": 80678,
+          "release_date": "2007-02-23"
+        },
+        {
+          "id": 39040,
+          "name": "Premier Manager 64",
+          "igdb_id": 44034,
+          "release_date": "1999-09-01"
+        },
+        {
+          "id": 23933,
+          "name": "Collection of Mana",
+          "igdb_id": 27916,
+          "release_date": "2017-06-01"
+        },
+        {
+          "id": 47276,
+          "name": "Motorsport Manager - GT Series",
+          "igdb_id": 53365,
+          "release_date": "2017-02-23"
+        },
+        {
+          "id": 13409,
+          "name": "World Basketball Manager 2010",
+          "igdb_id": 16154,
+          "release_date": "2010-03-03"
+        },
+        {
+          "id": 55261,
+          "name": "Seiken Densetsu: Rise of Mana",
+          "igdb_id": 62078,
+          "release_date": "2014-03-06"
+        },
+        {
+          "id": 13683,
+          "name": "Dysfunctional Systems: Learning to Manage Chaos",
+          "igdb_id": 16647,
+          "release_date": "2013-04-04"
+        },
+        {
+          "id": 15560,
+          "name": "Championship Manager 4",
+          "igdb_id": 18870,
+          "release_date": "2003-03-28"
+        },
+        {
+          "id": 2443,
+          "name": "Premier Manager",
+          "igdb_id": 4483,
+          "release_date": "1992-12-31"
+        },
+        {
+          "id": 2603,
+          "name": "Pro Evolution Soccer Management",
+          "igdb_id": 4646,
+          "release_date": "2006-03-24"
+        },
+        {
+          "id": 9644,
+          "name": "The Basket Manager",
+          "igdb_id": 11943,
+          "release_date": "1990-12-31"
+        },
+        {
+          "id": 3687,
+          "name": "Championship Manager: Season 02/03",
+          "igdb_id": 5770,
+          "release_date": "2002-12-06"
+        },
+        {
+          "id": 3688,
+          "name": "Championship Manager 2006",
+          "igdb_id": 5771,
+          "release_date": "2006-03-31"
+        },
+        {
+          "id": 3686,
+          "name": "Championship Manager: Season 01/02",
+          "igdb_id": 5769,
+          "release_date": "2001-10-12"
+        },
+        {
+          "id": 3690,
+          "name": "Championship Manager 5",
+          "igdb_id": 5773,
+          "release_date": "2005-03-18"
+        },
+        {
+          "id": 4108,
+          "name": "Total Club Manager 2003",
+          "igdb_id": 6211,
+          "release_date": "2002-11-27"
+        },
+        {
+          "id": 4107,
+          "name": "Total Club Manager 2005",
+          "igdb_id": 6210,
+          "release_date": "2004-10-22"
+        },
+        {
+          "id": 4519,
+          "name": "Sword of Mana",
+          "igdb_id": 6630,
+          "release_date": "2003-08-29"
+        },
+        {
+          "id": 4940,
+          "name": "MLB Front Office Manager",
+          "igdb_id": 7073,
+          "release_date": "2009-01-26"
+        },
+        {
+          "id": 6075,
+          "name": "Pro Cycling Manager 2014",
+          "igdb_id": 8251,
+          "release_date": "2014-06-19"
+        },
+        {
+          "id": 6719,
+          "name": "Franchise Hockey Manager 2014",
+          "igdb_id": 8913,
+          "release_date": "2014-05-30"
+        },
+        {
+          "id": 6776,
+          "name": "Football Manager 2006",
+          "igdb_id": 8971,
+          "release_date": "2005-10-21"
+        },
+        {
+          "id": 6777,
+          "name": "Football Manager 2009",
+          "igdb_id": 8972,
+          "release_date": "2008-11-14"
+        },
+        {
+          "id": 6778,
+          "name": "Football Manager 2012",
+          "igdb_id": 8973,
+          "release_date": "2011-10-21"
+        },
+        {
+          "id": 6779,
+          "name": "Football Manager 2013",
+          "igdb_id": 8974,
+          "release_date": "2012-11-02"
+        },
+        {
+          "id": 6780,
+          "name": "Football Manager 2014",
+          "igdb_id": 8975,
+          "release_date": "2013-10-30"
+        },
+        {
+          "id": 6781,
+          "name": "Football Manager 2015",
+          "igdb_id": 8976,
+          "release_date": "2014-11-07"
+        },
+        {
+          "id": 6933,
+          "name": "Middle Manager of Justice",
+          "igdb_id": 9133,
+          "release_date": "2012-12-13"
+        },
+        {
+          "id": 7162,
+          "name": "World Basketball Manager Tycoon",
+          "igdb_id": 9365,
+          "release_date": "2013-11-18"
+        },
+        {
+          "id": 7215,
+          "name": "Racing Manager 2014",
+          "igdb_id": 9419,
+          "release_date": "2013-12-06"
+        },
+        {
+          "id": 7683,
+          "name": "Grimoire: Manastorm",
+          "igdb_id": 9904,
+          "release_date": "2015-02-04"
+        },
+        {
+          "id": 7793,
+          "name": "Basketball Pro Management 2014",
+          "igdb_id": 10026,
+          "release_date": "2014-01-06"
+        },
+        {
+          "id": 7794,
+          "name": "Basketball Pro Management 2015",
+          "igdb_id": 10027,
+          "release_date": "2014-11-19"
+        },
+        {
+          "id": 8469,
+          "name": "Pro Cycling Manager 2012",
+          "igdb_id": 10721,
+          "release_date": "2012-06-21"
+        },
+        {
+          "id": 8468,
+          "name": "Pro Cycling Manager 2011",
+          "igdb_id": 10720,
+          "release_date": "2011-06-23"
+        },
+        {
+          "id": 8470,
+          "name": "Pro Cycling Manager 2013",
+          "igdb_id": 10722,
+          "release_date": "2013-07-20"
+        },
+        {
+          "id": 8475,
+          "name": "Pro Rugby Manager 2015",
+          "igdb_id": 10727,
+          "release_date": "2014-09-18"
+        },
+        {
+          "id": 8957,
+          "name": "Trials of Mana",
+          "igdb_id": 11227,
+          "release_date": "1995-09-30"
+        },
+        {
+          "id": 9033,
+          "name": "Championship Manager '93",
+          "igdb_id": 11306,
+          "release_date": "1993-07-01"
+        },
+        {
+          "id": 9160,
+          "name": "Adventurer Manager",
+          "igdb_id": 11442,
+          "release_date": "2014-04-23"
+        },
+        {
+          "id": 9283,
+          "name": "ManaCollect",
+          "igdb_id": 11572,
+          "release_date": "2013-09-12"
+        },
+        {
+          "id": 11091,
+          "name": "Boxing Manager",
+          "igdb_id": 13430,
+          "release_date": "1990-12-31"
+        },
+        {
+          "id": 9572,
+          "name": "1st Division Manager",
+          "igdb_id": 11871,
+          "release_date": "1992-12-31"
+        }
+      ]
+    }
+  ]
 }

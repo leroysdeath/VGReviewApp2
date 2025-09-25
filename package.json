@@ -9,12 +9,19 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:full": "node scripts/start-dev.cjs",
+    "netlify": "node scripts/cleanup-ports.cjs && netlify dev && start http://localhost:5173",
+    "netlify:open": "node scripts/cleanup-ports.cjs && netlify dev && timeout 3 && start http://localhost:5173",
+    "start": "node scripts/start-dev.cjs",
     "build": "tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "build:analyze": "vite build --mode analyze",
     "clean": "rm -rf dist node_modules/.vite",
+    "cleanup": "node scripts/cleanup-node-processes.cjs",
+    "cleanup:ports": "node scripts/cleanup-node-processes.cjs",
+    "kill-dev": "node scripts/cleanup-node-processes.cjs",
     "sync-igdb": "node scripts/sync-igdb.js",
     "sync-igdb:dry": "node scripts/sync-igdb.js --dry-run",
     "sync-igdb:help": "node scripts/sync-igdb.js --help",
@@ -70,7 +77,6 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
     "vite": "^5.4.2",
-    "vite-imagetools": "^8.0.0",
     "zod": "^4.0.5",
     "zustand": "^5.0.6"
   },
@@ -100,6 +106,7 @@
     "ts-jest": "^29.4.1",
     "typescript-eslint": "^8.3.0",
     "vite-bundle-analyzer": "^0.7.0",
+    "vite-imagetools": "^8.0.0",
     "whatwg-fetch": "^3.6.20"
   },
   "optionalDependencies": {
