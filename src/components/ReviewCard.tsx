@@ -206,7 +206,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {showGameTitle && review.gameTitle && (
             <div className="relative">
               {/* Right-side content stack: Rating + Cover */}
-              <div className="absolute right-0 -bottom-14 z-10 w-20">
+              <div className="absolute right-0 -bottom-20 z-10 w-20">
                 {/* Rating badge */}
                 <div className="flex justify-center mb-2">
                   <div className="bg-yellow-400 text-gray-900 px-2 py-1 rounded-md font-bold text-sm">
@@ -240,12 +240,9 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Row 3: Review Text */}
           <div className="relative">
             <div className="flex-1 pt-2 pr-24">
-              {/* Review Text - first line indented to align with username (avatar: 48px + gap: 12px = 60px) */}
+              {/* Review Text - with padding to avoid cover */}
               {review.hasText && (
-                <p
-                  className="text-sm text-gray-400 leading-relaxed whitespace-pre-line"
-                  style={{ textIndent: '60px', paddingLeft: '0' }}
-                >
+                <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">
                   {escapeHtml(truncateText(review.text, 144))}
                 </p>
               )}
@@ -348,7 +345,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {showGameTitle && review.gameTitle && (
             <div className="relative">
               {/* Right-side content stack: Rating + Cover */}
-              <div className="absolute right-0 -top-14 z-10 w-20">
+              <div className="absolute right-0 -top-20 z-10 w-20">
                 {/* Rating badge */}
                 <div className="flex justify-center mb-2">
                   <div className="bg-yellow-400 text-gray-900 px-2 py-1 rounded-md font-bold text-sm">
@@ -378,12 +375,9 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Row 4: Review Text */}
           <div className="relative">
             <div className="flex-1 pt-2 pr-24">
-              {/* Review Text - first line indented to align with username (avatar: 64px + gap: 16px = 80px) */}
+              {/* Review Text - with padding to avoid cover */}
               {review.hasText && (
-                <p
-                  className="text-base text-gray-400 leading-relaxed whitespace-pre-line"
-                  style={{ textIndent: '80px', paddingLeft: '0' }}
-                >
+                <p className="text-base text-gray-400 leading-relaxed whitespace-pre-line">
                   {escapeHtml(truncateText(review.text, 144))}
                 </p>
               )}
