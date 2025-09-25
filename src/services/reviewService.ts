@@ -128,11 +128,30 @@ export const ensureGameExists = async (
       return { success: false, error: 'Game name is required' };
     }
 
+    // Generate base slug first
+    const baseSlug = generateSlug(gameData.name.trim());
+
+    // Check if slug already exists
+    const { data: existingSlug } = await supabase
+      .from('game')
+      .select('id')
+      .eq('slug', baseSlug)
+      .maybeSingle();
+
+    // Only append IGDB ID if there's a conflict
+    const finalSlug = existingSlug
+      ? generateSlug(gameData.name.trim(), gameData.igdb_id)
+      : baseSlug;
+
+    if (existingSlug) {
+      console.log(`⚠️ Slug '${baseSlug}' already exists, using '${finalSlug}' instead`);
+    }
+
     const gameToInsert = {
       igdb_id: gameData.igdb_id,
-      game_id: `igdb_${gameData.igdb_id}`, // Prefix with 'igdb_' to prevent conflicts
+      game_id: gameData.igdb_id.toString(), // Just use IGDB ID as string, no prefix needed
       name: gameData.name.trim(),
-      slug: generateSlug(gameData.name.trim()), // Generate slug for new game
+      slug: finalSlug, // Use conflict-aware slug
       cover_url: gameData.cover_url || null,
       genres: gameData.genre ? [gameData.genre] : null,
       release_date: releaseDate,
