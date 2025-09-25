@@ -98,7 +98,7 @@ export const ensureGameExists = async (
       .from('game')
       .select('id, name, igdb_id')
       .eq('igdb_id', gameData.igdb_id)
-      .single();
+      .maybeSingle();
 
     if (!igdbError && existingByIGDB) {
       console.log('✅ Found game by IGDB ID:', existingByIGDB);
@@ -130,7 +130,7 @@ export const ensureGameExists = async (
 
     const gameToInsert = {
       igdb_id: gameData.igdb_id,
-      game_id: gameData.igdb_id.toString(), // Convert IGDB ID to string for game_id column
+      game_id: `igdb_${gameData.igdb_id}`, // Prefix with 'igdb_' to prevent conflicts
       name: gameData.name.trim(),
       slug: generateSlug(gameData.name.trim()), // Generate slug for new game
       cover_url: gameData.cover_url || null,
@@ -148,6 +148,24 @@ export const ensureGameExists = async (
 
     if (insertError) {
       console.error('❌ Error inserting game:', insertError);
+
+      // Handle conflict error (409) - game might already exist
+      if (insertError.code === '23505') { // Unique constraint violation
+        console.log('⚠️ Game might already exist, trying to fetch by IGDB ID');
+
+        // Try to fetch the existing game
+        const { data: existingGame } = await supabase
+          .from('game')
+          .select('id, name')
+          .eq('igdb_id', gameData.igdb_id)
+          .maybeSingle();
+
+        if (existingGame) {
+          console.log('✅ Found existing game after conflict:', existingGame);
+          return { success: true, data: { gameId: existingGame.id } };
+        }
+      }
+
       return { success: false, error: `Failed to add game to database: ${insertError.message}` };
     }
 
