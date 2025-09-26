@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Gift, BookOpen, Play, CheckCircle, ScrollText } from 'lucide-react';
+import { Gift, BookOpen, Play, CheckCircle, ScrollText, Lock } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 interface GameActionSheetProps {
@@ -144,25 +144,37 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
         </div>
 
         {/* Started Icon */}
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-          isStarted 
-            ? 'bg-blue-600' 
+        <div className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+          userHasReviewed && isStarted
+            ? 'bg-blue-600/80 border-2 border-blue-400'
+            : isStarted
+            ? 'bg-blue-600'
             : 'border border-blue-500 bg-gray-900/80 backdrop-blur-md'
         }`}>
-          <Play className={`h-6 w-6 ${
-            isStarted ? 'text-white' : 'text-blue-500'
-          }`} />
+          {userHasReviewed && isStarted ? (
+            <Lock className="h-6 w-6 text-white" />
+          ) : (
+            <Play className={`h-6 w-6 ${
+              isStarted ? 'text-white' : 'text-blue-500'
+            }`} />
+          )}
         </div>
 
         {/* Finished Icon */}
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-          isCompleted 
-            ? 'bg-green-600' 
+        <div className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+          userHasReviewed && isCompleted
+            ? 'bg-green-600/80 border-2 border-green-400'
+            : isCompleted
+            ? 'bg-green-600'
             : 'border border-green-500 bg-gray-900/80 backdrop-blur-md'
         }`}>
-          <CheckCircle className={`h-6 w-6 ${
-            isCompleted ? 'text-white' : 'text-green-500'
-          }`} />
+          {userHasReviewed && isCompleted ? (
+            <Lock className="h-6 w-6 text-white" />
+          ) : (
+            <CheckCircle className={`h-6 w-6 ${
+              isCompleted ? 'text-white' : 'text-green-500'
+            }`} />
+          )}
         </div>
 
         {/* Review Icon */}
@@ -237,64 +249,90 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
             <button
               onTouchStart={(e) => e.stopPropagation()}
               onTouchEnd={(e) => {
-                if (isCompleted || progressLoading) return;
+                if (progressLoading || (userHasReviewed && !isCompleted)) return;
                 e.preventDefault();
                 e.stopPropagation();
                 onMarkCompleted();
-                if (!isCompleted) handleClose();
+                if (!userHasReviewed) handleClose();
               }}
               onClick={(e) => {
-                if (isCompleted || progressLoading) return;
+                if (progressLoading || (userHasReviewed && !isCompleted)) return;
                 e.stopPropagation();
                 onMarkCompleted();
-                if (!isCompleted) handleClose();
+                if (!userHasReviewed) handleClose();
               }}
-              disabled={isCompleted || progressLoading}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors pointer-events-auto ${
-                isCompleted
-                  ? 'bg-green-600 text-white cursor-not-allowed'
+              disabled={progressLoading || (userHasReviewed && !isCompleted)}
+              className={`relative w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors pointer-events-auto ${
+                userHasReviewed
+                  ? isCompleted
+                    ? 'bg-green-600/80 text-white border-2 border-green-400 opacity-75 cursor-not-allowed'
+                    : 'bg-gray-700 text-gray-500 border-2 border-gray-600 opacity-50 cursor-not-allowed'
+                  : isCompleted
+                  ? 'bg-green-600 text-white hover:bg-green-700 active:bg-green-800'
                   : progressLoading
                   ? 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
                   : 'border border-green-500 text-green-400 hover:bg-green-600/10 active:bg-green-600/20'
               }`}
               style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
-              <CheckCircle className="h-5 w-5" />
+              {userHasReviewed && isCompleted ? (
+                <Lock className="h-5 w-5" />
+              ) : (
+                <CheckCircle className="h-5 w-5" />
+              )}
               <span className="font-medium">
                 {isCompleted ? 'Finished' : 'Mark as Finished'}
               </span>
+              {userHasReviewed && (
+                <div className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1">
+                  <Lock className="h-3 w-3 text-gray-400" />
+                </div>
+              )}
             </button>
 
             {/* Started Button */}
             <button
               onTouchStart={(e) => e.stopPropagation()}
               onTouchEnd={(e) => {
-                if (isStarted || progressLoading) return;
+                if (progressLoading || (userHasReviewed && !isStarted)) return;
                 e.preventDefault();
                 e.stopPropagation();
                 onMarkStarted();
-                if (!isStarted) handleClose();
+                if (!userHasReviewed) handleClose();
               }}
               onClick={(e) => {
-                if (isStarted || progressLoading) return;
+                if (progressLoading || (userHasReviewed && !isStarted)) return;
                 e.stopPropagation();
                 onMarkStarted();
-                if (!isStarted) handleClose();
+                if (!userHasReviewed) handleClose();
               }}
-              disabled={isStarted || progressLoading}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors pointer-events-auto ${
-                isStarted
-                  ? 'bg-blue-600 text-white cursor-not-allowed'
+              disabled={progressLoading || (userHasReviewed && !isStarted)}
+              className={`relative w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors pointer-events-auto ${
+                userHasReviewed
+                  ? isStarted
+                    ? 'bg-blue-600/80 text-white border-2 border-blue-400 opacity-75 cursor-not-allowed'
+                    : 'bg-gray-700 text-gray-500 border-2 border-gray-600 opacity-50 cursor-not-allowed'
+                  : isStarted
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
                   : progressLoading
                   ? 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
                   : 'border border-blue-500 text-blue-400 hover:bg-blue-600/10 active:bg-blue-600/20'
               }`}
               style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
             >
-              <Play className="h-5 w-5 fill-current" style={{ marginLeft: '2px' }} />
+              {userHasReviewed && isStarted ? (
+                <Lock className="h-5 w-5" />
+              ) : (
+                <Play className="h-5 w-5 fill-current" style={{ marginLeft: '2px' }} />
+              )}
               <span className="font-medium">
                 {isStarted ? 'Started' : 'Mark as Started'}
               </span>
+              {userHasReviewed && (
+                <div className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1">
+                  <Lock className="h-3 w-3 text-gray-400" />
+                </div>
+              )}
             </button>
 
             {/* Backlog Button - Show if not started/finished */}
