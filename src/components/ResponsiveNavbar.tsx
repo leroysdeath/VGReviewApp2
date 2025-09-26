@@ -8,8 +8,8 @@ import { useGameSearch } from '../hooks/useGameSearch';
 import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';
-// Filtering is now handled by AdvancedSearchCoordination service
-import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
+// Filtering is now handled by unified search service
+import { searchService } from '../services/searchService';
 import { getGameUrl } from '../utils/gameUrls';
 import { mapPlatformNames } from '../utils/platformMapping';
 
@@ -62,7 +62,7 @@ export const ResponsiveNavbar: React.FC = () => {
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
-  const searchCoordinationRef = useRef<AdvancedSearchCoordination>(new AdvancedSearchCoordination());
+  // Using the unified searchService instance directly
   
   // Remove dependency on shared useGameSearch hook for navbar dropdown
   // Keep it only for navigation to search results page
@@ -134,7 +134,7 @@ export const ResponsiveNavbar: React.FC = () => {
 
       // Use the same search as the search results page (no fastMode)
       // This ensures navbar shows same results as main search
-      const searchResult = await searchCoordinationRef.current.coordinatedSearch(normalizedQuery.trim(), {
+      const searchResult = await searchService.coordinatedSearch(normalizedQuery.trim(), {
         maxResults: 8,
         includeMetrics: false,
         fastMode: false, // Use full search with all filtering

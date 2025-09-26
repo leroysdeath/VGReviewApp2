@@ -35,7 +35,7 @@ describe('Critical Fixes - Simple Validation', () => {
 
     test('should handle unicode characters', () => {
       const slug = generateSlug('Pokémon Red & Blue');
-      expect(slug).toBe('pokmon-red-blue');
+      expect(slug).toBe('pokemon-red-blue'); // é is properly converted to e
     });
   });
 

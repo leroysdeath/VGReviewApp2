@@ -1,32 +1,75 @@
+/**
+ * Unified User Service
+ * Consolidates userService, userServiceSimple, profileService, and profileCache
+ *
+ * Features:
+ * - User authentication and session management
+ * - Profile CRUD operations with validation
+ * - Intelligent caching with TTL and cleanup
+ * - Username availability checking
+ * - Type-safe operations with comprehensive error handling
+ */
+
 import { supabase } from './supabase';
 import type { Session } from '@supabase/supabase-js';
+import { sanitizeStrict, sanitizeBasic, sanitizeURL } from '../utils/sanitize';
+import {
+  DatabaseUser,
+  ClientUser,
+  ProfileUpdateData,
+  ServiceResponse,
+  dbUserToClientUser,
+  clientUpdateToDbUpdate,
+  authIdUtils,
+  isDatabaseUser
+} from '../types/user';
 
+const DEBUG_USER_SERVICE = false;
+
+// Unified interfaces - consolidating from all services
 export interface UserServiceResult {
   success: boolean;
   userId?: number;
   error?: string;
 }
 
-export interface UserProfile {
-  id: number;
-  provider_id: string;
-  email: string;
-  name: string;
+export interface UserProfile extends DatabaseUser {
+  follower_count?: number;
+  following_count?: number;
+}
+
+export interface UserUpdate {
+  name?: string;
   username?: string;
+  display_name?: string;
+  bio?: string;
   avatar_url?: string;
-  provider: string;
-  created_at: string;
-  updated_at: string;
+  location?: string;
+  website?: string;
+  platform?: string;
+}
+
+// Re-export types for backward compatibility
+export type { ProfileUpdateData, ServiceResponse, DatabaseUser, ClientUser } from '../types/user';
+
+interface CachedProfile {
+  data: UserProfile;
+  timestamp: number;
+  userId: string;
+}
+
+interface CachedUser {
+  data: UserServiceResult;
+  timestamp: number;
 }
 
 /**
- * User Management Module
- * Centralized service for all user-related operations
- * Follows modular monolithic architecture pattern
+ * Unified User Service - handles all user and profile operations
  */
-export class UserService {
-  private userCache = new Map<string, number>();
-  private profileCache = new Map<number, UserProfile>();
+class UnifiedUserService {
+  // Caching system - consolidated from profileCache and userService
+  private profileCache = new Map<string, CachedProfile>();
+  private userCache = new Map<string, CachedUser>();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   private cacheTimestamps = new Map<string, number>();
 
@@ -38,80 +81,150 @@ export class UserService {
   }
 
   /**
-   * Cache Management Module
+   * Cache Management
    */
   private cleanupCache(): void {
     const now = Date.now();
+
+    // Clean profile cache
+    for (const [key, cached] of this.profileCache.entries()) {
+      if (now - cached.timestamp > this.CACHE_TTL) {
+        this.profileCache.delete(key);
+        if (DEBUG_USER_SERVICE) console.log('🧹 Cleaned profile cache for:', key);
+      }
+    }
+
+    // Clean user cache
+    for (const [key, cached] of this.userCache.entries()) {
+      if (now - cached.timestamp > this.CACHE_TTL) {
+        this.userCache.delete(key);
+        if (DEBUG_USER_SERVICE) console.log('🧹 Cleaned user cache for:', key);
+      }
+    }
+
+    // Clean timestamps
     for (const [key, timestamp] of this.cacheTimestamps.entries()) {
       if (now - timestamp > this.CACHE_TTL) {
-        this.userCache.delete(key);
         this.cacheTimestamps.delete(key);
-        // Extract user ID from cache key pattern if needed
-        const userId = parseInt(key.split(':')[1]);
-        if (userId) {
-          this.profileCache.delete(userId);
-        }
       }
     }
   }
 
-  private setCacheEntry(authId: string, userId: number): void {
-    this.userCache.set(authId, userId);
-    this.cacheTimestamps.set(authId, Date.now());
-  }
+  private getCachedProfile(userId: string): UserProfile | null {
+    const cached = this.profileCache.get(userId);
 
-  private getCacheEntry(authId: string): number | null {
-    const timestamp = this.cacheTimestamps.get(authId);
-    if (!timestamp || Date.now() - timestamp > this.CACHE_TTL) {
-      this.userCache.delete(authId);
-      this.cacheTimestamps.delete(authId);
+    if (!cached) {
       return null;
     }
-    return this.userCache.get(authId) || null;
+
+    if (Date.now() - cached.timestamp > this.CACHE_TTL) {
+      this.profileCache.delete(userId);
+      return null;
+    }
+
+    if (DEBUG_USER_SERVICE) console.log('🚀 Using cached profile data for user:', userId);
+    return cached.data;
+  }
+
+  private setCachedProfile(userId: string, data: UserProfile): void {
+    this.profileCache.set(userId, {
+      data,
+      timestamp: Date.now(),
+      userId
+    });
+    if (DEBUG_USER_SERVICE) console.log('💾 Cached profile data for user:', userId);
+  }
+
+  private updateCachedProfile(userId: string, updatedData: Partial<UserProfile>): void {
+    const cached = this.profileCache.get(userId);
+    if (cached) {
+      cached.data = { ...cached.data, ...updatedData };
+      cached.timestamp = Date.now();
+      if (DEBUG_USER_SERVICE) console.log('🔄 Updated cached profile data for user:', userId);
+    }
   }
 
   /**
-   * Core User Operations Module
+   * Authentication and User Management
    */
-  public async getOrCreateDatabaseUser(authUser: Session['user']): Promise<UserServiceResult> {
-    if (!authUser?.id) {
-      return { success: false, error: 'No authenticated user provided' };
-    }
-
-    // Check cache first for performance
-    const cachedId = this.getCacheEntry(authUser.id);
-    if (cachedId) {
-      return { success: true, userId: cachedId };
-    }
-
+  async getCurrentAuthUser(): Promise<ServiceResponse<{ id: string; email?: string }>> {
     try {
-      // Skip database function (has table reference issues) - go directly to manual operation
-      const manualResult = await this.performManualUserOperation(authUser);
-      if (manualResult.success) {
-        this.setCacheEntry(authUser.id, manualResult.userId!);
-      }
-      return manualResult;
+      if (DEBUG_USER_SERVICE) console.log('🔍 Getting current auth user...');
 
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (DEBUG_USER_SERVICE) console.log('👤 Auth user result:', { user: user ? { id: user.id, email: user.email } : null, authError });
+
+      if (authError) {
+        console.error('❌ Auth error:', authError);
+        return { success: false, error: `Authentication error: ${authError.message}` };
+      }
+
+      if (!user) {
+        if (DEBUG_USER_SERVICE) console.log('❌ No authenticated user found');
+        return { success: false, error: 'User not authenticated' };
+      }
+
+      return {
+        success: true,
+        data: {
+          id: user.id,
+          email: user.email || undefined
+        }
+      };
     } catch (error) {
-      console.error('Error in user operation:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error in user creation'
+      console.error('💥 Unexpected error getting auth user:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get auth user'
       };
     }
   }
 
-  /**
-   * Database Function Integration Module
-   */
+  async getOrCreateUser(session?: Session): Promise<UserServiceResult> {
+    try {
+      if (!session?.user) {
+        return { success: false, error: 'No session provided' };
+      }
+
+      const authUser = session.user;
+      const cacheKey = `user:${authUser.id}`;
+
+      // Check cache first
+      const cached = this.userCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        if (DEBUG_USER_SERVICE) console.log('🚀 Using cached user data for:', authUser.id);
+        return cached.data;
+      }
+
+      if (DEBUG_USER_SERVICE) console.log('🔄 Processing user authentication for:', authUser.id);
+
+      // Try database function first
+      const dbResult = await this.tryDatabaseFunction(authUser);
+      if (dbResult.success) {
+        this.userCache.set(cacheKey, { data: dbResult, timestamp: Date.now() });
+        return dbResult;
+      }
+
+      // Fallback to manual operations
+      const manualResult = await this.performManualUserOperation(authUser);
+      if (manualResult.success) {
+        this.userCache.set(cacheKey, { data: manualResult, timestamp: Date.now() });
+      }
+
+      return manualResult;
+    } catch (error) {
+      console.error('💥 Exception in getOrCreateUser:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'User operation failed'
+      };
+    }
+  }
+
   private async tryDatabaseFunction(authUser: Session['user']): Promise<UserServiceResult> {
     try {
-      console.log('🔄 Calling get_or_create_user function with:', {
-        auth_id: authUser.id,
-        user_email: authUser.email || '',
-        user_name: authUser.user_metadata?.name || authUser.user_metadata?.username || 'User'
-      });
-      
+      if (DEBUG_USER_SERVICE) console.log('🔄 Calling get_or_create_user function');
+
       const { data: functionResult, error: functionError } = await supabase
         .rpc('get_or_create_user', {
           auth_id: authUser.id,
@@ -120,26 +233,21 @@ export class UserService {
           user_provider: 'supabase'
         });
 
-      console.log('📊 Database function result:', { functionResult, functionError });
-
       if (!functionError && functionResult) {
         return { success: true, userId: functionResult };
       }
 
-      console.error('❌ Database function failed:', functionError);
+      if (DEBUG_USER_SERVICE) console.error('❌ Database function failed:', functionError);
       return { success: false, error: functionError?.message || 'Database function failed' };
     } catch (error) {
-      console.error('💥 Database function exception:', error);
-      return { 
-        success: false, 
+      if (DEBUG_USER_SERVICE) console.error('💥 Database function exception:', error);
+      return {
+        success: false,
         error: error instanceof Error ? error.message : 'Database function error'
       };
     }
   }
 
-  /**
-   * Manual User Operations Module
-   */
   private async performManualUserOperation(authUser: Session['user']): Promise<UserServiceResult> {
     try {
       // Step 1: Lookup existing user
@@ -166,16 +274,13 @@ export class UserService {
 
     } catch (error) {
       console.error('Manual user operation failed:', error);
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error instanceof Error ? error.message : 'Unknown error in user operation'
       };
     }
   }
 
-  /**
-   * User Lookup Module
-   */
   private async lookupExistingUser(providerId: string): Promise<UserServiceResult> {
     try {
       const { data: existingUser, error: selectError } = await supabase
@@ -190,248 +295,460 @@ export class UserService {
 
       return { success: false, error: selectError?.message || 'User not found' };
     } catch (error) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error instanceof Error ? error.message : 'Lookup error'
       };
     }
   }
 
-  /**
-   * Generate username from email or name for OAuth users
-   */
-  private generateUsernameFromEmail(email: string): string | null {
-    if (!email) return null;
-    
-    // Extract username part from email (before @)
-    const emailParts = email.split('@');
-    if (emailParts.length !== 2) return null;
-    
-    // Clean up the username part (remove dots, special chars except underscore)
-    let username = emailParts[0]
-      .toLowerCase()
-      .replace(/[^a-z0-9_]/g, '') // Remove non-alphanumeric except underscore
-      .substring(0, 18); // Leave room for potential numeric suffix
-    
-    // Ensure minimum length
-    if (username.length < 3) {
-      username = username.padEnd(3, '0');
-    }
-    
-    return username;
-  }
-
-  /**
-   * User Creation Module
-   */
   private async createNewUser(authUser: Session['user']): Promise<UserServiceResult> {
     try {
-      // Determine username: use metadata username, or generate from email for OAuth users
-      let username = authUser.user_metadata?.username;
-      
-      if (!username && authUser.email) {
-        // Generate username for OAuth users
-        username = this.generateUsernameFromEmail(authUser.email);
-        
-        // Check if generated username already exists and add suffix if needed
-        if (username) {
-          let finalUsername = username;
-          let suffix = 1;
-          let isUnique = false;
-          
-          while (!isUnique && suffix <= 99) {
-            const { count } = await supabase
-              .from('user')
-              .select('id', { count: 'exact', head: true })
-              .eq('username', finalUsername);
-            
-            if (count === 0) {
-              isUnique = true;
-              username = finalUsername;
-            } else {
-              finalUsername = `${username}${suffix}`;
-              suffix++;
-            }
-          }
-          
-          // If still not unique after 99 attempts, use timestamp
-          if (!isUnique) {
-            username = `${username}${Date.now().toString().slice(-4)}`;
-          }
-        }
-      }
-      
+      const userData = {
+        provider_id: authUser.id,
+        email: authUser.email || null,
+        name: authUser.user_metadata?.name || authUser.user_metadata?.username || 'User',
+        provider: 'supabase',
+        username: authUser.user_metadata?.username || `user_${Date.now()}`,
+        bio: '',
+        location: '',
+        website: ''
+      };
+
       const { data: newUser, error: insertError } = await supabase
         .from('user')
-        .insert({
-          provider_id: authUser.id,
-          email: authUser.email || '',
-          name: authUser.user_metadata?.name || authUser.user_metadata?.username || 'User',
-          username: username || null, // Use generated or provided username
-          provider: 'supabase',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert([userData])
         .select('id')
         .single();
 
-      if (insertError) {
-        return { 
-          success: false, 
-          error: insertError.message || 'Failed to create user'
-        };
-      }
-
-      if (newUser) {
+      if (!insertError && newUser) {
+        if (DEBUG_USER_SERVICE) console.log('✅ Created new user:', newUser.id);
         return { success: true, userId: newUser.id };
       }
 
-      return { success: false, error: 'User creation returned no data' };
-
+      return { success: false, error: insertError?.message || 'Failed to create user' };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Creation error'
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'User creation error'
       };
     }
   }
 
   /**
-   * Profile Management Module
+   * Profile Operations - Direct and Simple (from userServiceSimple)
    */
-  public async getUserProfile(userId: number): Promise<UserProfile | null> {
-    // Check profile cache first
-    const cachedProfile = this.profileCache.get(userId);
-    if (cachedProfile) {
-      return cachedProfile;
-    }
-
+  async getUser(userId: string | number): Promise<ServiceResponse<UserProfile>> {
     try {
       const { data, error } = await supabase
         .from('user')
         .select('*')
         .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return null;
-      }
-
-      if (data) {
-        // Cache the profile
-        this.profileCache.set(userId, data);
-        this.cacheTimestamps.set(`profile:${userId}`, Date.now());
-      }
-
-      return data;
-    } catch (error) {
-      console.error('User profile fetch failed:', error);
-      return null;
-    }
-  }
-
-  public async updateUserProfile(userId: number, updates: Partial<UserProfile>): Promise<UserServiceResult> {
-    try {
-      const { data, error } = await supabase
-        .from('user')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId)
-        .select('*')
         .single();
 
       if (error) {
         return { success: false, error: error.message };
       }
 
-      if (data) {
-        // Update cache
-        this.profileCache.set(userId, data);
-        this.cacheTimestamps.set(`profile:${userId}`, Date.now());
+      return { success: true, data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get user'
+      };
+    }
+  }
+
+  async getUserByUsername(username: string): Promise<ServiceResponse<UserProfile>> {
+    try {
+      const { data, error } = await supabase
+        .from('user')
+        .select('*')
+        .eq('username', username)
+        .single();
+
+      if (error) {
+        return { success: false, error: error.message };
       }
 
-      return { success: true, userId };
+      return { success: true, data };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Profile update failed'
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get user by username'
+      };
+    }
+  }
+
+  async getUserByProviderId(providerId: string): Promise<ServiceResponse<UserProfile>> {
+    try {
+      const { data, error } = await supabase
+        .from('user')
+        .select('*')
+        .eq('provider_id', providerId)
+        .single();
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get user by provider ID'
       };
     }
   }
 
   /**
-   * Batch Operations Module
+   * Enhanced Profile Operations (from profileService)
    */
-  public async getUsersByIds(userIds: number[]): Promise<UserProfile[]> {
-    if (userIds.length === 0) return [];
-
+  async getUserProfile(providerId: string): Promise<ServiceResponse<DatabaseUser>> {
     try {
-      const { data, error } = await supabase
-        .from('user')
-        .select('*')
-        .in('id', userIds);
+      if (DEBUG_USER_SERVICE) console.log('🔍 Getting user profile for provider_id:', providerId);
 
-      if (error) {
-        console.error('Error fetching users by IDs:', error);
-        return [];
+      // Check cache first
+      const cached = this.getCachedProfile(providerId);
+      if (cached) {
+        return { success: true, data: cached };
       }
 
-      // Cache results
-      data?.forEach(user => {
-        this.profileCache.set(user.id, user);
-        this.cacheTimestamps.set(`profile:${user.id}`, Date.now());
-      });
+      // Validate UUID format
+      const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!isValidUUID.test(providerId)) {
+        console.error('❌ Invalid provider_id format:', providerId);
+        return { success: false, error: 'Invalid provider ID format' };
+      }
 
-      return data || [];
+      const { data: dbUser, error } = await supabase
+        .from('user')
+        .select('*')
+        .eq('provider_id', providerId)
+        .single();
+
+      if (error) {
+        console.error('❌ Error fetching database user profile:', error);
+
+        if (error.code === 'PGRST116') {
+          if (DEBUG_USER_SERVICE) console.log('⚠️ User profile not found in database');
+          return { success: false, error: 'User profile not found' };
+        }
+
+        return { success: false, error: `Database error: ${error.message}` };
+      }
+
+      if (!dbUser) {
+        return { success: false, error: 'User profile not found' };
+      }
+
+      // Validate data structure
+      if (!isDatabaseUser(dbUser)) {
+        console.error('❌ Invalid user data structure:', dbUser);
+        return { success: false, error: 'Invalid user data structure' };
+      }
+
+      // Cache the result
+      this.setCachedProfile(providerId, dbUser);
+
+      if (DEBUG_USER_SERVICE) console.log('✅ Found user profile:', dbUser);
+      return { success: true, data: dbUser };
     } catch (error) {
-      console.error('Batch user fetch failed:', error);
-      return [];
+      console.error('💥 Unexpected error in getUserProfile:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? `Unexpected error: ${error.message}` : 'Failed to get user profile'
+      };
+    }
+  }
+
+  async ensureUserProfileExists(
+    providerId: string,
+    email?: string,
+    defaultUsername?: string
+  ): Promise<ServiceResponse<UserProfile>> {
+    try {
+      if (DEBUG_USER_SERVICE) console.log('🔍 Ensuring user profile exists for:', providerId);
+
+      // Validate UUID format
+      const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!isValidUUID.test(providerId)) {
+        console.error('❌ Invalid provider_id format:', providerId);
+        return { success: false, error: `Invalid provider ID format. Expected UUID but got: ${providerId}` };
+      }
+
+      // Check if user profile already exists
+      const existingProfileResult = await this.getUserProfile(providerId);
+
+      if (existingProfileResult.success && existingProfileResult.data) {
+        if (DEBUG_USER_SERVICE) console.log('✅ User profile already exists');
+        return existingProfileResult;
+      }
+
+      if (DEBUG_USER_SERVICE) console.log('📝 Profile not found - creating manually as fallback...');
+
+      // Generate unique username
+      let baseUsername = defaultUsername || email?.split('@')[0] || 'user';
+      baseUsername = baseUsername.toLowerCase().replace(/\s+/g, '_');
+      let generatedUsername = baseUsername;
+
+      // Ensure username uniqueness
+      while (true) {
+        const { data: existingUser } = await supabase
+          .from('user')
+          .select('id')
+          .eq('username', generatedUsername)
+          .maybeSingle();
+
+        if (!existingUser) break;
+
+        generatedUsername = `${baseUsername}_${Math.floor(Math.random() * 1000)}`;
+      }
+
+      // Create user profile
+      const userData = {
+        provider_id: providerId,
+        email: email || null,
+        provider: 'supabase',
+        username: sanitizeStrict(generatedUsername),
+        name: sanitizeStrict(defaultUsername || email?.split('@')[0] || 'User'),
+        display_name: '',
+        bio: '',
+        location: '',
+        website: '',
+        avatar_url: null,
+        platform: null
+      };
+
+      const { data: newUser, error: insertError } = await supabase
+        .from('user')
+        .insert([userData])
+        .select('*')
+        .single();
+
+      if (insertError) {
+        console.error('❌ Failed to create user profile:', insertError);
+        return { success: false, error: `Failed to create user profile: ${insertError.message}` };
+      }
+
+      if (!newUser) {
+        return { success: false, error: 'User profile creation returned no data' };
+      }
+
+      // Cache the new profile
+      this.setCachedProfile(providerId, newUser);
+
+      if (DEBUG_USER_SERVICE) console.log('✅ Created new user profile:', newUser);
+      return { success: true, data: newUser };
+
+    } catch (error) {
+      console.error('💥 Unexpected error in ensureUserProfileExists:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to ensure user profile exists'
+      };
+    }
+  }
+
+  async updateUserProfile(
+    userId: number,
+    updateData: UserUpdate
+  ): Promise<ServiceResponse<UserProfile>> {
+    try {
+      if (DEBUG_USER_SERVICE) console.log('🔄 Updating user profile for user:', userId);
+
+      // Sanitize input data
+      const sanitizedData: any = {};
+
+      if (updateData.name !== undefined) {
+        sanitizedData.name = sanitizeStrict(updateData.name);
+      }
+      if (updateData.username !== undefined) {
+        sanitizedData.username = sanitizeStrict(updateData.username);
+      }
+      if (updateData.display_name !== undefined) {
+        sanitizedData.display_name = sanitizeBasic(updateData.display_name);
+      }
+      if (updateData.bio !== undefined) {
+        sanitizedData.bio = sanitizeBasic(updateData.bio);
+      }
+      if (updateData.location !== undefined) {
+        sanitizedData.location = sanitizeBasic(updateData.location);
+      }
+      if (updateData.website !== undefined) {
+        sanitizedData.website = sanitizeURL(updateData.website);
+      }
+      if (updateData.avatar_url !== undefined) {
+        sanitizedData.avatar_url = sanitizeURL(updateData.avatar_url);
+      }
+      if (updateData.platform !== undefined) {
+        sanitizedData.platform = sanitizeBasic(updateData.platform);
+      }
+
+      // Add timestamp
+      sanitizedData.updated_at = new Date().toISOString();
+
+      const { data: updatedUser, error } = await supabase
+        .from('user')
+        .update(sanitizedData)
+        .eq('id', userId)
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('❌ Failed to update user profile:', error);
+        return { success: false, error: `Failed to update profile: ${error.message}` };
+      }
+
+      if (!updatedUser) {
+        return { success: false, error: 'User profile update returned no data' };
+      }
+
+      // Update cache if we have provider_id
+      if (updatedUser.provider_id) {
+        this.updateCachedProfile(updatedUser.provider_id, updatedUser);
+      }
+
+      if (DEBUG_USER_SERVICE) console.log('✅ Updated user profile:', updatedUser);
+      return { success: true, data: updatedUser };
+
+    } catch (error) {
+      console.error('💥 Unexpected error updating user profile:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update user profile'
+      };
+    }
+  }
+
+  async checkUsernameAvailability(username: string, excludeUserId?: number): Promise<ServiceResponse<{ available: boolean }>> {
+    try {
+      if (!username || username.trim().length === 0) {
+        return { success: false, error: 'Username cannot be empty' };
+      }
+
+      // Sanitize username
+      const sanitizedUsername = sanitizeStrict(username.trim());
+
+      if (sanitizedUsername.length < 3) {
+        return { success: false, error: 'Username must be at least 3 characters long' };
+      }
+
+      let query = supabase
+        .from('user')
+        .select('id')
+        .eq('username', sanitizedUsername);
+
+      if (excludeUserId) {
+        query = query.neq('id', excludeUserId);
+      }
+
+      const { data: existingUser, error } = await query.maybeSingle();
+
+      if (error) {
+        console.error('❌ Error checking username availability:', error);
+        return { success: false, error: `Database error: ${error.message}` };
+      }
+
+      const available = !existingUser;
+
+      if (DEBUG_USER_SERVICE) console.log(`🔍 Username "${sanitizedUsername}" availability:`, available);
+      return { success: true, data: { available } };
+
+    } catch (error) {
+      console.error('💥 Unexpected error checking username availability:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to check username availability'
+      };
+    }
+  }
+
+  async getCurrentUserProfile(forceRefresh = false): Promise<ServiceResponse<UserProfile>> {
+    try {
+      if (DEBUG_USER_SERVICE) console.log('🔍 Getting current user profile, forceRefresh:', forceRefresh);
+
+      // Get current auth user
+      const authResult = await this.getCurrentAuthUser();
+      if (!authResult.success || !authResult.data) {
+        return { success: false, error: authResult.error || 'No authenticated user' };
+      }
+
+      const providerId = authResult.data.id;
+
+      // If force refresh, clear cache first
+      if (forceRefresh) {
+        this.profileCache.delete(providerId);
+      }
+
+      // Get profile with caching
+      const profileResult = await this.getUserProfile(providerId);
+
+      if (!profileResult.success || !profileResult.data) {
+        // Try to ensure profile exists if not found
+        const ensureResult = await this.ensureUserProfileExists(
+          providerId,
+          authResult.data.email
+        );
+
+        if (ensureResult.success && ensureResult.data) {
+          return ensureResult;
+        }
+
+        return { success: false, error: profileResult.error || 'Failed to get current user profile' };
+      }
+
+      return profileResult;
+
+    } catch (error) {
+      console.error('💥 Unexpected error getting current user profile:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get current user profile'
+      };
     }
   }
 
   /**
-   * Monitoring and Maintenance Module
+   * Cache Management Public Methods
    */
-  public clearCache(): void {
-    this.userCache.clear();
+  clearCache(): void {
     this.profileCache.clear();
+    this.userCache.clear();
     this.cacheTimestamps.clear();
+    if (DEBUG_USER_SERVICE) console.log('🧹 Cleared all user service caches');
   }
 
-  public getCacheSize(): number {
-    return this.userCache.size;
-  }
-
-  public getProfileCacheSize(): number {
-    return this.profileCache.size;
-  }
-
-  public getCacheStats(): {
-    userCacheSize: number;
-    profileCacheSize: number;
-    totalCachedItems: number;
-    oldestCacheEntry: string | null;
-  } {
-    let oldestTimestamp = Date.now();
-    let oldestKey: string | null = null;
-
-    for (const [key, timestamp] of this.cacheTimestamps.entries()) {
-      if (timestamp < oldestTimestamp) {
-        oldestTimestamp = timestamp;
-        oldestKey = key;
-      }
+  clearProfileCache(userId?: string): void {
+    if (userId) {
+      this.profileCache.delete(userId);
+      if (DEBUG_USER_SERVICE) console.log('🧹 Cleared profile cache for user:', userId);
+    } else {
+      this.profileCache.clear();
+      if (DEBUG_USER_SERVICE) console.log('🧹 Cleared all profile cache');
     }
-
-    return {
-      userCacheSize: this.userCache.size,
-      profileCacheSize: this.profileCache.size,
-      totalCachedItems: this.cacheTimestamps.size,
-      oldestCacheEntry: oldestKey
-    };
   }
 }
 
-export const userService = new UserService();
+// Export unified service instance
+export const userService = new UnifiedUserService();
+
+// Backward compatibility exports
+export { userService as userServiceSimple };
+export const profileCache = {
+  get: (userId: string) => userService['getCachedProfile'](userId),
+  set: (userId: string, data: UserProfile) => userService['setCachedProfile'](userId, data),
+  update: (userId: string, data: Partial<UserProfile>) => userService['updateCachedProfile'](userId, data),
+  clear: (userId?: string) => userService.clearProfileCache(userId)
+};
+
+// Re-export functions for backward compatibility
+export const getCurrentAuthUser = (...args: Parameters<typeof userService.getCurrentAuthUser>) => userService.getCurrentAuthUser(...args);
+export const getUserProfile = (...args: Parameters<typeof userService.getUserProfile>) => userService.getUserProfile(...args);
+export const ensureUserProfileExists = (...args: Parameters<typeof userService.ensureUserProfileExists>) => userService.ensureUserProfileExists(...args);
+export const updateUserProfile = (...args: Parameters<typeof userService.updateUserProfile>) => userService.updateUserProfile(...args);
+export const checkUsernameAvailability = (...args: Parameters<typeof userService.checkUsernameAvailability>) => userService.checkUsernameAvailability(...args);
+export const getCurrentUserProfile = (...args: Parameters<typeof userService.getCurrentUserProfile>) => userService.getCurrentUserProfile(...args);
+
+// Legacy class export
+export { UnifiedUserService as UserService };

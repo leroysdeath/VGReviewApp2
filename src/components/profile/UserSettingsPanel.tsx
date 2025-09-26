@@ -20,7 +20,7 @@ import {
   Shield,
   Trash2
 } from 'lucide-react';
-import { ProfileUpdateData, checkUsernameAvailability } from '../../services/profileService';
+import { ProfileUpdateData, checkUsernameAvailability } from '../../services/userService';
 import { AccountDeletionSection } from './AccountDeletionSection';
 import { PrivacySettings } from '../privacy/PrivacySettings';
 

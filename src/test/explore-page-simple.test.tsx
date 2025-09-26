@@ -27,9 +27,16 @@ jest.mock('../hooks/useGameSearch', () => ({
   useGameSearch: jest.fn(),
 }));
 
+jest.mock('../services/trackingService', () => ({
+  trackEvent: jest.fn(),
+  trackPageView: jest.fn(),
+  trackSearch: jest.fn(),
+}));
+
 import { fetchGamesWithReviewMetrics } from '../services/exploreService';
 import { useGameSearch } from '../hooks/useGameSearch';
 import { ExplorePage } from '../pages/ExplorePage';
+import { AuthModalProvider } from '../context/AuthModalContext';
 
 // ============================================
 // Test Data Factories
@@ -72,9 +79,11 @@ const createMockGamesList = (count: number = 10): ExploreGame[] => {
 
 const renderExplorePage = () => {
   return render(
-    <BrowserRouter>
-      <ExplorePage />
-    </BrowserRouter>
+    <AuthModalProvider>
+      <BrowserRouter>
+        <ExplorePage />
+      </BrowserRouter>
+    </AuthModalProvider>
   );
 };
 

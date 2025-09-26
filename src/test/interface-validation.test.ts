@@ -4,7 +4,7 @@
  * Simple tests to verify the updated interfaces work correctly without requiring database connections
  */
 
-import { searchDiagnosticService } from '../services/searchDiagnosticService';
+import { searchObservabilityService } from '../services/searchObservabilityService';
 import { dmcaManagementService } from '../services/dmcaManagementService';
 
 describe('Interface Validation', () => {
@@ -12,15 +12,15 @@ describe('Interface Validation', () => {
   describe('Search Diagnostic Service Interfaces', () => {
     test('should have updated method signatures', () => {
       // Verify the service exports correctly
-      expect(searchDiagnosticService).toBeDefined();
-      expect(typeof searchDiagnosticService.analyzeSingleSearch).toBe('function');
-      expect(typeof searchDiagnosticService.bulkTestQueries).toBe('function');
-      expect(typeof searchDiagnosticService.getIGDBStats).toBe('function');
+      expect(searchObservabilityService).toBeDefined();
+      expect(typeof searchObservabilityService.analyzeSingleSearch).toBe('function');
+      expect(typeof searchObservabilityService.bulkTestQueries).toBe('function');
+      expect(typeof searchObservabilityService.getIGDBStats).toBe('function');
     });
 
     test('should include new analysis methods', () => {
       // These are private methods but we can verify they exist by checking the service structure
-      const serviceInstance = searchDiagnosticService as any;
+      const serviceInstance = searchObservabilityService as any;
       
       // Verify the service has the enhanced methods
       expect(typeof serviceInstance.analyzeContentFiltering).toBe('function');
@@ -239,7 +239,7 @@ describe('Interface Validation', () => {
 
   describe('API Rate Limiting Compliance', () => {
     test('should have proper rate limiting in IGDB stats', () => {
-      const stats = searchDiagnosticService.getIGDBStats();
+      const stats = searchObservabilityService.getIGDBStats();
       
       expect(stats).toBeDefined();
       expect(typeof stats.dailyRequestCount).toBe('number');
@@ -268,7 +268,7 @@ describe('Interface Validation', () => {
   describe('Relaxed Filtering Validation', () => {
     test('should properly identify popular franchises', () => {
       // Test the private method logic by checking popular franchise list
-      const serviceInstance = searchDiagnosticService as any;
+      const serviceInstance = searchObservabilityService as any;
       
       // Popular franchises should bypass filtering
       const popularFranchises = ['mario', 'zelda', 'pokemon', 'final fantasy', 'call of duty', 'sonic', 'mega man'];
@@ -282,7 +282,7 @@ describe('Interface Validation', () => {
 
     test('should have composite scoring weights defined', () => {
       // Verify the scoring weights are properly defined
-      const serviceInstance = searchDiagnosticService as any;
+      const serviceInstance = searchObservabilityService as any;
       const calculateMethod = serviceInstance.calculateCompositeScoreForAnalysis;
       
       expect(calculateMethod).toBeDefined();
