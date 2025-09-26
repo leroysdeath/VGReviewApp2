@@ -73,7 +73,7 @@ export const ModSection: React.FC<ModSectionProps> = ({ gameId, className = '' }
   }
 
   return (
-    <div className={`bg-gray-800 rounded-lg p-6 ${className}`}>
+    <div className={`bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-6 ${className}`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Wrench className="h-5 w-5 text-blue-400" />

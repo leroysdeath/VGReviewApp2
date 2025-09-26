@@ -49,6 +49,12 @@ export const ReviewPage: React.FC = () => {
   // Use review interactions hook - only when review is loaded and valid
   const reviewId = review?.id ? parseInt(review.id) : null;
   const useInteractions = reviewId && reviewId > 0;
+
+  // Generate user initial from username or name
+  const getUserInitial = (user: Review['user']): string => {
+    const name = user.username || user.name;
+    return name ? name.charAt(0).toUpperCase() : '?';
+  };
   
   const {
     likeCount,
@@ -358,13 +364,31 @@ export const ReviewPage: React.FC = () => {
                   
                   {/* Review Info */}
                   <div className="flex items-center justify-between mb-1">
-                    <div className="text-gray-400">
-                      Review by{' '}
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <span>Reviewed by</span>
                       <Link
                         to={`/user/${review.user.id}`}
-                        className="text-white font-medium hover:text-purple-400 transition-colors"
+                        className="flex items-center gap-2 group"
                       >
-                        {review.user.username || review.user.name}
+                        {/* User Avatar */}
+                        {review.user.avatar_url ? (
+                          <img
+                            src={review.user.avatar_url}
+                            alt={review.user.username || review.user.name}
+                            className="w-8 h-8 rounded-full object-cover border border-gray-600
+                              transition-all duration-300 group-hover:border-purple-400"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full border border-gray-600
+                            bg-gradient-to-br from-purple-600 to-purple-800
+                            flex items-center justify-center font-bold text-white text-sm
+                            transition-all duration-300 group-hover:border-purple-400">
+                            {getUserInitial(review.user)}
+                          </div>
+                        )}
+                        <span className="text-white font-medium group-hover:text-purple-400 transition-colors">
+                          {review.user.username || review.user.name}
+                        </span>
                       </Link>
                     </div>
                     {/* Edit Review Button - Show only if current user is the review owner */}

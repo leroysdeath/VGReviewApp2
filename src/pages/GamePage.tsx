@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Gift, BookOpen, Play, CheckCircle } from 'lucide-react';
+import { User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Gift, LibraryBig, Play, CheckCircle, Lock } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
@@ -9,7 +9,7 @@ import { gameService } from '../services/gameService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
-import { getGameProgress, markGameStarted, markGameCompleted } from '../services/gameProgressService';
+import { getGameProgress, markGameStarted, markGameCompleted, toggleGameStarted, toggleGameCompleted } from '../services/gameProgressService';
 import { ensureGameExists, getUserReviewForGameByIGDBId } from '../services/reviewService';
 import { generateRatingDistribution } from '../utils/dataTransformers';
 import { DLCSection } from '../components/DLCSection';
@@ -495,10 +495,17 @@ export const GamePage: React.FC = () => {
   };
 
   const handleMarkStarted = async () => {
-    if (!game || !game.igdb_id || isStarted) return; // Don't allow if already started
-    
-    // Automatically move from wishlist/collection when marking as started
-    if (isInWishlist || isInCollection) {
+    if (!game || !game.igdb_id) return;
+
+    // If user has reviewed, don't allow toggling (state is locked)
+    if (userHasReviewed) {
+      console.log('Cannot toggle started state - game has a review');
+      return;
+    }
+
+    // If toggling off, don't need to move from wishlist/collection
+    // If toggling on, automatically move from wishlist/collection
+    if (!isStarted && (isInWishlist || isInCollection)) {
       console.log('Moving game from wishlist/collection to started');
       if (isInWishlist) {
         await collectionWishlistService.removeFromWishlist(game.igdb_id);
@@ -512,7 +519,9 @@ export const GamePage: React.FC = () => {
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
-      // Game should already exist since it was loaded, but verify with complete game data
+      console.log('Toggling started state for IGDB ID:', game.igdb_id);
+
+      // Ensure game exists in our database first
       const ensureResult = await ensureGameExists({
         id: game.id,
         igdb_id: game.igdb_id,
@@ -523,33 +532,48 @@ export const GamePage: React.FC = () => {
 
       if (!ensureResult.success) {
         console.error('Failed to ensure game exists:', ensureResult.error);
-        alert(`Failed to verify game in database: ${ensureResult.error}`);
+        alert(`Failed to toggle game state: ${ensureResult.error}`);
         return;
       }
 
-      // Mark game as started using IGDB ID
-      const result = await markGameStarted(game.igdb_id);
-      
+      // Toggle the started state
+      const result = await toggleGameStarted(game.igdb_id, userHasReviewed);
+
       if (result.success) {
-        dispatch({ type: 'SET_PROGRESS', payload: { isStarted: true, isCompleted } });
-        console.log('✅ Game marked as started');
+        // Toggle the state
+        const newStartedState = !isStarted;
+        dispatch({ type: 'SET_PROGRESS', payload: {
+          isStarted: newStartedState,
+          isCompleted: newStartedState ? isCompleted : false // If unmarking started, also unmark completed
+        }});
+        console.log(`✅ Game ${newStartedState ? 'marked as' : 'unmarked from'} started`);
       } else {
-        console.error('Failed to mark game as started:', result.error);
-        alert(`Failed to mark game as started: ${result.error}`);
+        console.error('Failed to toggle started state:', result.error);
+        if (result.error?.includes('review')) {
+          alert('Cannot change progress state - this game has a review. Remove the review first to unlock progress state.');
+        } else {
+          alert(`Failed to toggle game state: ${result.error}`);
+        }
       }
     } catch (error) {
-      console.error('Error marking game as started:', error);
-      alert('Failed to mark game as started. Please try again.');
+      console.error('Error toggling started state:', error);
+      alert('Failed to toggle game state. Please try again.');
     } finally {
       dispatch({ type: 'SET_PROGRESS_LOADING', payload: false });
     }
   };
 
   const handleMarkCompleted = async () => {
-    if (!game || !game.igdb_id || isCompleted) return; // Don't allow if already completed
+    if (!game || !game.igdb_id) return;
+
+    // If user has reviewed, don't allow toggling (state is locked)
+    if (userHasReviewed) {
+      console.log('Cannot toggle completed state - game has a review');
+      return;
+    }
     
-    // Automatically move from wishlist/collection when marking as completed
-    if (isInWishlist || isInCollection) {
+    // If toggling on, automatically move from wishlist/collection
+    if (!isCompleted && (isInWishlist || isInCollection)) {
       console.log('Moving game from wishlist/collection to completed');
       if (isInWishlist) {
         await collectionWishlistService.removeFromWishlist(game.igdb_id);
@@ -563,7 +587,9 @@ export const GamePage: React.FC = () => {
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
-      // Game should already exist since it was loaded, but verify with complete game data
+      console.log('Toggling completed state for IGDB ID:', game.igdb_id);
+
+      // Ensure game exists in our database first
       const ensureResult = await ensureGameExists({
         id: game.id,
         igdb_id: game.igdb_id,
@@ -574,23 +600,32 @@ export const GamePage: React.FC = () => {
 
       if (!ensureResult.success) {
         console.error('Failed to ensure game exists:', ensureResult.error);
-        alert(`Failed to verify game in database: ${ensureResult.error}`);
+        alert(`Failed to toggle game state: ${ensureResult.error}`);
         return;
       }
 
-      // Mark game as completed using IGDB ID (this will also mark as started)
-      const result = await markGameCompleted(game.igdb_id);
-      
+      // Toggle the completed state
+      const result = await toggleGameCompleted(game.igdb_id, userHasReviewed);
+
       if (result.success) {
-        dispatch({ type: 'SET_PROGRESS', payload: { isStarted: true, isCompleted: true } });
-        console.log('✅ Game marked as completed');
+        // Toggle the state
+        const newCompletedState = !isCompleted;
+        dispatch({ type: 'SET_PROGRESS', payload: {
+          isStarted: newCompletedState ? true : isStarted, // If marking completed, also mark as started
+          isCompleted: newCompletedState
+        }});
+        console.log(`✅ Game ${newCompletedState ? 'marked as' : 'unmarked from'} completed`);
       } else {
-        console.error('Failed to mark game as completed:', result.error);
-        alert(`Failed to mark game as completed: ${result.error}`);
+        console.error('Failed to toggle completed state:', result.error);
+        if (result.error?.includes('review')) {
+          alert('Cannot change progress state - this game has a review. Remove the review first to unlock progress state.');
+        } else {
+          alert(`Failed to toggle game state: ${result.error}`);
+        }
       }
     } catch (error) {
-      console.error('Error marking game as completed:', error);
-      alert('Failed to mark game as completed. Please try again.');
+      console.error('Error toggling completed state:', error);
+      alert('Failed to toggle game state. Please try again.');
     } finally {
       dispatch({ type: 'SET_PROGRESS_LOADING', payload: false });
     }
@@ -1191,7 +1226,7 @@ export const GamePage: React.FC = () => {
                   <button
                     onClick={handleToggleWishlist}
                     disabled={wishlistLoading || isInCollection || isStarted || isCompleted}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors min-w-[120px] ${
                       isInCollection || isStarted || isCompleted
                         ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
                         : isInWishlist
@@ -1223,7 +1258,7 @@ export const GamePage: React.FC = () => {
                   <button
                     onClick={handleToggleCollection}
                     disabled={collectionLoading || isStarted || isCompleted}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors min-w-[120px] ${
                       isStarted || isCompleted
                         ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
                         : isInCollection
@@ -1234,7 +1269,7 @@ export const GamePage: React.FC = () => {
                     {collectionLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <BookOpen className="h-4 w-4" />
+                      <LibraryBig className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
                       {isInCollection ? (
@@ -1259,23 +1294,33 @@ export const GamePage: React.FC = () => {
                   {/* Started Button */}
                   <button
                     onClick={() => handleAuthRequiredAction('mark_started')}
-                    disabled={isStarted || progressLoading}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isStarted
-                        ? 'bg-blue-600 text-white cursor-not-allowed'
+                    disabled={progressLoading || (userHasReviewed && !isStarted)}
+                    title={userHasReviewed ? (isStarted ? "Progress locked by review" : "Cannot mark as started after writing a review") : (isStarted ? "Click to unmark as started" : "Click to mark as started")}
+                    className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all min-w-[120px] ${
+                      userHasReviewed
+                        ? isStarted
+                          ? 'bg-blue-600/80 text-white border-2 border-blue-400 opacity-75 cursor-not-allowed'
+                          : 'bg-gray-700 text-gray-500 border-2 border-gray-600 opacity-50 cursor-not-allowed'
+                        : isStarted
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
                         : progressLoading
                         ? 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
-                        : 'border border-blue-500 text-blue-400 hover:bg-blue-600/10'
+                        : 'border border-blue-500 text-blue-400 hover:bg-blue-600/10 cursor-pointer'
                     }`}
                   >
                     {progressLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : userHasReviewed && isStarted ? (
+                      <Lock className="h-4 w-4" />
                     ) : (
                       <Play className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
                       {isStarted ? (
-                        'Started'
+                        <span className="flex flex-col items-center leading-tight">
+                          <span className="invisible">Mark as</span>
+                          <span>Started</span>
+                        </span>
                       ) : (
                         <span className="flex flex-col items-center leading-tight">
                           <span>Mark as</span>
@@ -1283,28 +1328,43 @@ export const GamePage: React.FC = () => {
                         </span>
                       )}
                     </span>
+                    {userHasReviewed && (
+                      <div className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1">
+                        <Lock className="h-3 w-3 text-gray-400" />
+                      </div>
+                    )}
                   </button>
 
                   {/* Finished Button */}
                   <button
                     onClick={() => handleAuthRequiredAction('mark_completed')}
-                    disabled={isCompleted || progressLoading}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isCompleted
-                        ? 'bg-green-600 text-white cursor-not-allowed'
+                    disabled={progressLoading || (userHasReviewed && !isCompleted)}
+                    title={userHasReviewed ? (isCompleted ? "Progress locked by review" : "Cannot mark as finished after writing a review") : (isCompleted ? "Click to unmark as finished" : "Click to mark as finished")}
+                    className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all min-w-[120px] ${
+                      userHasReviewed
+                        ? isCompleted
+                          ? 'bg-green-600/80 text-white border-2 border-green-400 opacity-75 cursor-not-allowed'
+                          : 'bg-gray-700 text-gray-500 border-2 border-gray-600 opacity-50 cursor-not-allowed'
+                        : isCompleted
+                        ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
                         : progressLoading
                         ? 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
-                        : 'border border-green-500 text-green-400 hover:bg-green-600/10'
+                        : 'border border-green-500 text-green-400 hover:bg-green-600/10 cursor-pointer'
                     }`}
                   >
                     {progressLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : userHasReviewed && isCompleted ? (
+                      <Lock className="h-4 w-4" />
                     ) : (
                       <CheckCircle className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
                       {isCompleted ? (
-                        'Finished'
+                        <span className="flex flex-col items-center leading-tight">
+                          <span className="invisible">Mark as</span>
+                          <span>Finished</span>
+                        </span>
                       ) : (
                         <span className="flex flex-col items-center leading-tight">
                           <span>Mark as</span>
@@ -1312,13 +1372,18 @@ export const GamePage: React.FC = () => {
                         </span>
                       )}
                     </span>
+                    {userHasReviewed && (
+                      <div className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1">
+                        <Lock className="h-3 w-3 text-gray-400" />
+                      </div>
+                    )}
                   </button>
 
                   {/* Write Review Button */}
                   {isAuthenticated ? (
                     <Link
                       to={`/review/${game.igdb_id}`}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors min-w-[120px]"
                     >
                       <ScrollText className="h-4 w-4" />
                       <span className="text-sm font-medium">
@@ -1340,7 +1405,7 @@ export const GamePage: React.FC = () => {
                   ) : (
                     <button
                       onClick={() => handleAuthRequiredAction('write_review')}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors min-w-[120px]"
                     >
                       <ScrollText className="h-4 w-4" />
                       <span className="text-sm font-medium">
