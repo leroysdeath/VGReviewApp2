@@ -40,7 +40,7 @@ export const ParentGameSection: React.FC<ParentGameSectionProps> = ({ dlcId, cla
   }
 
   return (
-    <div className={`bg-gray-800 rounded-lg p-6 border-l-4 border-purple-500 ${className}`}>
+    <div className={`bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-6 border-l-4 border-purple-500 ${className}`}>
       {loading ? (
         <div className="animate-pulse">
           <div className="flex items-center gap-2 mb-3">
