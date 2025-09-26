@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Gift, BookOpen, Play, CheckCircle, ScrollText, Lock } from 'lucide-react';
+import { Gift, LibraryBig, Play, CheckCircle, ScrollText, Lock } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 interface GameActionSheetProps {
@@ -134,7 +134,7 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
             ? 'border border-orange-500 bg-gray-900/80 backdrop-blur-md'
             : 'bg-gray-800 opacity-30'
         }`}>
-          <BookOpen className={`h-6 w-6 ${
+          <LibraryBig className={`h-6 w-6 ${
             isInCollection && showCollection
               ? 'text-white'
               : showCollection
@@ -363,7 +363,7 @@ export const GameActionSheet: React.FC<GameActionSheetProps> = ({
                 {collectionLoading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current" />
                 ) : (
-                  <BookOpen className="h-5 w-5" />
+                  <LibraryBig className="h-5 w-5" />
                 )}
                 <span className="font-medium">
                   {collectionLoading ? (

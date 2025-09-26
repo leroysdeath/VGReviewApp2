@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Search, Star, Gamepad2, BookOpen, Gift, AlertCircle } from 'lucide-react';
+import { X, Search, Star, Gamepad2, LibraryBig, Gift, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { igdbService } from '../services/igdbService';
@@ -487,7 +487,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                           </>
                         ) : (
                           <>
-                            {mode === 'collection' ? <BookOpen className="h-4 w-4" /> : 
+                            {mode === 'collection' ? <LibraryBig className="h-4 w-4" /> :
                              mode === 'wishlist' ? <Gift className="h-4 w-4" /> : 
                              mode === 'review' ? <Gamepad2 className="h-4 w-4" /> : null}
                             {mode === 'review' ? 'Select Game' : `Add to ${mode === 'collection' ? 'Backlog' : 'Wishlist'}`}
@@ -559,7 +559,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                           </>
                         ) : (
                           <>
-                            {mode === 'collection' ? <BookOpen className="h-4 w-4" /> : 
+                            {mode === 'collection' ? <LibraryBig className="h-4 w-4" /> :
                              mode === 'wishlist' ? <Gift className="h-4 w-4" /> : 
                              mode === 'review' ? <Gamepad2 className="h-4 w-4" /> : null}
                             {mode === 'review' ? 'Select Game' : `Add to ${mode === 'collection' ? 'Backlog' : 'Wishlist'}`}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Gift, BookOpen, Play, CheckCircle, Lock } from 'lucide-react';
+import { User, MessageCircle, Plus, Check, Heart, ScrollText, ChevronDown, ChevronUp, Gift, LibraryBig, Play, CheckCircle, Lock } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
@@ -1226,7 +1226,7 @@ export const GamePage: React.FC = () => {
                   <button
                     onClick={handleToggleWishlist}
                     disabled={wishlistLoading || isInCollection || isStarted || isCompleted}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors min-w-[120px] ${
                       isInCollection || isStarted || isCompleted
                         ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
                         : isInWishlist
@@ -1258,7 +1258,7 @@ export const GamePage: React.FC = () => {
                   <button
                     onClick={handleToggleCollection}
                     disabled={collectionLoading || isStarted || isCompleted}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors min-w-[120px] ${
                       isStarted || isCompleted
                         ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
                         : isInCollection
@@ -1269,7 +1269,7 @@ export const GamePage: React.FC = () => {
                     {collectionLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <BookOpen className="h-4 w-4" />
+                      <LibraryBig className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
                       {isInCollection ? (
@@ -1296,7 +1296,7 @@ export const GamePage: React.FC = () => {
                     onClick={() => handleAuthRequiredAction('mark_started')}
                     disabled={progressLoading || (userHasReviewed && !isStarted)}
                     title={userHasReviewed ? (isStarted ? "Progress locked by review" : "Cannot mark as started after writing a review") : (isStarted ? "Click to unmark as started" : "Click to mark as started")}
-                    className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                    className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all min-w-[120px] ${
                       userHasReviewed
                         ? isStarted
                           ? 'bg-blue-600/80 text-white border-2 border-blue-400 opacity-75 cursor-not-allowed'
@@ -1317,7 +1317,10 @@ export const GamePage: React.FC = () => {
                     )}
                     <span className="text-sm font-medium">
                       {isStarted ? (
-                        'Started'
+                        <span className="flex flex-col items-center leading-tight">
+                          <span className="invisible">Mark as</span>
+                          <span>Started</span>
+                        </span>
                       ) : (
                         <span className="flex flex-col items-center leading-tight">
                           <span>Mark as</span>
@@ -1337,7 +1340,7 @@ export const GamePage: React.FC = () => {
                     onClick={() => handleAuthRequiredAction('mark_completed')}
                     disabled={progressLoading || (userHasReviewed && !isCompleted)}
                     title={userHasReviewed ? (isCompleted ? "Progress locked by review" : "Cannot mark as finished after writing a review") : (isCompleted ? "Click to unmark as finished" : "Click to mark as finished")}
-                    className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                    className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all min-w-[120px] ${
                       userHasReviewed
                         ? isCompleted
                           ? 'bg-green-600/80 text-white border-2 border-green-400 opacity-75 cursor-not-allowed'
@@ -1358,7 +1361,10 @@ export const GamePage: React.FC = () => {
                     )}
                     <span className="text-sm font-medium">
                       {isCompleted ? (
-                        'Finished'
+                        <span className="flex flex-col items-center leading-tight">
+                          <span className="invisible">Mark as</span>
+                          <span>Finished</span>
+                        </span>
                       ) : (
                         <span className="flex flex-col items-center leading-tight">
                           <span>Mark as</span>
@@ -1377,7 +1383,7 @@ export const GamePage: React.FC = () => {
                   {isAuthenticated ? (
                     <Link
                       to={`/review/${game.igdb_id}`}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors min-w-[120px]"
                     >
                       <ScrollText className="h-4 w-4" />
                       <span className="text-sm font-medium">
@@ -1399,7 +1405,7 @@ export const GamePage: React.FC = () => {
                   ) : (
                     <button
                       onClick={() => handleAuthRequiredAction('write_review')}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors min-w-[120px]"
                     >
                       <ScrollText className="h-4 w-4" />
                       <span className="text-sm font-medium">
