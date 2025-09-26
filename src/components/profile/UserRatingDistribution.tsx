@@ -4,12 +4,14 @@ import { getUserRatingDistribution } from '../../services/profileService';
 
 interface UserRatingDistributionProps {
   userId: number;
+  username?: string;
   className?: string;
   onBarClick?: (rating: number) => void;
 }
 
 export const UserRatingDistribution: React.FC<UserRatingDistributionProps> = ({
   userId,
+  username,
   className = '',
   onBarClick
 }) => {
@@ -66,7 +68,12 @@ export const UserRatingDistribution: React.FC<UserRatingDistributionProps> = ({
   if (error) {
     return (
       <div className={`bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-6 ${className}`}>
-        <h3 className="text-white font-semibold mb-4">Rating Distribution</h3>
+        <div className="mb-2">
+          <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+            {username ? `${username}'s Ratings` : 'Ratings'}
+          </h3>
+        </div>
+        <div className="border-b border-gray-700 mb-4"></div>
         <div className="text-center py-8">
           <p className="text-red-400">{error}</p>
         </div>
@@ -78,7 +85,12 @@ export const UserRatingDistribution: React.FC<UserRatingDistributionProps> = ({
   if (!distribution || distribution.totalRatings === 0) {
     return (
       <div className={`bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-6 ${className}`}>
-        <h3 className="text-white font-semibold mb-4">Rating Distribution</h3>
+        <div className="mb-2">
+          <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+            {username ? `${username}'s Ratings` : 'Ratings'}
+          </h3>
+        </div>
+        <div className="border-b border-gray-700 mb-4"></div>
         <div className="text-center py-8">
           <p className="text-gray-400">No ratings yet</p>
           <p className="text-gray-500 text-sm mt-2">
@@ -92,13 +104,17 @@ export const UserRatingDistribution: React.FC<UserRatingDistributionProps> = ({
   // Main content
   return (
     <div className={`bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-6 ${className}`}>
-      <h3 className="text-white font-semibold mb-4">Rating Distribution</h3>
+      <div className="mb-2">
+        <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+          {username ? `${username}'s Ratings` : 'Ratings'}
+        </h3>
+      </div>
+      <div className="border-b border-gray-700 mb-4"></div>
       <RatingBars
         distribution={distribution.distribution}
         totalRatings={distribution.totalRatings}
         averageRating={distribution.averageRating}
         barHeight={60}
-        barWidth={20}
         showLabels={true}
         interactive={!!onBarClick}
         onBarClick={onBarClick}

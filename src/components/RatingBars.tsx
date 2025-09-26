@@ -11,7 +11,6 @@ interface RatingBarsProps {
   totalRatings: number;
   averageRating?: number;
   barHeight?: number;
-  barWidth?: number;
   showLabels?: boolean;
   interactive?: boolean;
   onBarClick?: (rating: number) => void;
@@ -23,7 +22,6 @@ export const RatingBars: React.FC<RatingBarsProps> = ({
   totalRatings,
   averageRating,
   barHeight = 80,
-  barWidth = 24,
   showLabels = true,
   interactive = false,
   onBarClick,
@@ -61,18 +59,17 @@ export const RatingBars: React.FC<RatingBarsProps> = ({
       )}
 
       {/* Rating bars */}
-      <div className="flex flex-col space-y-2">
-        <div className="flex items-end gap-[2px] justify-center" style={{ height: `${barHeight}px` }}>
+      <div className="flex flex-col space-y-2 w-full max-w-sm mx-auto">
+        <div className="flex items-end gap-[2px] w-full" style={{ height: `${barHeight}px` }}>
           {distribution.map((item) => (
             <div
               key={item.rating}
-              className={`relative group ${interactive ? 'cursor-pointer' : ''}`}
-              style={{ width: `${barWidth}px` }}
+              className={`relative group flex-1 ${interactive ? 'cursor-pointer' : ''}`}
               onClick={() => interactive && onBarClick?.(item.rating)}
             >
               {/* Bar */}
               <div
-                className={`${getBarColor(item.rating)} rounded-sm transition-all duration-200 ${
+                className={`w-full ${getBarColor(item.rating)} rounded-sm transition-all duration-200 ${
                   interactive ? 'hover:opacity-80' : ''
                 }`}
                 style={{
@@ -84,7 +81,7 @@ export const RatingBars: React.FC<RatingBarsProps> = ({
               >
                 {/* Tooltip on hover */}
                 {item.count > 0 && (
-                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none">
+                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none z-10">
                     {item.count} {item.count === 1 ? 'rating' : 'ratings'} ({item.percentage.toFixed(1)}%)
                   </div>
                 )}
@@ -95,12 +92,11 @@ export const RatingBars: React.FC<RatingBarsProps> = ({
 
         {/* Labels */}
         {showLabels && (
-          <div className="flex gap-[2px] justify-center">
+          <div className="flex gap-[2px] w-full">
             {distribution.map((item) => (
               <div
                 key={item.rating}
-                className="text-xs text-gray-500 text-center"
-                style={{ width: `${barWidth}px` }}
+                className="flex-1 text-xs text-gray-500 text-center"
               >
                 {item.rating}
               </div>

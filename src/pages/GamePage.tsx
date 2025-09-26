@@ -1425,13 +1425,8 @@ export const GamePage: React.FC = () => {
           {/* Rating Summary */}
           <div className="space-y-6">
             <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-6">
-              <div className="flex justify-between items-center mb-2">
+              <div className="mb-2">
                 <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
-                <div className="text-sm">
-                  <span className="text-blue-400">
-                    {reviewsLoading ? 'Loading...' : totalRatings}
-                  </span>
-                </div>
               </div>
               <div className="border-b border-gray-700 mb-4"></div>
 
@@ -1456,10 +1451,13 @@ export const GamePage: React.FC = () => {
                   totalRatings={totalRatings}
                   averageRating={averageRating}
                   barHeight={60}
-                  barWidth={20}
                   showLabels={true}
                   interactive={false}
+                  showTotalRatings={false}
                 />
+                <p className="text-gray-400 text-sm text-center mt-3">
+                  Based on {totalRatings} {totalRatings === 1 ? 'review' : 'reviews'}
+                </p>
               )}
             </div>
 

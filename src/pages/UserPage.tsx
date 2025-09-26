@@ -357,7 +357,7 @@ export const UserPage: React.FC = () => {
             />
           </div>
           <div className="w-full max-w-sm">
-            <UserRatingDistribution userId={parseInt(id)} />
+            <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} />
           </div>
         </div>
 
@@ -386,7 +386,7 @@ export const UserPage: React.FC = () => {
               />
             </div>
           </div>
-          <UserRatingDistribution userId={parseInt(id)} />
+          <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} />
         </div>
 
         {/* Profile Header - Mobile Layout */}
@@ -401,7 +401,7 @@ export const UserPage: React.FC = () => {
             followLoading={followLoading}
             isAuthenticated={isAuthenticated}
           />
-          <UserRatingDistribution userId={parseInt(id)} />
+          <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} />
           <div ref={profileDetailsRef}>
             <ProfileDetails
               stats={stats}
