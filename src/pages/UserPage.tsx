@@ -333,7 +333,7 @@ export const UserPage: React.FC = () => {
     <div className="bg-gray-900 text-white p-6">
       <div className="max-w-6xl mx-auto">
         {/* Profile Header */}
-        <div className="flex flex-col md:flex-row justify-between gap-6 mb-8">
+        <div className="flex flex-col gap-6 mb-8">
           <ProfileInfo
             user={transformedUser}
             isDummy={false}
@@ -376,8 +376,8 @@ export const UserPage: React.FC = () => {
             Want to Play
             {activeTab === 'playlist' && (
               <div className="absolute bottom-0 left-0 right-0 h-[2px] flex">
-                <div className="w-1/2 bg-orange-600"></div>
                 <div className="w-1/2 bg-red-600"></div>
+                <div className="w-1/2 bg-orange-600"></div>
               </div>
             )}
           </button>
