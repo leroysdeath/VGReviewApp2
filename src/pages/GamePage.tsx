@@ -1446,18 +1446,20 @@ export const GamePage: React.FC = () => {
                   <p className="text-gray-500 text-sm mt-2">Be the first to rate this game</p>
                 </div>
               ) : (
-                <RatingBars
-                  distribution={ratingDistribution}
-                  totalRatings={totalRatings}
-                  averageRating={averageRating}
-                  barHeight={60}
-                  showLabels={true}
-                  interactive={false}
-                  showTotalRatings={false}
-                />
-                <p className="text-gray-400 text-sm text-center mt-3">
-                  Based on {totalRatings} {totalRatings === 1 ? 'review' : 'reviews'}
-                </p>
+                <>
+                  <RatingBars
+                    distribution={ratingDistribution}
+                    totalRatings={totalRatings}
+                    averageRating={averageRating}
+                    barHeight={60}
+                    showLabels={true}
+                    interactive={false}
+                    showTotalRatings={false}
+                  />
+                  <p className="text-gray-400 text-sm text-center mt-3">
+                    Based on {totalRatings} {totalRatings === 1 ? 'review' : 'reviews'}
+                  </p>
+                </>
               )}
             </div>
 
