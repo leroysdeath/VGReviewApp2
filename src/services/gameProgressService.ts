@@ -260,6 +260,140 @@ export const markGameCompleted = async (gameId: number): Promise<ServiceResponse
 };
 
 /**
+ * Toggle game started state (only if not locked by review)
+ */
+export const toggleGameStarted = async (gameId: number, hasReview: boolean = false): Promise<ServiceResponse<GameProgress | null>> => {
+  try {
+    if (hasReview) {
+      return { success: false, error: 'Cannot change progress state - game has a review' };
+    }
+
+    console.log('🔄 Toggling started state for gameId:', gameId);
+
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // Get current progress
+    const progressResult = await getGameProgress(gameId);
+    if (!progressResult.success) {
+      return progressResult;
+    }
+
+    const currentProgress = progressResult.data;
+
+    if (!currentProgress || !currentProgress.started) {
+      // Mark as started
+      return markGameStarted(gameId);
+    } else {
+      // Unmark started (remove the record or update to false)
+      const { data: gameRecord } = await supabase
+        .from('game')
+        .select('id')
+        .eq('igdb_id', gameId)
+        .single();
+
+      if (!gameRecord) {
+        return { success: false, error: 'Game not found in database' };
+      }
+
+      // Remove the progress record entirely if unmarking
+      const { error } = await supabase
+        .from('game_progress')
+        .delete()
+        .eq('user_id', userId)
+        .eq('game_id', gameRecord.id);
+
+      if (error) {
+        console.error('❌ Error removing game progress:', error);
+        return { success: false, error: `Failed to unmark game: ${error.message}` };
+      }
+
+      console.log('✅ Successfully unmarked game as started');
+      return { success: true, data: null };
+    }
+  } catch (error) {
+    console.error('💥 Unexpected error toggling game started:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to toggle game state'
+    };
+  }
+};
+
+/**
+ * Toggle game completed state (only if not locked by review)
+ */
+export const toggleGameCompleted = async (gameId: number, hasReview: boolean = false): Promise<ServiceResponse<GameProgress | null>> => {
+  try {
+    if (hasReview) {
+      return { success: false, error: 'Cannot change progress state - game has a review' };
+    }
+
+    console.log('🔄 Toggling completed state for gameId:', gameId);
+
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    // Get current progress
+    const progressResult = await getGameProgress(gameId);
+    if (!progressResult.success) {
+      return progressResult;
+    }
+
+    const currentProgress = progressResult.data;
+
+    if (!currentProgress || !currentProgress.completed) {
+      // Mark as completed
+      return markGameCompleted(gameId);
+    } else {
+      // Unmark completed - revert to just started
+      const { data: gameRecord } = await supabase
+        .from('game')
+        .select('id')
+        .eq('igdb_id', gameId)
+        .single();
+
+      if (!gameRecord) {
+        return { success: false, error: 'Game not found in database' };
+      }
+
+      const now = new Date().toISOString();
+
+      // Update to remove completed status but keep started
+      const { data, error } = await supabase
+        .from('game_progress')
+        .update({
+          completed: false,
+          completed_date: null,
+          updated_at: now
+        })
+        .eq('user_id', userId)
+        .eq('game_id', gameRecord.id)
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('❌ Error updating game progress:', error);
+        return { success: false, error: `Failed to unmark game as completed: ${error.message}` };
+      }
+
+      console.log('✅ Successfully unmarked game as completed');
+      return { success: true, data };
+    }
+  } catch (error) {
+    console.error('💥 Unexpected error toggling game completed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to toggle game state'
+    };
+  }
+};
+
+/**
  * Get user's game statistics
  */
 export const getUserGameStats = async (): Promise<ServiceResponse<{
