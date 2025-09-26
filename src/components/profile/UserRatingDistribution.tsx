@@ -68,7 +68,7 @@ export const UserRatingDistribution: React.FC<UserRatingDistributionProps> = ({
   if (error) {
     return (
       <div className={`bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-6 ${className}`}>
-        <div className="mb-2">
+        <div className="mb-2 text-center">
           <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
             {username ? `${username}'s Ratings` : 'Ratings'}
           </h3>
@@ -85,7 +85,7 @@ export const UserRatingDistribution: React.FC<UserRatingDistributionProps> = ({
   if (!distribution || distribution.totalRatings === 0) {
     return (
       <div className={`bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-6 ${className}`}>
-        <div className="mb-2">
+        <div className="mb-2 text-center">
           <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
             {username ? `${username}'s Ratings` : 'Ratings'}
           </h3>

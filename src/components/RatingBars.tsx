@@ -27,7 +27,7 @@ export const RatingBars: React.FC<RatingBarsProps> = ({
   onBarClick,
   showTotalRatings = true,
 }) => {
-  // Calculate the color for each bar based on rating (red to yellow to green gradient)
+  // Calculate the color for each bar based on rating (red to yellow to green to blue gradient)
   const getBarColor = (rating: number): string => {
     if (rating <= 3) {
       // Red for low ratings
@@ -38,9 +38,12 @@ export const RatingBars: React.FC<RatingBarsProps> = ({
     } else if (rating <= 7) {
       // Yellow for mid-high ratings
       return 'bg-yellow-500';
-    } else {
+    } else if (rating <= 9.5) {
       // Green for high ratings
       return 'bg-green-500';
+    } else {
+      // Blue for perfect/near-perfect ratings (>9.5)
+      return 'bg-blue-500';
     }
   };
 

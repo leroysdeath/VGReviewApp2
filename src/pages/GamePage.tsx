@@ -1425,7 +1425,7 @@ export const GamePage: React.FC = () => {
           {/* Rating Summary */}
           <div className="space-y-6">
             <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-6">
-              <div className="mb-2">
+              <div className="mb-2 text-center">
                 <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
               </div>
               <div className="border-b border-gray-700 mb-4"></div>
