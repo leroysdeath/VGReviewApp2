@@ -30,7 +30,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
   userId,
   isOwnProfile
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'collection' | 'wishlist'>('collection');
+  const [activeSubTab, setActiveSubTab] = useState<'collection' | 'wishlist'>('wishlist');
   const [collectionItems, setCollectionItems] = useState<GameItem[]>([]);
   const [wishlistItems, setWishlistItems] = useState<GameItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -228,24 +228,24 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
       {/* Sub-tab Navigation */}
       <div className="flex justify-center gap-6 mb-6 border-b border-gray-700">
         <button
-          onClick={() => setActiveSubTab('collection')}
-          className={`pb-3 px-1 transition-colors ${
-            activeSubTab === 'collection' 
-              ? 'border-b-2 border-orange-600 text-white' 
-              : 'text-gray-400 hover:text-gray-300'
-          }`}
-        >
-          Backlog
-        </button>
-        <button
           onClick={() => setActiveSubTab('wishlist')}
           className={`pb-3 px-1 transition-colors ${
-            activeSubTab === 'wishlist' 
-              ? 'border-b-2 border-red-600 text-white' 
+            activeSubTab === 'wishlist'
+              ? 'border-b-2 border-red-600 text-white'
               : 'text-gray-400 hover:text-gray-300'
           }`}
         >
           Wishlist
+        </button>
+        <button
+          onClick={() => setActiveSubTab('collection')}
+          className={`pb-3 px-1 transition-colors ${
+            activeSubTab === 'collection'
+              ? 'border-b-2 border-orange-600 text-white'
+              : 'text-gray-400 hover:text-gray-300'
+          }`}
+        >
+          Backlog
         </button>
       </div>
 
