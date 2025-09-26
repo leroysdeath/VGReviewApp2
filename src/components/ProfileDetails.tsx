@@ -27,15 +27,16 @@ export const ProfileDetails: React.FC<ProfileDetailsProps> = ({
       <div className="grid grid-cols-5 gap-2 sm:gap-4 md:gap-6 w-full sm:w-auto">
         <button
           onClick={onGamesClick}
-          className="group relative flex flex-col items-center justify-center rounded-lg p-2 transition-all min-w-0 overflow-hidden"
+          className="group relative flex flex-col items-center justify-center rounded-lg p-2 md:px-6 md:py-3 transition-all min-w-0 overflow-hidden"
           disabled={!onGamesClick}
         >
           {/* Split border for Games */}
           <div className="absolute inset-0 rounded-lg" style={{
-            background: 'linear-gradient(90deg, #3b82f6 50%, #10b981 50%)',
-            padding: '1px'
+            background: 'linear-gradient(90deg, #3b82f6 50%, #10b981 50%)'
           }}>
-            <div className="w-full h-full bg-gray-900 rounded-lg"></div>
+            <div className="absolute inset-0 rounded-lg p-[1px] md:p-[2px]">
+              <div className="w-full h-full bg-gray-900 rounded-lg"></div>
+            </div>
           </div>
           <div className="absolute inset-0 flex opacity-0 group-hover:opacity-10 transition-opacity rounded-lg">
             <div className="w-1/2 bg-blue-600"></div>
@@ -46,7 +47,7 @@ export const ProfileDetails: React.FC<ProfileDetailsProps> = ({
         </button>
         <button
           onClick={onReviewsClick}
-          className="group flex flex-col items-center justify-center border border-purple-500 hover:bg-purple-600/10 rounded-lg p-2 transition-all min-w-0"
+          className="group flex flex-col items-center justify-center border border-purple-500 md:border-2 hover:bg-purple-600/10 rounded-lg p-2 md:px-6 md:py-3 transition-all min-w-0"
           disabled={!onReviewsClick}
         >
           <div className="text-lg sm:text-xl font-bold text-white group-hover:text-purple-400 transition-colors">{stats.thisYear}</div>
@@ -58,7 +59,7 @@ export const ProfileDetails: React.FC<ProfileDetailsProps> = ({
         </div>
         <button
           onClick={onFollowingClick}
-          className="group flex flex-col items-center justify-center border border-[#E8A5A5] hover:bg-[#E8A5A5]/10 rounded-lg p-2 transition-all min-w-0"
+          className="group flex flex-col items-center justify-center border border-[#E8A5A5] md:border-2 hover:bg-[#E8A5A5]/10 rounded-lg p-2 md:px-6 md:py-3 transition-all min-w-0"
           disabled={!onFollowingClick}
         >
           <div className="text-lg sm:text-xl font-bold text-white group-hover:text-[#E8A5A5] transition-colors">{stats.following}</div>
@@ -68,7 +69,7 @@ export const ProfileDetails: React.FC<ProfileDetailsProps> = ({
         </button>
         <button
           onClick={onFollowersClick}
-          className="group flex flex-col items-center justify-center border border-[#FF6B9D] hover:bg-[#FF6B9D]/10 rounded-lg p-2 transition-all min-w-0"
+          className="group flex flex-col items-center justify-center border border-[#FF6B9D] md:border-2 hover:bg-[#FF6B9D]/10 rounded-lg p-2 md:px-6 md:py-3 transition-all min-w-0"
           disabled={!onFollowersClick}
         >
           <div className="text-lg sm:text-xl font-bold text-white group-hover:text-[#FF6B9D] transition-colors">{stats.followers.toLocaleString()}</div>
