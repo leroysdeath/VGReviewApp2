@@ -37,14 +37,14 @@ interface ReviewCardProps {
 const themeConfig = {
   purple: {
     border: 'border-purple-800/30',
-    hoverBorder: 'hover:border-purple-500/70 hover:border-2',
+    hoverBorder: 'hover:border-purple-500/70',
     accent: 'text-purple-400',
     gradient: 'from-purple-600 to-purple-800',
     background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-purple-900/10'
   },
   green: {
     border: 'border-green-800/30',
-    hoverBorder: 'hover:border-green-500/70 hover:border-2',
+    hoverBorder: 'hover:border-green-500/70',
     accent: 'text-green-400',
     gradient: 'from-green-600 to-green-800',
     background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-green-900/10'
@@ -58,7 +58,7 @@ const themeConfig = {
   },
   blue: {
     border: 'border-blue-800/30',
-    hoverBorder: 'hover:border-blue-500/70 hover:border-2',
+    hoverBorder: 'hover:border-blue-500/70',
     accent: 'text-blue-400',
     gradient: 'from-blue-600 to-blue-800',
     background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-blue-900/10'
@@ -150,8 +150,9 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
     <Link
       to={reviewUrl}
       className={`
-        block p-4 md:p-8 bg-gray-900/95 border ${themeStyles.border}
+        block p-4 md:p-6 bg-gray-900/95 border ${themeStyles.border}
         rounded-lg ${themeStyles.hoverBorder} transition-all duration-300
+        shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30
         ${className}
       `}
     >
@@ -160,7 +161,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
         {/* MOBILE LAYOUT (default) */}
         <div className="md:hidden">
           {/* Row 1: Avatar + Author */}
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-2 mb-2">
             <div
               className="group/avatar cursor-pointer flex-shrink-0"
               onClick={(e) => {
@@ -172,25 +173,23 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                 <img
                   src={review.authorAvatar}
                   alt={review.author}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-gray-600
-                    transition-all duration-300 group-hover/avatar:border-gray-400
-                    group-hover/avatar:scale-110"
+                  className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-700/50 ring-offset-1 ring-offset-gray-900
+                    transition-all duration-300 group-hover/avatar:ring-gray-500"
                 />
               ) : (
                 <div className={`
-                  w-12 h-12 rounded-full border-2 border-gray-600
+                  w-10 h-10 rounded-full ring-2 ring-gray-700/50 ring-offset-1 ring-offset-gray-900
                   bg-gradient-to-br ${themeStyles.gradient}
-                  flex items-center justify-center font-bold text-white text-lg
-                  transition-all duration-300 group-hover/avatar:border-gray-400
-                  group-hover/avatar:scale-110
+                  flex items-center justify-center font-bold text-white text-base
+                  transition-all duration-300 group-hover/avatar:ring-gray-500
                 `}>
                   {getUserInitial(review.author)}
                 </div>
               )}
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <span
-                className="font-semibold text-white hover:text-purple-400 cursor-pointer transition-colors duration-200"
+                className="font-medium text-white text-sm hover:text-purple-400 cursor-pointer transition-colors duration-200 block truncate"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/user/${review.userId}`);
@@ -198,7 +197,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               >
                 {review.author}
               </span>
-              <div className="text-sm text-gray-400">{getRelativeTime(review.date)}</div>
+              <div className="text-xs text-gray-400">{getRelativeTime(review.date)}</div>
             </div>
           </div>
 
@@ -227,7 +226,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
               {/* Game Title - wraps around cover if needed */}
               <div className="mb-2 text-center pr-24">
-                <span className="text-gray-300 font-medium">
+                <span className="text-gray-300 text-sm font-medium">
                   {review.gameTitle}
                 </span>
               </div>
@@ -308,17 +307,15 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   <img
                     src={review.authorAvatar}
                     alt={review.author}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-600
-                      transition-all duration-300 group-hover/avatar:border-gray-400
-                      group-hover/avatar:scale-110"
+                    className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-700/50 ring-offset-2 ring-offset-gray-900
+                      transition-all duration-300 group-hover/avatar:ring-gray-500"
                   />
                 ) : (
                   <div className={`
-                    w-16 h-16 rounded-full border-2 border-gray-600
+                    w-16 h-16 rounded-full ring-2 ring-gray-700/50 ring-offset-2 ring-offset-gray-900
                     bg-gradient-to-br ${themeStyles.gradient}
                     flex items-center justify-center font-bold text-white text-xl
-                    transition-all duration-300 group-hover/avatar:border-gray-400
-                    group-hover/avatar:scale-110
+                    transition-all duration-300 group-hover/avatar:ring-gray-500
                   `}>
                     {getUserInitial(review.author)}
                   </div>

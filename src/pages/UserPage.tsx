@@ -13,6 +13,7 @@ import { GamesModal } from '../components/GamesModal';
 import { ReviewsModal } from '../components/ReviewsModal';
 import { userServiceSimple, UserUpdate } from '../services/userServiceSimple';
 import { useFollow } from '../hooks/useFollow';
+import { UserRatingDistribution } from '../components/profile/UserRatingDistribution';
 
 // Import UserSettingsModal directly to avoid dynamic import issues
 import UserSettingsModal from '../components/profile/UserSettingsModal';
@@ -332,8 +333,64 @@ export const UserPage: React.FC = () => {
   return (
     <div className="bg-gray-900 text-white p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Profile Header */}
-        <div className="flex flex-col gap-6 mb-8">
+        {/* Profile Header - Desktop Layout (lg+) */}
+        <div className="hidden lg:flex gap-6 mb-8">
+          <div className="flex-1">
+            <ProfileInfo
+              user={transformedUser}
+              isDummy={false}
+              onEditClick={handleEditClick}
+              isCurrentUser={isOwnProfile}
+              onFollowClick={handleFollowClick}
+              isFollowing={isFollowingUser}
+              followLoading={followLoading}
+              isAuthenticated={isAuthenticated}
+            />
+          </div>
+          <div ref={profileDetailsRef} className="w-full max-w-md">
+            <ProfileDetails
+              stats={stats}
+              onFollowersClick={handleFollowersClick}
+              onFollowingClick={handleFollowingClick}
+              onGamesClick={handleGamesClick}
+              onReviewsClick={handleReviewsClick}
+            />
+          </div>
+          <div className="w-full max-w-sm">
+            <UserRatingDistribution userId={parseInt(id)} />
+          </div>
+        </div>
+
+        {/* Profile Header - Tablet Layout (md) */}
+        <div className="hidden md:block lg:hidden mb-8">
+          <div className="flex gap-6 mb-6">
+            <div className="flex-1">
+              <ProfileInfo
+                user={transformedUser}
+                isDummy={false}
+                onEditClick={handleEditClick}
+                isCurrentUser={isOwnProfile}
+                onFollowClick={handleFollowClick}
+                isFollowing={isFollowingUser}
+                followLoading={followLoading}
+                isAuthenticated={isAuthenticated}
+              />
+            </div>
+            <div ref={profileDetailsRef} className="w-full max-w-md">
+              <ProfileDetails
+                stats={stats}
+                onFollowersClick={handleFollowersClick}
+                onFollowingClick={handleFollowingClick}
+                onGamesClick={handleGamesClick}
+                onReviewsClick={handleReviewsClick}
+              />
+            </div>
+          </div>
+          <UserRatingDistribution userId={parseInt(id)} />
+        </div>
+
+        {/* Profile Header - Mobile Layout */}
+        <div className="md:hidden mb-8 space-y-6">
           <ProfileInfo
             user={transformedUser}
             isDummy={false}
@@ -344,7 +401,8 @@ export const UserPage: React.FC = () => {
             followLoading={followLoading}
             isAuthenticated={isAuthenticated}
           />
-          <div ref={profileDetailsRef} className="w-full md:max-w-md">
+          <UserRatingDistribution userId={parseInt(id)} />
+          <div ref={profileDetailsRef}>
             <ProfileDetails
               stats={stats}
               onFollowersClick={handleFollowersClick}

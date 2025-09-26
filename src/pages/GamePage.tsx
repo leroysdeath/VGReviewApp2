@@ -23,6 +23,7 @@ import { collectionWishlistService } from '../services/collectionWishlistService
 import { mapPlatformNames } from '../utils/platformMapping';
 import { GameActionSheet } from '../components/GameActionSheet';
 import { useTrackGameView } from '../hooks/useTrackGameView';
+import { RatingBars } from '../components/RatingBars';
 
 // Interface for review data from database
 interface GameReview {
@@ -1444,34 +1445,21 @@ export const GamePage: React.FC = () => {
                     Retry
                   </button>
                 </div>
-              ) : (
-                <div className="flex items-end justify-between">
-                  <div className="flex flex-col">
-                    <div className="flex items-end gap-[2px] mb-1" style={{ height: '80px' }}>
-                      {ratingDistribution.map((item) => (
-                        <div
-                          key={item.rating}
-                          className="w-6 bg-gray-700 rounded-sm"
-                          style={{
-                            height: item.count > 0 
-                              ? `${(item.percentage / 100) * 80}px`
-                              : '2px',
-                            backgroundColor: '#6b7280'
-                          }}
-                        ></div>
-                      ))}
-                    </div>
-                    <div className="border-t border-gray-700 pt-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400 text-xs" style={{ width: '24px', textAlign: 'center' }}>1</span>
-                        <span className="text-gray-400 text-xs" style={{ width: '24px', textAlign: 'center' }}>10</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-2xl font-bold text-green-400">
-                    {averageRating > 0 ? averageRating.toFixed(1) : 'N/A'}
-                  </div>
+              ) : totalRatings === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-400">No ratings yet</p>
+                  <p className="text-gray-500 text-sm mt-2">Be the first to rate this game</p>
                 </div>
+              ) : (
+                <RatingBars
+                  distribution={ratingDistribution}
+                  totalRatings={totalRatings}
+                  averageRating={averageRating}
+                  barHeight={60}
+                  barWidth={20}
+                  showLabels={true}
+                  interactive={false}
+                />
               )}
             </div>
 
