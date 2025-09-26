@@ -344,7 +344,7 @@ export const UserPage: React.FC = () => {
             followLoading={followLoading}
             isAuthenticated={isAuthenticated}
           />
-          <div ref={profileDetailsRef}>
+          <div ref={profileDetailsRef} className="w-full md:max-w-md">
             <ProfileDetails
               stats={stats}
               onFollowersClick={handleFollowersClick}
