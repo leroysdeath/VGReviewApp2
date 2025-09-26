@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -35,6 +35,7 @@ import { PrivacySettingsPage } from './pages/PrivacySettingsPage';
 import EnhancedSearchTestPage from './pages/EnhancedSearchTestPage';
 import DiagnosticPage from './pages/DiagnosticPage';
 import { SearchPerformanceDashboard } from './components/SearchPerformanceDashboard';
+import { AnalyticsPage } from './pages/AnalyticsPage';
 
 // Navigation debugging component
 const NavigationDebugger: React.FC = () => {
@@ -117,6 +118,10 @@ const AppContent: React.FC = () => {
                     <Route
                       path="/search-performance"
                       element={<SearchPerformanceDashboard />}
+                    />
+                    <Route
+                      path="/admin/analytics"
+                      element={<AnalyticsPage />}
                     />
                     <Route
                       path="/review/:gameId?" 

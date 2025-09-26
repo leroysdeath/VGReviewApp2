@@ -130,8 +130,8 @@ exports.handler = async (event, context) => {
         };
       }
       // MINIMAL FIELDS for GamePage - Only fetch what's actually displayed
-      // GamePage shows: name, cover, platforms, release_date, developer, publisher, summary, dlcs, expansions
-      requestBody = `fields name, slug, cover.url, first_release_date, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, summary, category, dlcs, expansions; where id = ${gameId};`;
+      // GamePage shows: name, cover, platforms, release_date, developer, publisher, summary, storyline, dlcs, expansions
+      requestBody = `fields name, slug, cover.url, first_release_date, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, summary, storyline, category, dlcs, expansions; where id = ${gameId};`;
     } else {
       // Search request
       if (!query || query.trim().length === 0) {

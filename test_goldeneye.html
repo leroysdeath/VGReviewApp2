@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head><title>GoldenEye Test</title></head>
+<body>
+<h1>Test IGDB GoldenEye Lookup</h1>
+<div id="result"></div>
+<script>
+async function testGoldenEye() {
+  try {
+    // Test search
+    const searchResp = await fetch('/.netlify/functions/igdb-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'goldeneye 007', limit: 5 })
+    });
+    const searchData = await searchResp.json();
+    
+    document.getElementById('result').innerHTML = '<pre>' + 
+      JSON.stringify(searchData.games.map(g => ({
+        id: g.id,
+        name: g.name,
+        platforms: g.platforms?.map(p => p.name)
+      })), null, 2) + '</pre>';
+  } catch (err) {
+    document.getElementById('result').innerText = 'Error: ' + err.message;
+  }
+}
+testGoldenEye();
+</script>
+</body>
+</html>

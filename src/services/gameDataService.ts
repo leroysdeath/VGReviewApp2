@@ -86,8 +86,8 @@ class GameDataService {
         }
       }
 
-      // Check if game exists but has incomplete data (only check fields we actually use)
-      const needsUpdate = data && (!data.summary || !data.developer || !data.publisher)
+      // Check if game exists but has incomplete data (check critical display fields)
+      const needsUpdate = data && (!data.summary || !data.developer || !data.publisher || !data.cover_url)
       
       if (error || !data || needsUpdate) {
         if (needsUpdate) {
@@ -115,6 +115,7 @@ class GameDataService {
             name: transformedGame.name,
             slug: data?.slug || generateSlug(transformedGame.name), // Keep existing slug if updating
             summary: transformedGame.summary,
+            description: transformedGame.description, // Add description/storyline field
             release_date: transformedGame.first_release_date
               ? (typeof transformedGame.first_release_date === 'number'
                   ? new Date(transformedGame.first_release_date * 1000).toISOString().split('T')[0]
@@ -184,6 +185,11 @@ class GameDataService {
           return this.transformGameWithRatings(upsertedGame as GameWithRating)
         } catch (igdbError) {
           console.error('Error fetching from IGDB:', igdbError)
+          // If IGDB fetch failed but we have data in database, use that instead of returning null
+          if (data) {
+            console.warn(`⚠️ IGDB fetch failed for ${igdbId}, falling back to existing database data`)
+            return this.transformGameWithRatings(data as GameWithRating)
+          }
           return null
         }
       }
@@ -239,8 +245,8 @@ class GameDataService {
         });
       }
 
-      // Check if game exists but has incomplete data (only check fields we actually use)
-      const needsUpdate = gameData && (!gameData.summary || !gameData.developer || !gameData.publisher)
+      // Check if game exists but has incomplete data (check critical display fields)
+      const needsUpdate = gameData && (!gameData.summary || !gameData.developer || !gameData.publisher || !gameData.cover_url)
       
       if (gameError || !gameData || needsUpdate) {
         if (needsUpdate) {
@@ -349,7 +355,15 @@ class GameDataService {
           }
         } catch (igdbError) {
           console.error('Error fetching from IGDB:', igdbError)
-          return { game: null, reviews: [] }
+          // If IGDB fetch failed but we have data in database, use that instead of failing completely
+          if (gameData) {
+            console.warn(`⚠️ IGDB fetch failed for ${igdbId}, falling back to existing database data`)
+            // Continue to fetch reviews with existing game data
+            // Fall through to the review fetching code below
+          } else {
+            // No database data and IGDB failed - truly can't load this game
+            return { game: null, reviews: [] }
+          }
         }
       }
 
@@ -447,6 +461,15 @@ class GameDataService {
       if (gameError || !gameData) {
         console.log(`Game with slug ${slug} not found in database`)
         return { game: null, reviews: [] }
+      }
+
+      // Check if game has incomplete data and refresh from IGDB if needed
+      const needsUpdate = gameData && (!gameData.summary || !gameData.developer || !gameData.publisher || !gameData.cover_url)
+
+      if (needsUpdate && gameData.igdb_id) {
+        console.log(`Game "${gameData.name}" (slug: ${slug}) has incomplete data, refreshing from IGDB...`)
+        // Delegate to getGameWithFullReviews which handles IGDB refresh
+        return await this.getGameWithFullReviews(gameData.igdb_id)
       }
 
       // Get reviews using the game's database ID
