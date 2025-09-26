@@ -46,7 +46,7 @@ export const STATE_LABELS: Record<GameState, string> = {
 export const STATE_ICONS: Record<GameState, string> = {
   none: '',
   wishlist: 'Gift',
-  collection: 'BookOpen',
+  collection: 'LibraryBig',
   started: 'Play',
   completed: 'CheckCircle'
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Gift, Plus, X } from 'lucide-react';
+import { LibraryBig, Gift, Plus, X } from 'lucide-react';
 import { collectionWishlistService } from '../../services/collectionWishlistService';
 import { Link } from 'react-router-dom';
 import { GamePickerModal } from '../GamePickerModal';
@@ -107,7 +107,7 @@ export const PlaylistTabs: React.FC<PlaylistTabsProps> = ({
         <div className="text-center py-8 sm:py-12 px-4">
           <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             {type === 'collection' ? (
-              <BookOpen className="h-8 w-8 text-gray-500" />
+              <LibraryBig className="h-8 w-8 text-gray-500" />
             ) : (
               <Gift className="h-8 w-8 text-gray-500" />
             )}
