@@ -15,6 +15,7 @@ interface RatingBarsProps {
   showLabels?: boolean;
   interactive?: boolean;
   onBarClick?: (rating: number) => void;
+  showTotalRatings?: boolean;
 }
 
 export const RatingBars: React.FC<RatingBarsProps> = ({
@@ -26,6 +27,7 @@ export const RatingBars: React.FC<RatingBarsProps> = ({
   showLabels = true,
   interactive = false,
   onBarClick,
+  showTotalRatings = true,
 }) => {
   // Calculate the color for each bar based on rating (red to yellow to green gradient)
   const getBarColor = (rating: number): string => {
@@ -108,7 +110,7 @@ export const RatingBars: React.FC<RatingBarsProps> = ({
       </div>
 
       {/* Total ratings */}
-      {totalRatings > 0 && (
+      {showTotalRatings && totalRatings > 0 && (
         <div className="text-center mt-3 text-sm text-gray-400">
           {totalRatings} {totalRatings === 1 ? 'rating' : 'ratings'}
         </div>
