@@ -401,6 +401,7 @@ export const UserPage: React.FC = () => {
             followLoading={followLoading}
             isAuthenticated={isAuthenticated}
           />
+          <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} />
           <div ref={profileDetailsRef} className="w-full">
             <ProfileDetails
               stats={stats}
@@ -410,7 +411,6 @@ export const UserPage: React.FC = () => {
               onReviewsClick={handleReviewsClick}
             />
           </div>
-          <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} />
         </div>
 
         {/* Tabs Navigation */}
