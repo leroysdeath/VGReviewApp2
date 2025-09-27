@@ -334,51 +334,59 @@ export const UserPage: React.FC = () => {
     <div className="bg-gray-900 text-white p-6">
       <div className="max-w-6xl mx-auto">
         {/* Profile Header - Desktop Layout (lg+) */}
-        <div className="hidden lg:block mb-8 space-y-6">
-          <ProfileInfo
-            user={transformedUser}
-            isDummy={false}
-            onEditClick={handleEditClick}
-            isCurrentUser={isOwnProfile}
-            onFollowClick={handleFollowClick}
-            isFollowing={isFollowingUser}
-            followLoading={followLoading}
-            isAuthenticated={isAuthenticated}
-          />
-          <div ref={profileDetailsRef} className="w-full max-w-xl">
-            <ProfileDetails
-              stats={stats}
-              onFollowersClick={handleFollowersClick}
-              onFollowingClick={handleFollowingClick}
-              onGamesClick={handleGamesClick}
-              onReviewsClick={handleReviewsClick}
+        <div className="hidden lg:flex gap-6 mb-8">
+          <div className="flex-1 space-y-6">
+            <ProfileInfo
+              user={transformedUser}
+              isDummy={false}
+              onEditClick={handleEditClick}
+              isCurrentUser={isOwnProfile}
+              onFollowClick={handleFollowClick}
+              isFollowing={isFollowingUser}
+              followLoading={followLoading}
+              isAuthenticated={isAuthenticated}
             />
+            <div ref={profileDetailsRef} className="w-full max-w-xl">
+              <ProfileDetails
+                stats={stats}
+                onFollowersClick={handleFollowersClick}
+                onFollowingClick={handleFollowingClick}
+                onGamesClick={handleGamesClick}
+                onReviewsClick={handleReviewsClick}
+              />
+            </div>
           </div>
-          <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} />
+          <div className="w-full max-w-sm">
+            <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} />
+          </div>
         </div>
 
         {/* Profile Header - Tablet Layout (md) */}
-        <div className="hidden md:block lg:hidden mb-8 space-y-6">
-          <ProfileInfo
-            user={transformedUser}
-            isDummy={false}
-            onEditClick={handleEditClick}
-            isCurrentUser={isOwnProfile}
-            onFollowClick={handleFollowClick}
-            isFollowing={isFollowingUser}
-            followLoading={followLoading}
-            isAuthenticated={isAuthenticated}
-          />
-          <div ref={profileDetailsRef} className="w-full max-w-xl">
-            <ProfileDetails
-              stats={stats}
-              onFollowersClick={handleFollowersClick}
-              onFollowingClick={handleFollowingClick}
-              onGamesClick={handleGamesClick}
-              onReviewsClick={handleReviewsClick}
+        <div className="hidden md:flex lg:hidden gap-6 mb-8">
+          <div className="flex-1 space-y-6">
+            <ProfileInfo
+              user={transformedUser}
+              isDummy={false}
+              onEditClick={handleEditClick}
+              isCurrentUser={isOwnProfile}
+              onFollowClick={handleFollowClick}
+              isFollowing={isFollowingUser}
+              followLoading={followLoading}
+              isAuthenticated={isAuthenticated}
             />
+            <div ref={profileDetailsRef} className="w-full max-w-xl">
+              <ProfileDetails
+                stats={stats}
+                onFollowersClick={handleFollowersClick}
+                onFollowingClick={handleFollowingClick}
+                onGamesClick={handleGamesClick}
+                onReviewsClick={handleReviewsClick}
+              />
+            </div>
           </div>
-          <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} />
+          <div className="w-full max-w-sm">
+            <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} />
+          </div>
         </div>
 
         {/* Profile Header - Mobile Layout */}
