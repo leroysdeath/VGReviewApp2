@@ -88,24 +88,24 @@ export const DLCSection: React.FC<DLCSectionProps> = ({ gameId, className = '' }
             <button
               onClick={() => scroll('left')}
               disabled={!canScrollLeft}
-              className={`p-2 rounded-full transition-colors ${
-                canScrollLeft 
-                  ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+              className={`p-2 rounded-full transition-colors flex items-center justify-center ${
+                canScrollLeft
+                  ? 'bg-gray-700 hover:bg-gray-600 text-white'
                   : 'bg-gray-800 text-gray-600 cursor-not-allowed'
               }`}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-5 w-5" />
             </button>
             <button
               onClick={() => scroll('right')}
               disabled={!canScrollRight}
-              className={`p-2 rounded-full transition-colors ${
-                canScrollRight 
-                  ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+              className={`p-2 rounded-full transition-colors flex items-center justify-center ${
+                canScrollRight
+                  ? 'bg-gray-700 hover:bg-gray-600 text-white'
                   : 'bg-gray-800 text-gray-600 cursor-not-allowed'
               }`}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-5 w-5" />
             </button>
           </div>
         )}

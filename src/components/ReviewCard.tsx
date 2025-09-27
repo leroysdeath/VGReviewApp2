@@ -40,35 +40,35 @@ const themeConfig = {
     hoverBorder: 'hover:border-purple-500/70',
     accent: 'text-purple-400',
     gradient: 'from-purple-600 to-purple-800',
-    background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-purple-900/10'
+    // Removed theme-specific background - using consistent gradient for all cards
   },
   green: {
     border: 'border-green-800/30',
     hoverBorder: 'hover:border-green-500/70',
     accent: 'text-green-400',
     gradient: 'from-green-600 to-green-800',
-    background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-green-900/10'
+    // Removed theme-specific background - using consistent gradient for all cards
   },
   orange: {
     border: 'border-orange-500/50',
     hoverBorder: 'hover:border-orange-400',
     accent: 'text-orange-400',
     gradient: 'from-orange-600 to-orange-800',
-    background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-orange-900/10'
+    // Removed theme-specific background - using consistent gradient for all cards
   },
   blue: {
     border: 'border-blue-800/30',
     hoverBorder: 'hover:border-blue-500/70',
     accent: 'text-blue-400',
     gradient: 'from-blue-600 to-blue-800',
-    background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-blue-900/10'
+    // Removed theme-specific background - using consistent gradient for all cards
   },
   red: {
     border: 'border-red-500/50',
     hoverBorder: 'hover:border-red-400',
     accent: 'text-red-400',
     gradient: 'from-red-600 to-red-800',
-    background: 'bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-red-900/10'
+    // Removed theme-specific background - using consistent gradient for all cards
   }
 };
 
@@ -150,7 +150,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
     <Link
       to={reviewUrl}
       className={`
-        block p-4 md:p-6 bg-gray-900/95 border ${themeStyles.border}
+        block p-4 md:p-6 bg-gradient-to-br from-gray-900/80 to-gray-800/70 border ${themeStyles.border}
         rounded-lg ${themeStyles.hoverBorder} transition-all duration-300
         shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30
         ${className}
