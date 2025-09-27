@@ -208,7 +208,13 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               <div className="absolute right-0 -bottom-14 z-10 w-20">
                 {/* Rating badge */}
                 <div className="flex justify-center mb-2">
-                  <div className="bg-yellow-400 text-gray-700 px-2 py-1 rounded-md font-bold text-sm">
+                  <div className={`px-2 py-1 rounded-md font-bold text-sm ${
+                    review.rating <= 3 ? 'bg-red-500 text-white' :
+                    review.rating <= 5 ? 'bg-orange-500 text-white' :
+                    review.rating <= 7 ? 'bg-yellow-400 text-gray-700' :
+                    review.rating <= 9.5 ? 'bg-green-500 text-white' :
+                    'bg-blue-500 text-white'
+                  }`}>
                     {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
                   </div>
                 </div>
@@ -361,7 +367,13 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               <div className="absolute right-0 -top-20 z-10 w-20">
                 {/* Rating badge */}
                 <div className="flex justify-center mb-2">
-                  <div className="bg-yellow-400 text-gray-700 px-2 py-1 rounded-md font-bold text-sm">
+                  <div className={`px-2 py-1 rounded-md font-bold text-sm ${
+                    review.rating <= 3 ? 'bg-red-500 text-white' :
+                    review.rating <= 5 ? 'bg-orange-500 text-white' :
+                    review.rating <= 7 ? 'bg-yellow-400 text-gray-700' :
+                    review.rating <= 9.5 ? 'bg-green-500 text-white' :
+                    'bg-blue-500 text-white'
+                  }`}>
                     {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
                   </div>
                 </div>
