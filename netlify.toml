@@ -1,6 +1,12 @@
 [build]
 command = "npm install && npm run build"
 publish = "dist"
+# Enable Netlify's asset optimization
+[build.processing]
+css = { bundle = true, minify = true }
+js = { bundle = true, minify = true }
+html = { pretty_urls = true }
+images = { compress = true }
 
 [dev]
 command = "npm run dev"
@@ -109,22 +115,57 @@ Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
 X-Frame-Options = "DENY"
 X-Content-Type-Options = "nosniff"
 
-# Cache for static assets
+# Enable compression for JavaScript files in assets root
+[[headers]]
+for = "/assets/*.js"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+Content-Encoding = "gzip"
+Vary = "Accept-Encoding"
+
+[[headers]]
+for = "/assets/*.css"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+Content-Encoding = "gzip"
+Vary = "Accept-Encoding"
+
+[[headers]]
+for = "/*.html"
+[headers.values]
+Cache-Control = "public, max-age=0, must-revalidate"
+Content-Encoding = "gzip"
+Vary = "Accept-Encoding"
+
+[[headers]]
+for = "/*.json"
+[headers.values]
+Cache-Control = "public, max-age=3600"
+Content-Encoding = "gzip"
+Vary = "Accept-Encoding"
+
+[[headers]]
+for = "/*.svg"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+Content-Encoding = "gzip"
+Vary = "Accept-Encoding"
+
+# Cache for static assets in chunks directory
+[[headers]]
+for = "/assets/chunks/*"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+Content-Encoding = "gzip"
+Vary = "Accept-Encoding"
+
+# Cache for other static assets
 [[headers]]
 for = "/assets/*"
 [headers.values]
 Cache-Control = "public, max-age=31536000, immutable"
 
-[[headers]]
-for = "/*.js"
-[headers.values]
-Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-for = "/*.css"
-[headers.values]
-Cache-Control = "public, max-age=31536000, immutable"
-
+# Cache for font files
 [[headers]]
 for = "/*.woff2"
 [headers.values]
@@ -134,6 +175,22 @@ Cache-Control = "public, max-age=31536000, immutable"
 for = "/*.woff"
 [headers.values]
 Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache for images
+[[headers]]
+for = "/assets/images/*"
+[headers.values]
+Cache-Control = "public, max-age=604800"
+
+[[headers]]
+for = "/*.webp"
+[headers.values]
+Cache-Control = "public, max-age=604800"
+
+[[headers]]
+for = "/*.avif"
+[headers.values]
+Cache-Control = "public, max-age=604800"
 
 # Specific redirect for reset-password to ensure it works
 [[redirects]]

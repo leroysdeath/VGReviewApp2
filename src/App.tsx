@@ -1,5 +1,5 @@
-import React, { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import React, { Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ResponsiveNavbar } from './components/ResponsiveNavbar';
@@ -8,33 +8,16 @@ import { Footer } from './components/Footer';
 import { AuthModalProvider } from './context/AuthModalContext';
 import { AuthModal } from './components/auth/AuthModal';
 import { AdminProvider } from './context/AdminContext';
-// Import heavy page components directly (not lazy-loaded for now due to build issues)
-import { GamePage } from './pages/GamePage';
-import { SearchResultsPage } from './pages/SearchResultsPage';
-import { ExplorePage } from './pages/ExplorePage';
-import { UserPage } from './pages/UserPage';
-import { UserSearchPage } from './pages/UserSearchPage';
-import { ReviewFormPage } from './pages/ReviewFormPage';
-import { ReviewPage } from './pages/ReviewPage';
-import { ResetPasswordPage } from './components/ResetPasswordPage';
-import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { SEOHead } from './components/SEOHead';
 import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { DebugAuthPage } from './pages/DebugAuthPage';
-import { FAQ } from './components/FAQ';
-import { Navigate } from 'react-router-dom';
 import { PrivacyConsentBanner } from './components/privacy/PrivacyConsentBanner';
 import { ScrollToTop } from './components/ScrollToTop';
+import { RouteLoader } from './components/RouteLoader';
+import { PerformanceOptimizer } from './components/PerformanceOptimizer';
 
-
-// Import non-critical pages directly to avoid build issues
-import TermsPage from './pages/TermsPage';
-import PrivacyPage from './pages/PrivacyPage';
-import { PrivacySettingsPage } from './pages/PrivacySettingsPage';
-import EnhancedSearchTestPage from './pages/EnhancedSearchTestPage';
-import DiagnosticPage from './pages/DiagnosticPage';
-import { SearchPerformanceDashboard } from './components/SearchPerformanceDashboard';
+// Lazy load all route components for better performance
+import * as LazyRoutes from './LazyRoutes';
 
 // Navigation debugging component
 const NavigationDebugger: React.FC = () => {
@@ -86,47 +69,98 @@ const AppContent: React.FC = () => {
     <>
       <NavigationDebugger />
       <ScrollToTop />
+      <PerformanceOptimizer />
       <div className="min-h-screen bg-gray-900 flex flex-col">
         <SEOHead />
         <ResponsiveNavbar />
         <main className="flex-grow">
           <Routes>
                     <Route path="/" element={<ResponsiveLandingPage />} />
-                    <Route path="/game/:identifier" element={<GamePage />} />
-                    <Route path="/search" element={<SearchResultsPage />} />
-                    <Route path="/search-results" element={<SearchResultsPage />} />
-                    <Route path="/explore" element={<ExplorePage />} />
+                    <Route path="/game/:identifier" element={
+                      <Suspense fallback={<RouteLoader />}>
+                        <LazyRoutes.GamePage />
+                      </Suspense>
+                    } />
+                    <Route path="/search" element={
+                      <Suspense fallback={<RouteLoader />}>
+                        <LazyRoutes.SearchResultsPage />
+                      </Suspense>
+                    } />
+                    <Route path="/search-results" element={
+                      <Suspense fallback={<RouteLoader />}>
+                        <LazyRoutes.SearchResultsPage />
+                      </Suspense>
+                    } />
+                    <Route path="/explore" element={
+                      <Suspense fallback={<RouteLoader />}>
+                        <LazyRoutes.ExplorePage />
+                      </Suspense>
+                    } />
                     <Route path="/user/:id" element={
-                      <>
-                        <UserPage />
-                      </>
+                      <Suspense fallback={<RouteLoader />}>
+                        <LazyRoutes.UserPage />
+                      </Suspense>
                     } />
 
-                    <Route path="/users" element={<UserSearchPage />} />
-                    <Route path="/debug-auth" element={<DebugAuthPage />} />
-                    <Route path="/reset-password" element={<ResetPasswordPage />} />
-                    <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                    <Route path="/users" element={
+                      <Suspense fallback={<RouteLoader />}>
+                        <LazyRoutes.UserSearchPage />
+                      </Suspense>
+                    } />
+                    <Route path="/debug-auth" element={
+                      <Suspense fallback={<RouteLoader />}>
+                        <LazyRoutes.DebugAuthPage />
+                      </Suspense>
+                    } />
+                    <Route path="/reset-password" element={
+                      <Suspense fallback={<RouteLoader />}>
+                        <LazyRoutes.ResetPasswordPage />
+                      </Suspense>
+                    } />
+                    <Route path="/auth/callback" element={
+                      <Suspense fallback={<RouteLoader />}>
+                        <LazyRoutes.AuthCallbackPage />
+                      </Suspense>
+                    } />
                     <Route
                       path="/enhanced-search-test"
-                      element={<EnhancedSearchTestPage />}
+                      element={
+                        <Suspense fallback={<RouteLoader />}>
+                          <LazyRoutes.EnhancedSearchTestPage />
+                        </Suspense>
+                      }
                     />
                     <Route
                       path="/admin/diagnostic"
-                      element={<DiagnosticPage />}
+                      element={
+                        <Suspense fallback={<RouteLoader />}>
+                          <LazyRoutes.DiagnosticPage />
+                        </Suspense>
+                      }
                     />
                     <Route
                       path="/search-performance"
-                      element={<SearchPerformanceDashboard />}
+                      element={
+                        <Suspense fallback={<RouteLoader />}>
+                          <LazyRoutes.SearchPerformanceDashboard />
+                        </Suspense>
+                      }
                     />
                     <Route
-                      path="/review/:gameId?" 
+                      path="/review/:gameId?"
                       element={
                         <ProtectedRoute showModal={true}>
-                          <ReviewFormPage />
+                          <Suspense fallback={<RouteLoader />}>
+                            <LazyRoutes.ReviewFormPage />
+                          </Suspense>
                         </ProtectedRoute>
-                      } 
+                      }
                     />
-                    <Route path="/review/:userId/:gameId" element={<ReviewPage />} />
+                    <Route path="/review/:userId/:gameId" element={
+                      <Suspense fallback={<RouteLoader />}>
+                        <LazyRoutes.ReviewPage />
+                      </Suspense>
+                    } />
                     <Route 
                       path="/profile" 
                       element={
@@ -154,23 +188,37 @@ const AppContent: React.FC = () => {
                         </div>
                       } 
                     />
-                    <Route 
-                      path="/faq" 
-                      element={<FAQ />} 
+                    <Route
+                      path="/faq"
+                      element={
+                        <Suspense fallback={<RouteLoader />}>
+                          <LazyRoutes.FAQ />
+                        </Suspense>
+                      }
                     />
                     <Route
                       path="/terms"
-                      element={<TermsPage />}
+                      element={
+                        <Suspense fallback={<RouteLoader />}>
+                          <LazyRoutes.TermsPage />
+                        </Suspense>
+                      }
                     />
                     <Route
                       path="/privacy"
-                      element={<PrivacyPage />}
+                      element={
+                        <Suspense fallback={<RouteLoader />}>
+                          <LazyRoutes.PrivacyPage />
+                        </Suspense>
+                      }
                     />
                     <Route
                       path="/privacy-settings"
                       element={
                         <ProtectedRoute showModal={true}>
-                          <PrivacySettingsPage />
+                          <Suspense fallback={<RouteLoader />}>
+                            <LazyRoutes.PrivacySettingsPage />
+                          </Suspense>
                         </ProtectedRoute>
                       }
                     />
@@ -178,7 +226,9 @@ const AppContent: React.FC = () => {
                       path="/privacy-settings/:userId"
                       element={
                         <ProtectedRoute showModal={true}>
-                          <PrivacySettingsPage />
+                          <Suspense fallback={<RouteLoader />}>
+                            <LazyRoutes.PrivacySettingsPage />
+                          </Suspense>
                         </ProtectedRoute>
                       }
                     />

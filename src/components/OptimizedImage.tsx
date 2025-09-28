@@ -129,7 +129,8 @@ export const HeroImage: React.FC<{
   alt: string;
   className?: string;
   height?: string;
-}> = ({ src, alt, className = '', height = 'h-96' }) => {
+  fetchpriority?: 'high' | 'low' | 'auto';
+}> = ({ src, alt, className = '', height = 'h-96', fetchpriority = 'high' }) => {
   return (
     <OptimizedImage
       src={src}
@@ -138,6 +139,7 @@ export const HeroImage: React.FC<{
       layout="hero"
       priority // Hero images should load immediately
       aspectRatio="21/9"
+      {...{ fetchpriority }} // Pass fetchpriority as a prop
     />
   );
 };
