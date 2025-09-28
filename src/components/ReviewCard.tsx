@@ -169,9 +169,9 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
       <div className="relative">
         {/* MOBILE LAYOUT - CSS Grid */}
         <div className="md:hidden">
-          <div className="grid grid-cols-[1fr,auto] gap-x-3 gap-y-1">
-            {/* Row 1: Avatar + Author (spans full width) */}
-            <div className="col-span-2 flex items-center gap-2 mb-1">
+          <div className="grid grid-cols-[1fr,auto] gap-x-3">
+            {/* Row 1: Avatar + Username (spans full width) */}
+            <div className="col-span-2 flex items-center gap-2">
               <div
                 className="group/avatar cursor-pointer flex-shrink-0"
                 onClick={(e) => {
@@ -207,17 +207,22 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                 >
                   {review.author}
                 </span>
+                <div className="text-xs text-gray-400">
+                  {getRelativeTime(review.date)}
+                </div>
               </div>
             </div>
 
-            {/* Row 2: Date (column 1) */}
-            <div className="text-xs text-gray-400">
-              {getRelativeTime(review.date)}
-            </div>
+            {/* Row 2: Game Title (column 1) */}
+            {showGameTitle && review.gameTitle && (
+              <div className="text-gray-300 text-sm font-medium mt-3">
+                {review.gameTitle}
+              </div>
+            )}
 
-            {/* Game Cover + Rating (column 2, spans rows 2-5) */}
+            {/* Game Cover + Rating (column 2, spans rows 2-4) */}
             {showGameTitle && (review.gameCoverUrl || review.rating) && (
-              <div className="row-start-2 row-span-4 col-start-2 flex flex-col items-center justify-center">
+              <div className="row-start-2 row-span-3 col-start-2 flex flex-col items-center justify-center mt-3">
                 {/* Game cover */}
                 {review.gameCoverUrl && (
                   <img
@@ -239,19 +244,12 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               </div>
             )}
 
-            {/* Row 3: Game Title (column 1) */}
-            {showGameTitle && review.gameTitle && (
-              <div className="text-gray-300 text-sm font-medium">
-                {review.gameTitle}
-              </div>
-            )}
-
-            {/* Row 4: Separator (spans both columns) */}
+            {/* Row 3: Separator (spans both columns) */}
             {showGameTitle && (
-              <div className="col-span-2 h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% my-2"></div>
+              <div className="col-span-2 h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% mt-2 mb-3"></div>
             )}
 
-            {/* Row 5: Review Text (column 1) */}
+            {/* Row 4: Review Text (spans both columns) */}
             {review.hasText && (
               <div className="col-span-2 relative">
                 <p
@@ -304,9 +302,9 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
         {/* DESKTOP LAYOUT - CSS Grid */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-[auto,1fr,auto] gap-x-4 gap-y-2">
-            {/* Avatar (spans rows 1-3) */}
-            <div className="row-span-3">
+          <div className="grid grid-cols-[auto,1fr,auto] gap-x-4">
+            {/* Avatar (spans rows 1-4) */}
+            <div className="row-span-4">
               <div
                 className="group/avatar cursor-pointer"
                 onClick={(e) => {
@@ -335,7 +333,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </div>
 
             {/* Row 1: Username (column 2) */}
-            <div>
+            <div className="mb-1">
               <span
                 className="font-semibold text-white cursor-pointer hover:text-purple-400 transition-colors"
                 onClick={(e) => {
@@ -347,9 +345,9 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               </span>
             </div>
 
-            {/* Game Cover + Rating (column 3, spans rows 2-5) */}
+            {/* Game Cover + Rating (column 3, spans rows 3-5) */}
             {showGameTitle && (review.gameCoverUrl || review.rating) && (
-              <div className="row-start-2 row-span-4 col-start-3 flex flex-col items-center justify-center">
+              <div className="row-start-3 row-span-3 col-start-3 flex flex-col items-center justify-center">
                 {/* Game cover */}
                 {review.gameCoverUrl && (
                   <img
@@ -375,23 +373,23 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             )}
 
             {/* Row 2: Date (column 2) */}
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-gray-400 mb-2">
               {getRelativeTime(review.date)}
             </div>
 
             {/* Row 3: Game Title (column 2) */}
             {showGameTitle && review.gameTitle && (
-              <div className="text-gray-300 font-medium">
+              <div className="text-gray-300 font-medium mb-2">
                 {review.gameTitle}
               </div>
             )}
 
-            {/* Row 4: Separator (spans columns 1-3) */}
+            {/* Row 4: Separator (spans all columns) */}
             {showGameTitle && (
-              <div className="col-span-3 h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% my-1"></div>
+              <div className="col-span-3 h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% mb-3"></div>
             )}
 
-            {/* Row 5: Review Text (spans columns 1-3) */}
+            {/* Row 5: Review Text (spans all columns) */}
             {review.hasText && (
               <div className="col-span-3 relative">
                 <p
