@@ -200,19 +200,34 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   const currentUsers = activeTab === 'followers' ? followers : following;
   const isLoading = activeTab === 'followers' ? loadingFollowers : loadingFollowing;
 
-  // Determine modal positioning style - use fixed positioning for consistent behavior
+  // Determine modal positioning style
   const modalStyle: React.CSSProperties = topPosition
-    ? {
-        position: 'fixed',
-        top: `${topPosition - window.scrollY}px`,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        maxWidth: 'min(448px, calc(100vw - 2rem))',
-        width: '100%',
-        minHeight: isMobile ? '400px' : '300px', // Ensure minimum usable height
-        maxHeight: `calc(100vh - ${topPosition - window.scrollY}px - 2rem)`,
-        zIndex: 50
-      }
+    ? isMobile
+      ? {
+          // Mobile: Full-screen modal
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '100vh',
+          maxWidth: '100%',
+          borderRadius: 0,
+          zIndex: 50
+        }
+      : {
+          // Desktop: Position below navbar (approximately 100px from top)
+          position: 'fixed',
+          top: '100px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          maxWidth: 'min(448px, calc(100vw - 2rem))',
+          width: '100%',
+          minHeight: '300px',
+          maxHeight: 'calc(100vh - 120px)',
+          zIndex: 50
+        }
     : {};
 
   const containerStyle: React.CSSProperties = topPosition
@@ -233,7 +248,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
     >
       <div
         ref={modalRef}
-        className={topPosition ? 'bg-gray-800 rounded-lg flex flex-col' : 'bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] flex flex-col'}
+        className={topPosition ? (isMobile ? 'bg-gray-800 flex flex-col' : 'bg-gray-800 rounded-lg flex flex-col') : 'bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] flex flex-col'}
         style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >

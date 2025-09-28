@@ -277,16 +277,34 @@ export const GamesModal: React.FC<GamesModalProps> = ({
   const currentGames = getCurrentGames();
   const isLoading = getCurrentLoading();
 
-  // Calculate positioning style - use fixed positioning for consistent behavior
+  // Calculate positioning style
   const modalStyle: React.CSSProperties = topPosition
-    ? {
-        position: 'fixed',
-        top: `${topPosition - window.scrollY}px`,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        minHeight: isMobile ? '400px' : '300px', // Ensure minimum usable height
-        zIndex: 50,
-      }
+    ? isMobile
+      ? {
+          // Mobile: Full-screen modal
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '100vh',
+          maxWidth: '100%',
+          borderRadius: 0,
+          zIndex: 50
+        }
+      : {
+          // Desktop: Position below navbar (approximately 100px from top)
+          position: 'fixed',
+          top: '100px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          maxWidth: 'min(896px, calc(100vw - 2rem))',
+          width: '100%',
+          minHeight: '300px',
+          maxHeight: 'calc(100vh - 120px)',
+          zIndex: 50
+        }
     : {};
 
   return (
@@ -296,7 +314,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     >
       <div
         ref={modalRef}
-        className={`bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto ${
+        className={`${isMobile && topPosition ? 'bg-gray-800' : 'bg-gray-800 rounded-lg'} w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto ${
           topPosition ? '' : 'relative top-1/2 -translate-y-1/2'
         }`}
         style={modalStyle}
