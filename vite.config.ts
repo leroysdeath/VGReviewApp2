@@ -146,42 +146,64 @@ export default defineConfig({
         manualChunks: (id) => {
           // Core vendor libraries that rarely change
           if (id.includes('node_modules')) {
-            // React ecosystem - fundamental dependencies
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+            // React ecosystem and ALL React-dependent libraries must be together
+            // This prevents "useLayoutEffect of undefined" errors
+            if (
+              id.includes('react') ||
+              id.includes('react-dom') ||
+              id.includes('react-router') ||
+              id.includes('react-hook-form') ||
+              id.includes('react-datepicker') ||
+              id.includes('react-helmet') ||
+              id.includes('react-hot-toast') ||
+              id.includes('react-icons') ||
+              id.includes('react-select') ||
+              id.includes('react-slider') ||
+              id.includes('react-swipeable') ||
+              id.includes('react-virtualized') ||
+              id.includes('react-window') ||
+              id.includes('@emotion') ||  // Emotion needs React
+              id.includes('@hello-pangea') ||  // DnD library needs React
+              id.includes('@dnd-kit') ||  // DnD library needs React
+              id.includes('@use-gesture') ||  // Gesture library needs React
+              id.includes('@hookform') ||  // Hook form related
+              id.includes('lucide-react') ||  // Icon library needs React
+              id.includes('@headlessui') ||  // Headless UI needs React
+              id.includes('@heroicons') ||  // Hero icons might need React
+              id.includes('focus-trap-react') ||  // Focus trap needs React
+              id.includes('@testing-library/react') ||  // Testing library needs React
+              id.includes('use-sync-external-store') ||  // React 18 compatibility
+              id.includes('scheduler') ||  // React scheduler
+              id.includes('zustand') ||  // Zustand uses React hooks
+              id.includes('swr') ||  // SWR uses React hooks
+              id.includes('@tanstack/react-query')  // React Query if used
+            ) {
               return 'vendor-react';
             }
 
-            // Supabase SDK - large but essential
+            // Supabase SDK - large but essential (no React dependency)
             if (id.includes('@supabase')) {
               return 'vendor-supabase';
             }
 
-            // UI libraries
-            if (id.includes('lucide-react') || id.includes('@headlessui') || id.includes('@heroicons')) {
-              return 'vendor-ui-icons';
-            }
-
-            // Date/time libraries
-            if (id.includes('date-fns') || id.includes('react-datepicker')) {
+            // Date/time libraries (only non-React ones)
+            if (id.includes('date-fns')) {
               return 'vendor-datetime';
             }
 
-            // Form and validation
-            if (id.includes('react-hook-form') || id.includes('yup') || id.includes('formik')) {
-              return 'vendor-forms';
-            }
-
-            // State management
-            if (id.includes('zustand') || id.includes('immer')) {
+            // State management (only truly non-React ones)
+            if (id.includes('immer')) {
               return 'vendor-state';
             }
 
-            // Data fetching
-            if (id.includes('swr') || id.includes('axios')) {
+            // Note: zustand and swr are moved to vendor-react chunk since they use React hooks
+
+            // Data fetching (only non-React specific)
+            if (id.includes('axios')) {
               return 'vendor-data';
             }
 
-            // Markdown and rich text
+            // Markdown and rich text (non-React specific)
             if (id.includes('marked') || id.includes('dompurify') || id.includes('highlight')) {
               return 'vendor-markdown';
             }
