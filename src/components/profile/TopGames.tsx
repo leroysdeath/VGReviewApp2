@@ -631,6 +631,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                             isDragging={activeId === gameData.game.id.toString()}
                             isMobile={isMobile}
                             isSaving={isSaving}
+                            isPhonePortrait={isPhonePortrait}
                           />
                         </div>
                       );
@@ -698,6 +699,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                             isDragging={activeId === gameData.game.id.toString()}
                             isMobile={isMobile}
                             isSaving={isSaving}
+                            isPhonePortrait={isPhonePortrait}
                           />
                         </div>
                       );
@@ -787,6 +789,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                         isDragging={activeId === gameData.game.id.toString()}
                         isMobile={isMobile}
                         isSaving={isSaving}
+                        isPhonePortrait={isPhonePortrait}
                       />
                     </div>
                   );

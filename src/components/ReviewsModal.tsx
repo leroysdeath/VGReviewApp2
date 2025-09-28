@@ -366,7 +366,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
             </div>
           ) : (
             /* Tile View */
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
+            <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
               {reviews.map((review) => {
                 const reviewUrl = `/review/${userId}/${review.gameId}`;
 
