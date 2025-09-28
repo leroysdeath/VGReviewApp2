@@ -816,11 +816,11 @@ export const ReviewFormPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Slider Container */}
-                <div className="relative pt-2">
+                {/* Slider Container with Padding to Center 5 */}
+                <div className="relative pt-2" style={{ paddingLeft: '5.26%', paddingRight: '5.26%' }}>
                   {/* Custom Slider Track */}
                   <div className="relative h-2 bg-gray-700 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="absolute h-full bg-purple-500 transition-all duration-150"
                       style={{ width: `${((rating - 1) / 9) * 100}%` }}
                     />
@@ -835,7 +835,7 @@ export const ReviewFormPage: React.FC = () => {
                     value={rating}
                     onChange={(e) => setRating(parseFloat(e.target.value))}
                     className="slider-input absolute inset-0 w-full h-2 cursor-pointer"
-                    style={{ 
+                    style={{
                       zIndex: 2,
                       WebkitAppearance: 'none',
                       appearance: 'none',
@@ -844,18 +844,24 @@ export const ReviewFormPage: React.FC = () => {
                     }}
                   />
 
-                  {/* Tick Marks */}
+                  {/* Tick Marks - Only show ticks for half points, numbers for whole points */}
                   <div className="absolute inset-x-0 -bottom-6">
                     {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10].map((tick) => {
                       const position = ((tick - 1) / 9) * 100;
+                      const isHalfPoint = tick % 1 === 0.5;
+                      const isWholeNumber = tick % 1 === 0;
                       return (
-                        <div 
-                          key={tick} 
+                        <div
+                          key={tick}
                           className="absolute"
                           style={{ left: `${position}%` }}
                         >
-                          <div className="absolute -top-3 w-0.5 h-2 bg-gray-600 transform -translate-x-1/2" />
-                          {tick % 1 === 0 && (
+                          {/* Only show tick marks for half points */}
+                          {isHalfPoint && (
+                            <div className="absolute -top-3 w-0.5 h-2 bg-gray-600 transform -translate-x-1/2" />
+                          )}
+                          {/* Show numbers for whole points */}
+                          {isWholeNumber && (
                             <span className="absolute top-1 transform -translate-x-1/2 text-xs text-gray-500">
                               {tick}
                             </span>

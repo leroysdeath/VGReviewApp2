@@ -1316,9 +1316,13 @@ export const GamePage: React.FC = () => {
                     ) : (
                       <Play className="h-4 w-4" />
                     )}
-                    <span className="text-sm font-medium flex flex-col items-center justify-center leading-tight">
+                    <span className="text-sm font-medium relative flex flex-col items-center justify-center leading-tight">
                       {isStarted ? (
-                        <span>Started</span>
+                        <>
+                          <span className="invisible">Mark as</span>
+                          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">Started</span>
+                          <span className="invisible">Started</span>
+                        </>
                       ) : (
                         <>
                           <span>Mark as</span>
@@ -1357,9 +1361,13 @@ export const GamePage: React.FC = () => {
                     ) : (
                       <CheckCircle className="h-4 w-4" />
                     )}
-                    <span className="text-sm font-medium flex flex-col items-center justify-center leading-tight">
+                    <span className="text-sm font-medium relative flex flex-col items-center justify-center leading-tight">
                       {isCompleted ? (
-                        <span>Finished</span>
+                        <>
+                          <span className="invisible">Mark as</span>
+                          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">Finished</span>
+                          <span className="invisible">Finished</span>
+                        </>
                       ) : (
                         <>
                           <span>Mark as</span>
