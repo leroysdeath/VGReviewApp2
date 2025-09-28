@@ -36,10 +36,28 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'list' | 'tile'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'tile'>('tile');
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // Get color based on rating value - matching distribution from RatingBars
+  const getRatingColor = (rating: number): string => {
+    if (rating <= 3) return 'text-red-500';
+    else if (rating <= 5) return 'text-orange-500';
+    else if (rating <= 7) return 'text-yellow-500';
+    else if (rating <= 9.5) return 'text-green-500';
+    else return 'text-blue-500';
+  };
+
+  // Get background color for rating badges - matching ReviewCard
+  const getRatingBgColor = (rating: number): string => {
+    if (rating <= 3) return 'bg-red-500 text-white';
+    else if (rating <= 5) return 'bg-orange-500 text-white';
+    else if (rating <= 7) return 'bg-yellow-400 text-gray-700';
+    else if (rating <= 9.5) return 'bg-green-500 text-white';
+    else return 'bg-blue-500 text-white';
+  };
 
   // Load reviews based on active tab - optimized with foreign key syntax
   const loadReviews = useCallback(async () => {
@@ -202,15 +220,6 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
           <div className="flex items-center gap-2">
             {/* View Mode Toggle */}
             <button
-              onClick={() => setViewMode('list')}
-              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
-                viewMode === 'list' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
-              }`}
-              title="List View"
-            >
-              <List className="h-5 w-5" />
-            </button>
-            <button
               onClick={() => setViewMode('tile')}
               className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
                 viewMode === 'tile' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
@@ -218,6 +227,15 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
               title="Tile View"
             >
               <Grid className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
+                viewMode === 'list' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
+              }`}
+              title="List View"
+            >
+              <List className="h-5 w-5" />
             </button>
             {/* Close Button */}
             <button
@@ -348,7 +366,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                         </h3>
 
                         <div className="text-gray-400 text-sm mb-2">
-                          {new Date(review.postDate).toLocaleDateString()} <span className="text-yellow-400">{review.rating % 1 === 0 ? `${review.rating}/10` : `${review.rating.toFixed(1)}/10`}</span>
+                          {new Date(review.postDate).toLocaleDateString()} <span className={getRatingColor(review.rating)}>{review.rating % 1 === 0 ? `${review.rating}/10` : `${review.rating.toFixed(1)}/10`}</span>
                         </div>
 
                         <div className="text-gray-300 text-sm">
@@ -401,9 +419,9 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                           e.currentTarget.src = '/default-cover.png';
                         }}
                       />
-                      {/* Rating Badge - Similar to Explore Page */}
-                      <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
-                        <span className="text-sm font-bold text-white">
+                      {/* Rating Badge - Using same color distribution as ReviewCard */}
+                      <div className={`absolute top-1 right-1 rounded-lg px-2 py-1 ${getRatingBgColor(review.rating)}`}>
+                        <span className="text-sm font-bold">
                           {review.rating === 10 ? '10' : review.rating.toFixed(1)}/10
                         </span>
                       </div>

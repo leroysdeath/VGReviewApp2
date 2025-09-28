@@ -204,10 +204,20 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Row 2: Game Title with wrapping for cover + Separator */}
           {showGameTitle && review.gameTitle && (
             <div className="relative">
-              {/* Right-side content stack: Rating + Cover */}
+              {/* Right-side content stack: Cover + Rating */}
               <div className="absolute right-0 -bottom-14 z-10 w-20">
+                {/* Game cover */}
+                {review.gameCoverUrl && (
+                  <img
+                    src={review.gameCoverUrl}
+                    alt={review.gameTitle}
+                    className="w-20 h-28 object-cover rounded shadow-lg mb-2"
+                    loading="lazy"
+                  />
+                )}
+
                 {/* Rating badge */}
-                <div className="flex justify-center mb-2">
+                <div className="flex justify-center">
                   <div className={`px-2 py-1 rounded-md font-bold text-sm ${
                     review.rating <= 3 ? 'bg-red-500 text-white' :
                     review.rating <= 5 ? 'bg-orange-500 text-white' :
@@ -218,16 +228,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                     {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
                   </div>
                 </div>
-
-                {/* Game cover */}
-                {review.gameCoverUrl && (
-                  <img
-                    src={review.gameCoverUrl}
-                    alt={review.gameTitle}
-                    className="w-20 h-28 object-cover rounded shadow-lg"
-                    loading="lazy"
-                  />
-                )}
               </div>
 
               {/* Game Title - wraps around cover if needed */}
@@ -363,10 +363,23 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           {/* Separator and Cover Container */}
           {showGameTitle && review.gameTitle && (
             <div className="relative">
-              {/* Right-side content stack: Rating + Cover */}
+              {/* Right-side content stack: Cover + Rating */}
               <div className="absolute right-0 -top-20 z-10 w-20">
+                {/* Game cover */}
+                {review.gameCoverUrl && (
+                  <img
+                    src={review.gameCoverUrl}
+                    alt={review.gameTitle}
+                    className={`
+                      object-cover rounded shadow-lg mb-2
+                      ${compact ? 'w-16 h-20' : 'w-20 h-28'}
+                    `}
+                    loading="lazy"
+                  />
+                )}
+
                 {/* Rating badge */}
-                <div className="flex justify-center mb-2">
+                <div className="flex justify-center">
                   <div className={`px-2 py-1 rounded-md font-bold text-sm ${
                     review.rating <= 3 ? 'bg-red-500 text-white' :
                     review.rating <= 5 ? 'bg-orange-500 text-white' :
@@ -377,19 +390,6 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                     {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
                   </div>
                 </div>
-
-                {/* Game cover */}
-                {review.gameCoverUrl && (
-                  <img
-                    src={review.gameCoverUrl}
-                    alt={review.gameTitle}
-                    className={`
-                      object-cover rounded shadow-lg
-                      ${compact ? 'w-16 h-20' : 'w-20 h-28'}
-                    `}
-                    loading="lazy"
-                  />
-                )}
               </div>
 
               {/* Full-width separator */}
