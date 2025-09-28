@@ -206,19 +206,21 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             <div className="relative">
               {/* Right-side content stack: Cover + Rating */}
               <div className="absolute right-0 -bottom-14 z-10 w-20">
-                {/* Game cover */}
-                {review.gameCoverUrl && (
-                  <img
-                    src={review.gameCoverUrl}
-                    alt={review.gameTitle}
-                    className="w-20 h-28 object-cover rounded shadow-lg mb-2"
-                    loading="lazy"
-                  />
-                )}
+                {/* Position cover so separator goes through middle */}
+                <div className="relative -top-14">
+                  {/* Game cover */}
+                  {review.gameCoverUrl && (
+                    <img
+                      src={review.gameCoverUrl}
+                      alt={review.gameTitle}
+                      className="w-20 h-28 object-cover rounded shadow-lg mb-2"
+                      loading="lazy"
+                    />
+                  )}
 
-                {/* Rating badge */}
-                <div className="flex justify-center">
-                  <div className={`px-2 py-1 rounded-md font-bold text-sm ${
+                  {/* Rating badge */}
+                  <div className="flex justify-center">
+                    <div className={`px-2 py-1 rounded-md font-bold text-sm ${
                     review.rating <= 3 ? 'bg-red-500 text-white' :
                     review.rating <= 5 ? 'bg-orange-500 text-white' :
                     review.rating <= 7 ? 'bg-yellow-400 text-gray-700' :
@@ -227,6 +229,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   }`}>
                     {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
                   </div>
+                </div>
                 </div>
               </div>
 
@@ -365,22 +368,24 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             <div className="relative">
               {/* Right-side content stack: Cover + Rating */}
               <div className="absolute right-0 -top-20 z-10 w-20">
-                {/* Game cover */}
-                {review.gameCoverUrl && (
-                  <img
-                    src={review.gameCoverUrl}
-                    alt={review.gameTitle}
-                    className={`
-                      object-cover rounded shadow-lg mb-2
-                      ${compact ? 'w-16 h-20' : 'w-20 h-28'}
-                    `}
-                    loading="lazy"
-                  />
-                )}
+                {/* Position cover so separator goes through middle */}
+                <div className="relative top-6">
+                  {/* Game cover */}
+                  {review.gameCoverUrl && (
+                    <img
+                      src={review.gameCoverUrl}
+                      alt={review.gameTitle}
+                      className={`
+                        object-cover rounded shadow-lg mb-2
+                        ${compact ? 'w-16 h-20' : 'w-20 h-28'}
+                      `}
+                      loading="lazy"
+                    />
+                  )}
 
-                {/* Rating badge */}
-                <div className="flex justify-center">
-                  <div className={`px-2 py-1 rounded-md font-bold text-sm ${
+                  {/* Rating badge */}
+                  <div className="flex justify-center">
+                    <div className={`px-2 py-1 rounded-md font-bold text-sm ${
                     review.rating <= 3 ? 'bg-red-500 text-white' :
                     review.rating <= 5 ? 'bg-orange-500 text-white' :
                     review.rating <= 7 ? 'bg-yellow-400 text-gray-700' :
@@ -389,6 +394,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   }`}>
                     {review.rating === 10 ? '10' : (review.rating || 0).toFixed(1)}/10
                   </div>
+                </div>
                 </div>
               </div>
 

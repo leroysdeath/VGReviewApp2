@@ -420,7 +420,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                         }}
                       />
                       {/* Rating Badge - Using same color distribution as ReviewCard */}
-                      <div className={`absolute top-1 right-1 rounded-lg px-2 py-1 ${getRatingBgColor(review.rating)}`}>
+                      <div className={`absolute top-1 right-1 rounded-lg px-1.5 py-0.5 ${getRatingBgColor(review.rating)}`}>
                         <span className="text-sm font-bold">
                           {review.rating === 10 ? '10' : review.rating.toFixed(1)}/10
                         </span>
