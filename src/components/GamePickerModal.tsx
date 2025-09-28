@@ -293,7 +293,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
     if (mode === 'top-games') {
       return (
         <p className="text-yellow-500 text-sm font-medium">
-          {rating.toFixed(1)}/10
+          {rating === 10 ? '10' : rating.toFixed(1)}/10
         </p>
       );
     }

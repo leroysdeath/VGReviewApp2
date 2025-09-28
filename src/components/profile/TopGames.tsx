@@ -636,8 +636,8 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                       );
                     }
 
-                    // Only show empty slots for own profile
-                    if (!editable) return null;
+                    // Only show empty slots for own profile and when not in edit mode
+                    if (!editable || isEditingTop5) return null;
 
                     return (
                       <div key={`empty-${position}`} className="relative aspect-[3/4] w-[180px] group">
@@ -647,7 +647,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                             setShowGamePicker(true);
                           }}
                           className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center hover:border-purple-500 transition-colors"
-                          disabled={isSaving || isEditingTop5}
+                          disabled={isSaving}
                         >
                           <div className="text-center">
                             <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
@@ -703,8 +703,8 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                       );
                     }
 
-                    // Only show empty slots for own profile
-                    if (!editable) return null;
+                    // Only show empty slots for own profile and when not in edit mode
+                    if (!editable || isEditingTop5) return null;
 
                     return (
                       <div key={`empty-${position}`} className="relative aspect-[3/4] group">
@@ -714,7 +714,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                             setShowGamePicker(true);
                           }}
                           className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center hover:border-purple-500 transition-colors"
-                          disabled={isSaving || isEditingTop5}
+                          disabled={isSaving}
                         >
                           <div className="text-center">
                             <Plus className="h-5 w-5 text-gray-400 mx-auto mb-1" />
@@ -792,8 +792,8 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                   );
                 }
 
-                // Empty slot - only show for own profile
-                if (!editable) return null;
+                // Empty slot - only show for own profile and when not in edit mode
+                if (!editable || isEditingTop5) return null;
 
                 return (
                   <div key={`empty-${position}`} className={`relative aspect-[3/4] group ${
@@ -807,7 +807,7 @@ export const TopGames: React.FC<TopGamesProps> = ({ userId, limit, editable = fa
                         setShowGamePicker(true);
                       }}
                       className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center hover:border-purple-500 transition-colors"
-                      disabled={isSaving || isEditingTop5}
+                      disabled={isSaving}
                     >
                       <div className="text-center">
                         <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />

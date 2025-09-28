@@ -153,6 +153,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
         transform: 'translateX(-50%)',
         maxWidth: 'min(896px, calc(100vw - 2rem))',
         width: '100%',
+        minHeight: isMobile ? '400px' : '300px', // Ensure minimum usable height
         maxHeight: `calc(100vh - ${topPosition - window.scrollY}px - 2rem)`,
         zIndex: 50
       }
@@ -181,13 +182,13 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 md:px-6 md:py-4 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}'s Reviews</h2>
           <div className="flex items-center gap-2">
             {/* View Mode Toggle */}
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
                 viewMode === 'list' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
               }`}
               title="List View"
@@ -196,7 +197,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
             </button>
             <button
               onClick={() => setViewMode('tile')}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
                 viewMode === 'tile' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
               }`}
               title="Tile View"

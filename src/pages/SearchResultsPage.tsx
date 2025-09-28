@@ -634,7 +634,7 @@ export const SearchResultsPage: React.FC = () => {
                       {game.avg_user_rating && (
                         <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
                           <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                          <span className="text-sm font-bold">{game.avg_user_rating.toFixed(1)}</span>
+                          <span className="text-sm font-bold">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}</span>
                         </div>
                       )}
                     </div>
@@ -740,7 +740,7 @@ export const SearchResultsPage: React.FC = () => {
                                   <div className="flex items-center gap-1 mb-1">
                                     <Star className={`text-yellow-400 fill-current ${isNarrowMode ? 'h-4 w-4' : 'h-5 w-5'}`} />
                                     <span className={`font-bold ${isNarrowMode ? 'text-base' : 'text-lg'}`}>
-                                      {game.avg_user_rating.toFixed(1)}
+                                      {game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}
                                     </span>
                                   </div>
                                 )}

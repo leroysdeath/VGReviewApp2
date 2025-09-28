@@ -286,21 +286,21 @@ export const ExplorePage: React.FC = () => {
                       )}
                       {game.avg_user_rating && game.avg_user_rating > 0 && (
                         <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
-                          <span className="text-sm font-bold text-white">{game.avg_user_rating.toFixed(1)}/10</span>
+                          <span className="text-sm font-bold text-white">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10</span>
                         </div>
                       )}
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold text-lg mb-2 line-clamp-2">{game.name}</h3>
-                      <div className="text-sm text-gray-400">
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
                         {game.release_date && (
-                          <span>{new Date(game.release_date).getFullYear()}</span>
+                          <span className="shrink-0">{new Date(game.release_date).getFullYear()}</span>
                         )}
                         {game.release_date && game.platforms && game.platforms.length > 0 && (
-                          <span> • </span>
+                          <span className="shrink-0">•</span>
                         )}
                         {game.platforms && game.platforms.length > 0 && (
-                          <span className="truncate inline-block max-w-full">
+                          <span className="truncate">
                             {mapPlatformNames(game.platforms).join(', ')}
                           </span>
                         )}
@@ -328,7 +328,7 @@ export const ExplorePage: React.FC = () => {
                       />
                       {game.avg_user_rating && game.avg_user_rating > 0 && (
                         <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
-                          <span className="text-sm font-bold text-white">{game.avg_user_rating.toFixed(1)}/10</span>
+                          <span className="text-sm font-bold text-white">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10</span>
                         </div>
                       )}
                     </div>
@@ -356,13 +356,15 @@ export const ExplorePage: React.FC = () => {
                           )}
                           <div className="flex items-center gap-2 text-sm text-gray-400">
                             {game.release_date && (
-                              <span>{new Date(game.release_date).getFullYear()}</span>
+                              <span className="shrink-0">{new Date(game.release_date).getFullYear()}</span>
                             )}
                             {game.release_date && game.platforms && game.platforms.length > 0 && (
-                              <span>•</span>
+                              <span className="shrink-0">•</span>
                             )}
                             {game.platforms && game.platforms.length > 0 && (
-                              <span>{mapPlatformNames(game.platforms).join(', ')}</span>
+                              <span className="truncate">
+                                {mapPlatformNames(game.platforms).join(', ')}
+                              </span>
                             )}
                           </div>
                         </div>

@@ -284,6 +284,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         top: `${topPosition - window.scrollY}px`,
         left: '50%',
         transform: 'translateX(-50%)',
+        minHeight: isMobile ? '400px' : '300px', // Ensure minimum usable height
         zIndex: 50,
       }
     : {};
@@ -302,7 +303,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 md:px-6 md:py-4 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}'s Games</h2>
           <button
             onClick={onClose}

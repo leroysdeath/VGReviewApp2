@@ -1297,7 +1297,7 @@ export const GamePage: React.FC = () => {
                     onClick={() => handleAuthRequiredAction('mark_started')}
                     disabled={progressLoading || (userHasReviewed && !isStarted)}
                     title={userHasReviewed ? (isStarted ? "Progress locked by review" : "Cannot mark as started after writing a review") : (isStarted ? "Click to unmark as started" : "Click to mark as started")}
-                    className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all min-w-[120px] ${
+                    className={`relative inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all min-w-[140px] h-[40px] ${
                       userHasReviewed
                         ? isStarted
                           ? 'bg-blue-600/80 text-white border-2 border-blue-400 opacity-75 cursor-not-allowed'
@@ -1317,17 +1317,7 @@ export const GamePage: React.FC = () => {
                       <Play className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
-                      {isStarted ? (
-                        <span className="flex flex-col items-center leading-tight">
-                          <span className="invisible">Mark as</span>
-                          <span>Started</span>
-                        </span>
-                      ) : (
-                        <span className="flex flex-col items-center leading-tight">
-                          <span>Mark as</span>
-                          <span>Started</span>
-                        </span>
-                      )}
+                      {isStarted ? 'Started' : 'Mark as Started'}
                     </span>
                     {userHasReviewed && (
                       <div className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1">
@@ -1341,7 +1331,7 @@ export const GamePage: React.FC = () => {
                     onClick={() => handleAuthRequiredAction('mark_completed')}
                     disabled={progressLoading || (userHasReviewed && !isCompleted)}
                     title={userHasReviewed ? (isCompleted ? "Progress locked by review" : "Cannot mark as finished after writing a review") : (isCompleted ? "Click to unmark as finished" : "Click to mark as finished")}
-                    className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all min-w-[120px] ${
+                    className={`relative inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all min-w-[140px] h-[40px] ${
                       userHasReviewed
                         ? isCompleted
                           ? 'bg-green-600/80 text-white border-2 border-green-400 opacity-75 cursor-not-allowed'
@@ -1361,17 +1351,7 @@ export const GamePage: React.FC = () => {
                       <CheckCircle className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
-                      {isCompleted ? (
-                        <span className="flex flex-col items-center leading-tight">
-                          <span className="invisible">Mark as</span>
-                          <span>Finished</span>
-                        </span>
-                      ) : (
-                        <span className="flex flex-col items-center leading-tight">
-                          <span>Mark as</span>
-                          <span>Finished</span>
-                        </span>
-                      )}
+                      {isCompleted ? 'Finished' : 'Mark as Finished'}
                     </span>
                     {userHasReviewed && (
                       <div className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1">

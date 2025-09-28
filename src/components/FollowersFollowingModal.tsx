@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
 import { useAuth } from '../hooks/useAuth';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface User {
   id: string;
@@ -38,6 +39,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   
   const { toggleFollow, loading: followLoading } = useFollow();
   const { isAuthenticated, dbUserId: currentDbUserId } = useAuth();
+  const { isMobile } = useResponsive();
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Update active tab when initialTab changes
@@ -207,6 +209,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
         transform: 'translateX(-50%)',
         maxWidth: 'min(448px, calc(100vw - 2rem))',
         width: '100%',
+        minHeight: isMobile ? '400px' : '300px', // Ensure minimum usable height
         maxHeight: `calc(100vh - ${topPosition - window.scrollY}px - 2rem)`,
         zIndex: 50
       }
@@ -235,7 +238,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 md:px-6 md:py-4 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}</h2>
           <button
             onClick={onClose}
