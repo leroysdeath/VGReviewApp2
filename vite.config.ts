@@ -176,7 +176,10 @@ export default defineConfig({
               id.includes('scheduler') ||  // React scheduler
               id.includes('zustand') ||  // Zustand uses React hooks
               id.includes('swr') ||  // SWR uses React hooks
-              id.includes('@tanstack/react-query')  // React Query if used
+              id.includes('@tanstack/react-query') ||  // React Query if used
+              id.includes('zod') ||  // Zod validation (needed by @hookform/resolvers)
+              id.includes('yup') ||  // Yup validation if used
+              id.includes('joi')  // Joi validation if used
             ) {
               return 'vendor-react';
             }
