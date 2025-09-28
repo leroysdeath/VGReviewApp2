@@ -165,15 +165,13 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
         ${className}
       `}
     >
-      {/* Card content with responsive layout */}
+      {/* Card content with unified grid layout */}
       <div className="relative">
-        {/* MOBILE LAYOUT - CSS Grid */}
-        <div className="md:hidden">
-          <div className="grid grid-cols-[1fr,auto] gap-x-3">
-            {/* Row 1: Avatar + Username (spans full width) */}
-            <div className="col-span-2 flex items-center gap-2">
+          <div className="grid grid-cols-[auto,1fr,auto] gap-x-2 md:gap-x-4">
+            {/* Avatar (spans rows 1-4) */}
+            <div className="row-span-4">
               <div
-                className="group/avatar cursor-pointer flex-shrink-0"
+                className="group/avatar cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/user/${review.userId}`);
@@ -183,52 +181,47 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                   <img
                     src={review.authorAvatar}
                     alt={review.author}
-                    className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-700/50 ring-offset-1 ring-offset-gray-900
+                    className="w-10 h-10 md:w-16 md:h-16 rounded-full object-cover ring-2 ring-gray-700/50 ring-offset-1 md:ring-offset-2 ring-offset-gray-900
                       transition-all duration-300 group-hover/avatar:ring-gray-500"
                   />
                 ) : (
                   <div className={`
-                    w-10 h-10 rounded-full ring-2 ring-gray-700/50 ring-offset-1 ring-offset-gray-900
+                    w-10 h-10 md:w-16 md:h-16 rounded-full ring-2 ring-gray-700/50 ring-offset-1 md:ring-offset-2 ring-offset-gray-900
                     bg-gradient-to-br ${themeStyles.gradient}
-                    flex items-center justify-center font-bold text-white text-base
+                    flex items-center justify-center font-bold text-white text-base md:text-xl
                     transition-all duration-300 group-hover/avatar:ring-gray-500
                   `}>
                     {getUserInitial(review.author)}
                   </div>
                 )}
               </div>
-              <div className="flex-1 min-w-0">
-                <span
-                  className="font-medium text-white text-sm hover:text-purple-400 cursor-pointer transition-colors duration-200 block truncate"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/user/${review.userId}`);
-                  }}
-                >
-                  {review.author}
-                </span>
-                <div className="text-xs text-gray-400">
-                  {getRelativeTime(review.date)}
-                </div>
-              </div>
             </div>
 
-            {/* Row 2: Game Title (column 1) */}
-            {showGameTitle && review.gameTitle && (
-              <div className="text-gray-300 text-sm font-medium mt-3">
-                {review.gameTitle}
-              </div>
-            )}
+            {/* Row 1: Username (column 2) */}
+            <div className="mb-1">
+              <span
+                className="font-medium md:font-semibold text-white text-sm md:text-base cursor-pointer hover:text-purple-400 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/user/${review.userId}`);
+                }}
+              >
+                {review.author}
+              </span>
+            </div>
 
-            {/* Game Cover + Rating (column 2, spans rows 2-4) */}
+            {/* Game Cover + Rating (column 3, spans rows 3-5) */}
             {showGameTitle && (review.gameCoverUrl || review.rating) && (
-              <div className="row-start-2 row-span-3 col-start-2 flex flex-col items-center justify-center mt-3">
+              <div className="row-start-3 row-span-3 col-start-3 flex flex-col items-center justify-center">
                 {/* Game cover */}
                 {review.gameCoverUrl && (
                   <img
                     src={review.gameCoverUrl}
                     alt={review.gameTitle}
-                    className="w-20 h-28 object-cover rounded shadow-lg"
+                    className={`
+                      object-cover rounded shadow-lg
+                      ${compact ? 'w-14 h-20 md:w-16' : 'w-16 h-24 md:w-20 md:h-28'}
+                    `}
                     loading="lazy"
                   />
                 )}
@@ -236,7 +229,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                 {/* Rating badge */}
                 {review.rating && (
                   <div className="mt-2">
-                    <div className={`px-2 py-1 rounded-md font-bold text-sm ${getRatingColorClasses(review.rating)}`}>
+                    <div className={`px-1.5 md:px-2 py-0.5 md:py-1 rounded-md font-bold text-xs md:text-sm ${getRatingColorClasses(review.rating)}`}>
                       {review.rating === 10 ? '10' : review.rating.toFixed(1)}/10
                     </div>
                   </div>
@@ -244,18 +237,30 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               </div>
             )}
 
-            {/* Row 3: Separator (spans both columns) */}
-            {showGameTitle && (
-              <div className="col-span-2 h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% mt-2 mb-3"></div>
+            {/* Row 2: Date (column 2) */}
+            <div className="text-xs md:text-sm text-gray-400 mb-1 md:mb-2">
+              {getRelativeTime(review.date)}
+            </div>
+
+            {/* Row 3: Game Title (column 2) */}
+            {showGameTitle && review.gameTitle && (
+              <div className="text-gray-300 text-sm md:text-base font-medium mb-1 md:mb-2">
+                {review.gameTitle}
+              </div>
             )}
 
-            {/* Row 4: Review Text (spans both columns) */}
+            {/* Row 4: Separator (spans all columns) */}
+            {showGameTitle && (
+              <div className="col-span-3 h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% mb-2 md:mb-3"></div>
+            )}
+
+            {/* Row 5: Review Text (spans all columns) */}
             {review.hasText && (
-              <div className="col-span-2 relative">
+              <div className="col-span-3 relative">
                 <p
-                  className="text-sm text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
+                  className="text-sm md:text-base text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
                   style={{
-                    height: '3.75rem', // 2.5 lines at 1.5rem line height
+                    height: '3.75rem', // 2.5 lines - consistent for both mobile and desktop
                     maxHeight: '3.75rem'
                   }}
                 >
@@ -292,153 +297,12 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             isLikingComment={false}
             likingCommentId={likingCommentId}
             error={error || undefined}
-            className="mt-3"
+            className="mt-2 md:mt-3"
             reviewAuthorId={parseInt(review.userId)}
             currentUserId={currentUserId}
             disableCommentHover={true}
             disableComments={true}
           />
-        </div>
-
-        {/* DESKTOP LAYOUT - CSS Grid */}
-        <div className="hidden md:block">
-          <div className="grid grid-cols-[auto,1fr,auto] gap-x-4">
-            {/* Avatar (spans rows 1-4) */}
-            <div className="row-span-4">
-              <div
-                className="group/avatar cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/user/${review.userId}`);
-                }}
-              >
-                {review.authorAvatar ? (
-                  <img
-                    src={review.authorAvatar}
-                    alt={review.author}
-                    className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-700/50 ring-offset-2 ring-offset-gray-900
-                      transition-all duration-300 group-hover/avatar:ring-gray-500"
-                  />
-                ) : (
-                  <div className={`
-                    w-16 h-16 rounded-full ring-2 ring-gray-700/50 ring-offset-2 ring-offset-gray-900
-                    bg-gradient-to-br ${themeStyles.gradient}
-                    flex items-center justify-center font-bold text-white text-xl
-                    transition-all duration-300 group-hover/avatar:ring-gray-500
-                  `}>
-                    {getUserInitial(review.author)}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Row 1: Username (column 2) */}
-            <div className="mb-1">
-              <span
-                className="font-semibold text-white cursor-pointer hover:text-purple-400 transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/user/${review.userId}`);
-                }}
-              >
-                {review.author}
-              </span>
-            </div>
-
-            {/* Game Cover + Rating (column 3, spans rows 3-5) */}
-            {showGameTitle && (review.gameCoverUrl || review.rating) && (
-              <div className="row-start-3 row-span-3 col-start-3 flex flex-col items-center justify-center">
-                {/* Game cover */}
-                {review.gameCoverUrl && (
-                  <img
-                    src={review.gameCoverUrl}
-                    alt={review.gameTitle}
-                    className={`
-                      object-cover rounded shadow-lg
-                      ${compact ? 'w-16 h-20' : 'w-20 h-28'}
-                    `}
-                    loading="lazy"
-                  />
-                )}
-
-                {/* Rating badge */}
-                {review.rating && (
-                  <div className="mt-2">
-                    <div className={`px-2 py-1 rounded-md font-bold text-sm ${getRatingColorClasses(review.rating)}`}>
-                      {review.rating === 10 ? '10' : review.rating.toFixed(1)}/10
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Row 2: Date (column 2) */}
-            <div className="text-sm text-gray-400 mb-2">
-              {getRelativeTime(review.date)}
-            </div>
-
-            {/* Row 3: Game Title (column 2) */}
-            {showGameTitle && review.gameTitle && (
-              <div className="text-gray-300 font-medium mb-2">
-                {review.gameTitle}
-              </div>
-            )}
-
-            {/* Row 4: Separator (spans all columns) */}
-            {showGameTitle && (
-              <div className="col-span-3 h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% mb-3"></div>
-            )}
-
-            {/* Row 5: Review Text (spans all columns) */}
-            {review.hasText && (
-              <div className="col-span-3 relative">
-                <p
-                  className="text-base text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
-                  style={{
-                    height: '4rem', // 2.5 lines at 1.6rem line height for text-base
-                    maxHeight: '4rem'
-                  }}
-                >
-                  {escapeHtml(truncateText(review.text, 144))}
-                </p>
-                {/* Gradient fade overlay */}
-                <div
-                  className="absolute bottom-0 left-0 right-0 pointer-events-none"
-                  style={{
-                    height: '0.4rem',
-                    background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.9) 100%)'
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Review Interactions (outside grid) */}
-          <ReviewInteractions
-            reviewId={review.id}
-            initialLikeCount={review.likeCount || likeCount}
-            initialCommentCount={review.commentCount || commentCount}
-            isLiked={isLiked}
-            onLike={toggleLike}
-            onUnlike={toggleLike}
-            comments={comments}
-            onAddComment={postComment}
-            onEditComment={updateComment}
-            onDeleteComment={removeComment}
-            onLikeComment={toggleCommentLike}
-            onUnlikeComment={toggleCommentLike}
-            isLoadingComments={isLoadingComments}
-            isLoadingLike={isLoadingLike}
-            isLikingComment={false}
-            likingCommentId={likingCommentId}
-            error={error || undefined}
-            className="mt-3"
-            reviewAuthorId={parseInt(review.userId)}
-            currentUserId={currentUserId}
-            disableCommentHover={true}
-            disableComments={true}
-          />
-        </div>
       </div>
 
     </Link>
