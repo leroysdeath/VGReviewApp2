@@ -1204,9 +1204,9 @@ class IGDBService {
     if (!url) return '';
 
     // IGDB URLs come as //images.igdb.com/igdb/image/upload/t_thumb/imageid.jpg
-    // Change to t_1080p for high quality (1920x1080) images
-    // t_cover_big is only 264x374 which appears blurry on modern displays
-    return url.replace('t_thumb', 't_1080p').replace('//', 'https://');
+    // Use t_cover_big for covers (264x374) - IGDB's highest resolution portrait format
+    // While not high-res, it maintains proper cover aspect ratio unlike t_1080p (16:9)
+    return url.replace('t_thumb', 't_cover_big').replace('//', 'https://');
   }
 
   // Test API connection

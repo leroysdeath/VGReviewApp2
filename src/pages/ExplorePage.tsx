@@ -28,11 +28,11 @@ export const ExplorePage: React.FC = () => {
   const [exploreError, setExploreError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isMobile, setIsMobile] = useState(false);
-  // Remove search-related state since we're redirecting to search-results
-  
+  const debounceRef = useRef<NodeJS.Timeout>();
+
   // Auth for tracking
   const { user } = useAuth();
-  
+
   // Extensible filter state
   const [filters, setFilters] = useState<ExploreFilters>({
     searchTerm: ''
@@ -71,7 +71,28 @@ export const ExplorePage: React.FC = () => {
     }
   }, []); // Only load once on mount
 
-  // Remove auto-search on typing - now only search on explicit action
+  // Auto-search with debounce when typing
+  useEffect(() => {
+    if (filters.searchTerm?.trim()) {
+      // Clear existing timeout
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+
+      // Set new timeout for auto-search
+      debounceRef.current = setTimeout(() => {
+        // Redirect to search-results page after debounce delay
+        navigate(`/search-results?q=${encodeURIComponent(filters.searchTerm)}`);
+      }, 500); // 500ms delay for autosearch
+    }
+
+    // Cleanup timeout on unmount or when search term changes
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [filters.searchTerm, navigate]);
 
   const loadExploreGames = async () => {
     setExploreLoading(true);
@@ -124,7 +145,11 @@ export const ExplorePage: React.FC = () => {
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && filters.searchTerm?.trim()) {
-      // Redirect to search-results page on Enter
+      // Clear any pending debounced search
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      // Redirect to search-results page immediately on Enter
       navigate(`/search-results?q=${encodeURIComponent(filters.searchTerm)}`);
     }
   };
@@ -152,7 +177,7 @@ export const ExplorePage: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
                 type="text"
-                placeholder="Search games... (press Enter or click Search)"
+                placeholder="Search games..."
                 value={filters.searchTerm}
                 onChange={(e) => handleFilterChange({ searchTerm: e.target.value })}
                 onKeyDown={handleKeyPress}
@@ -162,7 +187,11 @@ export const ExplorePage: React.FC = () => {
             <button
               onClick={() => {
                 if (filters.searchTerm?.trim()) {
-                  // Redirect to search-results page
+                  // Clear any pending debounced search
+                  if (debounceRef.current) {
+                    clearTimeout(debounceRef.current);
+                  }
+                  // Redirect to search-results page immediately
                   navigate(`/search-results?q=${encodeURIComponent(filters.searchTerm)}`);
                 }
               }}
