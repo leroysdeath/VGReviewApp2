@@ -148,16 +148,16 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
   const modalStyle: React.CSSProperties = topPosition
     ? isMobile
       ? {
-          // Mobile: Full-screen modal
+          // Mobile: Position below navbar, taking up most of screen
           position: 'fixed',
-          top: 0,
+          top: '64px', // Below navbar on mobile
           left: 0,
           right: 0,
           bottom: 0,
           width: '100%',
-          height: '100vh',
+          height: 'calc(100vh - 64px)', // Full height minus navbar
           maxWidth: '100%',
-          borderRadius: 0,
+          borderRadius: '16px 16px 0 0', // Rounded top corners
           zIndex: 50
         }
       : {
@@ -192,7 +192,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
     >
       <div
         ref={modalRef}
-        className={topPosition ? (isMobile ? 'bg-gray-800 flex flex-col' : 'bg-gray-800 rounded-lg flex flex-col') : 'bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl'}
+        className={topPosition ? (isMobile ? 'bg-gray-800 flex flex-col rounded-t-2xl' : 'bg-gray-800 rounded-lg flex flex-col') : 'bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl'}
         style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >

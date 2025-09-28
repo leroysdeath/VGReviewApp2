@@ -281,16 +281,16 @@ export const GamesModal: React.FC<GamesModalProps> = ({
   const modalStyle: React.CSSProperties = topPosition
     ? isMobile
       ? {
-          // Mobile: Full-screen modal
+          // Mobile: Position below navbar, taking up most of screen
           position: 'fixed',
-          top: 0,
+          top: '64px', // Below navbar on mobile
           left: 0,
           right: 0,
           bottom: 0,
           width: '100%',
-          height: '100vh',
+          height: 'calc(100vh - 64px)', // Full height minus navbar
           maxWidth: '100%',
-          borderRadius: 0,
+          borderRadius: '16px 16px 0 0', // Rounded top corners
           zIndex: 50
         }
       : {
@@ -314,7 +314,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     >
       <div
         ref={modalRef}
-        className={`${isMobile && topPosition ? 'bg-gray-800' : 'bg-gray-800 rounded-lg'} w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto ${
+        className={`${isMobile && topPosition ? 'bg-gray-800 rounded-t-2xl' : 'bg-gray-800 rounded-lg'} w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto ${
           topPosition ? '' : 'relative top-1/2 -translate-y-1/2'
         }`}
         style={modalStyle}

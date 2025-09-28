@@ -358,7 +358,7 @@ export const UserPage: React.FC = () => {
             </div>
           </div>
           <div className="w-full max-w-sm">
-            <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} />
+            <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} isOwnProfile={isOwnProfile} />
           </div>
         </div>
 
@@ -386,7 +386,7 @@ export const UserPage: React.FC = () => {
             </div>
           </div>
           <div className="w-full max-w-sm">
-            <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} />
+            <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} isOwnProfile={isOwnProfile} />
           </div>
         </div>
 
@@ -402,7 +402,7 @@ export const UserPage: React.FC = () => {
             followLoading={followLoading}
             isAuthenticated={isAuthenticated}
           />
-          <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} />
+          <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} isOwnProfile={isOwnProfile} />
           <div ref={profileDetailsRef} className="w-full">
             <ProfileDetails
               stats={stats}

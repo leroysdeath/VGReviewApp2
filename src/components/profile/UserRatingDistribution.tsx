@@ -7,13 +7,15 @@ interface UserRatingDistributionProps {
   username?: string;
   className?: string;
   onBarClick?: (rating: number) => void;
+  isOwnProfile?: boolean;
 }
 
 export const UserRatingDistribution: React.FC<UserRatingDistributionProps> = ({
   userId,
   username,
   className = '',
-  onBarClick
+  onBarClick,
+  isOwnProfile = false
 }) => {
   const [distribution, setDistribution] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -92,9 +94,10 @@ export const UserRatingDistribution: React.FC<UserRatingDistributionProps> = ({
         </div>
         <div className="border-b border-gray-700 mb-4"></div>
         <div className="text-center py-8">
-          <p className="text-gray-400">No ratings yet</p>
-          <p className="text-gray-500 text-sm mt-2">
-            Rate some games to see your distribution
+          <p className="text-gray-400">
+            {isOwnProfile
+              ? "No ratings yet. Start rating games to see your distribution!"
+              : "No ratings yet"}
           </p>
         </div>
       </div>
