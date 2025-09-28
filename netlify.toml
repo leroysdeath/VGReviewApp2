@@ -1,12 +1,10 @@
 [build]
-command = "npm install && npm run build"
+command = "rm -rf dist && npm install && npm run build"
 publish = "dist"
-# Enable Netlify's asset optimization
+
+# Disable Netlify's post-processing to avoid conflicts with Vite's optimization
 [build.processing]
-css = { bundle = true, minify = true }
-js = { bundle = true, minify = true }
-html = { pretty_urls = true }
-images = { compress = true }
+skip_processing = true
 
 [dev]
 command = "npm run dev"
@@ -25,14 +23,18 @@ NODE_VERSION = "20"
 for = "/index.html"
 [headers.values]
 Content-Type = "text/html; charset=UTF-8"
-Cache-Control = "public, max-age=0, must-revalidate"
+Cache-Control = "no-cache, no-store, must-revalidate"
+Pragma = "no-cache"
+Expires = "0"
 
 # Critical: Root path charset (for when index.html is served at /)
 [[headers]]
 for = "/"
 [headers.values]
 Content-Type = "text/html; charset=UTF-8"
-Cache-Control = "public, max-age=0, must-revalidate"
+Cache-Control = "no-cache, no-store, must-revalidate"
+Pragma = "no-cache"
+Expires = "0"
 
 # Critical: All HTML files charset
 [[headers]]
@@ -133,7 +135,9 @@ Vary = "Accept-Encoding"
 [[headers]]
 for = "/*.html"
 [headers.values]
-Cache-Control = "public, max-age=0, must-revalidate"
+Cache-Control = "no-cache, no-store, must-revalidate"
+Pragma = "no-cache"
+Expires = "0"
 Content-Encoding = "gzip"
 Vary = "Accept-Encoding"
 
