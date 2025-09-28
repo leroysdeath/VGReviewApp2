@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Grid, List, Loader, AlertCircle, Star, TrendingUp, Trophy, Search, RefreshCw } from 'lucide-react';
 import { SmartImage } from '../components/SmartImage';
 import { fetchGamesWithReviewMetrics, ExploreGame, SortOption } from '../services/exploreService';
-import { useGameSearch } from '../hooks/useGameSearch';
 import { shouldShowCategoryLabel, getCategoryLabel, getCategoryStyles } from '../utils/gameCategoryLabels';
 import { mapPlatformNames } from '../utils/platformMapping';
 import { useAuth } from '../hooks/useAuth';
@@ -29,11 +28,7 @@ export const ExplorePage: React.FC = () => {
   const [exploreError, setExploreError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isMobile, setIsMobile] = useState(false);
-  const [searchStarted, setSearchStarted] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout>();
-  
-  // Search functionality from useGameSearch hook
-  const { searchState, searchGames, searchTerm, setSearchTerm } = useGameSearch();
+  // Remove search-related state since we're redirecting to search-results
   
   // Auth for tracking
   const { user } = useAuth();
@@ -60,14 +55,14 @@ export const ExplorePage: React.FC = () => {
     }
   }, [isMobile]);
 
-  // Initialize from URL params
+  // Initialize from URL params - redirect if search query exists
   useEffect(() => {
     const query = searchParams.get('q') || '';
     if (query.trim()) {
-      setFilters(prev => ({ ...prev, searchTerm: query }));
-      setSearchTerm(query);
+      // Redirect to search-results page if there's a query parameter
+      navigate(`/search-results?q=${encodeURIComponent(query)}`);
     }
-  }, [searchParams, setSearchTerm]);
+  }, [searchParams, navigate]);
 
   // Fetch explore games (default state)
   useEffect(() => {
@@ -76,25 +71,7 @@ export const ExplorePage: React.FC = () => {
     }
   }, []); // Only load once on mount
 
-  // Handle search when searchTerm changes
-  useEffect(() => {
-    if (filters.searchTerm?.trim()) {
-      // Debounced search
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-
-      debounceRef.current = setTimeout(() => {
-        performSearch();
-      }, 500);
-    }
-
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
-  }, [filters.searchTerm]);
+  // Remove auto-search on typing - now only search on explicit action
 
   const loadExploreGames = async () => {
     setExploreLoading(true);
@@ -111,20 +88,11 @@ export const ExplorePage: React.FC = () => {
     }
   };
 
-  const performSearch = async () => {
-    if (!filters.searchTerm?.trim()) return;
-    
-    try {
-      setSearchStarted(true);
-      await searchGames(filters.searchTerm);
-    } catch (err) {
-      console.error('Search failed:', err);
-    }
-  };
+  // Search now redirects to /search-results page
 
   const handleGameClick = async (game: ExploreGame | any) => {
-    // Track the click based on the context (search vs explore)
-    const source = isSearchMode ? 'search' : 'list';
+    // Track the click from explore page
+    const source = 'list';
     
     try {
       // Track the game click (respects user consent)
@@ -150,38 +118,24 @@ export const ExplorePage: React.FC = () => {
     const updated = { ...filters, ...newFilters };
     setFilters(updated);
 
-    // Update URL if search term changes
-    if (newFilters.searchTerm !== undefined) {
-      const params = new URLSearchParams(searchParams);
-      if (newFilters.searchTerm.trim()) {
-        params.set('q', newFilters.searchTerm);
-      } else {
-        params.delete('q');
-      }
-      setSearchParams(params);
-    }
+    // Don't update URL params anymore - we'll redirect on search
+    // Keep local state for the input field only
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && filters.searchTerm?.trim()) {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-      performSearch();
+      // Redirect to search-results page on Enter
+      navigate(`/search-results?q=${encodeURIComponent(filters.searchTerm)}`);
     }
   };
 
-  // Determine what to show: search results or explore games
-  const isSearchMode = filters.searchTerm?.trim() && searchStarted;
-  const displayGames = isSearchMode ? searchState.games : exploreGames;
-  const loading = isSearchMode ? searchState.loading : exploreLoading;
-  const error = isSearchMode ? searchState.error : exploreError;
+  // Only show explore games now - search redirects elsewhere
+  const displayGames = exploreGames;
+  const loading = exploreLoading;
+  const error = exploreError;
 
-  // Get display title
+  // Display title for explore page
   const getDisplayTitle = () => {
-    if (isSearchMode) {
-      return `Search Results for "${filters.searchTerm}"`;
-    }
     return 'Top Games by Rating, Reviews & Popularity';
   };
 
@@ -198,7 +152,7 @@ export const ExplorePage: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
                 type="text"
-                placeholder="Search games... (auto-searches after typing or press Enter)"
+                placeholder="Search games... (press Enter or click Search)"
                 value={filters.searchTerm}
                 onChange={(e) => handleFilterChange({ searchTerm: e.target.value })}
                 onKeyDown={handleKeyPress}
@@ -208,7 +162,8 @@ export const ExplorePage: React.FC = () => {
             <button
               onClick={() => {
                 if (filters.searchTerm?.trim()) {
-                  performSearch();
+                  // Redirect to search-results page
+                  navigate(`/search-results?q=${encodeURIComponent(filters.searchTerm)}`);
                 } else {
                   loadExploreGames();
                 }
@@ -240,35 +195,28 @@ export const ExplorePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Info Banner - Only show when not searching */}
-          {!isSearchMode && (
-            <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-2 text-purple-300">
-                <TrendingUp className="h-5 w-5" />
-                <p className="text-sm">
-                  Games ranked by our unified algorithm combining <strong>rating quality</strong>, <strong>review volume</strong>, and <strong>community engagement</strong>
-                </p>
-              </div>
+          {/* Info Banner */}
+          <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2 text-purple-300">
+              <TrendingUp className="h-5 w-5" />
+              <p className="text-sm">
+                Games ranked by our unified algorithm combining <strong>rating quality</strong>, <strong>review volume</strong>, and <strong>community engagement</strong>
+              </p>
             </div>
-          )}
+          </div>
 
           {/* Results Info */}
           <div className="flex justify-between items-center text-gray-400 text-sm">
             <div>
-              {isSearchMode 
-                ? `Found ${displayGames.length} games${searchState.source ? ` from ${searchState.source}` : ''}`
-                : `Showing top ${displayGames.length} games ranked by unified score`
-              }
+              Showing top {displayGames.length} games ranked by unified score
             </div>
-            {!filters.searchTerm?.trim() && (
-              <button
-                onClick={loadExploreGames}
-                className="flex items-center gap-2 hover:text-white transition-colors"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </button>
-            )}
+            <button
+              onClick={loadExploreGames}
+              className="flex items-center gap-2 hover:text-white transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </button>
           </div>
         </div>
 
@@ -277,7 +225,7 @@ export const ExplorePage: React.FC = () => {
           <div className="flex justify-center items-center gap-3 mb-6 p-4 bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700">
             <Loader className="h-5 w-5 animate-spin text-purple-500" />
             <span className="text-gray-300">
-              {isSearchMode ? `Searching for "${filters.searchTerm}"...` : 'Loading top-ranked games...'}
+              Loading top-ranked games...
             </span>
           </div>
         )}
@@ -412,23 +360,8 @@ export const ExplorePage: React.FC = () => {
         {/* No Results */}
         {!loading && !error && displayGames.length === 0 && (
           <div className="text-center py-20">
-            {isSearchMode ? (
-              <>
-                <p className="text-gray-400 text-lg mb-4">No games found for "{filters.searchTerm}"</p>
-                <p className="text-gray-500 text-sm mb-4">Try different search terms or check back later</p>
-                <button
-                  onClick={() => handleFilterChange({ searchTerm: '' })}
-                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-                >
-                  Clear Search
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-gray-400 text-lg mb-4">No games found with reviews</p>
-                <p className="text-gray-500 text-sm">Check back later for more content</p>
-              </>
-            )}
+            <p className="text-gray-400 text-lg mb-4">No games found with reviews</p>
+            <p className="text-gray-500 text-sm">Check back later for more content</p>
           </div>
         )}
       </div>
