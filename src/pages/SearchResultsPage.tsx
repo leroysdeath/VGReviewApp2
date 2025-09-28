@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Grid, List, Loader, AlertCircle, Star, RefreshCw, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { Grid, List, Loader, AlertCircle, Star, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { useGameSearch } from '../hooks/useGameSearch';
 import { SmartImage } from '../components/SmartImage';
 import { supabase } from '../services/supabase';
@@ -75,6 +75,13 @@ export const SearchResultsPage: React.FC = () => {
   const [searchStarted, setSearchStarted] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>();
   const filterDebounceRef = useRef<NodeJS.Timeout>();
+
+  // Debug mode detection
+  const isDebugMode = useMemo(() => {
+    return searchParams.get('debug') === 'true' ||
+           localStorage.getItem('debugMode') === 'true' ||
+           import.meta.env.DEV;
+  }, [searchParams]);
 
   // Optimized debounce delays for different contexts
   const DEBOUNCE_DELAYS = {
@@ -410,7 +417,9 @@ export const SearchResultsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">Browse Games</h1>
+          <h1 className="text-4xl font-bold mb-4">
+            {filters.searchTerm?.trim() ? `Search Results for "${filters.searchTerm}"` : 'Browse Games'}
+          </h1>
           
           {/* Search Bar */}
           <div className="flex gap-4 mb-6">
@@ -437,12 +446,13 @@ export const SearchResultsPage: React.FC = () => {
               <Search className="h-4 w-4" />
               Search
             </button>
-            <button
+            {/* Filters button - hidden for now */}
+            {/* <button
               onClick={() => setShowFilters(!showFilters)}
               className="px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
             >
               Filters
-            </button>
+            </button> */}
             <div className="hidden md:flex gap-2">
               <button
                 onClick={() => setViewMode('grid')}
@@ -480,7 +490,7 @@ export const SearchResultsPage: React.FC = () => {
                 <p className="text-sm sm:text-base">
                   Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredGames.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredGames.length)} of {filteredGames.length} games
                 </p>
-                {searchState.source && (
+                {isDebugMode && searchState.source && (
                   <div className="flex items-center gap-2 text-xs">
                     <div className={`
                       px-2 py-1 rounded-full text-xs font-medium
@@ -492,25 +502,9 @@ export const SearchResultsPage: React.FC = () => {
                        searchState.source === 'igdb' ? 'IGDB API' :
                        'Mixed Sources'}
                     </div>
-                    {searchState.source === 'igdb' && (
-                      <span className="text-gray-500 text-xs">
-                        High-quality game data
-                      </span>
-                    )}
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => {
-                  if (filters.searchTerm?.trim()) {
-                    performSearch();
-                  }
-                }}
-                className="flex items-center gap-2 hover:text-white transition-colors"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </button>
             </div>
           )}
         </div>
@@ -569,17 +563,6 @@ export const SearchResultsPage: React.FC = () => {
                 <p className="text-sm">
                   Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredGames.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredGames.length)} of {filteredGames.length} games
                 </p>
-                <button
-                  onClick={() => {
-                    if (filters.searchTerm?.trim()) {
-                      performSearch();
-                    }
-                  }}
-                  className="flex items-center gap-2 hover:text-white transition-colors"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Refresh
-                </button>
               </div>
             )}
 

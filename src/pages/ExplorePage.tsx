@@ -136,7 +136,7 @@ export const ExplorePage: React.FC = () => {
 
   // Display title for explore page
   const getDisplayTitle = () => {
-    return 'Top Games by Rating, Reviews & Popularity';
+    return 'Top Games by Popularity';
   };
 
   return (
@@ -164,14 +164,12 @@ export const ExplorePage: React.FC = () => {
                 if (filters.searchTerm?.trim()) {
                   // Redirect to search-results page
                   navigate(`/search-results?q=${encodeURIComponent(filters.searchTerm)}`);
-                } else {
-                  loadExploreGames();
                 }
               }}
               className="px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors flex items-center gap-2"
             >
               <Search className="h-4 w-4" />
-              {filters.searchTerm?.trim() ? 'Search' : 'Refresh'}
+              Search
             </button>
             
             {/* View Mode Toggle - Desktop Only */}
@@ -195,28 +193,11 @@ export const ExplorePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Info Banner */}
-          <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mb-4">
-            <div className="flex items-center gap-2 text-purple-300">
-              <TrendingUp className="h-5 w-5" />
-              <p className="text-sm">
-                Games ranked by our unified algorithm combining <strong>rating quality</strong>, <strong>review volume</strong>, and <strong>community engagement</strong>
-              </p>
-            </div>
-          </div>
-
           {/* Results Info */}
-          <div className="flex justify-between items-center text-gray-400 text-sm">
+          <div className="text-gray-400 text-sm">
             <div>
-              Showing top {displayGames.length} games ranked by unified score
+              Showing top {displayGames.length} games by popularity
             </div>
-            <button
-              onClick={loadExploreGames}
-              className="flex items-center gap-2 hover:text-white transition-colors"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </button>
           </div>
         </div>
 
@@ -282,11 +263,19 @@ export const ExplorePage: React.FC = () => {
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold text-lg mb-2 line-clamp-2">{game.name}</h3>
-                      {game.release_date && (
-                        <p className="text-sm text-gray-400 mb-1">
-                          {new Date(game.release_date).getFullYear()}
-                        </p>
-                      )}
+                      <div className="text-sm text-gray-400">
+                        {game.release_date && (
+                          <span>{new Date(game.release_date).getFullYear()}</span>
+                        )}
+                        {game.release_date && game.platforms && game.platforms.length > 0 && (
+                          <span> • </span>
+                        )}
+                        {game.platforms && game.platforms.length > 0 && (
+                          <span className="truncate inline-block max-w-full">
+                            {mapPlatformNames(game.platforms).join(', ')}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -299,14 +288,21 @@ export const ExplorePage: React.FC = () => {
                     onClick={() => handleGameClick(game)}
                     className="bg-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-750 transition-colors flex gap-4"
                   >
-                    <SmartImage
-                      src={getCoverUrl(game)}
-                      alt={game.name}
-                      className="w-24 h-32 object-cover rounded-lg"
-                      optimization={{ width: 200, height: 300, quality: 85 }}
-                      fallback="/placeholder-game.jpg"
-                      lazy={true}
-                    />
+                    <div className="relative">
+                      <SmartImage
+                        src={getCoverUrl(game)}
+                        alt={game.name}
+                        className="w-24 h-32 object-cover rounded-lg"
+                        optimization={{ width: 200, height: 300, quality: 85 }}
+                        fallback="/placeholder-game.jpg"
+                        lazy={true}
+                      />
+                      {game.avg_user_rating && game.avg_user_rating > 0 && (
+                        <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
+                          <span className="text-sm font-bold text-white">{game.avg_user_rating.toFixed(1)}/10</span>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -340,13 +336,6 @@ export const ExplorePage: React.FC = () => {
                               <span>{mapPlatformNames(game.platforms).join(', ')}</span>
                             )}
                           </div>
-                        </div>
-                        <div className="text-right ml-4">
-                          {game.avg_user_rating && game.avg_user_rating > 0 && (
-                            <div className="mb-1">
-                              <span className="font-bold text-lg text-white">{game.avg_user_rating.toFixed(1)}/10</span>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
