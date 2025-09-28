@@ -56,6 +56,24 @@ export const SearchResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { searchState, searchGames, searchTerm, setSearchTerm } = useGameSearch();
+
+  // Helper function to get rating badge color classes (matching ReviewCard and ExplorePage)
+  const getRatingColorClasses = (rating: number): string => {
+    if (rating <= 3) return 'bg-red-500 text-white';
+    if (rating <= 5) return 'bg-orange-500 text-white';
+    if (rating <= 7) return 'bg-yellow-400 text-gray-700';
+    if (rating <= 9.5) return 'bg-green-500 text-white';
+    return 'bg-blue-500 text-white';
+  };
+
+  // Helper function to get rating text color only (for inline display)
+  const getRatingColor = (rating: number): string => {
+    if (rating <= 3) return 'text-red-500';
+    if (rating <= 5) return 'text-orange-500';
+    if (rating <= 7) return 'text-yellow-500';
+    if (rating <= 9.5) return 'text-green-500';
+    return 'text-blue-500';
+  };
   
   // Detect mobile and set default view mode accordingly
   const [isMobile, setIsMobile] = useState(false);
@@ -632,9 +650,8 @@ export const SearchResultsPage: React.FC = () => {
                         </div>
                       )}
                       {game.avg_user_rating && (
-                        <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
-                          <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                          <span className="text-sm font-bold">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}</span>
+                        <div className={`absolute top-1 right-1 rounded-lg px-1.5 py-0.5 ${getRatingColorClasses(game.avg_user_rating)}`}>
+                          <span className="text-sm font-bold">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10</span>
                         </div>
                       )}
                     </div>
@@ -730,26 +747,23 @@ export const SearchResultsPage: React.FC = () => {
                                       {mapPlatformNames(game.platforms).join(', ')}
                                     </span>
                                   )}
-                                  {/* Developer info removed - only loaded on game detail page */}
+                                  {game.avg_user_rating && game.avg_user_rating > 0 && (
+                                    <>
+                                      <span>•</span>
+                                      <span className={`font-medium ${getRatingColor(game.avg_user_rating)}`}>
+                                        {game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10
+                                      </span>
+                                    </>
+                                  )}
+                                  {game.user_rating_count && game.user_rating_count > 0 && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{game.user_rating_count} {game.user_rating_count === 1 ? 'review' : 'reviews'}</span>
+                                    </>
+                                  )}
                                 </div>
                               </div>
 
-                              {/* Rating - More compact in narrow mode */}
-                              <div className={`text-right ${isNarrowMode ? 'ml-2' : 'ml-4'}`}>
-                                {game.avg_user_rating && (
-                                  <div className="flex items-center gap-1 mb-1">
-                                    <Star className={`text-yellow-400 fill-current ${isNarrowMode ? 'h-4 w-4' : 'h-5 w-5'}`} />
-                                    <span className={`font-bold ${isNarrowMode ? 'text-base' : 'text-lg'}`}>
-                                      {game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}
-                                    </span>
-                                  </div>
-                                )}
-                                {game.user_rating_count > 0 && (
-                                  <p className={`text-gray-400 ${isNarrowMode ? 'text-xs' : 'text-sm'}`}>
-                                    {game.user_rating_count} {isNarrowMode ? '' : 'reviews'}
-                                  </p>
-                                )}
-                              </div>
                             </div>
                           </div>
                         </div>

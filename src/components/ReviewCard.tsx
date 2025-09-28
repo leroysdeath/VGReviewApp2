@@ -167,100 +167,93 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
     >
       {/* Card content with responsive layout */}
       <div className="relative">
-        {/* UNIFIED MOBILE-FIRST LAYOUT */}
+        {/* MOBILE LAYOUT - CSS Grid */}
         <div className="md:hidden">
-          {/* Row 1: Avatar + Author */}
-          <div className="flex items-center gap-2 mb-2">
-            <div
-              className="group/avatar cursor-pointer flex-shrink-0"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/user/${review.userId}`);
-              }}
-            >
-              {review.authorAvatar ? (
-                <img
-                  src={review.authorAvatar}
-                  alt={review.author}
-                  className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-700/50 ring-offset-1 ring-offset-gray-900
-                    transition-all duration-300 group-hover/avatar:ring-gray-500"
-                />
-              ) : (
-                <div className={`
-                  w-10 h-10 rounded-full ring-2 ring-gray-700/50 ring-offset-1 ring-offset-gray-900
-                  bg-gradient-to-br ${themeStyles.gradient}
-                  flex items-center justify-center font-bold text-white text-base
-                  transition-all duration-300 group-hover/avatar:ring-gray-500
-                `}>
-                  {getUserInitial(review.author)}
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <span
-                className="font-medium text-white text-sm hover:text-purple-400 cursor-pointer transition-colors duration-200 block truncate"
+          <div className="grid grid-cols-[1fr,auto] gap-x-3 gap-y-1">
+            {/* Row 1: Avatar + Author (spans full width) */}
+            <div className="col-span-2 flex items-center gap-2 mb-1">
+              <div
+                className="group/avatar cursor-pointer flex-shrink-0"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/user/${review.userId}`);
                 }}
               >
-                {review.author}
-              </span>
-              <div className="text-xs text-gray-400">{getRelativeTime(review.date)}</div>
+                {review.authorAvatar ? (
+                  <img
+                    src={review.authorAvatar}
+                    alt={review.author}
+                    className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-700/50 ring-offset-1 ring-offset-gray-900
+                      transition-all duration-300 group-hover/avatar:ring-gray-500"
+                  />
+                ) : (
+                  <div className={`
+                    w-10 h-10 rounded-full ring-2 ring-gray-700/50 ring-offset-1 ring-offset-gray-900
+                    bg-gradient-to-br ${themeStyles.gradient}
+                    flex items-center justify-center font-bold text-white text-base
+                    transition-all duration-300 group-hover/avatar:ring-gray-500
+                  `}>
+                    {getUserInitial(review.author)}
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <span
+                  className="font-medium text-white text-sm hover:text-purple-400 cursor-pointer transition-colors duration-200 block truncate"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/user/${review.userId}`);
+                  }}
+                >
+                  {review.author}
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* Row 2: Game Title + Cover/Rating with Flexbox */}
-          {showGameTitle && review.gameTitle && (
-            <div className="mb-3">
-              {/* Flex container for title and cover */}
-              <div className="flex gap-3 items-start mb-2">
-                {/* Game Title - naturally flows with cover */}
-                <div className="flex-1">
-                  <span className="text-gray-300 text-sm font-medium block">
-                    {review.gameTitle}
-                  </span>
-                </div>
+            {/* Row 2: Date (column 1) */}
+            <div className="text-xs text-gray-400">
+              {getRelativeTime(review.date)}
+            </div>
 
-                {/* Cover and Rating container - flex-shrink-0 keeps it fixed width */}
-                {(review.gameCoverUrl || review.rating) && (
-                  <div className="flex-shrink-0 relative">
-                    {/* Wrapper to handle the separator alignment */}
-                    <div className="relative" style={{ marginTop: '-14px' }}>
-                      {/* Game cover */}
-                      {review.gameCoverUrl && (
-                        <img
-                          src={review.gameCoverUrl}
-                          alt={review.gameTitle}
-                          className="w-20 h-28 object-cover rounded shadow-lg"
-                          loading="lazy"
-                        />
-                      )}
+            {/* Game Cover + Rating (column 2, spans rows 2-5) */}
+            {showGameTitle && (review.gameCoverUrl || review.rating) && (
+              <div className="row-start-2 row-span-4 col-start-2 flex flex-col items-center justify-center">
+                {/* Game cover */}
+                {review.gameCoverUrl && (
+                  <img
+                    src={review.gameCoverUrl}
+                    alt={review.gameTitle}
+                    className="w-20 h-28 object-cover rounded shadow-lg"
+                    loading="lazy"
+                  />
+                )}
 
-                      {/* Rating badge - shows even without cover */}
-                      {review.rating && (
-                        <div className="flex justify-center mt-2">
-                          <div className={`px-2 py-1 rounded-md font-bold text-sm ${getRatingColorClasses(review.rating)}`}>
-                            {review.rating === 10 ? '10' : review.rating.toFixed(1)}/10
-                          </div>
-                        </div>
-                      )}
+                {/* Rating badge */}
+                {review.rating && (
+                  <div className="mt-2">
+                    <div className={`px-2 py-1 rounded-md font-bold text-sm ${getRatingColorClasses(review.rating)}`}>
+                      {review.rating === 10 ? '10' : review.rating.toFixed(1)}/10
                     </div>
                   </div>
                 )}
               </div>
+            )}
 
-              {/* Separator line - positioned to align with cover middle */}
-              <div className="relative" style={{ marginTop: review.gameCoverUrl ? '-70px' : '0' }}>
-                <div className="h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99%"></div>
+            {/* Row 3: Game Title (column 1) */}
+            {showGameTitle && review.gameTitle && (
+              <div className="text-gray-300 text-sm font-medium">
+                {review.gameTitle}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Row 3: Review Text */}
-          {review.hasText && (
-            <div className="mb-2">
-              <div className="relative">
+            {/* Row 4: Separator (spans both columns) */}
+            {showGameTitle && (
+              <div className="col-span-2 h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% my-2"></div>
+            )}
+
+            {/* Row 5: Review Text (column 1) */}
+            {review.hasText && (
+              <div className="col-span-2 relative">
                 <p
                   className="text-sm text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
                   style={{
@@ -270,19 +263,19 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
                 >
                   {escapeHtml(truncateText(review.text, 144))}
                 </p>
-                {/* Gradient fade overlay for bottom quarter of third line */}
+                {/* Gradient fade overlay */}
                 <div
                   className="absolute bottom-0 left-0 right-0 pointer-events-none"
                   style={{
-                    height: '0.375rem', // Quarter the height of one line
+                    height: '0.375rem',
                     background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.9) 100%)'
                   }}
                 />
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Review Interactions */}
+          {/* Review Interactions (outside grid) */}
           <ReviewInteractions
             reviewId={review.id}
             initialLikeCount={review.likeCount || likeCount}
@@ -301,7 +294,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             isLikingComment={false}
             likingCommentId={likingCommentId}
             error={error || undefined}
-            className="mt-2"
+            className="mt-3"
             reviewAuthorId={parseInt(review.userId)}
             currentUserId={currentUserId}
             disableCommentHover={true}
@@ -309,11 +302,11 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
           />
         </div>
 
-        {/* DESKTOP LAYOUT - Using similar Flexbox approach */}
+        {/* DESKTOP LAYOUT - CSS Grid */}
         <div className="hidden md:block">
-          <div className="flex items-start gap-4">
-            {/* User Avatar */}
-            <div className="flex-shrink-0">
+          <div className="grid grid-cols-[auto,1fr,auto] gap-x-4 gap-y-2">
+            {/* Avatar (spans rows 1-3) */}
+            <div className="row-span-3">
               <div
                 className="group/avatar cursor-pointer"
                 onClick={(e) => {
@@ -341,99 +334,88 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               </div>
             </div>
 
-            {/* Review Content */}
-            <div className="flex-1">
-              {/* Author and Date */}
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <div className="mb-1">
-                    <span
-                      className="font-semibold text-white cursor-pointer hover:text-purple-400 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/user/${review.userId}`);
-                      }}
-                    >
-                      {review.author}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {getRelativeTime(review.date)}
-                  </div>
-                </div>
+            {/* Row 1: Username (column 2) */}
+            <div>
+              <span
+                className="font-semibold text-white cursor-pointer hover:text-purple-400 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/user/${review.userId}`);
+                }}
+              >
+                {review.author}
+              </span>
+            </div>
 
-                {/* Cover and Rating - positioned in the top right */}
-                {showGameTitle && (review.gameCoverUrl || review.rating) && (
-                  <div className="flex-shrink-0 relative ml-4">
-                    <div className="relative" style={{ marginTop: '-8px' }}>
-                      {/* Game cover */}
-                      {review.gameCoverUrl && (
-                        <img
-                          src={review.gameCoverUrl}
-                          alt={review.gameTitle}
-                          className={`
-                            object-cover rounded shadow-lg
-                            ${compact ? 'w-16 h-20' : 'w-20 h-28'}
-                          `}
-                          loading="lazy"
-                        />
-                      )}
+            {/* Game Cover + Rating (column 3, spans rows 2-5) */}
+            {showGameTitle && (review.gameCoverUrl || review.rating) && (
+              <div className="row-start-2 row-span-4 col-start-3 flex flex-col items-center justify-center">
+                {/* Game cover */}
+                {review.gameCoverUrl && (
+                  <img
+                    src={review.gameCoverUrl}
+                    alt={review.gameTitle}
+                    className={`
+                      object-cover rounded shadow-lg
+                      ${compact ? 'w-16 h-20' : 'w-20 h-28'}
+                    `}
+                    loading="lazy"
+                  />
+                )}
 
-                      {/* Rating badge - shows even without cover */}
-                      {review.rating && (
-                        <div className="flex justify-center mt-2">
-                          <div className={`px-2 py-1 rounded-md font-bold text-sm ${getRatingColorClasses(review.rating)}`}>
-                            {review.rating === 10 ? '10' : review.rating.toFixed(1)}/10
-                          </div>
-                        </div>
-                      )}
+                {/* Rating badge */}
+                {review.rating && (
+                  <div className="mt-2">
+                    <div className={`px-2 py-1 rounded-md font-bold text-sm ${getRatingColorClasses(review.rating)}`}>
+                      {review.rating === 10 ? '10' : review.rating.toFixed(1)}/10
                     </div>
                   </div>
                 )}
               </div>
+            )}
 
-              {/* Game Title and Separator */}
-              {showGameTitle && review.gameTitle && (
-                <div className="mb-3">
-                  <div className="mb-2">
-                    <span className="text-gray-300 font-medium">
-                      {review.gameTitle}
-                    </span>
-                  </div>
-
-                  {/* Separator line - positioned to align with cover middle */}
-                  <div className="relative" style={{ marginTop: review.gameCoverUrl ? (compact ? '-50px' : '-60px') : '0' }}>
-                    <div className="h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99%"></div>
-                  </div>
-                </div>
-              )}
-
-              {/* Review Text */}
-              {review.hasText && (
-                <div className="relative pt-2">
-                  <p
-                    className="text-base text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
-                    style={{
-                      height: '4rem', // 2.5 lines at 1.6rem line height for text-base
-                      maxHeight: '4rem'
-                    }}
-                  >
-                    {escapeHtml(truncateText(review.text, 144))}
-                  </p>
-                  {/* Gradient fade overlay for bottom quarter of third line */}
-                  <div
-                    className="absolute bottom-0 left-0 right-0 pointer-events-none"
-                    style={{
-                      height: '0.4rem', // Quarter the height of one line for text-base
-                      background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.9) 100%)'
-                    }}
-                  />
-                </div>
-              )}
+            {/* Row 2: Date (column 2) */}
+            <div className="text-sm text-gray-400">
+              {getRelativeTime(review.date)}
             </div>
+
+            {/* Row 3: Game Title (column 2) */}
+            {showGameTitle && review.gameTitle && (
+              <div className="text-gray-300 font-medium">
+                {review.gameTitle}
+              </div>
+            )}
+
+            {/* Row 4: Separator (spans columns 1-3) */}
+            {showGameTitle && (
+              <div className="col-span-3 h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% my-1"></div>
+            )}
+
+            {/* Row 5: Review Text (spans columns 1-3) */}
+            {review.hasText && (
+              <div className="col-span-3 relative">
+                <p
+                  className="text-base text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
+                  style={{
+                    height: '4rem', // 2.5 lines at 1.6rem line height for text-base
+                    maxHeight: '4rem'
+                  }}
+                >
+                  {escapeHtml(truncateText(review.text, 144))}
+                </p>
+                {/* Gradient fade overlay */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                  style={{
+                    height: '0.4rem',
+                    background: 'linear-gradient(to bottom, transparent 0%, rgba(17, 24, 39, 0.9) 100%)'
+                  }}
+                />
+              </div>
+            )}
           </div>
 
-          {/* Review Interactions */}
+          {/* Review Interactions (outside grid) */}
           <ReviewInteractions
             reviewId={review.id}
             initialLikeCount={review.likeCount || likeCount}

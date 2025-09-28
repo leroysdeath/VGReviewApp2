@@ -42,6 +42,15 @@ export const ExplorePage: React.FC = () => {
     return 'bg-blue-500 text-white';
   };
 
+  // Helper function to get rating text color only (for inline display)
+  const getRatingColor = (rating: number): string => {
+    if (rating <= 3) return 'text-red-500';
+    if (rating <= 5) return 'text-orange-500';
+    if (rating <= 7) return 'text-yellow-500';
+    if (rating <= 9.5) return 'text-green-500';
+    return 'text-blue-500';
+  };
+
   // Extensible filter state
   const [filters, setFilters] = useState<ExploreFilters>({
     searchTerm: ''
@@ -294,7 +303,7 @@ export const ExplorePage: React.FC = () => {
                         </div>
                       )}
                       {game.avg_user_rating && game.avg_user_rating > 0 && (
-                        <div className={`absolute top-2 right-2 rounded-lg px-2 py-1 ${getRatingColorClasses(game.avg_user_rating)}`}>
+                        <div className={`absolute top-1 right-1 rounded-lg px-1.5 py-0.5 ${getRatingColorClasses(game.avg_user_rating)}`}>
                           <span className="text-sm font-bold">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10</span>
                         </div>
                       )}
@@ -335,11 +344,6 @@ export const ExplorePage: React.FC = () => {
                         fallback="/placeholder-game.jpg"
                         lazy={true}
                       />
-                      {game.avg_user_rating && game.avg_user_rating > 0 && (
-                        <div className={`absolute top-2 right-2 rounded-lg px-2 py-1 ${getRatingColorClasses(game.avg_user_rating)}`}>
-                          <span className="text-sm font-bold">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10</span>
-                        </div>
-                      )}
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
@@ -374,6 +378,14 @@ export const ExplorePage: React.FC = () => {
                               <span className="truncate">
                                 {mapPlatformNames(game.platforms).join(', ')}
                               </span>
+                            )}
+                            {game.avg_user_rating && game.avg_user_rating > 0 && (
+                              <>
+                                <span className="shrink-0">•</span>
+                                <span className={`shrink-0 font-medium ${getRatingColor(game.avg_user_rating)}`}>
+                                  {game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10
+                                </span>
+                              </>
                             )}
                           </div>
                         </div>
