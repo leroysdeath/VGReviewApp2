@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Search, Star, Gamepad2, LibraryBig, Gift, AlertCircle } from 'lucide-react';
+import { X, Search, Star, Gamepad2, LibraryBig, Gift, AlertCircle, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { igdbService } from '../services/igdbService';
@@ -214,13 +214,25 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
         }
         
         console.log('✅ Game ensured in database with ID:', ensureResult.data?.gameId);
+
+        // For top-games mode, pass the database game ID to onSelect
+        if (mode === 'top-games') {
+          const dbGameId = ensureResult.data?.gameId;
+          if (dbGameId) {
+            onSelect(dbGameId.toString());
+            onClose();
+          } else {
+            setError('Failed to get game ID from database');
+          }
+          return;
+        }
       } catch (error) {
         console.error('❌ Error ensuring game exists:', error);
         setError('Failed to process game selection');
         return;
       }
     }
-    
+
     // For review mode, just call onSelect with the game data
     if (mode === 'review') {
       const gameInfo = {
@@ -237,9 +249,9 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
       onClose();
       return;
     }
-    
-    // Check if game is started/finished
-    if (startedFinishedGames.has(igdbId)) {
+
+    // Check if game is started/finished for collection/wishlist modes
+    if ((mode === 'collection' || mode === 'wishlist') && startedFinishedGames.has(igdbId)) {
       alert('This game has already been started or finished and cannot be added to collection or wishlist.');
       return;
     }
@@ -429,9 +441,12 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                         ) : (
                           <>
                             {mode === 'collection' ? <LibraryBig className="h-4 w-4" /> :
-                             mode === 'wishlist' ? <Gift className="h-4 w-4" /> : 
-                             mode === 'review' ? <Gamepad2 className="h-4 w-4" /> : null}
-                            {mode === 'review' ? 'Select Game' : `Add to ${mode === 'collection' ? 'Backlog' : 'Wishlist'}`}
+                             mode === 'wishlist' ? <Gift className="h-4 w-4" /> :
+                             mode === 'review' ? <Gamepad2 className="h-4 w-4" /> :
+                             mode === 'top-games' ? <Trophy className="h-4 w-4" /> : null}
+                            {mode === 'review' ? 'Select Game' :
+                             mode === 'top-games' ? 'Add to Top 5' :
+                             `Add to ${mode === 'collection' ? 'Backlog' : 'Wishlist'}`}
                           </>
                         )}
                         </button>
@@ -501,9 +516,12 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                         ) : (
                           <>
                             {mode === 'collection' ? <LibraryBig className="h-4 w-4" /> :
-                             mode === 'wishlist' ? <Gift className="h-4 w-4" /> : 
-                             mode === 'review' ? <Gamepad2 className="h-4 w-4" /> : null}
-                            {mode === 'review' ? 'Select Game' : `Add to ${mode === 'collection' ? 'Backlog' : 'Wishlist'}`}
+                             mode === 'wishlist' ? <Gift className="h-4 w-4" /> :
+                             mode === 'review' ? <Gamepad2 className="h-4 w-4" /> :
+                             mode === 'top-games' ? <Trophy className="h-4 w-4" /> : null}
+                            {mode === 'review' ? 'Select Game' :
+                             mode === 'top-games' ? 'Add to Top 5' :
+                             `Add to ${mode === 'collection' ? 'Backlog' : 'Wishlist'}`}
                           </>
                         )}
                       </button>
