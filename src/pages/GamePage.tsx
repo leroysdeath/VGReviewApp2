@@ -1316,7 +1316,7 @@ export const GamePage: React.FC = () => {
                     ) : (
                       <Play className="h-4 w-4" />
                     )}
-                    <span className="text-sm font-medium flex flex-col items-center justify-center leading-tight min-h-[2.5rem]">
+                    <span className="text-sm font-medium flex flex-col items-center justify-center leading-tight">
                       {isStarted ? (
                         <span>Started</span>
                       ) : (
@@ -1357,7 +1357,7 @@ export const GamePage: React.FC = () => {
                     ) : (
                       <CheckCircle className="h-4 w-4" />
                     )}
-                    <span className="text-sm font-medium flex flex-col items-center justify-center leading-tight min-h-[2.5rem]">
+                    <span className="text-sm font-medium flex flex-col items-center justify-center leading-tight">
                       {isCompleted ? (
                         <span>Finished</span>
                       ) : (
