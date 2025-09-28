@@ -135,20 +135,8 @@ export const Last5Games: React.FC<Last5GamesProps> = ({ userId, isOwnProfile = f
     } else if (layoutType === 'tablet') {
       return 'grid grid-cols-4 gap-4 max-w-2xl mx-auto';
     } else {
-      return 'flex gap-4 justify-center flex-wrap';
-    }
-  };
-
-  // Determine image size classes based on device type (same as TopGames)
-  const getImageClasses = () => {
-    if (layoutType === 'phonePortrait') {
-      return 'w-full aspect-[3/4] object-cover';
-    } else if (layoutType === 'phoneLandscape') {
-      return 'w-full aspect-[3/4] object-cover';
-    } else if (layoutType === 'tablet') {
-      return 'w-full aspect-[3/4] object-cover';
-    } else {
-      return 'w-32 h-40 object-cover';
+      // Desktop - use grid-cols-5 like TopGames
+      return 'grid grid-cols-5 gap-4';
     }
   };
 
@@ -191,11 +179,11 @@ export const Last5Games: React.FC<Last5GamesProps> = ({ userId, isOwnProfile = f
             to={gameUrl}
             className="group relative block"
           >
-            <div className="relative overflow-hidden rounded-lg bg-gray-800">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-gray-800">
               <img
                 src={game.cover_url}
                 alt={game.name}
-                className={`${getImageClasses()} group-hover:scale-105 transition-transform duration-300`}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
                 onError={(e) => {
                   e.currentTarget.src = '/default-cover.png';
