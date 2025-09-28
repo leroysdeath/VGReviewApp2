@@ -12,7 +12,30 @@ framework = "#auto"
 [build.environment]
 NODE_VERSION = "20"
 
-# Enhanced security headers with CSP
+# IMPORTANT: Order matters - more specific rules must come first
+
+# Critical: Specific rule for index.html charset (fixes Lighthouse charset error)
+[[headers]]
+for = "/index.html"
+[headers.values]
+Content-Type = "text/html; charset=UTF-8"
+Cache-Control = "public, max-age=0, must-revalidate"
+
+# Critical: Root path charset (for when index.html is served at /)
+[[headers]]
+for = "/"
+[headers.values]
+Content-Type = "text/html; charset=UTF-8"
+Cache-Control = "public, max-age=0, must-revalidate"
+
+# Critical: All HTML files charset
+[[headers]]
+for = "/*.html"
+[headers.values]
+Content-Type = "text/html; charset=UTF-8"
+Cache-Control = "public, max-age=0, must-revalidate"
+
+# Enhanced security headers with CSP (general catch-all)
 [[headers]]
 for = "/*"
 [headers.values]
@@ -29,13 +52,6 @@ Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=
 # Additional security headers
 Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 X-Permitted-Cross-Domain-Policies = "none"
-
-# Critical: HTML charset header (fixes Lighthouse charset error)
-[[headers]]
-for = "/*.html"
-[headers.values]
-Content-Type = "text/html; charset=UTF-8"
-Cache-Control = "public, max-age=0, must-revalidate"
 
 # Production CORS headers for API (restrictive)
 [[headers]]
