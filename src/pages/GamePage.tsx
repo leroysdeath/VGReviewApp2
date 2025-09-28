@@ -1067,6 +1067,7 @@ export const GamePage: React.FC = () => {
                     src={game.cover?.url ? `https:${game.cover.url}` : (game.cover_url || '/placeholder-game.jpg')}
                     alt={game.name}
                     className="h-96 w-full object-cover md:h-80 md:w-64"
+                    priority={true}
                     optimization={{
                       width: window.innerWidth < 768 ? 640 : 640,  // High quality for all devices
                       height: window.innerWidth < 768 ? 960 : 960, // High quality for all devices

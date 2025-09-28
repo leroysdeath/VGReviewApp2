@@ -40,9 +40,9 @@ Cache-Control = "public, max-age=0, must-revalidate"
 for = "/*"
 [headers.values]
 # Content Security Policy - Comprehensive protection
-Content-Security-Policy = "default-src 'self'; script-src 'self' https://*.supabase.co https://*.netlify.app https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://api.igdb.com wss://*.supabase.co https://www.google-analytics.com https://images.igdb.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; report-uri /csp-report;"
+Content-Security-Policy = "default-src 'self'; script-src 'self' https://*.supabase.co https://*.netlify.app https://www.googletagmanager.com https://www.google-analytics.com https://api.revenuecat.com https://sdk.revenuecat.com https://app.revenuecat.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://api.igdb.com wss://*.supabase.co https://www.google-analytics.com https://images.igdb.com https://api.revenuecat.com https://purchases.revenuecat.com https://api.segment.io; frame-src 'self' https://checkout.revenuecat.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; report-uri /csp-report;"
 # Report-only policy for testing (monitors violations without blocking)
-Content-Security-Policy-Report-Only = "default-src 'self'; script-src 'self' https://*.supabase.co https://*.netlify.app https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://api.igdb.com wss://*.supabase.co https://www.google-analytics.com https://images.igdb.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; report-uri /csp-report;"
+Content-Security-Policy-Report-Only = "default-src 'self'; script-src 'self' https://*.supabase.co https://*.netlify.app https://www.googletagmanager.com https://www.google-analytics.com https://api.revenuecat.com https://sdk.revenuecat.com https://app.revenuecat.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://api.igdb.com wss://*.supabase.co https://www.google-analytics.com https://images.igdb.com https://api.revenuecat.com https://purchases.revenuecat.com https://api.segment.io; frame-src 'self' https://checkout.revenuecat.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; report-uri /csp-report;"
 # Security headers
 X-Frame-Options = "DENY"
 X-XSS-Protection = "1; mode=block"
@@ -92,6 +92,23 @@ for = "/src/*"
 Content-Type = "application/javascript"
 Cache-Control = "no-cache"
 
+# Strict CSP for payment routes (Phase 3 - future use)
+[[headers]]
+for = "/pro/*"
+[headers.values]
+Content-Security-Policy = "default-src 'self'; script-src 'self' https://api.revenuecat.com https://sdk.revenuecat.com https://app.revenuecat.com https://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://api.revenuecat.com https://purchases.revenuecat.com https://api.segment.io; frame-src 'self' https://checkout.revenuecat.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; report-uri /csp-report;"
+Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+
+[[headers]]
+for = "/subscription/*"
+[headers.values]
+Content-Security-Policy = "default-src 'self'; script-src 'self' https://api.revenuecat.com https://sdk.revenuecat.com https://app.revenuecat.com https://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://api.revenuecat.com https://purchases.revenuecat.com https://api.segment.io; frame-src 'self' https://checkout.revenuecat.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; report-uri /csp-report;"
+Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+
 # Cache for static assets
 [[headers]]
 for = "/assets/*"
@@ -105,6 +122,16 @@ Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
 for = "/*.css"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/*.woff2"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/*.woff"
 [headers.values]
 Cache-Control = "public, max-age=31536000, immutable"
 

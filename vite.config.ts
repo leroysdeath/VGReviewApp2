@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { imagetools } from 'vite-imagetools'
+import { vitePluginCSPGuard } from './plugins/vite-plugin-csp-guard'
 
 // Image optimization configuration
 const imageOptimizationConfig = {
@@ -20,6 +21,12 @@ const imageOptimizationConfig = {
 export default defineConfig({
   plugins: [
     react(),
+    // CSP hash generation for inline scripts
+    vitePluginCSPGuard({
+      outputFile: 'dist/csp-hashes.json',
+      algorithm: 'sha256',
+      verbose: process.env.NODE_ENV === 'development'
+    }),
     // Progressive image optimization:
     // - IGDB images are already optimized via their CDN
     // - Local images (heroes, placeholders) are processed at build time
