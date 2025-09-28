@@ -33,6 +33,15 @@ export const ExplorePage: React.FC = () => {
   // Auth for tracking
   const { user } = useAuth();
 
+  // Helper function to get rating badge color classes (matching ReviewCard)
+  const getRatingColorClasses = (rating: number): string => {
+    if (rating <= 3) return 'bg-red-500 text-white';
+    if (rating <= 5) return 'bg-orange-500 text-white';
+    if (rating <= 7) return 'bg-yellow-400 text-gray-700';
+    if (rating <= 9.5) return 'bg-green-500 text-white';
+    return 'bg-blue-500 text-white';
+  };
+
   // Extensible filter state
   const [filters, setFilters] = useState<ExploreFilters>({
     searchTerm: ''
@@ -285,8 +294,8 @@ export const ExplorePage: React.FC = () => {
                         </div>
                       )}
                       {game.avg_user_rating && game.avg_user_rating > 0 && (
-                        <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
-                          <span className="text-sm font-bold text-white">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10</span>
+                        <div className={`absolute top-2 right-2 rounded-lg px-2 py-1 ${getRatingColorClasses(game.avg_user_rating)}`}>
+                          <span className="text-sm font-bold">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10</span>
                         </div>
                       )}
                     </div>
@@ -327,8 +336,8 @@ export const ExplorePage: React.FC = () => {
                         lazy={true}
                       />
                       {game.avg_user_rating && game.avg_user_rating > 0 && (
-                        <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
-                          <span className="text-sm font-bold text-white">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10</span>
+                        <div className={`absolute top-2 right-2 rounded-lg px-2 py-1 ${getRatingColorClasses(game.avg_user_rating)}`}>
+                          <span className="text-sm font-bold">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10</span>
                         </div>
                       )}
                     </div>
