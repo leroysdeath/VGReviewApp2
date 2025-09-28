@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, TrendingUp, TrendingDown, Clock, History } from 'lucide-react';
+import { X, TrendingUp, TrendingDown, Clock, History, Grid, List } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useResponsive } from '../hooks/useResponsive';
@@ -31,11 +31,12 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
   userName,
   topPosition
 }) => {
-  const [activeTab, setActiveTab] = useState<'recent' | 'oldest' | 'highest' | 'lowest'>('recent');
+  const [activeTab, setActiveTab] = useState<'recent' | 'oldest' | 'highest' | 'lowest'>('highest');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'list' | 'tile'>('list');
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -143,16 +144,16 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Determine modal positioning style
+  // Determine modal positioning style - use fixed positioning for consistent behavior
   const modalStyle: React.CSSProperties = topPosition
     ? {
-        position: 'absolute',
-        top: `${topPosition}px`,
+        position: 'fixed',
+        top: `${topPosition - window.scrollY}px`,
         left: '50%',
         transform: 'translateX(-50%)',
         maxWidth: 'min(896px, calc(100vw - 2rem))',
         width: '100%',
-        maxHeight: `calc(100vh - ${topPosition}px - 2rem)`,
+        maxHeight: `calc(100vh - ${topPosition - window.scrollY}px - 2rem)`,
         zIndex: 50
       }
     : {};
@@ -182,42 +183,38 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}'s Reviews</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-lg transition-colors ${
+                viewMode === 'list' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
+              }`}
+              title="List View"
+            >
+              <List className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setViewMode('tile')}
+              className={`p-2 rounded-lg transition-colors ${
+                viewMode === 'tile' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
+              }`}
+              title="Tile View"
+            >
+              <Grid className="h-5 w-5" />
+            </button>
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="ml-2 text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b border-gray-700">
-          <button
-            onClick={() => setActiveTab('recent')}
-            className={`flex-1 py-3 px-2 text-center transition-colors ${
-              activeTab === 'recent'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-1">
-              <Clock className="h-4 w-4" />
-              <span className={isMobile ? 'text-xs' : 'text-sm'}>Recent</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('oldest')}
-            className={`flex-1 py-3 px-2 text-center transition-colors ${
-              activeTab === 'oldest'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-1">
-              <History className="h-4 w-4" />
-              <span className={isMobile ? 'text-xs' : 'text-sm'}>Oldest</span>
-            </div>
-          </button>
           <button
             onClick={() => setActiveTab('highest')}
             className={`flex-1 py-3 px-2 text-center transition-colors ${
@@ -242,6 +239,32 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
             <div className="flex items-center justify-center gap-1">
               <TrendingDown className="h-4 w-4" />
               <span className={isMobile ? 'text-xs' : 'text-sm'}>Lowest</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('recent')}
+            className={`flex-1 py-3 px-2 text-center transition-colors ${
+              activeTab === 'recent'
+                ? 'border-b-2 border-purple-500 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-1">
+              <Clock className="h-4 w-4" />
+              <span className={isMobile ? 'text-xs' : 'text-sm'}>Recent</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('oldest')}
+            className={`flex-1 py-3 px-2 text-center transition-colors ${
+              activeTab === 'oldest'
+                ? 'border-b-2 border-purple-500 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-1">
+              <History className="h-4 w-4" />
+              <span className={isMobile ? 'text-xs' : 'text-sm'}>Oldest</span>
             </div>
           </button>
         </div>
@@ -277,13 +300,13 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
               </div>
               <p className="text-gray-400">No reviews found</p>
             </div>
-          ) : (
-            /* Reviews List */
+          ) : viewMode === 'list' ? (
+            /* List View */
             <div className="space-y-4">
               {reviews.map((review) => {
                 // Generate review URL (same logic as ReviewCard: /review/{userId}/{gameId})
                 const reviewUrl = `/review/${userId}/${review.gameId}`;
-                
+
                 return (
                   <Link
                     key={review.id}
@@ -302,16 +325,16 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                           }}
                         />
                       </div>
-                      
+
                       <div className="flex-1 min-w-0 mt-4">
                         <h3 className="text-white font-medium mb-2">
                           {review.gameTitle}
                         </h3>
-                        
+
                         <div className="text-gray-400 text-sm mb-2">
                           {new Date(review.postDate).toLocaleDateString()} <span className="text-yellow-400">{review.rating % 1 === 0 ? `${review.rating}/10` : `${review.rating.toFixed(1)}/10`}</span>
                         </div>
-                        
+
                         <div className="text-gray-300 text-sm">
                           {expandedReviews.has(review.id) || review.reviewText.length <= 150 ? (
                             <p className="whitespace-pre-line">{review.reviewText}</p>
@@ -320,7 +343,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                               {review.reviewText.slice(0, 150)}...
                             </p>
                           )}
-                          
+
                           {review.reviewText.length > 150 && (
                             <button
                               onClick={(e) => {
@@ -336,6 +359,42 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                         </div>
                       </div>
                     </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            /* Tile View */
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
+              {reviews.map((review) => {
+                const reviewUrl = `/review/${userId}/${review.gameId}`;
+
+                return (
+                  <Link
+                    key={review.id}
+                    to={reviewUrl}
+                    onClick={onClose}
+                    className="group relative hover:scale-105 transition-transform"
+                  >
+                    <div className="relative">
+                      <img
+                        src={review.gameCover}
+                        alt={review.gameTitle}
+                        className="w-full aspect-[3/4] object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.src = '/default-cover.png';
+                        }}
+                      />
+                      {/* Rating Badge - Similar to Explore Page */}
+                      <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
+                        <span className="text-sm font-bold text-white">
+                          {review.rating === 10 ? '10' : review.rating.toFixed(1)}/10
+                        </span>
+                      </div>
+                    </div>
+                    <h4 className="mt-2 text-sm text-gray-300 truncate group-hover:text-white transition-colors">
+                      {review.gameTitle}
+                    </h4>
                   </Link>
                 );
               })}

@@ -1481,20 +1481,21 @@ export const GamePage: React.FC = () => {
         </div>
 
         {/* Reviews Section */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Reviews</h2>
-            {reviewsLoading && (
-              <div className="flex items-center gap-2 text-gray-400">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
-                <span className="text-sm">Loading reviews...</span>
-              </div>
-            )}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <div className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Reviews</h2>
+              {reviewsLoading && (
+                <div className="flex items-center gap-2 text-gray-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                  <span className="text-sm">Loading reviews...</span>
+                </div>
+              )}
+            </div>
 
-          {/* Reviews content - show only reviews with text */}
-          {reviewsWithText.length > 0 ? (
-            <div className="space-y-4">
+            {/* Reviews content - show only reviews with text */}
+            {reviewsWithText.length > 0 ? (
+              <div className="space-y-4">
               {reviewsWithText.slice(0, 5).map(review => (
                 <Link 
                   key={review.id} 
@@ -1520,7 +1521,13 @@ export const GamePage: React.FC = () => {
                       {review.author ? review.author.charAt(0).toUpperCase() : '?'}
                     </div>
                     <span className="text-white font-medium">{review.author}</span>
-                    <span className="text-yellow-500">{review.rating}/10</span>
+                    <span className={`${
+                      review.rating <= 3 ? 'text-red-400' :
+                      review.rating <= 5 ? 'text-orange-400' :
+                      review.rating <= 7 ? 'text-yellow-400' :
+                      review.rating <= 9.5 ? 'text-green-400' :
+                      'text-blue-400'
+                    }`}>{review.rating}/10</span>
                   </div>
                   {review.text && (
                     <p className="text-gray-300 text-sm whitespace-pre-line">{review.text}</p>
@@ -1541,6 +1548,7 @@ export const GamePage: React.FC = () => {
               )}
             </div>
           )}
+          </div>
         </div>
       </div>
 

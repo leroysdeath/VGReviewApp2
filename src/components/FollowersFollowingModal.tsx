@@ -198,16 +198,16 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   const currentUsers = activeTab === 'followers' ? followers : following;
   const isLoading = activeTab === 'followers' ? loadingFollowers : loadingFollowing;
 
-  // Determine modal positioning style
+  // Determine modal positioning style - use fixed positioning for consistent behavior
   const modalStyle: React.CSSProperties = topPosition
     ? {
-        position: 'absolute',
-        top: `${topPosition}px`,
+        position: 'fixed',
+        top: `${topPosition - window.scrollY}px`,
         left: '50%',
         transform: 'translateX(-50%)',
         maxWidth: 'min(448px, calc(100vw - 2rem))',
         width: '100%',
-        maxHeight: `calc(100vh - ${topPosition}px - 2rem)`,
+        maxHeight: `calc(100vh - ${topPosition - window.scrollY}px - 2rem)`,
         zIndex: 50
       }
     : {};

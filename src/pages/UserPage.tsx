@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { ProfileInfo } from '../components/ProfileInfo';
 import { ProfileDetails } from '../components/ProfileDetails';
 import { TopGames } from '../components/profile/TopGames';
+import { Last5Games } from '../components/profile/Last5Games';
 import { PlaylistTabs } from '../components/profile/PlaylistTabs';
 import { ActivityFeed } from '../components/profile/ActivityFeed';
 import { FollowersFollowingModal } from '../components/FollowersFollowingModal';
@@ -31,7 +32,7 @@ export const UserPage: React.FC = () => {
       return <Navigate to="/users" replace />;
     }
   }
-  const [activeTab, setActiveTab] = useState<'top5' | 'top10' | 'playlist' | 'activity'>('top5');
+  const [activeTab, setActiveTab] = useState<'top5' | 'last5' | 'playlist' | 'activity'>('top5');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -422,10 +423,10 @@ export const UserPage: React.FC = () => {
             Top 5
           </button>
           <button
-            onClick={() => setActiveTab('top10')}
-            className={`pb-2 ${activeTab === 'top10' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
+            onClick={() => setActiveTab('last5')}
+            className={`pb-2 ${activeTab === 'last5' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
-            Top 10
+            Last 5
           </button>
           <button
             onClick={() => setActiveTab('playlist')}
@@ -451,8 +452,8 @@ export const UserPage: React.FC = () => {
         {activeTab === 'top5' && (
           <TopGames userId={id} limit={5} editable={isOwnProfile} isOwnProfile={isOwnProfile} />
         )}
-        {activeTab === 'top10' && (
-          <TopGames userId={id} limit={10} isOwnProfile={isOwnProfile} />
+        {activeTab === 'last5' && (
+          <Last5Games userId={id} isOwnProfile={isOwnProfile} />
         )}
         {activeTab === 'playlist' && (
           <PlaylistTabs userId={id!} isOwnProfile={isOwnProfile} />

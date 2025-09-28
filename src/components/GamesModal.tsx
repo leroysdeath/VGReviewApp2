@@ -277,13 +277,14 @@ export const GamesModal: React.FC<GamesModalProps> = ({
   const currentGames = getCurrentGames();
   const isLoading = getCurrentLoading();
 
-  // Calculate positioning style
+  // Calculate positioning style - use fixed positioning for consistent behavior
   const modalStyle: React.CSSProperties = topPosition
     ? {
-        position: 'absolute',
-        top: `${topPosition}px`,
+        position: 'fixed',
+        top: `${topPosition - window.scrollY}px`,
         left: '50%',
         transform: 'translateX(-50%)',
+        zIndex: 50,
       }
     : {};
 
