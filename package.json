@@ -58,6 +58,7 @@
     "dompurify": "^3.2.3",
     "focus-trap-react": "^10.2.3",
     "immer": "^10.1.1",
+    "isomorphic-dompurify": "^2.28.0",
     "lucide-react": "^0.344.0",
     "postcss": "^8.4.35",
     "react": "^18.3.1",
@@ -79,7 +80,7 @@
     "typescript": "^5.5.3",
     "vite": "^5.4.2",
     "vite-imagetools": "^8.0.0",
-    "zod": "^4.0.5",
+    "zod": "^3.25.76",
     "zustand": "^5.0.6"
   },
   "devDependencies": {
