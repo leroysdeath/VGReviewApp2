@@ -670,11 +670,6 @@ export const SearchResultsPage: React.FC = () => {
                           )}
                         </div>
                       )}
-                      {game.user_rating_count > 0 && (
-                        <p className="text-sm text-gray-400">
-                          {game.user_rating_count} review{game.user_rating_count !== 1 ? 's' : ''}
-                        </p>
-                      )}
                     </div>
                   </div>
                 ))}
