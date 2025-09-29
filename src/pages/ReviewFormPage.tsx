@@ -44,11 +44,49 @@ export const ReviewFormPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   const { isAuthenticated, user } = useAuth();
-  
+
   // Replace IGDB search with Supabase-based search
   const [searchResults, setSearchResults] = useState<GameWithCalculatedFields[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+
+  // Non-linear curve functions to center 5 at 50% position
+  // Convert rating (1-10) to slider position (0-100)
+  const ratingToPosition = (rating: number): number => {
+    // Using a smooth curve that compresses the edges and expands the middle
+    // This centers 5 at exactly 50% position
+    if (rating <= 5) {
+      // For 1-5: map to 0-50% with a curve that expands near 5
+      const normalized = (rating - 1) / 4; // 0 to 1
+      const curved = Math.pow(normalized, 0.8); // Gentle curve
+      return curved * 50;
+    } else {
+      // For 5-10: map to 50-100% with a curve that compresses near 10
+      const normalized = (rating - 5) / 5; // 0 to 1
+      const curved = 1 - Math.pow(1 - normalized, 0.8); // Inverse gentle curve
+      return 50 + curved * 50;
+    }
+  };
+
+  // Convert slider position (0-100) to rating (1-10)
+  const positionToRating = (position: number): number => {
+    // Inverse of the above function
+    if (position <= 50) {
+      // For 0-50%: map to 1-5
+      const normalized = position / 50; // 0 to 1
+      const uncurved = Math.pow(normalized, 1.25); // Inverse of 0.8
+      const rating = 1 + uncurved * 4;
+      // Round to nearest 0.5
+      return Math.round(rating * 2) / 2;
+    } else {
+      // For 50-100%: map to 5-10
+      const normalized = (position - 50) / 50; // 0 to 1
+      const uncurved = 1 - Math.pow(1 - normalized, 1.25); // Inverse curve
+      const rating = 5 + uncurved * 5;
+      // Round to nearest 0.5
+      return Math.round(rating * 2) / 2;
+    }
+  };
   
   const performSearch = useCallback(async (query: string) => {
     if (!query || query.length < 2) {
@@ -822,18 +860,21 @@ export const ReviewFormPage: React.FC = () => {
                   <div className="relative h-2 bg-gray-700 rounded-full overflow-hidden">
                     <div
                       className="absolute h-full bg-purple-500 transition-all duration-150"
-                      style={{ width: `${((rating - 1) / 9) * 100}%` }}
+                      style={{ width: `${ratingToPosition(rating)}%` }}
                     />
                   </div>
 
                   {/* Range Input */}
                   <input
                     type="range"
-                    min="1"
-                    max="10"
-                    step="0.5"
-                    value={rating}
-                    onChange={(e) => setRating(parseFloat(e.target.value))}
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={ratingToPosition(rating)}
+                    onChange={(e) => {
+                      const position = parseFloat(e.target.value);
+                      setRating(positionToRating(position));
+                    }}
                     className="slider-input absolute inset-0 w-full h-2 cursor-pointer"
                     style={{
                       zIndex: 2,
@@ -847,7 +888,7 @@ export const ReviewFormPage: React.FC = () => {
                   {/* Tick Marks - Only show for 1, 5, and 10 */}
                   <div className="absolute inset-x-0 -bottom-6">
                     {[1, 5, 10].map((tick) => {
-                      const position = ((tick - 1) / 9) * 100;
+                      const position = ratingToPosition(tick);
                       return (
                         <div
                           key={tick}

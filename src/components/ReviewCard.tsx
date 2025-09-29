@@ -167,7 +167,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
     >
       {/* Card content with unified grid layout */}
       <div className="relative">
-          <div className="grid grid-cols-[auto,1fr,auto] grid-rows-[auto,auto,auto,1px,auto] gap-x-2 md:gap-x-4">
+          <div className="grid grid-cols-[auto,1fr,auto] gap-x-2 md:gap-x-4 gap-y-1 md:gap-y-2" style={{ gridTemplateRows: 'auto auto auto 1px auto' }}>
             {/* Avatar (spans rows 1-4) */}
             <div className="row-start-1 row-span-4 col-start-1">
               <div
@@ -198,7 +198,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             </div>
 
             {/* Row 1: Username (column 2) */}
-            <div className="row-start-1 col-start-2 mb-1">
+            <div className="row-start-1 col-start-2">
               <span
                 className="font-medium md:font-semibold text-white text-sm md:text-base cursor-pointer hover:text-purple-400 transition-colors"
                 onClick={(e) => {
@@ -238,20 +238,20 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
             )}
 
             {/* Row 2: Date (column 2) */}
-            <div className="row-start-2 col-start-2 text-xs md:text-sm text-gray-400 mb-1 md:mb-2">
+            <div className="row-start-2 col-start-2 text-xs md:text-sm text-gray-400">
               {getRelativeTime(review.date)}
             </div>
 
             {/* Row 3: Game Title (column 2) */}
             {showGameTitle && review.gameTitle && (
-              <div className="row-start-3 col-start-2 text-gray-300 text-sm md:text-base font-medium mb-1 md:mb-2">
+              <div className="row-start-3 col-start-2 text-gray-300 text-sm md:text-base font-medium">
                 {review.gameTitle}
               </div>
             )}
 
             {/* Row 4: Separator (spans all columns) */}
             {showGameTitle && (
-              <div className="row-start-4 col-start-1 col-span-3 h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% mb-2 md:mb-3"></div>
+              <div className="row-start-4 col-start-1 col-span-3 bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99%" style={{ height: '1px' }}></div>
             )}
 
             {/* Row 5: Review Text (spans all columns) */}
