@@ -8,6 +8,8 @@ interface AuthModalContextType {
   openAuthModal: (mode?: 'login' | 'signup' | 'reset') => void; // Alias for consistency
   closeModal: () => void;
   setMode: (mode: 'login' | 'signup' | 'reset') => void;
+  initialReferralCode?: string;
+  setInitialReferralCode?: (code: string) => void;
 }
 
 const AuthModalContext = createContext<AuthModalContextType | undefined>(undefined);
@@ -19,6 +21,7 @@ interface AuthModalProviderProps {
 export const AuthModalProvider: React.FC<AuthModalProviderProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login');
+  const [initialReferralCode, setInitialReferralCode] = useState<string | undefined>();
 
   const openModal = (initialMode: 'login' | 'signup' | 'reset' = 'login') => {
     setMode(initialMode);
@@ -27,6 +30,8 @@ export const AuthModalProvider: React.FC<AuthModalProviderProps> = ({ children }
 
   const closeModal = () => {
     setIsOpen(false);
+    // Clear referral code when modal closes
+    setInitialReferralCode(undefined);
   };
 
   const value = {
@@ -35,7 +40,9 @@ export const AuthModalProvider: React.FC<AuthModalProviderProps> = ({ children }
     openModal,
     openAuthModal: openModal, // Alias for consistency
     closeModal,
-    setMode
+    setMode,
+    initialReferralCode,
+    setInitialReferralCode
   };
 
   return (

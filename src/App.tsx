@@ -117,6 +117,11 @@ const AppContent: React.FC = () => {
                         <LazyRoutes.ResetPasswordPage />
                       </Suspense>
                     } />
+                    <Route path="/signup/:code" element={
+                      <Suspense fallback={<RouteLoader />}>
+                        <LazyRoutes.SignupPage />
+                      </Suspense>
+                    } />
                     <Route path="/auth/callback" element={
                       <Suspense fallback={<RouteLoader />}>
                         <LazyRoutes.AuthCallbackPage />

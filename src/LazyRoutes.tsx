@@ -38,6 +38,10 @@ export const ReviewPage = lazy(() =>
 );
 
 // Auth pages
+export const SignupPage = lazy(() =>
+  import('./pages/SignupPage').then(module => ({ default: module.SignupPage }))
+);
+
 export const ResetPasswordPage = lazy(() =>
   import('./components/ResetPasswordPage').then(module => ({ default: module.ResetPasswordPage }))
 );

@@ -1,6 +1,6 @@
 // src/components/auth/AuthModal.tsx - COMPLETE REPLACEMENT
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Eye, EyeOff, Mail, Key, User, AlertCircle, Check, Loader2, Gamepad2, CheckCircle } from 'lucide-react';
+import { X, Eye, EyeOff, Mail, Key, User, AlertCircle, Check, Loader2, Gamepad2, CheckCircle, Gift, UserPlus } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,6 +9,7 @@ import { useAuthModal } from '../../context/AuthModalContext';
 import { LegalModal } from '../LegalModal';
 import { supabase } from '../../services/supabase';
 import { authService } from '../../services/authService';
+import { referralService } from '../../services/referralService';
 
 // Form validation schemas
 const loginSchema = z.object({
@@ -31,6 +32,10 @@ const signupSchema = z.object({
     .regex(/[0-9]/, 'Password must contain at least one number')
     .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
   confirmPassword: z.string(),
+  referralCode: z.string()
+    .max(17, 'Referral code must be 17 characters or less')
+    .regex(/^[a-zA-Z0-9]*$/, 'Referral code can only contain letters and numbers')
+    .optional(),
   agreeToTerms: z.literal(true, {
     errorMap: () => ({ message: 'You must agree to the terms and conditions' })
   })
@@ -57,7 +62,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onSignupSuccess
 }) => {
   const { signIn, signUp, resetPassword } = useAuth();
-  const { isOpen, mode, closeModal, setMode } = useAuthModal();
+  const { isOpen, mode, closeModal, setMode, initialReferralCode } = useAuthModal();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -70,6 +75,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [usernameCheckTimeout, setUsernameCheckTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [referralCodeValid, setReferralCodeValid] = useState<boolean | null>(null);
+  const [checkingReferralCode, setCheckingReferralCode] = useState(false);
+  const [referralCodeInfo, setReferralCodeInfo] = useState<{ owner_name: string } | null>(null);
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -89,9 +97,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       email: '',
       password: '',
       confirmPassword: '',
+      referralCode: '',
       agreeToTerms: false
     }
   });
+
+  // Set initial referral code when modal opens
+  useEffect(() => {
+    if (mode === 'signup' && initialReferralCode) {
+      signupForm.setValue('referralCode', initialReferralCode);
+      // Trigger validation for the referral code
+      checkReferralCode(initialReferralCode);
+    }
+  }, [mode, initialReferralCode, signupForm, checkReferralCode]);
 
   // Check username availability with debounce
   const checkUsernameAvailability = useCallback(async (username: string) => {
@@ -136,6 +154,51 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     };
   }, [signupForm.watch('username')]);
 
+  // Check referral code validity
+  const checkReferralCode = useCallback(async (code: string) => {
+    if (!code || code.length === 0) {
+      setReferralCodeValid(null);
+      setReferralCodeInfo(null);
+      return;
+    }
+
+    setCheckingReferralCode(true);
+    try {
+      const isValid = await referralService.validateCode(code);
+      setReferralCodeValid(isValid);
+
+      if (isValid) {
+        const info = await referralService.getCodeInfo(code);
+        setReferralCodeInfo(info);
+      } else {
+        setReferralCodeInfo(null);
+      }
+    } catch (error) {
+      console.error('Referral code check failed:', error);
+      setReferralCodeValid(false);
+      setReferralCodeInfo(null);
+    } finally {
+      setCheckingReferralCode(false);
+    }
+  }, []);
+
+  // Debounced referral code check
+  useEffect(() => {
+    const code = signupForm.watch('referralCode');
+
+    if (!code) {
+      setReferralCodeValid(null);
+      setReferralCodeInfo(null);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      checkReferralCode(code);
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [signupForm.watch('referralCode'), checkReferralCode]);
+
   // Reset password form
   const resetForm = useForm<ResetFormValues>({
     resolver: zodResolver(resetSchema),
@@ -168,16 +231,50 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleSignup = async (data: SignupFormValues) => {
     setIsLoading(true);
     setAuthError(null);
-    
+
     try {
       // Store email in session storage for personalization
       sessionStorage.setItem('pendingVerificationEmail', data.email);
-      
+
       const result = await signUp(data.email, data.password, data.username);
       if (result.error) {
         setAuthError(result.error.message || 'Signup failed. Please try again.');
         sessionStorage.removeItem('pendingVerificationEmail');
       } else {
+        // Record referral if code was provided and user was created
+        if (result.data?.user) {
+          // Check for referral code from form or session storage (from URL)
+          const referralCode = data.referralCode || sessionStorage.getItem('referralCode');
+          const signupUrl = sessionStorage.getItem('referralSignupUrl');
+          const signupMethod = signupUrl ? 'referral_url' : 'direct_code';
+
+          if (referralCode) {
+            // Get the user's database ID (we'll need to fetch it)
+            const { data: userData } = await supabase
+              .from('user')
+              .select('id')
+              .eq('provider_id', result.data.user.id)
+              .single();
+
+            if (userData?.id) {
+              // Record the referral (don't await to not block signup flow)
+              referralService.recordReferral(
+                userData.id,
+                referralCode,
+                signupMethod,
+                signupUrl || undefined
+              ).catch(error => {
+                console.error('Failed to record referral:', error);
+                // Don't show error to user - signup was successful
+              });
+
+              // Clear session storage
+              sessionStorage.removeItem('referralCode');
+              sessionStorage.removeItem('referralSignupUrl');
+            }
+          }
+        }
+
         // Show email verification screen instead of switching to login
         setVerificationEmail(data.email);
         setShowEmailVerification(true);
@@ -626,6 +723,54 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
                 {signupForm.formState.errors.confirmPassword && (
                   <p className="mt-1 text-sm text-red-400">{signupForm.formState.errors.confirmPassword.message}</p>
+                )}
+              </div>
+
+              {/* Referral Code - Optional */}
+              <div>
+                <label htmlFor="referralCode" className="block text-sm font-medium text-gray-300 mb-2">
+                  Referral Code <span className="text-gray-500">(Optional)</span>
+                </label>
+                <div className="relative">
+                  <UserPlus className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <input
+                    {...signupForm.register('referralCode')}
+                    type="text"
+                    id="referralCode"
+                    className="w-full pl-10 pr-10 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                    placeholder="Enter referral code"
+                    disabled={isLoading}
+                    style={{ textTransform: 'uppercase' }}
+                    onChange={(e) => {
+                      e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                      signupForm.setValue('referralCode', e.target.value);
+                    }}
+                  />
+                  {checkingReferralCode && (
+                    <Loader2 className="absolute right-3 top-3 h-5 w-5 text-gray-400 animate-spin" />
+                  )}
+                  {!checkingReferralCode && referralCodeValid === true && (
+                    <CheckCircle className="absolute right-3 top-3 h-5 w-5 text-green-500" />
+                  )}
+                  {!checkingReferralCode && referralCodeValid === false && signupForm.watch('referralCode') && (
+                    <AlertCircle className="absolute right-3 top-3 h-5 w-5 text-red-500" />
+                  )}
+                </div>
+
+                {/* Show referral code validation status */}
+                {referralCodeValid === true && referralCodeInfo && (
+                  <p className="mt-1 text-sm text-green-400">
+                    <Check className="inline h-3 w-3 mr-1" />
+                    Referred by {referralCodeInfo.owner_name}
+                  </p>
+                )}
+                {referralCodeValid === false && signupForm.watch('referralCode') && (
+                  <p className="mt-1 text-sm text-yellow-400">
+                    Invalid code - you can still sign up without it
+                  </p>
+                )}
+                {signupForm.formState.errors.referralCode && (
+                  <p className="mt-1 text-sm text-red-400">{signupForm.formState.errors.referralCode.message}</p>
                 )}
               </div>
 
