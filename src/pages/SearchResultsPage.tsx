@@ -636,7 +636,7 @@ export const SearchResultsPage: React.FC = () => {
                         showLoadingSpinner={true}
                         showLoadingSkeleton={false}
                       />
-                      {shouldShowCategoryLabel(game.category) && (
+                      {!!shouldShowCategoryLabel(game.category) && (
                         <div className="absolute top-2 left-2">
                           {(() => {
                             const label = getCategoryLabel(game.category);
@@ -706,7 +706,7 @@ export const SearchResultsPage: React.FC = () => {
                                   <h3 className={`font-semibold ${isNarrowMode ? 'text-lg' : 'text-xl'}`}>
                                     {game.name}
                                   </h3>
-                                  {shouldShowCategoryLabel(game.category) && (
+                                  {!!shouldShowCategoryLabel(game.category) && (
                                     (() => {
                                       const label = getCategoryLabel(game.category);
                                       const styles = getCategoryStyles(game.category);
