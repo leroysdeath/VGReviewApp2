@@ -829,23 +829,42 @@ export class GameDataServiceV2 {
     const timeoutId = setTimeout(() => abortController.abort(), 1000); // OPTIMIZED: 1 second timeout for fast response
 
     try {
-      // First, try to use search_games_with_mode which includes rating data
+      // Direct query with rating aggregation using raw SQL for better control
       const { data: ratedResults, error: ratedError } = await supabase
-        .rpc('search_games_with_mode', {
-          search_term: query,
-          search_mode: 'fuzzy', // Use fuzzy search for better matches
-          max_results: limit
-        })
+        .from('game')
+        .select(`
+          *,
+          rating!left(
+            rating
+          )
+        `)
+        .ilike('name', `%${query}%`)
+        .limit(limit)
         .abortSignal(abortController.signal);
 
       clearTimeout(timeoutId);
 
-      // If the function exists and returns results, use them with rating data
+      // Process results with rating aggregation
       if (!ratedError && ratedResults) {
-        if (DEBUG_GAME_DATA) console.log(`🎯 Rated search found ${ratedResults.length} games for "${query}"`);
+        if (DEBUG_GAME_DATA) console.log(`🎯 Search found ${ratedResults.length} games for "${query}"`);
 
-        // OPTIMIZED: Single-pass filtering
-        const filteredResults = this.applyFiltersOptimized(ratedResults, filters);
+        // Calculate rating aggregates for each game
+        const resultsWithRatings = ratedResults.map(game => {
+          const ratings = (game as any).rating || [];
+          const validRatings = ratings.filter((r: any) => r.rating != null);
+          const avgRating = validRatings.length > 0
+            ? validRatings.reduce((sum: number, r: any) => sum + r.rating, 0) / validRatings.length
+            : 0;
+
+          return {
+            ...game,
+            average_rating: Math.round(avgRating * 10) / 10, // Round to 1 decimal
+            rating_count: validRatings.length
+          };
+        });
+
+        // Apply filters after getting results
+        const filteredResults = this.applyFiltersOptimized(resultsWithRatings, filters);
 
         // Transform with rating data included
         return filteredResults.map(game => this.transformGameWithRatings(game as any));
