@@ -742,6 +742,75 @@ export const profileCache = {
   clear: (userId?: string) => userService.clearProfileCache(userId)
 };
 
+// Rating distribution function (from legacy profileService)
+export const getUserRatingDistribution = async (userId: number) => {
+  try {
+    console.log('📊 Fetching rating distribution for user:', userId);
+
+    // Fetch all published ratings for the user
+    const { data: ratings, error } = await supabase
+      .from('rating')
+      .select('rating')
+      .eq('user_id', userId)
+      .eq('is_published', true);
+
+    if (error) {
+      console.error('❌ Error fetching user ratings:', error);
+      return {
+        success: false,
+        error: `Failed to fetch ratings: ${error.message}`
+      };
+    }
+
+    // Initialize distribution array for ratings 1-10
+    const distribution = Array.from({ length: 10 }, (_, i) => ({
+      rating: i + 1,
+      count: 0,
+      percentage: 0
+    }));
+
+    let totalRatings = 0;
+    let sumRatings = 0;
+
+    // Process each rating
+    if (ratings && ratings.length > 0) {
+      ratings.forEach(item => {
+        const ratingValue = Math.floor(item.rating);
+        if (ratingValue >= 1 && ratingValue <= 10) {
+          distribution[ratingValue - 1].count++;
+          totalRatings++;
+          sumRatings += item.rating;
+        }
+      });
+
+      // Calculate percentages
+      distribution.forEach(segment => {
+        segment.percentage = totalRatings > 0 ? (segment.count / totalRatings) * 100 : 0;
+      });
+    }
+
+    // Calculate average rating
+    const averageRating = totalRatings > 0 ? sumRatings / totalRatings : 0;
+
+    console.log(`✅ Distribution calculated: ${totalRatings} ratings, avg: ${averageRating.toFixed(1)}`);
+
+    return {
+      success: true,
+      data: {
+        distribution,
+        totalRatings,
+        averageRating
+      }
+    };
+  } catch (error) {
+    console.error('💥 Unexpected error getting user rating distribution:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get rating distribution'
+    };
+  }
+};
+
 // Re-export functions for backward compatibility
 export const getCurrentAuthUser = (...args: Parameters<typeof userService.getCurrentAuthUser>) => userService.getCurrentAuthUser(...args);
 export const getUserProfile = (...args: Parameters<typeof userService.getUserProfile>) => userService.getUserProfile(...args);
