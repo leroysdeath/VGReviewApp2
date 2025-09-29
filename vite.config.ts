@@ -72,7 +72,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     // Dynamic sourcemap and minify based on environment
-    sourcemap: process.env.NODE_ENV === 'development',
+    sourcemap: false, // Disabled for production
     minify: 'terser', // Always use terser for better compression
     // Enhanced Terser options for maximum compression
     terserOptions: {
@@ -80,35 +80,34 @@ export default defineConfig({
         drop_console: true,
         drop_debugger: true,
         pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn'],
-        passes: 3, // Multiple compression passes for better results
-        ecma: 2015, // Enable ES6 optimizations
-        module: true, // Enable module optimizations
-        toplevel: true, // Enable top-level variable and function name mangling
-        unsafe_arrows: true, // Convert ES5 functions to arrow functions
-        unsafe_comps: true, // Compress comparisons
-        unsafe_methods: true, // Convert methods to arrow functions
-        unsafe_proto: true, // Optimize prototype access
-        unsafe_regexp: true, // Optimize regular expressions
-        unsafe_undefined: true, // Substitute undefined with void 0
-        conditionals: true, // Optimize conditionals
-        dead_code: true, // Remove dead code
-        evaluate: true, // Evaluate constant expressions
-        inline: true, // Inline functions
-        loops: true, // Optimize loops
-        unused: true, // Drop unused variables/functions
-        hoist_funs: true, // Hoist function declarations
-        if_return: true, // Optimize if-return sequences
-        join_vars: true, // Join variable declarations
-        reduce_vars: true, // Reduce variable assignments
-        side_effects: true, // Remove side-effect-free statements
-        switches: true, // Optimize switch statements
+        passes: 2, // Reduced from 3 to avoid over-optimization
+        ecma: 2015,
+        module: true,
+        // Disabled aggressive optimizations that can cause initialization issues
+        toplevel: false, // Don't mangle top-level names (was true)
+        unsafe_arrows: false, // Don't convert functions (was true)
+        unsafe_comps: false, // Don't compress comparisons (was true)
+        unsafe_methods: false, // Don't convert methods (was true)
+        unsafe_proto: false, // Don't optimize prototype (was true)
+        unsafe_regexp: false, // Don't optimize regexp (was true)
+        unsafe_undefined: false, // Don't substitute undefined (was true)
+        conditionals: true,
+        dead_code: true,
+        evaluate: true,
+        inline: 2, // Limit inline level (was true/3)
+        loops: true,
+        unused: true,
+        hoist_funs: false, // Don't hoist functions (was true) - can cause init issues
+        if_return: true,
+        join_vars: false, // Don't join vars (was true) - can cause init issues
+        reduce_vars: false, // Don't reduce vars (was true) - can cause init issues
+        side_effects: false, // Don't remove side effects (was true)
+        switches: true,
       },
       mangle: {
         safari10: true, // Work around Safari 10 bugs
-        toplevel: true, // Mangle top-level names
-        properties: {
-          regex: /^_/ // Mangle properties starting with underscore
-        }
+        toplevel: false, // Don't mangle top-level names to avoid init issues
+        // Removed property mangling as it can break runtime access
       },
       format: {
         comments: false, // Remove all comments
