@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { GameSearchResult, SearchResponse, PaginationOptions } from '../types/search'
 import { searchCacheService } from './searchCacheService'
 import { searchAnalyticsService } from './searchAnalyticsService'
 import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization'
@@ -187,42 +188,7 @@ function hasEnhancedModIndicators(game: any): boolean {
   return modIndicators.some(indicator => searchText.includes(indicator));
 }
 
-export interface PaginationOptions {
-  limit?: number
-  offset?: number
-}
-
-export interface GameSearchResult {
-  id: number
-  igdb_id?: number
-  name: string
-  description?: string
-  summary?: string
-  release_date?: string
-  cover_url?: string
-  developer?: string
-  publisher?: string
-  genre?: string
-  genres?: string[]
-  platforms?: string[]
-  category?: number
-  igdb_rating?: number
-  metacritic_score?: number
-  avg_user_rating?: number
-  user_rating_count?: number
-  screenshots?: string[]
-  total_rating?: number
-  total_rating_count?: number
-  rating_count?: number
-  follows?: number
-  hypes?: number
-}
-
-export interface SearchResponse {
-  games: GameSearchResult[]
-  totalCount: number
-  hasMore: boolean
-}
+// Types are now imported from '../types/search'
 
 /**
  * Enhanced relevance calculation with franchise awareness

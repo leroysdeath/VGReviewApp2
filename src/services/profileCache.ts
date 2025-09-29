@@ -1,4 +1,4 @@
-import type { UserProfile } from './profileService';
+import type { DatabaseUser as UserProfile } from '../types/user';
 
 interface CachedProfile {
   data: UserProfile;

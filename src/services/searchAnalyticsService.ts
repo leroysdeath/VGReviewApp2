@@ -4,7 +4,7 @@
  */
 
 import { supabase } from './supabase';
-import { GameSearchResult } from './gameSearchService';
+import { GameSearchResult } from '../types/search';
 
 interface SearchAnalytic {
   id?: number;

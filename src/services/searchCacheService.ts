@@ -3,7 +3,7 @@
  * Implements localStorage caching for search results with TTL and compression
  */
 
-import { GameSearchResult } from './gameSearchService';
+import { GameSearchResult } from '../types/search';
 
 interface CachedSearch {
   query: string;

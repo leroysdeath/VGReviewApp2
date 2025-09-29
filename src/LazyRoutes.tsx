@@ -76,6 +76,11 @@ export const DiagnosticPage = lazy(() =>
   import('./pages/DiagnosticPage')
 );
 
+// Admin pages
+export const AdminDashboard = lazy(() =>
+  import('./pages/AdminDashboard').then(module => ({ default: module.AdminDashboard }))
+);
+
 // FAQ component
 export const FAQ = lazy(() =>
   import('./components/FAQ').then(module => ({ default: module.FAQ }))

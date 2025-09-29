@@ -1,3 +1,41 @@
+// Core search types
+export interface GameSearchResult {
+  id: number
+  igdb_id?: number
+  name: string
+  description?: string
+  summary?: string
+  release_date?: string
+  cover_url?: string
+  developer?: string
+  publisher?: string
+  genre?: string
+  genres?: string[]
+  platforms?: string[]
+  category?: number
+  igdb_rating?: number
+  metacritic_score?: number
+  avg_user_rating?: number
+  user_rating_count?: number
+  screenshots?: string[]
+  total_rating?: number
+  total_rating_count?: number
+  rating_count?: number
+  follows?: number
+  hypes?: number
+}
+
+export interface SearchResponse {
+  games: GameSearchResult[]
+  totalCount: number
+  hasMore: boolean
+}
+
+export interface PaginationOptions {
+  limit?: number
+  offset?: number
+}
+
 // Search and filter types
 export interface GameSearchFilters {
   query: string;
