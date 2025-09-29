@@ -169,7 +169,7 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
       <div className="relative">
           <div className="grid grid-cols-[auto,1fr,auto] grid-rows-[auto,auto,auto,1px,auto] gap-x-2 md:gap-x-4">
             {/* Avatar (spans rows 1-4) */}
-            <div className="row-span-4">
+            <div className="row-start-1 row-span-4 col-start-1">
               <div
                 className="group/avatar cursor-pointer"
                 onClick={(e) => {
@@ -210,9 +210,9 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
               </span>
             </div>
 
-            {/* Game Cover + Rating (column 3, spans rows 3-5) */}
+            {/* Game Cover + Rating (column 3, spans rows 2-4) */}
             {showGameTitle && (review.gameCoverUrl || review.rating) && (
-              <div className="row-start-3 row-span-3 col-start-3 flex flex-col items-center justify-center">
+              <div className="row-start-2 row-span-3 col-start-3 flex flex-col items-center justify-center">
                 {/* Game cover */}
                 {review.gameCoverUrl && (
                   <img
@@ -251,12 +251,12 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
             {/* Row 4: Separator (spans all columns) */}
             {showGameTitle && (
-              <div className="row-start-4 col-span-3 h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% mb-2 md:mb-3"></div>
+              <div className="row-start-4 col-start-1 col-span-3 h-px bg-gradient-to-r from-transparent from-1% via-gray-600 to-transparent to-99% mb-2 md:mb-3"></div>
             )}
 
             {/* Row 5: Review Text (spans all columns) */}
             {review.hasText && (
-              <div className="row-start-5 col-span-3 relative">
+              <div className="row-start-5 col-start-1 col-span-3 relative">
                 <p
                   className="text-sm md:text-base text-gray-400 leading-relaxed whitespace-pre-line overflow-hidden"
                   style={{

@@ -829,8 +829,29 @@ export class GameDataServiceV2 {
     const timeoutId = setTimeout(() => abortController.abort(), 1000); // OPTIMIZED: 1 second timeout for fast response
 
     try {
-      // First, try to use the new search_games_with_aliases function if it exists
-      // This will search both names and aliases for better Roman numeral matching
+      // First, try to use search_games_with_mode which includes rating data
+      const { data: ratedResults, error: ratedError } = await supabase
+        .rpc('search_games_with_mode', {
+          search_term: query,
+          search_mode: 'fuzzy', // Use fuzzy search for better matches
+          max_results: limit
+        })
+        .abortSignal(abortController.signal);
+
+      clearTimeout(timeoutId);
+
+      // If the function exists and returns results, use them with rating data
+      if (!ratedError && ratedResults) {
+        if (DEBUG_GAME_DATA) console.log(`🎯 Rated search found ${ratedResults.length} games for "${query}"`);
+
+        // OPTIMIZED: Single-pass filtering
+        const filteredResults = this.applyFiltersOptimized(ratedResults, filters);
+
+        // Transform with rating data included
+        return filteredResults.map(game => this.transformGameWithRatings(game as any));
+      }
+
+      // Fallback to search_games_with_aliases if search_games_with_mode doesn't exist
       const { data: aliasResults, error: aliasError } = await supabase
         .rpc('search_games_with_aliases', {
           search_query: query,
@@ -838,9 +859,7 @@ export class GameDataServiceV2 {
         })
         .abortSignal(abortController.signal);
 
-      clearTimeout(timeoutId);
-
-      // If the function exists and returns results, use them
+      // If the alias function exists and returns results, use them
       if (!aliasError && aliasResults) {
         if (DEBUG_GAME_DATA) console.log(`🎯 Alias search found ${aliasResults.length} games for "${query}"`);
 
@@ -967,17 +986,32 @@ export class GameDataServiceV2 {
       totalUserRatings: 0
     } as GameWithCalculatedFields;
   }
+
+  /**
+   * Transform game data with rating fields from search_games_with_mode RPC
+   */
+  private transformGameWithRatings(game: any): GameWithCalculatedFields {
+    return {
+      ...game,
+      // Map the RPC fields to our expected field names
+      averageUserRating: game.average_rating || 0,
+      totalUserRatings: game.rating_count || 0,
+      // Also add them as the SearchResult interface expects
+      avg_user_rating: game.average_rating || 0,
+      user_rating_count: game.rating_count || 0
+    } as GameWithCalculatedFields & { avg_user_rating?: number; user_rating_count?: number };
+  }
   
   /**
-   * Transform game data with calculated fields (slower version with ratings)
+   * Transform game data with calculated fields (slower version with inline ratings)
    */
-  private transformGameWithRatings(game: GameWithRating): GameWithCalculatedFields {
+  private transformGameWithInlineRatings(game: GameWithRating): GameWithCalculatedFields {
     const ratings = game.ratings || [];
     const totalRatings = ratings.length;
-    const averageRating = totalRatings > 0 
-      ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings 
+    const averageRating = totalRatings > 0
+      ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
       : 0;
-    
+
     return {
       ...game,
       averageUserRating: Math.round(averageRating * 100) / 100,

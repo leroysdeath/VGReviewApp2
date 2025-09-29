@@ -49,6 +49,8 @@ export interface SearchResult {
   cover_url?: string;
   igdb_rating?: number;
   igdb_id?: number;
+  avg_user_rating?: number;  // Added: Average user rating from database
+  user_rating_count?: number; // Added: Number of user ratings
   relevanceScore?: number;
   qualityScore?: number;
   source: 'database' | 'igdb' | 'hybrid';
