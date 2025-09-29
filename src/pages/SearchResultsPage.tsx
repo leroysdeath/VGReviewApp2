@@ -650,7 +650,7 @@ export const SearchResultsPage: React.FC = () => {
                           })()}
                         </div>
                       )}
-                      {game.avg_user_rating && game.user_rating_count > 0 && (
+                      {game.avg_user_rating != null && game.user_rating_count > 0 && (
                         <div className={`absolute top-1 right-1 rounded-lg px-1.5 py-0.5 ${getRatingColorClasses(game.avg_user_rating)}`}>
                           <span className="text-sm font-bold">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10</span>
                         </div>
@@ -743,7 +743,7 @@ export const SearchResultsPage: React.FC = () => {
                                       {mapPlatformNames(game.platforms).join(', ')}
                                     </span>
                                   )}
-                                  {game.avg_user_rating && game.user_rating_count > 0 && (
+                                  {game.avg_user_rating != null && game.user_rating_count > 0 && (
                                     <>
                                       <span>•</span>
                                       <span className={`font-medium ${getRatingColor(game.avg_user_rating)}`}>
