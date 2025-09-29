@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, X, Edit } from 'lucide-react';
-import { gameDataService } from '../services/gameDataService';
+import { gameService } from '../services/gameService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
@@ -198,7 +198,7 @@ export const ReviewPage: React.FC = () => {
       setReview(reviewData);
 
       // Now load game data using IGDB ID
-      const gameData = await gameDataService.getGameByIGDBId(gameIdNum);
+      const gameData = await gameService.getGameByIGDBId(gameIdNum);
       console.log('🎮 ReviewPage - Game data result:', gameData);
       
       // If game not in database, create a minimal game object

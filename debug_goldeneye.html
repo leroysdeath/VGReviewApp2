@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head><title>GoldenEye Debug</title></head>
+<body>
+<h1>GoldenEye Database Investigation</h1>
+<div id="result"></div>
+<script type="module">
+// Check browser console for detailed logs
+async function investigateGoldenEye() {
+  const result = document.getElementById('result');
+  result.innerHTML = 'Investigating...';
+  
+  try {
+    // Load the current page and check what happens
+    const response = await fetch('/game/goldeneye-007');
+    const html = await response.text();
+    
+    // Check if page loads or shows error
+    if (html.includes('Game not found')) {
+      result.innerHTML = '<p style="color: red">❌ Page shows "Game not found"</p>';
+    } else if (html.includes('GoldenEye')) {
+      result.innerHTML = '<p style="color: green">✅ Page loads with GoldenEye content</p>';
+    } else {
+      result.innerHTML = '<p style="color: orange">⚠️ Page loads but unclear content</p>';
+    }
+    
+    // Now test IGDB search for correct GoldenEye
+    console.log('Testing IGDB search for GoldenEye...');
+    const igdbResp = await fetch('/.netlify/functions/igdb-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'goldeneye 007', limit: 10 })
+    });
+    
+    if (igdbResp.ok) {
+      const igdbData = await igdbResp.json();
+      console.log('IGDB Search Results:', igdbData);
+      
+      if (igdbData.success && igdbData.games?.length > 0) {
+        result.innerHTML += '<h3>IGDB Search Results:</h3>';
+        igdbData.games.forEach((game, i) => {
+          result.innerHTML += `<p>${i+1}. <strong>${game.name}</strong> (ID: ${game.id})<br>`;
+          result.innerHTML += `Platforms: ${game.platforms?.map(p => p.name).join(', ') || 'None'}</p>`;
+        });
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error:', error);
+    result.innerHTML = `<p style="color: red">Error: ${error.message}</p>`;
+  }
+}
+
+investigateGoldenEye();
+</script>
+</body>
+</html>

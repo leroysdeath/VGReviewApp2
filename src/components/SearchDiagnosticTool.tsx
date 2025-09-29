@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { searchDiagnosticService } from '../services/searchDiagnosticService';
+import { searchObservabilityService } from '../services/searchObservabilityService';
 import { AdminKeyManager } from './AdminKeyManager';
 import { SearchResultsTable } from './SearchResultsTable';
 import { ManualFlaggingPanel } from './ManualFlaggingPanel';
@@ -73,7 +73,7 @@ export const SearchDiagnosticTool: React.FC = () => {
   useEffect(() => {
     // Update IGDB stats periodically
     const updateStats = () => {
-      setIgdbStats(searchDiagnosticService.getIGDBStats());
+      setIgdbStats(searchObservabilityService.getIGDBStats());
     };
     
     updateStats();
@@ -83,16 +83,16 @@ export const SearchDiagnosticTool: React.FC = () => {
   }, []);
 
   const handleAdminLogin = () => {
-    // Simple admin key check with all valid keys
-    const validKeys = [
-      'vg-search-admin-2024',
-      'debug',
-      'diagnostic-tool',
-      'tommy-admin',
-      'search-diagnostic',
-      'vg-admin'
-    ];
-    
+    // Load valid keys from environment variable (comma-separated)
+    const envKeys = import.meta.env.VITE_ADMIN_KEYS || '';
+    const validKeys = envKeys.split(',').map((key: string) => key.trim()).filter(Boolean);
+
+    // Fallback for development if no env keys configured
+    if (validKeys.length === 0 && import.meta.env.DEV) {
+      console.warn('⚠️ No VITE_ADMIN_KEYS configured. Using dev fallback.');
+      validKeys.push('debug', 'dev');
+    }
+
     if (validKeys.includes(adminKey)) {
       setIsAuthenticated(true);
       localStorage.setItem('searchDiagnosticAuth', 'true');
@@ -107,7 +107,7 @@ export const SearchDiagnosticTool: React.FC = () => {
     
     setIsLoading(true);
     try {
-      const result = await searchDiagnosticService.analyzeSingleSearch(singleQuery);
+      const result = await searchObservabilityService.analyzeSingleSearch(singleQuery);
       setSingleResult(result);
     } catch (error) {
       console.error('Single search analysis failed:', error);
@@ -122,7 +122,7 @@ export const SearchDiagnosticTool: React.FC = () => {
     
     setIsLoading(true);
     try {
-      const result = await searchDiagnosticService.bulkTestQueries(queries);
+      const result = await searchObservabilityService.bulkTestQueries(queries);
       setBulkResults(result);
       setSelectedTab('patterns');
     } catch (error) {

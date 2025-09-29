@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X, Loader2, Star, Gamepad2, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
+import { searchService } from '../services/searchService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { supabase } from '../services/supabase';
 
@@ -38,7 +38,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
-  const searchCoordinationRef = useRef<AdvancedSearchCoordination>(new AdvancedSearchCoordination());
+  // Using the unified searchService instance directly
 
   // Direct game search using fast mode for immediate dropdown results
   const performGameSearch = useCallback(async (query: string) => {
@@ -54,7 +54,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
       }
 
       // Use fast mode for immediate dropdown results - independent of main search
-      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+      const searchResult = await searchService.coordinatedSearch(query.trim(), {
         maxResults: maxSuggestions,
         includeMetrics: false,
         fastMode: true,

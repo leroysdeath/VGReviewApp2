@@ -186,7 +186,7 @@ export const useAuth = (): UseAuthReturn => {
       });
 
       const result = await Promise.race([
-        userService.getOrCreateDatabaseUser(session.user),
+        userService.getOrCreateUser(session),
         timeoutPromise
       ]);
 

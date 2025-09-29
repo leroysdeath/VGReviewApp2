@@ -1,4 +1,4 @@
-import { searchDiagnosticService } from '../services/searchDiagnosticService';
+import { searchObservabilityService } from '../services/searchObservabilityService';
 import { resultAnalysisService } from '../services/resultAnalysisService';
 
 describe('Mario Search Data Quality Analysis', () => {
@@ -13,7 +13,7 @@ describe('Mario Search Data Quality Analysis', () => {
     
     try {
       // 1. Perform Mario search using diagnostic service
-      const diagnostic = await searchDiagnosticService.analyzeSingleSearch('mario');
+      const diagnostic = await searchObservabilityService.analyzeSingleSearch('mario');
       
       console.log(`📊 Database results: ${diagnostic.dbResults.totalCount}`);
       console.log(`🔍 IGDB results: ${diagnostic.igdbResults?.count || 0}`);

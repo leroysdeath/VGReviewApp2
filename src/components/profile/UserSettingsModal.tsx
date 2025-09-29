@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { UserSettingsPanel } from './UserSettingsPanel';
-import { ProfileUpdateData } from '../../services/profileService';
+import { ProfileUpdateData } from '../../services/userService';
 
 interface UserSettingsModalProps {
   isOpen: boolean;

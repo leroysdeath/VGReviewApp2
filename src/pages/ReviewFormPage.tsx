@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart, Trash2, Gamepad2, ScrollText } from 'lucide-react';
-import { gameDataService } from '../services/gameDataService';
+import { gameService } from '../services/gameService';
 import { gameSearchService } from '../services/gameSearchService';
 import type { Game, GameWithCalculatedFields } from '../types/database';
 import { createReview, getUserReviewForGameByIGDBId, updateReview, deleteReview } from '../services/reviewService';
@@ -101,7 +101,7 @@ export const ReviewFormPage: React.FC = () => {
 
     try {
       // First try local database
-      const localResults = await gameDataService.searchGames(query);
+      const localResults = await gameService.searchGames(query);
 
       // If we have few local results, also search IGDB
       if (localResults.length < 10) {
@@ -221,7 +221,7 @@ export const ReviewFormPage: React.FC = () => {
     if (gameId) {
       const loadGame = async () => {
         try {
-          const game = await gameDataService.getGameByIGDBId(parseInt(gameId));
+          const game = await gameService.getGameByIGDBId(parseInt(gameId));
           if (game) {
             setSelectedGame(game);
             console.log("ID:", gameId);
