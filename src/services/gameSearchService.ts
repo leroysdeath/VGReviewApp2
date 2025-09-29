@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
-import { searchService } from './searchService'
-import { searchObservabilityService } from './searchObservabilityService'
+import { GameSearchResult, SearchResponse, PaginationOptions } from '../types/search'
+import { searchCacheService } from './searchCacheService'
+import { searchAnalyticsService } from './searchAnalyticsService'
 import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization'
 import { 
   sortGamesIntelligently, 
@@ -187,42 +188,7 @@ function hasEnhancedModIndicators(game: any): boolean {
   return modIndicators.some(indicator => searchText.includes(indicator));
 }
 
-export interface PaginationOptions {
-  limit?: number
-  offset?: number
-}
-
-export interface GameSearchResult {
-  id: number
-  igdb_id?: number
-  name: string
-  description?: string
-  summary?: string
-  release_date?: string
-  cover_url?: string
-  developer?: string
-  publisher?: string
-  genre?: string
-  genres?: string[]
-  platforms?: string[]
-  category?: number
-  igdb_rating?: number
-  metacritic_score?: number
-  avg_user_rating?: number
-  user_rating_count?: number
-  screenshots?: string[]
-  total_rating?: number
-  total_rating_count?: number
-  rating_count?: number
-  follows?: number
-  hypes?: number
-}
-
-export interface SearchResponse {
-  games: GameSearchResult[]
-  totalCount: number
-  hasMore: boolean
-}
+// Types are now imported from '../types/search'
 
 /**
  * Enhanced relevance calculation with franchise awareness
@@ -562,7 +528,7 @@ class GameSearchService {
         let cacheHit = false;
 
         // Try cache first
-        const cachedResults = searchService.getCachedSearch(query.trim());
+        const cachedResults = searchCacheService.getCachedSearch(query.trim());
         if (cachedResults) {
           searchResults = cachedResults;
           cacheHit = true;
@@ -573,13 +539,13 @@ class GameSearchService {
 
           // Cache successful results
           if (searchResults && searchResults.length > 0) {
-            searchService.setCachedSearch(query.trim(), searchResults);
+            searchCacheService.setCachedSearch(query.trim(), searchResults);
           }
         }
 
         // Track analytics (async, don't wait)
         const executionTime = Date.now() - startTime;
-        searchObservabilityService.trackSearch(
+        searchAnalyticsService.trackSearch(
           query.trim(),
           searchResults,
           executionTime,
@@ -595,7 +561,7 @@ class GameSearchService {
           console.log(`❌ NO SEARCH RESULTS: No games found for query "${query.trim()}"`);
 
           // Track zero-result search
-          searchObservabilityService.trackSearch(query.trim(), [], executionTime, cacheHit);
+          searchAnalyticsService.trackSearch(query.trim(), [], executionTime, cacheHit);
 
           return { games: [], totalCount: 0, hasMore: false };
         }
@@ -928,57 +894,45 @@ class GameSearchService {
    * Warm cache with popular searches
    */
   async warmCache(): Promise<void> {
-    // Popular search terms to warm the cache
-    const popularSearches = ['mario', 'zelda', 'pokemon', 'call of duty', 'minecraft'];
-
-    try {
-      for (const query of popularSearches) {
-        try {
-          await executeIntelligentSearch(query);
-          // Small delay between searches to avoid rate limits
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (error) {
-          console.warn(`Failed to warm cache for "${query}":`, error);
-        }
-      }
-    } catch (error) {
-      console.error('Cache warming failed:', error);
-    }
+    await searchCacheService.warmCache(async (query) => {
+      const results = await executeIntelligentSearch(query);
+      return results || [];
+    });
   }
 
   /**
    * Get cache statistics
    */
   getCacheStats() {
-    return searchService.getCacheStats();
+    return searchCacheService.getCacheStats();
   }
 
   /**
    * Get popular searches from local cache
    */
   getPopularSearches(limit: number = 10) {
-    return searchService.getPopularSearches(limit);
+    return searchCacheService.getPopularSearches(limit);
   }
 
   /**
    * Clear search cache
    */
   clearCache() {
-    searchService.clearAllCache();
+    searchCacheService.clearAllCache();
   }
 
   /**
    * Get analytics performance metrics
    */
   async getPerformanceMetrics(timeRange: 'hour' | 'day' | 'week' = 'day') {
-    return await searchObservabilityService.getSearchPerformanceMetrics(timeRange);
+    return await searchAnalyticsService.getSearchPerformanceMetrics(timeRange);
   }
 
   /**
    * Get trending searches from analytics
    */
   async getTrendingSearches(limit: number = 10) {
-    return await searchObservabilityService.getTrendingSearches(limit);
+    return await searchAnalyticsService.getTrendingSearches(limit);
   }
 }
 
@@ -986,8 +940,8 @@ export const gameSearchService = new GameSearchService()
 
 // Warm cache on initialization (delayed to avoid blocking)
 if (typeof window !== 'undefined') {
-  // Clean cache on page load
-  searchService.clearCache();
+  // Clean expired cache on page load
+  searchCacheService.clearExpiredCache();
 
   // Warm cache after delay
   setTimeout(() => {
