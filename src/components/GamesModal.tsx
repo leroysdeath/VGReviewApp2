@@ -279,12 +279,32 @@ export const GamesModal: React.FC<GamesModalProps> = ({
 
   // Calculate positioning style
   const modalStyle: React.CSSProperties = topPosition
-    ? {
-        position: 'absolute',
-        top: `${topPosition}px`,
-        left: '50%',
-        transform: 'translateX(-50%)',
-      }
+    ? isMobile
+      ? {
+          // Mobile: Position below navbar, taking up most of screen
+          position: 'fixed',
+          top: '64px', // Below navbar on mobile
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: 'calc(100vh - 64px)', // Full height minus navbar
+          maxWidth: '100%',
+          borderRadius: '16px 16px 0 0', // Rounded top corners
+          zIndex: 50
+        }
+      : {
+          // Desktop: Position below navbar (approximately 100px from top)
+          position: 'fixed',
+          top: '100px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          maxWidth: 'min(896px, calc(100vw - 2rem))',
+          width: '100%',
+          minHeight: '300px',
+          maxHeight: 'calc(100vh - 120px)',
+          zIndex: 50
+        }
     : {};
 
   return (
@@ -294,14 +314,14 @@ export const GamesModal: React.FC<GamesModalProps> = ({
     >
       <div
         ref={modalRef}
-        className={`bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto ${
+        className={`${isMobile && topPosition ? 'bg-gray-800 rounded-t-2xl' : 'bg-gray-800 rounded-lg'} w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto ${
           topPosition ? '' : 'relative top-1/2 -translate-y-1/2'
         }`}
         style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 md:px-6 md:py-4 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}'s Games</h2>
           <button
             onClick={onClose}

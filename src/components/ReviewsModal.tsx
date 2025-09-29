@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, TrendingUp, TrendingDown, Clock, History } from 'lucide-react';
+import { X, TrendingUp, TrendingDown, Clock, History, Grid, List } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useResponsive } from '../hooks/useResponsive';
@@ -31,14 +31,33 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
   userName,
   topPosition
 }) => {
-  const [activeTab, setActiveTab] = useState<'recent' | 'oldest' | 'highest' | 'lowest'>('recent');
+  const [activeTab, setActiveTab] = useState<'recent' | 'oldest' | 'highest' | 'lowest'>('highest');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'list' | 'tile'>('tile');
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // Get color based on rating value - matching distribution from RatingBars
+  const getRatingColor = (rating: number): string => {
+    if (rating <= 3) return 'text-red-500';
+    else if (rating <= 5) return 'text-orange-500';
+    else if (rating <= 7) return 'text-yellow-500';
+    else if (rating <= 9.5) return 'text-green-500';
+    else return 'text-blue-500';
+  };
+
+  // Get background color for rating badges - matching ReviewCard
+  const getRatingBgColor = (rating: number): string => {
+    if (rating <= 3) return 'bg-red-500 text-white';
+    else if (rating <= 5) return 'bg-orange-500 text-white';
+    else if (rating <= 7) return 'bg-yellow-400 text-gray-700';
+    else if (rating <= 9.5) return 'bg-green-500 text-white';
+    else return 'bg-blue-500 text-white';
+  };
 
   // Load reviews based on active tab - optimized with foreign key syntax
   const loadReviews = useCallback(async () => {
@@ -145,16 +164,32 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
 
   // Determine modal positioning style
   const modalStyle: React.CSSProperties = topPosition
-    ? {
-        position: 'absolute',
-        top: `${topPosition}px`,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        maxWidth: 'min(896px, calc(100vw - 2rem))',
-        width: '100%',
-        maxHeight: `calc(100vh - ${topPosition}px - 2rem)`,
-        zIndex: 50
-      }
+    ? isMobile
+      ? {
+          // Mobile: Position below navbar, taking up most of screen
+          position: 'fixed',
+          top: '64px', // Below navbar on mobile
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: 'calc(100vh - 64px)', // Full height minus navbar
+          maxWidth: '100%',
+          borderRadius: '16px 16px 0 0', // Rounded top corners
+          zIndex: 50
+        }
+      : {
+          // Desktop: Position below navbar (approximately 100px from top)
+          position: 'fixed',
+          top: '100px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          maxWidth: 'min(896px, calc(100vw - 2rem))',
+          width: '100%',
+          minHeight: '300px',
+          maxHeight: 'calc(100vh - 120px)',
+          zIndex: 50
+        }
     : {};
 
   const containerStyle: React.CSSProperties = topPosition
@@ -175,49 +210,45 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
     >
       <div
         ref={modalRef}
-        className={topPosition ? 'bg-gray-800 rounded-lg flex flex-col' : 'bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl'}
+        className={topPosition ? (isMobile ? 'bg-gray-800 flex flex-col rounded-t-2xl' : 'bg-gray-800 rounded-lg flex flex-col') : 'bg-gray-800 rounded-lg w-full max-h-[90vh] flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-2xl lg:max-w-4xl'}
         style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 md:px-6 md:py-4 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}'s Reviews</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <button
+              onClick={() => setViewMode('tile')}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
+                viewMode === 'tile' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
+              }`}
+              title="Tile View"
+            >
+              <Grid className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
+                viewMode === 'list' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
+              }`}
+              title="List View"
+            >
+              <List className="h-5 w-5" />
+            </button>
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="ml-2 text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b border-gray-700">
-          <button
-            onClick={() => setActiveTab('recent')}
-            className={`flex-1 py-3 px-2 text-center transition-colors ${
-              activeTab === 'recent'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-1">
-              <Clock className="h-4 w-4" />
-              <span className={isMobile ? 'text-xs' : 'text-sm'}>Recent</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('oldest')}
-            className={`flex-1 py-3 px-2 text-center transition-colors ${
-              activeTab === 'oldest'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-1">
-              <History className="h-4 w-4" />
-              <span className={isMobile ? 'text-xs' : 'text-sm'}>Oldest</span>
-            </div>
-          </button>
           <button
             onClick={() => setActiveTab('highest')}
             className={`flex-1 py-3 px-2 text-center transition-colors ${
@@ -242,6 +273,32 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
             <div className="flex items-center justify-center gap-1">
               <TrendingDown className="h-4 w-4" />
               <span className={isMobile ? 'text-xs' : 'text-sm'}>Lowest</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('recent')}
+            className={`flex-1 py-3 px-2 text-center transition-colors ${
+              activeTab === 'recent'
+                ? 'border-b-2 border-purple-500 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-1">
+              <Clock className="h-4 w-4" />
+              <span className={isMobile ? 'text-xs' : 'text-sm'}>Recent</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('oldest')}
+            className={`flex-1 py-3 px-2 text-center transition-colors ${
+              activeTab === 'oldest'
+                ? 'border-b-2 border-purple-500 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-1">
+              <History className="h-4 w-4" />
+              <span className={isMobile ? 'text-xs' : 'text-sm'}>Oldest</span>
             </div>
           </button>
         </div>
@@ -277,13 +334,13 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
               </div>
               <p className="text-gray-400">No reviews found</p>
             </div>
-          ) : (
-            /* Reviews List */
+          ) : viewMode === 'list' ? (
+            /* List View */
             <div className="space-y-4">
               {reviews.map((review) => {
                 // Generate review URL (same logic as ReviewCard: /review/{userId}/{gameId})
                 const reviewUrl = `/review/${userId}/${review.gameId}`;
-                
+
                 return (
                   <Link
                     key={review.id}
@@ -302,16 +359,16 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                           }}
                         />
                       </div>
-                      
+
                       <div className="flex-1 min-w-0 mt-4">
                         <h3 className="text-white font-medium mb-2">
                           {review.gameTitle}
                         </h3>
-                        
+
                         <div className="text-gray-400 text-sm mb-2">
-                          {new Date(review.postDate).toLocaleDateString()} <span className="text-yellow-400">{review.rating % 1 === 0 ? `${review.rating}/10` : `${review.rating.toFixed(1)}/10`}</span>
+                          {new Date(review.postDate).toLocaleDateString()} <span className={getRatingColor(review.rating)}>{review.rating % 1 === 0 ? `${review.rating}/10` : `${review.rating.toFixed(1)}/10`}</span>
                         </div>
-                        
+
                         <div className="text-gray-300 text-sm">
                           {expandedReviews.has(review.id) || review.reviewText.length <= 150 ? (
                             <p className="whitespace-pre-line">{review.reviewText}</p>
@@ -320,7 +377,7 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                               {review.reviewText.slice(0, 150)}...
                             </p>
                           )}
-                          
+
                           {review.reviewText.length > 150 && (
                             <button
                               onClick={(e) => {
@@ -335,6 +392,44 @@ export const ReviewsModal: React.FC<ReviewsModalProps> = ({
                           )}
                         </div>
                       </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            /* Tile View */
+            <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
+              {reviews.map((review) => {
+                const reviewUrl = `/review/${userId}/${review.gameId}`;
+
+                return (
+                  <Link
+                    key={review.id}
+                    to={reviewUrl}
+                    onClick={onClose}
+                    className="group relative hover:scale-105 transition-transform"
+                  >
+                    <div className="relative">
+                      <img
+                        src={review.gameCover}
+                        alt={review.gameTitle}
+                        className="w-full aspect-[3/4] object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.src = '/default-cover.png';
+                        }}
+                      />
+                      {/* Rating Badge - Using same color distribution as ReviewCard */}
+                      <div className={`absolute top-1 right-1 rounded-lg px-1.5 py-0.5 ${getRatingBgColor(review.rating)}`}>
+                        <span className="text-sm font-bold">
+                          {review.rating === 10 ? '10' : review.rating.toFixed(1)}/10
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-1">
+                      <h3 className="text-white text-xs font-medium group-hover:text-purple-400 transition-colors line-clamp-2">
+                        {review.gameTitle}
+                      </h3>
                     </div>
                   </Link>
                 );

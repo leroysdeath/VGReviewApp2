@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useFollow } from '../hooks/useFollow';
 import { useAuth } from '../hooks/useAuth';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface User {
   id: string;
@@ -38,6 +39,7 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
   
   const { toggleFollow, loading: followLoading } = useFollow();
   const { isAuthenticated, dbUserId: currentDbUserId } = useAuth();
+  const { isMobile } = useResponsive();
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Update active tab when initialTab changes
@@ -200,16 +202,32 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
 
   // Determine modal positioning style
   const modalStyle: React.CSSProperties = topPosition
-    ? {
-        position: 'absolute',
-        top: `${topPosition}px`,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        maxWidth: 'min(448px, calc(100vw - 2rem))',
-        width: '100%',
-        maxHeight: `calc(100vh - ${topPosition}px - 2rem)`,
-        zIndex: 50
-      }
+    ? isMobile
+      ? {
+          // Mobile: Position below navbar, taking up most of screen
+          position: 'fixed',
+          top: '64px', // Below navbar on mobile
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: 'calc(100vh - 64px)', // Full height minus navbar
+          maxWidth: '100%',
+          borderRadius: '16px 16px 0 0', // Rounded top corners
+          zIndex: 50
+        }
+      : {
+          // Desktop: Position below navbar (approximately 100px from top)
+          position: 'fixed',
+          top: '100px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          maxWidth: 'min(448px, calc(100vw - 2rem))',
+          width: '100%',
+          minHeight: '300px',
+          maxHeight: 'calc(100vh - 120px)',
+          zIndex: 50
+        }
     : {};
 
   const containerStyle: React.CSSProperties = topPosition
@@ -230,12 +248,12 @@ export const FollowersFollowingModal: React.FC<FollowersFollowingModalProps> = (
     >
       <div
         ref={modalRef}
-        className={topPosition ? 'bg-gray-800 rounded-lg flex flex-col' : 'bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] flex flex-col'}
+        className={topPosition ? (isMobile ? 'bg-gray-800 flex flex-col rounded-t-2xl' : 'bg-gray-800 rounded-lg flex flex-col') : 'bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] flex flex-col'}
         style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 md:px-6 md:py-4 border-b border-gray-700">
           <h2 className="text-xl font-bold text-white">{userName}</h2>
           <button
             onClick={onClose}

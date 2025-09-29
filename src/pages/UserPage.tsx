@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { ProfileInfo } from '../components/ProfileInfo';
 import { ProfileDetails } from '../components/ProfileDetails';
 import { TopGames } from '../components/profile/TopGames';
+import { Last5Games } from '../components/profile/Last5Games';
 import { PlaylistTabs } from '../components/profile/PlaylistTabs';
 import { ActivityFeed } from '../components/profile/ActivityFeed';
 import { FollowersFollowingModal } from '../components/FollowersFollowingModal';
@@ -13,6 +14,7 @@ import { GamesModal } from '../components/GamesModal';
 import { ReviewsModal } from '../components/ReviewsModal';
 import { userServiceSimple, UserUpdate } from '../services/userServiceSimple';
 import { useFollow } from '../hooks/useFollow';
+import { UserRatingDistribution } from '../components/profile/UserRatingDistribution';
 
 // Import UserSettingsModal directly to avoid dynamic import issues
 import UserSettingsModal from '../components/profile/UserSettingsModal';
@@ -30,7 +32,7 @@ export const UserPage: React.FC = () => {
       return <Navigate to="/users" replace />;
     }
   }
-  const [activeTab, setActiveTab] = useState<'top5' | 'top10' | 'playlist' | 'activity'>('top5');
+  const [activeTab, setActiveTab] = useState<'top5' | 'last5' | 'playlist' | 'activity'>('top5');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -332,8 +334,64 @@ export const UserPage: React.FC = () => {
   return (
     <div className="bg-gray-900 text-white p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Profile Header */}
-        <div className="flex flex-col md:flex-row justify-between gap-6 mb-8">
+        {/* Profile Header - Desktop Layout (lg+) */}
+        <div className="hidden lg:flex gap-6 mb-8">
+          <div className="flex-1 space-y-6">
+            <ProfileInfo
+              user={transformedUser}
+              isDummy={false}
+              onEditClick={handleEditClick}
+              isCurrentUser={isOwnProfile}
+              onFollowClick={handleFollowClick}
+              isFollowing={isFollowingUser}
+              followLoading={followLoading}
+              isAuthenticated={isAuthenticated}
+            />
+            <div ref={profileDetailsRef} className="w-full max-w-xl">
+              <ProfileDetails
+                stats={stats}
+                onFollowersClick={handleFollowersClick}
+                onFollowingClick={handleFollowingClick}
+                onGamesClick={handleGamesClick}
+                onReviewsClick={handleReviewsClick}
+              />
+            </div>
+          </div>
+          <div className="w-full max-w-sm">
+            <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} isOwnProfile={isOwnProfile} />
+          </div>
+        </div>
+
+        {/* Profile Header - Tablet Layout (md) */}
+        <div className="hidden md:flex lg:hidden gap-6 mb-8">
+          <div className="flex-1 space-y-6">
+            <ProfileInfo
+              user={transformedUser}
+              isDummy={false}
+              onEditClick={handleEditClick}
+              isCurrentUser={isOwnProfile}
+              onFollowClick={handleFollowClick}
+              isFollowing={isFollowingUser}
+              followLoading={followLoading}
+              isAuthenticated={isAuthenticated}
+            />
+            <div ref={profileDetailsRef} className="w-full max-w-xl">
+              <ProfileDetails
+                stats={stats}
+                onFollowersClick={handleFollowersClick}
+                onFollowingClick={handleFollowingClick}
+                onGamesClick={handleGamesClick}
+                onReviewsClick={handleReviewsClick}
+              />
+            </div>
+          </div>
+          <div className="w-full max-w-sm">
+            <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} isOwnProfile={isOwnProfile} />
+          </div>
+        </div>
+
+        {/* Profile Header - Mobile Layout */}
+        <div className="md:hidden mb-8 space-y-6">
           <ProfileInfo
             user={transformedUser}
             isDummy={false}
@@ -344,7 +402,8 @@ export const UserPage: React.FC = () => {
             followLoading={followLoading}
             isAuthenticated={isAuthenticated}
           />
-          <div ref={profileDetailsRef}>
+          <UserRatingDistribution userId={parseInt(id)} username={transformedUser.username} isOwnProfile={isOwnProfile} />
+          <div ref={profileDetailsRef} className="w-full">
             <ProfileDetails
               stats={stats}
               onFollowersClick={handleFollowersClick}
@@ -364,10 +423,10 @@ export const UserPage: React.FC = () => {
             Top 5
           </button>
           <button
-            onClick={() => setActiveTab('top10')}
-            className={`pb-2 ${activeTab === 'top10' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
+            onClick={() => setActiveTab('last5')}
+            className={`pb-2 ${activeTab === 'last5' ? 'border-b-2 border-purple-600 text-white' : 'text-gray-400'}`}
           >
-            Top 10
+            Last 5
           </button>
           <button
             onClick={() => setActiveTab('playlist')}
@@ -376,8 +435,8 @@ export const UserPage: React.FC = () => {
             Want to Play
             {activeTab === 'playlist' && (
               <div className="absolute bottom-0 left-0 right-0 h-[2px] flex">
-                <div className="w-1/2 bg-orange-600"></div>
                 <div className="w-1/2 bg-red-600"></div>
+                <div className="w-1/2 bg-orange-600"></div>
               </div>
             )}
           </button>
@@ -393,8 +452,8 @@ export const UserPage: React.FC = () => {
         {activeTab === 'top5' && (
           <TopGames userId={id} limit={5} editable={isOwnProfile} isOwnProfile={isOwnProfile} />
         )}
-        {activeTab === 'top10' && (
-          <TopGames userId={id} limit={10} isOwnProfile={isOwnProfile} />
+        {activeTab === 'last5' && (
+          <Last5Games userId={id} isOwnProfile={isOwnProfile} />
         )}
         {activeTab === 'playlist' && (
           <PlaylistTabs userId={id!} isOwnProfile={isOwnProfile} />

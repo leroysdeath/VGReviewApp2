@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Search, Star, Gamepad2, LibraryBig, Gift, AlertCircle } from 'lucide-react';
+import { X, Search, Star, Gamepad2, LibraryBig, Gift, AlertCircle, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { igdbService } from '../services/igdbService';
@@ -61,111 +61,56 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
-  // Force IGDB search mode for collection/wishlist/review
-  const searchMode = mode === 'top-games' ? 'user-games' : 'igdb';
+  // Always use IGDB search mode for all modes (including top-games)
+  const searchMode = 'igdb';
   const [addingGameId, setAddingGameId] = useState<number | null>(null);
   const [startedFinishedGames, setStartedFinishedGames] = useState<Set<number>>(new Set());
 
 
-  // Fetch user's reviewed games (for top-games mode or when in user-games search mode)
+  // Fetch started/finished games to exclude for collection/wishlist modes
   useEffect(() => {
     console.log('[GamePickerModal] useEffect triggered - isOpen:', isOpen, 'userId:', userId, 'mode:', mode);
     if (!isOpen || !userId) return;
-    // Only fetch if in top-games mode or if in user-games search mode for collection/wishlist
-    if (mode !== 'top-games' && searchMode !== 'user-games') return;
+    // Only fetch started/finished games for collection/wishlist modes
+    if (mode !== 'collection' && mode !== 'wishlist') return;
 
-    const fetchGames = async () => {
-      console.log('[GamePickerModal] fetchGames called - setting loading to true');
+    const fetchExcludedGames = async () => {
+      console.log('[GamePickerModal] fetchExcludedGames called - setting loading to true');
       setLoading(true);
       setError(null);
-      
+
       try {
-        // If in collection/wishlist mode, fetch started/finished games to exclude them
+        // Fetch started/finished games to exclude them
         const excludedIgdbIds = new Set<number>();
-        if (mode === 'collection' || mode === 'wishlist') {
-          const { data: progressData } = await supabase
-            .from('game_progress')
-            .select('game:game_id(igdb_id)')
-            .eq('user_id', parseInt(userId))
-            .or('started.eq.true,completed.eq.true');
-          
-          if (progressData) {
-            progressData.forEach(item => {
-              if (item.game?.igdb_id) {
-                excludedIgdbIds.add(item.game.igdb_id);
-              }
-            });
-            setStartedFinishedGames(excludedIgdbIds);
-          }
-        }
-        
-        // Build the query
-        let query = supabase
-          .from('rating')
-          .select(`
-            game:game_id (
-              id,
-              igdb_id,
-              name,
-              cover_url,
-              genre
-            ),
-            rating
-          `)
+        const { data: progressData } = await supabase
+          .from('game_progress')
+          .select('game:game_id(igdb_id)')
           .eq('user_id', parseInt(userId))
-          .not('rating', 'is', null)
-          .order('rating', { ascending: false });
+          .or('started.eq.true,completed.eq.true');
 
-        // Exclude already selected games if any
-        if (memoizedExcludeIds.length > 0) {
-          query = query.not('game_id', 'in', `(${memoizedExcludeIds.join(',')})`);
+        if (progressData) {
+          progressData.forEach(item => {
+            if (item.game?.igdb_id) {
+              excludedIgdbIds.add(item.game.igdb_id);
+            }
+          });
+          setStartedFinishedGames(excludedIgdbIds);
         }
 
-        const { data, error } = await query;
-        
-        console.log('[GamePickerModal] Raw API response:', data);
-        console.log('[GamePickerModal] ExcludeGameIds:', memoizedExcludeIds);
-        console.log('[GamePickerModal] Mode:', mode);
-
-        if (error) throw error;
-
-        // Filter out any entries without game data and started/finished games
-        const validGames = (data || [])
-          .filter(item => {
-            if (!item.game) return false;
-            // For collection/wishlist mode, exclude started/finished games
-            if ((mode === 'collection' || mode === 'wishlist') && item.game.igdb_id) {
-              return !excludedIgdbIds.has(item.game.igdb_id);
-            }
-            return true;
-          })
-          .map(item => ({
-            game: {
-              id: item.game.id.toString(),
-              igdb_id: item.game.igdb_id,
-              name: item.game.name || 'Unknown Game',
-              cover_url: item.game.cover_url || '/default-cover.png',
-              genre: item.game.genre || ''
-            },
-            rating: item.rating
-          }));
-
-        console.log('[GamePickerModal] Valid games after filtering:', validGames);
-        console.log('[GamePickerModal] Valid games count:', validGames.length);
-        setGames(validGames);
+        console.log('[GamePickerModal] Excluded IGDB IDs:', excludedIgdbIds);
       } catch (err) {
-        console.error('Error fetching games:', err);
-        setError('Failed to load games');
+        console.error('Error fetching excluded games:', err);
+        setError('Failed to load excluded games');
       } finally {
         console.log('[GamePickerModal] Setting loading to false');
         setLoading(false);
       }
     };
 
-    fetchGames();
-  }, [isOpen, userId, memoizedExcludeIds, mode, searchMode]);
+    fetchExcludedGames();
+  }, [isOpen, userId, mode]);
 
-  // Search IGDB when in collection/wishlist mode
+  // Search IGDB for all modes (including top-games)
   useEffect(() => {
     if (!isOpen || searchMode !== 'igdb' || !searchQuery.trim()) {
       setIgdbGames([]);
@@ -269,13 +214,25 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
         }
         
         console.log('✅ Game ensured in database with ID:', ensureResult.data?.gameId);
+
+        // For top-games mode, pass the database game ID to onSelect
+        if (mode === 'top-games') {
+          const dbGameId = ensureResult.data?.gameId;
+          if (dbGameId) {
+            onSelect(dbGameId.toString());
+            onClose();
+          } else {
+            setError('Failed to get game ID from database');
+          }
+          return;
+        }
       } catch (error) {
         console.error('❌ Error ensuring game exists:', error);
         setError('Failed to process game selection');
         return;
       }
     }
-    
+
     // For review mode, just call onSelect with the game data
     if (mode === 'review') {
       const gameInfo = {
@@ -292,9 +249,9 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
       onClose();
       return;
     }
-    
-    // Check if game is started/finished
-    if (startedFinishedGames.has(igdbId)) {
+
+    // Check if game is started/finished for collection/wishlist modes
+    if ((mode === 'collection' || mode === 'wishlist') && startedFinishedGames.has(igdbId)) {
       alert('This game has already been started or finished and cannot be added to collection or wishlist.');
       return;
     }
@@ -336,7 +293,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
     if (mode === 'top-games') {
       return (
         <p className="text-yellow-500 text-sm font-medium">
-          {rating.toFixed(1)}/10
+          {rating === 10 ? '10' : rating.toFixed(1)}/10
         </p>
       );
     }
@@ -396,11 +353,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={
-                mode === 'top-games'
-                  ? 'Search by game title or genre...'
-                  : 'Search for any game...'
-              }
+              placeholder="Search for any game..."
               className="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
@@ -488,9 +441,12 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                         ) : (
                           <>
                             {mode === 'collection' ? <LibraryBig className="h-4 w-4" /> :
-                             mode === 'wishlist' ? <Gift className="h-4 w-4" /> : 
-                             mode === 'review' ? <Gamepad2 className="h-4 w-4" /> : null}
-                            {mode === 'review' ? 'Select Game' : `Add to ${mode === 'collection' ? 'Backlog' : 'Wishlist'}`}
+                             mode === 'wishlist' ? <Gift className="h-4 w-4" /> :
+                             mode === 'review' ? <Gamepad2 className="h-4 w-4" /> :
+                             mode === 'top-games' ? <Trophy className="h-4 w-4" /> : null}
+                            {mode === 'review' ? 'Select Game' :
+                             mode === 'top-games' ? 'Add to Top 5' :
+                             `Add to ${mode === 'collection' ? 'Backlog' : 'Wishlist'}`}
                           </>
                         )}
                         </button>
@@ -560,9 +516,12 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
                         ) : (
                           <>
                             {mode === 'collection' ? <LibraryBig className="h-4 w-4" /> :
-                             mode === 'wishlist' ? <Gift className="h-4 w-4" /> : 
-                             mode === 'review' ? <Gamepad2 className="h-4 w-4" /> : null}
-                            {mode === 'review' ? 'Select Game' : `Add to ${mode === 'collection' ? 'Backlog' : 'Wishlist'}`}
+                             mode === 'wishlist' ? <Gift className="h-4 w-4" /> :
+                             mode === 'review' ? <Gamepad2 className="h-4 w-4" /> :
+                             mode === 'top-games' ? <Trophy className="h-4 w-4" /> : null}
+                            {mode === 'review' ? 'Select Game' :
+                             mode === 'top-games' ? 'Add to Top 5' :
+                             `Add to ${mode === 'collection' ? 'Backlog' : 'Wishlist'}`}
                           </>
                         )}
                       </button>
@@ -576,36 +535,17 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
             <div className="text-center py-12">
               <Gamepad2 className="h-12 w-12 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-400 mb-6">
-                {mode === 'top-games' ? (
-                  searchQuery 
-                    ? 'No games found matching your search'
-                    : games.length === 0 
-                      ? 'No reviewed games available to select'
-                      : 'All your reviewed games are already in your Top 5'
-                ) : (
-                  searchQuery
-                    ? 'No eligible games found. Try a different search.'
+                {searchQuery
+                  ? 'No games found matching your search. Try a different search term.'
+                  : mode === 'top-games'
+                    ? 'Search for any game to add to your Top 5'
                     : 'Search for games to add (already started/finished games are excluded)'
-                )}
+                }
               </p>
               {(mode === 'collection' || mode === 'wishlist') && startedFinishedGames.size > 0 && (
                 <p className="text-xs text-gray-500 mb-4">
                   {startedFinishedGames.size} game{startedFinishedGames.size !== 1 ? 's' : ''} hidden (already started/finished)
                 </p>
-              )}
-              {/* Rate More Games button for Top 5 mode */}
-              {mode === 'top-games' && (
-                (searchQuery ? true : games.length === 0) && (
-                  <button
-                    onClick={() => {
-                      onClose();
-                      navigate('/search');
-                    }}
-                    className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
-                  >
-                    Rate More Games
-                  </button>
-                )
               )}
             </div>
           )}

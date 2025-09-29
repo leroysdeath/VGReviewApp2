@@ -16,6 +16,7 @@ interface SortableGameCardProps {
   isDragging?: boolean;
   isMobile?: boolean;
   isSaving?: boolean;
+  isPhonePortrait?: boolean;
 }
 
 export const SortableGameCard: React.FC<SortableGameCardProps> = ({
@@ -27,6 +28,7 @@ export const SortableGameCard: React.FC<SortableGameCardProps> = ({
   isDragging = false,
   isMobile = false,
   isSaving = false,
+  isPhonePortrait = false,
 }) => {
   const {
     attributes,
@@ -84,8 +86,12 @@ export const SortableGameCard: React.FC<SortableGameCardProps> = ({
           draggable={false}
         />
         
-        {/* Position badge */}
-        <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm pointer-events-none">
+        {/* Position badge - adjust size for positions 2-5 on phone portrait */}
+        <div className={`absolute bg-gray-900 bg-opacity-75 text-white rounded-full flex items-center justify-center font-bold pointer-events-none
+          ${isPhonePortrait && position > 1
+            ? 'top-1 left-1 w-6 h-6 text-xs'  // Smaller for positions 2-5 on phone portrait
+            : 'top-2 left-2 w-8 h-8 text-sm'   // Normal size for position 1 or other layouts
+          }`}>
           {position}
         </div>
 
@@ -93,7 +99,7 @@ export const SortableGameCard: React.FC<SortableGameCardProps> = ({
           <>
             {/* Semi-transparent overlay on hover */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg pointer-events-none" />
-            
+
             {/* Drag handle visual indicator */}
             <div
               className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-900/95 backdrop-blur-sm text-white p-2 sm:p-3 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none"
@@ -102,16 +108,22 @@ export const SortableGameCard: React.FC<SortableGameCardProps> = ({
               <GripVertical className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
 
-            {/* Remove button */}
+            {/* Remove button - position and size based on layout and position */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onRemove(position);
               }}
-              className="absolute top-2 right-2 bg-red-600 text-white w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 hover:bg-red-700 hover:scale-110 z-10"
+              className={`absolute bg-red-600 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:bg-red-700 hover:scale-110 z-10
+                ${isPhonePortrait
+                  ? position === 1
+                    ? 'top-2 right-2 w-7 h-7 opacity-100'  // Position 1 on phone - keep current size
+                    : 'top-1 right-1 w-6 h-6 opacity-100'  // Positions 2-5 on phone - smaller
+                  : 'top-2 right-2 w-7 h-7 sm:w-8 sm:h-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100'  // Other layouts
+                }`}
               title="Remove game"
             >
-              <X className="h-4 w-4" />
+              <X className={isPhonePortrait && position > 1 ? 'h-3 w-3' : 'h-4 w-4'} />
             </button>
           </>
         )}
