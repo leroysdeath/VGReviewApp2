@@ -255,7 +255,8 @@ const ReviewCardComponent: React.FC<ReviewCardProps> = ({
 
             {/* Right: Game Cover + Rating */}
             {showGameTitle && (review.gameCoverUrl || review.rating) && (
-              <div className="flex-shrink-0 relative" style={{ alignSelf: 'center', marginTop: '-1.5rem' }}>
+              <div className="flex-shrink-0 relative mt-8 md:mt-10">
+                {/* Position cover to straddle separator line */}
                 <div className="flex flex-col items-center">
                   {/* Game cover */}
                   {review.gameCoverUrl && (
