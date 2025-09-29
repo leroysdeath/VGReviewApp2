@@ -1,4 +1,12 @@
-import DOMPurify from 'isomorphic-dompurify';
+// Use dynamic import to avoid initialization issues
+let DOMPurify: any = null;
+
+// Only import DOMPurify in browser environment
+if (typeof window !== 'undefined') {
+  import('dompurify').then(module => {
+    DOMPurify = module.default;
+  });
+}
 
 /**
  * Sanitization utility for preventing XSS attacks in user-generated content
@@ -7,7 +15,20 @@ import DOMPurify from 'isomorphic-dompurify';
 // Configure DOMPurify to be more restrictive for user content
 const createSanitizer = () => {
   // Create a DOMPurify instance with custom config
-  const purify = DOMPurify;
+  // Use DOMPurify if available, otherwise use a safe fallback
+  const purify = DOMPurify || {
+    sanitize: (str: string, config?: any) => {
+      // Basic HTML escaping as fallback
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
+        .replace(/\//g, '&#x2F;');
+    }
+  };
   
   // Configure allowed tags and attributes for different content types
   const configs = {
@@ -159,10 +180,22 @@ export const sanitizeObject = <T extends Record<string, any>>(
  */
 export const escapeHtml = (input: string | null | undefined): string => {
   if (!input) return '';
-  
-  const div = document.createElement('div');
-  div.textContent = input;
-  return div.innerHTML;
+
+  // Check if document is available
+  if (typeof document !== 'undefined') {
+    const div = document.createElement('div');
+    div.textContent = input;
+    return div.innerHTML;
+  }
+
+  // Fallback for non-browser environments
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
 };
 
 /**
