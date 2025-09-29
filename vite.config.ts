@@ -73,48 +73,7 @@ export default defineConfig({
     assetsDir: 'assets',
     // Dynamic sourcemap and minify based on environment
     sourcemap: false, // Disabled for production
-    minify: 'terser', // Always use terser for better compression
-    // Enhanced Terser options for maximum compression
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn'],
-        passes: 2, // Reduced from 3 to avoid over-optimization
-        ecma: 2015,
-        module: true,
-        // Disabled aggressive optimizations that can cause initialization issues
-        toplevel: false, // Don't mangle top-level names (was true)
-        unsafe_arrows: false, // Don't convert functions (was true)
-        unsafe_comps: false, // Don't compress comparisons (was true)
-        unsafe_methods: false, // Don't convert methods (was true)
-        unsafe_proto: false, // Don't optimize prototype (was true)
-        unsafe_regexp: false, // Don't optimize regexp (was true)
-        unsafe_undefined: false, // Don't substitute undefined (was true)
-        conditionals: true,
-        dead_code: true,
-        evaluate: true,
-        inline: 2, // Limit inline level (was true/3)
-        loops: true,
-        unused: true,
-        hoist_funs: false, // Don't hoist functions (was true) - can cause init issues
-        if_return: true,
-        join_vars: false, // Don't join vars (was true) - can cause init issues
-        reduce_vars: false, // Don't reduce vars (was true) - can cause init issues
-        side_effects: false, // Don't remove side effects (was true)
-        switches: true,
-      },
-      mangle: {
-        safari10: true, // Work around Safari 10 bugs
-        toplevel: false, // Don't mangle top-level names to avoid init issues
-        // Removed property mangling as it can break runtime access
-      },
-      format: {
-        comments: false, // Remove all comments
-        ecma: 2015, // Use ES6 formatting
-        ascii_only: true // Escape non-ASCII characters
-      }
-    },
+    minify: 'esbuild', // Use esbuild for faster, safer minification
     // Optimize build size
     reportCompressedSize: true,
     chunkSizeWarningLimit: 1000,
