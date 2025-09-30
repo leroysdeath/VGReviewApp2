@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import { faker } from '@faker-js/faker';
@@ -27,9 +27,16 @@ jest.mock('../hooks/useGameSearch', () => ({
   useGameSearch: jest.fn(),
 }));
 
+jest.mock('../services/trackingService', () => ({
+  trackEvent: jest.fn(),
+  trackPageView: jest.fn(),
+  trackSearch: jest.fn(),
+}));
+
 import { fetchGamesWithReviewMetrics } from '../services/exploreService';
 import { useGameSearch } from '../hooks/useGameSearch';
 import { ExplorePage } from '../pages/ExplorePage';
+import { AuthModalProvider } from '../context/AuthModalContext';
 
 // ============================================
 // Test Data Factories
@@ -72,9 +79,11 @@ const createMockGamesList = (count: number = 10): ExploreGame[] => {
 
 const renderExplorePage = () => {
   return render(
-    <BrowserRouter>
-      <ExplorePage />
-    </BrowserRouter>
+    <AuthModalProvider>
+      <BrowserRouter>
+        <ExplorePage />
+      </BrowserRouter>
+    </AuthModalProvider>
   );
 };
 
@@ -112,33 +121,41 @@ describe('ExplorePage Simple Tests', () => {
   
   describe('Basic Rendering', () => {
     test('renders the main heading', async () => {
-      renderExplorePage();
-      
+      await act(async () => {
+        renderExplorePage();
+      });
+
       await waitFor(() => {
         expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-        expect(screen.getByText('Top Games by Rating, Reviews & Popularity')).toBeInTheDocument();
+        expect(screen.getByText('Top Games by Popularity')).toBeInTheDocument();
       });
     });
 
     test('renders search input', async () => {
-      renderExplorePage();
-      
+      await act(async () => {
+        renderExplorePage();
+      });
+
       expect(screen.getByPlaceholderText(/search games/i)).toBeInTheDocument();
     });
 
     test('calls fetchGamesWithReviewMetrics on mount', async () => {
-      renderExplorePage();
-      
+      await act(async () => {
+        renderExplorePage();
+      });
+
       await waitFor(() => {
         expect(fetchGamesWithReviewMetrics).toHaveBeenCalledWith('unified_score', 40);
       });
     });
 
     test('displays info banner in explore mode', async () => {
-      renderExplorePage();
-      
+      await act(async () => {
+        renderExplorePage();
+      });
+
       await waitFor(() => {
-        expect(screen.getByText(/games ranked by our unified algorithm/i)).toBeInTheDocument();
+        expect(screen.getByText(/showing top.*games by popularity/i)).toBeInTheDocument();
       });
     });
   });
@@ -147,9 +164,11 @@ describe('ExplorePage Simple Tests', () => {
     test('displays games when loaded', async () => {
       const mockGames = createMockGamesList(3);
       (fetchGamesWithReviewMetrics as jest.Mock).mockResolvedValue(mockGames);
-      
-      renderExplorePage();
-      
+
+      await act(async () => {
+        renderExplorePage();
+      });
+
       await waitFor(() => {
         mockGames.forEach(game => {
           expect(screen.getByText(game.name)).toBeInTheDocument();
@@ -193,11 +212,13 @@ describe('ExplorePage Simple Tests', () => {
     test('displays results count', async () => {
       const mockGames = createMockGamesList(7);
       (fetchGamesWithReviewMetrics as jest.Mock).mockResolvedValue(mockGames);
-      
-      renderExplorePage();
-      
+
+      await act(async () => {
+        renderExplorePage();
+      });
+
       await waitFor(() => {
-        expect(screen.getByText('Showing top 7 games ranked by unified score')).toBeInTheDocument();
+        expect(screen.getByText('Showing top 7 games by popularity')).toBeInTheDocument();
       });
     });
   });
@@ -453,7 +474,7 @@ describe('ExplorePage Simple Tests', () => {
       renderExplorePage();
       
       await waitFor(() => {
-        expect(screen.getByText('Top Games by Rating, Reviews & Popularity')).toBeInTheDocument();
+        expect(screen.getByText('Top Games by Popularity')).toBeInTheDocument();
         mockExploreGames.forEach(game => {
           expect(screen.getByText(game.name)).toBeInTheDocument();
         });

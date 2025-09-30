@@ -12,7 +12,7 @@ import { ActivityFeed } from '../components/profile/ActivityFeed';
 import { FollowersFollowingModal } from '../components/FollowersFollowingModal';
 import { GamesModal } from '../components/GamesModal';
 import { ReviewsModal } from '../components/ReviewsModal';
-import { userServiceSimple, UserUpdate } from '../services/userServiceSimple';
+import { userService as userServiceSimple, UserUpdate } from '../services/userService';
 import { useFollow } from '../hooks/useFollow';
 import { UserRatingDistribution } from '../components/profile/UserRatingDistribution';
 

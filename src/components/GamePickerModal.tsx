@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, Search, Star, Gamepad2, LibraryBig, Gift, AlertCircle, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
-import { igdbService } from '../services/igdbService';
+import { searchService } from '../services/searchService';
 import { collectionWishlistService } from '../services/collectionWishlistService';
 import { ensureGameExists } from '../services/reviewService';
 
@@ -119,9 +119,54 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
 
     const searchIGDB = async () => {
       setLoading(true);
+      setError(null);
       try {
-        let results = await igdbService.searchGames(searchQuery, 20);
-        
+        // Use searchService with same settings as ResponsiveNavbar for consistent results
+        console.log(`🔍 [GamePickerModal] Searching for "${searchQuery}" using searchService`);
+
+        const searchResponse = await searchService.coordinatedSearch(searchQuery.trim(), {
+          maxResults: 20,
+          includeMetrics: false,
+          fastMode: false, // Use full search with all filtering (same as navbar)
+          bypassCache: false,
+          useAggressive: false // Conservative to avoid unrelated results (same as navbar)
+        });
+
+        console.log(`✅ [GamePickerModal] Found ${searchResponse.total_count} results from searchService`);
+
+        // Apply same relevance filtering as ResponsiveNavbar for consistency
+        const relevantResults = searchResponse.results.filter(game => {
+          const queryLower = searchQuery.toLowerCase().trim();
+          const nameLower = game.name.toLowerCase();
+
+          // Prioritize games that start with or contain the exact query
+          if (nameLower.includes(queryLower)) {
+            return true;
+          }
+
+          // Check for word matches in title
+          const queryWords = queryLower.split(/\s+/);
+          const nameWords = nameLower.split(/\s+/);
+          const matchingWords = queryWords.filter(qWord =>
+            nameWords.some(nWord => nWord.includes(qWord))
+          );
+
+          // Require at least 60% word match (same as navbar)
+          return matchingWords.length / queryWords.length >= 0.6;
+        });
+
+        // Transform searchService results to match expected IGDB game format
+        let results = relevantResults.map(game => ({
+          id: game.igdb_id,
+          name: game.name,
+          cover: game.cover_url ? { url: game.cover_url } : undefined,
+          genres: game.genres ? game.genres.map(g => ({ name: g })) : undefined,
+          platforms: game.platforms ? game.platforms.map(p => ({ name: p })) : undefined,
+          first_release_date: game.release_date ? new Date(game.release_date).getTime() / 1000 : undefined,
+          summary: game.summary,
+          rating: undefined // Not available from database search
+        }));
+
         // Filter out started/finished games if in collection/wishlist mode
         if (mode === 'collection' || mode === 'wishlist') {
           // Fetch started/finished games if not already loaded
@@ -131,7 +176,7 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
               .select('game:game_id(igdb_id)')
               .eq('user_id', parseInt(userId))
               .or('started.eq.true,completed.eq.true');
-            
+
             if (progressData) {
               const excludedIds = new Set<number>();
               progressData.forEach(item => {
@@ -146,10 +191,10 @@ export const GamePickerModal: React.FC<GamePickerModalProps> = ({
             results = results.filter(game => !startedFinishedGames.has(game.id));
           }
         }
-        
+
         setIgdbGames(results);
       } catch (err) {
-        console.error('IGDB search error:', err);
+        console.error('❌ [GamePickerModal] Search error:', err);
         setError('Failed to search games');
       } finally {
         setLoading(false);

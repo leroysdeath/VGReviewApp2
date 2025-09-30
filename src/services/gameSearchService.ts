@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
-import { searchCacheService } from './searchCacheService'
-import { searchAnalyticsService } from './searchAnalyticsService'
+import { searchService } from './searchService'
+import { searchObservabilityService } from './searchObservabilityService'
 import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization'
 import { 
   sortGamesIntelligently, 
@@ -562,7 +562,7 @@ class GameSearchService {
         let cacheHit = false;
 
         // Try cache first
-        const cachedResults = searchCacheService.getCachedSearch(query.trim());
+        const cachedResults = searchService.getCachedSearch(query.trim());
         if (cachedResults) {
           searchResults = cachedResults;
           cacheHit = true;
@@ -573,13 +573,13 @@ class GameSearchService {
 
           // Cache successful results
           if (searchResults && searchResults.length > 0) {
-            searchCacheService.setCachedSearch(query.trim(), searchResults);
+            searchService.setCachedSearch(query.trim(), searchResults);
           }
         }
 
         // Track analytics (async, don't wait)
         const executionTime = Date.now() - startTime;
-        searchAnalyticsService.trackSearch(
+        searchObservabilityService.trackSearch(
           query.trim(),
           searchResults,
           executionTime,
@@ -595,7 +595,7 @@ class GameSearchService {
           console.log(`❌ NO SEARCH RESULTS: No games found for query "${query.trim()}"`);
 
           // Track zero-result search
-          searchAnalyticsService.trackSearch(query.trim(), [], executionTime, cacheHit);
+          searchObservabilityService.trackSearch(query.trim(), [], executionTime, cacheHit);
 
           return { games: [], totalCount: 0, hasMore: false };
         }
@@ -928,45 +928,57 @@ class GameSearchService {
    * Warm cache with popular searches
    */
   async warmCache(): Promise<void> {
-    await searchCacheService.warmCache(async (query) => {
-      const results = await executeIntelligentSearch(query);
-      return results || [];
-    });
+    // Popular search terms to warm the cache
+    const popularSearches = ['mario', 'zelda', 'pokemon', 'call of duty', 'minecraft'];
+
+    try {
+      for (const query of popularSearches) {
+        try {
+          await executeIntelligentSearch(query);
+          // Small delay between searches to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error) {
+          console.warn(`Failed to warm cache for "${query}":`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Cache warming failed:', error);
+    }
   }
 
   /**
    * Get cache statistics
    */
   getCacheStats() {
-    return searchCacheService.getCacheStats();
+    return searchService.getCacheStats();
   }
 
   /**
    * Get popular searches from local cache
    */
   getPopularSearches(limit: number = 10) {
-    return searchCacheService.getPopularSearches(limit);
+    return searchService.getPopularSearches(limit);
   }
 
   /**
    * Clear search cache
    */
   clearCache() {
-    searchCacheService.clearAllCache();
+    searchService.clearAllCache();
   }
 
   /**
    * Get analytics performance metrics
    */
   async getPerformanceMetrics(timeRange: 'hour' | 'day' | 'week' = 'day') {
-    return await searchAnalyticsService.getSearchPerformanceMetrics(timeRange);
+    return await searchObservabilityService.getSearchPerformanceMetrics(timeRange);
   }
 
   /**
    * Get trending searches from analytics
    */
   async getTrendingSearches(limit: number = 10) {
-    return await searchAnalyticsService.getTrendingSearches(limit);
+    return await searchObservabilityService.getTrendingSearches(limit);
   }
 }
 
@@ -974,8 +986,8 @@ export const gameSearchService = new GameSearchService()
 
 // Warm cache on initialization (delayed to avoid blocking)
 if (typeof window !== 'undefined') {
-  // Clean expired cache on page load
-  searchCacheService.clearExpiredCache();
+  // Clean cache on page load
+  searchService.clearCache();
 
   // Warm cache after delay
   setTimeout(() => {

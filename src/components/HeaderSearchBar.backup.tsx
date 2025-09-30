@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X, Clock, TrendingUp, Database, Loader2, Star, Gamepad2, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGameSearch } from '../hooks/useGameSearch';
-import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
+import { searchService } from '../services/searchService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { browserCache } from '../services/browserCacheService';
 import { supabase } from '../services/supabase';

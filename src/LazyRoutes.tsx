@@ -82,6 +82,11 @@ export const SearchPerformanceDashboard = lazy(() =>
   import('./components/SearchPerformanceDashboard').then(module => ({ default: module.SearchPerformanceDashboard }))
 );
 
+// Analytics Page
+export const AnalyticsPage = lazy(() =>
+  import('./pages/AnalyticsPage').then(module => ({ default: module.AnalyticsPage }))
+);
+
 // Heavy modals that can be lazy loaded
 export const GamesModal = lazy(() =>
   import('./components/GamesModal').then(module => ({ default: module.GamesModal }))

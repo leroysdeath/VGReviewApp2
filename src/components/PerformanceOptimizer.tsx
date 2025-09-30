@@ -6,6 +6,8 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
 export const PerformanceOptimizer: React.FC = () => {
   const location = useLocation();
 
@@ -70,8 +72,8 @@ export const PerformanceOptimizer: React.FC = () => {
     const prefetchAPI = () => {
       // Prefetch common API endpoints that are likely to be needed
       const apiEndpoints = [
-        'https://iluvvboiuizhqnlumfpt.supabase.co/rest/v1/game?select=*&limit=20',
-        'https://iluvvboiuizhqnlumfpt.supabase.co/rest/v1/user?select=*&limit=10',
+        `${SUPABASE_URL}/rest/v1/game?select=*&limit=20`,
+        `${SUPABASE_URL}/rest/v1/user?select=*&limit=10`,
       ];
 
       apiEndpoints.forEach(endpoint => {

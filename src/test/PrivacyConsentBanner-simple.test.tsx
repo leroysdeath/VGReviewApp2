@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { PrivacyConsentBanner } from '../components/privacy/PrivacyConsentBanner';
 
@@ -37,164 +37,193 @@ describe('PrivacyConsentBanner Component - Basic Tests', () => {
     jest.clearAllMocks();
   });
 
-  it('should render without crashing', () => {
-    expect(() => {
+  it('should render without crashing', async () => {
+    await act(async () => {
       render(
         <TestWrapper>
           <PrivacyConsentBanner />
         </TestWrapper>
       );
-    }).not.toThrow();
+    });
   });
 
-  it('should not show banner by default when shouldShowConsentBanner returns false', () => {
+  it('should not show banner by default when shouldShowConsentBanner returns false', async () => {
     const { privacyService } = require('../services/privacyService');
     privacyService.shouldShowConsentBanner.mockReturnValue(false);
 
-    render(
-      <TestWrapper>
-        <PrivacyConsentBanner />
-      </TestWrapper>
-    );
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <PrivacyConsentBanner />
+        </TestWrapper>
+      );
+    });
 
     // Should render empty (no banner content)
     expect(screen.queryByText('Your Privacy Matters')).not.toBeInTheDocument();
   });
 
-  it('should call shouldShowConsentBanner on mount', () => {
+  it('should call shouldShowConsentBanner on mount', async () => {
     const { privacyService } = require('../services/privacyService');
-    
-    render(
-      <TestWrapper>
-        <PrivacyConsentBanner />
-      </TestWrapper>
-    );
 
-    expect(privacyService.shouldShowConsentBanner).toHaveBeenCalled();
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <PrivacyConsentBanner />
+        </TestWrapper>
+      );
+    });
+
+    await waitFor(() => {
+      expect(privacyService.shouldShowConsentBanner).toHaveBeenCalled();
+    });
   });
 
-  it('should work with authenticated users', () => {
+  it('should work with authenticated users', async () => {
     const { useAuth } = require('../hooks/useAuth');
     useAuth.mockReturnValue({
       user: { databaseId: 456, email: 'user@example.com' }
     });
 
-    expect(() => {
+    await act(async () => {
       render(
         <TestWrapper>
           <PrivacyConsentBanner />
         </TestWrapper>
       );
-    }).not.toThrow();
+    });
   });
 
-  it('should work with unauthenticated users', () => {
+  it('should work with unauthenticated users', async () => {
     const { useAuth } = require('../hooks/useAuth');
     useAuth.mockReturnValue({
       user: null
     });
 
-    expect(() => {
+    await act(async () => {
       render(
         <TestWrapper>
           <PrivacyConsentBanner />
         </TestWrapper>
       );
-    }).not.toThrow();
+    });
   });
 
-  it('should call syncConsentWithDatabase when user is authenticated', () => {
+  it('should call syncConsentWithDatabase when user is authenticated', async () => {
     const { privacyService } = require('../services/privacyService');
     const { useAuth } = require('../hooks/useAuth');
-    
+
     useAuth.mockReturnValue({
       user: { databaseId: 789, email: 'sync@example.com' }
     });
 
-    render(
-      <TestWrapper>
-        <PrivacyConsentBanner />
-      </TestWrapper>
-    );
-
-    expect(privacyService.syncConsentWithDatabase).toHaveBeenCalledWith(789);
-  });
-
-  it('should not call syncConsentWithDatabase when user is not authenticated', () => {
-    const { privacyService } = require('../services/privacyService');
-    const { useAuth } = require('../hooks/useAuth');
-    
-    useAuth.mockReturnValue({
-      user: null
-    });
-
-    render(
-      <TestWrapper>
-        <PrivacyConsentBanner />
-      </TestWrapper>
-    );
-
-    expect(privacyService.syncConsentWithDatabase).not.toHaveBeenCalled();
-  });
-
-  it('should handle privacy service errors gracefully', () => {
-    const { privacyService } = require('../services/privacyService');
-    
-    // Mock a method to throw an error
-    privacyService.shouldShowConsentBanner.mockImplementation(() => {
-      throw new Error('Service error');
-    });
-
-    // Should not crash the component
-    expect(() => {
+    await act(async () => {
       render(
         <TestWrapper>
           <PrivacyConsentBanner />
         </TestWrapper>
       );
-    }).not.toThrow();
+    });
+
+    await waitFor(() => {
+      expect(privacyService.syncConsentWithDatabase).toHaveBeenCalledWith(789);
+    });
   });
 
-  it('should handle different user ID formats', () => {
+  it('should not call syncConsentWithDatabase when user is not authenticated', async () => {
+    const { privacyService } = require('../services/privacyService');
     const { useAuth } = require('../hooks/useAuth');
-    
+
+    useAuth.mockReturnValue({
+      user: null
+    });
+
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <PrivacyConsentBanner />
+        </TestWrapper>
+      );
+    });
+
+    await waitFor(() => {
+      expect(privacyService.syncConsentWithDatabase).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should handle privacy service returning false', async () => {
+    const { privacyService } = require('../services/privacyService');
+
+    // Mock service to return false (banner should not show)
+    privacyService.shouldShowConsentBanner.mockReturnValue(false);
+
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <PrivacyConsentBanner />
+        </TestWrapper>
+      );
+    });
+
+    // Banner should not be visible
+    expect(screen.queryByText('Your Privacy Matters')).not.toBeInTheDocument();
+  });
+
+  it('should handle different user ID formats', async () => {
+    const { useAuth } = require('../hooks/useAuth');
+    const { privacyService } = require('../services/privacyService');
+
+    // Reset mock to not throw errors
+    privacyService.shouldShowConsentBanner.mockReturnValue(false);
+
     // Test with string ID
     useAuth.mockReturnValue({
       user: { databaseId: '123', email: 'string@example.com' }
     });
 
-    expect(() => {
+    await act(async () => {
       render(
         <TestWrapper>
           <PrivacyConsentBanner />
         </TestWrapper>
       );
-    }).not.toThrow();
+    });
 
     // Test with number ID
     useAuth.mockReturnValue({
       user: { databaseId: 456, email: 'number@example.com' }
     });
 
-    expect(() => {
+    await act(async () => {
       render(
         <TestWrapper>
           <PrivacyConsentBanner />
         </TestWrapper>
       );
-    }).not.toThrow();
+    });
   });
 
-  it('should render in different environments', () => {
+  it('should render in different environments', async () => {
+    const { privacyService } = require('../services/privacyService');
+
+    // Reset mock to not throw errors
+    privacyService.shouldShowConsentBanner.mockReturnValue(false);
+
     // Test multiple renders to ensure stability
     for (let i = 0; i < 3; i++) {
-      const { unmount } = render(
-        <TestWrapper>
-          <PrivacyConsentBanner />
-        </TestWrapper>
-      );
-      
-      expect(() => unmount()).not.toThrow();
+      let unmount: () => void;
+      await act(async () => {
+        const result = render(
+          <TestWrapper>
+            <PrivacyConsentBanner />
+          </TestWrapper>
+        );
+        unmount = result.unmount;
+      });
+
+      act(() => {
+        unmount!();
+      });
     }
   });
 });

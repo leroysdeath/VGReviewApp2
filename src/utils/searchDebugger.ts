@@ -84,11 +84,11 @@ export class SearchDebugger {
     console.log('⏱️ Starting search...');
     
     try {
-      // Import the gameDataService dynamically
-      const { gameDataService } = await import('../services/gameDataService');
-      
+      // Import the gameService dynamically
+      const { gameService } = await import('../services/gameService');
+
       const startTime = performance.now();
-      const results = await gameDataService.searchGames(query);
+      const results = await gameService.searchGames(query);
       const endTime = performance.now();
       
       console.log(`✅ Search completed in ${Math.round(endTime - startTime)}ms`);
