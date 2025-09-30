@@ -334,6 +334,100 @@ class UnifiedSearchService {
   }
 
   /**
+   * Coordinated Search - Main search method with advanced options
+   * Used by navbar, search results page, and other components
+   *
+   * @param query - Search query string
+   * @param options - Search configuration options
+   * @returns SearchResponse with results and metadata
+   */
+  async coordinatedSearch(
+    query: string,
+    options: {
+      maxResults?: number;
+      includeMetrics?: boolean;
+      fastMode?: boolean;
+      bypassCache?: boolean;
+      useAggressive?: boolean;
+    } = {}
+  ): Promise<SearchResponse> {
+    const {
+      maxResults = 20,
+      includeMetrics = false,
+      fastMode = false,
+      bypassCache = false,
+      useAggressive = false
+    } = options;
+
+    const searchOptions: SearchOptions = {
+      query,
+      limit: maxResults
+    };
+
+    // If bypassCache is true, we don't check cache
+    // Otherwise use the regular searchGames which checks cache
+    if (bypassCache) {
+      // Temporarily disable cache by getting results directly
+      const startTime = Date.now();
+      const sanitizedQuery = sanitizeSearchTerm(query.trim());
+
+      if (!sanitizedQuery) {
+        return {
+          results: [],
+          total_count: 0,
+          search_time_ms: Date.now() - startTime,
+          query_used: '',
+          cache_hit: false
+        };
+      }
+
+      try {
+        const { data: results, error } = await supabase.rpc('secure_game_search', {
+          search_query: sanitizedQuery,
+          search_limit: Math.min(maxResults, 100),
+          use_phrase_search: false,
+          genre_filters: null,
+          platform_filters: null,
+          release_year_filter: null,
+          min_rating_filter: null
+        });
+
+        if (error || !results) {
+          return {
+            results: [],
+            total_count: 0,
+            search_time_ms: Date.now() - startTime,
+            query_used: sanitizedQuery,
+            cache_hit: false
+          };
+        }
+
+        const deduplicatedResults = await this.deduplicateResults(results);
+
+        return {
+          results: deduplicatedResults,
+          total_count: deduplicatedResults.length,
+          search_time_ms: Date.now() - startTime,
+          query_used: sanitizedQuery,
+          cache_hit: false
+        };
+      } catch (error) {
+        if (DEBUG_SEARCH) console.error('💥 Coordinated search error:', error);
+        return {
+          results: [],
+          total_count: 0,
+          search_time_ms: Date.now() - startTime,
+          query_used: sanitizedQuery,
+          cache_hit: false
+        };
+      }
+    }
+
+    // Use regular searchGames which includes caching
+    return await this.searchGames(searchOptions);
+  }
+
+  /**
    * Game-Specific Search Operations
    */
   async searchGamesByTitle(title: string, limit: number = 10): Promise<GameSearchResult[]> {

@@ -1,20 +1,21 @@
 // IGDB API Service with Enhanced Iconic Game Support
+import { supabase } from './supabase';
 import { filterProtectedContent, getFilterStats } from '../utils/contentProtectionFilter';
 import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization';
 import { generateFuzzyPatterns, rankByFuzzyMatch, fuzzyMatchScore } from '../utils/fuzzySearch';
-import { 
-  detectFranchiseSearch, 
+import {
+  detectFranchiseSearch,
   generateFlagshipSearchPatterns,
-  getFlagshipGames 
+  getFlagshipGames
 } from '../utils/flagshipGames';
-import { 
+import {
   applyIconicBoost,
-  calculateIconicScore 
+  calculateIconicScore
 } from '../utils/iconicGameDetection';
-import { 
+import {
   calculateGameQuality,
   prioritizeOriginalVersions,
-  sortByGameQuality 
+  sortByGameQuality
 } from '../utils/gameQualityScoring';
 
 // Define the transformed game type
@@ -514,7 +515,58 @@ interface IGDBSearchResponse {
 }
 
 class IGDBService {
-  private readonly endpoint = '/.netlify/functions/igdb-search';
+  private _endpoint: string | null = null;
+  private useDatabase: boolean = false;
+
+  /**
+   * Lazy endpoint getter - only detects environment when first accessed
+   * This prevents issues with ServiceWorker module loading
+   */
+  private get endpoint(): string {
+    if (this._endpoint === null) {
+      this._endpoint = this.detectEndpoint();
+    }
+    return this._endpoint;
+  }
+
+  /**
+   * Detect the correct endpoint based on current environment
+   * - On Netlify dev (port 8888): Use /.netlify/functions/igdb-search
+   * - On Vite dev (port 5173): Try Netlify proxy first, fallback to database
+   * - In production: Use /.netlify/functions/igdb-search
+   *
+   * Safe to call during ServiceWorker execution - only runs when endpoint is needed
+   */
+  private detectEndpoint(): string {
+    // SSR safety check
+    if (typeof window === 'undefined') {
+      return '/.netlify/functions/igdb-search';
+    }
+
+    // ServiceWorker safety check - avoid errors during SW interception
+    try {
+      const port = window.location.port;
+      const hostname = window.location.hostname;
+
+      // Running on Netlify dev (port 8888)
+      if (port === '8888') {
+        console.log('🌐 IGDB: Using Netlify dev endpoint (port 8888)');
+        return '/.netlify/functions/igdb-search';
+      }
+
+      // Running on Vite dev (port 5173) or production
+      // Try Netlify functions, but prepare to fallback to database
+      if (port === '5173' && hostname === 'localhost') {
+        console.log('⚠️ IGDB: Vite dev detected (port 5173) - will use database fallback if Netlify functions unavailable');
+      }
+
+      return '/.netlify/functions/igdb-search';
+    } catch (error) {
+      // Fallback if window.location isn't accessible (e.g., during SW module loading)
+      console.warn('⚠️ IGDB: Could not detect environment, using default endpoint');
+      return '/.netlify/functions/igdb-search';
+    }
+  }
 
   /**
    * Multi-strategy search with iconic game fallback
@@ -566,7 +618,11 @@ class IGDBService {
   }
   
   /**
-   * Perform basic IGDB search without fallback logic
+   * Perform basic IGDB search with automatic database fallback
+   * Falls back to database when:
+   * - IGDB endpoint returns 404 (Netlify function not available)
+   * - IGDB endpoint returns 500 (API temporarily unavailable)
+   * - Network errors occur
    */
   private async performBasicSearch(query: string, limit: number): Promise<IGDBGame[]> {
     try {
@@ -585,34 +641,47 @@ class IGDBService {
         // Production-visible error logging
         console.error(`🔴 IGDB API Error ${response.status}: ${response.statusText}`);
         console.error(`🔴 Query that failed: "${query}"`);
-        
-        if (response.status === 500) {
-          console.error('🔴 IGDB Server Error (500) - The IGDB API is temporarily unavailable');
-          // Return empty array instead of throwing to allow graceful degradation
-          return [];
+
+        // Fallback to database for 404 (function unavailable) or 500 (server error)
+        if (response.status === 404 || response.status === 500) {
+          console.warn(`⚠️ IGDB API unavailable (${response.status}), falling back to database search`);
+          return this.searchDatabase(query, limit);
         }
-        
+
         throw new Error(`IGDB API error: ${response.status}`);
       }
 
       const data: IGDBSearchResponse = await response.json();
-      
+
       if (!data.success) {
         console.error('🔴 IGDB API returned unsuccessful response:', data.error);
-        throw new Error(data.error || 'IGDB API error');
+        // Fallback to database on API errors
+        console.warn('⚠️ IGDB API error, falling back to database search');
+        return this.searchDatabase(query, limit);
       }
 
       return data.games || [];
     } catch (error: any) {
+      // Check if it's a network error (fetch failed, connection refused, etc.)
+      const isNetworkError = error?.message?.includes('fetch') ||
+                            error?.message?.includes('NetworkError') ||
+                            error?.message?.includes('Failed to fetch');
+
+      if (isNetworkError) {
+        console.warn('⚠️ Network error accessing IGDB, falling back to database search');
+        return this.searchDatabase(query, limit);
+      }
+
       // Production-visible error logging
       console.error('🔴 IGDB performBasicSearch error:', {
         query,
         error: error?.message || error,
         stack: error?.stack
       });
-      
-      // Re-throw to allow calling code to handle
-      throw error;
+
+      // Last resort: try database fallback
+      console.warn('⚠️ IGDB search failed, attempting database fallback');
+      return this.searchDatabase(query, limit);
     }
   }
 
@@ -1204,9 +1273,9 @@ class IGDBService {
     if (!url) return '';
 
     // IGDB URLs come as //images.igdb.com/igdb/image/upload/t_thumb/imageid.jpg
-    // Change to t_1080p for high quality (1920x1080) images
-    // t_cover_big is only 264x374 which appears blurry on modern displays
-    return url.replace('t_thumb', 't_1080p').replace('//', 'https://');
+    // Use t_cover_big for covers (264x374) - IGDB's highest resolution portrait format
+    // While not high-res, it maintains proper cover aspect ratio unlike t_1080p (16:9)
+    return url.replace('t_thumb', 't_cover_big').replace('//', 'https://');
   }
 
   // Test API connection
@@ -1227,11 +1296,69 @@ class IGDBService {
 
       const data = await response.json();
       console.log('🔗 IGDB API test response:', data);
-      
+
       return response.ok && data.success;
     } catch (error) {
       console.error('❌ IGDB API test failed:', error);
       return false;
+    }
+  }
+
+  /**
+   * Database fallback search when IGDB API is unavailable
+   * Uses local Supabase database with 185K+ games
+   */
+  private async searchDatabase(query: string, limit: number): Promise<IGDBGame[]> {
+    try {
+      console.log(`🔄 Database fallback: Searching for "${query}"`);
+
+      const { data, error } = await supabase
+        .rpc('search_games_secure', {
+          search_query: query.trim(),
+          limit_count: Math.min(limit, 100)
+        });
+
+      if (error) {
+        console.error('❌ Database search error:', error);
+        return [];
+      }
+
+      if (!data || data.length === 0) {
+        console.log('📭 Database search: No results found');
+        return [];
+      }
+
+      console.log(`✅ Database fallback: Found ${data.length} results`);
+
+      // Transform database results to IGDB format
+      const transformed: IGDBGame[] = data.map((game: any) => ({
+        id: game.igdb_id || game.id,
+        name: game.name || 'Unknown Game',
+        slug: game.slug,
+        summary: game.description || game.summary,
+        cover: game.cover_url ? {
+          url: game.cover_url,
+          image_id: game.cover_url.split('/').pop()?.split('.')[0]
+        } : undefined,
+        first_release_date: game.release_date ?
+          Math.floor(new Date(game.release_date).getTime() / 1000) :
+          undefined,
+        category: game.category || 0,
+        genres: game.genres || [],
+        platforms: game.platforms || [],
+        involved_companies: game.developer || game.publisher ? [{
+          company: {
+            name: game.developer || game.publisher
+          }
+        }] : undefined,
+        // Pass through any additional fields from database
+        ...game
+      }));
+
+      return transformed;
+    } catch (error) {
+      console.error('💥 Database fallback error:', error);
+      return [];
     }
   }
 }

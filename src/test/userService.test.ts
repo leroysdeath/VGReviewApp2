@@ -317,6 +317,85 @@ describe('Unified User Service Tests', () => {
       });
     });
 
+    describe('getUserProfileById', () => {
+      it('should get user profile by integer ID', async () => {
+        const mockProfile = {
+          id: 5,
+          provider_id: 'b47ac10b-58cc-4372-a567-0e02b2c3d479',
+          username: 'testuser',
+          email: 'test@example.com',
+          avatar_url: 'https://example.com/avatar.jpg',
+          name: 'Test User'
+        };
+
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: mockProfile,
+                error: null
+              })
+            })
+          })
+        });
+
+        const result = await userService.getUserProfileById(5);
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(mockProfile);
+        expect(mockSupabase.from).toHaveBeenCalledWith('user');
+      });
+
+      it('should handle user not found by ID', async () => {
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: null,
+                error: { code: 'PGRST116', message: 'Not found' }
+              })
+            })
+          })
+        });
+
+        const result = await userService.getUserProfileById(999);
+
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('User profile not found');
+      });
+
+      it('should cache profile by both ID and provider_id', async () => {
+        const mockProfile = {
+          id: 5,
+          provider_id: 'b47ac10b-58cc-4372-a567-0e02b2c3d479',
+          username: 'testuser',
+          email: 'test@example.com',
+          avatar_url: 'https://example.com/avatar.jpg',
+          name: 'Test User'
+        };
+
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: mockProfile,
+                error: null
+              })
+            })
+          })
+        });
+
+        // First call - should hit database
+        const result1 = await userService.getUserProfileById(5);
+        expect(result1.success).toBe(true);
+
+        // Second call - should hit cache
+        const result2 = await userService.getUserProfileById(5);
+        expect(result2.success).toBe(true);
+        expect(result2.data).toEqual(mockProfile);
+      });
+    });
+
     describe('ensureUserProfileExists', () => {
       it('should return existing profile if found', async () => {
         const mockProfile = {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart, Trash2, Gamepad2, ScrollText } from 'lucide-react';
 import { gameService } from '../services/gameService';
-import { gameSearchService } from '../services/gameSearchService';
+import { searchService } from '../services/searchService';
 import type { Game, GameWithCalculatedFields } from '../types/database';
 import { createReview, getUserReviewForGameByIGDBId, updateReview, deleteReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
@@ -10,7 +10,6 @@ import { useAuth } from '../hooks/useAuth';
 import { mapPlatformNames } from '../utils/platformMapping';
 import { formatGameReleaseDate } from '../utils/dateUtils';
 import { filterProtectedContent } from '../utils/contentProtectionFilter';
-import { igdbService } from '../services/igdbService';
 
 // Search filters interface from SearchResultsPage
 interface SearchFilters {
@@ -44,11 +43,49 @@ export const ReviewFormPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   const { isAuthenticated, user } = useAuth();
-  
+
   // Replace IGDB search with Supabase-based search
   const [searchResults, setSearchResults] = useState<GameWithCalculatedFields[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+
+  // Non-linear curve functions to center 5 at 50% position
+  // Convert rating (1-10) to slider position (0-100)
+  const ratingToPosition = (rating: number): number => {
+    // Using a smooth curve that compresses the edges and expands the middle
+    // This centers 5 at exactly 50% position
+    if (rating <= 5) {
+      // For 1-5: map to 0-50% with a curve that expands near 5
+      const normalized = (rating - 1) / 4; // 0 to 1
+      const curved = Math.pow(normalized, 0.8); // Gentle curve
+      return curved * 50;
+    } else {
+      // For 5-10: map to 50-100% with a curve that compresses near 10
+      const normalized = (rating - 5) / 5; // 0 to 1
+      const curved = 1 - Math.pow(1 - normalized, 0.8); // Inverse gentle curve
+      return 50 + curved * 50;
+    }
+  };
+
+  // Convert slider position (0-100) to rating (1-10)
+  const positionToRating = (position: number): number => {
+    // Inverse of the above function
+    if (position <= 50) {
+      // For 0-50%: map to 1-5
+      const normalized = position / 50; // 0 to 1
+      const uncurved = Math.pow(normalized, 1.25); // Inverse of 0.8
+      const rating = 1 + uncurved * 4;
+      // Round to nearest 0.5
+      return Math.round(rating * 2) / 2;
+    } else {
+      // For 50-100%: map to 5-10
+      const normalized = (position - 50) / 50; // 0 to 1
+      const uncurved = 1 - Math.pow(1 - normalized, 1.25); // Inverse curve
+      const rating = 5 + uncurved * 5;
+      // Round to nearest 0.5
+      return Math.round(rating * 2) / 2;
+    }
+  };
   
   const performSearch = useCallback(async (query: string) => {
     if (!query || query.length < 2) {
@@ -62,53 +99,63 @@ export const ReviewFormPage: React.FC = () => {
     setShowSearchResults(true);
 
     try {
-      // First try local database
-      const localResults = await gameService.searchGames(query);
+      // Use searchService with same settings as ResponsiveNavbar for consistent results
+      console.log(`🔍 [ReviewFormPage] Searching for "${query}" using searchService`);
 
-      // If we have few local results, also search IGDB
-      if (localResults.length < 10) {
-        console.log(`📚 Few local results (${localResults.length}), searching IGDB...`);
-        try {
-          const igdbGames = await igdbService.searchGames(query, 20);
+      const searchResponse = await searchService.coordinatedSearch(query.trim(), {
+        maxResults: 20,
+        includeMetrics: false,
+        fastMode: false, // Use full search with all filtering (same as navbar)
+        bypassCache: false,
+        useAggressive: false // Conservative to avoid unrelated results (same as navbar)
+      });
 
-          // Transform IGDB results to match local format
-          const transformedIgdbResults = igdbGames.map(game => ({
-            id: 0, // No local ID yet
-            igdb_id: game.id,
-            name: game.name,
-            slug: game.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_1080p').replace('//', 'https://') : undefined,
-            summary: game.summary,
-            first_release_date: game.first_release_date,
-            genres: game.genres?.map(g => g.name) || [],
-            platforms: game.platforms?.map(p => p.name) || [],
-            igdb_rating: game.rating,
-            total_rating: game.rating,
-            rating_count: 0,
-            averageRating: 0,
-            gameReviewCount: 0
-          }));
+      console.log(`✅ [ReviewFormPage] Found ${searchResponse.total_count} results from searchService`);
 
-          // Merge results, avoiding duplicates
-          const mergedResults = [...localResults];
-          for (const igdbResult of transformedIgdbResults) {
-            if (!mergedResults.some(r => r.igdb_id === igdbResult.igdb_id)) {
-              mergedResults.push(igdbResult);
-            }
-          }
+      // Apply same relevance filtering as ResponsiveNavbar for consistency
+      const relevantResults = searchResponse.results.filter(game => {
+        const queryLower = query.toLowerCase().trim();
+        const nameLower = game.name.toLowerCase();
 
-          // Limit to 20 results
-          setSearchResults(mergedResults.slice(0, 20));
-        } catch (igdbError) {
-          console.error('IGDB search failed, using local results only:', igdbError);
-          setSearchResults(localResults.slice(0, 20));
+        // Prioritize games that start with or contain the exact query
+        if (nameLower.includes(queryLower)) {
+          return true;
         }
-      } else {
-        setSearchResults(localResults.slice(0, 20));
-      }
+
+        // Check for word matches in title
+        const queryWords = queryLower.split(/\s+/);
+        const nameWords = nameLower.split(/\s+/);
+        const matchingWords = queryWords.filter(qWord =>
+          nameWords.some(nWord => nWord.includes(qWord))
+        );
+
+        // Require at least 60% word match (same as navbar)
+        return matchingWords.length / queryWords.length >= 0.6;
+      });
+
+      // Transform to GameWithCalculatedFields format
+      const transformedResults: GameWithCalculatedFields[] = relevantResults.map(game => ({
+        id: game.id,
+        igdb_id: game.igdb_id,
+        name: game.name,
+        slug: game.slug || game.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        cover_url: game.cover_url,
+        summary: game.summary,
+        description: game.description,
+        release_date: game.release_date,
+        genres: game.genres || [],
+        platforms: game.platforms || [],
+        created_at: game.created_at,
+        updated_at: game.updated_at,
+        averageUserRating: 0,
+        totalUserRatings: 0
+      }));
+
+      setSearchResults(transformedResults);
     } catch (error) {
       setSearchError('Failed to search games');
       console.error('Search error:', error);
+      setSearchResults([]);
     } finally {
       setSearchLoading(false);
     }
@@ -820,22 +867,25 @@ export const ReviewFormPage: React.FC = () => {
                 <div className="relative pt-2">
                   {/* Custom Slider Track */}
                   <div className="relative h-2 bg-gray-700 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="absolute h-full bg-purple-500 transition-all duration-150"
-                      style={{ width: `${((rating - 1) / 9) * 100}%` }}
+                      style={{ width: `${ratingToPosition(rating)}%` }}
                     />
                   </div>
 
                   {/* Range Input */}
                   <input
                     type="range"
-                    min="1"
-                    max="10"
-                    step="0.5"
-                    value={rating}
-                    onChange={(e) => setRating(parseFloat(e.target.value))}
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={ratingToPosition(rating)}
+                    onChange={(e) => {
+                      const position = parseFloat(e.target.value);
+                      setRating(positionToRating(position));
+                    }}
                     className="slider-input absolute inset-0 w-full h-2 cursor-pointer"
-                    style={{ 
+                    style={{
                       zIndex: 2,
                       WebkitAppearance: 'none',
                       appearance: 'none',
@@ -844,22 +894,22 @@ export const ReviewFormPage: React.FC = () => {
                     }}
                   />
 
-                  {/* Tick Marks */}
+                  {/* Tick Marks - Only show for 1, 5, and 10 */}
                   <div className="absolute inset-x-0 -bottom-6">
-                    {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10].map((tick) => {
-                      const position = ((tick - 1) / 9) * 100;
+                    {[1, 5, 10].map((tick) => {
+                      const position = ratingToPosition(tick);
                       return (
-                        <div 
-                          key={tick} 
+                        <div
+                          key={tick}
                           className="absolute"
                           style={{ left: `${position}%` }}
                         >
+                          {/* Tick mark */}
                           <div className="absolute -top-3 w-0.5 h-2 bg-gray-600 transform -translate-x-1/2" />
-                          {tick % 1 === 0 && (
-                            <span className="absolute top-1 transform -translate-x-1/2 text-xs text-gray-500">
-                              {tick}
-                            </span>
-                          )}
+                          {/* Number label */}
+                          <span className="absolute top-1 transform -translate-x-1/2 text-xs text-gray-500">
+                            {tick}
+                          </span>
                         </div>
                       );
                     })}
@@ -867,7 +917,7 @@ export const ReviewFormPage: React.FC = () => {
                 </div>
 
                 {/* Helper Text */}
-                <div className="mt-8 text-center">
+                <div className="mt-12 text-center">
                   <span className="text-sm text-gray-400">
                     {rating === 1 ? 'Minimum rating' : rating === 10 ? 'Perfect score!' : `${rating.toFixed(1)} out of 10`}
                   </span>

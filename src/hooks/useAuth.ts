@@ -181,8 +181,9 @@ export const useAuth = (): UseAuthReturn => {
   // Helper function to get or create database user ID and fetch profile data
   const getOrCreateDbUserId = async (session: Session) => {
     try {
+      // Shorter timeout (2s) to fail fast and not block the UI
       const timeoutPromise = new Promise<{ success: false, error: string }>((resolve) => {
-        setTimeout(() => resolve({ success: false, error: 'Database operation timeout' }), 5000);
+        setTimeout(() => resolve({ success: false, error: 'Database operation timeout' }), 2000);
       });
 
       const result = await Promise.race([
@@ -195,8 +196,9 @@ export const useAuth = (): UseAuthReturn => {
 
         // Fetch the user profile to get the avatar_url and other database fields
         try {
-          const profile = await userService.getUserProfile(result.userId);
-          if (profile && profile.avatar_url) {
+          const profileResult = await userService.getUserProfileById(result.userId);
+          if (profileResult.success && profileResult.data) {
+            const profile = profileResult.data;
             // Update the user state with the database avatar
             setUser(prevUser => {
               if (prevUser) {
@@ -214,12 +216,19 @@ export const useAuth = (): UseAuthReturn => {
           // Continue with auth metadata avatar if profile fetch fails
         }
       } else {
-        console.error('Failed to get/create database user:', result.error);
-        setDbUserId(null);
+        // Only log once, not repeatedly
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Could not get/create database user (non-critical):', result.error);
+        }
+        // Don't set to null - keep any existing value
+        // setDbUserId(null);
       }
     } catch (error) {
-      console.error('Error in user creation:', error);
-      setDbUserId(null);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error in user creation (non-critical):', error);
+      }
+      // Don't set to null - keep any existing value
+      // setDbUserId(null);
     }
   };
 

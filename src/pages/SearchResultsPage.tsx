@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Grid, List, Loader, AlertCircle, Star, RefreshCw, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { Grid, List, Loader, AlertCircle, Star, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { useGameSearch } from '../hooks/useGameSearch';
 import { SmartImage } from '../components/SmartImage';
 import { supabase } from '../services/supabase';
@@ -56,6 +56,24 @@ export const SearchResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { searchState, searchGames, searchTerm, setSearchTerm } = useGameSearch();
+
+  // Helper function to get rating badge color classes (matching ReviewCard and ExplorePage)
+  const getRatingColorClasses = (rating: number): string => {
+    if (rating <= 3) return 'bg-red-500 text-white';
+    if (rating <= 5) return 'bg-orange-500 text-white';
+    if (rating <= 7) return 'bg-yellow-400 text-gray-700';
+    if (rating <= 9.5) return 'bg-green-500 text-white';
+    return 'bg-blue-500 text-white';
+  };
+
+  // Helper function to get rating text color only (for inline display)
+  const getRatingColor = (rating: number): string => {
+    if (rating <= 3) return 'text-red-500';
+    if (rating <= 5) return 'text-orange-500';
+    if (rating <= 7) return 'text-yellow-500';
+    if (rating <= 9.5) return 'text-green-500';
+    return 'text-blue-500';
+  };
   
   // Detect mobile and set default view mode accordingly
   const [isMobile, setIsMobile] = useState(false);
@@ -75,6 +93,13 @@ export const SearchResultsPage: React.FC = () => {
   const [searchStarted, setSearchStarted] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>();
   const filterDebounceRef = useRef<NodeJS.Timeout>();
+
+  // Debug mode detection
+  const isDebugMode = useMemo(() => {
+    return searchParams.get('debug') === 'true' ||
+           localStorage.getItem('debugMode') === 'true' ||
+           import.meta.env.DEV;
+  }, [searchParams]);
 
   // Optimized debounce delays for different contexts
   const DEBOUNCE_DELAYS = {
@@ -179,10 +204,11 @@ export const SearchResultsPage: React.FC = () => {
 
   const loadPlatforms = async () => {
     try {
+      // Fetch all platforms and filter in JavaScript
+      // The Postgrest query syntax for ranges is complex, so we filter client-side
       const { data, error } = await supabase
         .from('platform')
         .select('id, name')
-        .or('id.gte.1.lte.33,id.gte.44.lte.55,id.eq.71')
         .order('name');
 
       if (error) {
@@ -190,7 +216,7 @@ export const SearchResultsPage: React.FC = () => {
         throw error;
       }
 
-      // Filter in JavaScript as a safety measure
+      // Filter to include: 1-33, 44-55, and 71 (common gaming platforms)
       const filteredData = data?.filter(p =>
         (p.id >= 1 && p.id <= 33) ||
         (p.id >= 44 && p.id <= 55) ||
@@ -410,7 +436,9 @@ export const SearchResultsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">Browse Games</h1>
+          <h1 className="text-4xl font-bold mb-4">
+            {filters.searchTerm?.trim() ? `Search Results for "${filters.searchTerm}"` : 'Browse Games'}
+          </h1>
           
           {/* Search Bar */}
           <div className="flex gap-4 mb-6">
@@ -437,12 +465,13 @@ export const SearchResultsPage: React.FC = () => {
               <Search className="h-4 w-4" />
               Search
             </button>
-            <button
+            {/* Filters button - hidden for now */}
+            {/* <button
               onClick={() => setShowFilters(!showFilters)}
               className="px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
             >
               Filters
-            </button>
+            </button> */}
             <div className="hidden md:flex gap-2">
               <button
                 onClick={() => setViewMode('grid')}
@@ -480,7 +509,7 @@ export const SearchResultsPage: React.FC = () => {
                 <p className="text-sm sm:text-base">
                   Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredGames.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredGames.length)} of {filteredGames.length} games
                 </p>
-                {searchState.source && (
+                {isDebugMode && searchState.source && (
                   <div className="flex items-center gap-2 text-xs">
                     <div className={`
                       px-2 py-1 rounded-full text-xs font-medium
@@ -492,25 +521,9 @@ export const SearchResultsPage: React.FC = () => {
                        searchState.source === 'igdb' ? 'IGDB API' :
                        'Mixed Sources'}
                     </div>
-                    {searchState.source === 'igdb' && (
-                      <span className="text-gray-500 text-xs">
-                        High-quality game data
-                      </span>
-                    )}
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => {
-                  if (filters.searchTerm?.trim()) {
-                    performSearch();
-                  }
-                }}
-                className="flex items-center gap-2 hover:text-white transition-colors"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </button>
             </div>
           )}
         </div>
@@ -569,17 +582,6 @@ export const SearchResultsPage: React.FC = () => {
                 <p className="text-sm">
                   Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredGames.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredGames.length)} of {filteredGames.length} games
                 </p>
-                <button
-                  onClick={() => {
-                    if (filters.searchTerm?.trim()) {
-                      performSearch();
-                    }
-                  }}
-                  className="flex items-center gap-2 hover:text-white transition-colors"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Refresh
-                </button>
               </div>
             )}
 
@@ -635,7 +637,7 @@ export const SearchResultsPage: React.FC = () => {
                         showLoadingSpinner={true}
                         showLoadingSkeleton={false}
                       />
-                      {shouldShowCategoryLabel(game.category) && (
+                      {!!shouldShowCategoryLabel(game.category) && (
                         <div className="absolute top-2 left-2">
                           {(() => {
                             const label = getCategoryLabel(game.category);
@@ -648,10 +650,9 @@ export const SearchResultsPage: React.FC = () => {
                           })()}
                         </div>
                       )}
-                      {game.avg_user_rating && (
-                        <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
-                          <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                          <span className="text-sm font-bold">{game.avg_user_rating.toFixed(1)}</span>
+                      {game.avg_user_rating && game.user_rating_count > 0 && (
+                        <div className={`absolute top-1 right-1 rounded-lg px-1.5 py-0.5 ${getRatingColorClasses(game.avg_user_rating)}`}>
+                          <span className="text-sm font-bold">{game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10</span>
                         </div>
                       )}
                     </div>
@@ -669,11 +670,6 @@ export const SearchResultsPage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                      )}
-                      {game.user_rating_count > 0 && (
-                        <p className="text-sm text-gray-400">
-                          {game.user_rating_count} review{game.user_rating_count !== 1 ? 's' : ''}
-                        </p>
                       )}
                     </div>
                   </div>
@@ -711,7 +707,7 @@ export const SearchResultsPage: React.FC = () => {
                                   <h3 className={`font-semibold ${isNarrowMode ? 'text-lg' : 'text-xl'}`}>
                                     {game.name}
                                   </h3>
-                                  {shouldShowCategoryLabel(game.category) && (
+                                  {!!shouldShowCategoryLabel(game.category) && (
                                     (() => {
                                       const label = getCategoryLabel(game.category);
                                       const styles = getCategoryStyles(game.category);
@@ -747,26 +743,17 @@ export const SearchResultsPage: React.FC = () => {
                                       {mapPlatformNames(game.platforms).join(', ')}
                                     </span>
                                   )}
-                                  {/* Developer info removed - only loaded on game detail page */}
+                                  {game.avg_user_rating && game.user_rating_count > 0 && (
+                                    <>
+                                      <span>•</span>
+                                      <span className={`font-medium ${getRatingColor(game.avg_user_rating)}`}>
+                                        {game.avg_user_rating === 10 ? '10' : game.avg_user_rating.toFixed(1)}/10
+                                      </span>
+                                    </>
+                                  )}
                                 </div>
                               </div>
 
-                              {/* Rating - More compact in narrow mode */}
-                              <div className={`text-right ${isNarrowMode ? 'ml-2' : 'ml-4'}`}>
-                                {game.avg_user_rating && (
-                                  <div className="flex items-center gap-1 mb-1">
-                                    <Star className={`text-yellow-400 fill-current ${isNarrowMode ? 'h-4 w-4' : 'h-5 w-5'}`} />
-                                    <span className={`font-bold ${isNarrowMode ? 'text-base' : 'text-lg'}`}>
-                                      {game.avg_user_rating.toFixed(1)}
-                                    </span>
-                                  </div>
-                                )}
-                                {game.user_rating_count > 0 && (
-                                  <p className={`text-gray-400 ${isNarrowMode ? 'text-xs' : 'text-sm'}`}>
-                                    {game.user_rating_count} {isNarrowMode ? '' : 'reviews'}
-                                  </p>
-                                )}
-                              </div>
                             </div>
                           </div>
                         </div>

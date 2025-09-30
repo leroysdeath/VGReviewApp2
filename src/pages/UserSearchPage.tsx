@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Search, Users, UserPlus, UserCheck, TrendingUp, Clock, Filter, Star } from 'lucide-react';
+import { Search, Users, UserPlus, UserCheck, TrendingUp, Clock, Filter } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useResponsive } from '../hooks/useResponsive';
 import { supabase } from '../services/supabase';
@@ -33,6 +33,15 @@ export const UserSearchPage: React.FC = () => {
   const { isMobile } = useResponsive();
   const { toggleFollow: dbToggleFollow, getFollowingList, loading: followLoading, canFollow } = useFollow();
   const { dbUserId: currentDbUserId } = useAuth();
+
+  // Helper function to get rating color based on value
+  const getRatingColor = (rating: number): string => {
+    if (rating <= 3) return 'text-red-400';
+    if (rating <= 5) return 'text-orange-400';
+    if (rating <= 7) return 'text-yellow-400';
+    if (rating <= 9.5) return 'text-green-400';
+    return 'text-blue-400';
+  };
 
   // Load recent searches from localStorage
   const loadRecentSearches = () => {
@@ -501,7 +510,7 @@ export const UserSearchPage: React.FC = () => {
                           <p className="text-gray-400 text-xs">
                             {user.reviewCount} reviews
                             {user.averageRating && (
-                              <span className="text-yellow-500 ml-2">★ {user.averageRating}</span>
+                              <span className={`${getRatingColor(user.averageRating)} ml-2`}>Avg {user.averageRating === 10 ? '10' : user.averageRating.toFixed(1)}</span>
                             )}
                           </p>
                         </div>
@@ -620,7 +629,7 @@ export const UserSearchPage: React.FC = () => {
                     {user.averageRating && (
                       <>
                         <span className="mx-2">•</span>
-                        <span className="text-yellow-500">★ {user.averageRating}</span>
+                        <span className={getRatingColor(user.averageRating)}>Avg {user.averageRating === 10 ? '10' : user.averageRating.toFixed(1)}</span>
                       </>
                     )}
                   </div>
@@ -729,7 +738,7 @@ export const UserSearchPage: React.FC = () => {
                               </p>
                               {user.averageRating && (
                                 <div className="flex items-center gap-1">
-                                  <span className="text-yellow-500 text-xs">{user.averageRating}</span>
+                                  <span className={`${getRatingColor(user.averageRating)} text-xs`}>Avg {user.averageRating === 10 ? '10' : user.averageRating.toFixed(1)}</span>
                                 </div>
                               )}
                             </div>
@@ -838,7 +847,7 @@ export const UserSearchPage: React.FC = () => {
                           )}
                           {user.averageRating && (
                             <div className="flex items-center gap-1 mt-1">
-                              <span className="text-yellow-500 text-xs">Avg: {user.averageRating}</span>
+                              <span className={`${getRatingColor(user.averageRating)} text-xs`}>Avg {user.averageRating === 10 ? '10' : user.averageRating.toFixed(1)}</span>
                             </div>
                           )}
                         </div>

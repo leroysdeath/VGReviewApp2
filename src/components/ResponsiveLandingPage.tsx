@@ -353,13 +353,13 @@ export const ResponsiveLandingPage: React.FC = () => {
           </div>
           <div className="space-y-6">
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-blue-500/50 group overflow-hidden"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-blue-500/50 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('social-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-blue-600/10 to-blue-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="relative z-10">
-                <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
+                <div className="transition-all duration-300">
                   <SplittingUsers isHovered={hoveredCard === 'social-mobile'} size="small" />
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-3 transition-colors duration-300 group-hover:text-blue-300">Social Discovery</h3>
@@ -369,13 +369,13 @@ export const ResponsiveLandingPage: React.FC = () => {
               </div>
             </div>
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-green-500/50 group overflow-hidden"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-green-500/50 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('stats-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-green-600/0 via-green-600/10 to-green-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="relative z-10">
-                <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
+                <div className="transition-all duration-300">
                   <CascadingCheckboxes isHovered={hoveredCard === 'stats-mobile'} size="small" />
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-3 transition-colors duration-300 group-hover:text-green-300">Track Your Games</h3>
@@ -385,13 +385,13 @@ export const ResponsiveLandingPage: React.FC = () => {
               </div>
             </div>
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-purple-500/50 group overflow-hidden"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-purple-500/50 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('ratings-mobile')}
               onMouseLeave={() => setHoveredCard(null)}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-purple-600/10 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="relative z-10">
-                <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
+                <div className="transition-all duration-300">
                   <SpinningNumber isHovered={hoveredCard === 'ratings-mobile'} />
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-3 transition-colors duration-300 group-hover:text-purple-300">Write Reviews</h3>
@@ -568,22 +568,16 @@ export const ResponsiveLandingPage: React.FC = () => {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-blue-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-blue-500/50 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('social')}
               onMouseLeave={() => setHoveredCard(null)}
             >
-              {/* Animated gradient border */}
-              <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                <div className="absolute inset-[-2px] bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 rounded-lg animate-pulse"></div>
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-900/90 via-blue-900/10 to-gray-800/80 rounded-lg"></div>
-              </div>
-
               {/* Background effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/0 via-blue-600/20 to-blue-600/0 opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-lg"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-blue-600/10 to-blue-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
               {/* Content */}
               <div className="relative z-10">
-                <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
+                <div className="transition-all duration-500">
                   <SplittingUsers isHovered={hoveredCard === 'social'} />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-3 transition-all duration-300 group-hover:text-blue-300">Social Discovery</h3>
@@ -594,22 +588,16 @@ export const ResponsiveLandingPage: React.FC = () => {
             </div>
 
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-green-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-green-500/50 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('stats')}
               onMouseLeave={() => setHoveredCard(null)}
             >
-              {/* Animated gradient border */}
-              <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                <div className="absolute inset-[-2px] bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 rounded-lg animate-pulse"></div>
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-900/90 via-green-900/10 to-gray-800/80 rounded-lg"></div>
-              </div>
-
               {/* Background effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-green-600/0 via-green-600/20 to-green-600/0 opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-lg"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-green-600/0 via-green-600/10 to-green-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
               {/* Content */}
               <div className="relative z-10">
-                <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
+                <div className="transition-all duration-500">
                   <CascadingCheckboxes isHovered={hoveredCard === 'stats'} />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-3 transition-all duration-300 group-hover:text-green-300">Track Your Games</h3>
@@ -620,22 +608,16 @@ export const ResponsiveLandingPage: React.FC = () => {
             </div>
 
             <div
-              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-purple-500/50 group overflow-hidden cursor-pointer transform hover:scale-105 hover:shadow-2xl"
+              className="relative text-center p-6 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 backdrop-blur-lg rounded-lg border border-gray-700/60 transition-all duration-300 hover:border-purple-500/50 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 group overflow-hidden"
               onMouseEnter={() => setHoveredCard('ratings')}
               onMouseLeave={() => setHoveredCard(null)}
             >
-              {/* Animated gradient border */}
-              <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                <div className="absolute inset-[-2px] bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-lg animate-pulse"></div>
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-900/90 via-purple-900/10 to-gray-800/80 rounded-lg"></div>
-              </div>
-
               {/* Background effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/0 via-purple-600/20 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-all duration-700 rounded-lg"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-purple-600/10 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
               {/* Content */}
               <div className="relative z-10">
-                <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2">
+                <div className="transition-all duration-500">
                   <SpinningNumber isHovered={hoveredCard === 'ratings'} />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-3 transition-all duration-300 group-hover:text-purple-300">Write Reviews</h3>

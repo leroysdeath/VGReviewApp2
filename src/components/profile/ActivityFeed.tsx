@@ -403,7 +403,13 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId, isOwnProfile
               </Link>
             )}
             {activity.rating && (
-              <span className="text-yellow-400 ml-2">
+              <span className={`ml-2 ${
+                activity.rating <= 3 ? 'text-red-400' :
+                activity.rating <= 5 ? 'text-orange-400' :
+                activity.rating <= 7 ? 'text-yellow-400' :
+                activity.rating <= 9.5 ? 'text-green-400' :
+                'text-blue-400'
+              }`}>
                 ({activity.rating === 10 ? '10' : activity.rating.toFixed(1)}/10)
               </span>
             )}
@@ -424,7 +430,13 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId, isOwnProfile
                 {activity.game?.name}
               </Link>
             )}
-            <span className="text-yellow-400 ml-2">
+            <span className={`ml-2 ${
+              activity.rating && activity.rating <= 3 ? 'text-red-400' :
+              activity.rating && activity.rating <= 5 ? 'text-orange-400' :
+              activity.rating && activity.rating <= 7 ? 'text-yellow-400' :
+              activity.rating && activity.rating <= 9.5 ? 'text-green-400' :
+              'text-blue-400'
+            }`}>
               {activity.rating === 10 ? '10' : activity.rating?.toFixed(1)}/10
             </span>
           </span>

@@ -447,14 +447,26 @@ export const ReviewPage: React.FC = () => {
               <div className="border-b border-gray-700 mb-4"></div>
               
               <div className="text-center">
-                <div className="text-4xl font-bold text-green-400 mb-2">
+                <div className={`text-4xl font-bold mb-2 ${
+                  review.rating <= 3 ? 'text-red-400' :
+                  review.rating <= 5 ? 'text-orange-400' :
+                  review.rating <= 7 ? 'text-yellow-400' :
+                  review.rating <= 9.5 ? 'text-green-400' :
+                  'text-blue-400'
+                }`}>
                   {review.rating === 10 ? '10' : review.rating.toFixed(1)}
                 </div>
                 <div className="mb-2">
                   {/* Progress bar */}
                   <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
-                    <div 
-                      className="bg-green-400 h-full rounded-full transition-all duration-300"
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        review.rating <= 3 ? 'bg-red-500' :
+                        review.rating <= 5 ? 'bg-orange-500' :
+                        review.rating <= 7 ? 'bg-yellow-500' :
+                        review.rating <= 9.5 ? 'bg-green-500' :
+                        'bg-blue-500'
+                      }`}
                       style={{ width: `${(review.rating / 10) * 100}%` }}
                     />
                   </div>

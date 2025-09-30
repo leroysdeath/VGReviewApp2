@@ -23,6 +23,7 @@ import { collectionWishlistService } from '../services/collectionWishlistService
 import { mapPlatformNames } from '../utils/platformMapping';
 import { GameActionSheet } from '../components/GameActionSheet';
 import { useTrackGameView } from '../hooks/useTrackGameView';
+import { RatingBars } from '../components/RatingBars';
 
 // Interface for review data from database
 interface GameReview {
@@ -1066,6 +1067,7 @@ export const GamePage: React.FC = () => {
                     src={game.cover?.url ? `https:${game.cover.url}` : (game.cover_url || '/placeholder-game.jpg')}
                     alt={game.name}
                     className="h-96 w-full object-cover md:h-80 md:w-64"
+                    priority={true}
                     optimization={{
                       width: window.innerWidth < 768 ? 640 : 640,  // High quality for all devices
                       height: window.innerWidth < 768 ? 960 : 960, // High quality for all devices
@@ -1296,16 +1298,16 @@ export const GamePage: React.FC = () => {
                     onClick={() => handleAuthRequiredAction('mark_started')}
                     disabled={progressLoading || (userHasReviewed && !isStarted)}
                     title={userHasReviewed ? (isStarted ? "Progress locked by review" : "Cannot mark as started after writing a review") : (isStarted ? "Click to unmark as started" : "Click to mark as started")}
-                    className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all min-w-[120px] ${
+                    className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors min-w-[120px] ${
                       userHasReviewed
                         ? isStarted
                           ? 'bg-blue-600/80 text-white border-2 border-blue-400 opacity-75 cursor-not-allowed'
                           : 'bg-gray-700 text-gray-500 border-2 border-gray-600 opacity-50 cursor-not-allowed'
                         : isStarted
-                        ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
                         : progressLoading
                         ? 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
-                        : 'border border-blue-500 text-blue-400 hover:bg-blue-600/10 cursor-pointer'
+                        : 'border border-blue-500 text-blue-400 hover:bg-blue-600/10'
                     }`}
                   >
                     {progressLoading ? (
@@ -1315,17 +1317,18 @@ export const GamePage: React.FC = () => {
                     ) : (
                       <Play className="h-4 w-4" />
                     )}
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium relative flex flex-col items-center justify-center leading-tight">
                       {isStarted ? (
-                        <span className="flex flex-col items-center leading-tight">
+                        <>
                           <span className="invisible">Mark as</span>
-                          <span>Started</span>
-                        </span>
+                          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">Started</span>
+                          <span className="invisible">Started</span>
+                        </>
                       ) : (
-                        <span className="flex flex-col items-center leading-tight">
+                        <>
                           <span>Mark as</span>
                           <span>Started</span>
-                        </span>
+                        </>
                       )}
                     </span>
                     {userHasReviewed && (
@@ -1340,16 +1343,16 @@ export const GamePage: React.FC = () => {
                     onClick={() => handleAuthRequiredAction('mark_completed')}
                     disabled={progressLoading || (userHasReviewed && !isCompleted)}
                     title={userHasReviewed ? (isCompleted ? "Progress locked by review" : "Cannot mark as finished after writing a review") : (isCompleted ? "Click to unmark as finished" : "Click to mark as finished")}
-                    className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all min-w-[120px] ${
+                    className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors min-w-[120px] ${
                       userHasReviewed
                         ? isCompleted
                           ? 'bg-green-600/80 text-white border-2 border-green-400 opacity-75 cursor-not-allowed'
                           : 'bg-gray-700 text-gray-500 border-2 border-gray-600 opacity-50 cursor-not-allowed'
                         : isCompleted
-                        ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer'
+                        ? 'bg-green-600 text-white hover:bg-green-700'
                         : progressLoading
                         ? 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
-                        : 'border border-green-500 text-green-400 hover:bg-green-600/10 cursor-pointer'
+                        : 'border border-green-500 text-green-400 hover:bg-green-600/10'
                     }`}
                   >
                     {progressLoading ? (
@@ -1359,17 +1362,18 @@ export const GamePage: React.FC = () => {
                     ) : (
                       <CheckCircle className="h-4 w-4" />
                     )}
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium relative flex flex-col items-center justify-center leading-tight">
                       {isCompleted ? (
-                        <span className="flex flex-col items-center leading-tight">
+                        <>
                           <span className="invisible">Mark as</span>
-                          <span>Finished</span>
-                        </span>
+                          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">Finished</span>
+                          <span className="invisible">Finished</span>
+                        </>
                       ) : (
-                        <span className="flex flex-col items-center leading-tight">
+                        <>
                           <span>Mark as</span>
                           <span>Finished</span>
-                        </span>
+                        </>
                       )}
                     </span>
                     {userHasReviewed && (
@@ -1424,13 +1428,8 @@ export const GamePage: React.FC = () => {
           {/* Rating Summary */}
           <div className="space-y-6">
             <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-6">
-              <div className="flex justify-between items-center mb-2">
+              <div className="mb-2 text-center">
                 <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
-                <div className="text-sm">
-                  <span className="text-blue-400">
-                    {reviewsLoading ? 'Loading...' : totalRatings}
-                  </span>
-                </div>
               </div>
               <div className="border-b border-gray-700 mb-4"></div>
 
@@ -1444,34 +1443,26 @@ export const GamePage: React.FC = () => {
                     Retry
                   </button>
                 </div>
-              ) : (
-                <div className="flex items-end justify-between">
-                  <div className="flex flex-col">
-                    <div className="flex items-end gap-[2px] mb-1" style={{ height: '80px' }}>
-                      {ratingDistribution.map((item) => (
-                        <div
-                          key={item.rating}
-                          className="w-6 bg-gray-700 rounded-sm"
-                          style={{
-                            height: item.count > 0 
-                              ? `${(item.percentage / 100) * 80}px`
-                              : '2px',
-                            backgroundColor: '#6b7280'
-                          }}
-                        ></div>
-                      ))}
-                    </div>
-                    <div className="border-t border-gray-700 pt-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400 text-xs" style={{ width: '24px', textAlign: 'center' }}>1</span>
-                        <span className="text-gray-400 text-xs" style={{ width: '24px', textAlign: 'center' }}>10</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-2xl font-bold text-green-400">
-                    {averageRating > 0 ? averageRating.toFixed(1) : 'N/A'}
-                  </div>
+              ) : totalRatings === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-400">No ratings yet</p>
+                  <p className="text-gray-500 text-sm mt-2">Be the first to rate this game</p>
                 </div>
+              ) : (
+                <>
+                  <RatingBars
+                    distribution={ratingDistribution}
+                    totalRatings={totalRatings}
+                    averageRating={averageRating}
+                    barHeight={60}
+                    showLabels={true}
+                    interactive={false}
+                    showTotalRatings={false}
+                  />
+                  <p className="text-gray-400 text-sm text-center mt-3">
+                    Based on {totalRatings} {totalRatings === 1 ? 'review' : 'reviews'}
+                  </p>
+                </>
               )}
             </div>
 
@@ -1493,20 +1484,21 @@ export const GamePage: React.FC = () => {
         </div>
 
         {/* Reviews Section */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Reviews</h2>
-            {reviewsLoading && (
-              <div className="flex items-center gap-2 text-gray-400">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
-                <span className="text-sm">Loading reviews...</span>
-              </div>
-            )}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <div className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Reviews</h2>
+              {reviewsLoading && (
+                <div className="flex items-center gap-2 text-gray-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                  <span className="text-sm">Loading reviews...</span>
+                </div>
+              )}
+            </div>
 
-          {/* Reviews content - show only reviews with text */}
-          {reviewsWithText.length > 0 ? (
-            <div className="space-y-4">
+            {/* Reviews content - show only reviews with text */}
+            {reviewsWithText.length > 0 ? (
+              <div className="space-y-4">
               {reviewsWithText.slice(0, 5).map(review => (
                 <Link 
                   key={review.id} 
@@ -1532,7 +1524,13 @@ export const GamePage: React.FC = () => {
                       {review.author ? review.author.charAt(0).toUpperCase() : '?'}
                     </div>
                     <span className="text-white font-medium">{review.author}</span>
-                    <span className="text-yellow-500">{review.rating}/10</span>
+                    <span className={`${
+                      review.rating <= 3 ? 'text-red-400' :
+                      review.rating <= 5 ? 'text-orange-400' :
+                      review.rating <= 7 ? 'text-yellow-400' :
+                      review.rating <= 9.5 ? 'text-green-400' :
+                      'text-blue-400'
+                    }`}>{review.rating}/10</span>
                   </div>
                   {review.text && (
                     <p className="text-gray-300 text-sm whitespace-pre-line">{review.text}</p>
@@ -1553,6 +1551,7 @@ export const GamePage: React.FC = () => {
               )}
             </div>
           )}
+          </div>
         </div>
       </div>
 
