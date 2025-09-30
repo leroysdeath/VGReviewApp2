@@ -1,32 +1,55 @@
-// Use dynamic import to avoid initialization issues
-let DOMPurify: any = null;
-
-// Only import DOMPurify in browser environment
-if (typeof window !== 'undefined') {
-  import('dompurify').then(module => {
-    DOMPurify = module.default;
-  });
-}
-
 /**
  * Sanitization utility for preventing XSS attacks in user-generated content
  */
 
+// Lazy-loaded DOMPurify instance
+let DOMPurifyInstance: any = null;
+let loadingPromise: Promise<any> | null = null;
+
+// Basic HTML escaping function used as fallback
+const basicHtmlEscape = (str: string): string => {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+};
+
+// Load DOMPurify only when needed
+const loadDOMPurify = async () => {
+  if (DOMPurifyInstance) return DOMPurifyInstance;
+  if (loadingPromise) return loadingPromise;
+
+  if (typeof window === 'undefined') {
+    return null; // Not in browser environment
+  }
+
+  loadingPromise = import('dompurify').then(module => {
+    DOMPurifyInstance = module.default;
+    return DOMPurifyInstance;
+  }).catch(err => {
+    console.error('Failed to load DOMPurify:', err);
+    return null;
+  });
+
+  return loadingPromise;
+};
+
 // Configure DOMPurify to be more restrictive for user content
 const createSanitizer = () => {
-  // Create a DOMPurify instance with custom config
-  // Use DOMPurify if available, otherwise use a safe fallback
-  const purify = DOMPurify || {
+  // Create a safe wrapper that handles both DOMPurify and fallback
+  const purify = {
     sanitize: (str: string, config?: any) => {
-      // Basic HTML escaping as fallback
-      if (!str) return '';
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;')
-        .replace(/\//g, '&#x2F;');
+      // If DOMPurify is loaded, use it
+      if (DOMPurifyInstance) {
+        return DOMPurifyInstance.sanitize(str, config);
+      }
+
+      // Otherwise use basic HTML escaping
+      return basicHtmlEscape(str);
     }
   };
   
@@ -258,6 +281,16 @@ export const createSafeHTML = (
   return { __html: sanitized };
 };
 
+/**
+ * Initialize DOMPurify after the app has loaded
+ * Call this from your main App component
+ */
+export const initializeSanitizer = () => {
+  if (typeof window !== 'undefined' && !DOMPurifyInstance) {
+    loadDOMPurify();
+  }
+};
+
 // Export default sanitizer for general use
 export default {
   strict: sanitizeStrict,
@@ -269,4 +302,5 @@ export default {
   escapeHtml,
   truncate: sanitizeAndTruncate,
   createSafeHTML,
+  initialize: initializeSanitizer,
 };

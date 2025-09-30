@@ -15,6 +15,7 @@ import { PrivacyConsentBanner } from './components/privacy/PrivacyConsentBanner'
 import { ScrollToTop } from './components/ScrollToTop';
 import { RouteLoader } from './components/RouteLoader';
 import { PerformanceOptimizer } from './components/PerformanceOptimizer';
+import { initializeSanitizer } from './utils/sanitize';
 
 // Lazy load all route components for better performance
 import * as LazyRoutes from './LazyRoutes';
@@ -61,8 +62,13 @@ const ProfileRedirect: React.FC = () => {
 const AppContent: React.FC = () => {
   // Debug navigation
 
+  // Initialize sanitizer after component mounts
+  useEffect(() => {
+    initializeSanitizer();
+  }, []);
+
   // Game preloading service disabled to eliminate console spam
-  // Search functionality remains independent and unaffected  
+  // Search functionality remains independent and unaffected
   // Preloading can be enabled manually if needed via gamePreloadService.startPreloading()
 
   return (
