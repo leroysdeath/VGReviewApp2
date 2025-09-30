@@ -5,7 +5,7 @@ import { Helmet } from 'react-helmet-async';
 import { StarRating } from '../components/StarRating';
 import { ReviewCard } from '../components/ReviewCard';
 import { AuthModal } from '../components/auth/AuthModal';
-import { gameDataService } from '../services/gameDataService';
+import { gameService } from '../services/gameService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
@@ -215,12 +215,12 @@ export const GamePage: React.FC = () => {
       // Smart resolution: check if identifier is numeric (IGDB ID) or slug
       if (isNumericIdentifier(identifier)) {
         console.log('🔢 Treating as IGDB ID:', identifier);
-        const result = await gameDataService.getGameWithFullReviews(parseInt(identifier));
+        const result = await gameService.getGameWithFullReviews(parseInt(identifier));
         gameData = result.game;
         reviewData = result.reviews;
       } else {
         console.log('🔤 Treating as slug:', identifier);
-        const result = await gameDataService.getGameWithFullReviewsBySlug(identifier);
+        const result = await gameService.getGameWithFullReviewsBySlug(identifier);
         gameData = result.game;
         reviewData = result.reviews;
       }
@@ -253,10 +253,10 @@ export const GamePage: React.FC = () => {
         let result;
         if (isNumericIdentifier(identifier)) {
           console.log('Using IGDB ID lookup:', identifier);
-          result = await gameDataService.getGameWithFullReviews(parseInt(identifier));
+          result = await gameService.getGameWithFullReviews(parseInt(identifier));
         } else {
           console.log('Using slug lookup:', identifier);
-          result = await gameDataService.getGameWithFullReviewsBySlug(identifier);
+          result = await gameService.getGameWithFullReviewsBySlug(identifier);
         }
         
         const { game: gameData, reviews: reviewData } = result;

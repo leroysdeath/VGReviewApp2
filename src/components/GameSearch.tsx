@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Loader2, AlertCircle, Calendar, Star, Gamepad2, Grid, List, Activity, Bug, ArrowRight } from 'lucide-react';
-import { gameDataService } from '../services/gameDataService';
 import type { GameWithCalculatedFields } from '../types/database';
 import { Link } from 'react-router-dom';
 import type { SearchSuggestion } from '../types/search';
-import { searchMetricsService } from '../services/searchMetricsService';
+import { searchObservabilityService } from '../services/searchObservabilityService';
 import { SearchMode } from '../constants/search';
 // Import search debugger for frontend testing
 import '../utils/searchDebugger';
@@ -140,7 +139,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
     }));
 
     // Start tracking search metrics
-    const searchId = searchMetricsService.startSearch(searchTerm);
+    const searchId = searchObservabilityService.startSearch(searchTerm);
 
     try {
       console.log('🔍 Performing search for:', searchTerm, 'with filters:', searchFilters);
@@ -149,9 +148,9 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         console.log('🐛 [DEBUG] Current URL:', window.location.href);
       }
 
-      // Import GameDataServiceV2 for filter support
-      const { GameDataServiceV2 } = await import('../services/gameDataServiceV2');
-      const service = new GameDataServiceV2();
+      // Import GameService for filter support
+      const { GameService } = await import('../services/gameService');
+      const service = new GameService();
 
       // Use the V2 service with filters
       const games = await service.searchGames(searchTerm, searchFilters, maxResults);
@@ -163,7 +162,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
       }
       
       // End tracking with success metrics
-      searchMetricsService.endSearch(searchId, {
+      searchObservabilityService.endSearch(searchId, {
         total: games.length,
         dbCount: games.filter(g => !g.fromIGDB).length, // Assuming we track source
         igdbCount: games.filter(g => g.fromIGDB).length,
@@ -205,7 +204,7 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         : 'Failed to search games. Please try again.';
       
       // End tracking with error metrics
-      searchMetricsService.endSearch(searchId, {
+      searchObservabilityService.endSearch(searchId, {
         total: 0,
         dbCount: 0,
         igdbCount: 0,
@@ -256,9 +255,9 @@ export const GameSearch: React.FC<GameSearchProps> = ({
         try {
           console.log('🔍 Performing initial search for:', initialQuery);
 
-          // Import gameDataServiceV2 for filter support
-          const { gameDataServiceV2 } = await import('../services/gameDataServiceV2');
-          const service = new gameDataServiceV2();
+          // Import gameService for filter support
+          const { gameService } = await import('../services/gameService');
+          const service = gameService;
 
           // Use the V2 service with filters
           const games = await service.searchGames(initialQuery, filters, maxResults);

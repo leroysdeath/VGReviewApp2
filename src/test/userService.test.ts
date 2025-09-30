@@ -1,177 +1,305 @@
-import { UserService, userService } from '../services/userService';
-import type { Session } from '@supabase/supabase-js';
+/**
+ * Unified User Service Tests
+ * Consolidates tests from userService, userServiceSimple, profileService, and profileCache
+ */
 
-// Mock Supabase completely to avoid network calls
+import { userService, profileCache, userServiceSimple } from '../services/userService';
+import type { UserProfile, UserUpdate, ServiceResponse } from '../services/userService';
+import { supabase } from '../services/supabase';
+
+// Mock Supabase
 jest.mock('../services/supabase', () => ({
   supabase: {
-    from: jest.fn(),
     auth: {
-      getUser: jest.fn(),
-      getSession: jest.fn()
-    }
+      getUser: jest.fn()
+    },
+    from: jest.fn(),
+    rpc: jest.fn()
   }
 }));
 
-// Import after mocking
-const { supabase } = require('../services/supabase');
-const mockSupabase = supabase;
+// Mock sanitization utilities
+jest.mock('../utils/sanitize', () => ({
+  sanitizeStrict: jest.fn((str) => str),
+  sanitizeBasic: jest.fn((str) => str),
+  sanitizeURL: jest.fn((str) => str)
+}));
 
-// Mock user data for consistent testing
-const mockAuthUser = {
-  id: 'auth-user-123',
-  email: 'test@example.com',
-  user_metadata: {
-    username: 'testuser',
-    name: 'Test User'
-  }
-} as Session['user'];
+// Mock type validators
+jest.mock('../types/user', () => ({
+  isDatabaseUser: jest.fn(() => true),
+  dbUserToClientUser: jest.fn((user) => user),
+  clientUpdateToDbUpdate: jest.fn((update) => update),
+  authIdUtils: {},
+  ProfileUpdateData: {},
+  ServiceResponse: {},
+  DatabaseUser: {},
+  ClientUser: {}
+}));
 
-const mockDatabaseUser = {
-  id: 1,
-  provider_id: 'auth-user-123',
-  email: 'test@example.com',
-  name: 'testuser',
-  username: 'testuser',
-  provider: 'supabase',
-  created_at: '2024-01-01T00:00:00.000Z',
-  updated_at: '2024-01-01T00:00:00.000Z'
-};
+const mockSupabase = supabase as jest.Mocked<typeof supabase>;
 
-describe('UserService', () => {
-  let testUserService: UserService;
-
+describe('Unified User Service Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Create fresh instance for each test to avoid cache pollution
-    testUserService = new UserService();
-    
-    // Mock current time for consistent cache testing
-    jest.spyOn(Date, 'now').mockReturnValue(1640995200000); // 2022-01-01
+    userService.clearCache();
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
+  describe('Authentication Operations', () => {
+    describe('getCurrentAuthUser', () => {
+      it('should return authenticated user successfully', async () => {
+        const mockUser = {
+          id: 'auth-123',
+          email: 'test@example.com'
+        };
 
-  describe('Cache Management', () => {
-    it('should cache user ID after successful lookup', async () => {
-      // Mock successful database query chain
-      const mockSingle = jest.fn().mockResolvedValue({
-        data: mockDatabaseUser,
-        error: null
+        mockSupabase.auth.getUser.mockResolvedValue({
+          data: { user: mockUser },
+          error: null
+        });
+
+        const result = await userService.getCurrentAuthUser();
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual({
+          id: 'auth-123',
+          email: 'test@example.com'
+        });
       });
-      const mockEq = jest.fn().mockReturnValue({ single: mockSingle });
-      const mockSelect = jest.fn().mockReturnValue({ eq: mockEq });
-      mockSupabase.from.mockReturnValue({ select: mockSelect });
 
-      const result = await testUserService.getOrCreateDatabaseUser(mockAuthUser);
+      it('should handle no authenticated user', async () => {
+        mockSupabase.auth.getUser.mockResolvedValue({
+          data: { user: null },
+          error: null
+        });
 
-      expect(result.success).toBe(true);
-      expect(result.userId).toBe(1);
-      
-      // Verify cache entry exists
-      expect(testUserService.getCacheSize()).toBe(1);
-      
-      // Second call should use cache (no additional DB calls)
-      mockSupabase.from.mockClear();
-      const cachedResult = await testUserService.getOrCreateDatabaseUser(mockAuthUser);
-      
-      expect(cachedResult.success).toBe(true);
-      expect(cachedResult.userId).toBe(1);
-      expect(mockSupabase.from).not.toHaveBeenCalled();
+        const result = await userService.getCurrentAuthUser();
+
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('User not authenticated');
+      });
+
+      it('should handle auth errors', async () => {
+        mockSupabase.auth.getUser.mockResolvedValue({
+          data: { user: null },
+          error: { message: 'Auth failed' }
+        });
+
+        const result = await userService.getCurrentAuthUser();
+
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('Authentication error');
+      });
     });
 
-    it('should expire cache entries after TTL', async () => {
-      // Mock initial successful lookup
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: mockDatabaseUser,
-              error: null
+    describe('getOrCreateUser', () => {
+      it('should create user via database function', async () => {
+        const mockSession = {
+          user: {
+            id: 'auth-123',
+            email: 'test@example.com',
+            user_metadata: { name: 'Test User' }
+          }
+        };
+
+        mockSupabase.rpc.mockResolvedValue({
+          data: 456,
+          error: null
+        });
+
+        const result = await userService.getOrCreateUser(mockSession as any);
+
+        expect(result.success).toBe(true);
+        expect(result.userId).toBe(456);
+        expect(mockSupabase.rpc).toHaveBeenCalledWith('get_or_create_user', {
+          auth_id: 'auth-123',
+          user_email: 'test@example.com',
+          user_name: 'Test User',
+          user_provider: 'supabase'
+        });
+      });
+
+      it('should fallback to manual user creation', async () => {
+        const mockSession = {
+          user: {
+            id: 'auth-123',
+            email: 'test@example.com',
+            user_metadata: { name: 'Test User' }
+          }
+        };
+
+        // Mock database function failure
+        mockSupabase.rpc.mockResolvedValue({
+          data: null,
+          error: { message: 'Function failed' }
+        });
+
+        // Mock successful lookup
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: { id: 789 },
+                error: null
+              })
             })
           })
-        })
-      } as any);
+        });
 
-      // First call - populates cache
-      await testUserService.getOrCreateDatabaseUser(mockAuthUser);
-      expect(testUserService.getCacheSize()).toBe(1);
+        const result = await userService.getOrCreateUser(mockSession as any);
 
-      // Advance time past TTL (5 minutes + 1ms)
-      jest.spyOn(Date, 'now').mockReturnValue(1640995200000 + (5 * 60 * 1000) + 1);
+        expect(result.success).toBe(true);
+        expect(result.userId).toBe(789);
+      });
 
-      // Second call should miss cache and query DB again
-      const result = await testUserService.getOrCreateDatabaseUser(mockAuthUser);
-      
-      expect(result.success).toBe(true);
-      expect(mockSupabase.from).toHaveBeenCalledTimes(2);
-    });
+      it('should handle no session provided', async () => {
+        const result = await userService.getOrCreateUser();
 
-    it('should provide accurate cache statistics', () => {
-      // Initially empty cache
-      const initialStats = testUserService.getCacheStats();
-      expect(initialStats.userCacheSize).toBe(0);
-      expect(initialStats.profileCacheSize).toBe(0);
-      expect(initialStats.totalCachedItems).toBe(0);
-      expect(initialStats.oldestCacheEntry).toBeNull();
-
-      // Add cache entry manually for testing
-      testUserService['setCacheEntry']('test-user-1', 1);
-      testUserService['setCacheEntry']('test-user-2', 2);
-
-      const stats = testUserService.getCacheStats();
-      expect(stats.userCacheSize).toBe(2);
-      expect(stats.totalCachedItems).toBe(2);
-      expect(stats.oldestCacheEntry).toBeDefined();
-    });
-
-    it('should clear cache completely', async () => {
-      // Populate cache first
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: mockDatabaseUser,
-              error: null
-            })
-          })
-        })
-      } as any);
-
-      await testUserService.getOrCreateDatabaseUser(mockAuthUser);
-      expect(testUserService.getCacheSize()).toBe(1);
-
-      testUserService.clearCache();
-      expect(testUserService.getCacheSize()).toBe(0);
-      expect(testUserService.getProfileCacheSize()).toBe(0);
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('No session provided');
+      });
     });
   });
 
-  describe('User Lookup Operations', () => {
-    it('should successfully lookup existing user', async () => {
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: mockDatabaseUser,
-              error: null
+  describe('Profile Operations - Simple', () => {
+    describe('getUser', () => {
+      it('should fetch user by ID', async () => {
+        const mockUser = {
+          id: 1,
+          username: 'testuser',
+          email: 'test@example.com',
+          name: 'Test User'
+        };
+
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: mockUser,
+                error: null
+              })
             })
           })
-        })
-      } as any);
+        });
 
-      const result = await testUserService.getOrCreateDatabaseUser(mockAuthUser);
+        const result = await userService.getUser(1);
 
-      expect(result.success).toBe(true);
-      expect(result.userId).toBe(1);
-      expect(mockSupabase.from).toHaveBeenCalledWith('user');
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(mockUser);
+      });
+
+      it('should handle user not found', async () => {
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: null,
+                error: { message: 'User not found' }
+              })
+            })
+          })
+        });
+
+        const result = await userService.getUser(999);
+
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('User not found');
+      });
     });
 
-    it('should handle user not found gracefully', async () => {
-      // Mock user not found scenario
-      mockSupabase.from
-        .mockReturnValueOnce({
+    describe('getUserByUsername', () => {
+      it('should fetch user by username', async () => {
+        const mockUser = {
+          id: 1,
+          username: 'testuser',
+          email: 'test@example.com'
+        };
+
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: mockUser,
+                error: null
+              })
+            })
+          })
+        });
+
+        const result = await userService.getUserByUsername('testuser');
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(mockUser);
+      });
+    });
+
+    describe('getUserByProviderId', () => {
+      it('should fetch user by provider ID', async () => {
+        const mockUser = {
+          id: 1,
+          provider_id: 'auth-123',
+          email: 'test@example.com'
+        };
+
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: mockUser,
+                error: null
+              })
+            })
+          })
+        });
+
+        const result = await userService.getUserByProviderId('auth-123');
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(mockUser);
+      });
+    });
+  });
+
+  describe('Enhanced Profile Operations', () => {
+    describe('getUserProfile', () => {
+      it('should get user profile with caching', async () => {
+        const mockProfile = {
+          id: 1,
+          provider_id: 'b47ac10b-58cc-4372-a567-0e02b2c3d479',
+          username: 'testuser',
+          email: 'test@example.com',
+          name: 'Test User',
+          provider: 'supabase',
+          created_at: '2023-01-01T00:00:00Z',
+          updated_at: '2023-01-01T00:00:00Z'
+        };
+
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: mockProfile,
+                error: null
+              })
+            })
+          })
+        });
+
+        const result = await userService.getUserProfile('b47ac10b-58cc-4372-a567-0e02b2c3d479');
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(mockProfile);
+      });
+
+      it('should reject invalid UUID format', async () => {
+        const result = await userService.getUserProfile('invalid-uuid');
+
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('Invalid provider ID format');
+      });
+
+      it('should handle profile not found', async () => {
+        mockSupabase.from.mockReturnValue({
           select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
@@ -180,400 +308,413 @@ describe('UserService', () => {
               })
             })
           })
-        } as any)
-        .mockReturnValueOnce({
-          insert: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: mockDatabaseUser,
-                error: null
-              })
-            })
-          })
-        } as any);
+        });
 
-      const result = await testUserService.getOrCreateDatabaseUser(mockAuthUser);
+        const result = await userService.getUserProfile('b47ac10b-58cc-4372-a567-0e02b2c3d479');
 
-      expect(result.success).toBe(true);
-      expect(result.userId).toBe(1);
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('User profile not found');
+      });
     });
 
-    it('should handle database connection errors', async () => {
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockRejectedValue(new Error('Connection failed'))
-          })
-        })
-      } as any);
+    describe('getUserProfileById', () => {
+      it('should get user profile by integer ID', async () => {
+        const mockProfile = {
+          id: 5,
+          provider_id: 'b47ac10b-58cc-4372-a567-0e02b2c3d479',
+          username: 'testuser',
+          email: 'test@example.com',
+          avatar_url: 'https://example.com/avatar.jpg',
+          name: 'Test User'
+        };
 
-      const result = await testUserService.getOrCreateDatabaseUser(mockAuthUser);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Connection failed');
-    });
-
-    it('should validate auth user input', async () => {
-      const invalidUser = null as any;
-      const result = await testUserService.getOrCreateDatabaseUser(invalidUser);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('No authenticated user provided');
-      expect(mockSupabase.from).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('User Creation Operations', () => {
-    it('should create new user with generated username', async () => {
-      const userWithoutUsername = {
-        ...mockAuthUser,
-        user_metadata: { email: 'newuser@example.com' }
-      };
-
-      // Mock user not found
-      mockSupabase.from
-        .mockReturnValueOnce({
+        mockSupabase.from.mockReturnValue({
           select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
-                data: null,
-                error: { code: 'PGRST116' }
-              })
-            })
-          })
-        } as any)
-        // Mock username availability check
-        .mockReturnValueOnce({
-          select: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ count: 0 })
-          })
-        } as any)
-        // Mock successful insert
-        .mockReturnValueOnce({
-          insert: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: { ...mockDatabaseUser, username: 'newuser' },
+                data: mockProfile,
                 error: null
               })
             })
           })
-        } as any);
+        });
 
-      const result = await testUserService.getOrCreateDatabaseUser(userWithoutUsername);
+        const result = await userService.getUserProfileById(5);
 
-      expect(result.success).toBe(true);
-      expect(result.userId).toBeDefined();
-    });
-
-    it('should handle username collisions with suffix generation', async () => {
-      const userWithCommonName = {
-        ...mockAuthUser,
-        email: 'admin@example.com',
-        user_metadata: { email: 'admin@example.com' }
-      };
-
-      // Mock user not found
-      mockSupabase.from
-        .mockReturnValueOnce({
-          select: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: null,
-                error: { code: 'PGRST116' }
-              })
-            })
-          })
-        } as any)
-        // Mock username 'admin' is taken
-        .mockReturnValueOnce({
-          select: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ count: 1 })
-          })
-        } as any)
-        // Mock username 'admin1' is available
-        .mockReturnValueOnce({
-          select: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ count: 0 })
-          })
-        } as any)
-        // Mock successful insert with suffixed username
-        .mockReturnValueOnce({
-          insert: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: { ...mockDatabaseUser, username: 'admin1' },
-                error: null
-              })
-            })
-          })
-        } as any);
-
-      const result = await testUserService.getOrCreateDatabaseUser(userWithCommonName);
-
-      expect(result.success).toBe(true);
-    });
-
-    it('should handle race conditions during user creation', async () => {
-      // Mock user not found initially
-      mockSupabase.from
-        .mockReturnValueOnce({
-          select: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: null,
-                error: { code: 'PGRST116' }
-              })
-            })
-          })
-        } as any)
-        // Mock unique constraint violation (race condition)
-        .mockReturnValueOnce({
-          insert: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockRejectedValue({
-                code: '23505',
-                message: 'duplicate key value violates unique constraint'
-              })
-            })
-          })
-        } as any)
-        // Mock retry lookup finds the user created by parallel process
-        .mockReturnValueOnce({
-          select: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: mockDatabaseUser,
-                error: null
-              })
-            })
-          })
-        } as any);
-
-      const result = await testUserService.getOrCreateDatabaseUser(mockAuthUser);
-
-      expect(result.success).toBe(true);
-      expect(result.userId).toBe(1);
-    });
-  });
-
-  describe('Profile Management', () => {
-    it('should fetch and cache user profile', async () => {
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: mockDatabaseUser,
-              error: null
-            })
-          })
-        })
-      } as any);
-
-      const profile = await testUserService.getUserProfile(1);
-
-      expect(profile).toEqual(mockDatabaseUser);
-      expect(testUserService.getProfileCacheSize()).toBe(1);
-
-      // Second call should use cache
-      mockSupabase.from.mockClear();
-      const cachedProfile = await testUserService.getUserProfile(1);
-      
-      expect(cachedProfile).toEqual(mockDatabaseUser);
-      expect(mockSupabase.from).not.toHaveBeenCalled();
-    });
-
-    it('should update user profile and refresh cache', async () => {
-      const updates = { name: 'Updated Name', bio: 'Updated bio' };
-
-      mockSupabase.from.mockReturnValue({
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: { ...mockDatabaseUser, ...updates },
-                error: null
-              })
-            })
-          })
-        })
-      } as any);
-
-      const result = await testUserService.updateUserProfile(1, updates);
-
-      expect(result.success).toBe(true);
-      expect(result.userId).toBe(1);
-      expect(testUserService.getProfileCacheSize()).toBe(1);
-    });
-
-    it('should handle profile update errors', async () => {
-      const updates = { name: 'Updated Name' };
-
-      mockSupabase.from.mockReturnValue({
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
-                data: null,
-                error: { message: 'Update failed' }
-              })
-            })
-          })
-        })
-      } as any);
-
-      const result = await testUserService.updateUserProfile(1, updates);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Update failed');
-    });
-  });
-
-  describe('Batch Operations', () => {
-    it('should fetch multiple users by IDs', async () => {
-      const userIds = [1, 2, 3];
-      const mockUsers = [
-        { ...mockDatabaseUser, id: 1 },
-        { ...mockDatabaseUser, id: 2, username: 'user2' },
-        { ...mockDatabaseUser, id: 3, username: 'user3' }
-      ];
-
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          in: jest.fn().mockResolvedValue({
-            data: mockUsers,
-            error: null
-          })
-        })
-      } as any);
-
-      const users = await testUserService.getUsersByIds(userIds);
-
-      expect(users).toEqual(mockUsers);
-      expect(testUserService.getProfileCacheSize()).toBe(3);
-      expect(mockSupabase.from).toHaveBeenCalledWith('user');
-    });
-
-    it('should handle empty user IDs array', async () => {
-      const users = await testUserService.getUsersByIds([]);
-
-      expect(users).toEqual([]);
-      expect(mockSupabase.from).not.toHaveBeenCalled();
-    });
-
-    it('should handle batch operation errors gracefully', async () => {
-      const userIds = [1, 2, 3];
-
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          in: jest.fn().mockRejectedValue(new Error('Batch operation failed'))
-        })
-      } as any);
-
-      const users = await testUserService.getUsersByIds(userIds);
-
-      expect(users).toEqual([]);
-      expect(testUserService.getProfileCacheSize()).toBe(0);
-    });
-  });
-
-  describe('Memory Management and Performance', () => {
-    it('should not grow cache indefinitely in production environment', () => {
-      // Simulate production environment (no cleanup interval)
-      const prodUserService = new UserService();
-      
-      // Add many cache entries
-      for (let i = 0; i < 1000; i++) {
-        prodUserService['setCacheEntry'](`test-user-${i}`, i);
-      }
-
-      expect(prodUserService.getCacheSize()).toBe(1000);
-      
-      // In production, cleanup would be handled by TTL expiration on access
-      // This test ensures the service can handle large cache sizes without breaking
-    });
-
-    it('should handle concurrent operations without cache corruption', async () => {
-      // Mock successful database operations
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: mockDatabaseUser,
-              error: null
-            })
-          })
-        })
-      } as any);
-
-      // Simulate concurrent user creation requests
-      const concurrentPromises = Array.from({ length: 10 }, (_, i) => 
-        testUserService.getOrCreateDatabaseUser({
-          ...mockAuthUser,
-          id: `concurrent-user-${i}`
-        })
-      );
-
-      const results = await Promise.all(concurrentPromises);
-
-      // All operations should succeed
-      results.forEach(result => {
         expect(result.success).toBe(true);
+        expect(result.data).toEqual(mockProfile);
+        expect(mockSupabase.from).toHaveBeenCalledWith('user');
       });
 
-      // Cache should contain all entries
-      expect(testUserService.getCacheSize()).toBe(10);
+      it('should handle user not found by ID', async () => {
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: null,
+                error: { code: 'PGRST116', message: 'Not found' }
+              })
+            })
+          })
+        });
+
+        const result = await userService.getUserProfileById(999);
+
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('User profile not found');
+      });
+
+      it('should cache profile by both ID and provider_id', async () => {
+        const mockProfile = {
+          id: 5,
+          provider_id: 'b47ac10b-58cc-4372-a567-0e02b2c3d479',
+          username: 'testuser',
+          email: 'test@example.com',
+          avatar_url: 'https://example.com/avatar.jpg',
+          name: 'Test User'
+        };
+
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: mockProfile,
+                error: null
+              })
+            })
+          })
+        });
+
+        // First call - should hit database
+        const result1 = await userService.getUserProfileById(5);
+        expect(result1.success).toBe(true);
+
+        // Second call - should hit cache
+        const result2 = await userService.getUserProfileById(5);
+        expect(result2.success).toBe(true);
+        expect(result2.data).toEqual(mockProfile);
+      });
+    });
+
+    describe('ensureUserProfileExists', () => {
+      it('should return existing profile if found', async () => {
+        const mockProfile = {
+          id: 1,
+          provider_id: 'b47ac10b-58cc-4372-a567-0e02b2c3d479',
+          username: 'testuser',
+          email: 'test@example.com'
+        };
+
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: mockProfile,
+                error: null
+              })
+            })
+          })
+        });
+
+        const result = await userService.ensureUserProfileExists(
+          'b47ac10b-58cc-4372-a567-0e02b2c3d479',
+          'test@example.com'
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(mockProfile);
+      });
+
+      it('should create new profile if not found', async () => {
+        const newProfile = {
+          id: 2,
+          provider_id: 'b47ac10b-58cc-4372-a567-0e02b2c3d479',
+          username: 'test',
+          email: 'test@example.com',
+          name: 'test',
+          provider: 'supabase'
+        };
+
+        // Mock profile not found
+        mockSupabase.from.mockReturnValueOnce({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: null,
+                error: { code: 'PGRST116' }
+              })
+            })
+          })
+        });
+
+        // Mock username availability check
+        mockSupabase.from.mockReturnValueOnce({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              maybeSingle: jest.fn().mockResolvedValue({
+                data: null,
+                error: null
+              })
+            })
+          })
+        });
+
+        // Mock profile creation
+        mockSupabase.from.mockReturnValueOnce({
+          insert: jest.fn().mockReturnValue({
+            select: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: newProfile,
+                error: null
+              })
+            })
+          })
+        });
+
+        const result = await userService.ensureUserProfileExists(
+          'b47ac10b-58cc-4372-a567-0e02b2c3d479',
+          'test@example.com'
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(newProfile);
+      });
+    });
+
+    describe('updateUserProfile', () => {
+      it('should update user profile successfully', async () => {
+        const updateData = {
+          name: 'Updated Name',
+          bio: 'Updated bio'
+        };
+
+        const updatedProfile = {
+          id: 1,
+          provider_id: 'auth-123',
+          username: 'testuser',
+          name: 'Updated Name',
+          bio: 'Updated bio',
+          updated_at: '2023-01-02T00:00:00Z'
+        };
+
+        mockSupabase.from.mockReturnValue({
+          update: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              select: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({
+                  data: updatedProfile,
+                  error: null
+                })
+              })
+            })
+          })
+        });
+
+        const result = await userService.updateUserProfile(1, updateData);
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(updatedProfile);
+      });
+
+      it('should handle update errors', async () => {
+        const updateData = { name: 'Updated Name' };
+
+        mockSupabase.from.mockReturnValue({
+          update: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              select: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({
+                  data: null,
+                  error: { message: 'Update failed' }
+                })
+              })
+            })
+          })
+        });
+
+        const result = await userService.updateUserProfile(1, updateData);
+
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('Failed to update profile');
+      });
+    });
+
+    describe('checkUsernameAvailability', () => {
+      it('should return available for unused username', async () => {
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              maybeSingle: jest.fn().mockResolvedValue({
+                data: null,
+                error: null
+              })
+            })
+          })
+        });
+
+        const result = await userService.checkUsernameAvailability('newuser');
+
+        expect(result.success).toBe(true);
+        expect(result.data?.available).toBe(true);
+      });
+
+      it('should return not available for existing username', async () => {
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              maybeSingle: jest.fn().mockResolvedValue({
+                data: { id: 1 },
+                error: null
+              })
+            })
+          })
+        });
+
+        const result = await userService.checkUsernameAvailability('existinguser');
+
+        expect(result.success).toBe(true);
+        expect(result.data?.available).toBe(false);
+      });
+
+      it('should handle empty username', async () => {
+        const result = await userService.checkUsernameAvailability('');
+
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('Username cannot be empty');
+      });
+
+      it('should handle short username', async () => {
+        const result = await userService.checkUsernameAvailability('ab');
+
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('Username must be at least 3 characters long');
+      });
+    });
+
+    describe('getCurrentUserProfile', () => {
+      it('should get current user profile', async () => {
+        const mockAuthUser = {
+          id: 'auth-123',
+          email: 'test@example.com'
+        };
+
+        const mockProfile = {
+          id: 1,
+          provider_id: 'auth-123',
+          username: 'testuser',
+          email: 'test@example.com'
+        };
+
+        mockSupabase.auth.getUser.mockResolvedValue({
+          data: { user: mockAuthUser },
+          error: null
+        });
+
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: mockProfile,
+                error: null
+              })
+            })
+          })
+        });
+
+        const result = await userService.getCurrentUserProfile();
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(mockProfile);
+      });
+
+      it('should handle no authenticated user', async () => {
+        mockSupabase.auth.getUser.mockResolvedValue({
+          data: { user: null },
+          error: null
+        });
+
+        const result = await userService.getCurrentUserProfile();
+
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('No authenticated user');
+      });
     });
   });
 
-  describe('Error Handling and Edge Cases', () => {
-    it('should handle malformed auth user data', async () => {
-      const malformedUser = {
-        id: '', // Empty ID
-        email: 'invalid-email', // Invalid email
-        user_metadata: null // Null metadata
-      } as any;
+  describe('Cache Management', () => {
+    it('should clear all caches', () => {
+      // Add some mock data to caches
+      userService['profileCache'].set('test-1', {
+        data: { id: 1, provider_id: 'test-1' } as UserProfile,
+        timestamp: Date.now(),
+        userId: 'test-1'
+      });
 
-      const result = await testUserService.getOrCreateDatabaseUser(malformedUser);
+      userService.clearCache();
+
+      // Cache should be empty
+      expect(userService['profileCache'].size).toBe(0);
+      expect(userService['userCache'].size).toBe(0);
+    });
+
+    it('should clear specific profile cache', () => {
+      userService.clearProfileCache('test-1');
+
+      // Should not throw error
+      expect(true).toBe(true);
+    });
+  });
+
+  describe('Backward Compatibility', () => {
+    it('should provide userServiceSimple alias', () => {
+      expect(userServiceSimple).toBeDefined();
+      expect(typeof userServiceSimple.getUser).toBe('function');
+    });
+
+    it('should provide profileCache interface', () => {
+      expect(profileCache).toBeDefined();
+      expect(typeof profileCache.get).toBe('function');
+      expect(typeof profileCache.set).toBe('function');
+      expect(typeof profileCache.update).toBe('function');
+      expect(typeof profileCache.clear).toBe('function');
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle database connection errors', async () => {
+      mockSupabase.from.mockImplementation(() => {
+        throw new Error('Database connection failed');
+      });
+
+      const result = await userService.getUser(1);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('No authenticated user provided');
+      expect(result.error).toContain('Database connection failed');
     });
 
-    it('should handle database timeout scenarios', async () => {
-      const timeoutError = new Error('Connection timeout');
-      timeoutError.name = 'TimeoutError';
+    it('should handle unexpected errors gracefully', async () => {
+      mockSupabase.auth.getUser.mockImplementation(() => {
+        throw new Error('Unexpected error');
+      });
 
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockRejectedValue(timeoutError)
-          })
-        })
-      } as any);
-
-      const result = await testUserService.getOrCreateDatabaseUser(mockAuthUser);
+      const result = await userService.getCurrentAuthUser();
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Connection timeout');
+      expect(result.error).toContain('Unexpected error');
     });
+  });
+});
 
-    it('should handle unexpected data structures from database', async () => {
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: { unexpected: 'structure' }, // Wrong data structure
-              error: null
-            })
-          })
-        })
-      } as any);
+describe('Function Exports', () => {
+  const { getCurrentAuthUser, getUserProfile, ensureUserProfileExists,
+          updateUserProfile, checkUsernameAvailability, getCurrentUserProfile } = require('../services/userService');
 
-      const result = await testUserService.getOrCreateDatabaseUser(mockAuthUser);
-
-      // Service should handle unexpected data gracefully
-      expect(result.success).toBeDefined();
-    });
+  it('should export all required functions', () => {
+    expect(typeof getCurrentAuthUser).toBe('function');
+    expect(typeof getUserProfile).toBe('function');
+    expect(typeof ensureUserProfileExists).toBe('function');
+    expect(typeof updateUserProfile).toBe('function');
+    expect(typeof checkUsernameAvailability).toBe('function');
+    expect(typeof getCurrentUserProfile).toBe('function');
   });
 });

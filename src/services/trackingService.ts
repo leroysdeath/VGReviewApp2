@@ -23,6 +23,47 @@ export interface TrackingResult {
   reason?: string;
 }
 
+export interface CohortAnalysis {
+  cohortDate: string;
+  totalUsers: number;
+  returningUsers: number;
+  retentionRate: number;
+  avgViewsPerUser: number;
+}
+
+export interface GamePerformanceTrend {
+  gameId: number;
+  gameName?: string;
+  weeklyData: Array<{
+    week: string;
+    views: number;
+    uniqueSessions: number;
+    changePercent: number;
+  }>;
+  overallTrend: 'rising' | 'falling' | 'stable';
+  totalViews: number;
+}
+
+export interface SourceAttribution {
+  source: ViewSource;
+  count: number;
+  percentage: number;
+  conversionRate?: number;
+}
+
+export interface AnalyticsSummary {
+  totalViews: number;
+  uniqueSessions: number;
+  avgViewsPerSession: number;
+  topGames: Array<{ gameId: number; gameName?: string; views: number }>;
+  sourceBreakdown: SourceAttribution[];
+  periodComparison: {
+    current: number;
+    previous: number;
+    changePercent: number;
+  };
+}
+
 // Throttling cache to prevent duplicate tracking
 interface ThrottleEntry {
   gameId: number;
@@ -353,6 +394,310 @@ class TrackingService {
       console.error('Error getting game stats:', error);
       return null;
     }
+  }
+
+  /**
+   * Get cohort analysis for user retention
+   * Groups users by first view date and tracks return behavior
+   */
+  async getCohortAnalysis(startDate: Date, endDate: Date): Promise<CohortAnalysis[]> {
+    try {
+      const { data, error } = await supabase
+        .from('game_views')
+        .select('user_id, view_date, session_hash')
+        .gte('view_date', startDate.toISOString().split('T')[0])
+        .lte('view_date', endDate.toISOString().split('T')[0])
+        .not('user_id', 'is', null);
+
+      if (error) {
+        console.error('Error fetching cohort data:', error);
+        return [];
+      }
+
+      const cohorts = new Map<string, Set<number>>();
+      const allViews = new Map<string, Map<number, number>>();
+
+      data?.forEach(row => {
+        const date = row.view_date;
+        const userId = row.user_id;
+
+        if (!cohorts.has(date)) {
+          cohorts.set(date, new Set());
+          allViews.set(date, new Map());
+        }
+
+        cohorts.get(date)!.add(userId);
+        const userViews = allViews.get(date)!;
+        userViews.set(userId, (userViews.get(userId) || 0) + 1);
+      });
+
+      const laterViews = new Map<string, Set<number>>();
+      data?.forEach(row => {
+        const date = row.view_date;
+        const userId = row.user_id;
+
+        cohorts.forEach((cohortUsers, cohortDate) => {
+          if (cohortDate < date && cohortUsers.has(userId)) {
+            if (!laterViews.has(cohortDate)) {
+              laterViews.set(cohortDate, new Set());
+            }
+            laterViews.get(cohortDate)!.add(userId);
+          }
+        });
+      });
+
+      const analysis: CohortAnalysis[] = [];
+      cohorts.forEach((users, date) => {
+        const returning = laterViews.get(date)?.size || 0;
+        const totalUsers = users.size;
+        const totalViews = Array.from(allViews.get(date)!.values()).reduce((a, b) => a + b, 0);
+
+        analysis.push({
+          cohortDate: date,
+          totalUsers,
+          returningUsers: returning,
+          retentionRate: totalUsers > 0 ? (returning / totalUsers) * 100 : 0,
+          avgViewsPerUser: totalUsers > 0 ? totalViews / totalUsers : 0
+        });
+      });
+
+      return analysis.sort((a, b) => a.cohortDate.localeCompare(b.cohortDate));
+    } catch (error) {
+      console.error('Error getting cohort analysis:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get game performance trends over time
+   */
+  async getGamePerformanceTrends(
+    gameIds: number[],
+    weeks: number = 8
+  ): Promise<GamePerformanceTrend[]> {
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - (weeks * 7));
+
+      const { data, error } = await supabase
+        .from('game_metrics_daily')
+        .select('game_id, metric_date, total_views, unique_sessions')
+        .in('game_id', gameIds)
+        .gte('metric_date', startDate.toISOString().split('T')[0])
+        .order('metric_date', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching performance trends:', error);
+        return [];
+      }
+
+      const gameData = new Map<number, Array<{
+        week: string;
+        views: number;
+        uniqueSessions: number;
+      }>>();
+
+      data?.forEach(row => {
+        const weekStart = this.getWeekStart(new Date(row.metric_date));
+        const weekKey = weekStart.toISOString().split('T')[0];
+
+        if (!gameData.has(row.game_id)) {
+          gameData.set(row.game_id, []);
+        }
+
+        const gameWeeks = gameData.get(row.game_id)!;
+        const existingWeek = gameWeeks.find(w => w.week === weekKey);
+
+        if (existingWeek) {
+          existingWeek.views += row.total_views;
+          existingWeek.uniqueSessions += row.unique_sessions;
+        } else {
+          gameWeeks.push({
+            week: weekKey,
+            views: row.total_views,
+            uniqueSessions: row.unique_sessions
+          });
+        }
+      });
+
+      const trends: GamePerformanceTrend[] = [];
+      gameData.forEach((weeklyData, gameId) => {
+        weeklyData.sort((a, b) => a.week.localeCompare(b.week));
+
+        const dataWithChange = weeklyData.map((week, index) => {
+          const prevWeek = index > 0 ? weeklyData[index - 1] : null;
+          const changePercent = prevWeek
+            ? ((week.views - prevWeek.views) / prevWeek.views) * 100
+            : 0;
+
+          return { ...week, changePercent };
+        });
+
+        const totalViews = weeklyData.reduce((sum, w) => sum + w.views, 0);
+        const avgChange = dataWithChange.length > 1
+          ? dataWithChange.slice(1).reduce((sum, w) => sum + w.changePercent, 0) / (dataWithChange.length - 1)
+          : 0;
+
+        let overallTrend: 'rising' | 'falling' | 'stable' = 'stable';
+        if (avgChange > 10) overallTrend = 'rising';
+        else if (avgChange < -10) overallTrend = 'falling';
+
+        trends.push({
+          gameId,
+          weeklyData: dataWithChange,
+          overallTrend,
+          totalViews
+        });
+      });
+
+      return trends;
+    } catch (error) {
+      console.error('Error getting game performance trends:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get source attribution report
+   */
+  async getSourceAttribution(startDate: Date, endDate: Date): Promise<SourceAttribution[]> {
+    try {
+      const { data, error } = await supabase
+        .from('game_metrics_daily')
+        .select('view_sources')
+        .gte('metric_date', startDate.toISOString().split('T')[0])
+        .lte('metric_date', endDate.toISOString().split('T')[0]);
+
+      if (error) {
+        console.error('Error fetching source attribution:', error);
+        return [];
+      }
+
+      const sourceTotals = new Map<ViewSource, number>();
+      let totalViews = 0;
+
+      data?.forEach(row => {
+        const sources = row.view_sources as Record<string, number>;
+        Object.entries(sources).forEach(([source, count]) => {
+          const currentCount = sourceTotals.get(source as ViewSource) || 0;
+          sourceTotals.set(source as ViewSource, currentCount + count);
+          totalViews += count;
+        });
+      });
+
+      const attribution: SourceAttribution[] = [];
+      sourceTotals.forEach((count, source) => {
+        attribution.push({
+          source,
+          count,
+          percentage: totalViews > 0 ? (count / totalViews) * 100 : 0
+        });
+      });
+
+      return attribution.sort((a, b) => b.count - a.count);
+    } catch (error) {
+      console.error('Error getting source attribution:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get comprehensive analytics summary
+   */
+  async getAnalyticsSummary(days: number = 30): Promise<AnalyticsSummary | null> {
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const previousStart = new Date(startDate);
+      previousStart.setDate(previousStart.getDate() - days);
+
+      const [currentData, previousData] = await Promise.all([
+        this.getPeriodStats(startDate, endDate),
+        this.getPeriodStats(previousStart, startDate)
+      ]);
+
+      if (!currentData) return null;
+
+      const topGames = await this.getTopGames(startDate, endDate, 10);
+      const sourceBreakdown = await this.getSourceAttribution(startDate, endDate);
+
+      return {
+        totalViews: currentData.totalViews,
+        uniqueSessions: currentData.uniqueSessions,
+        avgViewsPerSession: currentData.uniqueSessions > 0
+          ? currentData.totalViews / currentData.uniqueSessions
+          : 0,
+        topGames,
+        sourceBreakdown,
+        periodComparison: {
+          current: currentData.totalViews,
+          previous: previousData?.totalViews || 0,
+          changePercent: previousData && previousData.totalViews > 0
+            ? ((currentData.totalViews - previousData.totalViews) / previousData.totalViews) * 100
+            : 0
+        }
+      };
+    } catch (error) {
+      console.error('Error getting analytics summary:', error);
+      return null;
+    }
+  }
+
+  private async getPeriodStats(startDate: Date, endDate: Date): Promise<{
+    totalViews: number;
+    uniqueSessions: number;
+  } | null> {
+    const { data, error } = await supabase
+      .from('game_metrics_daily')
+      .select('total_views, unique_sessions')
+      .gte('metric_date', startDate.toISOString().split('T')[0])
+      .lte('metric_date', endDate.toISOString().split('T')[0]);
+
+    if (error) return null;
+
+    const totals = data?.reduce(
+      (acc, row) => ({
+        totalViews: acc.totalViews + row.total_views,
+        uniqueSessions: acc.uniqueSessions + row.unique_sessions
+      }),
+      { totalViews: 0, uniqueSessions: 0 }
+    );
+
+    return totals || null;
+  }
+
+  private async getTopGames(
+    startDate: Date,
+    endDate: Date,
+    limit: number
+  ): Promise<Array<{ gameId: number; views: number }>> {
+    const { data, error } = await supabase
+      .from('game_metrics_daily')
+      .select('game_id, total_views')
+      .gte('metric_date', startDate.toISOString().split('T')[0])
+      .lte('metric_date', endDate.toISOString().split('T')[0]);
+
+    if (error) return [];
+
+    const gameTotals = new Map<number, number>();
+    data?.forEach(row => {
+      const current = gameTotals.get(row.game_id) || 0;
+      gameTotals.set(row.game_id, current + row.total_views);
+    });
+
+    return Array.from(gameTotals.entries())
+      .map(([gameId, views]) => ({ gameId, views }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, limit);
+  }
+
+  private getWeekStart(date: Date): Date {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day;
+    return new Date(d.setDate(diff));
   }
 
   /**

@@ -14,8 +14,8 @@ import {
   AtSign
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { getCurrentUserProfile, updateUserProfile, ProfileUpdateData } from '../services/profileService';
-import type { UserProfile } from '../services/profileService';
+import { getCurrentUserProfile, updateUserProfile, ProfileUpdateData } from '../services/userService';
+import type { UserProfile } from '../services/userService';
 import UserSettingsModal from '../components/profile/UserSettingsModal';
 
 const UserSettingsPage: React.FC = () => {

@@ -149,7 +149,7 @@ export const ensureGameExists = async (
 
     const gameToInsert = {
       igdb_id: gameData.igdb_id,
-      game_id: gameData.igdb_id.toString(), // Just use IGDB ID as string, no prefix needed
+      game_id: `igdb_${gameData.igdb_id}`, // Prefix with 'igdb_' to prevent conflicts
       name: gameData.name.trim(),
       slug: finalSlug, // Use conflict-aware slug
       cover_url: gameData.cover_url || null,

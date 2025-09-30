@@ -1,7 +1,7 @@
 // hooks/useGameSearch.ts
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AdvancedSearchCoordination } from '../services/advancedSearchCoordination';
+import { searchService } from '../services/searchService';
 import type { GameWithCalculatedFields } from '../types/database';
 
 interface SearchResult {
@@ -44,7 +44,7 @@ export const useGameSearch = () => {
   });
   
   const abortControllerRef = useRef<AbortController | null>(null);
-  const searchCoordinationRef = useRef<AdvancedSearchCoordination>(new AdvancedSearchCoordination());
+  // Using the unified searchService instance directly
 
   // Main search function that both components will use
   const searchGames = useCallback(async (
@@ -73,7 +73,7 @@ export const useGameSearch = () => {
       const offset = append ? searchState.games.length : 0;
       
       // Use Advanced Search Coordination with accent normalization
-      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+      const searchResult = await searchService.coordinatedSearch(query.trim(), {
         maxResults: searchParams.limit || 200,  // Default to 200 to show all franchise games
         includeMetrics: true,
         bypassCache: false // Always use cache for better performance
@@ -119,7 +119,7 @@ export const useGameSearch = () => {
     if (query.trim().length < 2) return [];
     
     try {
-      const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+      const searchResult = await searchService.coordinatedSearch(query.trim(), {
         maxResults: 8, // Match maxSuggestions in HeaderSearchBar
         includeMetrics: false, // Skip expensive metrics calculation for dropdown
         bypassCache: false, // Use cache for faster results
@@ -224,7 +224,7 @@ export const useGameSearch = () => {
           source: 'database'
         }));
 
-        const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+        const searchResult = await searchService.coordinatedSearch(query.trim(), {
           maxResults: options.limit || 200,
           includeMetrics: false, // Skip metrics for speed
           bypassCache: false,
@@ -251,7 +251,7 @@ export const useGameSearch = () => {
         return data.games;
       } else {
         // Phase 2: Enhance with IGDB results
-        const searchResult = await searchCoordinationRef.current.coordinatedSearch(query.trim(), {
+        const searchResult = await searchService.coordinatedSearch(query.trim(), {
           maxResults: options.limit || 200,
           includeMetrics: true,
           bypassCache: false,

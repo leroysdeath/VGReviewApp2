@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import UserSettingsModal from '../components/profile/UserSettingsModal';
-import { ProfileUpdateData } from '../services/profileService';
+import { ProfileUpdateData } from '../services/userService';
 
 // Mock the UserSettingsPanel component to avoid complex dependencies
 jest.mock('../components/profile/UserSettingsPanel', () => ({

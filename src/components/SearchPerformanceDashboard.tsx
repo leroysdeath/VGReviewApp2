@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { gameSearchService } from '../services/gameSearchService';
-import { searchAnalyticsService } from '../services/searchAnalyticsService';
-import { searchCacheService } from '../services/searchCacheService';
+import { searchObservabilityService } from '../services/searchObservabilityService';
+import { searchService } from '../services/searchService';
 import { FaSearch, FaChartBar, FaTachometerAlt, FaFire, FaMemory, FaTrash, FaClock } from 'react-icons/fa';
 
 interface PerformanceMetrics {
@@ -64,10 +64,10 @@ export const SearchPerformanceDashboard: React.FC = () => {
     try {
       // Load all data in parallel
       const [perfMetrics, cache, popular, trending] = await Promise.all([
-        searchAnalyticsService.getSearchPerformanceMetrics(timeRange),
+        searchObservabilityService.getSearchPerformanceMetrics(timeRange),
         Promise.resolve(gameSearchService.getCacheStats()),
         Promise.resolve(gameSearchService.getPopularSearches(10)),
-        searchAnalyticsService.getTrendingSearches(5)
+        searchObservabilityService.getTrendingSearches(5)
       ]);
 
       setMetrics(perfMetrics);
@@ -288,7 +288,7 @@ export const SearchPerformanceDashboard: React.FC = () => {
               checked={privacyMode}
               onChange={(e) => {
                 setPrivacyMode(e.target.checked);
-                searchAnalyticsService.setPrivacyMode(e.target.checked);
+                searchObservabilityService.setPrivacyMode(e.target.checked);
               }}
               className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
             />

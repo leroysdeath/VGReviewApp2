@@ -147,6 +147,14 @@ const AppContent: React.FC = () => {
                       }
                     />
                     <Route
+                      path="/admin/analytics"
+                      element={
+                        <Suspense fallback={<RouteLoader />}>
+                          <LazyRoutes.AnalyticsPage />
+                        </Suspense>
+                      }
+                    />
+                    <Route
                       path="/review/:gameId?"
                       element={
                         <ProtectedRoute showModal={true}>

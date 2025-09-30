@@ -254,7 +254,7 @@ export const ResponsiveLandingPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-900">
         {/* Mobile Hero Section */}
-        <div className="relative bg-gray-900 overflow-hidden px-4 py-12 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+        <div className="relative bg-gray-900 overflow-hidden px-4 py-12 border-b border-gray-700/50">
           {/* Simplified multi-layered background for mobile */}
           {/* Layer 1: Subtle gradient */}
           <div 
@@ -460,7 +460,7 @@ export const ResponsiveLandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900">
       {/* Hero Section */}
-      <div className="relative bg-gray-900 overflow-hidden shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+      <div className="relative bg-gray-900 overflow-hidden border-b border-gray-700/50">
         {/* Multi-layered background */}
         {/* Layer 1: Base gradient - subtle radial gradients */}
         <div 

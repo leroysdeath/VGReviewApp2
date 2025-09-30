@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RatingBars } from '../RatingBars';
-import { getUserRatingDistribution } from '../../services/profileService';
+import { getUserRatingDistribution } from '../../services/userService';
 
 interface UserRatingDistributionProps {
   userId: number;
