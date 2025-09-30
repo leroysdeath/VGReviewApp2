@@ -225,7 +225,8 @@ class UnifiedUserService {
     try {
       if (DEBUG_USER_SERVICE) console.log('🔄 Calling get_or_create_user function');
 
-      const { data: functionResult, error: functionError } = await supabase
+      // Add timeout to RPC call to fail fast if function doesn't exist
+      const rpcPromise = supabase
         .rpc('get_or_create_user', {
           auth_id: authUser.id,
           user_email: authUser.email || '',
@@ -233,14 +234,23 @@ class UnifiedUserService {
           user_provider: 'supabase'
         });
 
+      const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) => {
+        setTimeout(() => resolve({ data: null, error: { message: 'RPC timeout' } }), 1500);
+      });
+
+      const { data: functionResult, error: functionError } = await Promise.race([
+        rpcPromise,
+        timeoutPromise
+      ]);
+
       if (!functionError && functionResult) {
         return { success: true, userId: functionResult };
       }
 
-      if (DEBUG_USER_SERVICE) console.error('❌ Database function failed:', functionError);
-      return { success: false, error: functionError?.message || 'Database function failed' };
+      if (DEBUG_USER_SERVICE) console.log('ℹ️ Database function not available, using fallback');
+      return { success: false, error: functionError?.message || 'Database function not available' };
     } catch (error) {
-      if (DEBUG_USER_SERVICE) console.error('💥 Database function exception:', error);
+      if (DEBUG_USER_SERVICE) console.log('ℹ️ Database function exception, using fallback');
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Database function error'
@@ -455,6 +465,65 @@ class UnifiedUserService {
       return { success: true, data: dbUser };
     } catch (error) {
       console.error('💥 Unexpected error in getUserProfile:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? `Unexpected error: ${error.message}` : 'Failed to get user profile'
+      };
+    }
+  }
+
+  /**
+   * Get user profile by integer user ID (not provider_id UUID)
+   * Use this when you have the database user ID from ratings, comments, etc.
+   */
+  async getUserProfileById(userId: number): Promise<ServiceResponse<DatabaseUser>> {
+    try {
+      if (DEBUG_USER_SERVICE) console.log('🔍 Getting user profile by ID:', userId);
+
+      // Check cache by ID
+      const cacheKey = `user_id_${userId}`;
+      const cached = this.profileCache.get(cacheKey);
+      if (cached) {
+        return { success: true, data: cached };
+      }
+
+      const { data: dbUser, error } = await supabase
+        .from('user')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('❌ Error fetching user profile by ID:', error);
+
+        if (error.code === 'PGRST116') {
+          if (DEBUG_USER_SERVICE) console.log('⚠️ User profile not found in database');
+          return { success: false, error: 'User profile not found' };
+        }
+
+        return { success: false, error: `Database error: ${error.message}` };
+      }
+
+      if (!dbUser) {
+        return { success: false, error: 'User profile not found' };
+      }
+
+      // Validate data structure
+      if (!isDatabaseUser(dbUser)) {
+        console.error('❌ Invalid user data structure:', dbUser);
+        return { success: false, error: 'Invalid user data structure' };
+      }
+
+      // Cache by both ID and provider_id for future lookups
+      this.profileCache.set(cacheKey, dbUser);
+      if (dbUser.provider_id) {
+        this.setCachedProfile(dbUser.provider_id, dbUser);
+      }
+
+      if (DEBUG_USER_SERVICE) console.log('✅ Found user profile by ID:', dbUser);
+      return { success: true, data: dbUser };
+    } catch (error) {
+      console.error('💥 Unexpected error in getUserProfileById:', error);
       return {
         success: false,
         error: error instanceof Error ? `Unexpected error: ${error.message}` : 'Failed to get user profile'
@@ -814,6 +883,7 @@ export const getUserRatingDistribution = async (userId: number) => {
 // Re-export functions for backward compatibility
 export const getCurrentAuthUser = (...args: Parameters<typeof userService.getCurrentAuthUser>) => userService.getCurrentAuthUser(...args);
 export const getUserProfile = (...args: Parameters<typeof userService.getUserProfile>) => userService.getUserProfile(...args);
+export const getUserProfileById = (...args: Parameters<typeof userService.getUserProfileById>) => userService.getUserProfileById(...args);
 export const ensureUserProfileExists = (...args: Parameters<typeof userService.ensureUserProfileExists>) => userService.ensureUserProfileExists(...args);
 export const updateUserProfile = (...args: Parameters<typeof userService.updateUserProfile>) => userService.updateUserProfile(...args);
 export const checkUsernameAvailability = (...args: Parameters<typeof userService.checkUsernameAvailability>) => userService.checkUsernameAvailability(...args);

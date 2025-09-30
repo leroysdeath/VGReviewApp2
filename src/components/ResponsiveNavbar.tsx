@@ -684,7 +684,7 @@ export const ResponsiveNavbar: React.FC = () => {
 
                   {/* User profile link and Write Review button */}
                   <Link
-                    to={dbUserId ? `/user/${dbUserId}` : "#"}
+                    to={`/user/${dbUserId}`}
                     className="flex items-center space-x-3 mb-3 hover:bg-gray-700 rounded-lg p-2 transition-colors"
                     onClick={(e) => {
                       if (!dbUserId) {
@@ -923,30 +923,6 @@ export const ResponsiveNavbar: React.FC = () => {
 
                   {/* Removed authenticated user links - moved to user info section */}
 
-                  {/* Development Links */}
-                  {import.meta.env.DEV && (
-                    <>
-                      <div className="border-t border-gray-700 pt-2 mt-2">
-                        <p className="text-xs text-gray-500 uppercase tracking-wide px-3 py-1">Development</p>
-                      </div>
-                      <Link
-                        to="/game/dummy-game"
-                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <Gamepad2 className="h-5 w-5 text-green-400" />
-                        <span>Dummy Game</span>
-                      </Link>
-                      <Link
-                        to="/user/1"
-                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <User className="h-5 w-5 text-blue-400" />
-                        <span>Dummy User</span>
-                      </Link>
-                    </>
-                  )}
 
                   {/* Sign Out Button */}
                   {isAuthenticated && (
@@ -982,34 +958,14 @@ export const ResponsiveNavbar: React.FC = () => {
               </Link>
               
               {/* Development Quick Links */}
-              {import.meta.env.DEV && (
-                <>
-                  <Link
-                    to="/game/dummy-game"
-                    className="p-2 bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
-                    title="Dummy Test Game"
-                  >
-                    <Gamepad2 className="h-5 w-5 text-white" />
-                  </Link>
-                  <Link
-                    to="/user/1"
-                    className="p-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                    title="Dummy Test User"
-                  >
-                    <User className="h-5 w-5 text-white" />
-                  </Link>
-                  {isAuthenticated && (
-                    <>
-                      <Link
-                        to="/review"
-                        className="p-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
-                        title="Write Review"
-                      >
-                        <ScrollText className="h-5 w-5 text-white" />
-                      </Link>
-                    </>
-                  )}
-                </>
+              {import.meta.env.DEV && isAuthenticated && (
+                <Link
+                  to="/review"
+                  className="p-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+                  title="Write Review"
+                >
+                  <ScrollText className="h-5 w-5 text-white" />
+                </Link>
               )}
             </div>
           </div>
@@ -1304,7 +1260,7 @@ export const ResponsiveNavbar: React.FC = () => {
                       className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50">
                       <div className="py-1">
                         <Link
-                          to={dbUserId ? `/user/${dbUserId}` : "#"}
+                          to={`/user/${dbUserId}`}
                           className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white"
                           onClick={(e) => {
                             if (!dbUserId) {
@@ -1395,7 +1351,7 @@ export const ResponsiveNavbar: React.FC = () => {
             {isAuthenticated ? (
               <>
                 <Link
-                  to={dbUserId ? `/user/${dbUserId}` : "#"}
+                  to={`/user/${dbUserId}`}
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors border-t border-gray-700 mt-2 pt-2"
                   onClick={(e) => {
                     if (!dbUserId) {

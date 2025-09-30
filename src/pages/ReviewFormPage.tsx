@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Search, Star, Save, Eye, EyeOff, X, Lock, Filter, Grid, List, RefreshCw, Loader, AlertCircle, Calendar, Plus, Heart, Trash2, Gamepad2, ScrollText } from 'lucide-react';
 import { gameService } from '../services/gameService';
-import { gameSearchService } from '../services/gameSearchService';
+import { searchService } from '../services/searchService';
 import type { Game, GameWithCalculatedFields } from '../types/database';
 import { createReview, getUserReviewForGameByIGDBId, updateReview, deleteReview } from '../services/reviewService';
 import { markGameStarted, markGameCompleted, getGameProgress } from '../services/gameProgressService';
@@ -10,7 +10,6 @@ import { useAuth } from '../hooks/useAuth';
 import { mapPlatformNames } from '../utils/platformMapping';
 import { formatGameReleaseDate } from '../utils/dateUtils';
 import { filterProtectedContent } from '../utils/contentProtectionFilter';
-import { igdbService } from '../services/igdbService';
 
 // Search filters interface from SearchResultsPage
 interface SearchFilters {
@@ -100,53 +99,63 @@ export const ReviewFormPage: React.FC = () => {
     setShowSearchResults(true);
 
     try {
-      // First try local database
-      const localResults = await gameService.searchGames(query);
+      // Use searchService with same settings as ResponsiveNavbar for consistent results
+      console.log(`🔍 [ReviewFormPage] Searching for "${query}" using searchService`);
 
-      // If we have few local results, also search IGDB
-      if (localResults.length < 10) {
-        console.log(`📚 Few local results (${localResults.length}), searching IGDB...`);
-        try {
-          const igdbGames = await igdbService.searchGames(query, 20);
+      const searchResponse = await searchService.coordinatedSearch(query.trim(), {
+        maxResults: 20,
+        includeMetrics: false,
+        fastMode: false, // Use full search with all filtering (same as navbar)
+        bypassCache: false,
+        useAggressive: false // Conservative to avoid unrelated results (same as navbar)
+      });
 
-          // Transform IGDB results to match local format
-          const transformedIgdbResults = igdbGames.map(game => ({
-            id: 0, // No local ID yet
-            igdb_id: game.id,
-            name: game.name,
-            slug: game.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            cover_url: game.cover?.url ? game.cover.url.replace('t_thumb', 't_1080p').replace('//', 'https://') : undefined,
-            summary: game.summary,
-            first_release_date: game.first_release_date,
-            genres: game.genres?.map(g => g.name) || [],
-            platforms: game.platforms?.map(p => p.name) || [],
-            igdb_rating: game.rating,
-            total_rating: game.rating,
-            rating_count: 0,
-            averageRating: 0,
-            gameReviewCount: 0
-          }));
+      console.log(`✅ [ReviewFormPage] Found ${searchResponse.total_count} results from searchService`);
 
-          // Merge results, avoiding duplicates
-          const mergedResults = [...localResults];
-          for (const igdbResult of transformedIgdbResults) {
-            if (!mergedResults.some(r => r.igdb_id === igdbResult.igdb_id)) {
-              mergedResults.push(igdbResult);
-            }
-          }
+      // Apply same relevance filtering as ResponsiveNavbar for consistency
+      const relevantResults = searchResponse.results.filter(game => {
+        const queryLower = query.toLowerCase().trim();
+        const nameLower = game.name.toLowerCase();
 
-          // Limit to 20 results
-          setSearchResults(mergedResults.slice(0, 20));
-        } catch (igdbError) {
-          console.error('IGDB search failed, using local results only:', igdbError);
-          setSearchResults(localResults.slice(0, 20));
+        // Prioritize games that start with or contain the exact query
+        if (nameLower.includes(queryLower)) {
+          return true;
         }
-      } else {
-        setSearchResults(localResults.slice(0, 20));
-      }
+
+        // Check for word matches in title
+        const queryWords = queryLower.split(/\s+/);
+        const nameWords = nameLower.split(/\s+/);
+        const matchingWords = queryWords.filter(qWord =>
+          nameWords.some(nWord => nWord.includes(qWord))
+        );
+
+        // Require at least 60% word match (same as navbar)
+        return matchingWords.length / queryWords.length >= 0.6;
+      });
+
+      // Transform to GameWithCalculatedFields format
+      const transformedResults: GameWithCalculatedFields[] = relevantResults.map(game => ({
+        id: game.id,
+        igdb_id: game.igdb_id,
+        name: game.name,
+        slug: game.slug || game.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        cover_url: game.cover_url,
+        summary: game.summary,
+        description: game.description,
+        release_date: game.release_date,
+        genres: game.genres || [],
+        platforms: game.platforms || [],
+        created_at: game.created_at,
+        updated_at: game.updated_at,
+        averageUserRating: 0,
+        totalUserRatings: 0
+      }));
+
+      setSearchResults(transformedResults);
     } catch (error) {
       setSearchError('Failed to search games');
       console.error('Search error:', error);
+      setSearchResults([]);
     } finally {
       setSearchLoading(false);
     }

@@ -204,10 +204,11 @@ export const SearchResultsPage: React.FC = () => {
 
   const loadPlatforms = async () => {
     try {
+      // Fetch all platforms and filter in JavaScript
+      // The Postgrest query syntax for ranges is complex, so we filter client-side
       const { data, error } = await supabase
         .from('platform')
         .select('id, name')
-        .or('id.gte.1.lte.33,id.gte.44.lte.55,id.eq.71')
         .order('name');
 
       if (error) {
@@ -215,7 +216,7 @@ export const SearchResultsPage: React.FC = () => {
         throw error;
       }
 
-      // Filter in JavaScript as a safety measure
+      // Filter to include: 1-33, 44-55, and 71 (common gaming platforms)
       const filteredData = data?.filter(p =>
         (p.id >= 1 && p.id <= 33) ||
         (p.id >= 44 && p.id <= 55) ||
