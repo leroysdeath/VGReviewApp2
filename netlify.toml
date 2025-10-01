@@ -1,5 +1,5 @@
 [build]
-command = "rm -rf dist && npm ci --include=dev && npm run build"
+command = "rm -rf dist && npm install && npm run build"
 publish = "dist"
 
 # Disable Netlify's post-processing to avoid conflicts with Vite's optimization
@@ -15,7 +15,6 @@ framework = "#auto"
 
 [build.environment]
 NODE_VERSION = "20"
-NPM_FLAGS = "--include=dev"
 
 # IMPORTANT: Order matters - more specific rules must come first
 
