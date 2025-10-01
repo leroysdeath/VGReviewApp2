@@ -18,12 +18,14 @@ VGReviewApp2 is a mature gaming community platform built with React, TypeScript,
 
 This is a content-driven community platform following a monolithic SPA architecture with feature-based organization. Think Letterboxd/Backloggd, not Netflix or Steam.
 
+**Performance-First Philosophy:** We prioritize end-user performance over architectural purity. Modular structure should enhance, not hinder, the user experience.
+
 ### Core Design Principles
 
 #### 1. Content-First, Not Service-Oriented
 
 - This is a CRUD application for user-generated content (reviews, ratings, lists)
-- NOT a microservices platform - avoid service abstraction layers
+- NOT a microservices platform - avoid unnecessary service abstraction layers
 - NOT an enterprise app - skip complex state machines, sagas, or event sourcing
 - Data flows directly: Database → API → Component → User
 
@@ -33,6 +35,7 @@ This is a content-driven community platform following a monolithic SPA architect
 - Each feature should be self-contained with its own components, hooks, and services
 - Avoid excessive component atomization - a ReviewCard is fine, don't split into ReviewTitle, ReviewRating, ReviewBody
 - Rule of thumb: If a component is only used in one place, it shouldn't be "atomic"
+- **Modular Monolithic > Atomic**: Consolidate similar functionality to reduce bundle size, import chains, and runtime overhead
 
 #### 3. Convention Over Configuration
 
@@ -40,6 +43,18 @@ This is a content-driven community platform following a monolithic SPA architect
 - Leverage database-driven functionality (RLS, triggers, views) over client-side logic
 - Standard REST patterns, not GraphQL or complex query builders
 - Direct SQL queries are fine - this isn't a multi-database platform
+
+#### 4. Performance-Driven Consolidation
+
+- **Consolidate aggressively** when it improves performance without sacrificing functionality
+- Merge duplicate/overlapping services, components, hooks, and utilities
+- Fewer, focused modules > many specialized fragments
+- Reduce indirection: Every abstraction layer adds latency and bundle weight
+- **Performance metrics that matter:**
+  - Bundle size reduction (faster initial load)
+  - Import chain simplification (faster code splitting)
+  - Runtime speed improvements (better user experience)
+  - Memory efficiency (especially on mobile devices)
 
 ### Anti-Patterns to Avoid
 
@@ -51,6 +66,8 @@ This is a content-driven community platform following a monolithic SPA architect
 - Build "atomic design systems" for a focused gaming platform
 - Add dependency injection containers or IoC patterns
 - Implement event-driven architectures for simple user actions
+- **Maintain duplicate services** that do the same thing (e.g., searchCacheService, dualSearchCacheService, enhancedSearchService)
+- **Split components excessively** when consolidation improves load times
 
 ✅ **INSTEAD DO:**
 - Write direct, readable code that solves the immediate problem
@@ -58,6 +75,8 @@ This is a content-driven community platform following a monolithic SPA architect
 - Keep components focused but complete (not fragmented)
 - Colocate related code in feature folders
 - Use built-in browser APIs and React features
+- **Consolidate aggressively**: Merge services/components/hooks when they share logic or purpose
+- **Measure performance impact**: Use bundle analysis and Lighthouse scores to validate consolidations
 
 ### Architectural Context
 
@@ -90,7 +109,31 @@ When making architectural decisions, ask:
 4. **"Will this pattern be used in more than 3 places?"**
    - If no, don't abstract it yet
 
-This is a pragmatic, user-focused platform, not a technical showcase. The complexity should be in the features users see (rich reviews, smart recommendations, social interactions), not in the architecture they don't.
+5. **"Does consolidation improve performance without losing functionality?"**
+   - If yes, consolidate aggressively - fewer modules mean faster loads
+
+### Consolidation Guidelines
+
+**When to Consolidate (Judgment-Based):**
+- Services with overlapping responsibilities (searchCacheService + dualSearchCacheService → searchService)
+- Components rendering similar UI patterns (multiple modal variants → unified Modal)
+- Hooks with duplicate logic (useGameData + useGameFetch → useGame)
+- Utilities with similar purposes (multiple sanitization files → single sanitizer)
+
+**Performance Indicators to Validate Consolidation:**
+- ✅ Reduced bundle size (check with `npm run build --report`)
+- ✅ Fewer HTTP requests for chunks
+- ✅ Simplified import graphs (less circular dependency risk)
+- ✅ Improved Lighthouse performance scores
+- ✅ Faster time-to-interactive (TTI) and First Contentful Paint (FCP)
+
+**When NOT to Consolidate:**
+- ❌ Loss of critical functionality
+- ❌ Increased complexity that makes code unmaintainable
+- ❌ Creates tight coupling between unrelated features
+- ❌ No measurable performance improvement
+
+**Remember:** This is a pragmatic, user-focused platform, not a technical showcase. The complexity should be in the features users see (rich reviews, smart recommendations, social interactions), not in the architecture they don't. **Performance is a feature.**
 
 ## Development Commands
 
@@ -170,9 +213,9 @@ npm run test:ci            # CI-optimized test run
   - Core UI components (GameCard, SearchResults, etc.)
 - `/src/pages/` (~30 pages) - Route page components with SSR optimization
 - `/src/hooks/` (~25 hooks) - Custom React hooks for data fetching and utilities
-- `/src/services/` (**50+ services**) - Comprehensive API services and business logic
-  - Game data services (`gameDataServiceV2.ts`, `igdbServiceV2.ts`)
-  - Search services with caching and analytics
+- `/src/services/` - Streamlined API services and business logic (**recently consolidated from 50+ to ~40 services**)
+  - Game services (`gameService.ts` - consolidated from gameDataService + gameDataServiceV2 + gameQueryService)
+  - Search services (`searchService.ts`, `searchObservabilityService.ts` - consolidated from 7+ fragmented search services)
   - User management and authentication
   - Real-time features and notifications
   - Privacy and GDPR compliance services
@@ -184,6 +227,9 @@ npm run test:ci            # CI-optimized test run
 - `/netlify/functions/` - IGDB API proxy functions
 - `/supabase/` - Database migrations and infrastructure
 - `/scripts/` - Database sync and maintenance scripts
+
+**Recent Consolidation Success Story:**
+The search infrastructure was consolidated from 7+ services (`searchCacheService`, `dualSearchCacheService`, `searchAnalyticsService`, `searchCoordinator`, `searchDeduplicationService`, `searchDiagnosticService`, `searchMetricsService`) into 2 focused services (`searchService`, `searchObservabilityService`). This reduced bundle size, simplified imports, and improved performance without losing functionality. See `docs/SERVICE_CONSOLIDATION_PLAN.md` for details.
 
 **Optimal Structure (per Design Philosophy):**
 ```
