@@ -741,7 +741,7 @@ class GameService {
   private async getIGDBResultsConditionally(query: string): Promise<IGDBGame[] | null> {
     try {
       const timeoutPromise = new Promise<null>((resolve) => {
-        setTimeout(() => resolve(null), 1000);
+        setTimeout(() => resolve(null), 3000);
       });
 
       const igdbPromise = this.getIGDBResults(query);
