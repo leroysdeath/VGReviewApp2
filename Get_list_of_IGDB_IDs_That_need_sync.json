@@ -1,0 +1,6002 @@
+[
+  {
+    "igdb_id": 2283,
+    "name": "Defense of the Ancients",
+    "rating_count": 57,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 2365,
+    "name": "Battle for Wesnoth",
+    "rating_count": 37,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 2895,
+    "name": "NetHack",
+    "rating_count": 17,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 2434,
+    "name": "Bloodwych",
+    "rating_count": 9,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 2873,
+    "name": "Beneath Apple Manor",
+    "rating_count": 5,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 2360,
+    "name": "Artemis: Spaceship Bridge Simulator",
+    "rating_count": 4,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 2357,
+    "name": "Altitude",
+    "rating_count": 4,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 2709,
+    "name": "Vancouver 2010",
+    "rating_count": 2,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 2804,
+    "name": "Citadels",
+    "rating_count": 1,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 62253,
+    "name": "Gensokyo no Nazo",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13878,
+    "name": "Hollywood or Bust",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 41711,
+    "name": "F1 Douchuuki",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53519,
+    "name": "River Simulator 2012",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53518,
+    "name": "Rising Storm: Game of the Year Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53520,
+    "name": "Road to Ballhalla: Roll Playing Game of the Year Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53521,
+    "name": "Rocket Riot: Collector's Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53522,
+    "name": "Rojo Ninja",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53542,
+    "name": "RPG Maker MV: Futuristic Atmospheres",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 41797,
+    "name": "Athletic Ball",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53907,
+    "name": "Warhammer: Arcane Magic Deluxe",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 55524,
+    "name": "Stick Engine",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 59981,
+    "name": "Dragon Eternity",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53531,
+    "name": "RPG Maker MV: Essentials Set",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53532,
+    "name": "RPG Maker VX Ace: Frontier Works - Horror Interior Tiles",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53534,
+    "name": "RPG Maker VX Ace: Adventurer's Final Journey",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53538,
+    "name": "RPG Tsukuuru DS+ Expansion - Retro SciFi",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53535,
+    "name": "RPG Maker MV: Adventurer's Journey",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53536,
+    "name": "RPG Maker VX Ace: Arabian Nights",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53537,
+    "name": "RPG Maker VX Ace: Dead or Alive",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53539,
+    "name": "RPG Maker VX Ace: Egyptian Myth Battlers",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53540,
+    "name": "RPG Maker VX Ace: Forest of the Necromancer Soundscapes",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53541,
+    "name": "RPG Maker MV: Frontier Works Futuristic Heroes and BGM",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53566,
+    "name": "Sacred 3 - Orcland Story",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 43451,
+    "name": "DJ: Decks & FX",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53571,
+    "name": "Sail Simulator 2010",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53913,
+    "name": "Wildlife Park 2: Ultimate Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53527,
+    "name": "Royal Defense: Complete Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79875,
+    "name": "EA Mahjong",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53575,
+    "name": "Samoliotik: Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53577,
+    "name": "Save the Dodos: Special Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53916,
+    "name": "West Somerset Railway Route",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53917,
+    "name": "Weather Lord: Royal Holidays",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57432,
+    "name": "Vertical Mayhem",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53593,
+    "name": "Shooting Love 20XX",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53594,
+    "name": "Shooter of War",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53614,
+    "name": "Sins of a Solar Empire Gold",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53920,
+    "name": "Weather Lord: Graduation",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53921,
+    "name": "We Are All Individuals",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58768,
+    "name": "Shooty Space Adventure",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53931,
+    "name": "Versailles Mysteries - The Royal Spy",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13347,
+    "name": "Atom Smasher",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79087,
+    "name": "The Four Crystals of Trazere",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79123,
+    "name": "Ata Hoshev SheAta Haham",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79155,
+    "name": "7.62mm",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79165,
+    "name": "Crosswords & Word Games",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79224,
+    "name": "Ballgame 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79346,
+    "name": "Guess it not",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79361,
+    "name": "GreenFace",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79391,
+    "name": "Mobile Man",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 45366,
+    "name": "Mad Martha 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79539,
+    "name": "Desert Storm Command Deluxe",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79568,
+    "name": "757 Professional",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79599,
+    "name": "Itouke no Urawaza DS",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79626,
+    "name": "Arcade & Puzzle Games",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79713,
+    "name": "The Boggit",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79750,
+    "name": "Squigs",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13936,
+    "name": "Action Reflex",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 43560,
+    "name": "The Snow Queen Quest",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 37725,
+    "name": "Toshi Tensou Keikaku: Eternal City",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 45446,
+    "name": "Ai Iijima: Good Island Cafe",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79888,
+    "name": "Chomp",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80053,
+    "name": "The Menagerie",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80090,
+    "name": "FourSide",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80237,
+    "name": "Unearthed Arsenal",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82876,
+    "name": "Dilarara!!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80336,
+    "name": "Devastro",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80385,
+    "name": "Poing 6",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80429,
+    "name": "Fowlplay",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57481,
+    "name": "The Shoe Dept.",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 14775,
+    "name": "Gem Stone Legend",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58162,
+    "name": "Cthulhu Clicker",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58163,
+    "name": "Scrambled",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 45915,
+    "name": "Master Labyrinth",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58164,
+    "name": "Touch de Zuno DS",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 46429,
+    "name": "Rand McNally's America: U.S. Atlas",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53647,
+    "name": "Space Rangers: Quest and Space Rangers HD",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53665,
+    "name": "Star Vikings: Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53659,
+    "name": "Starship Annihilator: Complete Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53660,
+    "name": "StarDrive 2: Sector Zero",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53662,
+    "name": "StarDrive 2: Digital Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53666,
+    "name": "Steam: Rails to Riches - Golden Train Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53667,
+    "name": "Steel Division: Normandy 44 - Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58166,
+    "name": "Tian Xing: Sword of Destiny",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58167,
+    "name": "Zusar Vasar",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53671,
+    "name": "Stellaris: Nova Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58256,
+    "name": "Sudokku Elite Collection",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 15373,
+    "name": "Space Racer",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 64596,
+    "name": "Cosmic Colony",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53687,
+    "name": "Super Power 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53688,
+    "name": "Super Rude Bear Resurrection: Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53690,
+    "name": "Surprising Party",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53691,
+    "name": "Surprising Stories",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 47090,
+    "name": "Inde Rally",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53692,
+    "name": "Survive on Mars",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 47542,
+    "name": "Space Trouble",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53693,
+    "name": "Survivor Squad Complete",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53694,
+    "name": "Sushi Frenzy",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 47185,
+    "name": "Leaderboard Executive Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53695,
+    "name": "Swipe Quest",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53696,
+    "name": "Talisman - Frostmarch",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53722,
+    "name": "The Cube and His Adventure",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53723,
+    "name": "The Daedalic Comedy Selection",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53724,
+    "name": "The Dark Eye: Skilltree Saga",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53725,
+    "name": "The Darkness Assault",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53726,
+    "name": "The Dope Game: Dope Fiend Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53727,
+    "name": "The Dwarves: Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53728,
+    "name": "The Dwarves: Digital Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 47255,
+    "name": "Tom & Jerry Popper",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 39904,
+    "name": "GP Rider",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 39906,
+    "name": "Ninja Kazan",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 64712,
+    "name": "Women's Murder Club: A Darker Shade of Grey",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 39070,
+    "name": "Goody",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 36905,
+    "name": "TT Racer",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 48286,
+    "name": "Goal II",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 49451,
+    "name": "Tetris Advance",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 50411,
+    "name": "Val and Rick",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 50525,
+    "name": "Colorless Life",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 52968,
+    "name": "Europa Universalis IV Collection",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53052,
+    "name": "Farming Simulator 2013: Titanium Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70284,
+    "name": "Paladin Quest Disk: The Scrolls of Talmouth",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13888,
+    "name": "Buffalo Roundup",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70052,
+    "name": "Pacman for GEM",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 68557,
+    "name": "MothBallz",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 39736,
+    "name": "Bingo the Multiva",
+    "rating_count": 0,
+    "needs_update": 0
+  },
+  {
+    "igdb_id": 37729,
+    "name": "Takeda Shingen",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 52308,
+    "name": "Cooking Quest",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 36564,
+    "name": "War-Copter",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 36579,
+    "name": "The Vortex Factor",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 52386,
+    "name": "Airport Simulator",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 52932,
+    "name": "Dungeon Souls: Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53099,
+    "name": "Xing Kakuro",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53107,
+    "name": "World War 2 Sniper",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53142,
+    "name": "Warbirds Red Baron 2012",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53739,
+    "name": "The Gift",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53741,
+    "name": "The Grand Ball: Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53742,
+    "name": "The Guild 2: Platinium Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53819,
+    "name": "Tomato Jones Adventures",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53823,
+    "name": "Tom Clancy's Signature Collection",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53745,
+    "name": "Train Simulator: The Holiday Express",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53746,
+    "name": "The Horus Heresy: Battle of Tallarn - Ascendance Campaign",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53747,
+    "name": "The Horus Heresy: Battle of Tallarn - Iron Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53835,
+    "name": "Towers of Twilight",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53748,
+    "name": "The Horus Heresy: Battle of Tallarn - Underworld Campaign",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53750,
+    "name": "The Jackbox Bundle",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53852,
+    "name": "Tron Run/r: Ultimate Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53857,
+    "name": "Train Valley: Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53853,
+    "name": "Tron Run/r: Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53860,
+    "name": "Tropico Trilogy",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53878,
+    "name": "Uprising Complete",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53870,
+    "name": "VoidExpanse - Complete Collection",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53873,
+    "name": "Versailles II",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53874,
+    "name": "Verald Defense",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53922,
+    "name": "Wars Across the World: Expanded Collection",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53753,
+    "name": "The Jumping Gent",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53754,
+    "name": "The Last Dogma - Complete Experience",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53755,
+    "name": "The Last Word",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53912,
+    "name": "Dark Secrets",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53951,
+    "name": "Turbogems",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53756,
+    "name": "The Legendary Hero of Space",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53991,
+    "name": "Eden's Quest: The Hunt for Akua",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53992,
+    "name": "Edna & Harvey: The Puzzle",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53757,
+    "name": "The Light",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53758,
+    "name": "The Love Bot",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53759,
+    "name": "The Magician's Handbook II: BlackLore",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53760,
+    "name": "The Magnificent Fragments",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54070,
+    "name": "Good Intentions",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70149,
+    "name": "Sesame Street Crayon: Letters For You",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 37813,
+    "name": "Super Mahjong 2: Honkaku 4-nin Uchi",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54136,
+    "name": "Jane's Realty",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54147,
+    "name": "Julia's Quest: United Kingdom",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54148,
+    "name": "Kino One",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54150,
+    "name": "Kings Collection",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54199,
+    "name": "The Wreckless",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 43305,
+    "name": "Motor Mayhem",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80580,
+    "name": "Kubus",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58257,
+    "name": "Bowling Party",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 43550,
+    "name": "Lowrider",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 67010,
+    "name": "Across Age",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58109,
+    "name": "Numberful",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 83124,
+    "name": "Locodriver 4",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79114,
+    "name": "Picross e5",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79277,
+    "name": "Toriko: Gourmet Monsters!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56163,
+    "name": "The Game 15",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56366,
+    "name": "Virtual Rides",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56443,
+    "name": "Blockor.io",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56794,
+    "name": "Itsuka Tenma No Kuro Usagi Portable",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56844,
+    "name": "Sega Sports 1",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 22987,
+    "name": "Red Faction: Guerrilla - Demons of the Badlands",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57597,
+    "name": "Laxius Power III",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57635,
+    "name": "Time Stripper",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57674,
+    "name": "Gapper",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58609,
+    "name": "Tap Adventure",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 23923,
+    "name": "Knight's Rush",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58812,
+    "name": "Girlfriend Note",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 24351,
+    "name": "Monkey Madness: Island Escape",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 59543,
+    "name": "Ice Age Avalanche",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 59562,
+    "name": "Fortune Wheel Slots",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 24403,
+    "name": "Akashic Re:cords",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 59656,
+    "name": "GetRektBambi",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60385,
+    "name": "Fritz Mobile",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60289,
+    "name": "Corp Wars: Karavan",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57504,
+    "name": "Fallen Leaves",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60355,
+    "name": "Narcissus",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60388,
+    "name": "King of Darts",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60479,
+    "name": "Happy Margaret!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60486,
+    "name": "Voyage of the Starship Lexicon",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60549,
+    "name": "New Hyu Stone",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 55465,
+    "name": "Space Crawl",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60609,
+    "name": "Mingy Jongo",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 61290,
+    "name": "Judas Code",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 61365,
+    "name": "Fun School 3: for the over 7s",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 61413,
+    "name": "Major DS: Dream Baseball",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 25205,
+    "name": "Floatlands",
+    "rating_count": 0,
+    "needs_update": 0
+  },
+  {
+    "igdb_id": 61452,
+    "name": "Hyakko: Yorozuya Jikenbo!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 14046,
+    "name": "Dynatron Mission",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 25248,
+    "name": "Palace in Thunderland",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 62148,
+    "name": "Fantastic Fossils",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 62159,
+    "name": "X-Ray Ball: Winter Storm",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 62437,
+    "name": "Swamp People",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 62501,
+    "name": "Warage Card Game",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 63113,
+    "name": "Big Huggin'",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 63149,
+    "name": "Jewel Dragon",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 63181,
+    "name": "Freddy Flintoff's Power Play Cricket",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 61304,
+    "name": "Shin Nippon Pro Wrestling '94: Battlefield in Tokyo Dome",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 64060,
+    "name": "Shisha no Yobu Tachi",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 64308,
+    "name": "Puzzle Bobble: Disney Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 136821,
+    "name": "Ryan Marks Revenge Mission",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 136835,
+    "name": "Dragon Quest X: Ibara no Miko to Horobi no Kami Online",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137232,
+    "name": "I Don't Want to Die",
+    "rating_count": 0,
+    "needs_update": 0
+  },
+  {
+    "igdb_id": 137245,
+    "name": "Tail to Nose: Great Championship",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53806,
+    "name": "Titan-3D",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60706,
+    "name": "Galaxy Online 3",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 68056,
+    "name": "Six in One Translator",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 68076,
+    "name": "Prank Your Neighbor",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 68806,
+    "name": "HexaPlunge",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 68862,
+    "name": "Remoove 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 68882,
+    "name": "Tinge 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 68895,
+    "name": "Savage Arena",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69022,
+    "name": "Buzz: Brain of Oz",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69143,
+    "name": "Dino Master",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82516,
+    "name": "Ruins of Wish: Ephemeral Traveler",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69666,
+    "name": "Executive Suite",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69670,
+    "name": "Crystalline Cauldron",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69693,
+    "name": "Pixel Puzzler",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82517,
+    "name": "Monolithic Candle Chapter.1",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69741,
+    "name": "Triad Volume 3",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69816,
+    "name": "AfterShocked!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69912,
+    "name": "Slyder",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 41445,
+    "name": "World Championship Baseball",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 136913,
+    "name": "Yo-kai Watch Busters: Shiroinutai",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 68556,
+    "name": "Monaco 360: Retro Racing",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 136903,
+    "name": "Shin Megami Tensei: Deep Strange Journey - 25th Anniversary Special Box",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70799,
+    "name": "Laserwars",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70674,
+    "name": "Cosmetic Paradise: Make no Kiseki",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70957,
+    "name": "Panic Invaders",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70963,
+    "name": "VFR Real Scenery: London",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 84642,
+    "name": "Games Festival Volume 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 75210,
+    "name": "PBA Bowling",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 77395,
+    "name": "Hoyle Card Games",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 76590,
+    "name": "Power Politics",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 55479,
+    "name": "The Last Sorcerer",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 76867,
+    "name": "Otome Hero",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57277,
+    "name": "3 Kingdoms",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53836,
+    "name": "Townopolis Romopolis Megapolis Collection",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 77006,
+    "name": "Flower and Animal 3D Encyclopedia",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 77015,
+    "name": "Knockin",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 77703,
+    "name": "Seika no Mori",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 77779,
+    "name": "Your Basic Block",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 77836,
+    "name": "Triangle Heart Gaiden",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53849,
+    "name": "Tropico 4 - Plantador",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139490,
+    "name": "Labyrinths of the World: The Wild Side",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 78378,
+    "name": "Sveerz Deluxe",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 78412,
+    "name": "Teazle",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53903,
+    "name": "Warhammer 40,000: Regicide - Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53904,
+    "name": "Warhammer 40,000: Space Marine Collection",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 78612,
+    "name": "Siege",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81648,
+    "name": "Lopp",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82820,
+    "name": "Magical Girl Momo",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82568,
+    "name": "Minus 48 Degrees",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 83575,
+    "name": "Tex Murphy: Mean Streets + Martian Memorandum",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 83646,
+    "name": "Hidden Object: Mermaid Magic",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 83726,
+    "name": "Pahelika: Revelations",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 84328,
+    "name": "GodPey",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 84110,
+    "name": "Real Steel Mobile",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 84220,
+    "name": "Painajainen",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 84239,
+    "name": "Beepertron",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 84276,
+    "name": "Droids",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 84290,
+    "name": "Ooops Up",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 36540,
+    "name": "Nightmare Rally",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 84393,
+    "name": "Chart Wars 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 84411,
+    "name": "Manage Your Football Club",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 84413,
+    "name": "Ali",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 84437,
+    "name": "Vampirijagd 2 Nightrace",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 84438,
+    "name": "Jubeat Copious",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 42831,
+    "name": "Babel: The King of the Blocks",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 38964,
+    "name": "Alphadia 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 40077,
+    "name": "Mania Challenge",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 40649,
+    "name": "Lady In Wading",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 94013,
+    "name": "Nahlakh",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 94212,
+    "name": "Ducky Dan",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 94426,
+    "name": "Slingo",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 95672,
+    "name": "59049",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 95834,
+    "name": "Shy Bunnies",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 95859,
+    "name": "Raft Survival",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 95955,
+    "name": "Save to Kill",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 96483,
+    "name": "True or False",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 96484,
+    "name": "Candy Smash Factory",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 96504,
+    "name": "Flight Light Plus",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 96509,
+    "name": "Your Sinclair Magnificent 7 February 1992",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 96529,
+    "name": "Aro",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 96543,
+    "name": "FunPack 3D",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53947,
+    "name": "Two Brothers: Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79485,
+    "name": "Medicopter 117 4",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 96801,
+    "name": "Creepy Dungeons",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53952,
+    "name": "Tryst: Premium Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53956,
+    "name": "Trivia Machine",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53957,
+    "name": "TriO: The Great Settlement",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 98610,
+    "name": "I Am",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 46374,
+    "name": "Sega Swirl",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53959,
+    "name": "Diamon Jones Devil's Contract",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53960,
+    "name": "Detective Agency",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53961,
+    "name": "Denis Adventures",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53962,
+    "name": "Demon Hunter: Chronicles from Beyond the Untold Story - Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53964,
+    "name": "Deadly Sin: Shining Faith",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 102664,
+    "name": "TrashBox",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 102686,
+    "name": "RRO Drive 3D",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53968,
+    "name": "DCS:A10C Warthog",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 102824,
+    "name": "Mr Burt",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 102826,
+    "name": "Eliminato",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 53973,
+    "name": "Dogfights 2012",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 103553,
+    "name": "One Bullet - Flip the gun",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 103931,
+    "name": "XAirports",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 103109,
+    "name": "Versus Pixels Battle 3D",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 103862,
+    "name": "Tiresmoke",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 103853,
+    "name": "Dot Blocks!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81193,
+    "name": "Rückblende",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 104268,
+    "name": "Balls Blast",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 55328,
+    "name": "Pirate Jump 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 104397,
+    "name": "Ballz Break",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 104313,
+    "name": "FA18 Hornet Jet Fighter",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 104359,
+    "name": "Fish Master",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 104360,
+    "name": "PUB Bubbles",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 104438,
+    "name": "MatchUp Friends: Find Pairs",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 104439,
+    "name": "Playful Math",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 55334,
+    "name": "Little Earth",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54017,
+    "name": "Fairy Nook",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 105720,
+    "name": "Pixel Miners",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54021,
+    "name": "Fast Lanes Carnage",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 105116,
+    "name": "BimbleBorn",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54025,
+    "name": "Farm Machine Championships 2013",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 106179,
+    "name": "Funky Bay",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 106203,
+    "name": "WordFloat",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 108617,
+    "name": "Tabletop Dice",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 106347,
+    "name": "Tie Dye Doodle",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 59453,
+    "name": "Ghost Encounters",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 55574,
+    "name": "Seconds to Square",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57589,
+    "name": "Elektrek",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 106860,
+    "name": "Last Hunt : Stealth Bigfoot",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 106872,
+    "name": "Mister Jump",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 106873,
+    "name": "Nail Doctor",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 106946,
+    "name": "Math and Sorcery",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 106990,
+    "name": "googolChooChoo3D2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 55344,
+    "name": "Trinity Dungeon",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 107041,
+    "name": "Zed Shot",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 108816,
+    "name": "PolyDodge",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54045,
+    "name": "FIM Speedway GP 3",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 108100,
+    "name": "Try.io",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 108453,
+    "name": "1 Minute Math",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 108631,
+    "name": "Bubble Shooter Blast",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 108722,
+    "name": "Igowin HD",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 108906,
+    "name": "Planetarix",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 109502,
+    "name": "Tuk Tuk Trials",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 109560,
+    "name": "Puzzle & Squishies",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 109908,
+    "name": "Soccer Manager Crypto",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 52658,
+    "name": "Pinball Heroes: Pain",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 110303,
+    "name": "colopl Cyberpong VR",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 110140,
+    "name": "Grigala Runner",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 110266,
+    "name": "Symphonica 64",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 111329,
+    "name": "Follow JC Go",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57668,
+    "name": "Street Tennis, the Next Generation Champions",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57669,
+    "name": "Bomb the City",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54071,
+    "name": "Gunspell",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54080,
+    "name": "Hedgehogs in Space",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54082,
+    "name": "Hot Farm Africa",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54083,
+    "name": "Hot Dish 2: Cross Country Cook-Off",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54084,
+    "name": "Hospital Haste",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 111841,
+    "name": "New Romance of the Three Kingdoms",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54085,
+    "name": "Hometown Poker Hero",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 125575,
+    "name": "CVRcade",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 120354,
+    "name": "Crazy Farm 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 112529,
+    "name": "Wasurenagusa",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 112553,
+    "name": "Novels: Game Center Arashi R",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54098,
+    "name": "Heracles - Battle of the Gods",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54099,
+    "name": "Hegemony Rome: Rise of Caesar",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82215,
+    "name": "Mystery Eater 2nd!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 135616,
+    "name": "Intrepid",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 135621,
+    "name": "Closets",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 135646,
+    "name": "Dogma",
+    "rating_count": 0,
+    "needs_update": 0
+  },
+  {
+    "igdb_id": 71005,
+    "name": "RON 13:13 Retaliation",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82216,
+    "name": "Only On",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54119,
+    "name": "Island Defence",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 113117,
+    "name": "The Dread Wolf Rises",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58745,
+    "name": "Defense Grid 2: Enhanced VR Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 135777,
+    "name": "The End Was Nigh",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54122,
+    "name": "International Cricket Captain 2005",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 61935,
+    "name": "Farland Symphony",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 113628,
+    "name": "Witch Weapon",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 85067,
+    "name": "Dairojo! Samurai Defenders",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71007,
+    "name": "Pre-RON MI5 Bob",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71008,
+    "name": "Surreality",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 136211,
+    "name": "Rayman 10th Anniversary",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13247,
+    "name": "The Crystal Maze",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13414,
+    "name": "BMX Simulator 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 116011,
+    "name": "Dear Stefan",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 116012,
+    "name": "Dream Story: Origin",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137651,
+    "name": "BER Bausimulator",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 129172,
+    "name": "Ganbare Goemon: Tengu-tou no Gyakushuu!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13442,
+    "name": "Bridge Player 3",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 135063,
+    "name": "The Political Compass: Devil's Labyrinth",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13450,
+    "name": "Bugsy",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 129776,
+    "name": "Mozart: The Conspirators of Prague",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 116656,
+    "name": "Grip: Garage Bundle Pack",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130478,
+    "name": "Kuwagata Tsumami: Kuttsuke! Tsumami Hako",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130506,
+    "name": "Pladzma",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130574,
+    "name": "Venture Seas",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130558,
+    "name": "Koro Dice",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130665,
+    "name": "Krishna Legends",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130900,
+    "name": "R42",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130941,
+    "name": "Ben 10 Game Generator",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 131005,
+    "name": "Baseball",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 131035,
+    "name": "Netblast",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 131394,
+    "name": "Disney Fairies",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 131591,
+    "name": "Square Fighters",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71731,
+    "name": "Space Bucks",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13580,
+    "name": "Death Wake",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 118684,
+    "name": "Hamburgers VS Eggs",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54153,
+    "name": "King's Bounty: Warriors of the North - Valhalla Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54156,
+    "name": "Kelly Green: Garden Queen",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54158,
+    "name": "Karate Panda",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54159,
+    "name": "Jungle Wild",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54161,
+    "name": "Jungle Boy",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82217,
+    "name": "Hidden Objects: Adventure",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 14244,
+    "name": "Aliex",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 63306,
+    "name": "Prime World: Alchemy",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 66128,
+    "name": "Lolita 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139791,
+    "name": "Dark Parables: Portrait of the Stained Princess",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60863,
+    "name": "Shooter Thing 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 132167,
+    "name": "Mini Motor Racing X: Digital Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 132265,
+    "name": "Isle Clash",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 132455,
+    "name": "Mini Railway",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 132736,
+    "name": "Ultimate Reality",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 132816,
+    "name": "Fort Apache",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133194,
+    "name": "Rally del Casentino: The Game",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60864,
+    "name": "Satsukoi: Yuukyuu Naru Koi no Uta",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57385,
+    "name": "Dr. Sleeptite and the Nightmare Factory",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54169,
+    "name": "Laser Dolphin",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 135282,
+    "name": "A woman goes to a private games industry party",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54171,
+    "name": "Kona's Crate",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54172,
+    "name": "Magic Solitaire",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54183,
+    "name": "Trainz Classics Volume 3",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54184,
+    "name": "Trainz Classics Volume 1 & 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54185,
+    "name": "Traffic Giant: Gold Edition 2012",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133550,
+    "name": "Vortex Rising",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60865,
+    "name": "Skies of Valor",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133577,
+    "name": "Resensory",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133642,
+    "name": "Helbreath Apocalypse",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133702,
+    "name": "Is It Love? Stories",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133723,
+    "name": "Scopus",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133753,
+    "name": "Kiekko.tk",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54188,
+    "name": "Towers of Altrac - Epic Defense Battles",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 117901,
+    "name": "Beat Saber Origins",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54190,
+    "name": "Tory's Shop 'n' Rush",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54191,
+    "name": "Titanic - Underwater Operation Simulator",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54193,
+    "name": "Tinseltown Dreams",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 54196,
+    "name": "Three Musketeers Secrets: Constance's Mission",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82218,
+    "name": "Hidden Objects: Water Park",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82219,
+    "name": "Hidden Objects: Old Castle",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82220,
+    "name": "Hidden Objects: Treasure Hunt",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80549,
+    "name": "Mystery P.I.: Stolen in San Francisco",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 117949,
+    "name": "Blades of Time: Remastered",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 117971,
+    "name": "WCW World Championship Wrestling: The Main Event",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 117984,
+    "name": "Black Clover: Quartet Knights Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 134158,
+    "name": "Super Mario Maker 2: Limited Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 118663,
+    "name": "MENA Speed",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 135053,
+    "name": "Turn Chase",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57386,
+    "name": "Segatakai",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 135379,
+    "name": "Blaster Tank",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137370,
+    "name": "Doc McStuffins",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 118864,
+    "name": "Songbringer Bundle",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 118878,
+    "name": "Four Legerior",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 135852,
+    "name": "There Aren't Really Words...",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 135916,
+    "name": "Project V",
+    "rating_count": 0,
+    "needs_update": 0
+  },
+  {
+    "igdb_id": 136007,
+    "name": "Wargroove: Deluxe Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 136023,
+    "name": "Fire Emblem: Three Houses - Limited Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 67039,
+    "name": "GhostSlayer",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 119443,
+    "name": "Headball Soccer Deluxe",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 119749,
+    "name": "Game of Puzzles: Furry",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 136480,
+    "name": "Hana Oboro: Sengoku-den Ranki",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 14356,
+    "name": "Bush Buck",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 14382,
+    "name": "The Cardinal of the Kremlin",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 136846,
+    "name": "Wizardry Perfect Pack",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 41088,
+    "name": "Os Man",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 67616,
+    "name": "Gardening Guide",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 41325,
+    "name": "Kind Gals",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 68748,
+    "name": "Plot",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69933,
+    "name": "Business Man 2000",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 37614,
+    "name": "Syd Mead's Terraforming",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 79760,
+    "name": "Egaint",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 120524,
+    "name": "Bus Simulator India 2018",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 120534,
+    "name": "Fates & Constellations",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 136933,
+    "name": "Elminage Gothic 3D Remix: Ulm Zakir to Yami no Gishiki",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137836,
+    "name": "Outbreak New Dawn",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137847,
+    "name": "Gormiti: La Lotta Oscura",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137896,
+    "name": "Cacau: Mistério da Ilha Perdida",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137924,
+    "name": "Kart Racing Supercharged!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137983,
+    "name": "Pocket Color Trump",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 42011,
+    "name": "Kiaidan 00",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138002,
+    "name": "Stick Cricket",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138174,
+    "name": "Fantasy Life Link!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138302,
+    "name": "Ballerburg: Castle Siege",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 42048,
+    "name": "Reflectron",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70486,
+    "name": "Super Splash 3D",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139064,
+    "name": "Le Vilain Petit Canard",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139085,
+    "name": "Die Biene Maja: Süßes Gold",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139152,
+    "name": "Heaven on Earth",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 121416,
+    "name": "Minna no Sokoban",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 121420,
+    "name": "Retro/Grade + Soundtrack",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139201,
+    "name": "Haunted Hotel: Room 18",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139427,
+    "name": "Taken Souls: Blood Ritual",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139488,
+    "name": "Labyrinths of the World: Forbidden Muse",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139568,
+    "name": "Kipper no Eigo Kyoushitsu: Floppy's Phonics Vol. 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139720,
+    "name": "Adventure Inlay",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 15102,
+    "name": "Zen Bound",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 43054,
+    "name": "Sengoku Basara HD Collection",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71279,
+    "name": "Anno 1701: The Curse of the Dragon",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139838,
+    "name": "Hellpoint: Signature Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 15332,
+    "name": "Outzone",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 15351,
+    "name": "Quadrel",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 15468,
+    "name": "Mage and Minions",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 61866,
+    "name": "1024",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 124621,
+    "name": "Mamusphere of the Forgotten",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 124688,
+    "name": "Deep Aquarium",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 124833,
+    "name": "Fantasy General II: Invasion Hero Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70144,
+    "name": "Day Trader",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 124855,
+    "name": "Strafe: Millennium Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70365,
+    "name": "Betty's Beer Bar",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 125312,
+    "name": "Black Dawn",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 125315,
+    "name": "Galactic Revolution",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 125341,
+    "name": "Demolition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 125342,
+    "name": "City Defence",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 125577,
+    "name": "The Weapon",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 125920,
+    "name": "Darkmists",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 125922,
+    "name": "Project Combat",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 125970,
+    "name": "Tie Break Tennis",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 126013,
+    "name": "Pyl",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 126057,
+    "name": "Gravity Reversal",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 126058,
+    "name": "Meteoroids!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 126104,
+    "name": "Days Gone 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 24732,
+    "name": "Critical Damage",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 61536,
+    "name": "Spirited Heart",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 63687,
+    "name": "Dizzel",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 63765,
+    "name": "The Button Affair",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60554,
+    "name": "SnowJinks",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 36678,
+    "name": "Pit Pot: The Magical Castle",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 36757,
+    "name": "Breaking Bad: VR Experience",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 36859,
+    "name": "Impossaball",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 39837,
+    "name": "GunNail",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 2582,
+    "name": "Dragon Ball: Tap Battle",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 2880,
+    "name": "Dungeon Quest",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 2882,
+    "name": "Amulet of Yendor",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 65119,
+    "name": "Rita James and the Race to Shangri La",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 59960,
+    "name": "Natsumegu",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 18776,
+    "name": "Snack Attack",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 5487,
+    "name": "Apocalypse: Desire Next",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81175,
+    "name": "Smash Out!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80599,
+    "name": "Arkanoid 2000",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 65016,
+    "name": "Soccer Tsuku DS: Touch and Direct",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 6469,
+    "name": "Adibou et les saisons magiques",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69899,
+    "name": "Adventure Master",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69866,
+    "name": "The Escape from the Hen-Roost",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71425,
+    "name": "Sensible Massacre",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70051,
+    "name": "Ball Breakers Corp.",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71476,
+    "name": "Elvira's Horror Pack",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 68399,
+    "name": "Heliotrope: Sore wa Shi ni Itaru Kami no Ai",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 59784,
+    "name": "Spirit Lords",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 65648,
+    "name": "Kinnikuman Muscle Grand Prix 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 6766,
+    "name": "Eternal Eden",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 66415,
+    "name": "DeviousMUD",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 6785,
+    "name": "Gon: Baku-baku Baku-baku Adventure",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 73979,
+    "name": "Rogue: The Adventure Game",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 73980,
+    "name": "Emergency Room 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 78937,
+    "name": "Monster Pack Volume 1",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 68825,
+    "name": "Saraba Uchuu Senkan Yamato: Ai no Senshi-tachi",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60441,
+    "name": "Rising Angels: Fates",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130054,
+    "name": "TalosFray",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130590,
+    "name": "Karugamo",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 62355,
+    "name": "Jissen Pachi-Slot Hisshouhou! Aladdin A",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130505,
+    "name": "Hong Kong 2020",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130610,
+    "name": "Freestyle King",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 62379,
+    "name": "Hikaru no Go 3",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80614,
+    "name": "Braminar",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80616,
+    "name": "Violator",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80623,
+    "name": "Cosmic Storm",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80625,
+    "name": "Jojo no Kimyou na Bouken",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80631,
+    "name": "Space Battles",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130707,
+    "name": "Brain",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 55572,
+    "name": "Hard Era: The Fantasy Defence",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 83143,
+    "name": "Grim Tales: The Vengeance",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 130945,
+    "name": "MJ",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80646,
+    "name": "Ford Simulator III",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 7721,
+    "name": "The Day the World Broke",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56619,
+    "name": "Undarkened",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81182,
+    "name": "VR Escape the Puzzle Room",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 61345,
+    "name": "Super Black Bass: Real Fight",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 8158,
+    "name": "Masters of the Universe: The Ilearth Stone",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133806,
+    "name": "Witold the Game 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70932,
+    "name": "Puzz 3D: The Orient Express",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69881,
+    "name": "Uncommon Valor: Campaign for the South Pacific",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 6664,
+    "name": "Der Fluch der Osterinsel",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69882,
+    "name": "Wobbly Bobbly",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 63569,
+    "name": "Bloons 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 59365,
+    "name": "P-Kara",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 78122,
+    "name": "Leprechauns",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 62872,
+    "name": "Savant",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 77937,
+    "name": "Saint Estella Gakuin no Shichi-nin no Majo",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57620,
+    "name": "World Cup Year 94",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 83435,
+    "name": "Saikyo Ginsei Shogi Go",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 78762,
+    "name": "Knightsquire",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133428,
+    "name": "The Suicide Forest",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133480,
+    "name": "The Magic Seven",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 101207,
+    "name": "DiabloSlayer",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13982,
+    "name": "Bristles",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133656,
+    "name": "Porp",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133668,
+    "name": "Xargon's Revenge",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133719,
+    "name": "Brown Stories",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133770,
+    "name": "Vex 4",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 133808,
+    "name": "Uzi's Drugged Adventures",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 58640,
+    "name": "Invasion VS",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81184,
+    "name": "My Girlfriend",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81185,
+    "name": "Prisoner",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80709,
+    "name": "Doll: Ouroboros",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80718,
+    "name": "Battleground: Ardennes",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81219,
+    "name": "Building Blocks / Master Builder of Egypt",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81589,
+    "name": "Winner Winner Chicken Dinner!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 9252,
+    "name": "Rail Racers",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80729,
+    "name": "Peak Angle",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80740,
+    "name": "International Test Cricket",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80742,
+    "name": "Orc Island",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60342,
+    "name": "Flatliners",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82225,
+    "name": "Hidden Objects: Ocean",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 60343,
+    "name": "She Who Fights Monsters",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 55429,
+    "name": "Shapes4",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82227,
+    "name": "Hidden Objects: Mystery Story",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80776,
+    "name": "Fox Sports Hockey '99",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82228,
+    "name": "Hidden Objects: Police Detective",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80766,
+    "name": "Adventure Value Pack #1",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 78486,
+    "name": "London Control",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 14001,
+    "name": "Cerius",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 14056,
+    "name": "Escape from Omicron",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 78945,
+    "name": "Snooper Troops: Case #2 - The Case of the Disappearing Dolphin",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 135120,
+    "name": "I am a Man",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 59013,
+    "name": "Cardfight!! Online",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 8148,
+    "name": "Star Wars: The Battle of Endor",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 61346,
+    "name": "Gekifu Bakegyamon: Ayakashi Fighting",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82919,
+    "name": "Foxy Furry Lady of the Forest",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 61348,
+    "name": "Denpa Ningen no RPG Free!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 22404,
+    "name": "Requiem Hurts",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 135974,
+    "name": "X-Plane 11 + Aerosoft Airport Collection",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 136351,
+    "name": "Get-'em-All Bundle",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 83334,
+    "name": "Another Day of Chikan! Vol8 Side-tail Glasses JK",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 136540,
+    "name": "Townsmen 4",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 136635,
+    "name": "Medarot Classics Plus: Advanced Edition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 10565,
+    "name": "Moto Racer 15th Anniversary",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137074,
+    "name": "Populous & The Promised Lands",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137095,
+    "name": "B.A.S.E. Jumping",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 65313,
+    "name": "Rally Pop",
+    "rating_count": 0,
+    "needs_update": 0
+  },
+  {
+    "igdb_id": 137310,
+    "name": "Helium Hills",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137348,
+    "name": "Leopard Lord",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137852,
+    "name": "Roguelegends: Dark Realms",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 65315,
+    "name": "Hany Party Game",
+    "rating_count": 0,
+    "needs_update": 0
+  },
+  {
+    "igdb_id": 137915,
+    "name": "EZ2DJ",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137952,
+    "name": "Snood Towers",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137953,
+    "name": "Day and Knight",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 137965,
+    "name": "Souper Man",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138075,
+    "name": "IHRA Motorsports",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138158,
+    "name": "Starfighter",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 63383,
+    "name": "The Tournament of Zulula",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138248,
+    "name": "LostHero",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138305,
+    "name": "All You Can Play: 10 Racing Games",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 25724,
+    "name": "Jack and the Beanstalk",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138425,
+    "name": "Infinite Run Up!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57904,
+    "name": "My Cup of Coffee: Earl Grey Forever After",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138526,
+    "name": "Iskib",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138529,
+    "name": "Lost Earth",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 61674,
+    "name": "Vacation Quest: The Hawaiian Islands",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138651,
+    "name": "DoorDoor MK II",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138677,
+    "name": "To Be With You",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138690,
+    "name": "ACE / ACE 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138764,
+    "name": "Kinnikuman",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 138903,
+    "name": "Nova II: New Dawn",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13047,
+    "name": "Wiz Biz",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 15661,
+    "name": "Bar Billiards",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 85109,
+    "name": "Electroplankton Varvoice",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 85110,
+    "name": "Electroplankton Trapy",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139198,
+    "name": "Harrowed Halls: Lakeview Lane",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13399,
+    "name": "Biggles",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139393,
+    "name": "Campgrounds: The Endorus Expedition",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 13415,
+    "name": "Bobby Bearing",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139426,
+    "name": "Combat Command",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 11851,
+    "name": "The Sting!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82229,
+    "name": "Hidden Objects: Chaos in the House",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82230,
+    "name": "Hidden Objects: World of Fairy Tales",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139723,
+    "name": "American Angst",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69977,
+    "name": "Caverns of Xaskazien",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69978,
+    "name": "Rings of the Magi v2.0",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 12006,
+    "name": "CJ in the USA",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 41910,
+    "name": "Chicken Labyrinth Puzzles",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80799,
+    "name": "Power Pegged",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80803,
+    "name": "Powder",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80804,
+    "name": "African Adventure",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81227,
+    "name": "Sugar Box",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82231,
+    "name": "Hidden Objects: Ghost Town",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80810,
+    "name": "I.N.E.R.T.I.A.",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 139947,
+    "name": "Chicken Range Bundle",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 64180,
+    "name": "Jissen Pachi-Slot Hisshouhou! Hokuto no Ken Plus",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 140028,
+    "name": "Haunted Legends: The Undertaker",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 85111,
+    "name": "Electroplankton Sun-Animalcule",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81590,
+    "name": "Asura Valley",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82232,
+    "name": "Hidden Objects: City Adventure",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80856,
+    "name": "Godkin",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81239,
+    "name": "TNA Wrestling",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 85112,
+    "name": "Electroplankton Rec-Rec",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 61115,
+    "name": "Weak Warrior",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80897,
+    "name": "Floresia I : Intemporel",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80899,
+    "name": "Kakusankibou",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80902,
+    "name": "Mimic",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80905,
+    "name": "Dungeon Escapist",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80906,
+    "name": "Mad Quad",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80907,
+    "name": "AO Tennis",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82234,
+    "name": "Hidden Objects: Fairyland",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82235,
+    "name": "Hidden Objects: Lost City",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82236,
+    "name": "Hidden Objects: Fashion Shop",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 57152,
+    "name": "A Story of the End: Revere",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 85113,
+    "name": "Electroplankton Nanocarp",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 55354,
+    "name": "Zombie Commando 3D",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82238,
+    "name": "Flick Field Goal 18",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80951,
+    "name": "Exit 4: Portal",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80953,
+    "name": "Mercury Blue: Mini Episode",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82239,
+    "name": "Flick Golf World Tour",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82240,
+    "name": "Tráfico",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80965,
+    "name": "The Coma - light and darkness battleground",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80966,
+    "name": "Warzone",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 85623,
+    "name": "IQ Test",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80969,
+    "name": "Grandam Overdrive",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82256,
+    "name": "Raburaba: Love Rubber",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82257,
+    "name": "Wauies: The Pet Shop Game",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82258,
+    "name": "Westard",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80974,
+    "name": "Captured King",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80976,
+    "name": "Raymond's Obstacle Course",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80977,
+    "name": "Ship Ahoy",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80981,
+    "name": "Impossibox",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80990,
+    "name": "Zero Days VR",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80987,
+    "name": "Blocster",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82259,
+    "name": "Nippon Pro Mahjong Renmei Kounin: Honkaku Pro Mahjong",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 80997,
+    "name": "High School Simulator 2018",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81002,
+    "name": "VR Dunhuang",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82260,
+    "name": "Nippon Pro Mahjong Renmei Kounin: Dojo Yaburi 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81003,
+    "name": "Close Call Extreme",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81005,
+    "name": "National Rugby Manager",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 85625,
+    "name": "Internal Invasion",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81019,
+    "name": "Skylight",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81021,
+    "name": "Hyper Slasher",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81023,
+    "name": "Quadra",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81026,
+    "name": "Space Shaft",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70208,
+    "name": "National Lampoon's Chess Maniac 5 Billion and 1",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82262,
+    "name": "Mahjong Gokuu Tenjiku 99",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 82263,
+    "name": "Mahjong Gokuu Taisei",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81033,
+    "name": "Explomania",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81034,
+    "name": "Bouncing Odyssey",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81035,
+    "name": "Kokoro no Yami no Saki ni",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 12723,
+    "name": "Pro Boxing Simulator",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81038,
+    "name": "Snake Charmer - TPS Snek",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81040,
+    "name": "Mino Saga",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81041,
+    "name": "Light in the Dark",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81043,
+    "name": "Kiss or Kill VR",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 12716,
+    "name": "Photon Storm",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81044,
+    "name": "Maso Marble",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81045,
+    "name": "Cendric",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 81046,
+    "name": "Mysteries Dragon Chess",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56554,
+    "name": "Like Life Every Hour",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56558,
+    "name": "Little Aid",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56574,
+    "name": "Juggernaut: Revenge of Sovering",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56575,
+    "name": "Juggernaut Wars: Arena Heroes",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56587,
+    "name": "Rom's Truffle Trail",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56663,
+    "name": "Humvee Assault",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56664,
+    "name": "Military Aircraft",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56595,
+    "name": "Lux umbra",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56617,
+    "name": "The Old Empire",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56614,
+    "name": "Magic Forest",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56621,
+    "name": "Shapes6",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56625,
+    "name": "MineFight",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56630,
+    "name": "Asyula",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56633,
+    "name": "Parkour",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56638,
+    "name": "SlingSkull Zombies: Gravedigger",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56641,
+    "name": "Point Connect 4",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56647,
+    "name": "Mystic Miracles - Strategy card board game",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56648,
+    "name": "Surviving in the forest",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56669,
+    "name": "Virus of Survivors: Life Simulator",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56680,
+    "name": "RunZ 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56686,
+    "name": "The Harvest VR",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56683,
+    "name": "Parse",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56747,
+    "name": "Konneko: Keep A Memory Green",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56750,
+    "name": "Koori No Bohyou: Ichiryuuwa, 3-Dome No Junan",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56759,
+    "name": "Mami no Doki-doki Tiro Finale",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56767,
+    "name": "Keibatsuu Portable",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56769,
+    "name": "Keibatsuu Portable 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56774,
+    "name": "Kaitou Tenshi Twin Angel: Toki to Sekai no Meikyuu",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56811,
+    "name": "Jyuujigen Ripputai Sypher Portable",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56849,
+    "name": "Undead Hero",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56851,
+    "name": "Rings of Night",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56863,
+    "name": "Biathlon 2004",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56872,
+    "name": "PuppetsVR",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 56877,
+    "name": "Biathlon 2003",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69285,
+    "name": "Butterfly Garden",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69289,
+    "name": "England Team Manager",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69291,
+    "name": "Amber Quartz",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69331,
+    "name": "Driver's Education '98",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69922,
+    "name": "Demise: The Revelation",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69363,
+    "name": "Ise Shima Mystery Annai: Itsuwari no Kuro Shinju",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69338,
+    "name": "Taichi Panda",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69923,
+    "name": "Pacific War",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69349,
+    "name": "Futwatch",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69360,
+    "name": "Line Space Wars",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69400,
+    "name": "Dragonball: Evolution",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69386,
+    "name": "The Base",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69387,
+    "name": "Mirrors",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69396,
+    "name": "Oni Zero: Sengoku Ransei Hyakkaryouran",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69397,
+    "name": "Tanoshii Youchien: Kotoba to Asobo!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69404,
+    "name": "Suujin Taisen",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69413,
+    "name": "Megaton: Total Destruction",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69428,
+    "name": "Ben Jordan: Paranormal Warrior Within - Case 1: Wrath of the Skunk Ape",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69467,
+    "name": "LEGO Ninjago: Skybound",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69468,
+    "name": "LEGO Ninjago: Wu Cru",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69940,
+    "name": "Tek-Kids Flash-Ops: Mission - Sky Fortress",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69485,
+    "name": "Gnome Valley",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70152,
+    "name": "School House: 30 Educational Programs",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69554,
+    "name": "Chronos: A Tapestry of Time",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69527,
+    "name": "Gunbee F-99: The Kidnapping of Lady Akiko",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69528,
+    "name": "European Racers",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69529,
+    "name": "South Pacific Quest",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69531,
+    "name": "Speculum Mortis",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69533,
+    "name": "The Restaurant Game",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69543,
+    "name": "Sky Jaguar",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69544,
+    "name": "RNFF: Running Naked in a Field of Flowers",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 69552,
+    "name": "Laser Surgeon: The Microscopic Mission",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70634,
+    "name": "National Geographic Panda",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70730,
+    "name": "Beyond the Limit: Ultimate Climb",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70679,
+    "name": "Hula Wii: Minna de Fura Oodorou!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70731,
+    "name": "D.A.: Pursuit of Justice - The Gatsby Diamond Jewelry Theft",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70716,
+    "name": "The $100,000 Pyramid",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70762,
+    "name": "Hawaiian Odyssey Scenery Adventure",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70723,
+    "name": "Turbocar",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70727,
+    "name": "Interstellar Trader 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70736,
+    "name": "Humpty Dumpty meets the Fuzzy Wuzzies",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70745,
+    "name": "Quatrolon",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70747,
+    "name": "Land der Hoffnung",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70752,
+    "name": "Return of Heracles",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70756,
+    "name": "Jetfighter",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70768,
+    "name": "Last Knight in Camelot",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70770,
+    "name": "The 5th Fleet",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70785,
+    "name": "Headline Harry and The Great Paper Race",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70774,
+    "name": "Paragliding",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70780,
+    "name": "The Power Pack",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70789,
+    "name": "Football Masters 99",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70792,
+    "name": "Vegas Fever Winner Takes All",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70793,
+    "name": "Boulder Crash",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70794,
+    "name": "The Awesome Adventures of Victor Vector & Yondo: The Vampire's Coffin",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70796,
+    "name": "Robot IV: Operation ExtraTax",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70802,
+    "name": "Bomb Threat",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70808,
+    "name": "Galaxy Gates",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70810,
+    "name": "Strange Days",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70814,
+    "name": "Your Bum is Talking",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70849,
+    "name": "Boogie Bum",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70851,
+    "name": "The Murder of Adrian Elkwood",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70852,
+    "name": "Rock - A True Story",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70853,
+    "name": "Au Naturel",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70854,
+    "name": "Witch!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70855,
+    "name": "Michael Gower's Zombie Hill",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70856,
+    "name": "Sixteen",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70857,
+    "name": "Cold Storage",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70864,
+    "name": "My Little Pony: Puzzle Party",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70915,
+    "name": "Premier Action",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70917,
+    "name": "The Winter Solstice",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70918,
+    "name": "Arthur's Pet Chase",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70916,
+    "name": "Vanguard Ace: Vertical Madness",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70921,
+    "name": "Retro Granny's Garden",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70936,
+    "name": "Treasure Trap",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70938,
+    "name": "Transformers Tatakai",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70955,
+    "name": "Racing Pitch",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71002,
+    "name": "Simon's Journey",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70965,
+    "name": "V for Victory: Market Garden",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70967,
+    "name": "SmileTris 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70970,
+    "name": "Dylan Dog: Horror Luna Park",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71003,
+    "name": "Ron 13:13^2: The Thickening",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70977,
+    "name": "Breakout in Space",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 70987,
+    "name": "Zombie Mess",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71004,
+    "name": "Stuck at Home",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71000,
+    "name": "The Crazed Chicken",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71010,
+    "name": "Major Bummer Dude: Lassi Quest RON",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71011,
+    "name": "The Petshop Incident",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71012,
+    "name": "Disappearance Time",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71042,
+    "name": "Nile: An Ancient Egyptian Quest",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71050,
+    "name": "Alfredo's Stupendous Surprise",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71051,
+    "name": "Black Knight: Marine Strike Fighter",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71053,
+    "name": "The Strangers",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71064,
+    "name": "Tikkasentappopeli",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71067,
+    "name": "The Divorce",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71070,
+    "name": "Crash Presents December 1989",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71090,
+    "name": "Facing the Empire",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71094,
+    "name": "Galleons of Glory: The Secret Voyage of Magellan",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71102,
+    "name": "Hover Bovver 2: Grand Theft Flymo",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71112,
+    "name": "The Warhammer Universe Strategy Game Collection",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71129,
+    "name": "Fairy Nights",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71139,
+    "name": "PGA Tour Golf: Tournament Course Disk",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71142,
+    "name": "Classic Mystery Library",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71151,
+    "name": "Mind's Eye",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71161,
+    "name": "The Reposessor",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71165,
+    "name": "Before the Legacy",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71166,
+    "name": "MI5 Bob",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71167,
+    "name": "Shadows of RON",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71174,
+    "name": "Defender of RON",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71175,
+    "name": "The Underworld",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71201,
+    "name": "Sudoku 4ever Plus",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71236,
+    "name": "Kittens and Cacti",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71237,
+    "name": "Cabbages and Kings",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71221,
+    "name": "Grand Fleet",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71223,
+    "name": "Championship Rugby Manager",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71235,
+    "name": "Super Silverbrothers",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71265,
+    "name": "Buzz Off!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71272,
+    "name": "Principles of Evil: Volume II",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71271,
+    "name": "Paranormal Investigation",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71281,
+    "name": "StarLines Inc.",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71295,
+    "name": "Scenery Disk \"Western European Tour\"",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71298,
+    "name": "Demon Day",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71302,
+    "name": "Switchquiz",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71307,
+    "name": "Blocks from Hell",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71315,
+    "name": "Voyage into the Unknown",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71375,
+    "name": "Coded X-Word",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71365,
+    "name": "Happy Birthday, Maisy!",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71367,
+    "name": "Ariva",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71320,
+    "name": "Perplex City",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71329,
+    "name": "Amarillo Slim Dealer's Choice",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71337,
+    "name": "Castaway: The Ordeal Begins",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71338,
+    "name": "Rock Challenge",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71381,
+    "name": "Turbo Speedway",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71382,
+    "name": "Bridge Olympiad",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71383,
+    "name": "Crash Powertape September 1991",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71357,
+    "name": "Skippy's Revenge",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71358,
+    "name": "D.A.: Pursuit of Justice - The Sunset Boulevard Deuce",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71360,
+    "name": "The Best of Gremlin",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71370,
+    "name": "Panzer Campaigns VI: Korsun '44",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71380,
+    "name": "Tom Landry Strategy Football",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71395,
+    "name": "Origamo",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71397,
+    "name": "Liverpool: the Computer Game",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71410,
+    "name": "The Big One",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71427,
+    "name": "Tek-Kids Flash-Ops: Mission - Polar Challenge",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71416,
+    "name": "Tiles of the Dragon",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71417,
+    "name": "Zombies and Pterodactyls 2005",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71420,
+    "name": "CatchWord",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71432,
+    "name": "Into the Void",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71431,
+    "name": "Spy vs. Spy Trilogy",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71447,
+    "name": "MusicVR Episode 2: Maestro",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71440,
+    "name": "Catz 3",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71453,
+    "name": "III Spy",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71450,
+    "name": "Solver: The Bank Quest",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71454,
+    "name": "Dead Man's Political Party",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71463,
+    "name": "Town Hall Toaster",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71468,
+    "name": "Hotel Detective",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71471,
+    "name": "Street Cred Football",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71473,
+    "name": "Drug Lord 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71474,
+    "name": "Emily Enough: Imprisoned",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71490,
+    "name": "Confused?",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71501,
+    "name": "Clouds Kingdom 3",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71508,
+    "name": "VariTale",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71503,
+    "name": "Beat the House 2",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71507,
+    "name": "BlapRacer",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71509,
+    "name": "Sinbad & the Golden Ship",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71513,
+    "name": "Elmo's Deep Sea Adventure",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71527,
+    "name": "Romeo",
+    "rating_count": 0,
+    "needs_update": 1
+  },
+  {
+    "igdb_id": 71529,
+    "name": "Mindbender",
+    "rating_count": 0,
+    "needs_update": 1
+  }
+]
