@@ -150,7 +150,8 @@ exports.handler = async (event, context) => {
 
       if (isMinimalMode) {
         // MINIMAL FIELDS - Only what SearchResultsPage actually displays
-        requestBody = `fields name, slug, cover.url, first_release_date, platforms.name, category; search "${query.trim()}"; limit ${limit}; where category = (0,4,8,9,10,11) & version_parent = null;`;
+        // Removed version_parent filter to allow remasters and ports (like GoldenEye 007 N64)
+        requestBody = `fields name, slug, cover.url, first_release_date, platforms.name, category; search "${query.trim()}"; limit ${limit}; where category = (0,4,8,9,10,11);`;
       } else {
         // FULL FIELDS - For backward compatibility and detailed views
         requestBody = `fields name, summary, storyline, slug, first_release_date, rating, category, cover.url, screenshots.url, genres.name, platforms.name, involved_companies.company.name, involved_companies.developer, involved_companies.publisher, alternative_names.name, collection.name, franchise.name, franchises.name, parent_game, url, dlcs, expansions, similar_games, hypes, follows, total_rating, total_rating_count, rating_count; search "${query.trim()}"; limit ${limit};`;
