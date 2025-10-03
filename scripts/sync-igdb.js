@@ -46,6 +46,26 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   }
 });
 
+/**
+ * Get release status from IGDB game data
+ * @param {Object} igdbGame - Game object from IGDB API
+ * @returns {'released' | 'unreleased' | null}
+ */
+function getReleaseStatus(igdbGame) {
+  // No release_dates data -> unknown (NULL)
+  if (!igdbGame.release_dates || igdbGame.release_dates.length === 0) {
+    return null;
+  }
+
+  // Check if ANY release is released/in-development (0, 1, 2, 3)
+  // Status 4 (Offline) is excluded - treat as unreleased
+  const hasRelease = igdbGame.release_dates.some(rd =>
+    rd.status === 0 || rd.status === 1 || rd.status === 2 || rd.status === 3
+  );
+
+  return hasRelease ? 'released' : 'unreleased';
+}
+
 // IGDB Service (simplified for Node.js)
 class NodeIGDBSyncService {
   async syncNewGames(options = {}) {
@@ -247,9 +267,10 @@ class NodeIGDBSyncService {
         genres: igdbGame.genres?.map(g => g.name) || null,
         developer: igdbGame.involved_companies?.find(c => c.developer)?.company?.name || 
                    igdbGame.involved_companies?.[0]?.company?.name || null,
-        publisher: igdbGame.involved_companies?.find(c => c.publisher)?.company?.name || 
+        publisher: igdbGame.involved_companies?.find(c => c.publisher)?.company?.name ||
                    igdbGame.involved_companies?.[0]?.company?.name || null,
         platforms: igdbGame.platforms?.map(p => p.name) || null,
+        release_status: getReleaseStatus(igdbGame),
         is_verified: false,
         view_count: 0,
         created_at: new Date().toISOString(),

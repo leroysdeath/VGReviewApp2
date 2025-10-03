@@ -9,7 +9,10 @@ const DEBUG_IGDB = false;
 import { filterProtectedContent, getFilterStats } from '../utils/contentProtectionFilter';
 import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization';
 import { rankByFuzzyMatch } from '../utils/fuzzySearch';
+import { getReleaseStatus } from '../utils/releaseStatus';
 import { enhancedIGDBService } from './enhancedIGDBService';
+
+import type { ReleaseStatus } from '../utils/releaseStatus';
 
 // Re-export the IGDBGame interface
 export interface IGDBGame {
@@ -23,6 +26,7 @@ export interface IGDBGame {
   follows?: number;
   hypes?: number;
   category?: number;
+  release_status?: ReleaseStatus; // Computed from release_dates
   cover?: {
     id: number;
     url: string;
@@ -175,8 +179,20 @@ export class IGDBServiceV2 {
     if (!data.success) {
       throw new Error(data.error || 'IGDB API error');
     }
-    
-    return data.games || [];
+
+    // Enrich games with release_status
+    const games = data.games || [];
+    return this.enrichGamesWithReleaseStatus(games);
+  }
+
+  /**
+   * Enrich games with computed release_status field
+   */
+  private enrichGamesWithReleaseStatus(games: IGDBGame[]): IGDBGame[] {
+    return games.map(game => ({
+      ...game,
+      release_status: getReleaseStatus(game)
+    }));
   }
   
   /**

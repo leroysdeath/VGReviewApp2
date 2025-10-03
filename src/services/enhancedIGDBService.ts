@@ -7,6 +7,7 @@
 const DEBUG_ENHANCED_IGDB = false;
 
 import { IGDBGame } from './igdbService';
+import { getReleaseStatus } from '../utils/releaseStatus';
 
 interface QueryOptions {
   searchType?: 'franchise' | 'specific' | 'general';
@@ -226,8 +227,20 @@ export class EnhancedIGDBService {
     if (!data.success) {
       throw new Error(data.error || 'IGDB API error');
     }
-    
-    return data.games || [];
+
+    // Enrich games with release_status
+    const games = data.games || [];
+    return this.enrichGamesWithReleaseStatus(games);
+  }
+
+  /**
+   * Enrich games with computed release_status field
+   */
+  private enrichGamesWithReleaseStatus(games: IGDBGame[]): IGDBGame[] {
+    return games.map(game => ({
+      ...game,
+      release_status: getReleaseStatus(game)
+    }));
   }
   
   /**
