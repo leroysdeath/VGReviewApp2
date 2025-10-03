@@ -35,6 +35,13 @@ export interface IGDBGame {
     id: number;
     name: string;
   }>;
+  release_dates?: Array<{
+    platform: number;
+    status: number;
+    date?: number;
+    human?: string;
+    region?: number;
+  }>;
   involved_companies?: Array<{
     company: {
       name: string;

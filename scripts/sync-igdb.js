@@ -183,7 +183,7 @@ class NodeIGDBSyncService {
         body: JSON.stringify({
           isBulkRequest: true,
           endpoint: 'games',
-          requestBody: `fields name, summary, first_release_date, rating, cover.url, genres.name, platforms.name, involved_companies.company.name, updated_at; where updated_at > ${timestamp} & category = 0; sort updated_at desc; limit ${limit};`
+          requestBody: `fields name, summary, first_release_date, rating, cover.url, genres.name, platforms.name, platforms.id, release_dates.platform, release_dates.status, involved_companies.company.name, updated_at; where updated_at > ${timestamp} & category = 0; sort updated_at desc; limit ${limit};`
         })
       });
 

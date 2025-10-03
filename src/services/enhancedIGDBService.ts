@@ -34,12 +34,13 @@ export class EnhancedIGDBService {
    */
   buildEnhancedQuery(searchTerm: string, options: QueryOptions = {}): string {
     const baseFields = `
-      fields name, summary, storyline, slug, first_release_date, rating, 
-      total_rating, total_rating_count, follows, hypes, category, 
-      cover.url, screenshots.url, genres.name, platforms.name, 
-      involved_companies.company.name, involved_companies.developer, 
-      involved_companies.publisher, alternative_names.name, 
-      collection.name, franchise.name, franchises.name, 
+      fields name, summary, storyline, slug, first_release_date, rating,
+      total_rating, total_rating_count, follows, hypes, category,
+      cover.url, screenshots.url, genres.name, platforms.name, platforms.id,
+      release_dates.platform, release_dates.status,
+      involved_companies.company.name, involved_companies.developer,
+      involved_companies.publisher, alternative_names.name,
+      collection.name, franchise.name, franchises.name,
       parent_game, version_parent, url, dlcs, expansions, similar_games
     `.trim();
     
