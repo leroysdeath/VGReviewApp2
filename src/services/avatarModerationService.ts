@@ -3,10 +3,16 @@
  * Uses NSFW.js for free client-side moderation
  * Blocks: nudity, extremism, self-harm, hate symbols
  * Allows: suggestive content, violence (gaming platform)
+ *
+ * LAZY LOADING: nsfwjs is dynamically imported only when needed
+ * This prevents loading TensorFlow.js on every page load
  */
 
-import * as nsfwjs from 'nsfwjs';
 import { supabase } from './supabase';
+
+// Type imports only - don't import the actual library
+type NSFWJS = any;
+type PredictionType = { className: string; probability: number };
 
 export interface ModerationResult {
   approved: boolean;
@@ -42,12 +48,32 @@ const DEFAULT_THRESHOLDS: ModerationThresholds = {
 };
 
 export class AvatarModerationService {
-  private nsfwModel: nsfwjs.NSFWJS | null = null;
+  private nsfwModel: NSFWJS | null = null;
   private modelLoading: Promise<void> | null = null;
+  private nsfwjs: any = null; // Dynamically loaded library
   private thresholds: ModerationThresholds;
 
   constructor(thresholds: ModerationThresholds = DEFAULT_THRESHOLDS) {
     this.thresholds = thresholds;
+  }
+
+  /**
+   * Lazy load the nsfwjs library
+   * Only loads when actually needed (during avatar upload)
+   */
+  private async loadNSFWLibrary(): Promise<any> {
+    if (this.nsfwjs) return this.nsfwjs;
+
+    try {
+      console.log('🔄 Lazy loading nsfwjs library...');
+      // Dynamic import - only loads when called
+      this.nsfwjs = await import('nsfwjs');
+      console.log('✅ nsfwjs library loaded');
+      return this.nsfwjs;
+    } catch (error) {
+      console.error('❌ Failed to load nsfwjs library:', error);
+      throw new Error('Failed to load moderation library');
+    }
   }
 
   /**
@@ -63,6 +89,9 @@ export class AvatarModerationService {
 
     this.modelLoading = (async () => {
       try {
+        // Lazy load the library first
+        const nsfwjs = await this.loadNSFWLibrary();
+
         console.log('🔄 Loading NSFW.js model...');
         // Load the model from the CDN
         this.nsfwModel = await nsfwjs.load();
@@ -160,7 +189,7 @@ export class AvatarModerationService {
   /**
    * Classify image using NSFW.js
    */
-  private async classifyImage(img: HTMLImageElement): Promise<nsfwjs.predictionType[]> {
+  private async classifyImage(img: HTMLImageElement): Promise<PredictionType[]> {
     if (!this.nsfwModel) {
       throw new Error('Model not initialized');
     }
@@ -178,7 +207,7 @@ export class AvatarModerationService {
   /**
    * Detect violations based on predictions and thresholds
    */
-  private detectViolations(predictions: nsfwjs.predictionType[]): ViolationType[] {
+  private detectViolations(predictions: PredictionType[]): ViolationType[] {
     const violations: ViolationType[] = [];
 
     // Get scores for each category
@@ -203,7 +232,7 @@ export class AvatarModerationService {
   /**
    * Extract scores from predictions
    */
-  private extractScores(predictions: nsfwjs.predictionType[]): Record<string, number> {
+  private extractScores(predictions: PredictionType[]): Record<string, number> {
     const scores: Record<string, number> = {
       porn: 0,
       sexy: 0,
@@ -225,7 +254,7 @@ export class AvatarModerationService {
   /**
    * Calculate overall confidence in the decision
    */
-  private calculateConfidence(predictions: nsfwjs.predictionType[]): number {
+  private calculateConfidence(predictions: PredictionType[]): number {
     const scores = this.extractScores(predictions);
 
     // If clearly safe (high neutral score)

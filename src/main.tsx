@@ -1,7 +1,3 @@
-// IMPORTANT: Polyfills must be loaded FIRST before any other imports
-// TensorFlow.js (used by nsfwjs) requires Node.js globals (Buffer, process)
-import './polyfills';
-
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
