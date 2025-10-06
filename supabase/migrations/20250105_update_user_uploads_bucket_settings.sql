@@ -1,18 +1,12 @@
--- Create storage bucket for user avatars
--- This bucket will store moderated avatar images
+-- Storage bucket configuration for user avatars
+-- Note: The 'user-uploads' bucket already exists and will be used for avatars
 
--- Create the bucket if it doesn't exist
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-  'user-avatars',
-  'user-avatars',
-  true, -- Public bucket since avatars need to be viewable
-  5242880, -- 5MB limit
-  ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp']::text[]
-)
-ON CONFLICT (id) DO UPDATE SET
-  file_size_limit = EXCLUDED.file_size_limit,
-  allowed_mime_types = EXCLUDED.allowed_mime_types;
+-- Ensure the existing user-uploads bucket has correct settings
+UPDATE storage.buckets
+SET
+  file_size_limit = 5242880, -- 5MB limit
+  allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp']::text[]
+WHERE id = 'user-uploads';
 
 -- Note: Storage RLS policies must be configured via Supabase Dashboard
 -- or using Supabase Management API, not via SQL migrations.

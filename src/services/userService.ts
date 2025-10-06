@@ -840,7 +840,7 @@ class UnifiedUserService {
       const filePath = `avatars/${userId}/${fileName}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('user-avatars')
+        .from('user-uploads')
         .upload(filePath, file, {
           upsert: false, // Don't upsert to avoid overwriting
           contentType: file.type
@@ -853,7 +853,7 @@ class UnifiedUserService {
 
       // Step 6: Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('user-avatars')
+        .from('user-uploads')
         .getPublicUrl(filePath);
 
       // Step 7: Update user profile with new avatar URL
@@ -867,18 +867,18 @@ class UnifiedUserService {
 
       if (updateError) {
         // Try to delete the uploaded file if profile update fails
-        await supabase.storage.from('user-avatars').remove([filePath]);
+        await supabase.storage.from('user-uploads').remove([filePath]);
         return { success: false, error: 'Failed to update profile' };
       }
 
       // Step 8: Delete old avatar if it exists
-      if (user.avatar_url && user.avatar_url.includes('user-avatars')) {
+      if (user.avatar_url && user.avatar_url.includes('user-uploads')) {
         try {
           // Extract the file path from the URL
           const oldUrl = new URL(user.avatar_url);
-          const oldPath = oldUrl.pathname.split('/user-avatars/').pop();
+          const oldPath = oldUrl.pathname.split('/user-uploads/').pop();
           if (oldPath) {
-            await supabase.storage.from('user-avatars').remove([oldPath]);
+            await supabase.storage.from('user-uploads').remove([oldPath]);
           }
         } catch (error) {
           // Don't fail if we can't delete old avatar

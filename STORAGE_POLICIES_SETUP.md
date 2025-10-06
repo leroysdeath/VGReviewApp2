@@ -7,10 +7,10 @@ Since storage policies cannot be created via SQL migrations (they require owners
 ### 1. Navigate to Storage in Supabase Dashboard
 - Go to your Supabase project dashboard
 - Click on "Storage" in the left sidebar
-- Find the `user-avatars` bucket (created by the migration)
+- Find the `user-uploads` bucket (this already exists)
 
 ### 2. Configure Bucket Settings
-- Click on the `user-avatars` bucket
+- Click on the `user-uploads` bucket
 - Go to "Policies" tab
 - Enable RLS (Row Level Security) if not already enabled
 
@@ -29,7 +29,7 @@ Since storage policies cannot be created via SQL migrations (they require owners
 - **Name**: `Users can upload own avatar`
 - **Policy Definition**:
   ```sql
-  bucket_id = 'user-avatars'
+  bucket_id = 'user-uploads'
   AND (storage.foldername(name))[1] = (
     SELECT id::text FROM public.user
     WHERE provider_id = auth.uid()
@@ -42,7 +42,7 @@ Since storage policies cannot be created via SQL migrations (they require owners
 - **Name**: `Users can update own avatar`
 - **Policy Definition**:
   ```sql
-  bucket_id = 'user-avatars'
+  bucket_id = 'user-uploads'
   AND (storage.foldername(name))[1] = (
     SELECT id::text FROM public.user
     WHERE provider_id = auth.uid()
@@ -55,7 +55,7 @@ Since storage policies cannot be created via SQL migrations (they require owners
 - **Name**: `Users can delete own avatar`
 - **Policy Definition**:
   ```sql
-  bucket_id = 'user-avatars'
+  bucket_id = 'user-uploads'
   AND (storage.foldername(name))[1] = (
     SELECT id::text FROM public.user
     WHERE provider_id = auth.uid()

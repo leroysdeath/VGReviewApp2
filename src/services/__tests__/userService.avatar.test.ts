@@ -164,7 +164,7 @@ describe('UserService - Avatar Upload', () => {
           data: {
             id: mockUserId,
             email_verified: true,
-            avatar_url: 'https://example.com/storage/v1/object/public/user-avatars/123/old-avatar.jpg',
+            avatar_url: 'https://example.com/storage/v1/object/public/user-uploads/123/old-avatar.jpg',
             provider_id: 'auth123'
           },
           error: null
@@ -188,7 +188,7 @@ describe('UserService - Avatar Upload', () => {
       await userService.uploadAvatar(mockUserId, mockFile);
 
       // Verify old avatar was deleted after successful upload
-      expect(supabase.storage.from).toHaveBeenCalledWith('user-avatars');
+      expect(supabase.storage.from).toHaveBeenCalledWith('user-uploads');
       const storageMock = (supabase.storage.from as jest.Mock).mock.results[1].value; // Second call is for deletion
       expect(storageMock.remove).toHaveBeenCalledWith(['123/old-avatar.jpg']);
     });
