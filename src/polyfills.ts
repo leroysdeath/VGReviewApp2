@@ -6,7 +6,7 @@
  */
 
 import { Buffer } from 'buffer';
-import process from 'process/browser';
+import process from 'process';
 
 // Make Buffer available globally
 if (typeof window !== 'undefined') {
