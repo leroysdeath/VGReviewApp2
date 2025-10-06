@@ -790,7 +790,7 @@ class UnifiedUserService {
       // Step 1: Check email verification and get current avatar
       const { data: user, error: userError } = await supabase
         .from('user')
-        .select('email_verified, auth_id, avatar_url')
+        .select('email_verified, provider_id, avatar_url')
         .eq('id', userId)
         .single();
 
@@ -887,7 +887,7 @@ class UnifiedUserService {
       }
 
       // Clear cache for this user
-      this.clearProfileCache(user.auth_id);
+      this.clearProfileCache(user.provider_id);
 
       console.log('✅ Avatar uploaded successfully for user:', userId);
       return {

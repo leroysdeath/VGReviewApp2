@@ -192,7 +192,7 @@ ALTER TABLE avatar_violations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own moderation logs"
   ON avatar_moderation_logs
   FOR SELECT
-  USING (auth.uid()::text = (SELECT auth_id FROM "user" WHERE id = user_id));
+  USING (auth.uid()::text = (SELECT provider_id FROM "user" WHERE id = user_id));
 
 -- Only admins can view violations
 CREATE POLICY "Only admins can view violations"
@@ -201,7 +201,7 @@ CREATE POLICY "Only admins can view violations"
   USING (
     EXISTS (
       SELECT 1 FROM "user"
-      WHERE auth_id = auth.uid()::text
+      WHERE provider_id = auth.uid()::text
       AND role = 'admin'
     )
   );

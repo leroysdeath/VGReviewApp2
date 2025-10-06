@@ -165,7 +165,7 @@ describe('UserService - Avatar Upload', () => {
             id: mockUserId,
             email_verified: true,
             avatar_url: 'https://example.com/storage/v1/object/public/user-avatars/123/old-avatar.jpg',
-            auth_id: 'auth123'
+            provider_id: 'auth123'
           },
           error: null
         }),
