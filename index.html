@@ -139,6 +139,27 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- TensorFlow.js polyfills - MUST load before main.tsx -->
+    <script>
+      // Minimal process polyfill for TensorFlow.js/nsfwjs
+      // These globals must exist before any modules load
+      window.process = {
+        env: {},
+        version: '',
+        platform: 'browser',
+        nextTick: (fn) => setTimeout(fn, 0),
+        listenerCount: () => 0,
+        on: function() { return this; },
+        once: function() { return this; },
+        off: function() { return this; },
+        removeListener: function() { return this; },
+        removeAllListeners: function() { return this; },
+        emit: () => false,
+        prependListener: function() { return this; },
+        prependOnceListener: function() { return this; }
+      };
+      window.global = window;
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
