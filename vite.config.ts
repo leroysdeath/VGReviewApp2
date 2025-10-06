@@ -253,7 +253,6 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
     // Polyfills for TensorFlow.js Node.js globals
     'global': 'globalThis',
-    'process.env': {},
   },
   resolve: {
     alias: {
