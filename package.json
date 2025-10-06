@@ -62,6 +62,7 @@
     "lucide-react": "^0.344.0",
     "nsfwjs": "^2.4.2",
     "postcss": "^8.4.35",
+    "process": "^0.11.10",
     "react": "^18.3.1",
     "react-datepicker": "^8.4.0",
     "react-dom": "^18.3.1",

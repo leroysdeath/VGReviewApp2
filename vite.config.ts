@@ -251,25 +251,34 @@ export default defineConfig({
   },
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
-    // Polyfill for TensorFlow.js Buffer usage
+    // Polyfills for TensorFlow.js Node.js globals
     'global': 'globalThis',
+    'process.env': {},
   },
   resolve: {
     alias: {
-      // Polyfill Buffer for TensorFlow.js
+      // Polyfills for TensorFlow.js Node.js APIs
       buffer: 'buffer/',
+      process: 'process/browser',
     }
   },
   optimizeDeps: {
     include: [
-      'react', 
-      'react-dom', 
-      'react-router-dom', 
+      'react',
+      'react-dom',
+      'react-router-dom',
       '@supabase/supabase-js',
       'lucide-react',
-      'zustand'
+      'zustand',
+      'buffer',
+      'process/browser'
     ],
-    exclude: ['@vite/client', '@vite/env']
+    exclude: ['@vite/client', '@vite/env'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      }
+    }
   },
   // Optimize CSS
   css: {
