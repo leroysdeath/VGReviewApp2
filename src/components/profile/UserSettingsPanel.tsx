@@ -438,22 +438,46 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     setValue('platform', platformString, { shouldDirty: true, shouldValidate: true });
   };
 
-  // Handle avatar change
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // States for avatar upload
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarError, setAvatarError] = useState<string>('');
+  const [isCheckingAvatar, setIsCheckingAvatar] = useState(false);
+
+  // Handle avatar change with validation
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Clear previous errors
+      setAvatarError('');
+
+      // Basic validation
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type.toLowerCase())) {
+        setAvatarError('Please select a JPG, PNG, GIF or WebP image');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) { // 5MB
+        setAvatarError('File size must be less than 5MB');
+        return;
+      }
+
+      // Store the file for later moderation during save
+      setAvatarFile(file);
+
+      // Preview the image immediately
       const reader = new FileReader();
       reader.onload = (e) => {
         const newAvatarData = e.target?.result as string;
         const originalAvatar = initialData.avatar || null;
-        
+
         console.log('🖼️ Avatar change detected:', {
           hasNewData: !!newAvatarData,
           originalAvatar: originalAvatar,
           isChanged: newAvatarData !== originalAvatar,
           newDataLength: newAvatarData?.length || 0
         });
-        
+
         setAvatarPreview(newAvatarData);
       };
       reader.readAsDataURL(file);
@@ -465,16 +489,17 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     console.log('🔵 UserSettingsPanel - onSubmit called');
     console.log('📋 Form data:', data);
     console.log('📊 Dirty fields:', dirtyFields);
-    
+
     setIsSubmitting(true);
     setIsLoading(true);
     setSaveError(null);
     setSaveSuccess(false);
+    setAvatarError('');
 
     try {
       // Build the data to submit (only changed fields)
       const submitData: any = {};
-      
+
       // Add dirty fields
       Object.keys(dirtyFields).forEach(fieldName => {
         if (fieldName in data) {
@@ -482,36 +507,80 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         }
       });
 
-      // Include avatar if it has changed
-      if (avatarPreview && avatarPreview !== (originalValues.avatar || initialData.avatar)) {
-        submitData.avatar = avatarPreview;
+      // Handle avatar upload if there's a new file
+      if (avatarFile && avatarPreview && avatarPreview !== (originalValues.avatar || initialData.avatar)) {
+        // Get user ID from the form data or props
+        const userIdNumber = parseInt(userId || '0');
+
+        if (!userIdNumber) {
+          throw new Error('User ID not found');
+        }
+
+        // Show checking message
+        setIsCheckingAvatar(true);
+        setSaveError('Checking image appropriateness...');
+
+        try {
+          // Import userService dynamically to avoid circular dependencies
+          const { userService } = await import('../../services/userService');
+
+          // Upload avatar with moderation
+          const avatarResult = await userService.uploadAvatar(userIdNumber, avatarFile);
+
+          if (avatarResult.success && avatarResult.data) {
+            // Avatar uploaded successfully, include the URL in submit data
+            submitData.avatar_url = avatarResult.data.avatar_url;
+          } else {
+            // Avatar moderation failed or upload error
+            setAvatarError(avatarResult.error || 'Avatar upload failed');
+            setSaveError(avatarResult.error || 'Avatar upload failed');
+            setIsCheckingAvatar(false);
+            setIsSubmitting(false);
+            setIsLoading(false);
+            return; // Don't proceed with saving other fields
+          }
+        } catch (error) {
+          console.error('Avatar upload error:', error);
+          const message = error instanceof Error ? error.message : 'Failed to upload avatar';
+          setAvatarError(message);
+          setSaveError(message);
+          setIsCheckingAvatar(false);
+          setIsSubmitting(false);
+          setIsLoading(false);
+          return;
+        }
+
+        setIsCheckingAvatar(false);
+        setSaveError(null);
       }
 
       console.log('📤 Submitting data:', submitData);
-      
+
       if (!onSave) {
         throw new Error('onSave function is not provided');
       }
-      
+
       setIsUpdating(true);
       setSaveSuccess(false);
-      
+
       await onSave(submitData as ProfileUpdateData);
-      
+
       // Show updating message briefly
       setTimeout(() => {
         setIsUpdating(false);
         setShowSuccessMessage(true);
-        
+
         // Show success message then close modal
         setTimeout(() => {
           setShowSuccessMessage(false);
+          // Clear avatar file after successful save
+          setAvatarFile(null);
           onSuccess?.();
         }, 2000);
       }, 500);
 
       // Update original values
-      setOriginalValues(data);
+      setOriginalValues({...data, avatar: submitData.avatar_url || avatarPreview});
       reset(data);
     } catch (error) {
       console.error('Save error:', error);
@@ -744,15 +813,30 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                     <span>Change Picture</span>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                       className="hidden"
                       onChange={handleAvatarChange}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || isCheckingAvatar}
                     />
                   </label>
                   <p className="text-xs text-gray-400 mt-2">
-                    JPG, PNG or GIF. Max size 2MB.
+                    JPG, PNG, GIF or WebP. Max 5MB.
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Email verification required • Content moderated
+                  </p>
+                  {avatarError && (
+                    <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {avatarError}
+                    </p>
+                  )}
+                  {isCheckingAvatar && (
+                    <p className="text-xs text-purple-400 mt-2 flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Checking image...
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

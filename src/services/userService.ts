@@ -779,6 +779,181 @@ class UnifiedUserService {
   }
 
   /**
+   * Avatar Upload with Moderation
+   * Requires email verification and passes through NSFW.js moderation
+   */
+  async uploadAvatar(userId: number, file: File): Promise<ServiceResponse<{ avatar_url: string }>> {
+    try {
+      // Import moderation service dynamically to avoid circular dependencies
+      const { avatarModerationService } = await import('./avatarModerationService');
+
+      // Step 1: Check email verification and get current avatar
+      const { data: user, error: userError } = await supabase
+        .from('user')
+        .select('email_verified, auth_id, avatar_url')
+        .eq('id', userId)
+        .single();
+
+      if (userError || !user) {
+        return { success: false, error: 'User not found' };
+      }
+
+      if (!user.email_verified) {
+        return {
+          success: false,
+          error: 'Email verification required to upload avatar'
+        };
+      }
+
+      // Step 2: Check rate limits
+      const rateLimitCheck = await avatarModerationService.checkRateLimits(userId);
+      if (!rateLimitCheck.allowed) {
+        return { success: false, error: rateLimitCheck.message || 'Upload limit reached' };
+      }
+
+      // Step 3: Validate file
+      if (!this.isValidImageFile(file)) {
+        return { success: false, error: 'Invalid file type. Please upload a JPG, PNG, GIF, or WebP image' };
+      }
+
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        return { success: false, error: 'File size must be less than 5MB' };
+      }
+
+      // Step 4: Moderate the image
+      console.log('🔍 Moderating avatar for user:', userId);
+      const moderationResult = await avatarModerationService.moderateAvatar(file, userId);
+
+      if (!moderationResult.approved) {
+        // Handle violations
+        if (moderationResult.violations.length > 0) {
+          await this.handleAvatarViolation(userId, moderationResult.violations);
+        }
+        return {
+          success: false,
+          error: moderationResult.message
+        };
+      }
+
+      // Step 5: Upload to Supabase Storage
+      const fileName = `avatar_${userId}_${Date.now()}.${file.name.split('.').pop()}`;
+      const filePath = `avatars/${userId}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('user-avatars')
+        .upload(filePath, file, {
+          upsert: false, // Don't upsert to avoid overwriting
+          contentType: file.type
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        return { success: false, error: 'Failed to upload avatar' };
+      }
+
+      // Step 6: Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-avatars')
+        .getPublicUrl(filePath);
+
+      // Step 7: Update user profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('user')
+        .update({
+          avatar_url: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (updateError) {
+        // Try to delete the uploaded file if profile update fails
+        await supabase.storage.from('user-avatars').remove([filePath]);
+        return { success: false, error: 'Failed to update profile' };
+      }
+
+      // Step 8: Delete old avatar if it exists
+      if (user.avatar_url && user.avatar_url.includes('user-avatars')) {
+        try {
+          // Extract the file path from the URL
+          const oldUrl = new URL(user.avatar_url);
+          const oldPath = oldUrl.pathname.split('/user-avatars/').pop();
+          if (oldPath) {
+            await supabase.storage.from('user-avatars').remove([oldPath]);
+          }
+        } catch (error) {
+          // Don't fail if we can't delete old avatar
+          console.warn('Failed to delete old avatar:', error);
+        }
+      }
+
+      // Clear cache for this user
+      this.clearProfileCache(user.auth_id);
+
+      console.log('✅ Avatar uploaded successfully for user:', userId);
+      return {
+        success: true,
+        data: { avatar_url: publicUrl }
+      };
+
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to upload avatar'
+      };
+    }
+  }
+
+  /**
+   * Check if file is a valid image type
+   */
+  private isValidImageFile(file: File): boolean {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    return allowedTypes.includes(file.type.toLowerCase());
+  }
+
+  /**
+   * Handle avatar upload violations
+   */
+  private async handleAvatarViolation(userId: number, violations: string[]): Promise<void> {
+    try {
+      // Call the database function to handle violations
+      await supabase.rpc('handle_avatar_violation', {
+        p_user_id: userId,
+        p_violation_types: violations
+      });
+    } catch (error) {
+      console.error('Failed to handle avatar violation:', error);
+    }
+  }
+
+  /**
+   * Remove user's avatar
+   */
+  async removeAvatar(userId: number): Promise<ServiceResponse<void>> {
+    try {
+      const { error } = await supabase
+        .from('user')
+        .update({
+          avatar_url: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: undefined };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to remove avatar'
+      };
+    }
+  }
+
+  /**
    * Cache Management Public Methods
    */
   clearCache(): void {

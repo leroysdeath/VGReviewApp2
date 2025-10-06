@@ -36,7 +36,28 @@ You may not post, upload, or share content that:
 ### 3.2 Profanity
 While profanity is permitted on the platform, it must not be used to target, harass, or attack other users. Profanity used in a harassing manner will be treated as a violation of our harassment policy.
 
-### 3.3 Consequences
+### 3.3 Avatar/Profile Images
+- User-uploaded avatars must comply with our content guidelines
+- Prohibited avatar content includes:
+  - Nudity or sexually explicit material (including partial nudity)
+  - Hate symbols or extremist imagery
+  - Self-harm or graphic violence depictions
+- Avatar uploads are automatically moderated and may be rejected
+- Email verification is required before avatar upload
+- The avatar upload service is provided "as is" without warranties
+- No guarantee of upload approval is provided
+- False positives may occur and we assume no liability for rejected uploads
+
+### 3.4 Automated Moderation
+- We use automated systems to check uploaded images for compliance
+- Moderation decisions are final with no formal appeal process
+- By uploading an avatar, you confirm you are 16 or older
+
+### 3.5 Upload Limits
+- Users are limited to 5 avatar uploads per hour and 10 per day
+- Repeated violations may result in temporary or permanent suspension of avatar upload privileges
+
+### 3.6 Consequences
 Violations of this policy may result in content removal and account termination.
 
 ## 4. User-Generated Content
