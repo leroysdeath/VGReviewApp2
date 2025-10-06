@@ -250,7 +250,15 @@ export default defineConfig({
     assetsInlineLimit: 4096, // Inline assets smaller than 4kb
   },
   define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version)
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+    // Polyfill for TensorFlow.js Buffer usage
+    'global': 'globalThis',
+  },
+  resolve: {
+    alias: {
+      // Polyfill Buffer for TensorFlow.js
+      buffer: 'buffer/',
+    }
   },
   optimizeDeps: {
     include: [
