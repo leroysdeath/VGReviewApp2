@@ -14,46 +14,16 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = EXCLUDED.file_size_limit,
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
--- Create RLS policies for the bucket
--- Allow authenticated users to upload their own avatars
-CREATE POLICY "Users can upload own avatar"
-ON storage.objects
-FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'user-avatars' AND
-  (storage.foldername(name))[1] = (SELECT id::text FROM "user" WHERE provider_id = auth.uid())
-);
-
--- Allow authenticated users to update their own avatars
-CREATE POLICY "Users can update own avatar"
-ON storage.objects
-FOR UPDATE
-TO authenticated
-USING (
-  bucket_id = 'user-avatars' AND
-  (storage.foldername(name))[1] = (SELECT id::text FROM "user" WHERE provider_id = auth.uid())
-);
-
--- Allow authenticated users to delete their own avatars
-CREATE POLICY "Users can delete own avatar"
-ON storage.objects
-FOR DELETE
-TO authenticated
-USING (
-  bucket_id = 'user-avatars' AND
-  (storage.foldername(name))[1] = (SELECT id::text FROM "user" WHERE provider_id = auth.uid())
-);
-
--- Allow public read access to all avatars
-CREATE POLICY "Public can view avatars"
-ON storage.objects
-FOR SELECT
-TO public
-USING (bucket_id = 'user-avatars');
-
--- Add comment for documentation
-COMMENT ON POLICY "Users can upload own avatar" ON storage.objects IS 'Allows authenticated users to upload avatars to their own folder';
-COMMENT ON POLICY "Users can update own avatar" ON storage.objects IS 'Allows authenticated users to update their own avatar files';
-COMMENT ON POLICY "Users can delete own avatar" ON storage.objects IS 'Allows authenticated users to delete their own avatar files';
-COMMENT ON POLICY "Public can view avatars" ON storage.objects IS 'Allows anyone to view uploaded avatars';
+-- Note: Storage RLS policies must be configured via Supabase Dashboard
+-- or using Supabase Management API, not via SQL migrations.
+--
+-- Recommended bucket settings:
+-- 1. Enable RLS on the bucket
+-- 2. Public access for viewing (since avatars need to be viewable)
+-- 3. Authenticated users can upload/update/delete files in their own user ID folder
+--
+-- Example RLS policies to configure in Supabase Dashboard:
+-- INSERT policy: (storage.foldername(name))[1] = (SELECT id::text FROM "user" WHERE provider_id = auth.uid())
+-- UPDATE policy: (storage.foldername(name))[1] = (SELECT id::text FROM "user" WHERE provider_id = auth.uid())
+-- DELETE policy: (storage.foldername(name))[1] = (SELECT id::text FROM "user" WHERE provider_id = auth.uid())
+-- SELECT policy: true (public read access)
