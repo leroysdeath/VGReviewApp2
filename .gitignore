@@ -205,3 +205,7 @@ test-supabase-config.mjs
 # Never commit files with hardcoded credentials
 *-with-keys.js
 *-with-credentials.*
+
+# MCP configuration files (contain access tokens)
+.mcp.json
+.claude.json
