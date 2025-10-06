@@ -22,7 +22,7 @@ FOR INSERT
 TO authenticated
 WITH CHECK (
   bucket_id = 'user-avatars' AND
-  (storage.foldername(name))[1] = (SELECT id::text FROM "user" WHERE provider_id = auth.uid()::text)
+  (storage.foldername(name))[1] = (SELECT id::text FROM "user" WHERE provider_id = auth.uid())
 );
 
 -- Allow authenticated users to update their own avatars
@@ -32,7 +32,7 @@ FOR UPDATE
 TO authenticated
 USING (
   bucket_id = 'user-avatars' AND
-  (storage.foldername(name))[1] = (SELECT id::text FROM "user" WHERE provider_id = auth.uid()::text)
+  (storage.foldername(name))[1] = (SELECT id::text FROM "user" WHERE provider_id = auth.uid())
 );
 
 -- Allow authenticated users to delete their own avatars
@@ -42,7 +42,7 @@ FOR DELETE
 TO authenticated
 USING (
   bucket_id = 'user-avatars' AND
-  (storage.foldername(name))[1] = (SELECT id::text FROM "user" WHERE provider_id = auth.uid()::text)
+  (storage.foldername(name))[1] = (SELECT id::text FROM "user" WHERE provider_id = auth.uid())
 );
 
 -- Allow public read access to all avatars
