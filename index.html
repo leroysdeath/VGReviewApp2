@@ -136,26 +136,54 @@
     <meta name="twitter:title" content="GameVault - Gaming Community Platform">
     <meta name="twitter:description" content="Discover games, write reviews, and connect with the gaming community">
     <meta name="twitter:image" content="/twitter-card.svg">
-  </head>
-  <body>
-    <div id="root"></div>
-    <!-- Inject process and global polyfills before app loads -->
+
+    <!-- Inject process and global polyfills BEFORE any module scripts load -->
     <script>
       // Create a minimal process object that satisfies typeof checks
       (function() {
         var processPolyfill = {
-          env: {},
+          env: { NODE_ENV: 'production' },
           browser: true,
           version: '',
           versions: {},
-          nextTick: function(fn) { setTimeout(fn, 0); }
+          nextTick: function(fn) { setTimeout(fn, 0); },
+          stderr: {
+            write: function() {}
+          },
+          stdout: {
+            write: function() {}
+          }
         };
         window.process = processPolyfill;
         window.global = window;
         globalThis.process = processPolyfill;
         globalThis.global = globalThis;
+
+        // Ensure console exists (some libraries check for it)
+        if (typeof console === 'undefined') {
+          window.console = {
+            log: function() {},
+            error: function() {},
+            warn: function() {},
+            info: function() {},
+            debug: function() {}
+          };
+        }
+
+        // Ensure Object.getPrototypeOf exists and works correctly
+        if (!Object.getPrototypeOf) {
+          Object.getPrototypeOf = function(obj) {
+            if (obj == null) {
+              throw new TypeError('Cannot convert undefined or null to object');
+            }
+            return obj.__proto__ || Object.prototype;
+          };
+        }
       })();
     </script>
+  </head>
+  <body>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
