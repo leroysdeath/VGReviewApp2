@@ -337,17 +337,122 @@ export const ReviewPage: React.FC = () => {
           {/* Game Cover and Info */}
           <div className="lg:col-span-2">
             <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-lg overflow-hidden">
-              <div className="md:flex">
+              {/* Mobile Layout */}
+              <div className="md:hidden">
+                {/* Title + Cover Row */}
+                <div className="flex gap-3 p-4 items-start">
+                  {/* Title + Review Info - Left Side */}
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      to={`/game/${gameId}`}
+                      className="text-2xl font-bold text-white mb-2 hover:text-purple-400 transition-colors block line-clamp-3 leading-tight"
+                    >
+                      {game.name}
+                    </Link>
+
+                    {/* Reviewed By */}
+                    <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
+                      <span>Reviewed by</span>
+                      <Link
+                        to={`/user/${review.user.id}`}
+                        className="flex items-center gap-1.5 group"
+                      >
+                        {/* User Avatar */}
+                        {review.user.avatar_url ? (
+                          <img
+                            src={review.user.avatar_url}
+                            alt={review.user.username || review.user.name}
+                            className="w-6 h-6 rounded-full object-cover border border-gray-600
+                              transition-all duration-300 group-hover:border-purple-400"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full border border-gray-600
+                            bg-gradient-to-br from-purple-600 to-purple-800
+                            flex items-center justify-center font-bold text-white text-xs
+                            transition-all duration-300 group-hover:border-purple-400">
+                            {getUserInitial(review.user)}
+                          </div>
+                        )}
+                        <span className="text-white font-medium group-hover:text-purple-400 transition-colors">
+                          {review.user.username || review.user.name}
+                        </span>
+                      </Link>
+                    </div>
+
+                    {/* Platform */}
+                    {review.platform && review.platform.name && (
+                      <div className="text-sm text-gray-400">
+                        {review.platform.name}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Cover - Right Side */}
+                  <div className="flex-shrink-0 w-[35%]">
+                    <Link to={`/game/${gameId}`}>
+                      <SmartImage
+                        src={game.cover_url || '/placeholder-game.jpg'}
+                        alt={game.name}
+                        className="w-full h-auto object-cover rounded hover:opacity-90 transition-opacity cursor-pointer"
+                        optimization={{
+                          width: 300,
+                          height: 450,
+                          quality: 95,
+                          format: 'webp'
+                        }}
+                        fallback="/placeholder-game.jpg"
+                      />
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Edit Button - Mobile */}
+                {isAuthenticated && dbUserId === review.user_id && (
+                  <div className="px-4 pb-3">
+                    <Link
+                      to={`/review/${game?.igdb_id || gameId}`}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                      <span>Edit Review</span>
+                    </Link>
+                  </div>
+                )}
+
+                {/* Review Text - Mobile */}
+                {reviewText && (
+                  <div className="px-4 pb-4">
+                    <div className="text-sm text-gray-300 leading-relaxed">
+                      {isLongReview && !reviewExpanded ? (
+                        <>
+                          <p>{reviewText.substring(0, 500)}...</p>
+                          <button
+                            onClick={() => setShowFullReview(true)}
+                            className="mt-2 text-purple-400 hover:text-purple-300 transition-colors text-sm"
+                          >
+                            more
+                          </button>
+                        </>
+                      ) : (
+                        <p className="whitespace-pre-line">{reviewText}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Layout */}
+              <div className="hidden md:flex">
                 <div className="md:flex-shrink-0">
                   <Link to={`/game/${gameId}`}>
                     <SmartImage
                       src={game.cover_url || '/placeholder-game.jpg'}
                       alt={game.name}
-                      className="h-96 w-full object-cover md:h-80 md:w-64 hover:opacity-90 transition-opacity cursor-pointer"
+                      className="h-80 w-64 object-cover hover:opacity-90 transition-opacity cursor-pointer"
                       optimization={{
-                        width: 640,  // High quality
-                        height: 960, // High quality
-                        quality: 95,  // High quality
+                        width: 640,
+                        height: 960,
+                        quality: 95,
                         format: 'webp'
                       }}
                       fallback="/placeholder-game.jpg"
@@ -355,13 +460,13 @@ export const ReviewPage: React.FC = () => {
                   </Link>
                 </div>
                 <div className="p-8">
-                  <Link 
+                  <Link
                     to={`/game/${gameId}`}
                     className="text-3xl font-bold text-white mb-2 hover:text-purple-400 transition-colors block"
                   >
                     {game.name}
                   </Link>
-                  
+
                   {/* Review Info */}
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2 text-gray-400">
@@ -402,7 +507,7 @@ export const ReviewPage: React.FC = () => {
                       </Link>
                     )}
                   </div>
-                  
+
                   <div className="text-sm text-gray-400 mb-4">
                     {review.post_date_time ? new Date(review.post_date_time).toLocaleDateString() : 'Unknown date'}
                     {review.platform && review.platform.name && (
@@ -412,7 +517,7 @@ export const ReviewPage: React.FC = () => {
                       </>
                     )}
                   </div>
-                  
+
                   {/* Review Text */}
                   {reviewText && (
                     <div className="text-gray-300 leading-relaxed mt-4">
