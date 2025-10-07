@@ -254,7 +254,9 @@ export default defineConfig({
       // Node.js polyfills for browser compatibility
       events: 'events',
       buffer: 'buffer',
-      process: 'process/browser'
+      process: 'process/browser',
+      util: 'util',
+      stream: 'stream-browserify'
     }
   },
   define: {
@@ -271,7 +273,9 @@ export default defineConfig({
       // Node.js polyfills for browser compatibility
       'events',
       'buffer',
-      'process/browser'
+      'process/browser',
+      'util',
+      'stream-browserify'
     ],
     exclude: ['@vite/client', '@vite/env']
   },
