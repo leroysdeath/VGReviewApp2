@@ -1061,17 +1061,122 @@ export const GamePage: React.FC = () => {
           {/* Game Cover and Info */}
           <div className="lg:col-span-2">
             <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg overflow-hidden">
-              <div className="md:flex">
+              {/* Mobile Layout - Letterboxd Style */}
+              <div className="md:hidden">
+                {/* Cover + Title Row */}
+                <div className="flex gap-3 p-4 items-center">
+                  {/* Cover - Left Side */}
+                  <div className="flex-shrink-0 w-[35%]">
+                    <SmartImage
+                      src={game.cover?.url ? `https:${game.cover.url}` : (game.cover_url || '/placeholder-game.jpg')}
+                      alt={game.name}
+                      className="w-full h-auto object-cover rounded"
+                      priority={true}
+                      optimization={{
+                        width: 300,
+                        height: 450,
+                        quality: 95,
+                        format: 'webp'
+                      }}
+                      fallback="/placeholder-game.jpg"
+                    />
+                  </div>
+
+                  {/* Title + Release Date + Platforms - Right Side */}
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-2xl font-bold text-white leading-tight mb-2 line-clamp-3">
+                      {game.name}
+                    </h1>
+
+                    <div className="space-y-1 text-sm text-gray-400">
+                      {/* Release Date */}
+                      <div>
+                        {formatFullDate(game.first_release_date || game.release_date)}
+                      </div>
+
+                      {/* Platforms */}
+                      {game.platforms && game.platforms.length > 0 && (
+                        <div>
+                          <span className="text-gray-500">Platforms: </span>
+                          <span>{mapPlatformNames(game.platforms).join(', ')}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Metadata Section - Developer & Publisher */}
+                {(game.developer || game.publisher) && (
+                  <div className="px-4 pb-3">
+                    <div className="space-y-1 text-sm text-gray-400">
+                      {/* Developer */}
+                      {game.developer && (
+                        <div>
+                          <span className="text-gray-500">Developer: </span>
+                          <span>{game.developer}</span>
+                        </div>
+                      )}
+
+                      {/* Publisher */}
+                      {game.publisher && (
+                        <div>
+                          <span className="text-gray-500">Publisher: </span>
+                          <span>{game.publisher}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Description Section */}
+                <div className="px-4 pb-4">
+                  <div className="relative">
+                    <p
+                      className={`text-sm text-gray-300 leading-relaxed transition-all duration-300 ${
+                        !isSummaryExpanded ? 'line-clamp-3' : ''
+                      }`}
+                      style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: !isSummaryExpanded ? 3 : 'unset',
+                        WebkitBoxOrient: 'vertical',
+                        overflow: !isSummaryExpanded ? 'hidden' : 'visible',
+                        textOverflow: 'ellipsis'
+                      }}
+                    >
+                      {game.summary || 'No description available.'}
+                    </p>
+                  </div>
+                  {game.summary && game.summary.length > 200 && (
+                    <button
+                      onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                      className="text-purple-400 hover:text-purple-300 text-sm mt-2 inline-flex items-center gap-1"
+                    >
+                      {isSummaryExpanded ? (
+                        <>
+                          See less <ChevronUp className="h-4 w-4" />
+                        </>
+                      ) : (
+                        <>
+                          See more <ChevronDown className="h-4 w-4" />
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Desktop Layout - Original */}
+              <div className="hidden md:flex">
                 <div className="md:flex-shrink-0">
                   <SmartImage
                     src={game.cover?.url ? `https:${game.cover.url}` : (game.cover_url || '/placeholder-game.jpg')}
                     alt={game.name}
-                    className="h-96 w-full object-cover md:h-80 md:w-64"
+                    className="h-80 w-64 object-cover"
                     priority={true}
                     optimization={{
-                      width: window.innerWidth < 768 ? 640 : 640,  // High quality for all devices
-                      height: window.innerWidth < 768 ? 960 : 960, // High quality for all devices
-                      quality: 95,  // High quality for all devices
+                      width: 640,
+                      height: 960,
+                      quality: 95,
                       format: 'webp'
                     }}
                     fallback="/placeholder-game.jpg"
@@ -1159,7 +1264,7 @@ export const GamePage: React.FC = () => {
                   </div>
                   <div className="mb-6">
                     <div className="relative">
-                      <p 
+                      <p
                         className={`text-gray-300 leading-relaxed transition-all duration-300 ${
                           !isSummaryExpanded ? 'line-clamp-3' : ''
                         }`}
