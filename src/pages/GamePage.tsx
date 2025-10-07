@@ -1064,7 +1064,7 @@ export const GamePage: React.FC = () => {
               {/* Mobile Layout - Letterboxd Style */}
               <div className="md:hidden">
                 {/* Cover + Title Row */}
-                <div className="flex gap-3 p-4">
+                <div className="flex gap-3 p-4 items-center">
                   {/* Cover - Left Side */}
                   <div className="flex-shrink-0 w-[35%]">
                     <SmartImage
@@ -1083,8 +1083,8 @@ export const GamePage: React.FC = () => {
                   </div>
 
                   {/* Title + Release Date + Platforms - Right Side */}
-                  <div className="flex-1 min-w-0 pt-1">
-                    <h1 className="text-2xl font-bold text-white leading-tight mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-2xl font-bold text-white leading-tight mb-2 line-clamp-3">
                       {game.name}
                     </h1>
 
