@@ -249,6 +249,14 @@ export default defineConfig({
     cssCodeSplit: true,
     assetsInlineLimit: 4096, // Inline assets smaller than 4kb
   },
+  resolve: {
+    alias: {
+      // Node.js polyfills for browser compatibility
+      events: 'events',
+      buffer: 'buffer',
+      process: 'process/browser'
+    }
+  },
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
   },
@@ -259,7 +267,11 @@ export default defineConfig({
       'react-router-dom',
       '@supabase/supabase-js',
       'lucide-react',
-      'zustand'
+      'zustand',
+      // Node.js polyfills for browser compatibility
+      'events',
+      'buffer',
+      'process/browser'
     ],
     exclude: ['@vite/client', '@vite/env']
   },
