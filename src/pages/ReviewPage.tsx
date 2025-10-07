@@ -351,7 +351,7 @@ export const ReviewPage: React.FC = () => {
                     </Link>
 
                     {/* Reviewed By */}
-                    <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
                       <span>Reviewed by</span>
                       <Link
                         to={`/user/${review.user.id}`}
@@ -379,12 +379,16 @@ export const ReviewPage: React.FC = () => {
                       </Link>
                     </div>
 
-                    {/* Platform */}
-                    {review.platform && review.platform.name && (
-                      <div className="text-sm text-gray-400">
-                        {review.platform.name}
-                      </div>
-                    )}
+                    {/* Date and Platform */}
+                    <div className="text-sm text-gray-400">
+                      {review.post_date_time ? new Date(review.post_date_time).toLocaleDateString() : 'Unknown date'}
+                      {review.platform && review.platform.name && (
+                        <>
+                          {' • '}
+                          <span>{review.platform.name}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   {/* Cover - Right Side */}
