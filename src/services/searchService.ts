@@ -15,6 +15,7 @@
 import { supabase } from './supabase';
 import { sanitizeSearchTerm } from '../utils/sqlSecurity';
 import type { GameWithCalculatedFields } from '../types/database';
+import { igdbService } from './igdbService';
 
 const DEBUG_SEARCH = false;
 
@@ -309,6 +310,11 @@ class UnifiedSearchService {
       // Cache the results
       this.setCachedResults(cacheKey, deduplicatedResults, deduplicatedResults.length);
 
+      // Enrich results with missing covers (async, non-blocking)
+      this.enrichMissingCovers(deduplicatedResults).catch(err => {
+        if (DEBUG_SEARCH) console.warn('Cover enrichment failed:', err);
+      });
+
       const response: SearchResponse = {
         results: deduplicatedResults,
         total_count: deduplicatedResults.length,
@@ -403,6 +409,11 @@ class UnifiedSearchService {
         }
 
         const deduplicatedResults = await this.deduplicateResults(results);
+
+        // Enrich results with missing covers (async, non-blocking)
+        this.enrichMissingCovers(deduplicatedResults).catch(err => {
+          if (DEBUG_SEARCH) console.warn('Cover enrichment failed:', err);
+        });
 
         return {
           results: deduplicatedResults,
@@ -546,6 +557,69 @@ class UnifiedSearchService {
     }
 
     return deduplicatedResults;
+  }
+
+  /**
+   * Enrich search results with missing cover URLs from IGDB
+   * This runs asynchronously and updates the database without blocking search results
+   */
+  private async enrichMissingCovers(results: SearchResult[]): Promise<void> {
+    // Find games without cover URLs
+    const gamesNeedingCovers = results.filter(game => !game.cover_url && game.igdb_id);
+
+    if (gamesNeedingCovers.length === 0) return;
+
+    if (DEBUG_SEARCH) {
+      console.log(`🖼️ Enriching ${gamesNeedingCovers.length} games with missing covers`);
+    }
+
+    // Process in small batches to avoid overwhelming IGDB API
+    const BATCH_SIZE = 5;
+    const batches = [];
+
+    for (let i = 0; i < gamesNeedingCovers.length; i += BATCH_SIZE) {
+      batches.push(gamesNeedingCovers.slice(i, i + BATCH_SIZE));
+    }
+
+    // Process batches sequentially with delay between them
+    for (const batch of batches) {
+      await Promise.all(
+        batch.map(async (game) => {
+          try {
+            // Fetch game details from IGDB
+            const igdbGame = await igdbService.getGameById(game.igdb_id);
+
+            if (igdbGame?.cover?.url) {
+              const coverUrl = igdbService.transformImageUrl(igdbGame.cover.url);
+
+              // Update database with cover URL
+              const { error } = await supabase
+                .from('game')
+                .update({
+                  pic_url: coverUrl,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('igdb_id', game.igdb_id);
+
+              if (error) {
+                console.error(`Failed to update cover for game ${game.igdb_id}:`, error);
+              } else {
+                if (DEBUG_SEARCH) {
+                  console.log(`✅ Updated cover for "${game.name}" (IGDB ID: ${game.igdb_id})`);
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`Failed to enrich cover for game ${game.igdb_id}:`, error);
+          }
+        })
+      );
+
+      // Small delay between batches to respect rate limits
+      if (batches.indexOf(batch) < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
   }
 
   private detectDuplicates(results: SearchResult[]): DuplicateGroup[] {

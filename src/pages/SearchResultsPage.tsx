@@ -417,17 +417,23 @@ export const SearchResultsPage: React.FC = () => {
   };
 
   const getCoverUrl = (game: Game) => {
-    // Handle both cover.url and cover_url formats, ensure https protocol
-    const coverUrl = (game as any).cover?.url
-      ? `https:${(game as any).cover.url}`
-      : game.cover_url;
+    // Search results come from database which may have missing cover URLs
+    // ~23% of games (28,301 out of 125,031) don't have pic_url populated yet
+    const coverUrl = game.cover_url || (game as any).cover?.url;
 
-    // Ensure URL has protocol if it exists
-    if (coverUrl && !coverUrl.startsWith('http')) {
-      return `https:${coverUrl}`;
+    // Ensure proper protocol for valid URLs
+    if (coverUrl) {
+      if (coverUrl.startsWith('//')) {
+        return `https:${coverUrl}`;
+      } else if (!coverUrl.startsWith('http')) {
+        return `https://${coverUrl}`;
+      }
+      return coverUrl;
     }
 
-    return coverUrl || '/placeholder-game.jpg';
+    // Fallback: Show placeholder for games without covers
+    // Note: GamePage will fetch from IGDB when visited and update the database
+    return '/placeholder-game.jpg';
   };
 
   // Use games directly from searchState (igdbService already applies filtering)
