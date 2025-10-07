@@ -380,7 +380,7 @@ export const ReviewPage: React.FC = () => {
                     </div>
 
                     {/* Date and Platform */}
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-gray-400 truncate overflow-hidden">
                       {review.post_date_time ? new Date(review.post_date_time).toLocaleDateString() : 'Unknown date'}
                       {review.platform && review.platform.name && (
                         <>
