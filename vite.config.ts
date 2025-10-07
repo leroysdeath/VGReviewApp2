@@ -261,6 +261,9 @@ export default defineConfig({
   },
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+    // Define global process for browser (required by some Node.js polyfills)
+    'process.env': {},
+    global: 'globalThis',
   },
   optimizeDeps: {
     include: [
