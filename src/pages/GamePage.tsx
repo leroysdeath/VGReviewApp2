@@ -1082,47 +1082,51 @@ export const GamePage: React.FC = () => {
                     />
                   </div>
 
-                  {/* Title - Right Side */}
-                  <div className="flex-1 min-w-0 flex items-start pt-1">
-                    <h1 className="text-2xl font-bold text-white leading-tight">
+                  {/* Title + Release Date + Platforms - Right Side */}
+                  <div className="flex-1 min-w-0 pt-1">
+                    <h1 className="text-2xl font-bold text-white leading-tight mb-2">
                       {game.name}
                     </h1>
-                  </div>
-                </div>
 
-                {/* Metadata Section */}
-                <div className="px-4 pb-3">
-                  <div className="space-y-1 text-sm text-gray-400">
-                    {/* Release Date */}
-                    <div>
-                      {formatFullDate(game.first_release_date || game.release_date)}
+                    <div className="space-y-1 text-sm text-gray-400">
+                      {/* Release Date */}
+                      <div>
+                        {formatFullDate(game.first_release_date || game.release_date)}
+                      </div>
+
+                      {/* Platforms */}
+                      {game.platforms && game.platforms.length > 0 && (
+                        <div>
+                          <span className="text-gray-500">Platforms: </span>
+                          <span>{mapPlatformNames(game.platforms).join(', ')}</span>
+                        </div>
+                      )}
                     </div>
-
-                    {/* Platforms */}
-                    {game.platforms && game.platforms.length > 0 && (
-                      <div>
-                        <span className="text-gray-500">Platforms: </span>
-                        <span>{mapPlatformNames(game.platforms).join(', ')}</span>
-                      </div>
-                    )}
-
-                    {/* Developer */}
-                    {game.developer && (
-                      <div>
-                        <span className="text-gray-500">Developer: </span>
-                        <span>{game.developer}</span>
-                      </div>
-                    )}
-
-                    {/* Publisher */}
-                    {game.publisher && (
-                      <div>
-                        <span className="text-gray-500">Publisher: </span>
-                        <span>{game.publisher}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
+
+                {/* Metadata Section - Developer & Publisher */}
+                {(game.developer || game.publisher) && (
+                  <div className="px-4 pb-3">
+                    <div className="space-y-1 text-sm text-gray-400">
+                      {/* Developer */}
+                      {game.developer && (
+                        <div>
+                          <span className="text-gray-500">Developer: </span>
+                          <span>{game.developer}</span>
+                        </div>
+                      )}
+
+                      {/* Publisher */}
+                      {game.publisher && (
+                        <div>
+                          <span className="text-gray-500">Publisher: </span>
+                          <span>{game.publisher}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Description Section */}
                 <div className="px-4 pb-4">
