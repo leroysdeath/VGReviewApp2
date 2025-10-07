@@ -139,6 +139,23 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Inject process and global polyfills before app loads -->
+    <script>
+      // Create a minimal process object that satisfies typeof checks
+      (function() {
+        var processPolyfill = {
+          env: {},
+          browser: true,
+          version: '',
+          versions: {},
+          nextTick: function(fn) { setTimeout(fn, 0); }
+        };
+        window.process = processPolyfill;
+        window.global = window;
+        globalThis.process = processPolyfill;
+        globalThis.global = globalThis;
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
