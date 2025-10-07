@@ -21,6 +21,7 @@ import { gameSearchService } from './gameSearchService';
 import { gameSyncService } from './gameSyncService';
 import { syncQueue } from '../utils/syncQueue';
 import { prioritizeFlagshipTitles } from '../utils/sisterGameDetection';
+import { deduplicateRequest, generateCacheKey } from '../utils/requestDeduplication';
 
 const DEBUG_GAME_SERVICE = true;
 
@@ -88,66 +89,73 @@ class GameService {
   private performanceLogs: QueryPerformance[] = [];
 
   async getGameById(id: number): Promise<GameWithCalculatedFields | null> {
-    try {
-      const { data, error } = await supabase
-        .from('game')
-        .select(`
-          *,
-          rating(rating)
-        `)
-        .eq('id', id)
-        .single();
+    const cacheKey = generateCacheKey('gameService', 'getGameById', id);
 
-      if (error || !data) {
-        console.error('Error fetching game by ID:', error);
-        return null;
-      }
-
-      return this.transformGameWithRatings(data as GameWithRating);
-    } catch (error) {
-      console.error('Error in getGameById:', error);
-      return null;
-    }
-  }
-
-  async getGameByIGDBId(igdbId: number): Promise<GameWithCalculatedFields | null> {
-    try {
-      if (DEBUG_GAME_SERVICE) console.log('🔍 getGameByIGDBId:', igdbId);
-
-      let { data, error } = await supabase
-        .from('game')
-        .select(`
-          *,
-          rating(rating)
-        `)
-        .eq('igdb_id', igdbId)
-        .single();
-
-      if (DEBUG_GAME_SERVICE) console.log('🔍 First query (igdb_id):', { found: !!data, error });
-
-      if ((error || !data) && igdbId) {
-        if (DEBUG_GAME_SERVICE) console.log('🔍 Trying fallback with game_id field...');
-        const { data: gameIdData, error: gameIdError } = await supabase
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        const { data, error } = await supabase
           .from('game')
           .select(`
             *,
             rating(rating)
           `)
-          .eq('game_id', igdbId.toString())
+          .eq('id', id)
           .single();
 
-        if (DEBUG_GAME_SERVICE) console.log('🔍 Second query (game_id):', { found: !!gameIdData, error: gameIdError });
-
-        if (!gameIdError && gameIdData) {
-          data = gameIdData;
-          error = null;
+        if (error || !data) {
+          console.error('Error fetching game by ID:', error);
+          return null;
         }
+
+        return this.transformGameWithRatings(data as GameWithRating);
+      } catch (error) {
+        console.error('Error in getGameById:', error);
+        return null;
       }
+    });
+  }
 
-      const needsUpdate = data && (!data.summary || !data.developer || !data.publisher || !data.cover_url);
+  async getGameByIGDBId(igdbId: number): Promise<GameWithCalculatedFields | null> {
+    const cacheKey = generateCacheKey('gameService', 'getGameByIGDBId', igdbId);
 
-      if (error || !data || needsUpdate) {
-        if (needsUpdate) {
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        if (DEBUG_GAME_SERVICE) console.log('🔍 getGameByIGDBId:', igdbId);
+
+        let { data, error } = await supabase
+          .from('game')
+          .select(`
+            *,
+            rating(rating)
+          `)
+          .eq('igdb_id', igdbId)
+          .single();
+
+        if (DEBUG_GAME_SERVICE) console.log('🔍 First query (igdb_id):', { found: !!data, error });
+
+        if ((error || !data) && igdbId) {
+          if (DEBUG_GAME_SERVICE) console.log('🔍 Trying fallback with game_id field...');
+          const { data: gameIdData, error: gameIdError } = await supabase
+            .from('game')
+            .select(`
+              *,
+              rating(rating)
+            `)
+            .eq('game_id', igdbId.toString())
+            .single();
+
+          if (DEBUG_GAME_SERVICE) console.log('🔍 Second query (game_id):', { found: !!gameIdData, error: gameIdError });
+
+          if (!gameIdError && gameIdData) {
+            data = gameIdData;
+            error = null;
+          }
+        }
+
+        const needsUpdate = data && (!data.summary || !data.developer || !data.publisher || !data.cover_url);
+
+        if (error || !data || needsUpdate) {
+          if (needsUpdate) {
           console.log(`Game with IGDB ID ${igdbId} has incomplete data, refreshing from IGDB API...`);
         } else {
           console.log(`Game with IGDB ID ${igdbId} not found in database, fetching from IGDB API...`);
@@ -242,11 +250,12 @@ class GameService {
         }
       }
 
-      return this.transformGameWithRatings(data as GameWithRating);
-    } catch (error) {
-      console.error('Error in getGameByIGDBId:', error);
-      return null;
-    }
+        return this.transformGameWithRatings(data as GameWithRating);
+      } catch (error) {
+        console.error('Error in getGameByIGDBId:', error);
+        return null;
+      }
+    });
   }
 
   async getGameWithFullReviews(igdbId: number): Promise<{
@@ -265,7 +274,10 @@ class GameService {
       };
     }>;
   }> {
-    try {
+    const cacheKey = generateCacheKey('gameService', 'getGameWithFullReviews', igdbId);
+
+    return deduplicateRequest(cacheKey, async () => {
+      try {
       if (DEBUG_GAME_SERVICE) console.log(`🔍 Looking up game with IGDB ID: ${igdbId}`);
 
       const { data: gameData, error: gameError } = await supabase
@@ -422,37 +434,41 @@ class GameService {
 
       if (DEBUG_GAME_SERVICE) console.log(`✅ Loaded game "${game.name}" with ${reviews.length} reviews`);
 
-      return { game, reviews };
-    } catch (error) {
-      console.error('Error in getGameWithFullReviews:', error);
-      return { game: null, reviews: [] };
-    }
+        return { game, reviews };
+      } catch (error) {
+        console.error('Error in getGameWithFullReviews:', error);
+        return { game: null, reviews: [] };
+      }
+    });
   }
 
   async getGameBySlug(slug: string): Promise<GameWithCalculatedFields | null> {
-    try {
-      if (DEBUG_GAME_SERVICE) console.log('🔍 getGameBySlug:', slug);
+    const cacheKey = generateCacheKey('gameService', 'getGameBySlug', slug);
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        if (DEBUG_GAME_SERVICE) console.log('🔍 getGameBySlug:', slug);
 
-      const { data, error } = await supabase
-        .from('game')
-        .select(`
-          *,
-          rating(rating)
-        `)
-        .eq('slug', slug)
-        .single();
+        const { data, error } = await supabase
+          .from('game')
+          .select(`
+            *,
+            rating(rating)
+          `)
+          .eq('slug', slug)
+          .single();
 
-      if (error || !data) {
-        console.error('Game not found by slug:', slug, error);
+        if (error || !data) {
+          console.error('Game not found by slug:', slug, error);
+          return null;
+        }
+
+        if (DEBUG_GAME_SERVICE) console.log('✅ Game found by slug:', data.name);
+        return this.transformGameWithRatings(data as GameWithRating);
+      } catch (error) {
+        console.error('Error in getGameBySlug:', error);
         return null;
       }
-
-      if (DEBUG_GAME_SERVICE) console.log('✅ Game found by slug:', data.name);
-      return this.transformGameWithRatings(data as GameWithRating);
-    } catch (error) {
-      console.error('Error in getGameBySlug:', error);
-      return null;
-    }
+    });
   }
 
   async getGameWithFullReviewsBySlug(slug: string): Promise<{
@@ -471,54 +487,57 @@ class GameService {
       };
     }>;
   }> {
-    try {
-      const { data: gameData, error: gameError } = await supabase
-        .from('game')
-        .select('*')
-        .eq('slug', slug)
-        .single();
+    const cacheKey = generateCacheKey('gameService', 'getGameWithFullReviewsBySlug', slug);
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        const { data: gameData, error: gameError } = await supabase
+          .from('game')
+          .select('*')
+          .eq('slug', slug)
+          .single();
 
-      if (gameError || !gameData) {
-        console.log(`Game with slug ${slug} not found in database`);
+        if (gameError || !gameData) {
+          console.log(`Game with slug ${slug} not found in database`);
+          return { game: null, reviews: [] };
+        }
+
+        const needsUpdate = gameData && (!gameData.summary || !gameData.developer || !gameData.publisher || !gameData.cover_url);
+
+        if (needsUpdate && gameData.igdb_id) {
+          console.log(`Game "${gameData.name}" (slug: ${slug}) has incomplete data, refreshing from IGDB...`);
+          return await this.getGameWithFullReviews(gameData.igdb_id);
+        }
+
+        const { data: reviewsData, error: reviewsError } = await supabase
+          .from('rating')
+          .select(`
+            *,
+            user!fk_rating_user(
+              id,
+              name,
+              avatar_url
+            )
+          `)
+          .eq('game_id', gameData.id)
+          .order('post_date_time', { ascending: false });
+
+        if (reviewsError) {
+          console.error('Error fetching reviews:', reviewsError);
+        }
+
+        const reviews = reviewsData || [];
+
+        const game = this.transformGameWithRatings({
+          ...gameData,
+          rating: reviews.map((r: any) => ({ rating: r.rating }))
+        } as GameWithRating);
+
+        return { game, reviews };
+      } catch (error) {
+        console.error('Error in getGameWithFullReviewsBySlug:', error);
         return { game: null, reviews: [] };
       }
-
-      const needsUpdate = gameData && (!gameData.summary || !gameData.developer || !gameData.publisher || !gameData.cover_url);
-
-      if (needsUpdate && gameData.igdb_id) {
-        console.log(`Game "${gameData.name}" (slug: ${slug}) has incomplete data, refreshing from IGDB...`);
-        return await this.getGameWithFullReviews(gameData.igdb_id);
-      }
-
-      const { data: reviewsData, error: reviewsError } = await supabase
-        .from('rating')
-        .select(`
-          *,
-          user!fk_rating_user(
-            id,
-            name,
-            avatar_url
-          )
-        `)
-        .eq('game_id', gameData.id)
-        .order('post_date_time', { ascending: false });
-
-      if (reviewsError) {
-        console.error('Error fetching reviews:', reviewsError);
-      }
-
-      const reviews = reviewsData || [];
-
-      const game = this.transformGameWithRatings({
-        ...gameData,
-        rating: reviews.map((r: any) => ({ rating: r.rating }))
-      } as GameWithRating);
-
-      return { game, reviews };
-    } catch (error) {
-      console.error('Error in getGameWithFullReviewsBySlug:', error);
-      return { game: null, reviews: [] };
-    }
+    });
   }
 
   async searchGames(query: string, filters?: SearchFilters, maxResults: number = 200): Promise<GameWithCalculatedFields[]> {
@@ -577,80 +596,86 @@ class GameService {
   }
 
   async getPopularGames(limit: number = 20): Promise<GameWithCalculatedFields[]> {
-    try {
-      const { data, error } = await supabase
-        .from('game')
-        .select(`
-          *,
-          rating(rating)
-        `)
-        .limit(limit * 3);
+    const cacheKey = generateCacheKey('gameService', 'getPopularGames', limit);
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        const { data, error } = await supabase
+          .from('game')
+          .select(`
+            *,
+            rating(rating)
+          `)
+          .limit(limit * 3);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const gamesWithRatings = (data || []).map(game =>
-        this.transformGameWithRatings(game as GameWithRating)
-      );
+        const gamesWithRatings = (data || []).map(game =>
+          this.transformGameWithRatings(game as GameWithRating)
+        );
 
-      return gamesWithRatings
-        .filter(g => g.totalUserRatings > 0)
-        .sort((a, b) => {
-          const countDiff = b.totalUserRatings - a.totalUserRatings;
-          if (countDiff !== 0) return countDiff;
-          return b.averageUserRating - a.averageUserRating;
-        })
-        .slice(0, limit);
-    } catch (error) {
-      console.error('Error in getPopularGames:', error);
-      return [];
-    }
+        return gamesWithRatings
+          .filter(g => g.totalUserRatings > 0)
+          .sort((a, b) => {
+            const countDiff = b.totalUserRatings - a.totalUserRatings;
+            if (countDiff !== 0) return countDiff;
+            return b.averageUserRating - a.averageUserRating;
+          })
+          .slice(0, limit);
+      } catch (error) {
+        console.error('Error in getPopularGames:', error);
+        return [];
+      }
+    });
   }
 
   async searchGamesExact(query: string, filters?: SearchFilters, limit: number = 200): Promise<GameWithCalculatedFields[]> {
-    try {
-      let queryBuilder = supabase
-        .from('game')
-        .select(`
-          *,
-          rating(rating)
-        `)
-        .ilike('name', `%${query}%`);
+    const cacheKey = generateCacheKey('gameService', 'searchGamesExact', query, JSON.stringify(filters), limit);
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        let queryBuilder = supabase
+          .from('game')
+          .select(`
+            *,
+            rating(rating)
+          `)
+          .ilike('name', `%${query}%`);
 
-      if (filters?.genres?.length) {
-        queryBuilder = queryBuilder.contains('genres', filters.genres);
+        if (filters?.genres?.length) {
+          queryBuilder = queryBuilder.contains('genres', filters.genres);
+        }
+
+        if (filters?.platforms?.length) {
+          queryBuilder = queryBuilder.contains('platforms', filters.platforms);
+        }
+
+        if (filters?.releaseYear) {
+          const yearStart = `${filters.releaseYear}-01-01`;
+          const yearEnd = `${filters.releaseYear}-12-31`;
+          queryBuilder = queryBuilder
+            .gte('release_date', yearStart)
+            .lte('release_date', yearEnd);
+        }
+
+        queryBuilder = queryBuilder.limit(limit);
+
+        const { data, error } = await queryBuilder;
+
+        if (error) throw error;
+
+        let results = (data || []).map(game =>
+          this.transformGameWithRatings(game as GameWithRating)
+        );
+
+        if (filters?.minRating !== undefined) {
+          results = results.filter(g => g.averageUserRating >= filters.minRating!);
+        }
+
+        return results;
+      } catch (error) {
+        console.error('Error in searchGamesExact:', error);
+        return [];
       }
-
-      if (filters?.platforms?.length) {
-        queryBuilder = queryBuilder.contains('platforms', filters.platforms);
-      }
-
-      if (filters?.releaseYear) {
-        const yearStart = `${filters.releaseYear}-01-01`;
-        const yearEnd = `${filters.releaseYear}-12-31`;
-        queryBuilder = queryBuilder
-          .gte('release_date', yearStart)
-          .lte('release_date', yearEnd);
-      }
-
-      queryBuilder = queryBuilder.limit(limit);
-
-      const { data, error } = await queryBuilder;
-
-      if (error) throw error;
-
-      let results = (data || []).map(game =>
-        this.transformGameWithRatings(game as GameWithRating)
-      );
-
-      if (filters?.minRating !== undefined) {
-        results = results.filter(g => g.averageUserRating >= filters.minRating!);
-      }
-
-      return results;
-    } catch (error) {
-      console.error('Error in searchGamesExact:', error);
-      return [];
-    }
+    });
   }
 
   private transformGameWithRatings(game: GameWithRating): GameWithCalculatedFields {
