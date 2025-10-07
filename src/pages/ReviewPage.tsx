@@ -345,7 +345,7 @@ export const ReviewPage: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <Link
                       to={`/game/${gameId}`}
-                      className="text-2xl font-bold text-white mb-2 hover:text-purple-400 transition-colors block line-clamp-3 leading-tight"
+                      className="text-2xl font-bold text-white hover:text-purple-400 transition-colors block line-clamp-3 leading-tight"
                     >
                       {game.name}
                     </Link>

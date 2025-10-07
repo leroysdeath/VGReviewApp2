@@ -417,7 +417,17 @@ export const SearchResultsPage: React.FC = () => {
   };
 
   const getCoverUrl = (game: Game) => {
-    return game.cover_url || '/placeholder-game.jpg';
+    // Handle both cover.url and cover_url formats, ensure https protocol
+    const coverUrl = (game as any).cover?.url
+      ? `https:${(game as any).cover.url}`
+      : game.cover_url;
+
+    // Ensure URL has protocol if it exists
+    if (coverUrl && !coverUrl.startsWith('http')) {
+      return `https:${coverUrl}`;
+    }
+
+    return coverUrl || '/placeholder-game.jpg';
   };
 
   // Use games directly from searchState (igdbService already applies filtering)
