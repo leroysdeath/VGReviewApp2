@@ -650,19 +650,16 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
             >
               Privacy
             </button>
-            {/* Account tab hidden for now */}
-            {false && (
-              <button
-                onClick={() => setActiveTab('account')}
-                className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
-                  activeTab === 'account'
-                    ? 'border-purple-500 text-purple-400'
-                    : 'border-transparent text-gray-400 hover:text-white'
-                }`}
-              >
-                Account
-              </button>
-            )}
+            <button
+              onClick={() => setActiveTab('account')}
+              className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'account'
+                  ? 'border-purple-500 text-purple-400'
+                  : 'border-transparent text-gray-400 hover:text-white'
+              }`}
+            >
+              Account
+            </button>
           </div>
         </div>
 
@@ -968,8 +965,8 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
           </div>
         )}
 
-        {/* Account Settings - hidden for now */}
-        {false && activeTab === 'account' && (
+        {/* Account Settings */}
+        {activeTab === 'account' && (
           <div className="space-y-8">
             {/* Password Change */}
             <div className="bg-gray-750 rounded-lg p-6 border border-gray-700">
