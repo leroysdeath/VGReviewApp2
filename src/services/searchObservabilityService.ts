@@ -604,7 +604,8 @@ class SearchObservabilityService {
    * Utility Methods
    */
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate a valid UUID v4 for session tracking
+    return crypto.randomUUID();
   }
 
   async cleanup(): Promise<void> {
@@ -649,11 +650,21 @@ class SearchObservabilityService {
     try {
       // Import dynamically to avoid circular dependencies
       const { gameSearchService } = await import('./gameSearchService');
+      const { ResultAnalysisService } = await import('./resultAnalysisService');
 
       const searchResults = await gameSearchService.searchGames({ query }, { limit: 100 });
       const executionTime = Date.now() - startTime;
 
-      // Basic analysis
+      // Use ResultAnalysisService for comprehensive analysis
+      const resultAnalysisService = new ResultAnalysisService();
+      const detailedAnalysis = resultAnalysisService.analyzeSearchResults(
+        query,
+        searchResults.games,  // dbResults
+        [],                    // igdbResults (empty for now)
+        searchResults.games    // finalResults
+      );
+
+      // Return comprehensive analysis
       const analysis = {
         query,
         timestamp: new Date().toISOString(),
@@ -685,15 +696,8 @@ class SearchObservabilityService {
           dbQueryTime: executionTime,
           processingTime: 0
         },
-        resultAnalysis: {
-          games: searchResults.games.map(game => ({
-            id: game.id,
-            name: game.name,
-            included: true,
-            filterReason: null,
-            sortScore: 0
-          }))
-        }
+        // Use the detailed analysis from ResultAnalysisService
+        resultAnalysis: detailedAnalysis
       };
 
       return analysis;

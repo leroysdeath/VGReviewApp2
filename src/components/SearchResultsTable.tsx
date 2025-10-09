@@ -22,20 +22,25 @@ export const SearchResultsTable: React.FC<SearchResultsTableProps> = ({ analysis
 
   // Sort and filter results
   const sortedResults = useMemo(() => {
+    // Defensive check: Handle undefined/null resultAnalyses
+    if (!analysis?.resultAnalyses || !Array.isArray(analysis.resultAnalyses)) {
+      return [];
+    }
+
     let filtered = analysis.resultAnalyses;
-    
+
     if (!showFiltered) {
       filtered = filtered.filter(r => !r.wasFiltered);
     }
-    
+
     if (showOnlyProblems) {
-      filtered = filtered.filter(r => 
-        r.wasFiltered || 
+      filtered = filtered.filter(r =>
+        r.wasFiltered ||
         (r.relevanceBreakdown.nameMatch.type === 'exact' && r.finalPosition > 5) ||
         (r.rankingFactors.relevanceScore < 0.1 && r.finalPosition !== -1 && r.finalPosition < 10)
       );
     }
-    
+
     return [...filtered].sort((a, b) => {
       let aValue: number | string;
       let bValue: number | string;
@@ -576,6 +581,114 @@ const DetailedResultModal: React.FC<{
               ))}
             </div>
           </div>
+
+          {/* Intelligent Score Breakdown */}
+          {result.intelligentScore && (
+            <div className="mb-6">
+              <h4 className="font-semibold mb-3">🧠 Intelligent Score Breakdown</h4>
+              <div className="space-y-2">
+                <div className="bg-gray-700 p-3 rounded">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium">Total Intelligent Score</span>
+                    <span className="font-mono text-purple-400 text-lg">
+                      {result.intelligentScore.totalScore.toFixed(3)}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">Title Match:</span>
+                      <span className="font-mono">{result.intelligentScore.breakdown.titleMatch.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">Quality:</span>
+                      <span className="font-mono">{result.intelligentScore.breakdown.quality.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">Engagement:</span>
+                      <span className="font-mono">{result.intelligentScore.breakdown.engagement.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">Acclaim:</span>
+                      <span className="font-mono">{result.intelligentScore.breakdown.acclaim.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">Iconic Boost:</span>
+                      <span className="font-mono">{result.intelligentScore.breakdown.iconicBoost.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">Platform:</span>
+                      <span className="font-mono">{result.intelligentScore.breakdown.platformRelevance.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Game Priority Classification */}
+          {result.gamePriority && (
+            <div className="mb-6">
+              <h4 className="font-semibold mb-3">🎯 Game Priority Classification</h4>
+              <div className="bg-gray-700 p-4 rounded">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-lg font-medium">Priority Tier:</span>
+                  <span className={`text-xl font-bold ${
+                    result.gamePriority.tier === 'flagship' ? 'text-purple-400' :
+                    result.gamePriority.tier === 'famous' ? 'text-blue-400' :
+                    result.gamePriority.tier === 'sequel' ? 'text-green-400' :
+                    result.gamePriority.tier === 'main' ? 'text-yellow-400' :
+                    result.gamePriority.tier === 'dlc' ? 'text-orange-400' :
+                    result.gamePriority.tier === 'community' ? 'text-gray-400' :
+                    'text-gray-500'
+                  }`}>
+                    {result.gamePriority.tier.toUpperCase()}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-300 mb-2">
+                  Score: <span className="font-mono">{result.gamePriority.score.toFixed(3)}</span>
+                </div>
+                {result.gamePriority.reasons && result.gamePriority.reasons.length > 0 && (
+                  <div className="text-sm">
+                    <div className="text-gray-400 mb-1">Reasons:</div>
+                    <ul className="space-y-1 ml-4">
+                      {result.gamePriority.reasons.map((reason, idx) => (
+                        <li key={idx} className="text-gray-300">• {reason}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Sister Game Analysis */}
+          {result.sisterGameAnalysis && result.sisterGameAnalysis.isSisterGame && (
+            <div className="mb-6">
+              <h4 className="font-semibold mb-3">🔗 Sister Game Detection</h4>
+              <div className="bg-gray-700 p-4 rounded border-l-4 border-blue-500">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium">Relationship:</span>
+                  <span className="text-blue-400 font-bold uppercase">{result.sisterGameAnalysis.relationship}</span>
+                </div>
+                {result.sisterGameAnalysis.seriesName && (
+                  <div className="text-sm mb-2">
+                    <span className="text-gray-400">Series:</span>{' '}
+                    <span className="text-white">{result.sisterGameAnalysis.seriesName}</span>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-400">Confidence:</span>{' '}
+                    <span className="font-mono">{(result.sisterGameAnalysis.confidence * 100).toFixed(0)}%</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Score Boost:</span>{' '}
+                    <span className="font-mono text-green-400">+{result.sisterGameAnalysis.boost.toFixed(3)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Quality Metrics */}
           <div>

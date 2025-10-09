@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { sanitizeRich } from '../utils/sanitize';
 import { generateSlug } from '../utils/gameUrls';
 import { igdbService } from './igdbService';
+import { deduplicateRequest, generateCacheKey } from '../utils/requestDeduplication';
 
 /**
  * Get database user ID from auth user
@@ -486,40 +487,43 @@ interface ServiceResponse<T> {
  * @param igdbId - The IGDB ID of the game
  */
 export const getUserReviewForGameByIGDBId = async (igdbId: number): Promise<ServiceResponse<Review | null>> => {
-  try {
-    console.log('🔍 Getting user review for game IGDB ID:', igdbId);
-    
-    const userId = await getCurrentUserId();
-    if (!userId) {
-      return { success: false, error: 'User not authenticated' };
-    }
-
-    // First find the database game ID by IGDB ID
-    const { data: gameData, error: gameError } = await supabase
-      .from('game')
-      .select('id')
-      .eq('igdb_id', igdbId)
-      .single();
-
-    if (gameError && gameError.code !== 'PGRST116') {
-      console.error('❌ Error finding game by IGDB ID:', gameError);
-      return { success: false, error: `Failed to find game: ${gameError.message}` };
-    }
-
-    if (!gameData) {
-      console.log('ℹ️ Game not found in database for IGDB ID:', igdbId);
-      return { success: true, data: null };
-    }
-
-    // Now get the user's review using the database game ID
-    return await getUserReviewForGame(gameData.id);
-  } catch (error) {
-    console.error('💥 Unexpected error getting user review by IGDB ID:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to get user review'
-    };
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return { success: false, error: 'User not authenticated' };
   }
+
+  const cacheKey = generateCacheKey('reviewService', 'getUserReviewForGameByIGDBId', userId, igdbId);
+  return deduplicateRequest(cacheKey, async () => {
+    try {
+      console.log('🔍 Getting user review for game IGDB ID:', igdbId);
+
+      // First find the database game ID by IGDB ID
+      const { data: gameData, error: gameError } = await supabase
+        .from('game')
+        .select('id')
+        .eq('igdb_id', igdbId)
+        .single();
+
+      if (gameError && gameError.code !== 'PGRST116') {
+        console.error('❌ Error finding game by IGDB ID:', gameError);
+        return { success: false, error: `Failed to find game: ${gameError.message}` };
+      }
+
+      if (!gameData) {
+        console.log('ℹ️ Game not found in database for IGDB ID:', igdbId);
+        return { success: true, data: null };
+      }
+
+      // Now get the user's review using the database game ID
+      return await getUserReviewForGame(gameData.id);
+    } catch (error) {
+      console.error('💥 Unexpected error getting user review by IGDB ID:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get user review'
+      };
+    }
+  });
 };
 
 /**
@@ -527,69 +531,72 @@ export const getUserReviewForGameByIGDBId = async (igdbId: number): Promise<Serv
  * @param gameId - The database game.id (not IGDB ID)
  */
 export const getUserReviewForGame = async (gameId: number): Promise<ServiceResponse<Review | null>> => {
-  try {
-    console.log('🔍 Getting user review for game:', gameId);
-    
-    const userId = await getCurrentUserId();
-    if (!userId) {
-      return { success: false, error: 'User not authenticated' };
-    }
-
-    // Get the user's review for this game using database ID directly
-    const { data, error } = await supabase
-      .from('rating')
-      .select(`
-        *,
-        user!fk_rating_user(*),
-        game(*)
-      `)
-      .eq('user_id', userId)
-      .eq('game_id', gameId)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('❌ Error fetching user review:', error);
-      return { success: false, error: `Failed to fetch review: ${error.message}` };
-    }
-
-    if (!data) {
-      console.log('ℹ️ No review found for user and game');
-      return { success: true, data: null };
-    }
-
-    // Transform to our interface
-    const review: Review = {
-      id: data.id,
-      userId: data.user_id,
-      gameId: data.game_id,
-      rating: data.rating,
-      review: data.review,
-      postDateTime: data.post_date_time,
-      playtimeHours: data.playtime_hours,
-      isRecommended: data.is_recommended,
-      likeCount: 0,
-      commentCount: 0,
-      user: data.user ? {
-        id: data.user.id,
-        name: data.user.username || data.user.name,
-        avatar_url: data.user.avatar_url
-      } : undefined,
-      game: data.game ? {
-        id: data.game.id,
-        name: data.game.name,
-        cover_url: data.game.cover_url
-      } : undefined
-    };
-
-    console.log('✅ Found user review:', review);
-    return { success: true, data: review };
-  } catch (error) {
-    console.error('💥 Unexpected error getting user review:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to get user review'
-    };
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return { success: false, error: 'User not authenticated' };
   }
+
+  const cacheKey = generateCacheKey('reviewService', 'getUserReviewForGame', userId, gameId);
+  return deduplicateRequest(cacheKey, async () => {
+    try {
+      console.log('🔍 Getting user review for game:', gameId);
+
+      // Get the user's review for this game using database ID directly
+      const { data, error } = await supabase
+        .from('rating')
+        .select(`
+          *,
+          user!fk_rating_user(*),
+          game(*)
+        `)
+        .eq('user_id', userId)
+        .eq('game_id', gameId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('❌ Error fetching user review:', error);
+        return { success: false, error: `Failed to fetch review: ${error.message}` };
+      }
+
+      if (!data) {
+        console.log('ℹ️ No review found for user and game');
+        return { success: true, data: null };
+      }
+
+      // Transform to our interface
+      const review: Review = {
+        id: data.id,
+        userId: data.user_id,
+        gameId: data.game_id,
+        rating: data.rating,
+        review: data.review,
+        postDateTime: data.post_date_time,
+        playtimeHours: data.playtime_hours,
+        isRecommended: data.is_recommended,
+        likeCount: 0,
+        commentCount: 0,
+        user: data.user ? {
+          id: data.user.id,
+          name: data.user.username || data.user.name,
+          avatar_url: data.user.avatar_url
+        } : undefined,
+        game: data.game ? {
+          id: data.game.id,
+          name: data.game.name,
+          cover_url: data.game.cover_url
+        } : undefined
+      };
+
+      console.log('✅ Found user review:', review);
+      return { success: true, data: review };
+    } catch (error) {
+      console.error('💥 Unexpected error getting user review:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get user review'
+      };
+    }
+  });
 };
 
 /**
@@ -712,56 +719,59 @@ export const updateReview = async (
  * Get reviews for current user
  */
 export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
-  try {
-    const userId = await getCurrentUserId();
-    
-    if (!userId) {
-      return { success: false, error: 'User not authenticated' };
-    }
+  const userId = await getCurrentUserId();
 
-    const { data, error, count } = await supabase
-      .from('rating')
-      .select(`
-        *,
-        user!fk_rating_user(*),
-        game(*)
-      `, { count: 'exact' })
-      .eq('user_id', userId)
-      .order('post_date_time', { ascending: false });
-
-    if (error) throw error;
-
-    const reviews: Review[] = data?.map(item => ({
-      id: item.id,
-      userId: item.user_id,
-      gameId: item.game_id,
-      rating: item.rating,
-      review: item.review,
-      postDateTime: item.post_date_time,
-      playtimeHours: item.playtime_hours,
-      isRecommended: item.is_recommended,
-      likeCount: 0, // Will be populated by separate query if needed
-      commentCount: 0, // Will be populated by separate query if needed
-      user: item.user ? {
-        id: item.user.id,
-        name: item.user.name,
-        avatar_url: item.user.avatar_url
-      } : undefined,
-      game: item.game ? {
-        id: item.game.id,
-        name: item.game.name,
-        cover_url: item.game.cover_url
-      } : undefined
-    })) || [];
-
-    return { success: true, data: reviews, count };
-  } catch (error) {
-    console.error('Error fetching user reviews:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch user reviews'
-    };
+  if (!userId) {
+    return { success: false, error: 'User not authenticated' };
   }
+
+  const cacheKey = generateCacheKey('reviewService', 'getUserReviews', userId);
+  return deduplicateRequest(cacheKey, async () => {
+    try {
+      const { data, error, count } = await supabase
+        .from('rating')
+        .select(`
+          *,
+          user!fk_rating_user(*),
+          game(*)
+        `, { count: 'exact' })
+        .eq('user_id', userId)
+        .order('post_date_time', { ascending: false });
+
+      if (error) throw error;
+
+      const reviews: Review[] = data?.map(item => ({
+        id: item.id,
+        userId: item.user_id,
+        gameId: item.game_id,
+        rating: item.rating,
+        review: item.review,
+        postDateTime: item.post_date_time,
+        playtimeHours: item.playtime_hours,
+        isRecommended: item.is_recommended,
+        likeCount: 0, // Will be populated by separate query if needed
+        commentCount: 0, // Will be populated by separate query if needed
+        user: item.user ? {
+          id: item.user.id,
+          name: item.user.name,
+          avatar_url: item.user.avatar_url
+        } : undefined,
+        game: item.game ? {
+          id: item.game.id,
+          name: item.game.name,
+          cover_url: item.game.cover_url
+        } : undefined
+      })) || [];
+
+      return { success: true, data: reviews, count };
+    } catch (error) {
+      console.error('Error fetching user reviews:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch user reviews'
+      };
+    }
+  });
 };
 
 /**
@@ -770,62 +780,65 @@ export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
 export const getReview = async (
   reviewId: number
 ): Promise<ServiceResponse<Review>> => {
-  try {
-    // Validate input
-    if (!reviewId || isNaN(reviewId)) {
-      return { success: false, error: 'Invalid review ID' };
-    }
-
-    // Fetch review with user and game info
-    const { data, error } = await supabase
-      .from('rating')
-      .select(`
-        *,
-        user!fk_rating_user(*),
-        game(*)
-      `)
-      .eq('id', reviewId)
-      .single();
-
-    if (error) throw error;
-    if (!data) return { success: false, error: 'Review not found' };
-
-    // Use computed columns for much faster performance (no JOINs or COUNT queries needed)
-    const likeCount = data.like_count || 0;
-    const commentCount = data.comment_count || 0;
-
-    // Transform to our interface
-    const review: Review = {
-      id: data.id,
-      userId: data.user_id,
-      gameId: data.game_id,
-      rating: data.rating,
-      review: data.review,
-      postDateTime: data.post_date_time,
-      playtimeHours: data.playtime_hours,
-      isRecommended: data.is_recommended,
-      likeCount: likeCount || 0,
-      commentCount: commentCount || 0,
-      user: data.user ? {
-        id: data.user.id,
-        name: data.user.username || data.user.name,
-        avatar_url: data.user.avatar_url
-      } : undefined,
-      game: data.game ? {
-        id: data.game.id,
-        name: data.game.name,
-        cover_url: data.game.cover_url
-      } : undefined
-    };
-
-    return { success: true, data: review };
-  } catch (error) {
-    console.error('Error fetching review:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch review'
-    };
+  // Validate input
+  if (!reviewId || isNaN(reviewId)) {
+    return { success: false, error: 'Invalid review ID' };
   }
+
+  const cacheKey = generateCacheKey('reviewService', 'getReview', reviewId);
+  return deduplicateRequest(cacheKey, async () => {
+    try {
+      // Fetch review with user and game info
+      const { data, error } = await supabase
+        .from('rating')
+        .select(`
+          *,
+          user!fk_rating_user(*),
+          game(*)
+        `)
+        .eq('id', reviewId)
+        .single();
+
+      if (error) throw error;
+      if (!data) return { success: false, error: 'Review not found' };
+
+      // Use computed columns for much faster performance (no JOINs or COUNT queries needed)
+      const likeCount = data.like_count || 0;
+      const commentCount = data.comment_count || 0;
+
+      // Transform to our interface
+      const review: Review = {
+        id: data.id,
+        userId: data.user_id,
+        gameId: data.game_id,
+        rating: data.rating,
+        review: data.review,
+        postDateTime: data.post_date_time,
+        playtimeHours: data.playtime_hours,
+        isRecommended: data.is_recommended,
+        likeCount: likeCount || 0,
+        commentCount: commentCount || 0,
+        user: data.user ? {
+          id: data.user.id,
+          name: data.user.username || data.user.name,
+          avatar_url: data.user.avatar_url
+        } : undefined,
+        game: data.game ? {
+          id: data.game.id,
+          name: data.game.name,
+          cover_url: data.game.cover_url
+        } : undefined
+      };
+
+      return { success: true, data: review };
+    } catch (error) {
+      console.error('Error fetching review:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch review'
+      };
+    }
+  });
 };
 
 /**
@@ -1540,96 +1553,98 @@ export const deleteReview = async (
  * Get recent reviews from all users (for landing page)
  */
 export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>> => {
-  try {
-
-    // Use abortController for timeout
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 15000); // 15 second timeout
-
+  const cacheKey = generateCacheKey('reviewService', 'getReviews', limit);
+  return deduplicateRequest(cacheKey, async () => {
     try {
-      // Simplified query without deep joins to prevent timeout
-      const { data, error, count } = await supabase
-        .from('rating')
-        .select(`
-          id,
-          user_id,
-          game_id,
-          igdb_id,
-          rating,
-          review,
-          post_date_time,
-          playtime_hours,
-          is_recommended
-        `, { count: 'exact' })
-        .not('review', 'is', null)
-        .order('post_date_time', { ascending: false })
-        .limit(limit)
-        .abortSignal(abortController.signal);
+      // Use abortController for timeout
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), 15000); // 15 second timeout
 
-      clearTimeout(timeoutId);
+      try {
+        // Simplified query without deep joins to prevent timeout
+        const { data, error, count } = await supabase
+          .from('rating')
+          .select(`
+            id,
+            user_id,
+            game_id,
+            igdb_id,
+            rating,
+            review,
+            post_date_time,
+            playtime_hours,
+            is_recommended
+          `, { count: 'exact' })
+          .not('review', 'is', null)
+          .order('post_date_time', { ascending: false })
+          .limit(limit)
+          .abortSignal(abortController.signal);
 
-      if (error) {
-        console.error('❌ Error fetching reviews:', error);
-        throw error;
+        clearTimeout(timeoutId);
+
+        if (error) {
+          console.error('❌ Error fetching reviews:', error);
+          throw error;
+        }
+
+        // Fetch user and game data separately to avoid complex joins
+        const userIds = [...new Set(data?.map(item => item.user_id) || [])];
+        const gameIds = [...new Set(data?.map(item => item.game_id) || [])];
+
+        const [usersData, gamesData] = await Promise.all([
+          userIds.length > 0 ? supabase
+            .from('user')
+            .select('id, username, name, avatar_url')
+            .in('id', userIds) : Promise.resolve({ data: [] }),
+          gameIds.length > 0 ? supabase
+            .from('game')
+            .select('id, name, cover_url, game_id, igdb_id')
+            .in('id', gameIds) : Promise.resolve({ data: [] })
+        ]);
+
+        // Create lookup maps for performance
+        const usersMap = new Map(usersData.data?.map(user => [user.id, user]) || []);
+        const gamesMap = new Map(gamesData.data?.map(game => [game.id, game]) || []);
+
+        const reviews: Review[] = data?.map(item => ({
+          id: item.id,
+          userId: item.user_id,
+          gameId: item.game_id,
+          igdb_id: item.igdb_id,
+          rating: item.rating,
+          review: item.review,
+          postDateTime: item.post_date_time,
+          playtimeHours: item.playtime_hours,
+          isRecommended: item.is_recommended,
+          likeCount: 0,
+          commentCount: 0,
+          user: usersMap.get(item.user_id) ? {
+            id: usersMap.get(item.user_id)!.id,
+            name: usersMap.get(item.user_id)!.username || usersMap.get(item.user_id)!.name,
+            avatar_url: usersMap.get(item.user_id)!.avatar_url
+          } : undefined,
+          game: gamesMap.get(item.game_id) ? {
+            id: gamesMap.get(item.game_id)!.id,
+            name: gamesMap.get(item.game_id)!.name,
+            cover_url: gamesMap.get(item.game_id)!.cover_url
+          } : undefined
+        })) || [];
+
+        return { success: true, data: reviews, count };
+      } catch (abortError) {
+        clearTimeout(timeoutId);
+        if (abortError.name === 'AbortError') {
+          console.error('❌ Review query timed out after 15 seconds');
+          throw new Error('Review query timed out');
+        }
+        throw abortError;
       }
-
-      // Fetch user and game data separately to avoid complex joins
-      const userIds = [...new Set(data?.map(item => item.user_id) || [])];
-      const gameIds = [...new Set(data?.map(item => item.game_id) || [])];
-
-      const [usersData, gamesData] = await Promise.all([
-        userIds.length > 0 ? supabase
-          .from('user')
-          .select('id, username, name, avatar_url')
-          .in('id', userIds) : Promise.resolve({ data: [] }),
-        gameIds.length > 0 ? supabase
-          .from('game')
-          .select('id, name, cover_url, game_id, igdb_id')
-          .in('id', gameIds) : Promise.resolve({ data: [] })
-      ]);
-
-      // Create lookup maps for performance
-      const usersMap = new Map(usersData.data?.map(user => [user.id, user]) || []);
-      const gamesMap = new Map(gamesData.data?.map(game => [game.id, game]) || []);
-
-      const reviews: Review[] = data?.map(item => ({
-        id: item.id,
-        userId: item.user_id,
-        gameId: item.game_id,
-        igdb_id: item.igdb_id,
-        rating: item.rating,
-        review: item.review,
-        postDateTime: item.post_date_time,
-        playtimeHours: item.playtime_hours,
-        isRecommended: item.is_recommended,
-        likeCount: 0,
-        commentCount: 0,
-        user: usersMap.get(item.user_id) ? {
-          id: usersMap.get(item.user_id)!.id,
-          name: usersMap.get(item.user_id)!.username || usersMap.get(item.user_id)!.name,
-          avatar_url: usersMap.get(item.user_id)!.avatar_url
-        } : undefined,
-        game: gamesMap.get(item.game_id) ? {
-          id: gamesMap.get(item.game_id)!.id,
-          name: gamesMap.get(item.game_id)!.name,
-          cover_url: gamesMap.get(item.game_id)!.cover_url
-        } : undefined
-      })) || [];
-
-      return { success: true, data: reviews, count };
-    } catch (abortError) {
-      clearTimeout(timeoutId);
-      if (abortError.name === 'AbortError') {
-        console.error('❌ Review query timed out after 15 seconds');
-        throw new Error('Review query timed out');
-      }
-      throw abortError;
+    } catch (error) {
+      console.error('💥 Error fetching reviews:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch reviews'
+      };
     }
-  } catch (error) {
-    console.error('💥 Error fetching reviews:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch reviews'
-    };
-  }
+  });
 };

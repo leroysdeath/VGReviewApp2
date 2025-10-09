@@ -1,19 +1,25 @@
 // Enhanced Game Prioritization System with Flagship Support
 // Ensures high-quality, official, and iconic games appear first in search results
 
-import { 
-  CopyrightLevel, 
+import {
+  CopyrightLevel,
   getCompanyCopyrightLevel,
   isAuthorizedPublisher,
   findFranchiseOwner,
   COMPANY_OWNERSHIP
 } from './copyrightPolicies';
 
-import { 
-  calculateIconicScore, 
+import {
+  calculateIconicScore,
   isIconicGame,
-  type IconicGameScore 
+  type IconicGameScore
 } from './iconicGameDetection';
+
+import {
+  getPlatformQualityPenalty,
+  calculatePlatformQuality,
+  type IGDBGameWithReleases
+} from './platformQuality';
 
 interface Game {
   id: number;
@@ -34,7 +40,8 @@ interface Game {
   hypes?: number;
   user_rating_count?: number;
   avg_user_rating?: number;
-  platforms?: string[] | Array<{name: string}>;
+  platforms?: string[] | Array<{id: number; name: string}>;
+  release_dates?: Array<{platform: number; status: number}>;
   popularity?: number;
 }
 
@@ -578,7 +585,7 @@ export function calculateGamePriority(game: Game): PriorityResult {
     const sisterBoost = (game as any)._sisterGameBoost;
     const sisterRelationship = (game as any)._sisterGameRelationship;
     const sisterConfidence = (game as any)._sisterGameConfidence;
-    
+
     boosts.push(`Sister game (+${sisterBoost}): ${sisterRelationship} (${Math.round(sisterConfidence * 100)}% confidence)`);
     score += sisterBoost;
 
@@ -586,6 +593,17 @@ export function calculateGamePriority(game: Game): PriorityResult {
     if (sisterBoost >= 100 && game.category === 0 && basePriority < GamePriority.SEQUEL_TIER) {
       basePriority = GamePriority.SEQUEL_TIER;
       reasons.push('SEQUEL TIER: Sister/sequel game in recognized series');
+    }
+  }
+
+  // === PLATFORM QUALITY PENALTY ===
+  // Deprioritize games with rumored/cancelled platforms
+  if (game.platforms && game.release_dates) {
+    const platformPenalty = getPlatformQualityPenalty(game as IGDBGameWithReleases);
+    if (platformPenalty < 0) {
+      const quality = calculatePlatformQuality(game as IGDBGameWithReleases);
+      penalties.push(`Platform quality (${platformPenalty}): ${quality.debugInfo}`);
+      score += platformPenalty;
     }
   }
 
