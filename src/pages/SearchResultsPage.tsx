@@ -19,6 +19,10 @@ interface Game {
   summary?: string;
   release_date?: string;
   cover_url?: string;
+  cover?: {
+    id: number;
+    url: string;
+  };
   developer?: string;
   publisher?: string;
   genre?: string;
@@ -416,8 +420,22 @@ export const SearchResultsPage: React.FC = () => {
     navigate(`/game/${game.igdb_id || game.id}`);
   };
 
-  const getCoverUrl = (game: Game) => {
-    return game.cover_url || '/placeholder-game.jpg';
+  const getCoverUrl = (game: Game): string => {
+    // Priority 1: IGDB API cover object (from enriched data)
+    if (game.cover?.url) {
+      const url = game.cover.url.startsWith('//') ? `https:${game.cover.url}` : game.cover.url;
+      return url;
+    }
+
+    // Priority 2: Database cover_url field
+    if (game.cover_url) {
+      return game.cover_url;
+    }
+
+    // Priority 3: Placeholder
+    // Note: Some games (especially bundles, special editions) don't have covers in IGDB
+    // To backfill these, run: node scripts/backfill-missing-covers.js
+    return '/placeholder-game.jpg';
   };
 
   // Use games directly from searchState (igdbService already applies filtering)
@@ -636,6 +654,7 @@ export const SearchResultsPage: React.FC = () => {
                         lazyStrategy="both"
                         showLoadingSpinner={true}
                         showLoadingSkeleton={false}
+                        optimize={false}
                       />
                       {!!shouldShowCategoryLabel(game.category) && (
                         <div className="absolute top-2 left-2">
@@ -698,6 +717,7 @@ export const SearchResultsPage: React.FC = () => {
                             lazyStrategy="both"
                             showLoadingSpinner={false}
                             showLoadingSkeleton={true}
+                            optimize={false}
                           />
                           <div className="flex-1">
                             <div className="flex justify-between items-start">

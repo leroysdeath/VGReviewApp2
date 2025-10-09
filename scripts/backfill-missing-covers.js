@@ -145,10 +145,13 @@ async function backfillMissingCovers() {
     console.log(`  ✅ Found cover: ${coverUrl}`);
 
     if (!isDryRun) {
-      // Update database
+      // Update BOTH cover_url and pic_url (search function uses pic_url)
       const { error: updateError } = await supabase
         .from('game')
-        .update({ cover_url: coverUrl })
+        .update({
+          cover_url: coverUrl,
+          pic_url: coverUrl
+        })
         .eq('id', game.id);
 
       if (updateError) {

@@ -152,7 +152,8 @@ class GameService {
           }
         }
 
-        const needsUpdate = data && (!data.summary || !data.developer || !data.publisher || !data.cover_url);
+        // Only consider critical fields for needsUpdate - cover_url is optional (many games don't have covers in IGDB)
+        const needsUpdate = data && (!data.summary || !data.developer || !data.publisher);
 
         if (error || !data || needsUpdate) {
           if (needsUpdate) {
@@ -299,7 +300,8 @@ class GameService {
         });
       }
 
-      const needsUpdate = gameData && (!gameData.summary || !gameData.developer || !gameData.publisher || !gameData.cover_url);
+      // Only consider critical fields for needsUpdate - cover_url is optional (many games don't have covers in IGDB)
+      const needsUpdate = gameData && (!gameData.summary || !gameData.developer || !gameData.publisher);
 
       if (gameError || !gameData || needsUpdate) {
         if (needsUpdate) {
@@ -501,7 +503,8 @@ class GameService {
           return { game: null, reviews: [] };
         }
 
-        const needsUpdate = gameData && (!gameData.summary || !gameData.developer || !gameData.publisher || !gameData.cover_url);
+        // Only consider critical fields for needsUpdate - cover_url is optional (many games don't have covers in IGDB)
+        const needsUpdate = gameData && (!gameData.summary || !gameData.developer || !gameData.publisher);
 
         if (needsUpdate && gameData.igdb_id) {
           console.log(`Game "${gameData.name}" (slug: ${slug}) has incomplete data, refreshing from IGDB...`);
