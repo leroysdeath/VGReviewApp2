@@ -493,7 +493,7 @@ async function executeIntelligentSearch(originalQuery: string): Promise<any[]> {
   console.log(`🧠 OPTIMIZED SEARCH: Searching for "${originalQuery}"`);
 
   try {
-    // Use the optimized database function that handles all search variations
+    // Try the optimized database function first
     const { data: searchResults, error } = await supabase
       .rpc('search_games_optimized', {
         search_term: originalQuery.trim(),
@@ -502,24 +502,52 @@ async function executeIntelligentSearch(originalQuery: string): Promise<any[]> {
         include_fan_content: false // Only get official games first
       });
 
-    if (error) {
-      console.error('❌ Search error:', error);
-      // Fallback to old search function if new one fails
-      const { data: fallbackResults } = await supabase
-        .rpc('search_games_secure', {
-          search_query: originalQuery.trim(),
-          limit_count: 150
-        });
-      return fallbackResults || [];
+    // If optimized search works, return results
+    if (!error && searchResults) {
+      console.log(`✅ OPTIMIZED SEARCH: Found ${searchResults.length} games in single query`);
+
+      // Add search metadata for compatibility
+      const resultsWithMetadata = searchResults.map(game => ({
+        ...game,
+        _searchStrategy: 'optimized',
+        _searchRank: game.search_rank || 0
+      }));
+
+      return resultsWithMetadata;
     }
 
-    console.log(`✅ OPTIMIZED SEARCH: Found ${searchResults?.length || 0} games in single query`);
+    // Log error but don't spam console in diagnostic mode
+    if (error && error.code !== '42P01' && error.code !== '42804' && error.code !== '42883') {
+      console.warn('⚠️  search_games_optimized unavailable:', error.message);
+    }
+
+    // FALLBACK: Use direct table query (more reliable for diagnostic mode)
+    console.log('🔄 Using direct table query');
+    const searchTerm = originalQuery.trim().toLowerCase();
+
+    const { data: directResults, error: directError } = await supabase
+      .from('game')
+      .select(`
+        *,
+        platforms:game_platform(platform_id),
+        genres:game_genre(genre_id)
+      `)
+      .or(`name.ilike.%${searchTerm}%,summary.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
+      .order('name')
+      .limit(150);
+
+    if (directError) {
+      console.error('❌ Direct query failed:', directError);
+      return [];
+    }
+
+    console.log(`✅ DIRECT SEARCH: Found ${directResults?.length || 0} games`);
 
     // Add search metadata for compatibility
-    const resultsWithMetadata = (searchResults || []).map(game => ({
+    const resultsWithMetadata = (directResults || []).map((game, index) => ({
       ...game,
-      _searchStrategy: 'optimized',
-      _searchRank: game.search_rank || 0
+      _searchStrategy: 'direct',
+      _searchRank: index
     }));
 
     return resultsWithMetadata;
@@ -561,21 +589,8 @@ class GameSearchService {
         let searchResults: GameSearchResult[] = [];
         let cacheHit = false;
 
-        // Try cache first
-        const cachedResults = searchService.getCachedSearch(query.trim());
-        if (cachedResults) {
-          searchResults = cachedResults;
-          cacheHit = true;
-          console.log(`📦 CACHE HIT: Using cached results for "${query.trim()}" (${cachedResults.length} results)`);
-        } else {
-          // Use optimized search function
-          searchResults = await executeIntelligentSearch(query.trim());
-
-          // Cache successful results
-          if (searchResults && searchResults.length > 0) {
-            searchService.setCachedSearch(query.trim(), searchResults);
-          }
-        }
+        // Use optimized search function (caching handled by request deduplication in P1.3)
+        searchResults = await executeIntelligentSearch(query.trim());
 
         // Track analytics (async, don't wait)
         const executionTime = Date.now() - startTime;

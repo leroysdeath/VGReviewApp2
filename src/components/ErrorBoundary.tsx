@@ -1,6 +1,7 @@
 // Error Boundary Component
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Bug, Copy } from 'lucide-react';
+import { isChunkLoadError } from '../utils/lazyWithRetry';
 
 interface Props {
   children: ReactNode;
@@ -43,13 +44,20 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
-    this.setState({ 
+    // Check if this is a chunk load error
+    if (this.state.error && isChunkLoadError(this.state.error)) {
+      // Force reload with cache bust for chunk errors
+      window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();
+      return;
+    }
+
+    this.setState({
       hasError: false,
       error: undefined,
       errorInfo: undefined,
       errorId: undefined
     });
-    
+
     // Call onReset if provided
     if (this.props.onReset) {
       this.props.onReset();
@@ -80,13 +88,20 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
+      // Check if this is a chunk load error
+      const isChunkError = this.state.error && isChunkLoadError(this.state.error);
+
       return (
         <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
           <div className="bg-gray-800 rounded-lg p-8 max-w-2xl w-full">
             <AlertTriangle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-4 text-center">Something went wrong</h2>
+            <h2 className="text-2xl font-bold text-white mb-4 text-center">
+              {isChunkError ? 'Update Available' : 'Something went wrong'}
+            </h2>
             <p className="text-gray-400 mb-6 text-center">
-              We're sorry, but something unexpected happened. Please try refreshing the page.
+              {isChunkError
+                ? 'A new version of the app is available. Please reload to get the latest version.'
+                : "We're sorry, but something unexpected happened. Please try refreshing the page."}
             </p>
             
             {this.state.errorId && (

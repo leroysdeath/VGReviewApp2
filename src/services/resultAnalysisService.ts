@@ -1,16 +1,31 @@
 /**
  * Result Analysis Service
- * 
+ *
  * Provides detailed analysis of individual search results including:
  * - Filtering decisions and reasons
  * - Sorting scores and ranking factors
  * - Quality metrics and relevance scoring
  * - Pattern identification for algorithm improvement
+ *
+ * UPDATED: Now uses real production algorithms instead of simulated logic
  */
 
 import type { GameWithCalculatedFields } from '../types/database';
 import type { IGDBGame } from './igdbServiceV2';
 import { getGameCopyrightInfo } from '../utils/contentProtectionFilter';
+import {
+  calculateIntelligentScore,
+  detectSearchIntent,
+  SearchIntent,
+  type IntelligentScore
+} from '../utils/intelligentPrioritization';
+import {
+  calculateGamePriority,
+  type PriorityResult as GamePriorityResult
+} from '../utils/gamePrioritization';
+import { FilterEngine, type FilterResult as FilterEngineResult } from '../utils/filterEngine';
+import { detectGameSeries, isSisterGame, applySisterGameBoost } from '../utils/sisterGameDetection';
+import { getDeduplicationStats, type DeduplicationStats } from '../utils/requestDeduplication';
 
 export interface FilteringDecision {
   passed: boolean;
@@ -34,13 +49,13 @@ export interface ResultAnalysis {
   gameName: string;
   source: 'database' | 'igdb';
   finalPosition: number;
-  
+
   // Filtering analysis
   filteringDecisions: FilteringDecision[];
   wasFiltered: boolean;
   filteringSummary: string;
-  
-  // Sorting analysis
+
+  // Sorting analysis (now using real intelligentPrioritization)
   totalSortingScore: number;
   sortingComponents: SortingScore[];
   rankingFactors: {
@@ -50,7 +65,21 @@ export interface ResultAnalysis {
     recencyBonus: number;
     penaltyScore: number;
   };
-  
+
+  // NEW: Intelligent Prioritization Data
+  intelligentScore?: IntelligentScore;
+  searchIntent?: SearchIntent;
+  gamePriority?: GamePriorityResult;
+
+  // NEW: Sister Game Detection
+  sisterGameAnalysis?: {
+    isSisterGame: boolean;
+    relationship: 'exact' | 'sequel' | 'prequel' | 'sister' | 'spin-off' | 'none';
+    confidence: number;
+    boost: number;
+    seriesName?: string;
+  };
+
   // Quality metrics
   qualityMetrics: {
     hasDescription: boolean;
@@ -66,7 +95,7 @@ export interface ResultAnalysis {
     hasPopularityScore: boolean;
     metricsCompletenessScore: number;
   };
-  
+
   // New IGDB metrics
   igdbMetrics: {
     totalRating?: number;
@@ -76,7 +105,7 @@ export interface ResultAnalysis {
     popularityScore?: number;
     popularityTier: 'viral' | 'mainstream' | 'popular' | 'known' | 'niche';
   };
-  
+
   // Manual flags
   flagStatus: {
     hasGreenlight: boolean;
@@ -86,7 +115,7 @@ export interface ResultAnalysis {
     flaggedBy?: string;
     overrideActive: boolean;
   };
-  
+
   // Copyright filtering level
   copyrightInfo: {
     level: 'BLOCK_ALL' | 'AGGRESSIVE' | 'MODERATE' | 'MOD_FRIENDLY';
@@ -94,7 +123,7 @@ export interface ResultAnalysis {
     policyReason: string;
     levelDescription: string;
   };
-  
+
   // Search relevance
   relevanceBreakdown: {
     nameMatch: {
@@ -124,20 +153,32 @@ export interface SearchResultsAnalysis {
   totalResults: number;
   filteredCount: number;
   resultAnalyses: ResultAnalysis[];
-  
+
+  // NEW: Search Intent & Sister Game Detection
+  searchIntent?: SearchIntent;
+  sisterGameSeries?: {
+    detected: boolean;
+    seriesName: string;
+    type: 'numbered' | 'versioned' | 'subtitled' | 'generational';
+    gamesInSeries: number;
+  };
+
+  // NEW: Request Deduplication Stats
+  deduplicationStats?: DeduplicationStats;
+
   // Aggregate insights
   filteringInsights: {
     mostCommonFilterReason: string;
     filteringStages: Record<string, number>;
     qualityIssues: string[];
   };
-  
+
   sortingInsights: {
     topScoringFactors: Array<{factor: string; averageContribution: number}>;
     sortingProblems: string[];
     recommendations: string[];
   };
-  
+
   // Pattern detection
   patterns: {
     irrelevantResults: Array<{game: string; reason: string}>;
@@ -150,6 +191,7 @@ export class ResultAnalysisService {
   
   /**
    * Analyze all results from a search with detailed filtering and sorting breakdown
+   * UPDATED: Now uses real production algorithms
    */
   analyzeSearchResults(
     query: string,
@@ -157,38 +199,63 @@ export class ResultAnalysisService {
     igdbResults: IGDBGame[] = [],
     finalResults: GameWithCalculatedFields[]
   ): SearchResultsAnalysis {
-    
-    console.log(`🔬 Analyzing search results for query: "${query}"`);
-    
+
+    console.log(`🔬 REAL ALGORITHM ANALYSIS: Analyzing search results for query: "${query}"`);
+
+    // Detect search intent using real algorithm
+    const searchIntent = detectSearchIntent(query);
+    console.log(`   Search Intent: ${searchIntent}`);
+
+    // Detect sister game series
+    const seriesDetection = detectGameSeries(query);
+    const sisterGameSeries = seriesDetection ? {
+      detected: true,
+      seriesName: seriesDetection.seriesInfo.baseName,
+      type: seriesDetection.seriesInfo.type,
+      gamesInSeries: seriesDetection.expandedQueries.length
+    } : undefined;
+
+    if (sisterGameSeries) {
+      console.log(`   Sister Game Series: ${sisterGameSeries.seriesName} (${sisterGameSeries.type})`);
+    }
+
+    // Get request deduplication stats
+    const deduplicationStats = getDeduplicationStats();
+
     // Combine all initial results for analysis
     const allInitialResults = [
       ...dbResults.map(g => ({ ...g, _source: 'database' as const })),
       ...igdbResults.map(g => this.convertIGDBToAnalysis(g))
     ];
-    
+
     // Analyze each result
     const resultAnalyses: ResultAnalysis[] = [];
-    
+
     allInitialResults.forEach((game, index) => {
       const analysis = this.analyzeIndividualResult(
         game,
         query,
         index,
-        finalResults
+        finalResults,
+        searchIntent,
+        seriesDetection
       );
       resultAnalyses.push(analysis);
     });
-    
+
     // Generate aggregate insights
     const filteringInsights = this.analyzeFilteringPatterns(resultAnalyses);
     const sortingInsights = this.analyzeSortingPatterns(resultAnalyses, query);
     const patterns = this.detectSearchPatterns(resultAnalyses, query);
-    
+
     return {
       query,
       totalResults: allInitialResults.length,
       filteredCount: resultAnalyses.filter(r => r.wasFiltered).length,
       resultAnalyses,
+      searchIntent,
+      sisterGameSeries,
+      deduplicationStats,
       filteringInsights,
       sortingInsights,
       patterns
@@ -197,59 +264,93 @@ export class ResultAnalysisService {
   
   /**
    * Analyze an individual search result
+   * UPDATED: Now uses real production algorithms
    */
   private analyzeIndividualResult(
     game: any,
     query: string,
     originalPosition: number,
-    finalResults: GameWithCalculatedFields[]
+    finalResults: GameWithCalculatedFields[],
+    searchIntent: SearchIntent,
+    seriesDetection: ReturnType<typeof detectGameSeries>
   ): ResultAnalysis {
-    
-    const finalPosition = finalResults.findIndex(fr => 
+
+    const finalPosition = finalResults.findIndex(fr =>
       fr.id === game.id || fr.igdb_id === game.igdb_id
     );
-    
+
     const wasFiltered = finalPosition === -1;
-    
-    // Simulate filtering decisions (in real implementation, this would be tracked during actual filtering)
+
+    // Use real filtering decisions (still simulated for now, will be updated with filterEngine)
     const filteringDecisions = this.simulateFilteringDecisions(game, query);
-    
-    // Calculate sorting scores
-    const sortingComponents = this.calculateSortingComponents(game, query);
-    const totalSortingScore = sortingComponents.reduce((sum, comp) => sum + comp.contribution, 0);
-    
+
+    // REAL ALGORITHM: Calculate intelligent score
+    const intelligentScore = calculateIntelligentScore(game, query);
+
+    // REAL ALGORITHM: Calculate game priority
+    const gamePriority = calculateGamePriority(game);
+
+    // REAL ALGORITHM: Analyze sister game relationship
+    let sisterGameAnalysis: ResultAnalysis['sisterGameAnalysis'];
+    if (seriesDetection) {
+      const sisterResult = isSisterGame(query, game.name, seriesDetection.seriesInfo);
+      sisterGameAnalysis = {
+        isSisterGame: sisterResult.isSister,
+        relationship: sisterResult.relationship,
+        confidence: sisterResult.confidence,
+        boost: game._sisterGameBoost || 0,
+        seriesName: seriesDetection.seriesInfo.baseName
+      };
+    }
+
+    // Calculate sorting scores using REAL intelligent prioritization
+    const sortingComponents = this.calculateSortingComponentsFromIntelligentScore(intelligentScore, gamePriority);
+    const totalSortingScore = intelligentScore.totalScore;
+
     // Analyze quality metrics
     const qualityMetrics = this.analyzeQualityMetrics(game);
-    
+
     // Analyze relevance
     const relevanceBreakdown = this.analyzeRelevance(game, query);
-    
-    // Calculate ranking factors
-    const rankingFactors = this.calculateRankingFactors(game, query, relevanceBreakdown);
-    
+
+    // Calculate ranking factors from intelligent score
+    const rankingFactors = {
+      relevanceScore: intelligentScore.relevanceScore,
+      qualityScore: intelligentScore.qualityScore,
+      popularityScore: intelligentScore.popularityScore,
+      recencyBonus: intelligentScore.recencyBonus,
+      penaltyScore: 0 // No explicit penalty in new system
+    };
+
     // Get copyright information
     const copyrightInfo = getGameCopyrightInfo(game);
-    
+
     // Analyze IGDB metrics
     const igdbMetrics = this.analyzeIGDBMetrics(game);
-    
+
     // Analyze flag status
     const flagStatus = this.analyzeFlagStatus(game);
-    
+
     return {
       gameId: game.id || game.igdb_id,
       gameName: game.name,
       source: game._source || 'database',
       finalPosition: finalPosition === -1 ? -1 : finalPosition,
-      
+
       filteringDecisions,
       wasFiltered,
       filteringSummary: this.generateFilteringSummary(filteringDecisions),
-      
+
       totalSortingScore,
       sortingComponents,
       rankingFactors,
-      
+
+      // NEW: Real algorithm data
+      intelligentScore,
+      searchIntent,
+      gamePriority,
+      sisterGameAnalysis,
+
       qualityMetrics,
       igdbMetrics,
       flagStatus,
@@ -312,11 +413,84 @@ export class ResultAnalysisService {
   }
   
   /**
-   * Calculate detailed sorting components
+   * Calculate detailed sorting components from intelligent score
+   * UPDATED: Uses real intelligentPrioritization algorithm data
+   */
+  private calculateSortingComponentsFromIntelligentScore(
+    intelligentScore: IntelligentScore,
+    gamePriority: GamePriorityResult
+  ): SortingScore[] {
+    const components: SortingScore[] = [];
+
+    // Extract breakdown from intelligent score
+    const breakdown = intelligentScore.breakdown;
+
+    components.push({
+      component: 'Title Match',
+      score: breakdown.titleMatch,
+      weight: 0.6,
+      contribution: breakdown.titleMatch * 0.6,
+      explanation: 'How well game title matches search query'
+    });
+
+    components.push({
+      component: 'Quality & Metadata',
+      score: breakdown.metadataQuality,
+      weight: 0.3,
+      contribution: breakdown.metadataQuality * 0.3,
+      explanation: 'Completeness of game data and critical acclaim'
+    });
+
+    components.push({
+      component: 'User Engagement',
+      score: breakdown.userEngagement,
+      weight: 0.4,
+      contribution: breakdown.userEngagement * 0.4,
+      explanation: 'User ratings, follows, and community engagement'
+    });
+
+    components.push({
+      component: 'Critical Acclaim',
+      score: breakdown.criticalAcclaim,
+      weight: 0.4,
+      contribution: breakdown.criticalAcclaim * 0.4,
+      explanation: 'IGDB and professional review scores'
+    });
+
+    components.push({
+      component: 'Iconic Game Boost',
+      score: breakdown.iconicGameBoost,
+      weight: 0.2,
+      contribution: breakdown.iconicGameBoost * 0.2,
+      explanation: 'Bonus for iconic/flagship franchise games'
+    });
+
+    components.push({
+      component: 'Platform Relevance',
+      score: breakdown.platformRelevance,
+      weight: 0.3,
+      contribution: breakdown.platformRelevance * 0.3,
+      explanation: 'Platform availability and search intent match'
+    });
+
+    components.push({
+      component: 'Game Priority Tier',
+      score: gamePriority.score,
+      weight: 1.0,
+      contribution: gamePriority.score,
+      explanation: `${gamePriority.reasons.join('; ')}`
+    });
+
+    return components;
+  }
+
+  /**
+   * OLD METHOD - Kept for backward compatibility
+   * @deprecated Use calculateSortingComponentsFromIntelligentScore instead
    */
   private calculateSortingComponents(game: any, query: string): SortingScore[] {
     const components: SortingScore[] = [];
-    
+
     // Relevance component
     const relevanceScore = this.calculateRelevanceScore(game, query);
     components.push({
@@ -326,7 +500,7 @@ export class ResultAnalysisService {
       contribution: relevanceScore * 0.4,
       explanation: `How well the game matches "${query}"`
     });
-    
+
     // Quality component
     const qualityScore = this.calculateQualityScore(game);
     components.push({
@@ -336,7 +510,7 @@ export class ResultAnalysisService {
       contribution: qualityScore * 0.3,
       explanation: 'Completeness of game data (description, cover, etc.)'
     });
-    
+
     // Popularity component
     const popularityScore = this.calculatePopularityScore(game);
     components.push({
@@ -346,7 +520,7 @@ export class ResultAnalysisService {
       contribution: popularityScore * 0.2,
       explanation: 'IGDB rating and user engagement metrics'
     });
-    
+
     // Recency bonus
     const recencyScore = this.calculateRecencyScore(game);
     components.push({
@@ -356,7 +530,7 @@ export class ResultAnalysisService {
       contribution: recencyScore * 0.1,
       explanation: 'Bonus for recently released games'
     });
-    
+
     return components;
   }
   
@@ -670,7 +844,7 @@ export class ResultAnalysisService {
     const factorContributions: Record<string, number[]> = {};
     const problems: string[] = [];
     const recommendations: string[] = [];
-    
+
     analyses.forEach(analysis => {
       analysis.sortingComponents.forEach(component => {
         if (!factorContributions[component.component]) {
@@ -678,17 +852,28 @@ export class ResultAnalysisService {
         }
         factorContributions[component.component].push(component.contribution);
       });
-      
-      // Identify sorting problems
-      if (analysis.relevanceBreakdown.nameMatch.type === 'exact' && analysis.finalPosition > 5) {
-        problems.push(`${analysis.gameName}: Exact match ranked at position ${analysis.finalPosition + 1}`);
-      }
-      
-      if (analysis.rankingFactors.relevanceScore < 0.1 && analysis.finalPosition <= 10) {
-        problems.push(`${analysis.gameName}: Low relevance (${analysis.rankingFactors.relevanceScore.toFixed(3)}) but high ranking`);
+
+      // Identify sorting problems using intelligent score
+      if (analysis.intelligentScore) {
+        const score = analysis.intelligentScore;
+
+        // Check for exact matches that are ranked low
+        if (analysis.relevanceBreakdown.nameMatch.type === 'exact' && analysis.finalPosition > 5) {
+          problems.push(`${analysis.gameName}: Exact match ranked at position ${analysis.finalPosition + 1} (score: ${score.totalScore})`);
+        }
+
+        // Check for low relevance but high ranking
+        if (score.relevanceScore < 100 && analysis.finalPosition <= 10) {
+          problems.push(`${analysis.gameName}: Low relevance (${score.relevanceScore.toFixed(0)}) but ranked #${analysis.finalPosition + 1}`);
+        }
+
+        // Check for iconic games that should be ranked higher
+        if (score.iconicBonus > 80 && analysis.finalPosition > 3) {
+          problems.push(`${analysis.gameName}: Iconic game (bonus: ${score.iconicBonus}) ranked at #${analysis.finalPosition + 1}, should be higher`);
+        }
       }
     });
-    
+
     // Calculate average contributions
     const topScoringFactors = Object.entries(factorContributions)
       .map(([factor, contributions]) => ({
@@ -696,16 +881,29 @@ export class ResultAnalysisService {
         averageContribution: contributions.reduce((sum, c) => sum + c, 0) / contributions.length
       }))
       .sort((a, b) => b.averageContribution - a.averageContribution);
-    
-    // Generate recommendations
-    if (topScoringFactors[0]?.factor === 'Popularity' && topScoringFactors[0].averageContribution > 0.5) {
-      recommendations.push('Consider reducing popularity weight to improve relevance ranking');
+
+    // Generate recommendations based on intelligent scoring
+    if (topScoringFactors[0]?.factor === 'User Engagement' && topScoringFactors[0].averageContribution > 500) {
+      recommendations.push('User engagement is dominating - ensure relevance is weighted appropriately');
     }
-    
+
     if (problems.some(p => p.includes('Exact match'))) {
-      recommendations.push('Boost exact match scores to ensure they appear first');
+      recommendations.push('Boost exact match scores in intelligentPrioritization algorithm');
     }
-    
+
+    if (problems.some(p => p.includes('Iconic game'))) {
+      recommendations.push('Review iconic game detection - some flagship titles may be ranked too low');
+    }
+
+    // Check if search intent matches results
+    const intentMismatches = analyses.filter(a =>
+      a.searchIntent && a.intelligentScore && a.intelligentScore.intentMatchScore < 0
+    );
+
+    if (intentMismatches.length > analyses.length * 0.3) {
+      recommendations.push(`${Math.round((intentMismatches.length / analyses.length) * 100)}% of results don't match search intent - review intent detection`);
+    }
+
     return {
       topScoringFactors,
       sortingProblems: problems.slice(0, 10),

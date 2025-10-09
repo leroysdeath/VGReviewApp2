@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { getCurrentUserId, ensureGameExists } from './reviewService';
 import type { Game } from '../types/database';
+import { deduplicateRequest, generateCacheKey, invalidateCache } from '../utils/requestDeduplication';
 
 export interface CollectionItem {
   id: number;
@@ -32,22 +33,25 @@ class CollectionWishlistService {
    * Check if game is already started or completed
    */
   async checkGameProgress(igdbId: number): Promise<boolean> {
-    try {
-      const userId = await getCurrentUserId();
-      if (!userId) return false;
-      
-      const { data } = await supabase
-        .from('game_progress')
-        .select('started, completed')
-        .eq('user_id', userId)
-        .eq('igdb_id', igdbId)
-        .maybeSingle();
-      
-      return data && (data.started || data.completed);
-    } catch (error) {
-      console.error('Error checking game progress:', error);
-      return false;
-    }
+    const userId = await getCurrentUserId();
+    if (!userId) return false;
+
+    const cacheKey = generateCacheKey('collectionWishlistService', 'checkGameProgress', userId, igdbId);
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        const { data } = await supabase
+          .from('game_progress')
+          .select('started, completed')
+          .eq('user_id', userId)
+          .eq('igdb_id', igdbId)
+          .maybeSingle();
+
+        return data && (data.started || data.completed);
+      } catch (error) {
+        console.error('Error checking game progress:', error);
+        return false;
+      }
+    });
   }
 
   /**
@@ -211,22 +215,36 @@ class CollectionWishlistService {
         error: 'This game is already in your progress list. Remove it from there first to add it to your collection.'
       };
     }
-    
-    return this.ensureGameAndAdd('user_collection', igdbId, gameData);
+
+    const result = await this.ensureGameAndAdd('user_collection', igdbId, gameData);
+
+    // Invalidate cache after mutation
+    if (result.success) {
+      invalidateCache('collectionWishlistService:*');
+    }
+
+    return result;
   }
 
   /**
    * Remove game from user's collection
    */
   async removeFromCollection(igdbId: number): Promise<ServiceResponse<void>> {
-    return this.removeFromTable('user_collection', igdbId);
+    const result = await this.removeFromTable('user_collection', igdbId);
+
+    // Invalidate cache after mutation
+    if (result.success) {
+      invalidateCache('collectionWishlistService:*');
+    }
+
+    return result;
   }
 
   /**
    * Add game to user's wishlist
    */
   async addToWishlist(
-    igdbId: number, 
+    igdbId: number,
     gameData?: Partial<Game>,
     priority?: number,
     notes?: string
@@ -239,168 +257,197 @@ class CollectionWishlistService {
         error: 'This game is already in your progress list. Remove it from there first to add it to your wishlist.'
       };
     }
-    
-    return this.ensureGameAndAdd('user_wishlist', igdbId, gameData, { priority, notes });
+
+    const result = await this.ensureGameAndAdd('user_wishlist', igdbId, gameData, { priority, notes });
+
+    // Invalidate cache after mutation
+    if (result.success) {
+      invalidateCache('collectionWishlistService:*');
+    }
+
+    return result;
   }
 
   /**
    * Remove game from user's wishlist
    */
   async removeFromWishlist(igdbId: number): Promise<ServiceResponse<void>> {
-    return this.removeFromTable('user_wishlist', igdbId);
+    const result = await this.removeFromTable('user_wishlist', igdbId);
+
+    // Invalidate cache after mutation
+    if (result.success) {
+      invalidateCache('collectionWishlistService:*');
+    }
+
+    return result;
   }
 
   /**
    * Check if game is in user's collection
    */
   async isInCollection(igdbId: number): Promise<boolean> {
-    try {
-      const userId = await getCurrentUserId();
-      if (!userId) return false;
+    const userId = await getCurrentUserId();
+    if (!userId) return false;
 
-      const { count } = await supabase
-        .from('user_collection')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('igdb_id', igdbId);
+    const cacheKey = generateCacheKey('collectionWishlistService', 'isInCollection', userId, igdbId);
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        const { count } = await supabase
+          .from('user_collection')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('igdb_id', igdbId);
 
-      return (count || 0) > 0;
-    } catch (error) {
-      console.error('Error checking collection status:', error);
-      return false;
-    }
+        return (count || 0) > 0;
+      } catch (error) {
+        console.error('Error checking collection status:', error);
+        return false;
+      }
+    });
   }
 
   /**
    * Check if game is in user's wishlist
    */
   async isInWishlist(igdbId: number): Promise<boolean> {
-    try {
-      const userId = await getCurrentUserId();
-      if (!userId) return false;
+    const userId = await getCurrentUserId();
+    if (!userId) return false;
 
-      const { count } = await supabase
-        .from('user_wishlist')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('igdb_id', igdbId);
+    const cacheKey = generateCacheKey('collectionWishlistService', 'isInWishlist', userId, igdbId);
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        const { count } = await supabase
+          .from('user_wishlist')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('igdb_id', igdbId);
 
-      return (count || 0) > 0;
-    } catch (error) {
-      console.error('Error checking wishlist status:', error);
-      return false;
-    }
+        return (count || 0) > 0;
+      } catch (error) {
+        console.error('Error checking wishlist status:', error);
+        return false;
+      }
+    });
   }
 
   /**
    * Check both collection and wishlist status in one call
    */
   async checkBothStatuses(igdbId: number): Promise<CollectionWishlistStatus> {
-    try {
-      const userId = await getCurrentUserId();
-      if (!userId) {
-        return { inCollection: false, inWishlist: false };
-      }
-
-      // Parallel queries for performance
-      const [collectionResult, wishlistResult] = await Promise.all([
-        supabase
-          .from('user_collection')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', userId)
-          .eq('igdb_id', igdbId),
-        supabase
-          .from('user_wishlist')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', userId)
-          .eq('igdb_id', igdbId)
-      ]);
-
-      return {
-        inCollection: (collectionResult.count || 0) > 0,
-        inWishlist: (wishlistResult.count || 0) > 0
-      };
-    } catch (error) {
-      console.error('Error checking collection/wishlist status:', error);
+    const userId = await getCurrentUserId();
+    if (!userId) {
       return { inCollection: false, inWishlist: false };
     }
+
+    const cacheKey = generateCacheKey('collectionWishlistService', 'checkBothStatuses', userId, igdbId);
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        // Parallel queries for performance
+        const [collectionResult, wishlistResult] = await Promise.all([
+          supabase
+            .from('user_collection')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('igdb_id', igdbId),
+          supabase
+            .from('user_wishlist')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('igdb_id', igdbId)
+        ]);
+
+        return {
+          inCollection: (collectionResult.count || 0) > 0,
+          inWishlist: (wishlistResult.count || 0) > 0
+        };
+      } catch (error) {
+        console.error('Error checking collection/wishlist status:', error);
+        return { inCollection: false, inWishlist: false };
+      }
+    });
   }
 
   /**
    * Get user's collection with game details
    */
   async getCollection(userId: number): Promise<ServiceResponse<CollectionItem[]>> {
-    try {
-      const { data, error } = await supabase
-        .from('user_collection')
-        .select(`
-          *,
-          game:game_id (
-            id,
-            igdb_id,
-            name,
-            cover_url,
-            genre,
-            release_date,
-            slug
-          )
-        `)
-        .eq('user_id', userId)
-        .order('added_at', { ascending: false });
+    const cacheKey = generateCacheKey('collectionWishlistService', 'getCollection', userId);
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_collection')
+          .select(`
+            *,
+            game:game_id (
+              id,
+              igdb_id,
+              name,
+              cover_url,
+              genre,
+              release_date,
+              slug
+            )
+          `)
+          .eq('user_id', userId)
+          .order('added_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching collection:', error);
-        return { success: false, error: error.message, data: [] };
+        if (error) {
+          console.error('Error fetching collection:', error);
+          return { success: false, error: error.message, data: [] };
+        }
+
+        return { success: true, data: data || [] };
+      } catch (error) {
+        console.error('Failed to get collection:', error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to get collection',
+          data: []
+        };
       }
-
-      return { success: true, data: data || [] };
-    } catch (error) {
-      console.error('Failed to get collection:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to get collection',
-        data: []
-      };
-    }
+    });
   }
 
   /**
    * Get user's wishlist with game details
    */
   async getWishlist(userId: number): Promise<ServiceResponse<WishlistItem[]>> {
-    try {
-      const { data, error } = await supabase
-        .from('user_wishlist')
-        .select(`
-          *,
-          game:game_id (
-            id,
-            igdb_id,
-            name,
-            cover_url,
-            genre,
-            release_date,
-            slug
-          )
-        `)
-        .eq('user_id', userId)
-        .order('priority', { ascending: false })
-        .order('added_at', { ascending: false });
+    const cacheKey = generateCacheKey('collectionWishlistService', 'getWishlist', userId);
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_wishlist')
+          .select(`
+            *,
+            game:game_id (
+              id,
+              igdb_id,
+              name,
+              cover_url,
+              genre,
+              release_date,
+              slug
+            )
+          `)
+          .eq('user_id', userId)
+          .order('priority', { ascending: false })
+          .order('added_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching wishlist:', error);
-        return { success: false, error: error.message, data: [] };
+        if (error) {
+          console.error('Error fetching wishlist:', error);
+          return { success: false, error: error.message, data: [] };
+        }
+
+        return { success: true, data: data || [] };
+      } catch (error) {
+        console.error('Failed to get wishlist:', error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to get wishlist',
+          data: []
+        };
       }
-
-      return { success: true, data: data || [] };
-    } catch (error) {
-      console.error('Failed to get wishlist:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to get wishlist',
-        data: []
-      };
-    }
+    });
   }
 
   /**
@@ -410,29 +457,32 @@ class CollectionWishlistService {
     collectionIds: Set<number>;
     wishlistIds: Set<number>;
   }> {
-    try {
-      const [collectionResult, wishlistResult] = await Promise.all([
-        supabase
-          .from('user_collection')
-          .select('igdb_id')
-          .eq('user_id', userId),
-        supabase
-          .from('user_wishlist')
-          .select('igdb_id')
-          .eq('user_id', userId)
-      ]);
+    const cacheKey = generateCacheKey('collectionWishlistService', 'getCollectionAndWishlistIds', userId);
+    return deduplicateRequest(cacheKey, async () => {
+      try {
+        const [collectionResult, wishlistResult] = await Promise.all([
+          supabase
+            .from('user_collection')
+            .select('igdb_id')
+            .eq('user_id', userId),
+          supabase
+            .from('user_wishlist')
+            .select('igdb_id')
+            .eq('user_id', userId)
+        ]);
 
-      return {
-        collectionIds: new Set(collectionResult.data?.map(item => item.igdb_id) || []),
-        wishlistIds: new Set(wishlistResult.data?.map(item => item.igdb_id) || [])
-      };
-    } catch (error) {
-      console.error('Error fetching collection/wishlist IDs:', error);
-      return {
-        collectionIds: new Set(),
-        wishlistIds: new Set()
-      };
-    }
+        return {
+          collectionIds: new Set(collectionResult.data?.map(item => item.igdb_id) || []),
+          wishlistIds: new Set(wishlistResult.data?.map(item => item.igdb_id) || [])
+        };
+      } catch (error) {
+        console.error('Error fetching collection/wishlist IDs:', error);
+        return {
+          collectionIds: new Set(),
+          wishlistIds: new Set()
+        };
+      }
+    });
   }
 
   /**

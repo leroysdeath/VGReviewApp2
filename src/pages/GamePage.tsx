@@ -402,10 +402,31 @@ export const GamePage: React.FC = () => {
     checkCollectionWishlistStatus();
   }, [game, isAuthenticated]);
 
-  // Fetch game category from IGDB for DLC/expansion detection - with timeout for mobile
+  // Fetch game category from IGDB for DLC/expansion detection - with sessionStorage caching
   useEffect(() => {
     const fetchGameCategory = async () => {
       if (!game || !game.igdb_id) return;
+
+      // P1.2 Optimization: Check sessionStorage cache first (1 hour TTL)
+      const cacheKey = `game-category-${game.igdb_id}`;
+      const cached = sessionStorage.getItem(cacheKey);
+
+      if (cached) {
+        try {
+          const { category, timestamp } = JSON.parse(cached);
+          const age = Date.now() - timestamp;
+          const ONE_HOUR = 60 * 60 * 1000;
+
+          if (age < ONE_HOUR) {
+            console.log('✅ Using cached category:', category);
+            dispatch({ type: 'SET_GAME_CATEGORY', payload: { category, loading: false }});
+            return;
+          }
+        } catch (e) {
+          // Invalid cache, continue to fetch
+          sessionStorage.removeItem(cacheKey);
+        }
+      }
 
       dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: null, loading: true }});
 
@@ -415,7 +436,7 @@ export const GamePage: React.FC = () => {
 
       try {
         console.log('Fetching category for game IGDB ID:', game.igdb_id);
-        
+
         const response = await fetch('/.netlify/functions/igdb-search', {
           method: 'POST',
           headers: {
@@ -438,7 +459,7 @@ export const GamePage: React.FC = () => {
         }
 
         const data = await response.json();
-        
+
         if (!data.success) {
           console.error('IGDB API returned error:', data.error);
           dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: null, loading: false }});
@@ -447,6 +468,13 @@ export const GamePage: React.FC = () => {
 
         const categoryValue = data.games?.[0]?.category || null;
         console.log('✅ Game category fetched:', categoryValue);
+
+        // P1.2 Optimization: Cache the result in sessionStorage
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          category: categoryValue,
+          timestamp: Date.now()
+        }));
+
         dispatch({ type: 'SET_GAME_CATEGORY', payload: { category: categoryValue, loading: false }});
 
       } catch (error) {
@@ -763,19 +791,25 @@ export const GamePage: React.FC = () => {
   );
 
   // Recommendation 6: Clarify terminology - separate reviews with text from ratings
-  const reviewsWithText = useMemo(() => 
+  const reviewsWithText = useMemo(() =>
     transformedReviews.filter(r => r.hasText),
     [transformedReviews]
   );
 
-  const topReviews = useMemo(() => 
+  const topReviews = useMemo(() =>
     transformedReviews.filter(r => r.rating >= 8).slice(0, 3),
     [transformedReviews]
   );
-  
-  const recentReviews = useMemo(() => 
+
+  const recentReviews = useMemo(() =>
     transformedReviews.slice(0, 5),
     [transformedReviews]
+  );
+
+  // P1.2 Optimization: Memoize platform display to avoid recalculating on every render
+  const platformsDisplay = useMemo(() =>
+    game?.platforms ? mapPlatformNames(game.platforms).join(', ') : '',
+    [game?.platforms]
   );
 
   // Calculate average rating from actual loaded reviews (client-side calculation)
@@ -973,9 +1007,9 @@ export const GamePage: React.FC = () => {
   }
 
   // Generate SEO meta data
-  const metaDescription = game.summary 
-    ? game.summary.substring(0, 160) 
-    : `${game.name} - Rating: ${averageRating.toFixed(1)}/10. ${totalRatings} player ratings. ${game.genres?.join(', ') || 'Game'} on ${game.platforms ? mapPlatformNames(game.platforms).join(', ') : 'multiple platforms'}.`;
+  const metaDescription = game.summary
+    ? game.summary.substring(0, 160)
+    : `${game.name} - Rating: ${averageRating.toFixed(1)}/10. ${totalRatings} player ratings. ${game.genres?.join(', ') || 'Game'} on ${platformsDisplay || 'multiple platforms'}.`;
   
   const canonicalUrl = game.slug 
     ? `https://vgreviewapp.com/game/${game.slug}`
@@ -1198,7 +1232,7 @@ export const GamePage: React.FC = () => {
                           <strong className="whitespace-nowrap flex-shrink-0">Platforms:</strong>
                           <div className="flex-1 min-w-0">
                             <span>
-                              {mapPlatformNames(game.platforms).join(', ')}
+                              {platformsDisplay}
                             </span>
                           </div>
                         </div>

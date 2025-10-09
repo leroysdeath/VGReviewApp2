@@ -434,6 +434,82 @@ const SingleSearchResult: React.FC<{ result: DiagnosticResult }> = ({ result }) 
         </div>
       </div>
 
+      {/* Search Intent & Intelligence */}
+      {(result.resultAnalysis?.searchIntent || result.resultAnalysis?.sisterGameSeries || result.resultAnalysis?.deduplicationStats) && (
+        <div className="bg-gray-800 p-6 rounded-lg">
+          <h3 className="text-lg font-bold mb-4">🧠 Search Intelligence</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Search Intent */}
+            {result.resultAnalysis?.searchIntent && (
+              <div className="bg-gray-700 p-4 rounded">
+                <h4 className="font-semibold mb-2 text-blue-400">🔍 Search Intent</h4>
+                <div className="text-center">
+                  <div className="text-2xl font-bold mb-2 capitalize text-white">
+                    {result.resultAnalysis.searchIntent.replace(/_/g, ' ')}
+                  </div>
+                  <div className="text-xs text-gray-300">
+                    {result.resultAnalysis.searchIntent === 'specific_game' && 'Looking for a specific game'}
+                    {result.resultAnalysis.searchIntent === 'franchise_browse' && 'Exploring a game series'}
+                    {result.resultAnalysis.searchIntent === 'genre_discovery' && 'Discovering games by genre'}
+                    {result.resultAnalysis.searchIntent === 'developer_search' && 'Searching by developer/publisher'}
+                    {result.resultAnalysis.searchIntent === 'year_search' && 'Searching games by year'}
+                    {result.resultAnalysis.searchIntent === 'platform_search' && 'Searching by platform'}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sister Game Series Detection */}
+            {result.resultAnalysis?.sisterGameSeries?.detected && (
+              <div className="bg-gray-700 p-4 rounded border-l-4 border-purple-500">
+                <h4 className="font-semibold mb-2 text-purple-400">🔗 Sister Game Series</h4>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="text-gray-400">Series:</span>{' '}
+                    <span className="font-semibold text-white">{result.resultAnalysis.sisterGameSeries.seriesName}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Type:</span>{' '}
+                    <span className="font-mono capitalize">{result.resultAnalysis.sisterGameSeries.type}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Games in Series:</span>{' '}
+                    <span className="font-mono">{result.resultAnalysis.sisterGameSeries.gamesInSeries}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Request Deduplication Stats */}
+            {result.resultAnalysis?.deduplicationStats && result.resultAnalysis.deduplicationStats.totalRequests > 0 && (
+              <div className="bg-gray-700 p-4 rounded">
+                <h4 className="font-semibold mb-2 text-green-400">⚡ Request Deduplication</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Total Requests:</span>
+                    <span className="font-mono">{result.resultAnalysis.deduplicationStats.totalRequests}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Deduplicated:</span>
+                    <span className="font-mono text-green-400">{result.resultAnalysis.deduplicationStats.deduplicatedRequests}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Savings Rate:</span>
+                    <span className={`font-mono font-bold ${
+                      result.resultAnalysis.deduplicationStats.savingsRate > 30 ? 'text-green-400' :
+                      result.resultAnalysis.deduplicationStats.savingsRate > 10 ? 'text-yellow-400' :
+                      'text-gray-400'
+                    }`}>
+                      {result.resultAnalysis.deduplicationStats.savingsRate.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Search Breakdown */}
       <div className="bg-gray-800 p-6 rounded-lg">
         <h3 className="text-lg font-bold mb-4">Search Breakdown</h3>
@@ -446,7 +522,7 @@ const SingleSearchResult: React.FC<{ result: DiagnosticResult }> = ({ result }) 
               <li>Duration: <span className="font-mono">{result.dbResults.duration}ms</span></li>
             </ul>
           </div>
-          
+
           {result.igdbResults && (
             <div>
               <h4 className="font-semibold mb-2">IGDB Search</h4>

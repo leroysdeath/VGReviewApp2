@@ -1,0 +1,12 @@
+{
+  "offset": 27900,
+  "stats": {
+    "totalProcessed": 27811,
+    "successfulUpdates": 30,
+    "noCoverInIGDB": 2760,
+    "notFoundInIGDB": 25021,
+    "errors": 0,
+    "startTime": 1759966478362
+  },
+  "timestamp": "2025-10-08T23:37:29.759Z"
+}
