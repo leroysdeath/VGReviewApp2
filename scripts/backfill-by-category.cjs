@@ -272,6 +272,12 @@ async function backfillCategory(categoryId, dryRun = false) {
         break;
       }
 
+      // Safety check: if we're getting errors repeatedly, stop after reasonable attempts
+      if (batchNum > 100 && totalFetched === 0) {
+        console.log(`   ⚠️  No data fetched after 100 batches, likely connection issue or empty category`);
+        break;
+      }
+
       totalFetched += games.length;
       console.log(`   ✅ Fetched ${games.length} games`);
 

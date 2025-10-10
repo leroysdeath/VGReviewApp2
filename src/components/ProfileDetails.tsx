@@ -53,9 +53,14 @@ export const ProfileDetails: React.FC<ProfileDetailsProps> = ({
           <div className="text-lg sm:text-xl font-bold text-white group-hover:text-purple-400 transition-colors">{stats.thisYear}</div>
           <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide group-hover:text-purple-400 transition-colors text-center">REVIEWS</div>
         </button>
-        <div className="flex flex-col items-center justify-center p-2 min-w-0">
+        <div className="group relative flex flex-col items-center justify-center p-2 min-w-0">
           <div className="text-lg sm:text-xl font-bold text-white">{stats.lists}</div>
           <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide text-center">LISTS</div>
+          {/* Tooltip */}
+          <div className="absolute bottom-full mb-2 hidden group-hover:block group-active:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+            Coming soon
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+          </div>
         </div>
         <button
           onClick={onFollowingClick}

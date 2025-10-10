@@ -151,6 +151,7 @@ exports.handler = async (event, context) => {
       if (isMinimalMode) {
         // MINIMAL FIELDS - Only what SearchResultsPage actually displays
         // ⚠️ FILTERING DISABLED 2025-01-10: Removed "where category = (0,4,8,9,10,11) & version_parent = null;"
+        // This allows all game types including remasters, ports, and alternate versions (like GoldenEye 007 N64)
         // TO RESTORE: Add back after "limit ${limit};" → ; where category = (0,4,8,9,10,11) & version_parent = null;
         requestBody = `fields name, slug, cover.url, first_release_date, platforms.name, category; search "${query.trim()}"; limit ${limit};`;
       } else {

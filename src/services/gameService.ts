@@ -769,7 +769,7 @@ class GameService {
   private async getIGDBResultsConditionally(query: string): Promise<IGDBGame[] | null> {
     try {
       const timeoutPromise = new Promise<null>((resolve) => {
-        setTimeout(() => resolve(null), 1000);
+        setTimeout(() => resolve(null), 3000);
       });
 
       const igdbPromise = this.getIGDBResults(query);
@@ -803,13 +803,15 @@ class GameService {
     const igdbConverted = this.convertIGDBToLocal(igdbGames);
 
     const existingIGDBIds = new Set<number>();
-    const existingNames = new Set<string>();
+    const existingNamePlatformCombos = new Set<string>();
 
     for (const game of dbResults) {
       if (game.igdb_id) {
         existingIGDBIds.add(game.igdb_id);
       }
-      existingNames.add(this.normalizeGameName(game.name));
+      // Use name + platform combination for more accurate deduplication
+      const namePlatformKey = this.normalizeGameNameWithPlatforms(game.name, game.platforms);
+      existingNamePlatformCombos.add(namePlatformKey);
     }
 
     const newIGDBGames = igdbConverted.filter(game => {
@@ -817,8 +819,9 @@ class GameService {
         return false;
       }
 
-      const normalizedName = this.normalizeGameName(game.name);
-      if (existingNames.has(normalizedName)) {
+      // Check name + platform combination instead of just name
+      const namePlatformKey = this.normalizeGameNameWithPlatforms(game.name, game.platforms);
+      if (existingNamePlatformCombos.has(namePlatformKey)) {
         return false;
       }
 
@@ -837,6 +840,15 @@ class GameService {
       .replace(/[^\w\s]/g, '')
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  private normalizeGameNameWithPlatforms(name: string, platforms?: string[]): string {
+    const normalizedName = this.normalizeGameName(name);
+    // Include primary platform in the key to differentiate same-name games on different platforms
+    const primaryPlatform = platforms && platforms.length > 0
+      ? platforms[0].toLowerCase().replace(/[^\w\s]/g, '').trim()
+      : 'unknown';
+    return `${normalizedName}|${primaryPlatform}`;
   }
 
   private isStaleGame(game: GameWithCalculatedFields, maxAgeMs: number): boolean {
