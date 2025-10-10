@@ -1,6 +1,10 @@
 // Content Protection Filter with Company-Specific Copyright Policies
 // Filters content based on individual company copyright aggression levels
 
+// ⚠️ FILTERING DISABLED 2025-01-10: Set to false to allow all content through
+// TO RESTORE: Set back to true
+const ENABLE_CONTENT_FILTERING = false;
+
 // Debug flag to control console logging (set to false to reduce verbosity)
 const DEBUG_FILTERING = true; // INVESTIGATION MODE - Enable detailed logging
 
@@ -967,6 +971,9 @@ function isMajorExpansion(game: Game): boolean {
  * Respects manual admin flags: greenlight_flag overrides to keep, redlight_flag overrides to filter
  */
 export function filterFanGamesAndEReaderContent(games: Game[]): Game[] {
+  // ⚠️ FILTERING DISABLED 2025-01-10: Return all games unfiltered
+  if (!ENABLE_CONTENT_FILTERING) return games;
+
   return games.filter(game => {
     // Check manual admin flags first
     if (game.greenlight_flag === true) {
@@ -1116,6 +1123,9 @@ export function filterFanGamesAndEReaderContent(games: Game[]): Game[] {
  * Respects manual admin flags: greenlight_flag overrides to keep, redlight_flag overrides to filter
  */
 export function filterProtectedContent(games: Game[]): Game[] {
+  // ⚠️ FILTERING DISABLED 2025-01-10: Return all games unfiltered
+  if (!ENABLE_CONTENT_FILTERING) return games;
+
   // Enhanced filtering for mods, fan content, collections, and ports
   const filtered = games.filter(game => {
     // Check manual admin flags first
