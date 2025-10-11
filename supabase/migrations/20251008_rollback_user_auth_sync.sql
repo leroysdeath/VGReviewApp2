@@ -10,13 +10,11 @@
 DROP TRIGGER IF EXISTS on_auth_user_metadata_updated ON auth.users;
 DROP TRIGGER IF EXISTS on_user_profile_updated ON public.user;
 
--- Drop functions
-DROP FUNCTION IF EXISTS public.sync_auth_user_metadata();
-DROP FUNCTION IF EXISTS public.sync_user_to_auth_metadata();
+-- Drop functions (use CASCADE to handle dependencies)
+DROP FUNCTION IF EXISTS public.sync_auth_user_metadata() CASCADE;
+DROP FUNCTION IF EXISTS public.sync_user_to_auth_metadata() CASCADE;
 
--- Revoke permissions (in case they were granted)
-REVOKE EXECUTE ON FUNCTION public.sync_auth_user_metadata() FROM authenticated, service_role;
-REVOKE EXECUTE ON FUNCTION public.sync_user_to_auth_metadata() FROM authenticated, service_role;
+-- Note: No need to revoke permissions since functions don't exist
 
 -- ============================================================================
 -- VERIFICATION
