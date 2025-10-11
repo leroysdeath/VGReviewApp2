@@ -21,7 +21,7 @@ ALTER FUNCTION public.get_or_create_user(uuid, text, text, text)
 SELECT
   p.proname AS function_name,
   pg_get_function_identity_arguments(p.oid) AS arguments,
-  (SELECT unnest(proconfig) FROM pg_proc WHERE oid = p.oid AND unnest(proconfig) LIKE 'search_path%') AS search_path_setting
+  (SELECT config FROM unnest(p.proconfig) AS config WHERE config LIKE 'search_path%' LIMIT 1) AS search_path_setting
 FROM pg_proc p
 JOIN pg_namespace n ON p.pronamespace = n.oid
 WHERE n.nspname = 'public'
