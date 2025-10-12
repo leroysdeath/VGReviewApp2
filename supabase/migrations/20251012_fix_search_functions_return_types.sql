@@ -13,7 +13,12 @@
 -- match expected type text in column 2"
 -- ============================================================================
 
--- Fix search_games_secure
+-- Drop existing functions first (required to change return types)
+DROP FUNCTION IF EXISTS public.search_games_secure(text, integer);
+DROP FUNCTION IF EXISTS public.search_games_phrase(text, integer);
+DROP FUNCTION IF EXISTS public.search_games_by_genre(text, integer);
+
+-- Recreate search_games_secure with correct types
 CREATE OR REPLACE FUNCTION search_games_secure(
     search_query text,
     limit_count integer DEFAULT 20
@@ -177,6 +182,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Grant permissions (required after dropping functions)
+GRANT EXECUTE ON FUNCTION search_games_secure(text, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION search_games_secure(text, integer) TO anon;
+GRANT EXECUTE ON FUNCTION search_games_phrase(text, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION search_games_phrase(text, integer) TO anon;
+GRANT EXECUTE ON FUNCTION search_games_by_genre(text, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION search_games_by_genre(text, integer) TO anon;
+
 -- Verification query
 SELECT
   p.proname AS function_name,
@@ -196,5 +209,11 @@ BEGIN
   RAISE NOTICE '   - search_games_by_genre: pic_url → cover_url, name text → varchar';
   RAISE NOTICE '';
   RAISE NOTICE '   This fixes "structure of query does not match function result type" errors';
-  RAISE NOTICE '   Test: Try searching for games now';
+  RAISE NOTICE '   Functions have been dropped and recreated with correct types';
+  RAISE NOTICE '   Permissions granted to authenticated and anon roles';
+  RAISE NOTICE '';
+  RAISE NOTICE '   🔍 TEST NOW:';
+  RAISE NOTICE '   1. Try searching for games';
+  RAISE NOTICE '   2. Check browser console for HTTP 400 errors';
+  RAISE NOTICE '   3. User ID 1 should now work normally';
 END $$;
