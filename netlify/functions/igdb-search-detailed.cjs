@@ -107,7 +107,7 @@ exports.handler = async (event, context) => {
       search "${query.trim()}";
       limit ${limit};
       offset ${offset};
-      where category = (0,4,8,9,10,11) & version_parent = null;
+      /* ⚠️ FILTERING DISABLED 2025-01-10 - OLD: where category = (0,4,8,9,10,11) & version_parent = null; */
     `;
 
     console.log(`📚 SEARCH: "${query}" - Fetching ${limit} results with minimal fields`);
