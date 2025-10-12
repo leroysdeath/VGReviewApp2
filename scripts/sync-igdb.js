@@ -203,7 +203,9 @@ class NodeIGDBSyncService {
         body: JSON.stringify({
           isBulkRequest: true,
           endpoint: 'games',
-          requestBody: `fields name, summary, first_release_date, rating, cover.url, genres.name, platforms.name, platforms.id, release_dates.platform, release_dates.status, involved_companies.company.name, updated_at; where updated_at > ${timestamp} & category = 0; sort updated_at desc; limit ${limit};`
+          // ⚠️ FILTERING DISABLED 2025-01-10: Removed "& category = 0" to sync all game categories
+          // TO RESTORE: Add back "& category = 0" after "updated_at > ${timestamp}"
+          requestBody: `fields name, summary, first_release_date, rating, cover.url, genres.name, platforms.name, platforms.id, release_dates.platform, release_dates.status, involved_companies.company.name, updated_at; where updated_at > ${timestamp}; sort updated_at desc; limit ${limit};`
         })
       });
 
@@ -245,8 +247,8 @@ class NodeIGDBSyncService {
   async addGameToDatabase(igdbGame) {
     try {
       const gameData = {
-        // CRITICAL FIX: Don't set game_id - let database auto-increment the primary key
-        // game_id: igdbGame.id.toString(), // REMOVED - this was causing orphaned records
+        // game_id is required VARCHAR field - use IGDB ID as string
+        game_id: igdbGame.id.toString(),
         igdb_id: igdbGame.id,
         name: igdbGame.name,
         slug: igdbGame.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
