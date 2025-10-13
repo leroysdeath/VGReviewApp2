@@ -103,7 +103,7 @@ exports.handler = async (event, context) => {
              platforms.name, category;
       search "${query.trim()}";
       limit 6;
-      where category = (0,4,8,9,10,11) & version_parent = null;
+      /* ⚠️ FILTERING DISABLED 2025-01-10 - OLD: where category = (0,4,8,9,10,11) & version_parent = null; */
     `;
 
     console.log(`🚀 AUTOCOMPLETE: "${query}" - Fetching 6 results with minimal fields`);

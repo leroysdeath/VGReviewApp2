@@ -1,0 +1,51 @@
+{
+  "completed": [
+    6,
+    7,
+    12,
+    13,
+    14
+  ],
+  "stats": {
+    "6": {
+      "categoryId": 6,
+      "categoryName": "Episodes",
+      "fetched": 69,
+      "new": 62,
+      "added": 62,
+      "time": 2
+    },
+    "7": {
+      "categoryId": 7,
+      "categoryName": "Seasons",
+      "fetched": 20,
+      "new": 18,
+      "added": 18,
+      "time": 1
+    },
+    "12": {
+      "categoryId": 12,
+      "categoryName": "Forks",
+      "fetched": 14,
+      "new": 12,
+      "added": 12,
+      "time": 1
+    },
+    "13": {
+      "categoryId": 13,
+      "categoryName": "Packs",
+      "fetched": 588,
+      "new": 586,
+      "added": 586,
+      "time": 8
+    },
+    "14": {
+      "categoryId": 14,
+      "categoryName": "Updates",
+      "fetched": 25,
+      "new": 21,
+      "added": 21,
+      "time": 1
+    }
+  }
+}
