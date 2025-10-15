@@ -24,6 +24,7 @@ import { mapPlatformNames } from '../utils/platformMapping';
 import { GameActionSheet } from '../components/GameActionSheet';
 import { useTrackGameView } from '../hooks/useTrackGameView';
 import { RatingBars } from '../components/RatingBars';
+import { ScreenshotCarousel } from '../components/ScreenshotCarousel';
 
 // Interface for review data from database
 interface GameReview {
@@ -1621,6 +1622,52 @@ export const GamePage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Screenshots Section */}
+        {game.screenshots && game.screenshots.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Screenshots ({game.screenshots.length})
+            </h2>
+
+            {/* Use carousel for 6+ screenshots, grid for 5 or fewer */}
+            {game.screenshots.length > 5 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                <div className="lg:col-span-2">
+                  <ScreenshotCarousel
+                    screenshots={game.screenshots.map(url => url.replace('t_screenshot_big', 't_screenshot_huge'))}
+                    gameName={game.name}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {game.screenshots.map((screenshot, index) => (
+                  <div
+                    key={index}
+                    className="group relative aspect-video rounded-lg overflow-hidden bg-gray-800 hover:ring-2 hover:ring-purple-500 transition-all duration-200 cursor-pointer shadow-lg"
+                    onClick={() => window.open(screenshot.replace('t_screenshot_big', 't_1080p'), '_blank')}
+                  >
+                    <img
+                      src={screenshot.replace('t_screenshot_big', 't_screenshot_huge')}
+                      alt={`${game.name} screenshot ${index + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      loading="lazy"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        // Fallback to medium quality if huge fails
+                        if (target.src.includes('t_screenshot_huge')) {
+                          target.src = screenshot.replace('t_screenshot_big', 't_screenshot_med');
+                        }
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-200" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Reviews Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
