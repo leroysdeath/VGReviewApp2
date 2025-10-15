@@ -15,6 +15,7 @@ import { PrivacyConsentBanner } from './components/privacy/PrivacyConsentBanner'
 import { ScrollToTop } from './components/ScrollToTop';
 import { RouteLoader } from './components/RouteLoader';
 import { PerformanceOptimizer } from './components/PerformanceOptimizer';
+import { DebugStateDashboard } from './components/DebugStateDashboard';
 
 // Lazy load all route components for better performance
 import * as LazyRoutes from './LazyRoutes';
@@ -256,6 +257,7 @@ const AppContent: React.FC = () => {
         <Footer />
         <AuthModal />
         <PrivacyConsentBanner />
+        <DebugStateDashboard />
       </div>
     </>
   );

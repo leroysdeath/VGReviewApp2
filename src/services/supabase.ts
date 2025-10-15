@@ -16,7 +16,10 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     // Use a unique storage key to avoid conflicts
-    storageKey: 'vgreviewapp-auth-token'
+    storageKey: 'vgreviewapp-auth-token',
+    // Disable navigator.locks to prevent errors in browsers that don't support it
+    // or in environments where locks fail (like some privacy-focused browsers)
+    lock: false
   },
   global: {
     headers: {

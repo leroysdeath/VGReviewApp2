@@ -1,9 +1,9 @@
 // GameVault Service Worker
-// Version: 1.0.2
-// Last Updated: December 2024
+// Version: 1.0.3 - Fixed JS chunk caching issues
+// Last Updated: January 2025
 
-const CACHE_NAME = 'gamevault-v1.0.2';
-const DYNAMIC_CACHE = 'gamevault-dynamic-v1.0.2';
+const CACHE_NAME = 'gamevault-v1.0.3';
+const DYNAMIC_CACHE = 'gamevault-dynamic-v1.0.3';
 const MAX_DYNAMIC_CACHE_ITEMS = 50;
 
 // Assets to cache on install
@@ -49,25 +49,56 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and stale JS chunks
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating...');
-  
+
   event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames
-            .filter((cacheName) => {
-              return cacheName !== CACHE_NAME && cacheName !== DYNAMIC_CACHE;
-            })
-            .map((cacheName) => {
-              console.log('[Service Worker] Deleting old cache:', cacheName);
-              return caches.delete(cacheName);
-            })
-        );
+    Promise.all([
+      // Delete old cache versions
+      caches.keys()
+        .then((cacheNames) => {
+          return Promise.all(
+            cacheNames
+              .filter((cacheName) => {
+                return cacheName !== CACHE_NAME && cacheName !== DYNAMIC_CACHE;
+              })
+              .map((cacheName) => {
+                console.log('[Service Worker] Deleting old cache:', cacheName);
+                return caches.delete(cacheName);
+              })
+          );
+        }),
+
+      // Clear all JS chunks from dynamic cache (prevent stale chunks)
+      caches.open(DYNAMIC_CACHE).then(cache => {
+        return cache.keys().then(requests => {
+          const jsChunkRequests = requests.filter(req =>
+            req.url.includes('/assets/') && req.url.endsWith('.js')
+          );
+          if (jsChunkRequests.length > 0) {
+            console.log('[Service Worker] Clearing', jsChunkRequests.length, 'stale JS chunks from dynamic cache');
+          }
+          return Promise.all(jsChunkRequests.map(req => cache.delete(req)));
+        });
+      }),
+
+      // Clear all JS chunks from static cache
+      caches.open(CACHE_NAME).then(cache => {
+        return cache.keys().then(requests => {
+          const jsChunkRequests = requests.filter(req =>
+            req.url.includes('/assets/') && req.url.endsWith('.js')
+          );
+          if (jsChunkRequests.length > 0) {
+            console.log('[Service Worker] Clearing', jsChunkRequests.length, 'stale JS chunks from static cache');
+          }
+          return Promise.all(jsChunkRequests.map(req => cache.delete(req)));
+        });
       })
-      .then(() => self.clients.claim()) // Take control immediately
+    ]).then(() => {
+      console.log('[Service Worker] Activation complete - taking control');
+      return self.clients.claim(); // Take control immediately
+    })
   );
 });
 
@@ -140,17 +171,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first for JS chunks (always get latest)
+  // Network-only for JS chunks (never cache to prevent stale chunk issues)
+  // Vite already handles caching via content-hash filenames + CDN
   if (url.pathname.includes('/assets/') && url.pathname.endsWith('.js')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Return network response immediately
+          // If fetch succeeds but returns error status, clear any stale cache
+          if (!response.ok) {
+            caches.open(DYNAMIC_CACHE).then(cache => cache.delete(request));
+            caches.open(CACHE_NAME).then(cache => cache.delete(request));
+          }
           return response;
         })
-        .catch(() => {
-          // If network fails, try cache as fallback
-          return caches.match(request);
+        .catch((error) => {
+          // Network failed completely - clear any stale cached version
+          caches.open(DYNAMIC_CACHE).then(cache => cache.delete(request));
+          caches.open(CACHE_NAME).then(cache => cache.delete(request));
+          // Don't fall back to cache - throw error so browser handles it
+          throw error;
         })
     );
     return;

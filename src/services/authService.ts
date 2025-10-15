@@ -43,7 +43,9 @@ class AuthService {
 
       // Create user profile in our database using userService
       if (data.user) {
-        const result = await userService.getOrCreateDatabaseUser(data.user);
+        const { user } = data;
+        const session = { user } as any; // Minimal session object for compatibility
+        const result = await userService.getOrCreateUser(session);
         if (!result.success) {
           console.error('Failed to create database user:', result.error);
         }

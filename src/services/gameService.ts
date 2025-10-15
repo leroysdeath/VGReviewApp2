@@ -23,7 +23,7 @@ import { syncQueue } from '../utils/syncQueue';
 import { prioritizeFlagshipTitles } from '../utils/sisterGameDetection';
 import { deduplicateRequest, generateCacheKey } from '../utils/requestDeduplication';
 
-const DEBUG_GAME_SERVICE = true;
+const DEBUG_GAME_SERVICE = false;
 
 export interface SearchFilters {
   genres?: string[];
@@ -156,12 +156,6 @@ class GameService {
         const needsUpdate = data && (!data.summary || !data.developer || !data.publisher);
 
         if (error || !data || needsUpdate) {
-          if (needsUpdate) {
-          console.log(`Game with IGDB ID ${igdbId} has incomplete data, refreshing from IGDB API...`);
-        } else {
-          console.log(`Game with IGDB ID ${igdbId} not found in database, fetching from IGDB API...`);
-        }
-
         try {
           const igdbGame = await igdbService.getGameById(igdbId);
 
@@ -236,10 +230,6 @@ class GameService {
             } as GameWithCalculatedFields;
           }
 
-          console.log(needsUpdate
-            ? `✅ Game "${transformedGame.name}" updated in database with complete data`
-            : `✅ Game "${transformedGame.name}" added to database`);
-
           return this.transformGameWithRatings(upsertedGame as GameWithRating);
         } catch (igdbError) {
           console.error('Error fetching from IGDB:', igdbError);
@@ -304,12 +294,6 @@ class GameService {
       const needsUpdate = gameData && (!gameData.summary || !gameData.developer || !gameData.publisher);
 
       if (gameError || !gameData || needsUpdate) {
-        if (needsUpdate) {
-          console.log(`Game with IGDB ID ${igdbId} has incomplete data, refreshing from IGDB API...`);
-        } else {
-          console.log(`Game with IGDB ID ${igdbId} not found in database, fetching from IGDB API...`);
-        }
-
         try {
           const igdbGame = await igdbService.getGameById(igdbId);
 
@@ -387,10 +371,6 @@ class GameService {
               reviews: []
             };
           }
-
-          console.log(needsUpdate
-            ? `✅ Game "${transformedGame.name}" updated in database with complete data`
-            : `✅ Game "${transformedGame.name}" added to database`);
 
           return {
             game: {
@@ -499,7 +479,6 @@ class GameService {
           .single();
 
         if (gameError || !gameData) {
-          console.log(`Game with slug ${slug} not found in database`);
           return { game: null, reviews: [] };
         }
 
@@ -507,7 +486,6 @@ class GameService {
         const needsUpdate = gameData && (!gameData.summary || !gameData.developer || !gameData.publisher);
 
         if (needsUpdate && gameData.igdb_id) {
-          console.log(`Game "${gameData.name}" (slug: ${slug}) has incomplete data, refreshing from IGDB...`);
           return await this.getGameWithFullReviews(gameData.igdb_id);
         }
 
