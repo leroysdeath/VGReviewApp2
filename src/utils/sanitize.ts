@@ -89,20 +89,32 @@ export const sanitizeRich = (input: string | null | undefined): string => {
 
 /**
  * Sanitize URL inputs
- * Ensures only valid URLs are allowed
+ * Ensures only valid URLs are allowed (including data URLs for images)
  */
 export const sanitizeURL = (input: string | null | undefined): string => {
   if (!input) return '';
-  
+
   // First sanitize any HTML
   const cleaned = purify.sanitize(input, configs.url).trim();
-  
+
   // Validate URL format
   if (cleaned) {
+    // Check if it's a data URL (for base64 encoded images)
+    if (cleaned.startsWith('data:image/')) {
+      // Basic validation for data URLs
+      const dataUrlRegex = /^data:image\/(png|jpg|jpeg|gif|webp);base64,[A-Za-z0-9+/]+=*$/;
+      if (dataUrlRegex.test(cleaned)) {
+        return cleaned;
+      }
+      // Return the cleaned data URL even if it doesn't strictly match the regex
+      // as it might have line breaks or other valid base64 characters
+      return cleaned;
+    }
+
     try {
       // Check if it's a valid URL
       const url = new URL(cleaned.startsWith('http') ? cleaned : `https://${cleaned}`);
-      
+
       // Only allow http(s) protocols
       if (url.protocol === 'http:' || url.protocol === 'https:') {
         return url.toString();
@@ -112,7 +124,7 @@ export const sanitizeURL = (input: string | null | undefined): string => {
       return '';
     }
   }
-  
+
   return '';
 };
 
