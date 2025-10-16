@@ -7,6 +7,11 @@ import { getCurrentUserId } from '../services/reviewService';
 import { useAuthModal } from '../context/AuthModalContext';
 import { supabase } from '../services/supabase';
 import type { Session } from '@supabase/supabase-js';
+import { stateLogger } from '../utils/stateLogger';
+import { browserCache } from '../services/browserCacheService';
+import { reviewCacheManager } from '../utils/reviewCacheManager';
+import { gameService } from '../services/gameService';
+import { searchService } from '../services/searchService';
 
 /**
  * Enhanced useAuth Hook
@@ -35,10 +40,11 @@ interface UseAuthReturn {
   isAuthenticated: boolean;
   loading: boolean;
   dbUserIdLoading: boolean;
-  
+
   // User ID utilities
   getCurrentUserId: () => Promise<number | null>;
   refreshDbUserId: () => Promise<void>;
+  requireDbUserId: () => Promise<number | null>;
   
   // Auth guards and permission checks
   requireAuth: (action: () => void | Promise<void>, options?: RequireAuthOptions) => Promise<void>;
@@ -111,9 +117,17 @@ export const useAuth = (): UseAuthReturn => {
   // Initialize authentication
   useEffect(() => {
     const getInitialSession = async () => {
+      stateLogger.log('auth_init_start', {});
+
       try {
         const session = await authService.getCurrentSession();
         setSession(session);
+
+        stateLogger.log('auth_session_fetched', {
+          hasSession: !!session,
+          userId: session?.user?.id
+        });
+
         if (session?.user) {
           const authUser = {
             id: session.user.id,
@@ -123,7 +137,12 @@ export const useAuth = (): UseAuthReturn => {
             created_at: session.user.created_at
           };
           setUser(authUser);
-          
+
+          stateLogger.log('auth_user_set', {
+            userId: authUser.id,
+            email: authUser.email
+          });
+
           // Get or create database user ID and fetch avatar (non-blocking with separate loading state)
           setDbUserIdLoading(true);
           getOrCreateDbUserId(session).finally(() => {
@@ -132,14 +151,17 @@ export const useAuth = (): UseAuthReturn => {
         } else {
           setUser(null);
           setDbUserId(null);
+          stateLogger.log('auth_no_session', {});
         }
       } catch (error) {
         console.error('Error in getInitialSession:', error);
+        stateLogger.log('auth_init_error', { error: String(error) });
         setUser(null);
         setSession(null);
         setDbUserId(null);
       } finally {
         setLoading(false);
+        stateLogger.log('auth_init_complete', {});
       }
     };
 
@@ -147,7 +169,50 @@ export const useAuth = (): UseAuthReturn => {
 
     // Listen for auth changes
     const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
+      stateLogger.log('auth_state_change', {
+        event,
+        hasSession: !!session,
+        userId: session?.user?.id
+      });
+
       try {
+        // CRITICAL FIX: Clear ALL caches on login/logout to prevent stale data
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+          stateLogger.log('auth_clearing_all_caches', { event });
+
+          // Clear user service caches
+          if (userService.clearCache) {
+            userService.clearCache();
+            stateLogger.log('auth_cleared_user_service_cache', {});
+          }
+
+          // Clear browser cache service
+          if (browserCache && browserCache.clear) {
+            browserCache.clear();
+            stateLogger.log('auth_cleared_browser_cache', {});
+          }
+
+          // Clear review cache manager
+          if (reviewCacheManager && reviewCacheManager.clearAll) {
+            reviewCacheManager.clearAll();
+            stateLogger.log('auth_cleared_review_cache', {});
+          }
+
+          // Clear game service cache
+          if (gameService && gameService.clearCache) {
+            gameService.clearCache();
+            stateLogger.log('auth_cleared_game_service_cache', {});
+          }
+
+          // Clear search service cache
+          if (searchService && searchService.clearCache) {
+            searchService.clearCache();
+            stateLogger.log('auth_cleared_search_service_cache', {});
+          }
+
+          stateLogger.log('auth_all_caches_cleared', {});
+        }
+
         setSession(session);
         if (session?.user) {
           const authUser = {
@@ -158,7 +223,12 @@ export const useAuth = (): UseAuthReturn => {
             created_at: session.user.created_at
           };
           setUser(authUser);
-          
+
+          stateLogger.log('auth_user_updated', {
+            userId: authUser.id,
+            email: authUser.email
+          });
+
           // Get or create database user ID and fetch avatar (non-blocking with separate loading state)
           setDbUserIdLoading(true);
           getOrCreateDbUserId(session).finally(() => {
@@ -167,9 +237,11 @@ export const useAuth = (): UseAuthReturn => {
         } else {
           setUser(null);
           setDbUserId(null);
+          stateLogger.log('auth_user_cleared', {});
         }
       } catch (error) {
         console.error('Error in auth state change:', error);
+        stateLogger.log('auth_state_change_error', { error: String(error) });
         setUser(null);
         setDbUserId(null);
       }
@@ -180,6 +252,8 @@ export const useAuth = (): UseAuthReturn => {
 
   // Helper function to get or create database user ID and fetch profile data
   const getOrCreateDbUserId = async (session: Session) => {
+    stateLogger.log('dbUserId_fetch_start', { userId: session.user.id });
+
     try {
       // Shorter timeout (2s) to fail fast and not block the UI
       const timeoutPromise = new Promise<{ success: false, error: string }>((resolve) => {
@@ -191,14 +265,23 @@ export const useAuth = (): UseAuthReturn => {
         timeoutPromise
       ]);
 
+      stateLogger.log('dbUserId_fetch_result', {
+        success: result.success,
+        dbUserId: result.userId,
+        error: result.error
+      });
+
       if (result.success && result.userId) {
         setDbUserId(result.userId);
+        stateLogger.log('dbUserId_set', { dbUserId: result.userId });
 
         // Fetch the user profile to get the avatar_url and other database fields
         try {
           const profileResult = await userService.getUserProfileById(result.userId);
           if (profileResult.success && profileResult.data) {
             const profile = profileResult.data;
+            stateLogger.log('profile_fetched', { userId: result.userId });
+
             // Update the user state with the database avatar
             setUser(prevUser => {
               if (prevUser) {
@@ -213,9 +296,12 @@ export const useAuth = (): UseAuthReturn => {
           }
         } catch (profileError) {
           console.error('Error fetching user profile:', profileError);
+          stateLogger.log('profile_fetch_error', { error: String(profileError) });
           // Continue with auth metadata avatar if profile fetch fails
         }
       } else {
+        stateLogger.log('dbUserId_fetch_failed', { error: result.error });
+
         // Only log once, not repeatedly
         if (process.env.NODE_ENV === 'development') {
           console.warn('⚠️ Could not get/create database user (non-critical):', result.error);
@@ -224,6 +310,8 @@ export const useAuth = (): UseAuthReturn => {
         // setDbUserId(null);
       }
     } catch (error) {
+      stateLogger.log('dbUserId_fetch_error', { error: String(error) });
+
       if (process.env.NODE_ENV === 'development') {
         console.error('Error in user creation (non-critical):', error);
       }
@@ -258,11 +346,77 @@ export const useAuth = (): UseAuthReturn => {
 
   const refreshDbUserId = useCallback(async () => {
     if (!session) return;
-    
+
     setDbUserIdLoading(true);
     await getOrCreateDbUserId(session);
     setDbUserIdLoading(false);
   }, [session]);
+
+  // CRITICAL FIX: Blocking dbUserId fetch for interactions
+  // This ensures dbUserId is always available before allowing user interactions
+  const requireDbUserId = useCallback(async (): Promise<number | null> => {
+    stateLogger.log('requireDbUserId_called', {
+      hasUser: !!user,
+      hasDbUserId: !!dbUserId,
+      dbUserIdLoading
+    });
+
+    // If we already have it, return immediately
+    if (dbUserId) {
+      stateLogger.log('requireDbUserId_cached', { dbUserId });
+      return dbUserId;
+    }
+
+    // If not authenticated, return null
+    if (!session || !user) {
+      stateLogger.log('requireDbUserId_no_session', {});
+      return null;
+    }
+
+    // If already loading, wait for it (max 5 seconds)
+    if (dbUserIdLoading) {
+      stateLogger.log('requireDbUserId_waiting_for_load', {});
+      const startTime = Date.now();
+      const maxWait = 5000; // 5 seconds max wait
+
+      while (dbUserIdLoading && Date.now() - startTime < maxWait) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      if (dbUserId) {
+        stateLogger.log('requireDbUserId_loaded_while_waiting', { dbUserId });
+        return dbUserId;
+      }
+
+      stateLogger.log('requireDbUserId_wait_timeout', {});
+      // Continue to trigger fetch below if still null
+    }
+
+    // Otherwise, trigger a fetch and wait for it
+    stateLogger.log('requireDbUserId_triggering_fetch', {});
+    setDbUserIdLoading(true);
+
+    try {
+      await getOrCreateDbUserId(session);
+
+      // Check if it was set
+      if (dbUserId) {
+        stateLogger.log('requireDbUserId_fetch_success', { dbUserId });
+        return dbUserId;
+      }
+
+      // One more check after a brief delay (state update may be async)
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      stateLogger.log('requireDbUserId_final_check', { dbUserId });
+      return dbUserId;
+    } catch (error) {
+      stateLogger.log('requireDbUserId_fetch_error', { error: String(error) });
+      return null;
+    } finally {
+      setDbUserIdLoading(false);
+    }
+  }, [user, session, dbUserId, dbUserIdLoading]);
 
   // Auth guards and permission checks (from useAuthGuard)
   const checkAuthGuard = useCallback((options: AuthGuardOptions = {}): boolean => {
@@ -392,11 +546,47 @@ export const useAuth = (): UseAuthReturn => {
 
   const signOut = async () => {
     setLoading(true);
+
+    // CRITICAL FIX: Clear all caches before signing out
+    stateLogger.log('signOut_clearing_all_caches', {});
+
+    // Clear user service caches
+    if (userService.clearCache) {
+      userService.clearCache();
+      stateLogger.log('signOut_cleared_user_service_cache', {});
+    }
+
+    // Clear browser cache service
+    if (browserCache && browserCache.clear) {
+      browserCache.clear();
+      stateLogger.log('signOut_cleared_browser_cache', {});
+    }
+
+    // Clear review cache manager
+    if (reviewCacheManager && reviewCacheManager.clearAll) {
+      reviewCacheManager.clearAll();
+      stateLogger.log('signOut_cleared_review_cache', {});
+    }
+
+    // Clear game service cache
+    if (gameService && gameService.clearCache) {
+      gameService.clearCache();
+      stateLogger.log('signOut_cleared_game_service_cache', {});
+    }
+
+    // Clear search service cache
+    if (searchService && searchService.clearCache) {
+      searchService.clearCache();
+      stateLogger.log('signOut_cleared_search_service_cache', {});
+    }
+
     const result = await authService.signOut();
     setUser(null);
     setSession(null);
     setDbUserId(null);
     setLoading(false);
+
+    stateLogger.log('signOut_complete', {});
     return result;
   };
 
@@ -495,10 +685,11 @@ export const useAuth = (): UseAuthReturn => {
     isAuthenticated: !!user,
     loading,
     dbUserIdLoading,
-    
+
     // User ID utilities
     getCurrentUserId: getCurrentUserIdAsync,
     refreshDbUserId,
+    requireDbUserId,
     
     // Auth guards and permission checks
     requireAuth,

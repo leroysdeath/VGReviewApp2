@@ -24,6 +24,7 @@ import { mapPlatformNames } from '../utils/platformMapping';
 import { GameActionSheet } from '../components/GameActionSheet';
 import { useTrackGameView } from '../hooks/useTrackGameView';
 import { RatingBars } from '../components/RatingBars';
+import { ScreenshotCarousel } from '../components/ScreenshotCarousel';
 
 // Interface for review data from database
 interface GameReview {
@@ -247,24 +248,17 @@ export const GamePage: React.FC = () => {
       dispatch({ type: 'SET_REVIEWS_LOADING', payload: true });
 
       try {
-        console.log('Loading game with identifier:', identifier);
-        
         // Smart resolution: check if identifier is numeric (IGDB ID) or slug
         let result;
         if (isNumericIdentifier(identifier)) {
-          console.log('Using IGDB ID lookup:', identifier);
           result = await gameService.getGameWithFullReviews(parseInt(identifier));
         } else {
-          console.log('Using slug lookup:', identifier);
           result = await gameService.getGameWithFullReviewsBySlug(identifier);
         }
-        
+
         const { game: gameData, reviews: reviewData } = result;
-        
+
         if (gameData) {
-          console.log('✅ Game loaded successfully:', gameData.name);
-          console.log(`✅ Loaded ${reviewData.length} reviews`);
-          console.log('📊 Raw review data:', reviewData);
           dispatch({ type: 'LOAD_GAME_SUCCESS', payload: { game: gameData, reviews: reviewData } });
           
           // If loaded by IGDB ID but game has slug, redirect to canonical URL
@@ -272,7 +266,6 @@ export const GamePage: React.FC = () => {
             navigate(`/game/${gameData.slug}`, { replace: true });
           }
         } else {
-          console.log('❌ Game not found for identifier:', identifier);
           dispatch({ type: 'LOAD_GAME_ERROR', payload: new Error('Game not found') });
         }
       } catch (error) {
@@ -291,19 +284,16 @@ export const GamePage: React.FC = () => {
 
       dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
       try {
-        console.log('Loading game progress for game ID:', game.igdb_id);
         const result = await getGameProgress(game.igdb_id);
-        
+
         if (result.success && result.data) {
-          dispatch({ type: 'SET_PROGRESS', payload: { 
-            isStarted: result.data.started, 
-            isCompleted: result.data.completed 
+          dispatch({ type: 'SET_PROGRESS', payload: {
+            isStarted: result.data.started,
+            isCompleted: result.data.completed
           }});
-          console.log('✅ Game progress loaded:', result.data);
         } else {
           // No progress found, set to false
           dispatch({ type: 'SET_PROGRESS', payload: { isStarted: false, isCompleted: false }});
-          console.log('ℹ️ No game progress found');
         }
       } catch (error) {
         console.error('❌ Error loading game progress:', error);
@@ -326,15 +316,13 @@ export const GamePage: React.FC = () => {
 
       dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: true }});
       try {
-        console.log('Checking if user has reviewed game IGDB ID:', game.igdb_id);
         const result = await getUserReviewForGameByIGDBId(game.igdb_id);
-        
+
         if (result.success) {
-          dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { 
-            hasReviewed: !!result.data, 
-            loading: false 
+          dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: {
+            hasReviewed: !!result.data,
+            loading: false
           }});
-          console.log('User has reviewed game:', !!result.data);
         } else {
           console.error('Error checking user review:', result.error);
           dispatch({ type: 'SET_USER_REVIEW_STATUS', payload: { hasReviewed: false, loading: false }});
@@ -390,7 +378,6 @@ export const GamePage: React.FC = () => {
           setIsInCollection(status.inCollection);
           setIsInWishlist(status.inWishlist);
         }
-        console.log('Collection/Wishlist status:', status);
       } catch (error) {
         console.error('Error checking collection/wishlist status:', error);
         // Default to false on error
@@ -418,7 +405,6 @@ export const GamePage: React.FC = () => {
           const ONE_HOUR = 60 * 60 * 1000;
 
           if (age < ONE_HOUR) {
-            console.log('✅ Using cached category:', category);
             dispatch({ type: 'SET_GAME_CATEGORY', payload: { category, loading: false }});
             return;
           }
@@ -435,8 +421,6 @@ export const GamePage: React.FC = () => {
       const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout for mobile
 
       try {
-        console.log('Fetching category for game IGDB ID:', game.igdb_id);
-
         const response = await fetch('/.netlify/functions/igdb-search', {
           method: 'POST',
           headers: {
@@ -467,7 +451,6 @@ export const GamePage: React.FC = () => {
         }
 
         const categoryValue = data.games?.[0]?.category || null;
-        console.log('✅ Game category fetched:', categoryValue);
 
         // P1.2 Optimization: Cache the result in sessionStorage
         sessionStorage.setItem(cacheKey, JSON.stringify({
@@ -528,14 +511,12 @@ export const GamePage: React.FC = () => {
 
     // If user has reviewed, don't allow toggling (state is locked)
     if (userHasReviewed) {
-      console.log('Cannot toggle started state - game has a review');
       return;
     }
 
     // If toggling off, don't need to move from wishlist/collection
     // If toggling on, automatically move from wishlist/collection
     if (!isStarted && (isInWishlist || isInCollection)) {
-      console.log('Moving game from wishlist/collection to started');
       if (isInWishlist) {
         await collectionWishlistService.removeFromWishlist(game.igdb_id);
         setIsInWishlist(false);
@@ -548,8 +529,6 @@ export const GamePage: React.FC = () => {
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
-      console.log('Toggling started state for IGDB ID:', game.igdb_id);
-
       // Ensure game exists in our database first
       const ensureResult = await ensureGameExists({
         id: game.id,
@@ -575,7 +554,6 @@ export const GamePage: React.FC = () => {
           isStarted: newStartedState,
           isCompleted: newStartedState ? isCompleted : false // If unmarking started, also unmark completed
         }});
-        console.log(`✅ Game ${newStartedState ? 'marked as' : 'unmarked from'} started`);
       } else {
         console.error('Failed to toggle started state:', result.error);
         if (result.error?.includes('review')) {
@@ -597,13 +575,11 @@ export const GamePage: React.FC = () => {
 
     // If user has reviewed, don't allow toggling (state is locked)
     if (userHasReviewed) {
-      console.log('Cannot toggle completed state - game has a review');
       return;
     }
-    
+
     // If toggling on, automatically move from wishlist/collection
     if (!isCompleted && (isInWishlist || isInCollection)) {
-      console.log('Moving game from wishlist/collection to completed');
       if (isInWishlist) {
         await collectionWishlistService.removeFromWishlist(game.igdb_id);
         setIsInWishlist(false);
@@ -616,8 +592,6 @@ export const GamePage: React.FC = () => {
 
     dispatch({ type: 'SET_PROGRESS_LOADING', payload: true });
     try {
-      console.log('Toggling completed state for IGDB ID:', game.igdb_id);
-
       // Ensure game exists in our database first
       const ensureResult = await ensureGameExists({
         id: game.id,
@@ -643,7 +617,6 @@ export const GamePage: React.FC = () => {
           isStarted: newCompletedState ? true : isStarted, // If marking completed, also mark as started
           isCompleted: newCompletedState
         }});
-        console.log(`✅ Game ${newCompletedState ? 'marked as' : 'unmarked from'} completed`);
       } else {
         console.error('Failed to toggle completed state:', result.error);
         if (result.error?.includes('review')) {
@@ -662,10 +635,9 @@ export const GamePage: React.FC = () => {
 
   const handleToggleWishlist = async () => {
     if (!game || !game.igdb_id) return;
-    
+
     // Prevent wishlist if game is in collection or started/finished
     if (isInCollection || isStarted || isCompleted) {
-      console.warn('Cannot add to wishlist: game is already in collection or started/finished');
       return;
     }
 
@@ -685,10 +657,9 @@ export const GamePage: React.FC = () => {
       };
 
       const result = await collectionWishlistService.toggleWishlist(game.igdb_id, gameData);
-      
+
       if (result.success) {
         setIsInWishlist(result.data || false);
-        console.log(result.data ? '✅ Added to wishlist' : '✅ Removed from wishlist');
       } else {
         console.error('Failed to toggle wishlist:', result.error);
         alert(`Failed to update wishlist: ${result.error}`);
@@ -725,7 +696,6 @@ export const GamePage: React.FC = () => {
         if (result.success) {
           setIsInWishlist(false);
           setIsInCollection(true);
-          console.log('✅ Moved from wishlist to collection');
         } else {
           console.error('Failed to move to collection:', result.error);
           alert(`Failed to move to collection: ${result.error}`);
@@ -735,7 +705,6 @@ export const GamePage: React.FC = () => {
         const result = await collectionWishlistService.toggleCollection(game.igdb_id, gameData);
         if (result.success) {
           setIsInCollection(result.data || false);
-          console.log(result.data ? '✅ Added to collection' : '✅ Removed from collection');
         } else {
           console.error('Failed to toggle collection:', result.error);
           alert(`Failed to update collection: ${result.error}`);
@@ -832,18 +801,8 @@ export const GamePage: React.FC = () => {
     }
     
     try {
-      // Debug logging
-      console.log('📊 Bar Graph Debug:', {
-        reviews: reviews,
-        validRatings: validRatings,
-        validRatingsCount: validRatings.length,
-        reviewsCount: reviews.length,
-        sampleRating: validRatings[0]
-      });
-      
       // Get distribution already in ascending order (1-10)
       const distribution = generateRatingDistribution(validRatings);
-      console.log('📊 Generated distribution:', distribution);
       return distribution;
     } catch (error) {
       console.error('Error generating rating distribution:', error);
@@ -1621,6 +1580,52 @@ export const GamePage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Screenshots Section */}
+        {game.screenshots && game.screenshots.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Screenshots ({game.screenshots.length})
+            </h2>
+
+            {/* Use carousel for 6+ screenshots, grid for 5 or fewer */}
+            {game.screenshots.length > 5 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                <div className="lg:col-span-2">
+                  <ScreenshotCarousel
+                    screenshots={game.screenshots.map(url => url.replace('t_screenshot_big', 't_screenshot_huge'))}
+                    gameName={game.name}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {game.screenshots.map((screenshot, index) => (
+                  <div
+                    key={index}
+                    className="group relative aspect-video rounded-lg overflow-hidden bg-gray-800 hover:ring-2 hover:ring-purple-500 transition-all duration-200 cursor-pointer shadow-lg"
+                    onClick={() => window.open(screenshot.replace('t_screenshot_big', 't_1080p'), '_blank')}
+                  >
+                    <img
+                      src={screenshot.replace('t_screenshot_big', 't_screenshot_huge')}
+                      alt={`${game.name} screenshot ${index + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      loading="lazy"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        // Fallback to medium quality if huge fails
+                        if (target.src.includes('t_screenshot_huge')) {
+                          target.src = screenshot.replace('t_screenshot_big', 't_screenshot_med');
+                        }
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-200" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Reviews Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">

@@ -23,8 +23,9 @@ import {
   authIdUtils,
   isDatabaseUser
 } from '../types/user';
+import { stateLogger } from '../utils/stateLogger';
 
-const DEBUG_USER_SERVICE = false;
+const DEBUG_USER_SERVICE = true;
 
 // Unified interfaces - consolidating from all services
 export interface UserServiceResult {
@@ -181,8 +182,14 @@ class UnifiedUserService {
   }
 
   async getOrCreateUser(session?: Session): Promise<UserServiceResult> {
+    stateLogger.log('userService_getOrCreateUser_start', {
+      hasSession: !!session,
+      userId: session?.user?.id
+    });
+
     try {
       if (!session?.user) {
+        stateLogger.log('userService_no_session', {});
         return { success: false, error: 'No session provided' };
       }
 
@@ -192,28 +199,55 @@ class UnifiedUserService {
       // Check cache first
       const cached = this.userCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        stateLogger.log('userService_cache_hit', {
+          userId: authUser.id,
+          cachedUserId: cached.data.userId
+        });
         if (DEBUG_USER_SERVICE) console.log('🚀 Using cached user data for:', authUser.id);
         return cached.data;
       }
+
+      stateLogger.log('userService_cache_miss', { userId: authUser.id });
 
       if (DEBUG_USER_SERVICE) console.log('🔄 Processing user authentication for:', authUser.id);
 
       // Try database function first
       const dbResult = await this.tryDatabaseFunction(authUser);
       if (dbResult.success) {
+        stateLogger.log('userService_db_function_success', {
+          userId: authUser.id,
+          dbUserId: dbResult.userId
+        });
         this.userCache.set(cacheKey, { data: dbResult, timestamp: Date.now() });
         return dbResult;
       }
 
+      stateLogger.log('userService_db_function_failed', {
+        userId: authUser.id,
+        error: dbResult.error
+      });
+
       // Fallback to manual operations
       const manualResult = await this.performManualUserOperation(authUser);
       if (manualResult.success) {
+        stateLogger.log('userService_manual_success', {
+          userId: authUser.id,
+          dbUserId: manualResult.userId
+        });
         this.userCache.set(cacheKey, { data: manualResult, timestamp: Date.now() });
+      } else {
+        stateLogger.log('userService_manual_failed', {
+          userId: authUser.id,
+          error: manualResult.error
+        });
       }
 
       return manualResult;
     } catch (error) {
       console.error('💥 Exception in getOrCreateUser:', error);
+      stateLogger.log('userService_exception', {
+        error: String(error)
+      });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'User operation failed'
@@ -223,10 +257,13 @@ class UnifiedUserService {
 
   private async tryDatabaseFunction(authUser: Session['user']): Promise<UserServiceResult> {
     try {
-      if (DEBUG_USER_SERVICE) console.log('🔄 Calling get_or_create_user function');
+      if (DEBUG_USER_SERVICE) console.log('🔄 Calling get_or_create_user function with params:', {
+        auth_id: authUser.id,
+        user_email: authUser.email,
+        user_name: authUser.user_metadata?.name || authUser.user_metadata?.username || 'User'
+      });
 
-      // Add timeout to RPC call to fail fast if function doesn't exist
-      const rpcPromise = supabase
+      const { data: functionResult, error: functionError } = await supabase
         .rpc('get_or_create_user', {
           auth_id: authUser.id,
           user_email: authUser.email || '',
@@ -234,23 +271,25 @@ class UnifiedUserService {
           user_provider: 'supabase'
         });
 
-      const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) => {
-        setTimeout(() => resolve({ data: null, error: { message: 'RPC timeout' } }), 1500);
-      });
-
-      const { data: functionResult, error: functionError } = await Promise.race([
-        rpcPromise,
-        timeoutPromise
-      ]);
-
       if (!functionError && functionResult) {
+        if (DEBUG_USER_SERVICE) console.log('✅ Database function succeeded, user ID:', functionResult);
         return { success: true, userId: functionResult };
       }
 
-      if (DEBUG_USER_SERVICE) console.log('ℹ️ Database function not available, using fallback');
+      // Log the FULL error details
+      if (DEBUG_USER_SERVICE) {
+        console.error('❌ RPC function error details:', {
+          message: functionError?.message,
+          details: functionError?.details,
+          hint: functionError?.hint,
+          code: functionError?.code,
+          fullError: functionError
+        });
+      }
+
       return { success: false, error: functionError?.message || 'Database function not available' };
     } catch (error) {
-      if (DEBUG_USER_SERVICE) console.log('ℹ️ Database function exception, using fallback');
+      if (DEBUG_USER_SERVICE) console.error('💥 Database function exception:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Database function error'
@@ -782,9 +821,16 @@ class UnifiedUserService {
    * Cache Management Public Methods
    */
   clearCache(): void {
+    stateLogger.log('userService_clearCache', {
+      profileCacheSize: this.profileCache.size,
+      userCacheSize: this.userCache.size,
+      timestampCacheSize: this.cacheTimestamps.size
+    });
+
     this.profileCache.clear();
     this.userCache.clear();
     this.cacheTimestamps.clear();
+
     if (DEBUG_USER_SERVICE) console.log('🧹 Cleared all user service caches');
   }
 
