@@ -452,11 +452,12 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
 
         if (result.error) {
           setSaveError(result.error);
+          setIsLoading(false);
           return;
         }
 
         if (result.data) {
-          const originalAvatar = initialData.avatar || null;
+          const originalAvatar = originalValues.avatar || null;
 
           console.log('🖼️ Avatar compressed:', {
             originalSize: file.size,
@@ -680,29 +681,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         </div>
 
       <div className="p-6">
-        {/* Updating message */}
-        {false && (
-          <div className="mb-6 p-3 bg-blue-900/50 border border-blue-700 rounded-lg flex items-start gap-3">
-            <Loader2 className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5 animate-spin" />
-            <p className="text-blue-300 text-sm">Updating your profile...</p>
-          </div>
-        )}
-
-        {/* Success message */}
-        {false && (
-          <div className="mb-6 p-3 bg-green-900/50 border border-green-700 rounded-lg flex items-start gap-3">
-            <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <p className="text-green-300 text-sm">Profile updated successfully!</p>
-          </div>
-        )}
-
-        {/* Legacy success message (fallback) */}
-        {false && !false && !false && (
-          <div className="mb-6 p-3 bg-green-900/50 border border-green-700 rounded-lg flex items-start gap-3">
-            <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <p className="text-green-300 text-sm">Changes saved successfully!</p>
-          </div>
-        )}
 
         {/* Error message */}
         {submitError && (

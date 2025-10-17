@@ -20,6 +20,30 @@ interface SearchFilters {
   sortOrder: 'asc' | 'desc';
 }
 
+// Helper function to extract IGDB ID from various sources
+const getIgdbId = (
+  gameId: string | undefined,
+  selectedGame: GameWithCalculatedFields | null
+): number | undefined => {
+  // First priority: gameId from URL (this is the source of truth)
+  if (gameId) {
+    const parsed = parseInt(gameId);
+    if (!isNaN(parsed)) return parsed;
+  }
+
+  // Second priority: selectedGame.igdb_id
+  if (selectedGame?.igdb_id && !isNaN(selectedGame.igdb_id)) {
+    return selectedGame.igdb_id;
+  }
+
+  // Third priority: selectedGame.id as fallback
+  if (selectedGame?.id && !isNaN(selectedGame.id)) {
+    return selectedGame.id;
+  }
+
+  return undefined;
+};
+
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
@@ -557,19 +581,8 @@ export const ReviewFormPage: React.FC = () => {
           // Update game progress based on user selection (only if game not already completed)
           try {
             if (!gameAlreadyCompleted) {
-              // Prioritize gameId from URL
-              let igdbId: number | undefined;
-              if (gameId) {
-                const parsedGameId = parseInt(gameId);
-                if (!isNaN(parsedGameId)) {
-                  igdbId = parsedGameId;
-                }
-              }
-              // Fallback to selectedGame.igdb_id
-              if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
-                igdbId = selectedGame.igdb_id;
-              }
-              if (igdbId !== undefined && igdbId !== null && !isNaN(igdbId)) {
+              const igdbId = getIgdbId(gameId, selectedGame);
+              if (igdbId !== undefined && !isNaN(igdbId)) {
                 if (didFinishGame) {
                   await markGameCompleted(igdbId);
                   console.log('✅ Game marked as completed');
@@ -594,40 +607,16 @@ export const ReviewFormPage: React.FC = () => {
       } else {
         // Create new review
         console.log('Creating new review with platform:', selectedPlatforms[0]);
-        
-        // First, prioritize the gameId from URL (this is the source of truth)
-        let igdbId: number | undefined;
-        
-        if (gameId) {
-          const parsedGameId = parseInt(gameId);
-          if (!isNaN(parsedGameId)) {
-            igdbId = parsedGameId;
-            console.log('Using gameId from URL as IGDB ID:', igdbId);
-            // Ensure selectedGame has the correct igdb_id
-            setSelectedGame(prev => prev ? { ...prev, igdb_id: parsedGameId } : null);
-          }
-        }
-        
-        // Fallback to selectedGame.igdb_id if URL parameter is not available
-        if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
-          igdbId = selectedGame.igdb_id;
-          console.log('Using selectedGame.igdb_id as fallback:', igdbId);
-        }
-        
-        // Final fallback: check if selectedGame has an 'id' property that could be the IGDB ID
-        if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
-          if (selectedGame.id && !isNaN(selectedGame.id)) {
-            igdbId = selectedGame.id;
-            console.log('Using selectedGame.id as IGDB ID:', igdbId);
-          }
-        }
-        
-        if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
+
+        // Get IGDB ID using helper function
+        const igdbId = getIgdbId(gameId, selectedGame);
+
+        if (igdbId === undefined || isNaN(igdbId)) {
           console.error('No valid IGDB ID available for game:', selectedGame, 'gameId from URL:', gameId);
           alert('Game data is missing IGDB ID. Please try selecting the game again.');
           return;
         }
-        
+
         console.log('Using IGDB ID for review submission:', igdbId);
 
         // Create the review - createReview will handle ensuring the game exists
@@ -650,19 +639,8 @@ export const ReviewFormPage: React.FC = () => {
           // Update game progress based on user selection (only if game not already completed)
           try {
             if (!gameAlreadyCompleted) {
-              // Prioritize gameId from URL
-              let igdbId: number | undefined;
-              if (gameId) {
-                const parsedGameId = parseInt(gameId);
-                if (!isNaN(parsedGameId)) {
-                  igdbId = parsedGameId;
-                }
-              }
-              // Fallback to selectedGame.igdb_id
-              if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
-                igdbId = selectedGame.igdb_id;
-              }
-              if (igdbId !== undefined && igdbId !== null && !isNaN(igdbId)) {
+              const igdbId = getIgdbId(gameId, selectedGame);
+              if (igdbId !== undefined && !isNaN(igdbId)) {
                 if (didFinishGame) {
                   await markGameCompleted(igdbId);
                   console.log('✅ Game marked as completed');

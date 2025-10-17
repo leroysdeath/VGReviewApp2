@@ -101,16 +101,13 @@ export const sanitizeURL = (input: string | null | undefined): string => {
   if (cleaned) {
     // Check if it's a data URL (for base64 encoded images)
     if (cleaned.startsWith('data:image/')) {
-      // Basic validation for data URLs
-      // Note: The regex is intentionally permissive for the base64 part
-      // because the imageCompression utility generates valid data URLs
+      // Strict validation for data URLs to prevent malformed data
       const dataUrlRegex = /^data:image\/(png|jpg|jpeg|gif|webp|svg\+xml);base64,/;
       if (dataUrlRegex.test(cleaned)) {
         return cleaned;
       }
-      // Even if it doesn't match our expected format exactly,
-      // allow it through if it starts with data:image/ to support various image formats
-      return cleaned;
+      // Don't allow invalid data URLs through
+      return '';
     }
 
     try {
