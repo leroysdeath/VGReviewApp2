@@ -89,20 +89,31 @@ export const sanitizeRich = (input: string | null | undefined): string => {
 
 /**
  * Sanitize URL inputs
- * Ensures only valid URLs are allowed
+ * Ensures only valid URLs are allowed (including data URLs for images)
  */
 export const sanitizeURL = (input: string | null | undefined): string => {
   if (!input) return '';
-  
+
   // First sanitize any HTML
   const cleaned = purify.sanitize(input, configs.url).trim();
-  
+
   // Validate URL format
   if (cleaned) {
+    // Check if it's a data URL (for base64 encoded images)
+    if (cleaned.startsWith('data:image/')) {
+      // Strict validation for data URLs to prevent malformed data
+      const dataUrlRegex = /^data:image\/(png|jpg|jpeg|gif|webp|svg\+xml);base64,/;
+      if (dataUrlRegex.test(cleaned)) {
+        return cleaned;
+      }
+      // Don't allow invalid data URLs through
+      return '';
+    }
+
     try {
       // Check if it's a valid URL
       const url = new URL(cleaned.startsWith('http') ? cleaned : `https://${cleaned}`);
-      
+
       // Only allow http(s) protocols
       if (url.protocol === 'http:' || url.protocol === 'https:') {
         return url.toString();
@@ -112,7 +123,7 @@ export const sanitizeURL = (input: string | null | undefined): string => {
       return '';
     }
   }
-  
+
   return '';
 };
 

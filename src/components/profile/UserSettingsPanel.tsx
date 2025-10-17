@@ -23,6 +23,7 @@ import {
 import { ProfileUpdateData, checkUsernameAvailability } from '../../services/userService';
 import { AccountDeletionSection } from './AccountDeletionSection';
 import { PrivacySettings } from '../privacy/PrivacySettings';
+import { compressImage, isAvatarSizeValid, getBase64Size } from '../../utils/imageCompression';
 
 // Create schemas as functions to avoid initialization issues
 const getProfileSchema = () => z.object({
@@ -438,25 +439,41 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
     setValue('platform', platformString, { shouldDirty: true, shouldValidate: true });
   };
 
-  // Handle avatar change
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle avatar change with compression
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const newAvatarData = e.target?.result as string;
-        const originalAvatar = initialData.avatar || null;
-        
-        console.log('🖼️ Avatar change detected:', {
-          hasNewData: !!newAvatarData,
-          originalAvatar: originalAvatar,
-          isChanged: newAvatarData !== originalAvatar,
-          newDataLength: newAvatarData?.length || 0
-        });
-        
-        setAvatarPreview(newAvatarData);
-      };
-      reader.readAsDataURL(file);
+      setIsLoading(true);
+      setSaveError(null);
+
+      try {
+        // Compress the image before storing
+        const result = await compressImage(file);
+
+        if (result.error) {
+          setSaveError(result.error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (result.data) {
+          const originalAvatar = originalValues.avatar || null;
+
+          console.log('🖼️ Avatar compressed:', {
+            originalSize: file.size,
+            compressedSize: result.data.length,
+            sizeReduction: `${Math.round((1 - result.data.length / file.size) * 100)}%`,
+            finalSize: getBase64Size(result.data)
+          });
+
+          setAvatarPreview(result.data);
+        }
+      } catch (error) {
+        console.error('Avatar compression error:', error);
+        setSaveError('Failed to process image. Please try a different image.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -664,29 +681,6 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
         </div>
 
       <div className="p-6">
-        {/* Updating message */}
-        {false && (
-          <div className="mb-6 p-3 bg-blue-900/50 border border-blue-700 rounded-lg flex items-start gap-3">
-            <Loader2 className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5 animate-spin" />
-            <p className="text-blue-300 text-sm">Updating your profile...</p>
-          </div>
-        )}
-
-        {/* Success message */}
-        {false && (
-          <div className="mb-6 p-3 bg-green-900/50 border border-green-700 rounded-lg flex items-start gap-3">
-            <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <p className="text-green-300 text-sm">Profile updated successfully!</p>
-          </div>
-        )}
-
-        {/* Legacy success message (fallback) */}
-        {false && !false && !false && (
-          <div className="mb-6 p-3 bg-green-900/50 border border-green-700 rounded-lg flex items-start gap-3">
-            <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <p className="text-green-300 text-sm">Changes saved successfully!</p>
-          </div>
-        )}
 
         {/* Error message */}
         {submitError && (
@@ -744,7 +738,7 @@ export const UserSettingsPanel: React.FC<UserSettingsPanelProps> = ({
                       accept="image/*"
                       className="hidden"
                       onChange={handleAvatarChange}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || isLoading}
                     />
                   </label>
                   <p className="text-xs text-gray-400 mt-2">

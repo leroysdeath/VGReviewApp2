@@ -20,6 +20,30 @@ interface SearchFilters {
   sortOrder: 'asc' | 'desc';
 }
 
+// Helper function to extract IGDB ID from various sources
+const getIgdbId = (
+  gameId: string | undefined,
+  selectedGame: GameWithCalculatedFields | null
+): number | undefined => {
+  // First priority: gameId from URL (this is the source of truth)
+  if (gameId) {
+    const parsed = parseInt(gameId);
+    if (!isNaN(parsed)) return parsed;
+  }
+
+  // Second priority: selectedGame.igdb_id
+  if (selectedGame?.igdb_id && !isNaN(selectedGame.igdb_id)) {
+    return selectedGame.igdb_id;
+  }
+
+  // Third priority: selectedGame.id as fallback
+  if (selectedGame?.id && !isNaN(selectedGame.id)) {
+    return selectedGame.id;
+  }
+
+  return undefined;
+};
+
 export const ReviewFormPage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
@@ -36,6 +60,7 @@ export const ReviewFormPage: React.FC = () => {
   const [availablePlatforms, setAvailablePlatforms] = useState<string[]>([]);
   const [platformsLoading, setPlatformsLoading] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [containsSpoilers, setContainsSpoilers] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchDebounceRef = useRef<NodeJS.Timeout>();
   
@@ -220,6 +245,7 @@ export const ReviewFormPage: React.FC = () => {
     isRecommended: boolean | null;
     didFinishGame: boolean | null;
     selectedPlatforms: string[];
+    containsSpoilers: boolean;
   } | null>(null);
   const [hasFormChanges, setHasFormChanges] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -322,6 +348,7 @@ export const ReviewFormPage: React.FC = () => {
           setReviewText(result.data.review || '');
           setPlaytimeHours(result.data.playtimeHours || null);
           setIsRecommended(result.data.isRecommended);
+          setContainsSpoilers(result.data.is_spoiler || false);
           
           // CRITICAL FIX: didFinishGame is already set by game progress check
           // We DO NOT override it here - game progress is the source of truth
@@ -366,7 +393,8 @@ export const ReviewFormPage: React.FC = () => {
             playtimeHours: result.data.playtimeHours || null,
             isRecommended: result.data.isRecommended,
             didFinishGame: finalDidFinishGame,
-            selectedPlatforms: validSelectedPlatforms
+            selectedPlatforms: validSelectedPlatforms,
+            containsSpoilers: result.data.is_spoiler || false
           };
           setInitialFormValues(initialValues);
           
@@ -399,16 +427,18 @@ export const ReviewFormPage: React.FC = () => {
       playtimeHours,
       isRecommended,
       didFinishGame,
-      selectedPlatforms
+      selectedPlatforms,
+      containsSpoilers
     };
 
-    const hasChanges = 
+    const hasChanges =
       currentValues.rating !== initialFormValues.rating ||
       currentValues.reviewText !== initialFormValues.reviewText ||
       currentValues.playtimeHours !== initialFormValues.playtimeHours ||
       currentValues.isRecommended !== initialFormValues.isRecommended ||
       (!isGameCompletionLocked && currentValues.didFinishGame !== initialFormValues.didFinishGame) ||
-      JSON.stringify(currentValues.selectedPlatforms.sort()) !== JSON.stringify(initialFormValues.selectedPlatforms.sort());
+      JSON.stringify(currentValues.selectedPlatforms.sort()) !== JSON.stringify(initialFormValues.selectedPlatforms.sort()) ||
+      currentValues.containsSpoilers !== initialFormValues.containsSpoilers;
 
     setHasFormChanges(hasChanges);
     console.log('Form change detection:', {
@@ -417,7 +447,7 @@ export const ReviewFormPage: React.FC = () => {
       isGameCompletionLocked,
       hasChanges
     });
-  }, [rating, reviewText, playtimeHours, isRecommended, didFinishGame, selectedPlatforms, isEditMode, initialFormValues, isGameCompletionLocked]);
+  }, [rating, reviewText, playtimeHours, isRecommended, didFinishGame, selectedPlatforms, containsSpoilers, isEditMode, initialFormValues, isGameCompletionLocked]);
 
   // Auto-select single platform when game changes
   useEffect(() => {
@@ -541,7 +571,8 @@ export const ReviewFormPage: React.FC = () => {
           reviewText,
           isRecommended,
           platformName,
-          playtimeHours
+          playtimeHours,
+          containsSpoilers
         );
 
         if (result.success) {
@@ -550,19 +581,8 @@ export const ReviewFormPage: React.FC = () => {
           // Update game progress based on user selection (only if game not already completed)
           try {
             if (!gameAlreadyCompleted) {
-              // Prioritize gameId from URL
-              let igdbId: number | undefined;
-              if (gameId) {
-                const parsedGameId = parseInt(gameId);
-                if (!isNaN(parsedGameId)) {
-                  igdbId = parsedGameId;
-                }
-              }
-              // Fallback to selectedGame.igdb_id
-              if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
-                igdbId = selectedGame.igdb_id;
-              }
-              if (igdbId !== undefined && igdbId !== null && !isNaN(igdbId)) {
+              const igdbId = getIgdbId(gameId, selectedGame);
+              if (igdbId !== undefined && !isNaN(igdbId)) {
                 if (didFinishGame) {
                   await markGameCompleted(igdbId);
                   console.log('✅ Game marked as completed');
@@ -587,40 +607,16 @@ export const ReviewFormPage: React.FC = () => {
       } else {
         // Create new review
         console.log('Creating new review with platform:', selectedPlatforms[0]);
-        
-        // First, prioritize the gameId from URL (this is the source of truth)
-        let igdbId: number | undefined;
-        
-        if (gameId) {
-          const parsedGameId = parseInt(gameId);
-          if (!isNaN(parsedGameId)) {
-            igdbId = parsedGameId;
-            console.log('Using gameId from URL as IGDB ID:', igdbId);
-            // Ensure selectedGame has the correct igdb_id
-            setSelectedGame(prev => prev ? { ...prev, igdb_id: parsedGameId } : null);
-          }
-        }
-        
-        // Fallback to selectedGame.igdb_id if URL parameter is not available
-        if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
-          igdbId = selectedGame.igdb_id;
-          console.log('Using selectedGame.igdb_id as fallback:', igdbId);
-        }
-        
-        // Final fallback: check if selectedGame has an 'id' property that could be the IGDB ID
-        if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
-          if (selectedGame.id && !isNaN(selectedGame.id)) {
-            igdbId = selectedGame.id;
-            console.log('Using selectedGame.id as IGDB ID:', igdbId);
-          }
-        }
-        
-        if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
+
+        // Get IGDB ID using helper function
+        const igdbId = getIgdbId(gameId, selectedGame);
+
+        if (igdbId === undefined || isNaN(igdbId)) {
           console.error('No valid IGDB ID available for game:', selectedGame, 'gameId from URL:', gameId);
           alert('Game data is missing IGDB ID. Please try selecting the game again.');
           return;
         }
-        
+
         console.log('Using IGDB ID for review submission:', igdbId);
 
         // Create the review - createReview will handle ensuring the game exists
@@ -633,7 +629,8 @@ export const ReviewFormPage: React.FC = () => {
           reviewText,
           isRecommended,
           platformName,
-          playtimeHours
+          playtimeHours,
+          containsSpoilers
         );
 
         if (result.success) {
@@ -642,19 +639,8 @@ export const ReviewFormPage: React.FC = () => {
           // Update game progress based on user selection (only if game not already completed)
           try {
             if (!gameAlreadyCompleted) {
-              // Prioritize gameId from URL
-              let igdbId: number | undefined;
-              if (gameId) {
-                const parsedGameId = parseInt(gameId);
-                if (!isNaN(parsedGameId)) {
-                  igdbId = parsedGameId;
-                }
-              }
-              // Fallback to selectedGame.igdb_id
-              if (igdbId === undefined || igdbId === null || isNaN(igdbId)) {
-                igdbId = selectedGame.igdb_id;
-              }
-              if (igdbId !== undefined && igdbId !== null && !isNaN(igdbId)) {
+              const igdbId = getIgdbId(gameId, selectedGame);
+              if (igdbId !== undefined && !isNaN(igdbId)) {
                 if (didFinishGame) {
                   await markGameCompleted(igdbId);
                   console.log('✅ Game marked as completed');
@@ -1092,6 +1078,19 @@ export const ReviewFormPage: React.FC = () => {
               <div className="mt-1 text-sm text-gray-400">
                 {reviewText.length} characters
               </div>
+            </div>
+
+            {/* Spoiler Warning Checkbox */}
+            <div>
+              <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer hover:text-gray-100 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={containsSpoilers}
+                  onChange={(e) => setContainsSpoilers(e.target.checked)}
+                  className="w-4 h-4 bg-gray-700 border-gray-600 rounded text-purple-600 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800"
+                />
+                <span>This review contains spoilers</span>
+              </label>
             </div>
 
             {/* Playtime */}
