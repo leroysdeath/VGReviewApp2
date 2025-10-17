@@ -16,6 +16,7 @@ interface Review {
   rating: number;
   review: string;
   post_date_time: string;
+  is_spoiler?: boolean;
   platform_id?: number;
   platform?: {
     id: number;
@@ -41,6 +42,7 @@ export const ReviewPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showFullReview, setShowFullReview] = useState(false);
   const [reviewExpanded, setReviewExpanded] = useState(false);
+  const [showSpoilerContent, setShowSpoilerContent] = useState(false);
 
   // Get current user ID for review interactions
   // Only use dbUserId if it's loaded (not null)
@@ -129,6 +131,7 @@ export const ReviewPage: React.FC = () => {
           rating,
           review,
           post_date_time,
+          is_spoiler,
           platform_id,
           platform:platform_id(
             id,
@@ -162,6 +165,7 @@ export const ReviewPage: React.FC = () => {
             rating,
             review,
             post_date_time,
+            is_spoiler,
             platform_id,
             platform:platform_id(
               id,
@@ -426,21 +430,40 @@ export const ReviewPage: React.FC = () => {
                 {/* Review Text - Mobile */}
                 {reviewText && (
                   <div className="px-4 pb-4">
-                    <div className="text-sm text-gray-300 leading-relaxed">
-                      {isLongReview && !reviewExpanded ? (
-                        <>
-                          <p>{reviewText.substring(0, 500)}...</p>
-                          <button
-                            onClick={() => setShowFullReview(true)}
-                            className="mt-2 text-purple-400 hover:text-purple-300 transition-colors text-sm"
-                          >
-                            more
-                          </button>
-                        </>
-                      ) : (
-                        <p className="whitespace-pre-line">{reviewText}</p>
-                      )}
-                    </div>
+                    {/* Show spoiler warning if review contains spoilers and user is not the author */}
+                    {review.is_spoiler && dbUserId !== review.user_id && !showSpoilerContent ? (
+                      <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4 text-center">
+                        <div className="text-yellow-500 font-semibold mb-2">⚠️ Spoiler Warning</div>
+                        <div className="text-gray-400 text-sm mb-3">
+                          This review contains spoilers
+                        </div>
+                        <div className="text-sm text-gray-300 leading-relaxed blur-sm select-none mb-3">
+                          {reviewText.substring(0, Math.min(200, reviewText.length))}...
+                        </div>
+                        <button
+                          onClick={() => setShowSpoilerContent(true)}
+                          className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors text-sm"
+                        >
+                          Show Spoiler Review
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-300 leading-relaxed">
+                        {isLongReview && !reviewExpanded ? (
+                          <>
+                            <p>{reviewText.substring(0, 500)}...</p>
+                            <button
+                              onClick={() => setShowFullReview(true)}
+                              className="mt-2 text-purple-400 hover:text-purple-300 transition-colors text-sm"
+                            >
+                              more
+                            </button>
+                          </>
+                        ) : (
+                          <p className="whitespace-pre-line">{reviewText}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -524,19 +547,40 @@ export const ReviewPage: React.FC = () => {
 
                   {/* Review Text */}
                   {reviewText && (
-                    <div className="text-gray-300 leading-relaxed mt-4">
-                      {isLongReview && !reviewExpanded ? (
-                        <>
-                          <p>{reviewText.substring(0, 500)}...</p>
+                    <div className="mt-4">
+                      {/* Show spoiler warning if review contains spoilers and user is not the author */}
+                      {review.is_spoiler && dbUserId !== review.user_id && !showSpoilerContent ? (
+                        <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4 text-center">
+                          <div className="text-yellow-500 font-semibold mb-2">⚠️ Spoiler Warning</div>
+                          <div className="text-gray-400 text-sm mb-3">
+                            This review contains spoilers
+                          </div>
+                          <div className="text-gray-300 leading-relaxed blur-sm select-none mb-3">
+                            {reviewText.substring(0, Math.min(300, reviewText.length))}...
+                          </div>
                           <button
-                            onClick={() => setShowFullReview(true)}
-                            className="mt-2 text-purple-400 hover:text-purple-300 transition-colors text-sm"
+                            onClick={() => setShowSpoilerContent(true)}
+                            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors"
                           >
-                            more
+                            Show Spoiler Review
                           </button>
-                        </>
+                        </div>
                       ) : (
-                        <p className="whitespace-pre-line">{reviewText}</p>
+                        <div className="text-gray-300 leading-relaxed">
+                          {isLongReview && !reviewExpanded ? (
+                            <>
+                              <p>{reviewText.substring(0, 500)}...</p>
+                              <button
+                                onClick={() => setShowFullReview(true)}
+                                className="mt-2 text-purple-400 hover:text-purple-300 transition-colors text-sm"
+                              >
+                                more
+                              </button>
+                            </>
+                          ) : (
+                            <p className="whitespace-pre-line">{reviewText}</p>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}

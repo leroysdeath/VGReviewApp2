@@ -214,12 +214,13 @@ export const ensureGameExists = async (
  * @param platformName - The platform name (required)
  */
 export const createReview = async (
-  igdbId: number, 
-  rating: number, 
-  reviewText?: string, 
+  igdbId: number,
+  rating: number,
+  reviewText?: string,
   isRecommended?: boolean,
   platformName: string,
-  playtimeHours?: number | null
+  playtimeHours?: number | null,
+  containsSpoilers?: boolean
 ): Promise<ServiceResponse<Review>> => {
   try {
     console.log('🔍 Creating review with params:', { igdbId, rating, reviewText, isRecommended });
@@ -349,7 +350,8 @@ export const createReview = async (
       post_date_time: new Date().toISOString(),
       is_recommended: isRecommended,
       platform_id: platformId, // Add platform ID
-      playtime_hours: playtimeHours || null // Add playtime
+      playtime_hours: playtimeHours || null, // Add playtime
+      is_spoiler: containsSpoilers || false // Add spoiler flag
     };
 
     console.log('📝 Inserting review data:', reviewData);
@@ -381,6 +383,7 @@ export const createReview = async (
       postDateTime: data.post_date_time,
       playtimeHours: data.playtime_hours,
       isRecommended: data.is_recommended,
+      is_spoiler: data.is_spoiler,
       likeCount: 0,
       commentCount: 0,
       user: data.user ? {
@@ -426,6 +429,7 @@ export interface Review {
   postDateTime: string;
   playtimeHours?: number | null;
   isRecommended: boolean | null;
+  is_spoiler?: boolean; // Spoiler flag from database
   likeCount?: number;
   commentCount?: number;
   isLiked?: boolean;
@@ -573,6 +577,7 @@ export const getUserReviewForGame = async (gameId: number): Promise<ServiceRespo
         postDateTime: data.post_date_time,
         playtimeHours: data.playtime_hours,
         isRecommended: data.is_recommended,
+        is_spoiler: data.is_spoiler,
         likeCount: 0,
         commentCount: 0,
         user: data.user ? {
@@ -609,7 +614,8 @@ export const updateReview = async (
   reviewText?: string,
   isRecommended?: boolean,
   platformName?: string,
-  playtimeHours?: number | null
+  playtimeHours?: number | null,
+  containsSpoilers?: boolean
 ): Promise<ServiceResponse<Review>> => {
   try {
     console.log('🔄 Updating review:', { reviewId, gameId, rating, reviewText, isRecommended });
@@ -656,7 +662,8 @@ export const updateReview = async (
       review: reviewText ? sanitizeRich(reviewText) : null, // Sanitize review text
       is_recommended: isRecommended,
       updated_at: new Date().toISOString(),
-      playtime_hours: playtimeHours || null // Add playtime
+      playtime_hours: playtimeHours || null, // Add playtime
+      is_spoiler: containsSpoilers !== undefined ? containsSpoilers : undefined // Add spoiler flag if provided
     };
 
     // Add platform_id if provided
@@ -690,6 +697,7 @@ export const updateReview = async (
       postDateTime: data.post_date_time,
       playtimeHours: data.playtime_hours,
       isRecommended: data.is_recommended,
+      is_spoiler: data.is_spoiler,
       likeCount: 0,
       commentCount: 0,
       user: data.user ? {
@@ -749,6 +757,7 @@ export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
         postDateTime: item.post_date_time,
         playtimeHours: item.playtime_hours,
         isRecommended: item.is_recommended,
+        is_spoiler: item.is_spoiler,
         likeCount: 0, // Will be populated by separate query if needed
         commentCount: 0, // Will be populated by separate query if needed
         user: item.user ? {
@@ -816,6 +825,7 @@ export const getReview = async (
         postDateTime: data.post_date_time,
         playtimeHours: data.playtime_hours,
         isRecommended: data.is_recommended,
+        is_spoiler: data.is_spoiler,
         likeCount: likeCount || 0,
         commentCount: commentCount || 0,
         user: data.user ? {
@@ -1573,7 +1583,8 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
             review,
             post_date_time,
             playtime_hours,
-            is_recommended
+            is_recommended,
+            is_spoiler
           `, { count: 'exact' })
           .not('review', 'is', null)
           .order('post_date_time', { ascending: false })
@@ -1616,6 +1627,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
           postDateTime: item.post_date_time,
           playtimeHours: item.playtime_hours,
           isRecommended: item.is_recommended,
+          is_spoiler: item.is_spoiler,
           likeCount: 0,
           commentCount: 0,
           user: usersMap.get(item.user_id) ? {

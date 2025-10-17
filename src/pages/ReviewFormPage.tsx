@@ -36,6 +36,7 @@ export const ReviewFormPage: React.FC = () => {
   const [availablePlatforms, setAvailablePlatforms] = useState<string[]>([]);
   const [platformsLoading, setPlatformsLoading] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [containsSpoilers, setContainsSpoilers] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchDebounceRef = useRef<NodeJS.Timeout>();
   
@@ -220,6 +221,7 @@ export const ReviewFormPage: React.FC = () => {
     isRecommended: boolean | null;
     didFinishGame: boolean | null;
     selectedPlatforms: string[];
+    containsSpoilers: boolean;
   } | null>(null);
   const [hasFormChanges, setHasFormChanges] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -322,6 +324,7 @@ export const ReviewFormPage: React.FC = () => {
           setReviewText(result.data.review || '');
           setPlaytimeHours(result.data.playtimeHours || null);
           setIsRecommended(result.data.isRecommended);
+          setContainsSpoilers(result.data.is_spoiler || false);
           
           // CRITICAL FIX: didFinishGame is already set by game progress check
           // We DO NOT override it here - game progress is the source of truth
@@ -366,7 +369,8 @@ export const ReviewFormPage: React.FC = () => {
             playtimeHours: result.data.playtimeHours || null,
             isRecommended: result.data.isRecommended,
             didFinishGame: finalDidFinishGame,
-            selectedPlatforms: validSelectedPlatforms
+            selectedPlatforms: validSelectedPlatforms,
+            containsSpoilers: result.data.is_spoiler || false
           };
           setInitialFormValues(initialValues);
           
@@ -399,16 +403,18 @@ export const ReviewFormPage: React.FC = () => {
       playtimeHours,
       isRecommended,
       didFinishGame,
-      selectedPlatforms
+      selectedPlatforms,
+      containsSpoilers
     };
 
-    const hasChanges = 
+    const hasChanges =
       currentValues.rating !== initialFormValues.rating ||
       currentValues.reviewText !== initialFormValues.reviewText ||
       currentValues.playtimeHours !== initialFormValues.playtimeHours ||
       currentValues.isRecommended !== initialFormValues.isRecommended ||
       (!isGameCompletionLocked && currentValues.didFinishGame !== initialFormValues.didFinishGame) ||
-      JSON.stringify(currentValues.selectedPlatforms.sort()) !== JSON.stringify(initialFormValues.selectedPlatforms.sort());
+      JSON.stringify(currentValues.selectedPlatforms.sort()) !== JSON.stringify(initialFormValues.selectedPlatforms.sort()) ||
+      currentValues.containsSpoilers !== initialFormValues.containsSpoilers;
 
     setHasFormChanges(hasChanges);
     console.log('Form change detection:', {
@@ -417,7 +423,7 @@ export const ReviewFormPage: React.FC = () => {
       isGameCompletionLocked,
       hasChanges
     });
-  }, [rating, reviewText, playtimeHours, isRecommended, didFinishGame, selectedPlatforms, isEditMode, initialFormValues, isGameCompletionLocked]);
+  }, [rating, reviewText, playtimeHours, isRecommended, didFinishGame, selectedPlatforms, containsSpoilers, isEditMode, initialFormValues, isGameCompletionLocked]);
 
   // Auto-select single platform when game changes
   useEffect(() => {
@@ -541,7 +547,8 @@ export const ReviewFormPage: React.FC = () => {
           reviewText,
           isRecommended,
           platformName,
-          playtimeHours
+          playtimeHours,
+          containsSpoilers
         );
 
         if (result.success) {
@@ -633,7 +640,8 @@ export const ReviewFormPage: React.FC = () => {
           reviewText,
           isRecommended,
           platformName,
-          playtimeHours
+          playtimeHours,
+          containsSpoilers
         );
 
         if (result.success) {
@@ -1092,6 +1100,19 @@ export const ReviewFormPage: React.FC = () => {
               <div className="mt-1 text-sm text-gray-400">
                 {reviewText.length} characters
               </div>
+            </div>
+
+            {/* Spoiler Warning Checkbox */}
+            <div>
+              <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer hover:text-gray-100 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={containsSpoilers}
+                  onChange={(e) => setContainsSpoilers(e.target.checked)}
+                  className="w-4 h-4 bg-gray-700 border-gray-600 rounded text-purple-600 focus:ring-purple-500 focus:ring-offset-0 focus:ring-offset-gray-800"
+                />
+                <span>This review contains spoilers</span>
+              </label>
             </div>
 
             {/* Playtime */}
