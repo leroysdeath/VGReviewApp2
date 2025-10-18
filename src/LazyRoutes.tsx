@@ -90,6 +90,11 @@ export const AnalyticsPage = lazyWithRetry(() =>
   import('./pages/AnalyticsPage').then(module => ({ default: module.AnalyticsPage }))
 );
 
+// Admin Sorting Page
+export const AdminSortingPage = lazyWithRetry(() =>
+  import('./pages/AdminSortingPage').then(module => ({ default: module.AdminSortingPage }))
+);
+
 // Heavy modals that can be lazy loaded
 export const GamesModal = lazyWithRetry(() =>
   import('./components/GamesModal').then(module => ({ default: module.GamesModal }))

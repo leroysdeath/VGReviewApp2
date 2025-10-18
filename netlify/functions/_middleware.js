@@ -2,6 +2,11 @@ const getEnvironment = () => {
   return process.env.ENVIRONMENT || process.env.NODE_ENV || 'development';
 };
 
+const isLocalDevelopment = () => {
+  const env = getEnvironment();
+  return env === 'development' || process.env.NETLIFY_DEV === 'true';
+};
+
 const getAllowedOrigins = () => {
   const environment = getEnvironment();
   
@@ -66,7 +71,7 @@ const getCorsHeaders = (origin = null) => {
 
 export const onRequest = async (request, context) => {
   const origin = request.headers.get('origin');
-  
+
   // Handle preflight OPTIONS requests
   if (request.method === 'OPTIONS') {
     return new Response(null, {
@@ -74,10 +79,10 @@ export const onRequest = async (request, context) => {
       headers: getCorsHeaders(origin)
     });
   }
-  
-  // Validate origin for non-OPTIONS requests
+
+  // In local development, be more permissive with CORS
   const validOrigin = validateOrigin(origin);
-  if (origin && !validOrigin) {
+  if (origin && !validOrigin && !isLocalDevelopment()) {
     console.log(`CORS: Origin ${origin} not allowed`);
     return new Response('Origin not allowed', {
       status: 403,
@@ -86,15 +91,15 @@ export const onRequest = async (request, context) => {
       }
     });
   }
-  
+
   // Continue to the next middleware/function
   const response = await context.next();
-  
+
   // Add CORS headers to the response
   const corsHeaders = getCorsHeaders(origin);
   Object.entries(corsHeaders).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
-  
+
   return response;
 };

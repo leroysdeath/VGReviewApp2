@@ -1,6 +1,7 @@
 // Supabase Authentication Service
 import { supabase } from './supabase';
 import { userService } from './userService';
+import { authLogger } from './authLogger';
 import type { User, Session } from '@supabase/supabase-js';
 
 export interface AuthUser {
@@ -13,16 +14,18 @@ export interface AuthUser {
 
 class AuthService {
   async signUp(email: string, password: string, username: string): Promise<{ user: User | null; error: any }> {
+    authLogger.logAuthAttempt('signup', email);
+
     try {
       // Determine redirect URL based on environment
       const getEmailRedirectTo = () => {
         const currentOrigin = window.location.origin;
-        
+
         // If we're on localhost/development, redirect to local
         if (currentOrigin.includes('localhost') || currentOrigin.includes('127.0.0.1')) {
           return `${currentOrigin}/auth/callback`;
         }
-        
+
         // For production, use the current origin
         return `${currentOrigin}/auth/callback`;
       };
@@ -39,7 +42,16 @@ class AuthService {
         }
       });
 
-      if (error) return { user: null, error };
+      if (error) {
+        authLogger.logAuthFailure({
+          operation: 'signup',
+          errorCode: error.code,
+          errorMessage: error.message,
+          email,
+          metadata: { username }
+        }, error);
+        return { user: null, error };
+      }
 
       // Create user profile in our database using userService
       if (data.user) {
@@ -47,34 +59,110 @@ class AuthService {
         const session = { user } as any; // Minimal session object for compatibility
         const result = await userService.getOrCreateUser(session);
         if (!result.success) {
+          authLogger.error('signup_db_user_creation_failed', 'Failed to create database user', result.error, {
+            userId: user.id,
+            username
+          });
           console.error('Failed to create database user:', result.error);
+        } else {
+          authLogger.logDbUserIdOperation('create', true, result.userId);
         }
       }
 
+      authLogger.logAuthSuccess('signup', data.user?.id, email);
       return { user: data.user, error: null };
     } catch (error) {
+      authLogger.logAuthFailure({
+        operation: 'signup',
+        email,
+        metadata: { username }
+      }, error);
       return { user: null, error };
     }
   }
 
-  async signIn(email: string, password: string): Promise<{ user: User | null; error: any }> {
+  async signIn(emailOrUsername: string, password: string): Promise<{ user: User | null; error: any }> {
+    const isEmail = emailOrUsername.includes('@');
+    authLogger.logAuthAttempt('login', isEmail ? emailOrUsername : undefined);
+
     try {
+      let email = emailOrUsername;
+
+      // Check if input is a username (not email format)
+      // Email must contain @ and a domain
+      if (!isEmail) {
+        // Input is a username - lookup the associated email
+        const { data: user, error: lookupError } = await supabase
+          .from('user')
+          .select('email')
+          .eq('username', emailOrUsername.toLowerCase())
+          .single();
+
+        if (lookupError || !user?.email) {
+          // Username not found or no email associated
+          authLogger.logAuthFailure({
+            operation: 'login',
+            errorMessage: 'Invalid login credentials - username not found',
+            metadata: { usernameProvided: true }
+          });
+          return {
+            user: null,
+            error: { message: 'Invalid login credentials' }
+          };
+        }
+
+        email = user.email;
+      }
+
+      // Now sign in with email (whether original or looked up)
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
+      if (error) {
+        authLogger.logAuthFailure({
+          operation: 'login',
+          errorCode: error.code,
+          errorMessage: error.message,
+          email,
+          metadata: { providedUsername: !isEmail }
+        }, error);
+        return { user: data.user, error };
+      }
+
+      authLogger.logAuthSuccess('login', data.user?.id, email);
       return { user: data.user, error };
     } catch (error) {
+      authLogger.logAuthFailure({
+        operation: 'login',
+        metadata: { providedUsername: !isEmail }
+      }, error);
       return { user: null, error };
     }
   }
 
   async signOut(): Promise<{ error: any }> {
+    authLogger.logAuthAttempt('logout');
+
     try {
       const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        authLogger.logAuthFailure({
+          operation: 'logout',
+          errorCode: error.code,
+          errorMessage: error.message
+        }, error);
+        return { error };
+      }
+
+      authLogger.logAuthSuccess('logout');
       return { error };
     } catch (error) {
+      authLogger.logAuthFailure({
+        operation: 'logout'
+      }, error);
       return { error };
     }
   }
@@ -84,6 +172,7 @@ class AuthService {
       const { data: { user } } = await supabase.auth.getUser();
       return user;
     } catch (error) {
+      authLogger.error('get_user_error', 'Failed to get current user', error);
       console.error('Get current user error:', error);
       return null;
     }
@@ -94,6 +183,7 @@ class AuthService {
       const { data: { session } } = await supabase.auth.getSession();
       return session;
     } catch (error) {
+      authLogger.error('get_session_error', 'Failed to get current session', error);
       console.error('Get current session error:', error);
       return null;
     }
@@ -132,48 +222,76 @@ class AuthService {
   }
 
   async resetPassword(email: string, customRedirectUrl?: string): Promise<{ error: any }> {
+    authLogger.logAuthAttempt('reset_password', email);
+
     try {
       // Determine the appropriate redirect URL based on environment
       let redirectUrl: string;
-      
+
       if (customRedirectUrl) {
         redirectUrl = customRedirectUrl;
       } else {
         // Auto-detect based on current environment
         const currentOrigin = window.location.origin;
-        
+
         // For all environments, use the current origin unless specifically overridden
         redirectUrl = `${currentOrigin}/reset-password`;
-        
+
         // Log for debugging
-        console.log('Password reset redirect URL:', redirectUrl);
-        console.log('Current origin:', currentOrigin);
+        authLogger.debug('reset_password_redirect_url', 'Determined password reset redirect URL', {
+          redirectUrl,
+          origin: currentOrigin
+        });
       }
-        
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl
       });
-      
+
       if (error) {
-        console.error('Password reset email error:', error);
-      } else {
-        console.log('Password reset email sent successfully');
+        authLogger.logAuthFailure({
+          operation: 'reset_password',
+          errorCode: error.code,
+          errorMessage: error.message,
+          email
+        }, error);
+        return { error };
       }
-      
+
+      authLogger.logAuthSuccess('reset_password', undefined, email);
       return { error };
     } catch (error) {
-      console.error('Password reset error:', error);
+      authLogger.logAuthFailure({
+        operation: 'reset_password',
+        email
+      }, error);
       return { error };
     }
   }
 
   async updatePassword(newPassword: string): Promise<{ error: any }> {
+    authLogger.logAuthAttempt('update_password');
+
     try {
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
+
+      if (error) {
+        authLogger.logAuthFailure({
+          operation: 'update_password',
+          errorCode: error.code,
+          errorMessage: error.message
+        }, error);
+        return { error };
+      }
+
+      authLogger.logAuthSuccess('update_password');
       return { error };
     } catch (error) {
+      authLogger.logAuthFailure({
+        operation: 'update_password'
+      }, error);
       return { error };
     }
   }

@@ -44,6 +44,7 @@
     "test:parallel": "jest --maxWorkers=75%",
     "test:unit": "jest --testPathPatterns=\"(simple|basic|unit|fast)\" --maxWorkers=100%",
     "test:integration": "jest --testPathPatterns=\"(integration|search|game|franchise)\" --maxWorkers=50%",
+    "test:auth": "jest --config jest.config.integration.js src/test/auth-integration.test.ts",
     "test:advanced": "node -r ts-node/register src/test/advanced-runner.ts",
     "test:incremental": "node -r ts-node/register src/test/advanced-runner.ts incremental",
     "test:smart": "node -r ts-node/register src/test/advanced-runner.ts dev"

@@ -196,13 +196,18 @@ const FAMOUS_SERIES_DATABASE = new Set([
  * Check if a game is in the famous games database
  */
 function isFamousGame(gameName: string): boolean {
-  const normalized = gameName.toLowerCase().trim();
-  
+  // Normalize accents (Pokémon → Pokemon) for better matching
+  const normalized = gameName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
   // Check exact matches first
   if (FAMOUS_GAMES_DATABASE.has(normalized)) {
     return true;
   }
-  
+
   // Check partial matches for games with subtitles
   for (const famousGame of FAMOUS_GAMES_DATABASE) {
     if (normalized.includes(famousGame) || famousGame.includes(normalized)) {
@@ -213,7 +218,7 @@ function isFamousGame(gameName: string): boolean {
       }
     }
   }
-  
+
   return false;
 }
 
@@ -221,9 +226,14 @@ function isFamousGame(gameName: string): boolean {
  * Check if a game belongs to a famous series (gets SEQUEL_TIER)
  */
 function isFamousSeriesGame(gameName: string): boolean {
-  const normalized = gameName.toLowerCase().trim();
-  
-  return Array.from(FAMOUS_SERIES_DATABASE).some(series => 
+  // Normalize accents (Pokémon → Pokemon) for better matching
+  const normalized = gameName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+  return Array.from(FAMOUS_SERIES_DATABASE).some(series =>
     normalized.includes(series) || series.includes(normalized)
   );
 }
@@ -282,8 +292,13 @@ export function calculateGamePriority(game: Game): PriorityResult {
   let basePriority = GamePriority.MAIN_TIER;
   let score = basePriority;
 
+  // Normalize accents (Pokémon → Pokemon) for better matching
   const searchText = [game.name, game.developer, game.publisher, game.summary, game.description]
-    .filter(Boolean).join(' ').toLowerCase();
+    .filter(Boolean)
+    .join(' ')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 
   // Get category priority - this is the primary sorting criterion
   const categoryPriority = getCategoryPriority(game.category);
@@ -398,10 +413,16 @@ export function calculateGamePriority(game: Game): PriorityResult {
         score += 25;
       } else {
         basePriority = GamePriority.LOW_TIER;
-        reasons.push('LOW TIER: Mod content');
-        penalties.push('Mod from non-friendly company (-100)');
-        score -= 100;
+        reasons.push('LOW TIER: Fan game/mod content');
+        penalties.push('Fan game/mod from non-authorized company (-200)');
+        score -= 200;
       }
+      break;
+    case 12: // Fork (also fan games)
+      basePriority = GamePriority.LOW_TIER;
+      reasons.push('LOW TIER: Forked/fan game');
+      penalties.push('Fork/fan game (-150)');
+      score -= 150;
       break;
     case 8: // Remake
     case 9: // Remaster
@@ -467,9 +488,15 @@ export function calculateGamePriority(game: Game): PriorityResult {
   }
 
   // Platform priority - Nintendo Switch gets priority for Nintendo games
-  const gameText = [game.name, game.developer, game.publisher].filter(Boolean).join(' ').toLowerCase();
-  const isNintendoGame = gameText.includes('nintendo') || 
-    gameText.includes('mario') || gameText.includes('zelda') || 
+  // Normalize accents (Pokémon → Pokemon) for better matching
+  const gameText = [game.name, game.developer, game.publisher]
+    .filter(Boolean)
+    .join(' ')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const isNintendoGame = gameText.includes('nintendo') ||
+    gameText.includes('mario') || gameText.includes('zelda') ||
     gameText.includes('pokemon') || gameText.includes('metroid') ||
     gameText.includes('kirby') || gameText.includes('splatoon');
   
@@ -607,10 +634,31 @@ export function calculateGamePriority(game: Game): PriorityResult {
     }
   }
 
+  // === FAN GAME DETECTION ===
+  // Additional check for fan games based on developer/publisher names
+  const developerLower = (game.developer || '').toLowerCase();
+  const publisherLower = (game.publisher || '').toLowerCase();
+  const isFanGame =
+    developerLower.includes('fan') ||
+    developerLower.includes('homebrew') ||
+    publisherLower.includes('fan') ||
+    publisherLower.includes('homebrew') ||
+    developerLower.includes('community') && !developerLower.includes('capcom') ||
+    publisherLower.includes('community') && !publisherLower.includes('capcom');
+
+  if (isFanGame && basePriority !== GamePriority.COMMUNITY_TIER) {
+    basePriority = GamePriority.LOW_TIER;
+    penalties.push('Fan game/homebrew developer (-250)');
+    score -= 250;
+    if (!reasons.some(r => r.includes('LOW TIER'))) {
+      reasons.push('LOW TIER: Fan game/homebrew content');
+    }
+  }
+
   // === FINAL ADJUSTMENTS ===
 
-  // Ensure minimum scores
-  score = Math.max(score, GamePriority.LOW_TIER);
+  // Ensure minimum scores (but allow negative scores for fan games)
+  score = Math.max(score, GamePriority.LOW_TIER - 500);
 
   // Update base priority based on final score
   if (score >= GamePriority.FAMOUS_TIER) {

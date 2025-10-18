@@ -13,6 +13,9 @@ targetPort = 5173
 autoLaunch = false
 framework = "#auto"
 
+# Note: Environment variables are loaded from .env.local and .env files automatically by Vite
+# No need to hardcode them here - they are gitignored for security
+
 [build.environment]
 NODE_VERSION = "20"
 
@@ -44,13 +47,14 @@ Content-Type = "text/html; charset=UTF-8"
 Cache-Control = "public, max-age=0, must-revalidate"
 
 # Enhanced security headers with CSP (general catch-all)
+# NOTE: CSP is relaxed for local development - Netlify context configs override this in production
 [[headers]]
 for = "/*"
 [headers.values]
-# Content Security Policy - Comprehensive protection
-Content-Security-Policy = "default-src 'self'; script-src 'self' https://*.supabase.co https://*.netlify.app https://www.googletagmanager.com https://www.google-analytics.com https://api.revenuecat.com https://sdk.revenuecat.com https://app.revenuecat.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://api.igdb.com wss://*.supabase.co https://www.google-analytics.com https://images.igdb.com https://api.revenuecat.com https://purchases.revenuecat.com https://api.segment.io https://ipapi.co; frame-src 'self' https://checkout.revenuecat.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; report-uri /csp-report;"
+# Content Security Policy - Development-friendly (allows Vite inline scripts and localhost)
+Content-Security-Policy = "default-src 'self' http://localhost:* http://127.0.0.1:*; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* http://127.0.0.1:* https://*.supabase.co https://*.netlify.app https://www.googletagmanager.com https://www.google-analytics.com https://api.revenuecat.com https://sdk.revenuecat.com https://app.revenuecat.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://localhost:* http://127.0.0.1:* https://*.supabase.co https://api.igdb.com wss://*.supabase.co https://www.google-analytics.com https://images.igdb.com https://api.revenuecat.com https://purchases.revenuecat.com https://api.segment.io https://ipapi.co; frame-src 'self' https://checkout.revenuecat.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; report-uri /csp-report;"
 # Report-only policy for testing (monitors violations without blocking)
-Content-Security-Policy-Report-Only = "default-src 'self'; script-src 'self' https://*.supabase.co https://*.netlify.app https://www.googletagmanager.com https://www.google-analytics.com https://api.revenuecat.com https://sdk.revenuecat.com https://app.revenuecat.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://api.igdb.com wss://*.supabase.co https://www.google-analytics.com https://images.igdb.com https://api.revenuecat.com https://purchases.revenuecat.com https://api.segment.io https://ipapi.co; frame-src 'self' https://checkout.revenuecat.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; report-uri /csp-report;"
+Content-Security-Policy-Report-Only = "default-src 'self' http://localhost:* http://127.0.0.1:*; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* http://127.0.0.1:* https://*.supabase.co https://*.netlify.app https://www.googletagmanager.com https://www.google-analytics.com https://api.revenuecat.com https://sdk.revenuecat.com https://app.revenuecat.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://localhost:* http://127.0.0.1:* https://*.supabase.co https://api.igdb.com wss://*.supabase.co https://www.google-analytics.com https://images.igdb.com https://api.revenuecat.com https://purchases.revenuecat.com https://api.segment.io https://ipapi.co; frame-src 'self' https://checkout.revenuecat.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; report-uri /csp-report;"
 # Security headers
 X-Frame-Options = "DENY"
 X-XSS-Protection = "1; mode=block"
@@ -193,6 +197,31 @@ for = "/*.avif"
 Cache-Control = "public, max-age=604800"
 Vary = "Accept-Encoding"
 
+# Exclude Vite dev server paths from SPA fallback
+[[redirects]]
+from = "/@vite/*"
+to = "/@vite/:splat"
+status = 200
+force = false
+
+[[redirects]]
+from = "/@react-refresh"
+to = "/@react-refresh"
+status = 200
+force = false
+
+[[redirects]]
+from = "/src/*"
+to = "/src/:splat"
+status = 200
+force = false
+
+[[redirects]]
+from = "/node_modules/*"
+to = "/node_modules/:splat"
+status = 200
+force = false
+
 # Specific redirect for reset-password to ensure it works
 [[redirects]]
 from = "/reset-password"
@@ -210,6 +239,12 @@ force = false
 [context.production.environment]
 NODE_ENV = "production"
 ENVIRONMENT = "production"
+
+# Production-only strict CSP (overrides the relaxed development CSP)
+[[context.production.headers]]
+for = "/*"
+[context.production.headers.values]
+Content-Security-Policy = "default-src 'self'; script-src 'self' https://*.supabase.co https://*.netlify.app https://www.googletagmanager.com https://www.google-analytics.com https://api.revenuecat.com https://sdk.revenuecat.com https://app.revenuecat.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://api.igdb.com wss://*.supabase.co https://www.google-analytics.com https://images.igdb.com https://api.revenuecat.com https://purchases.revenuecat.com https://api.segment.io https://ipapi.co; frame-src 'self' https://checkout.revenuecat.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; report-uri /csp-report;"
 
 # Development-specific configuration
 [context.deploy-preview]

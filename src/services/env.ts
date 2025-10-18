@@ -12,21 +12,17 @@ interface EnvironmentVariables {
  * Gets environment variables - prioritizes import.meta.env in browser, process.env in Node
  */
 function getEnvVar(key: keyof EnvironmentVariables): string | undefined {
-  // In browser/Vite environment, use import.meta.env
-  if (typeof window !== 'undefined') {
-    try {
-      // @ts-ignore - import.meta.env is available in Vite
-      return import.meta.env[key];
-    } catch (e) {
-      return undefined;
-    }
-  }
-  
   // In Node/Jest environment, use process.env
-  if (typeof process !== 'undefined' && process.env) {
+  if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') {
     return process.env[key];
   }
-  
+
+  // In browser/Vite environment, use import.meta.env directly
+  // Vite replaces import.meta.env at build time
+  if (typeof window !== 'undefined' || typeof import.meta !== 'undefined') {
+    return import.meta.env[key];
+  }
+
   return undefined;
 }
 

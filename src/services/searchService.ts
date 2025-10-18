@@ -15,6 +15,7 @@
 import { supabase } from './supabase';
 import { sanitizeSearchTerm } from '../utils/sqlSecurity';
 import type { GameWithCalculatedFields } from '../types/database';
+import { sortGamesByPriority, calculateGamePriority } from '../utils/gamePrioritization';
 
 const DEBUG_SEARCH = false;
 
@@ -306,12 +307,15 @@ class UnifiedSearchService {
       const searchResults = results || [];
       const deduplicatedResults = await this.deduplicateResults(searchResults);
 
+      // Apply game prioritization sorting (same as admin sorting page)
+      const prioritizedResults = this.applyPrioritization(deduplicatedResults);
+
       // Cache the results
-      this.setCachedResults(cacheKey, deduplicatedResults, deduplicatedResults.length);
+      this.setCachedResults(cacheKey, prioritizedResults, prioritizedResults.length);
 
       const response: SearchResponse = {
-        results: deduplicatedResults,
-        total_count: deduplicatedResults.length,
+        results: prioritizedResults,
+        total_count: prioritizedResults.length,
         search_time_ms: Date.now() - startTime,
         query_used: sanitizedQuery,
         cache_hit: false,
@@ -404,9 +408,12 @@ class UnifiedSearchService {
 
         const deduplicatedResults = await this.deduplicateResults(results);
 
+        // Apply game prioritization sorting
+        const prioritizedResults = this.applyPrioritization(deduplicatedResults);
+
         return {
-          results: deduplicatedResults,
-          total_count: deduplicatedResults.length,
+          results: prioritizedResults,
+          total_count: prioritizedResults.length,
           search_time_ms: Date.now() - startTime,
           query_used: sanitizedQuery,
           cache_hit: false
@@ -508,6 +515,51 @@ class UnifiedSearchService {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     } as GameSearchResult));
+  }
+
+  /**
+   * Game Prioritization - Apply intelligent sorting like admin page
+   */
+  private applyPrioritization(results: SearchResult[]): SearchResult[] {
+    if (results.length === 0) return results;
+
+    // Convert SearchResult to format compatible with gamePrioritization
+    const gamesWithMetadata = results.map(result => ({
+      id: result.id,
+      name: result.name,
+      summary: result.summary || undefined,
+      description: result.description || undefined,
+      release_date: result.release_date,
+      igdb_id: result.igdb_id,
+      genres: result.genres || undefined,
+      platforms: result.platforms || undefined,
+      // SearchResult doesn't have all the fields needed for full prioritization,
+      // but name, genres, and platforms are the most important for series detection
+    }));
+
+    // Apply the same sorting as admin page
+    const sortedGames = sortGamesByPriority(gamesWithMetadata);
+
+    // Map back to SearchResult format (preserve all original fields)
+    const sortedResults = sortedGames.map(game => {
+      const originalResult = results.find(r => r.id === game.id)!;
+      const priority = calculateGamePriority(game);
+
+      return {
+        ...originalResult,
+        // Add priority score for debugging
+        relevance_score: priority.score
+      };
+    });
+
+    if (DEBUG_SEARCH) {
+      console.log('🎯 Applied game prioritization:');
+      sortedResults.slice(0, 5).forEach((result, index) => {
+        console.log(`  ${index + 1}. ${result.name} (score: ${result.relevance_score})`);
+      });
+    }
+
+    return sortedResults;
   }
 
   /**

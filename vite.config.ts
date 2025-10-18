@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { imagetools } from 'vite-imagetools'
 import { vitePluginCSPGuard } from './plugins/vite-plugin-csp-guard'
@@ -19,7 +19,12 @@ const imageOptimizationConfig = {
   sizes: [320, 640, 768, 1024, 1280, 1920]
 };
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
   plugins: [
     react(),
     // CSP hash generation for inline scripts
@@ -249,14 +254,11 @@ export default defineConfig({
     cssCodeSplit: true,
     assetsInlineLimit: 4096, // Inline assets smaller than 4kb
   },
-  define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version)
-  },
   optimizeDeps: {
     include: [
-      'react', 
-      'react-dom', 
-      'react-router-dom', 
+      'react',
+      'react-dom',
+      'react-router-dom',
       '@supabase/supabase-js',
       'lucide-react',
       'zustand'
@@ -269,5 +271,17 @@ export default defineConfig({
     modules: {
       localsConvention: 'camelCase'
     }
+  },
+  // Explicitly specify environment variable handling
+  envDir: process.cwd(),
+  envPrefix: 'VITE_',
+  // Make environment variables available to the app
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+    // Ensure these are available in the browser
+    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
+    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY),
+    'import.meta.env.VITE_IGDB_CLIENT_ID': JSON.stringify(env.VITE_IGDB_CLIENT_ID),
+    'import.meta.env.VITE_IGDB_ACCESS_TOKEN': JSON.stringify(env.VITE_IGDB_ACCESS_TOKEN)
   }
-})
+}})

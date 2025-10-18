@@ -1,9 +1,8 @@
-import { authService } from '../services/authService';
 import type { User } from '@supabase/supabase-js';
 
-// Mock Supabase
-const mockSupabase = {
-  auth: {
+// Mock Supabase BEFORE any imports
+jest.mock('../services/supabase', () => {
+  const mockAuth = {
     signUp: jest.fn(),
     signInWithPassword: jest.fn(),
     signOut: jest.fn(),
@@ -13,22 +12,33 @@ const mockSupabase = {
     resetPasswordForEmail: jest.fn(),
     signInWithOAuth: jest.fn(),
     onAuthStateChange: jest.fn()
-  },
-  from: jest.fn()
-};
+  };
 
-jest.mock('../services/supabase', () => ({
-  supabase: mockSupabase
-}));
+  const mockFrom = jest.fn();
+
+  return {
+    supabase: {
+      auth: mockAuth,
+      from: mockFrom
+    },
+    __mockAuth: mockAuth,
+    __mockFrom: mockFrom
+  };
+});
 
 jest.mock('../services/userService', () => ({
   userService: {
-    getOrCreateDatabaseUser: jest.fn()
+    getOrCreateUser: jest.fn()
   }
 }));
 
-// Mock user service
+// Import authService AFTER mocks
+import { authService } from '../services/authService';
+import { supabase as mockSupabaseModule } from '../services/supabase';
+
+// Get mock references
 const { userService } = require('../services/userService');
+const mockSupabase = mockSupabaseModule as any;
 
 // Mock window.location for redirect URL tests
 delete (global as any).window.location;
@@ -62,29 +72,32 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
+    // Reset mockSupabase.from to default behavior
+    mockSupabase.from.mockClear();
+
     // Set up default successful responses
     mockSupabase.auth.signUp.mockResolvedValue({
       data: { user: mockUser, session: mockSession },
       error: null
     });
-    
+
     mockSupabase.auth.signInWithPassword.mockResolvedValue({
       data: { user: mockUser, session: mockSession },
       error: null
     });
-    
+
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: mockUser },
       error: null
     });
-    
+
     mockSupabase.auth.getSession.mockResolvedValue({
       data: { session: mockSession },
       error: null
     });
-    
-    userService.getOrCreateDatabaseUser.mockResolvedValue({
+
+    userService.getOrCreateUser.mockResolvedValue({
       success: true,
       userId: 1
     });
@@ -112,7 +125,7 @@ describe('AuthService', () => {
 
       expect(result.user).toBe(mockUser);
       expect(result.error).toBeNull();
-      expect(userService.getOrCreateDatabaseUser).toHaveBeenCalledWith(mockUser);
+      expect(userService.getOrCreateUser).toHaveBeenCalledWith(mockUser);
     });
 
     test('should handle registration errors', async () => {
@@ -126,7 +139,7 @@ describe('AuthService', () => {
 
       expect(result.user).toBeNull();
       expect(result.error).toBe(registrationError);
-      expect(userService.getOrCreateDatabaseUser).not.toHaveBeenCalled();
+      expect(userService.getOrCreateUser).not.toHaveBeenCalled();
     });
 
     test('should generate correct redirect URL for different environments', async () => {
@@ -162,7 +175,7 @@ describe('AuthService', () => {
     });
 
     test('should handle database user creation failure gracefully', async () => {
-      userService.getOrCreateDatabaseUser.mockResolvedValue({
+      userService.getOrCreateUser.mockResolvedValue({
         success: false,
         error: 'Database connection failed'
       });
@@ -220,6 +233,205 @@ describe('AuthService', () => {
 
       expect(result.user).toBeNull();
       expect(result.error).toBeInstanceOf(Error);
+    });
+
+    // New tests for username OR email login support
+    describe('Username OR Email Login Support', () => {
+      test('should successfully login with email address', async () => {
+        const email = 'user@example.com';
+        const password = 'ValidPass123!';
+
+        const result = await authService.signIn(email, password);
+
+        // Should NOT query user table when email is provided
+        expect(mockSupabase.from).not.toHaveBeenCalled();
+
+        // Should call auth with email directly
+        expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalledWith({
+          email,
+          password
+        });
+
+        expect(result.user).toBe(mockUser);
+        expect(result.error).toBeNull();
+      });
+
+      test('should successfully login with username by looking up email', async () => {
+        const username = 'testuser';
+        const password = 'ValidPass123!';
+        const associatedEmail = 'testuser@example.com';
+
+        // Mock user table lookup
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: { email: associatedEmail },
+                error: null
+              })
+            })
+          })
+        });
+
+        const result = await authService.signIn(username, password);
+
+        // Should query user table with lowercase username
+        expect(mockSupabase.from).toHaveBeenCalledWith('user');
+        const fromCall = mockSupabase.from.mock.results[0].value;
+        expect(fromCall.select).toHaveBeenCalledWith('email');
+        const selectCall = fromCall.select.mock.results[0].value;
+        expect(selectCall.eq).toHaveBeenCalledWith('username', 'testuser');
+
+        // Should call auth with looked-up email
+        expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalledWith({
+          email: associatedEmail,
+          password
+        });
+
+        expect(result.user).toBe(mockUser);
+        expect(result.error).toBeNull();
+      });
+
+      test('should handle username with mixed case by converting to lowercase', async () => {
+        const username = 'TestUser'; // Mixed case
+        const password = 'ValidPass123!';
+        const associatedEmail = 'testuser@example.com';
+
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: { email: associatedEmail },
+                error: null
+              })
+            })
+          })
+        });
+
+        await authService.signIn(username, password);
+
+        // Should query with lowercase username
+        const fromCall = mockSupabase.from.mock.results[0].value;
+        const selectCall = fromCall.select.mock.results[0].value;
+        expect(selectCall.eq).toHaveBeenCalledWith('username', 'testuser');
+      });
+
+      test('should return error when username is not found', async () => {
+        const username = 'nonexistentuser';
+        const password = 'ValidPass123!';
+
+        // Mock user table lookup returning no results
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: null,
+                error: { code: 'PGRST116', message: 'No rows found' }
+              })
+            })
+          })
+        });
+
+        const result = await authService.signIn(username, password);
+
+        // Should NOT call auth.signInWithPassword
+        expect(mockSupabase.auth.signInWithPassword).not.toHaveBeenCalled();
+
+        // Should return error
+        expect(result.user).toBeNull();
+        expect(result.error).toEqual({ message: 'Invalid login credentials' });
+      });
+
+      test('should return error when user has no email associated', async () => {
+        const username = 'userempty';
+        const password = 'ValidPass123!';
+
+        // Mock user table returning user with no email
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: { email: null },
+                error: null
+              })
+            })
+          })
+        });
+
+        const result = await authService.signIn(username, password);
+
+        // Should NOT call auth.signInWithPassword
+        expect(mockSupabase.auth.signInWithPassword).not.toHaveBeenCalled();
+
+        // Should return error
+        expect(result.user).toBeNull();
+        expect(result.error).toEqual({ message: 'Invalid login credentials' });
+      });
+
+      test('should handle database errors during username lookup', async () => {
+        const username = 'testuser';
+        const password = 'ValidPass123!';
+
+        // Mock database error during lookup
+        mockSupabase.from.mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: null,
+                error: { message: 'Database connection failed' }
+              })
+            })
+          })
+        });
+
+        const result = await authService.signIn(username, password);
+
+        // Should NOT call auth.signInWithPassword
+        expect(mockSupabase.auth.signInWithPassword).not.toHaveBeenCalled();
+
+        // Should return error
+        expect(result.user).toBeNull();
+        expect(result.error).toEqual({ message: 'Invalid login credentials' });
+      });
+
+      test('should distinguish between email and username correctly', async () => {
+        // Test various formats
+        const testCases = [
+          { input: 'user@example.com', isEmail: true },
+          { input: 'test@domain.co.uk', isEmail: true },
+          { input: 'username', isEmail: false },
+          { input: 'user_name123', isEmail: false },
+          { input: 'User123', isEmail: false }
+        ];
+
+        for (const testCase of testCases) {
+          jest.clearAllMocks();
+
+          if (!testCase.isEmail) {
+            // Mock username lookup
+            mockSupabase.from.mockReturnValue({
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { email: 'found@example.com' },
+                    error: null
+                  })
+                })
+              })
+            });
+          }
+
+          await authService.signIn(testCase.input, 'password');
+
+          if (testCase.isEmail) {
+            // Email should go directly to auth
+            expect(mockSupabase.from).not.toHaveBeenCalled();
+          } else {
+            // Username should query user table first
+            expect(mockSupabase.from).toHaveBeenCalledWith('user');
+          }
+        }
+      });
     });
   });
 

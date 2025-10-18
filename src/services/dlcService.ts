@@ -31,7 +31,9 @@ interface DLCResponse {
 }
 
 class DLCService {
-  private readonly endpoint = '/.netlify/functions/igdb-search';
+  private readonly endpoint = import.meta.env.DEV
+    ? 'http://localhost:8888/.netlify/functions/igdb-search'
+    : '/.netlify/functions/igdb-search';
 
   /**
    * Get DLC/expansions for a main game (official content only)

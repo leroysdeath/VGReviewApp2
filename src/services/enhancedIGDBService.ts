@@ -28,7 +28,9 @@ interface MultiQueryResult {
  * Enhanced IGDB Service with multi-query strategy and better sorting
  */
 export class EnhancedIGDBService {
-  private readonly endpoint = '/.netlify/functions/igdb-search';
+  private readonly endpoint = import.meta.env.DEV
+    ? 'http://localhost:8888/.netlify/functions/igdb-search'
+    : '/.netlify/functions/igdb-search';
   
   /**
    * Build an optimized IGDB query with sorting and filtering
@@ -44,48 +46,28 @@ export class EnhancedIGDBService {
       collection.name, franchise.name, franchises.name,
       parent_game, version_parent, url, dlcs, expansions, similar_games
     `.trim();
-    
+
     let query = baseFields + '; ';
-    
+
     // Determine search type if not specified
     const searchType = options.searchType || this.detectSearchType(searchTerm);
-    
+
+    // NOTE: IGDB API Constraints:
+    // 1. Cannot use 'sort' with 'search' - API returns 406 error
+    // 2. 'where' clauses with 'search' are unreliable and often return 0 results
+    // 3. Better to get broader results and filter client-side
+
     if (searchType === 'franchise') {
-      // For franchise searches, use broader matching and better sorting
       query += `search "${searchTerm}"; `;
-      
-      // Include main games, remakes, remasters, expansions
-      const allowedCategories = options.includeCategories || [0, 2, 4, 8, 9, 10, 11];
-      query += `where (category = (${allowedCategories.join(',')}) | version_parent != null | parent_game != null); `;
-      
-      // Sort by total rating with fallback to follows
-      const sortField = options.sortBy || 'total_rating';
-      if (sortField === 'total_rating') {
-        query += `sort total_rating desc; where total_rating != null; `;
-      } else if (sortField === 'follows') {
-        query += `sort follows desc; `;
-      } else {
-        query += `sort ${sortField} desc; `;
-      }
-      
-      query += `limit ${options.limit || 100}; `;
+      query += `limit ${options.limit || 100};`;
     } else if (searchType === 'specific') {
-      // For specific title searches, be more precise
       query += `search "${searchTerm}"; `;
-      
-      // Exclude problematic categories
-      const excludedCategories = options.excludeCategories || [5, 7, 13, 14];
-      query += `where category != (${excludedCategories.join(',')}); `;
-      
-      // Sort by relevance (follows is a good proxy)
-      query += `sort follows desc; `;
-      query += `limit ${options.limit || 50}; `;
+      query += `limit ${options.limit || 50};`;
     } else {
-      // General search
       query += `search "${searchTerm}"; `;
-      query += `limit ${options.limit || 50}; `;
+      query += `limit ${options.limit || 50};`;
     }
-    
+
     return query;
   }
   
@@ -150,8 +132,8 @@ export class EnhancedIGDBService {
    */
   private buildQueryForExactMatch(searchTerm: string): string {
     return `
-      fields name, summary, first_release_date, rating, total_rating, 
-      total_rating_count, follows, category, cover.url, genres.name, 
+      fields name, summary, first_release_date, rating, total_rating,
+      total_rating_count, follows, category, cover.url, genres.name,
       platforms.name, involved_companies.company.name, franchises.name;
       where name ~ *"${searchTerm}"* & category = (0,8,9,10);
       sort total_rating desc;
@@ -161,12 +143,31 @@ export class EnhancedIGDBService {
   
   /**
    * Build query for franchise searches
+   * NOTE: For Pokemon, franchise field is empty in IGDB, so we use name-based search instead
    */
   private buildQueryForFranchise(searchTerm: string): string {
+    const term = searchTerm.toLowerCase();
+
+    // SPECIAL CASE: Pokemon games don't have franchise data in IGDB
+    // Fall back to name-based search with high limit to catch all games
+    // NOTE: Pattern is "Pokemon"* (starts with Pokemon), not *"Pokemon"* (contains Pokemon)
+    if (term.includes('pokemon') || term.includes('pokémon')) {
+      return `
+        fields name, summary, first_release_date, rating, total_rating,
+        total_rating_count, follows, category, cover.url, genres.name,
+        platforms.name, involved_companies.company.name, involved_companies.developer,
+        involved_companies.publisher, franchises.name;
+        where name ~ "Pok"*;
+        sort follows desc;
+        limit 150;
+      `.trim();
+    }
+
+    // Default franchise query for other franchises
     const franchiseName = this.extractFranchiseName(searchTerm);
     return `
-      fields name, summary, first_release_date, rating, total_rating, 
-      total_rating_count, follows, category, cover.url, genres.name, 
+      fields name, summary, first_release_date, rating, total_rating,
+      total_rating_count, follows, category, cover.url, genres.name,
       platforms.name, involved_companies.company.name, franchises.name;
       where franchises.name ~ *"${franchiseName}"*;
       sort first_release_date asc;
@@ -179,8 +180,8 @@ export class EnhancedIGDBService {
    */
   private buildQueryForAlternativeNames(searchTerm: string): string {
     return `
-      fields name, summary, first_release_date, rating, total_rating, 
-      total_rating_count, follows, category, cover.url, genres.name, 
+      fields name, summary, first_release_date, rating, total_rating,
+      total_rating_count, follows, category, cover.url, genres.name,
       platforms.name, involved_companies.company.name, alternative_names.name;
       where alternative_names.name ~ *"${searchTerm}"*;
       sort total_rating desc;
@@ -279,8 +280,9 @@ export class EnhancedIGDBService {
     }
     
     // Check for franchise indicators
+    // NOTE: Pokemon excluded - IGDB's franchise field is empty for Pokemon games
     const franchiseKeywords = [
-      'mario', 'zelda', 'pokemon', 'final fantasy', 'call of duty',
+      'mario', 'zelda', /* 'pokemon', */ 'final fantasy', 'call of duty',
       'assassin', 'grand theft auto', 'mega man', 'sonic', 'halo',
       'god of war', 'uncharted', 'last of us', 'resident evil'
     ];

@@ -156,6 +156,14 @@ const AppContent: React.FC = () => {
                       }
                     />
                     <Route
+                      path="/admin/sorting"
+                      element={
+                        <Suspense fallback={<RouteLoader />}>
+                          <LazyRoutes.AdminSortingPage />
+                        </Suspense>
+                      }
+                    />
+                    <Route
                       path="/review/:gameId?"
                       element={
                         <ProtectedRoute showModal={true}>

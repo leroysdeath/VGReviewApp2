@@ -80,7 +80,9 @@ export interface IGDBGame {
  * Enhanced IGDB Service V2
  */
 export class IGDBServiceV2 {
-  private readonly endpoint = '/.netlify/functions/igdb-search';
+  private readonly endpoint = import.meta.env.DEV
+    ? 'http://localhost:8888/.netlify/functions/igdb-search'
+    : '/.netlify/functions/igdb-search';
   
   /**
    * Main search function with all Layer 1 enhancements
@@ -357,11 +359,12 @@ export class IGDBServiceV2 {
   
   /**
    * Detect if this is a franchise search
+   * NOTE: Pokemon excluded - IGDB's franchise field is empty, use regular search instead
    */
   private detectFranchiseSearch(query: string): boolean {
     const term = query.toLowerCase();
     const franchises = [
-      'mario', 'zelda', 'pokemon', 'final fantasy', 'call of duty',
+      'mario', 'zelda', /* 'pokemon', */ 'final fantasy', 'call of duty',
       'assassin', 'grand theft auto', 'mega man', 'sonic', 'halo',
       'god of war', 'uncharted', 'last of us', 'resident evil',
       'street fighter', 'mortal kombat', 'tekken'
