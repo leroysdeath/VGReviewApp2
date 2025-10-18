@@ -24,8 +24,7 @@ import { mapPlatformNames } from '../utils/platformMapping';
 import { GameActionSheet } from '../components/GameActionSheet';
 import { useTrackGameView } from '../hooks/useTrackGameView';
 import { RatingBars } from '../components/RatingBars';
-import { ScreenshotCarousel } from '../components/ScreenshotCarousel';
-import { screenshotService } from '../services/screenshotService';
+import { BackgroundCarousel } from '../components/BackgroundCarousel';
 
 // Interface for review data from database
 interface GameReview {
@@ -1046,15 +1045,22 @@ export const GamePage: React.FC = () => {
         <meta name="author" content="VGReviewApp" />
       </Helmet>
       
-      <div className="min-h-screen bg-gray-900 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-900">
+        {/* Background Carousel Section */}
+        <div className="relative">
+          {/* Screenshot Background */}
+          <div className="absolute inset-0 h-[600px] overflow-hidden">
+            <BackgroundCarousel screenshots={game.screenshots || []} />
+          </div>
 
-
-          {/* Game Header */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
-          {/* Game Cover and Info */}
-          <div className="lg:col-span-2">
-            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg overflow-hidden">
+          {/* Main Content - overlaid on background */}
+          <div className="relative z-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              {/* Game Header */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
+                {/* Game Cover and Info */}
+                <div className="lg:col-span-2">
+                  <div className="bg-gray-900/90 backdrop-blur-sm rounded-lg overflow-hidden">
               {/* Mobile Layout - Letterboxd Style */}
               <div className="md:hidden">
                 {/* Cover + Title Row */}
@@ -1524,9 +1530,9 @@ export const GamePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Rating Summary */}
-          <div className="space-y-6">
-            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 rounded-lg p-6">
+                {/* Rating Summary */}
+                <div className="space-y-6">
+                  <div className="bg-gray-900/90 backdrop-blur-sm rounded-lg p-6">
               <div className="mb-2 text-center">
                 <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Ratings</h3>
               </div>
@@ -1579,60 +1585,14 @@ export const GamePage: React.FC = () => {
             {game && !categoryLoading && (!gameCategory || gameCategory === 0) && !shouldHideFanContent(game) && (
               <ModSection gameId={game.igdb_id} />
             )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Screenshots Section */}
-        {game.screenshots && game.screenshots.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Screenshots ({game.screenshots.length})
-            </h2>
-
-            {/* Use carousel for 6+ screenshots, grid for 5 or fewer */}
-            {game.screenshots.length > 5 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-                <div className="lg:col-span-2">
-                  <ScreenshotCarousel
-                    screenshots={screenshotService.getOptimizedUrls(game.screenshots)}
-                    gameName={game.name}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {game.screenshots.map((screenshot, index) => {
-                  const optimizedUrl = screenshotService.getOptimizedUrl(screenshot);
-                  const fullSizeUrl = screenshotService.getUrlWithTemplate(screenshot, 't_1080p_2x');
-
-                  return (
-                    <div
-                      key={index}
-                      className="group relative aspect-video rounded-lg overflow-hidden bg-gray-800 hover:ring-2 hover:ring-purple-500 transition-all duration-200 cursor-pointer shadow-lg"
-                      onClick={() => window.open(fullSizeUrl, '_blank')}
-                    >
-                      <img
-                        src={optimizedUrl}
-                        alt={`${game.name} screenshot ${index + 1}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        loading="lazy"
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          // Fallback to medium quality if optimized fails
-                          if (!target.src.includes('t_screenshot_med')) {
-                            target.src = screenshotService.getUrlWithTemplate(screenshot, 't_screenshot_med');
-                          }
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-200" />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
+        {/* Reviews Section - Now outside the background area */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Reviews Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           <div className="lg:col-span-2">
