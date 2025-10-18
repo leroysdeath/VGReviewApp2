@@ -52,6 +52,7 @@ export const ReviewFormPage: React.FC = () => {
   const [rating, setRating] = useState(5); // Default to 5
   const [reviewText, setReviewText] = useState('');
   const [playtimeHours, setPlaytimeHours] = useState<number | null>(null);
+  const [playtimeToFinishHours, setPlaytimeToFinishHours] = useState<number | null>(null);
   const [isRecommended, setIsRecommended] = useState<boolean | null>(null);
   const [didFinishGame, setDidFinishGame] = useState<boolean | null>(null);
   const [gameAlreadyCompleted, setGameAlreadyCompleted] = useState(false);
@@ -242,6 +243,7 @@ export const ReviewFormPage: React.FC = () => {
     rating: number;
     reviewText: string;
     playtimeHours: number | null;
+    playtimeToFinishHours: number | null;
     isRecommended: boolean | null;
     didFinishGame: boolean | null;
     selectedPlatforms: string[];
@@ -347,6 +349,7 @@ export const ReviewFormPage: React.FC = () => {
           setRating(result.data.rating);
           setReviewText(result.data.review || '');
           setPlaytimeHours(result.data.playtimeHours || null);
+          setPlaytimeToFinishHours(result.data.playtimeToFinishHours || null);
           setIsRecommended(result.data.isRecommended);
           setContainsSpoilers(result.data.is_spoiler || false);
           
@@ -391,6 +394,7 @@ export const ReviewFormPage: React.FC = () => {
             rating: result.data.rating,
             reviewText: result.data.review || '',
             playtimeHours: result.data.playtimeHours || null,
+            playtimeToFinishHours: result.data.playtimeToFinishHours || null,
             isRecommended: result.data.isRecommended,
             didFinishGame: finalDidFinishGame,
             selectedPlatforms: validSelectedPlatforms,
@@ -425,6 +429,7 @@ export const ReviewFormPage: React.FC = () => {
       rating,
       reviewText,
       playtimeHours,
+      playtimeToFinishHours,
       isRecommended,
       didFinishGame,
       selectedPlatforms,
@@ -435,6 +440,7 @@ export const ReviewFormPage: React.FC = () => {
       currentValues.rating !== initialFormValues.rating ||
       currentValues.reviewText !== initialFormValues.reviewText ||
       currentValues.playtimeHours !== initialFormValues.playtimeHours ||
+      currentValues.playtimeToFinishHours !== initialFormValues.playtimeToFinishHours ||
       currentValues.isRecommended !== initialFormValues.isRecommended ||
       (!isGameCompletionLocked && currentValues.didFinishGame !== initialFormValues.didFinishGame) ||
       JSON.stringify(currentValues.selectedPlatforms.sort()) !== JSON.stringify(initialFormValues.selectedPlatforms.sort()) ||
@@ -447,7 +453,7 @@ export const ReviewFormPage: React.FC = () => {
       isGameCompletionLocked,
       hasChanges
     });
-  }, [rating, reviewText, playtimeHours, isRecommended, didFinishGame, selectedPlatforms, containsSpoilers, isEditMode, initialFormValues, isGameCompletionLocked]);
+  }, [rating, reviewText, playtimeHours, playtimeToFinishHours, isRecommended, didFinishGame, selectedPlatforms, containsSpoilers, isEditMode, initialFormValues, isGameCompletionLocked]);
 
   // Auto-select single platform when game changes
   useEffect(() => {
@@ -553,8 +559,14 @@ export const ReviewFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedGame || rating < 1 || (!gameAlreadyCompleted && didFinishGame === null) || 
+    if (!selectedGame || rating < 1 || (!gameAlreadyCompleted && didFinishGame === null) ||
         (availablePlatforms.length > 0 && selectedPlatforms.length === 0)) return;
+
+    // Validate playtime logic: finish time cannot exceed total time
+    if (playtimeHours && playtimeToFinishHours && playtimeToFinishHours > playtimeHours) {
+      alert('Playtime to finish cannot exceed total playtime. Please adjust your values.');
+      return;
+    }
 
     try {
       if (isEditMode && existingReviewId) {
@@ -572,6 +584,7 @@ export const ReviewFormPage: React.FC = () => {
           isRecommended,
           platformName,
           playtimeHours,
+          playtimeToFinishHours,
           containsSpoilers
         );
 
@@ -630,6 +643,7 @@ export const ReviewFormPage: React.FC = () => {
           isRecommended,
           platformName,
           playtimeHours,
+          playtimeToFinishHours,
           containsSpoilers
         );
 
@@ -1001,6 +1015,88 @@ export const ReviewFormPage: React.FC = () => {
               </div>
             )}
 
+            {/* Playtime to Finish Game - Only show when game is finished */}
+            {didFinishGame === true && (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Playtime to Finish Game (Optional)
+                  <span className="block text-xs text-gray-500 mt-1">
+                    How long did it take to complete the main story?
+                  </span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={playtimeToFinishHours || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '') {
+                        setPlaytimeToFinishHours(null);
+                      } else {
+                        const num = parseInt(value);
+                        const maxAllowed = playtimeHours || 99999;
+                        if (!isNaN(num) && num >= 1 && num <= maxAllowed) {
+                          setPlaytimeToFinishHours(num);
+                        }
+                      }
+                    }}
+                    onKeyPress={(e) => {
+                      // Only allow digits
+                      if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
+                        e.preventDefault();
+                      }
+                    }}
+                    min="1"
+                    max={playtimeHours || 99999}
+                    className="w-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    placeholder="0"
+                  />
+                  <span className="text-gray-400">hours</span>
+                </div>
+                {playtimeHours && playtimeToFinishHours && playtimeToFinishHours > playtimeHours && (
+                  <p className="mt-2 text-sm text-yellow-500 flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>Completion time cannot exceed total playtime</span>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Total Playtime */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Total Playtime (Optional)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={playtimeHours || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setPlaytimeHours(null);
+                    } else {
+                      const num = parseInt(value);
+                      if (!isNaN(num) && num >= 1 && num <= 99999) {
+                        setPlaytimeHours(num);
+                      }
+                    }
+                  }}
+                  onKeyPress={(e) => {
+                    // Only allow digits
+                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
+                      e.preventDefault();
+                    }
+                  }}
+                  min="1"
+                  max="99999"
+                  className="w-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  placeholder="0"
+                />
+                <span className="text-gray-400">hours</span>
+              </div>
+            </div>
+
             {/* Platform Played On */}
             {selectedGame && (
               <div>
@@ -1091,41 +1187,6 @@ export const ReviewFormPage: React.FC = () => {
                 />
                 <span>This review contains spoilers</span>
               </label>
-            </div>
-
-            {/* Playtime */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Playtime (Optional)
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={playtimeHours || ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '') {
-                      setPlaytimeHours(null);
-                    } else {
-                      const num = parseInt(value);
-                      if (!isNaN(num) && num >= 1 && num <= 99999) {
-                        setPlaytimeHours(num);
-                      }
-                    }
-                  }}
-                  onKeyPress={(e) => {
-                    // Only allow digits
-                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'Enter') {
-                      e.preventDefault();
-                    }
-                  }}
-                  min="1"
-                  max="99999"
-                  className="w-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                  placeholder="0"
-                />
-                <span className="text-gray-400">hours</span>
-              </div>
             </div>
 
 

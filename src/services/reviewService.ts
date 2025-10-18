@@ -220,6 +220,7 @@ export const createReview = async (
   isRecommended?: boolean,
   platformName: string,
   playtimeHours?: number | null,
+  playtimeToFinishHours?: number | null,
   containsSpoilers?: boolean
 ): Promise<ServiceResponse<Review>> => {
   try {
@@ -351,6 +352,7 @@ export const createReview = async (
       is_recommended: isRecommended,
       platform_id: platformId, // Add platform ID
       playtime_hours: playtimeHours || null, // Add playtime
+      playtime_to_finish_hours: playtimeToFinishHours || null, // Add playtime to finish
       is_spoiler: containsSpoilers || false // Add spoiler flag
     };
 
@@ -382,6 +384,7 @@ export const createReview = async (
       review: data.review,
       postDateTime: data.post_date_time,
       playtimeHours: data.playtime_hours,
+      playtimeToFinishHours: data.playtime_to_finish_hours,
       isRecommended: data.is_recommended,
       is_spoiler: data.is_spoiler,
       likeCount: 0,
@@ -428,6 +431,7 @@ export interface Review {
   review: string | null;
   postDateTime: string;
   playtimeHours?: number | null;
+  playtimeToFinishHours?: number | null;
   isRecommended: boolean | null;
   is_spoiler?: boolean; // Spoiler flag from database
   likeCount?: number;
@@ -576,6 +580,7 @@ export const getUserReviewForGame = async (gameId: number): Promise<ServiceRespo
         review: data.review,
         postDateTime: data.post_date_time,
         playtimeHours: data.playtime_hours,
+        playtimeToFinishHours: data.playtime_to_finish_hours,
         isRecommended: data.is_recommended,
         is_spoiler: data.is_spoiler,
         likeCount: 0,
@@ -615,6 +620,7 @@ export const updateReview = async (
   isRecommended?: boolean,
   platformName?: string,
   playtimeHours?: number | null,
+  playtimeToFinishHours?: number | null,
   containsSpoilers?: boolean
 ): Promise<ServiceResponse<Review>> => {
   try {
@@ -663,6 +669,7 @@ export const updateReview = async (
       is_recommended: isRecommended,
       updated_at: new Date().toISOString(),
       playtime_hours: playtimeHours || null, // Add playtime
+      playtime_to_finish_hours: playtimeToFinishHours || null, // Add playtime to finish
       is_spoiler: containsSpoilers !== undefined ? containsSpoilers : undefined // Add spoiler flag if provided
     };
 
@@ -696,6 +703,7 @@ export const updateReview = async (
       review: data.review,
       postDateTime: data.post_date_time,
       playtimeHours: data.playtime_hours,
+      playtimeToFinishHours: data.playtime_to_finish_hours,
       isRecommended: data.is_recommended,
       is_spoiler: data.is_spoiler,
       likeCount: 0,
@@ -756,6 +764,7 @@ export const getUserReviews = async (): Promise<ServiceResponse<Review[]>> => {
         review: item.review,
         postDateTime: item.post_date_time,
         playtimeHours: item.playtime_hours,
+        playtimeToFinishHours: item.playtime_to_finish_hours,
         isRecommended: item.is_recommended,
         is_spoiler: item.is_spoiler,
         likeCount: 0, // Will be populated by separate query if needed
@@ -824,6 +833,7 @@ export const getReview = async (
         review: data.review,
         postDateTime: data.post_date_time,
         playtimeHours: data.playtime_hours,
+        playtimeToFinishHours: data.playtime_to_finish_hours,
         isRecommended: data.is_recommended,
         is_spoiler: data.is_spoiler,
         likeCount: likeCount || 0,
@@ -1583,6 +1593,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
             review,
             post_date_time,
             playtime_hours,
+            playtime_to_finish_hours,
             is_recommended,
             is_spoiler
           `, { count: 'exact' })
@@ -1626,6 +1637,7 @@ export const getReviews = async (limit = 10): Promise<ServiceResponse<Review[]>>
           review: item.review,
           postDateTime: item.post_date_time,
           playtimeHours: item.playtime_hours,
+          playtimeToFinishHours: item.playtime_to_finish_hours,
           isRecommended: item.is_recommended,
           is_spoiler: item.is_spoiler,
           likeCount: 0,
