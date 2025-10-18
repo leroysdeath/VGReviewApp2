@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { SmartImage } from './SmartImage';
+import { screenshotService } from '../services/screenshotService';
 
 interface ScreenshotCarouselProps {
   screenshots: string[];
@@ -45,7 +46,7 @@ export const ScreenshotCarousel: React.FC<ScreenshotCarouselProps> = ({ screensh
             <div
               key={index}
               className="min-w-full h-full flex-shrink-0 cursor-pointer"
-              onClick={() => window.open(screenshot.replace('t_screenshot_big', 't_1080p'), '_blank')}
+              onClick={() => window.open(screenshotService.getUrlWithTemplate(screenshot, 't_1080p_2x'), '_blank')}
               role="button"
               tabIndex={0}
               aria-label={`View full size screenshot ${index + 1}`}

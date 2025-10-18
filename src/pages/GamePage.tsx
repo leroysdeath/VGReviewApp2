@@ -25,6 +25,7 @@ import { GameActionSheet } from '../components/GameActionSheet';
 import { useTrackGameView } from '../hooks/useTrackGameView';
 import { RatingBars } from '../components/RatingBars';
 import { ScreenshotCarousel } from '../components/ScreenshotCarousel';
+import { screenshotService } from '../services/screenshotService';
 
 // Interface for review data from database
 interface GameReview {
@@ -1593,35 +1594,40 @@ export const GamePage: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                 <div className="lg:col-span-2">
                   <ScreenshotCarousel
-                    screenshots={game.screenshots.map(url => url.replace('t_screenshot_big', 't_screenshot_huge'))}
+                    screenshots={screenshotService.getOptimizedUrls(game.screenshots)}
                     gameName={game.name}
                   />
                 </div>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {game.screenshots.map((screenshot, index) => (
-                  <div
-                    key={index}
-                    className="group relative aspect-video rounded-lg overflow-hidden bg-gray-800 hover:ring-2 hover:ring-purple-500 transition-all duration-200 cursor-pointer shadow-lg"
-                    onClick={() => window.open(screenshot.replace('t_screenshot_big', 't_1080p'), '_blank')}
-                  >
-                    <img
-                      src={screenshot.replace('t_screenshot_big', 't_screenshot_huge')}
-                      alt={`${game.name} screenshot ${index + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                      loading="lazy"
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        // Fallback to medium quality if huge fails
-                        if (target.src.includes('t_screenshot_huge')) {
-                          target.src = screenshot.replace('t_screenshot_big', 't_screenshot_med');
-                        }
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-200" />
-                  </div>
-                ))}
+                {game.screenshots.map((screenshot, index) => {
+                  const optimizedUrl = screenshotService.getOptimizedUrl(screenshot);
+                  const fullSizeUrl = screenshotService.getUrlWithTemplate(screenshot, 't_1080p_2x');
+
+                  return (
+                    <div
+                      key={index}
+                      className="group relative aspect-video rounded-lg overflow-hidden bg-gray-800 hover:ring-2 hover:ring-purple-500 transition-all duration-200 cursor-pointer shadow-lg"
+                      onClick={() => window.open(fullSizeUrl, '_blank')}
+                    >
+                      <img
+                        src={optimizedUrl}
+                        alt={`${game.name} screenshot ${index + 1}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          // Fallback to medium quality if optimized fails
+                          if (!target.src.includes('t_screenshot_med')) {
+                            target.src = screenshotService.getUrlWithTemplate(screenshot, 't_screenshot_med');
+                          }
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-200" />
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
