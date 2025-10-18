@@ -1047,15 +1047,15 @@ export const GamePage: React.FC = () => {
       
       <div className="min-h-screen bg-gray-900">
         {/* Background Carousel Section */}
-        <div className="relative">
-          {/* Screenshot Background */}
-          <div className="absolute inset-0 h-[600px] overflow-hidden">
+        <div className="relative min-h-[900px] md:min-h-[1000px]">
+          {/* Screenshot Background - Extended height for hero effect */}
+          <div className="absolute inset-0 overflow-hidden">
             <BackgroundCarousel screenshots={game.screenshots || []} />
           </div>
 
-          {/* Main Content - overlaid on background */}
+          {/* Main Content - overlaid on background with top spacing */}
           <div className="relative z-10">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 md:pt-56 pb-8">
               {/* Game Header */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
                 {/* Game Cover and Info */}
